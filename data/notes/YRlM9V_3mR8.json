@@ -1,0 +1,177 @@
+{
+ "one_line": "Kai reviews Poolside's Laguna S 2.1, an open-weight 118B MoE model with 8B active that runs on one desktop-class box; it beats GLM 5.2 on some coding benchmarks but not all, and the launch numbers are unverified.",
+ "summary": "The video reviews Poolside's Laguna S 2.1, a 118B-parameter mixture-of-experts model that activates about 8B parameters per token and has a 1M-token context. The speaker reports it leads open models on SWE-Bench Multilingual (78.5%) and a hard agentic benchmark (40%, or 16% without max thinking), and beats a 1.6T DeepSeek model on that agentic benchmark and on code-QA. It does not beat GLM 5.2 across the board: GLM wins the terminal-tasks and \"WE Pro\" benchmarks by a few points each. The local pitch is that a 4-bit build (about 59 GB) fits on one NVIDIA DGX Spark at 50 to 77 tokens/s, and an IQ4_XS GGUF can run on 64 GB RAM plus a 12 GB GPU by pushing expert layers to system RAM with llama.cpp. The speaker frames local hosting as a fixed hardware cost versus per-token API pricing, with code staying on-premises. Caveats he stresses: every number is Poolside's own and was not independently reproduced at launch, Claude still leads on terminal tasks (88 vs 70), and the model must be tested on your own codebase before trust. He also covers the company's funding and a fast training run (under nine weeks on about 4,000 H200s, the first Poolside run with RL and 8-bit training).",
+ "speakers": [
+  "Kai (host of Kai Explains; name not stated in the transcript)"
+ ],
+ "orgs": [
+  "Poolside",
+  "NVIDIA",
+  "Anthropic",
+  "DeepSeek",
+  "GitHub (Jason Warner's former employer, mentioned)"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "models-research",
+  "inference-serving",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "laguna-s-2.1",
+  "poolside",
+  "mixture-of-experts",
+  "open-weights",
+  "local-llm",
+  "dgx-spark",
+  "llama-cpp",
+  "expert-offload",
+  "gguf",
+  "iq4_xs",
+  "swe-bench",
+  "coding-agents",
+  "openmdw-license",
+  "glm-5.2",
+  "benchmarks"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Open-weight models finally offer frontier-adjacent coding quality that you can self-host; the speaker argues the West is back in the open race by going small.",
+   "detail": "Previously the best downloadable models came from Chinese labs (GLM, DeepSeek, Qwen, Kimi). Laguna S 2.1 is pitched as Western, self-hostable, and under the OpenMDW license, which permits shipping products.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The small-active-parameter trick is mixture of experts: a router wakes about 8B of 118B parameters per generated token.",
+   "detail": "Only about 7% of weights fire per token, so the model carries the memory of a large model but pays the running cost of a small one. It also reads a 1M-token context in one shot, so a whole repo can be held at once.",
+   "t": "2:47"
+  },
+  {
+   "idea": "On multilingual bug fixing and some agentic and code-QA benchmarks, Laguna beats much larger open models, including a 1.6T DeepSeek.",
+   "detail": "Reported: SWE-Bench Multilingual 78.5% (first among open models tested, GLM included); hard agentic 40% vs DeepSeek 9%; code-QA 46 vs DeepSeek 27. The speaker says the small model keeps winning when the task rewards understanding over raw size.",
+   "t": "2:47"
+  },
+  {
+   "idea": "It is a split decision with GLM 5.2, not a knockout: GLM wins the two benchmarks people quote first by a few points.",
+   "detail": "Terminal tasks GLM 81 vs Laguna 70; the 'WE Pro' benchmark GLM 62 vs Laguna 59. GLM is about 740B total with roughly five times the active parameters. Laguna does reach within a few points of a model six times its size.",
+   "t": "4:13"
+  },
+  {
+   "idea": "Max thinking mode is a tunable quality-vs-token trade: hard agentic score rises from 16% to 40% at roughly 2.5x the tokens.",
+   "detail": "The speaker presents this as a second gear for hard tasks; the cost is the token burn.",
+   "t": "4:13"
+  },
+  {
+   "idea": "Local hosting is framed as a one-time hardware cost against per-token API pricing and rate limits, and the code never leaves the machine.",
+   "detail": "The speaker's example is a DGX Spark (about $4,000, 128 GB unified memory) running the 4-bit model at 50 to 77 tokens/s with room left for a large context. He also says 16 GB of system RAM is not enough for the RAM-offload route.",
+   "t": "5:33"
+  },
+  {
+   "idea": "Honest caveats: every benchmark is self-reported and unreproduced at launch, the model trails the closed frontier, and a benchmark is not your codebase.",
+   "detail": "Claude beats it on terminal tasks (88 vs 70). He recommends running it on your own work for a week before trusting it with anything important.",
+   "t": "8:13"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run a MoE model that exceeds VRAM by offloading expert layers to system RAM (llama.cpp)",
+   "how": "Use the IQ4_XS GGUF (57.6 GB file). Set the llama.cpp MoE CPU-offload option to 46 (the caption reads 'ncpmo set to 46', most likely --n-cpu-moe 46), which keeps 46 expert layers in system RAM and the rest on the GPU. Budget about 62 GB usable system RAM plus about 12 GB VRAM. VRAM also holds the KV cache and compute buffers, so leave headroom. The speaker does not show the full command line.",
+   "when": "You have a 12 GB-class GPU and about 64 GB of RAM and want to avoid buying a 128 GB box. Not viable with 16 GB RAM."
+  },
+  {
+   "name": "Single-box 4-bit serving on unified memory",
+   "how": "Quantize to 4-bit (about 59 GB for Laguna S 2.1) and serve on a 128 GB unified-memory machine (DGX Spark). Day-one runtimes named: Ollama (captioned 'Alama'), vLLM, SGLang, plus hosted OpenRouter.",
+   "when": "You want a fully offline coding model with a large context on one desk-sized machine."
+  },
+  {
+   "name": "Enable max thinking only for hard agentic tasks",
+   "how": "Turn on the max thinking mode for hard tasks and expect roughly 2.5x the tokens; keep the default mode for routine edits.",
+   "when": "Per-task selection when quality on hard agentic work matters more than token cost."
+  },
+  {
+   "name": "Test an open model on your own repo before adopting it",
+   "how": "Run the candidate on a week of real work (your frameworks and conventions) and compare against your current model rather than trusting leaderboard numbers.",
+   "when": "Before using any new model, especially for work where a faceplant matters."
+  }
+ ],
+ "tools": [
+  "Laguna S 2.1 (Poolside, open weights, OpenMDW license)",
+  "Laguna XS (tinier sibling; captioned 'XS5')",
+  "GLM 5.2 (Chinese open model, about 740B)",
+  "DeepSeek (largest model cited, about 1.6T)",
+  "Qwen and Kimi (named as Chinese open-model families)",
+  "Claude (Anthropic, closed frontier comparison)",
+  "NVIDIA DGX Spark (128 GB unified memory desktop)",
+  "llama.cpp (GGUF, IQ4_XS quant, expert-layer offload)",
+  "Ollama (captioned 'Alama')",
+  "vLLM",
+  "SGLang",
+  "OpenRouter (hosted)"
+ ],
+ "numbers": [
+  {
+   "claim": "Laguna S 2.1: 118B total parameters, about 8B active per token (about 7%), 1M-token context.",
+   "t": "0:00-2:47"
+  },
+  {
+   "claim": "SWE-Bench Multilingual 78.5%, first among open models tested, including GLM.",
+   "t": "2:47"
+  },
+  {
+   "claim": "Hard agentic benchmark 40% (vs DeepSeek 1.6T at 9%). 16% without max thinking; max thinking uses about 2.5x tokens.",
+   "t": "2:47-4:13"
+  },
+  {
+   "claim": "Code-QA 46 for Laguna vs 27 for the 1.6T DeepSeek.",
+   "t": "2:47"
+  },
+  {
+   "claim": "Terminal tasks: GLM 5.2 81 vs Laguna 70. 'WE Pro': GLM 62 vs Laguna 59. Claude terminal tasks 88 vs Laguna 70.",
+   "t": "4:13 and 8:13"
+  },
+  {
+   "claim": "GLM 5.2 about 740B total, about 5x Laguna's active parameters.",
+   "t": "4:13"
+  },
+  {
+   "claim": "DGX Spark about $4,000, 128 GB unified memory; 4-bit Laguna about 59 GB; 50 to 77 tokens/s.",
+   "t": "5:33"
+  },
+  {
+   "claim": "IQ4_XS GGUF file 57.6 GB; needs about 62 GB usable system RAM and 12 GB VRAM for the offload route.",
+   "t": "5:33"
+  },
+  {
+   "claim": "Training: under nine weeks on roughly 4,000 H200 GPUs, 30T tokens; first run with RL and 8-bit precision.",
+   "t": "6:49"
+  },
+  {
+   "claim": "Poolside raised over $600M; NVIDIA put in up to $1B more, valuation around $12B (last October).",
+   "t": "6:49"
+  }
+ ],
+ "hot_takes": [
+  "The West is back in the open-weight race, and going small is the winning design choice.",
+  "For agent-heavy users, a local model's fixed hardware cost beats per-token API pricing and rate limits.",
+  "Launch benchmarks are a claim, not a result, until third parties reproduce them (speaker's own caveat).",
+  "The honest verdict is a split decision with GLM 5.2, not a clean win."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft (L2B) already serves local models with vLLM on one RTX 5090. This video gives a concrete open-weight MoE candidate and an expert-offload recipe, which fits InferCraft's serving and scheduler work.",
+   "action": "Add Laguna S 2.1 to the InferCraft vLLM benchmark matrix, and measure expert-offload throughput on the 32 GB RTX 5090 (the 59 GB 4-bit build does not fit there without offload; the speaker's numbers were on a 128 GB box)."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI, so a local model would only help cheap side steps (summaries, classification) if it ever runs non-Claude steps. This is a weak fit.",
+   "action": "Note Laguna S 2.1 as a zero-token local option for cheap sub-steps; verify tool calling on one of our repos before any use."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

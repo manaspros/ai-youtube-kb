@@ -1,0 +1,150 @@
+{
+ "one_line": "Steven Willmott (SafeIntelligence) argues agent testing needs an explicit spec of data, rules, terminology, roles and robustness needs, kept separate from the implementation and run in a closed loop.",
+ "summary": "Willmott, CEO of SafeIntelligence, says that a bigger or smarter model is not automatically a safer or better agent, since jailbreaks can work better on larger models and broad tool access widens the attack surface. He proposes spec-driven testing: write down what an agent must do, not just a dataset of inputs and outputs. The spec has six parts: ground-truth examples, business rules (for example a discount cap or a refund window), domain ontologies and internal terminology, domain substitutions that a generic LLM might confuse, roles and permissions, and robustness requirements such as tolerance to typos and rephrasing. He says the spec should feed two checks, security tests (the agent's stated domain is where it is most likely to be vulnerable) and robustness sweeps that vary inputs to see the range of valid answers. He points to A2A agent cards as a partial spec that still needs valid variation ranges. The main advice is to keep the spec independent of the framework, store it as versioned files in a repo, and use it to drive automated runs whose failures guide iteration, which he calls backyard RL rather than real RL. The talk is a short pitch for his company's product, but the framing is practical.",
+ "speakers": [
+  "Steven Willmott"
+ ],
+ "orgs": [
+  "SafeIntelligence",
+  "Braintrust"
+ ],
+ "format": "talk",
+ "topics": [
+  "testing-verification",
+  "evals",
+  "security-guardrails",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "spec-driven testing",
+  "agent specs",
+  "robustness testing",
+  "perturbation testing",
+  "agent cards",
+  "A2A",
+  "security testing",
+  "backyard RL",
+  "formal verification",
+  "product pitch"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A smarter or bigger model is not automatically a better or safer agent.",
+   "detail": "Jailbreaks wrapped in a poem fail on small models, which cannot read them, but succeed on larger models that can. Broad agent remits add attack surface and test surface. Large models also cost more and run slower on simple tasks.",
+   "t": "2:24"
+  },
+  {
+   "idea": "The real trade-off is between capability and the harm an agent can do.",
+   "detail": "Harm has two parts: what instructions the agent accepts (how flexible the prompt can be) and what tools it can use in your infrastructure. An agent that can wire money is much riskier than one that answers questions.",
+   "t": "3:45"
+  },
+  {
+   "idea": "A test dataset is not a full spec for an agent.",
+   "detail": "A spec needs ground-truth examples, explicit rules (for example no discount above 10%, no refunds after 30 days), ontologies of what the business offers, internal terms and valid substitutions (gross profit vs gross sales), roles and permissions, and robustness requirements. Rules are hard to test for certain, so they need to be explicit.",
+   "t": "4:42"
+  },
+  {
+   "idea": "Robustness means passing under stress, not only on the clean test set.",
+   "detail": "Borrowed from vision testing (sunset, fog, camera shake), the questions for agents are: do typos break it, how many, and how stable are answers under rephrasing? These form task- and role-specific benchmarks.",
+   "t": "7:18"
+  },
+  {
+   "idea": "The same spec can drive security tests and robustness sweeps.",
+   "detail": "Knowing the agent's intended domain shows where it is most likely to be attacked, since it will engage with that domain. Varying inputs around the spec shows the range over which the agent still answers correctly.",
+   "t": "8:38"
+  },
+  {
+   "idea": "Keep the spec independent of the implementation and version it like code.",
+   "detail": "Teams may build on LangSmith or Vertex agents and later switch. Specs, integration tests, unit tests and penetration tests should live in a repo, outside any one framework, and be versioned. He compares the spec to OpenAPI.",
+   "t": "10:03"
+  },
+  {
+   "idea": "Run the spec automatically in a loop to close robustness gaps.",
+   "detail": "Run the tests, read the failures, then change the agent until the gaps close. He calls this backyard RL, because it works around the model rather than training it.",
+   "t": "11:31"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Six-part agent spec",
+   "how": "Write down ground-truth examples, business rules, ontology and domain terms, valid term substitutions, roles and permissions, and robustness requirements as explicit artifacts, separate from the agent code.",
+   "when": "Before deploying an agent that runs with little human review, or whenever a plain eval set misses rule violations."
+  },
+  {
+   "name": "Spec-driven security testing",
+   "how": "Pull the agent's intended tasks and domain from the spec into the security test plan, and aim attacks at the domains and tools the agent is meant to use.",
+   "when": "For agents with tool access in a specific domain, such as banking or support."
+  },
+  {
+   "name": "Input perturbation sweep",
+   "how": "Vary the inputs around each spec case (typos at increasing rates, rephrasings, changed conditions) and record where correct behavior breaks.",
+   "when": "For customer-facing agents where users type loosely or phrase requests in many ways."
+  },
+  {
+   "name": "Closed-loop spec iteration (backyard RL)",
+   "how": "Run the spec tests automatically, collect failures, change prompts or config, and repeat until the robustness gaps are filled. The model weights are not changed.",
+   "when": "When you have an automated harness and want to improve an agent without fine-tuning."
+  },
+  {
+   "name": "Specs as versioned repo files",
+   "how": "Keep specs in a GitHub repo in a neutral format, pull them into any test tool, and version them with the code.",
+   "when": "When the team may change frameworks or run several testing tools."
+  },
+  {
+   "name": "Agent cards plus variation envelopes",
+   "how": "Use an A2A agent card for the skill description, then add the valid range of inputs (for example, which people a meeting can be booked for) to define what counts as a fair variant.",
+   "when": "When exposing agents to other agents or when test variants need limits."
+  }
+ ],
+ "tools": [
+  "SafeIntelligence platform",
+  "A2A agent cards",
+  "LangSmith",
+  "Vertex AI agents",
+  "Braintrust",
+  "OpenAPI"
+ ],
+ "numbers": [
+  {
+   "claim": "Example business rule from the talk: no discount above 10% (an illustration, not a measured result).",
+   "t": "4:42"
+  },
+  {
+   "claim": "Example business rule from the talk: refunds refused more than 30 days after purchase (an illustration, not a measured result).",
+   "t": "4:42"
+  },
+  {
+   "claim": "The speaker's company has been operating for about three years. No benchmark or adoption numbers are given.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "A bigger model is not automatically safer: jailbreaks can work better on larger, smarter models.",
+  "A test dataset is not enough to specify an agent. Rules, terminology, roles and robustness must be explicit and tested.",
+  "Keep agent specs independent of the framework so the tests survive a change of infrastructure."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Its spec ideas (rules, roles, perturbation sweeps) could feed the eval layer, but the talk does not cover the proxy, memory or serving pillars.",
+   "action": "Read the SafeIntelligence product docs or write a short spec for one AgentOS agent to see which rules and perturbation cases it would add to the current evals."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The closed-loop spec-run-fix pattern matches the plan, critique and debate loops, and a versioned spec could serve as the acceptance check for each checkpoint.",
+   "action": "Add a versioned spec file (rules, roles, robustness cases) that the ProsHarness critique step checks against on each loop, and see whether it reduces repeated failures across resumed runs."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Gives a concrete split between dataset evals and an explicit spec of rules, roles and robustness, which applies to any agent we test.",
+   "action": "Pick one live agent, write its rules, roles and terminology as a spec file, run typo and rephrase sweeps, and compare the gaps found with what the current eval set catches."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

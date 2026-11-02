@@ -1,0 +1,168 @@
+{
+ "one_line": "A 12-minute Better Stack tour of TanStack Router: full type safety across links, params and search params, file-based routing, and loaders wired to TanStack Query.",
+ "summary": "Better Stack presents TanStack Router as a fully type-safe React (and Solid) router, demoed on a sample app. The host shows how the typed Link component errors on unknown paths, missing params and invalid search params, and autocompletes valid routes. He walks through file-based routing (with the dev server generating route boilerplate), validating path params with a zod parse option so later code gets typed values, and validating search params with defaults so the URL works as state. The data-loading section covers loaders, passing a React Query client through router context, using ensureQueryData in the loader and useSuspenseQuery in components, plus pending and not-found components. A quick closing list covers automatic and manual code splitting, Link active options and preloading, beforeLoad for auth redirects, and TanStack Start for SSR and server functions. It is a feature tour with little setup code, no tradeoffs and no benchmarks.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "TanStack"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "tanstack-router",
+  "tanstack-query",
+  "tanstack-start",
+  "typescript",
+  "react",
+  "solid",
+  "type-safety",
+  "file-based-routing",
+  "zod",
+  "search-params",
+  "suspense",
+  "code-splitting",
+  "ssr"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Full type safety across the router: the typed Link component rejects unknown paths, missing path params and invalid search params, and autocompletes every valid route.",
+   "detail": "The speaker deliberately links to a page that doesn't exist to show the error on the 'to' field. Refactoring routes or search params then surfaces every broken link at compile time instead of at runtime.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Search params are typed and can be validated with a schema (zod here), with defaults and fallbacks, and can hold JSON objects. The URL acts as the app's state manager.",
+   "detail": "The dashboard's time range is an enum with a fallback and default of 3 months. Pagination is an object serialized into the URL. Invalid values fall back to the default instead of erroring, and partial search updates via Link stay typed.",
+   "t": "6:14"
+  },
+  {
+   "idea": "Route definitions are file-based, and the dev server generates the boilerplate when you add a file.",
+   "detail": "index.tsx maps to the home page, dashboard.tsx to /dashboard, and a folder with index.tsx to a section route. Dot notation (api.auth, api.demo) gives nested paths without folders when a route has few children. Adding demo.tsx produces the createFileRoute call automatically, and mistakes are flagged against the expected file-route pattern.",
+   "t": "2:28"
+  },
+  {
+   "idea": "Path params can be parsed and validated at the route level, so downstream code receives typed values.",
+   "detail": "A params option with a parse function (zod is used to turn the string user id into a number) runs before the route renders. A failed parse goes to the route's error component, so components never need to revalidate the param.",
+   "t": "3:40"
+  },
+  {
+   "idea": "Loaders can prefetch into React Query. The loader calls ensureQueryData on the query client from router context, and components read the same query with useSuspenseQuery.",
+   "detail": "The query client is passed through the router's context option and is available to every route. ensureQueryData fetches only when the cache is empty, which gives the route a head start. Routes are wrapped in Suspense, so a slow query shows the route's pending component.",
+   "t": "8:45"
+  },
+  {
+   "idea": "Loaders can throw to a not-found component when a record is missing. Loaded data can be read with useLoaderData, either from a hook or from the route object itself.",
+   "detail": "In the post example, a loader fetches the post and throws not-found if the id is invalid. Hooks such as useParams and useLoaderData can be called from the route object, which skips specifying the route.",
+   "t": "7:28"
+  },
+  {
+   "idea": "Smaller features: automatic code splitting, a .lazy route suffix for manual lazy loading, Link active options and preloading, and beforeLoad for auth redirects before render.",
+   "detail": "beforeLoad takes the same arguments as the loader and is the place to redirect unauthenticated users to login before any component renders. Link's activeOptions control exact matching, hash and search inclusion, and preload is available per link.",
+   "t": "11:11"
+  },
+  {
+   "idea": "TanStack Start is the full-stack framework on top of the router, offering SSR, streaming and server functions.",
+   "detail": "Mentioned only briefly at the end, with server components described as a possibility, not a shipped feature.",
+   "t": "11:11"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "File-based routing with generated boilerplate",
+   "how": "Create routes/index.tsx for /, routes/dashboard.tsx for /dashboard, and a folder with index.tsx for a section route. For a shallow nested route, use a dot in the filename (api.auth.tsx gives /api/auth, api.demo.tsx gives /api/demo). Create the file and let the TanStack dev server write the createFileRoute boilerplate. Each route file has a route definition plus the component it renders.",
+   "when": "Default setup for apps with many routes; the dot notation avoids a folder for each small nested route."
+  },
+  {
+   "name": "Validate path params in the route definition",
+   "how": "In the route definition, add a params option with a parse function. Use zod to check the string param and coerce it to the type you need (the example turns a user id into a number). If parse throws, the router shows the route's error component. Read the param later through the typed hook, with no extra validation.",
+   "when": "Whenever a route param has a type (ids, numbers, enums) and the component should never handle invalid values."
+  },
+  {
+   "name": "Validate search params with defaults and let the URL be state",
+   "how": "Define a zod schema for the route's search params in the route definition. Give each field a default so the hook never returns undefined, and use a fallback value for invalid input. Nested objects are serialized as JSON in the URL. Read them with the search hook. Update with a Link that passes a partial search object, which stays typed.",
+   "when": "Filters, pagination, sort order or time ranges on dashboards and list pages, where state should survive refresh and be shareable."
+  },
+  {
+   "name": "Loader prefetch into React Query via router context",
+   "how": "Create a QueryClient and pass it to the router's context option. In the route's loader, read queryClient from context and call queryClient.ensureQueryData with the same query options the component uses. Do not return the data from the loader. In the component, call useSuspenseQuery with those options. Give the route a pending component for the Suspense fallback. In the speaker's demo, an artificial 2-second delay showed the pending skeleton on a cold cache.",
+   "when": "Apps that already use React Query and want route-level prefetching without duplicating fetch logic."
+  },
+  {
+   "name": "Not-found and auth redirects in the route definition",
+   "how": "Throw a not-found error from the loader when a record is missing so the not-found component renders. Use beforeLoad, which receives the same arguments as the loader, to check auth and redirect to login before the route's components render.",
+   "when": "Protected routes and records that may not exist; a single redirect point before render."
+  },
+  {
+   "name": "Link active state and preloading",
+   "how": "Set activeProps on a Link for the class to apply when the link is active. Set activeOptions for exact matching and whether hash and search parameters count. Enable preload on the link to load the target route's data ahead of the click.",
+   "when": "Navigation menus and any list of links where active styling and fast transitions matter."
+  },
+  {
+   "name": "Code splitting",
+   "how": "Automatic code splitting is on by default with no setup. For manual control, name the route file with the .lazy suffix (the speaker says 'path dot lazy') so that route is lazy-loaded.",
+   "when": "Large apps where some routes are rarely visited and bundle size matters."
+  }
+ ],
+ "tools": [
+  "TanStack Router",
+  "TanStack Query (React Query)",
+  "TanStack Start",
+  "Zod",
+  "React",
+  "Solid",
+  "TypeScript"
+ ],
+ "numbers": [
+  {
+   "claim": "Video length is 12:00; the speaker picks favourite features from the router's docs, which he says are too many for one video.",
+   "t": "0:00"
+  },
+  {
+   "claim": "The demo adds an artificial 2-second delay to the React Query fetch to show the pending skeleton.",
+   "t": "9:47"
+  },
+  {
+   "claim": "Search param example: pagination page size set to 50, and page index 1 when starting from index 0; the time range falls back to 3 months on invalid input.",
+   "t": "6:14"
+  },
+  {
+   "claim": "The sample app has two API routes (api.auth and api.demo) built with dot-notation file names.",
+   "t": "2:28"
+  },
+  {
+   "claim": "The router supports React and Solid, according to the opening statement.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The speaker says TanStack libraries are 'slowly taking over the TypeScript ecosystem' and calls the router 'the ultimate router for full type safety'. Both are enthusiasm, not evidence.",
+  "'The URL as the ultimate state manager' is a strong claim with no comparison to other state approaches.",
+  "The video is a feature tour with almost no setup code, no versions, and no tradeoffs (bundle size, learning curve, lock-in to TanStack Query). Treat it as an orientation, not a decision guide.",
+  "The speaker prefers React Query for all data loading in React, so the loader-plus-query pattern reflects his preference more than a consensus."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "AgentOS is a Rust proxy and Python infra with no frontend routing mentioned in the project profile; nothing here changes what we build.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness is a CLI harness around Claude Code; no web routing or type-safe UI layer is named in the profile.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "Frontend routing library talk with no AI, agent, or LLM content.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

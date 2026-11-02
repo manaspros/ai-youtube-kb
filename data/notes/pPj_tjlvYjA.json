@@ -1,0 +1,131 @@
+{
+ "one_line": "Reelful's founder shows how an agentic video editor turns real footage into a clip: media understanding, a user-approved plan, a sandboxed agent with skills, Remotion rendering, and a verification loop.",
+ "summary": "Ekaterina Deyneka, founder and CEO of Reelful, says video editing is tedious and still mostly manual, and that agents could handle most of the pipeline. She compares agentic video editing to agentic app building: both use a prompt UI, a remote sandbox with an agent, tools and skills, and both return a result (a rendered video instead of an app preview). She argues that editing real footage is harder than generating from a blank canvas, because the agent must pick moments, cut messy material, and still deliver a polished clip. The pipeline runs media understanding and transcription first, then a creative plan the user can approve, change or regenerate, and only then a sandbox where the agent works. Remotion (video as React code) is the rendering layer, and a verification step checks that the composition is valid and renders, so the agent can iterate on errors. For mass consumers, Reelful is mobile-first, offers directional templates so users need no prompt, and provides a manual editor for small tweaks. The talk closes with a beta call and a note on a16z speedrun funding, and gives no benchmarks.",
+ "speakers": [
+  "Ekaterina Deyneka"
+ ],
+ "orgs": [
+  "Reelful",
+  "a16z speedrun"
+ ],
+ "format": "talk",
+ "topics": [
+  "sandboxing-execution",
+  "product-ux",
+  "testing-verification",
+  "voice-multimodal"
+ ],
+ "tags": [
+  "agentic video editing",
+  "Remotion",
+  "sandbox per job",
+  "plan approval gate",
+  "verification layer",
+  "skills as craft",
+  "mobile-first",
+  "directional templates",
+  "consumer AI"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agentic video editing has the same infrastructure shape as an agentic app builder.",
+   "detail": "Both have a prompt UI, a remote sandbox with an agent, tools and skills. The output differs: a rendered video instead of an app preview.",
+   "t": "2:32"
+  },
+  {
+   "idea": "Editing real footage is a harder agent problem than generating from scratch.",
+   "detail": "With a blank canvas the agent can do anything. With user footage it must choose the best moments, omit weak ones, organize the rest, and hide that the result is AI-edited.",
+   "t": "3:30"
+  },
+  {
+   "idea": "Show a creative plan and get user approval before spending on execution.",
+   "detail": "The pipeline does media understanding and transcription first, then a plan the user can approve, change or regenerate. The sandbox starts only after approval.",
+   "t": "4:49"
+  },
+  {
+   "idea": "Encode editing taste as skills.",
+   "detail": "Skills hold cut rules for picking moments, font pairing guidance, and B-roll generation. Sub-processes handle music, voiceover, sound and photo animation.",
+   "t": "6:06"
+  },
+  {
+   "idea": "Use a code-based render target so agents can write the output.",
+   "detail": "Remotion treats video as React code, and agents are good at writing code. The composition is a file that lists assets, tracks and their order.",
+   "t": "7:18"
+  },
+  {
+   "idea": "Add a verification layer that the agent must pass before delivery.",
+   "detail": "The layer checks that the composition is clean, well-defined and renders. If not, the agent reiterates on the composition.",
+   "t": "7:18"
+  },
+  {
+   "idea": "Hide the agent workflow behind consumer UX.",
+   "detail": "Mobile-first use, directional templates (speak-to-camera, B-roll, voiceover) that work with no prompt, and a manual timeline editor for small fixes like removing a second or correcting a caption word.",
+   "t": "8:33"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Sandbox per approved job",
+   "how": "Spin up a remote machine with the agent, its skills and tools only after the user approves the plan. The sandbox does the composition and rendering work.",
+   "when": "Multi-step agent jobs where execution is expensive and the user should steer the direction first."
+  },
+  {
+   "name": "Plan approval gate",
+   "how": "Generate a creative plan from media understanding. Let the user approve, edit or regenerate it before any execution starts.",
+   "when": "Creative or generative pipelines where a wrong direction wastes compute or user trust."
+  },
+  {
+   "name": "Skills as encoded craft",
+   "how": "Package domain taste as skills: cut rules, font pairings, B-roll generation rules. The agent loads them in the sandbox.",
+   "when": "Domains where quality depends on expert judgment rather than a single API call."
+  },
+  {
+   "name": "Code-defined render target",
+   "how": "Express the output as code (Remotion React compositions) so the agent writes it and the renderer compiles it.",
+   "when": "Agent output that must be rendered or built deterministically from assets."
+  },
+  {
+   "name": "Verification-then-reiterate loop",
+   "how": "Before delivery, check the composition is valid and renders. On failure, return the error to the agent to fix and retry.",
+   "when": "Any agent-written artifact that can fail to build or render."
+  },
+  {
+   "name": "Directional templates plus manual editor fallback",
+   "how": "Offer preset editing modes so users need no prompt. Let them fix small issues in a conventional timeline editor after the agent pass.",
+   "when": "Consumer products where prompting is a barrier and agent output needs small corrections."
+  }
+ ],
+ "tools": [
+  "Remotion",
+  "React"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Editing real footage is a harder agent problem than generating from a blank canvas.",
+  "Consumer users should not need to know that a complex agentic workflow runs behind the app."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Sandboxed render jobs with an error-feedback verification loop match the Crucible exec-gate pattern, but the talk gives no metrics or code.",
+   "action": "In Crucible, test one job type where the agent output must compile or render, and feed the build error back to the agent for a retry; consider SkillForge output as per-domain skill files."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Plan approval before sandbox execution maps to ProsHarness's plan step and phone-driven approvals.",
+   "action": "Add an explicit user approval gate after the plan stage and before the first costly execution step, reusing the phone-driven approval flow."
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "Consumer video product talk with no reusable eval or infra data beyond the patterns above.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

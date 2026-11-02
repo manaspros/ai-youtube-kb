@@ -1,0 +1,183 @@
+{
+ "one_line": "Traversal's PM argues AI coding agents shift engineering time from building to troubleshooting, and proposes a five-level \"self-driving production\" autonomy scale plus five criteria for judging AI SRE tools.",
+ "summary": "Eric Schwartz, a product manager at Traversal, argues that coding agents shrink the development phase of software engineering, so teams spend more time on troubleshooting and less on design. He says observability tools report what broke but not why, and frames root cause analysis as a causal problem rather than an observability one. He proposes a six-step autonomy scale (levels 0 to 5) from fully manual incident response to a closed loop that finds the root cause, ships a fix, and verifies it without paging anyone. He reports customer outcomes from Pepsi (alert triage) and American Express (Traversal as first responder to every incident), though without methodology. He closes with five questions to ask any AI SRE vendor (full data coverage, search at scale without cost blowup, entity relationship mapping, autonomous learning, multi-hop reasoning) and a rough three-layer architecture: data ingestion, a \"production world model,\" and a causal search harness for agents.",
+ "speakers": [
+  "Eric Schwartz"
+ ],
+ "orgs": [
+  "Traversal",
+  "American Express",
+  "Pepsi",
+  "DigitalOcean",
+  "Capital One",
+  "Datadog",
+  "Elastic",
+  "Splunk",
+  "ServiceNow",
+  "Google",
+  "Anthropic"
+ ],
+ "format": "talk",
+ "topics": [
+  "observability",
+  "enterprise-adoption",
+  "product-ux"
+ ],
+ "tags": [
+  "AI SRE",
+  "root cause analysis",
+  "self-driving production",
+  "incident response",
+  "on-call",
+  "alert fatigue",
+  "causal ML",
+  "multi-hop debugging"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Coding agents move the bottleneck from development to troubleshooting",
+   "detail": "Speaker splits software engineering into system design, development and troubleshooting. Agents make development much faster, but the enterprises he works with now spend more time debugging code that people understand less. He cites engineers losing 7+ hours a week to on-call troubleshooting.",
+   "t": "1:36"
+  },
+  {
+   "idea": "Observability tools say what broke, not why",
+   "detail": "Datadog, Elastic, Splunk and similar tools surface symptoms and correlations but not root causes or remediation. He argues that adding dashboards does not keep pace with added complexity.",
+   "t": "3:03"
+  },
+  {
+   "idea": "Root cause analysis is framed as a causal problem",
+   "detail": "Example: a checkout API failure can require 5 to 10 hops across dozens of services and petabytes of data to reach an expired TLS certificate. Large enterprises have no single engineer with the full context, so incidents turn into war rooms. The founders' background is causal machine learning.",
+   "t": "4:35"
+  },
+  {
+   "idea": "Self-driving production is a closed loop with a five-level autonomy scale",
+   "detail": "The loop is: detect the alert or incident, find the root cause, propose a fix, verify the fix, and close it without paging. Level 0 is fully manual war rooms. Level 1 is rule-based automation, which breaks on novel incidents. Levels 2 and 3 are homegrown agents for specific services. Level 4 covers a whole environment (hundreds of services, repos and log indexes), and level 5 adds fixing and verification.",
+   "t": "6:02"
+  },
+  {
+   "idea": "The jump from level 3 to level 4 is the hard one",
+   "detail": "Speaker says the leap is from service-specific agents to agents that span an entire environment, which is hard to build in-house.",
+   "t": "7:29"
+  },
+  {
+   "idea": "Alert intelligence is a near-term use case: triage and noise reduction",
+   "detail": "Pepsi used Traversal on a supply-chain stack that produced thousands of alerts a week; one engineer had a backlog of 700. Traversal pre-investigates alerts, surfaces the ones worth attention, and suggests rule changes, dismissals or tickets for technical debt.",
+   "t": "11:21"
+  },
+  {
+   "idea": "Claimed incident outcome: first responder on every incident",
+   "detail": "At American Express, Traversal is dispatched when an incident bridge is declared and posts a root cause analysis in Slack within about three minutes, sometimes updating ServiceNow tickets. The claimed effect is that teams are not paged or only one or two are, saving 50+ engineers per incident. These are vendor-reported figures.",
+   "t": "12:46"
+  },
+  {
+   "idea": "Five questions to ask any AI SRE vendor",
+   "detail": "(1) Can it see all production data, not a slice? (2) Can it search petabyte-scale data without blowing up cost or the observability stack? (3) Can it map relationships between entities? (4) Does it improve autonomously, without markdown files or forward-deployed engineers maintaining system knowledge? (5) Can it do multi-hop reasoning to a non-obvious root cause? He says anything beyond about five minutes loses the on-call team's patience.",
+   "t": "15:12"
+  },
+  {
+   "idea": "Three-layer architecture: ingest, world model, causal search",
+   "detail": "The bottom layer ingests and maps all connected data without raising cost. The middle layer is a \"production world model\" of relationships between data. The top layer packages results as use cases or user experiences. The core pieces are the world model and a \"causal search engine,\" which is the harness that lets agents search the mapped data.",
+   "t": "16:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Five-level autonomy scale for incident response",
+   "how": "Rate your current incident process: L0 fully manual war room; L1 rule-based runbook automation tied to alerts; L2-L3 agents for one service or alert set; L4 agent coverage across the whole environment; L5 diagnosis plus fix plus verification. Use it to decide where to invest next. The speaker's point is that rules fail on novel incidents, so the L3-to-L4 jump needs cross-environment data and search.",
+   "when": "Planning automation for on-call or deciding whether to build in-house versus buy an AI SRE product."
+  },
+  {
+   "name": "Five-question checklist for evaluating AI SRE tools",
+   "how": "Ask a vendor: full data coverage (no gaps or sampling)? Search at scale without cost blowup? Entity relationship map? Autonomous learning without hand-maintained markdown or forward-deployed engineers? Multi-hop root cause in under about five minutes?",
+   "when": "Evaluating AIOps or AI SRE vendors, or auditing an internal agent for incident diagnosis."
+  },
+  {
+   "name": "Causal root cause framing for multi-hop incidents",
+   "how": "Treat the investigation as finding cause and effect across hops (symptom service, upstream dependency, infrastructure such as an expired certificate), not as correlating alerts. Build an entity relationship graph across services, repos and log indexes, then have an agent search that graph. The speaker gives no implementation detail beyond this.",
+   "when": "Incidents whose symptom is several services away from the cause, such as a failing checkout API caused by a certificate or upstream dependency."
+  },
+  {
+   "name": "Agent-first incident intake",
+   "how": "Dispatch the agent when an incident bridge is declared. Have it post the root cause analysis to the incident channel and update the ticketing system, so humans page only to verify findings. Per the talk, the target is about 3 minutes to first analysis.",
+   "when": "Large incident response processes where many teams are paged by default."
+  },
+  {
+   "name": "Alert triage pass before on-call",
+   "how": "Run an investigation on every alert, rank by importance, and produce three outputs: a short prioritized queue, alert-rule changes to cut noise, and tickets for lower-priority technical debt. Engineers receive pre-investigated work instead of a raw backlog.",
+   "when": "Teams receiving thousands of alerts per week with large unmanaged backlogs."
+  }
+ ],
+ "tools": [
+  "Traversal (AI SRE product; production world model and causal search engine)",
+  "Claude Code (auto-caption \"Cloud Code\")",
+  "Codex",
+  "Cursor",
+  "Datadog",
+  "Elastic",
+  "Splunk",
+  "ServiceNow",
+  "Slack"
+ ],
+ "numbers": [
+  {
+   "claim": "Enterprises spend upwards of $400B a year on the troubleshooting problem by some accounts; 40% of executives say their teams face it",
+   "t": "1:36"
+  },
+  {
+   "claim": "Engineers lose 7+ hours each week to on-call troubleshooting on average",
+   "t": "1:36"
+  },
+  {
+   "claim": "Checkout API root cause can require 5 to 10 hops across dozens of services and petabytes of data",
+   "t": "4:35"
+  },
+  {
+   "claim": "Pepsi: thousands to tens of thousands of alerts per week; one engineer had a backlog of 700 alerts",
+   "t": "11:21"
+  },
+  {
+   "claim": "Typical American Express incident before Traversal: 5 to 10 teams paged, 20 to 50 engineers, about 60 minutes or longer",
+   "t": "12:46"
+  },
+  {
+   "claim": "Traversal posts root cause analysis within about 3 minutes of incident declaration; claimed to save 50+ engineers per incident",
+   "t": "13:46"
+  },
+  {
+   "claim": "Claimed scale: trillions of logs, trillions of spans, tens of billions of metrics and events",
+   "t": "8:57"
+  },
+  {
+   "claim": "Claimed 80%+ root cause hit rate on high-severity incidents at that scale",
+   "t": "8:57"
+  },
+  {
+   "claim": "Speaker's patience threshold for multi-hop investigation: about 5 minutes",
+   "t": "15:12"
+  }
+ ],
+ "hot_takes": [
+  "Vendor pitch from the product manager of the company being sold. Customer results (80%+ root cause, 3-minute RCA, 50+ engineers saved, 700-alert backlog) have no methodology, baselines or independent verification.",
+  "The causal-search architecture is named but not explained: no description of how causal inference is done, how the world model is built, or how the agent is evaluated.",
+  "Cites Google and Anthropic as saying LLMs are poor at root cause analysis, but gives no sources or quotes.",
+  "The five-level scale and the five vendor questions are the most reusable parts. They are framing rather than evidence."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "L4 observability (Prometheus/Grafana, OTel) has no multi-hop root-cause layer. The talk's framing of a cross-service causal graph and an agent that searches it is adjacent to AgentOS's GraphRAG and Neo4j work, but not a direct change.",
+   "action": "Add an L4 benchmark: time to root cause for an injected multi-hop fault (for example, an expired cert behind a failing API) across the AgentOS stack, with a 5-minute target."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs long Claude Code runs with checkpoint/resume and plan-critique-debate. The talk's detect, diagnose, fix, verify loop is a closed loop, but it is about production incidents, not coding-agent runs.",
+   "action": "Consider a verify stage in ProsHarness that re-runs the failing check after a fix and records whether it passed, borrowing the detect-diagnose-fix-verify framing."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

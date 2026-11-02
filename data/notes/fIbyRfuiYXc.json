@@ -1,0 +1,137 @@
+{
+ "one_line": "Walkthrough of FOKS, an open-source, federated, Go-based alternative to Keybase for end-to-end encrypted git and key-value secrets, with post-quantum hybrid encryption and a short setup demo.",
+ "summary": "The video introduces FOKS (Federated Open Key Service; captions render it as \"Fox\"), an open-source Keybase-style tool written in Go for end-to-end encrypted git repos and key-value storage, aimed at API keys, configs and sensitive files. The speaker's main claims are that clients, not the server, hold the keys, so a server breach exposes only ciphertext, and that users can pick or self-host a federated server to avoid vendor lock-in. The demo runs the setup on the default fox.app federated server: start the control agent, sign up with an email, username and device name, list keys, create a remote repo, then clone it, which turns on encryption automatically. Pushed files reach the server as ciphertext, and keys can be revoked by ID. For post-quantum security the speaker says FOKS layers Curve25519 with the ML-KEM algorithm, so an attacker would need to break both, though he admits he does not fully understand ML-KEM. The product is in beta, and the speaker says mobile apps, sync-based file systems and encrypted chat are planned. The video offers no benchmarks, threat model or independent audit, so the security claims are the vendor's.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "Keybase",
+  "fox.app"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "security-guardrails",
+  "dev-tools"
+ ],
+ "tags": [
+  "end-to-end-encryption",
+  "git",
+  "secrets-management",
+  "key-management",
+  "post-quantum",
+  "federated",
+  "keybase-alternative",
+  "homebrew",
+  "self-hosting"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Client-held keys are the core security claim",
+   "detail": "The speaker says the client, not the server, controls the keys, so a hacked server yields only ciphertext. This is a vendor claim; the video shows no threat model or audit.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Federation is pitched as the answer to vendor lock-in",
+   "detail": "Users can pick a server whose policies they trust or self-host one. Being open source, the code can be audited, forked or run as a hosting service.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Git contents are encrypted on the client, including file names and history",
+   "detail": "Commits, file names and history are encrypted locally, so the server stores only ciphertext. The speaker presents this as the main differentiator.",
+   "t": "1:09"
+  },
+  {
+   "idea": "The remote repo is created first, and cloning turns on encryption",
+   "detail": "fox git create makes the remote repo on the server. Cloning it locally initializes FOKS and enables encryption automatically; after that, normal add, commit and push work and are encrypted transparently.",
+   "t": "3:14"
+  },
+  {
+   "idea": "Key revocation by ID is the recovery story for lost devices",
+   "detail": "Keys are listed on the server and can be revoked by ID, e.g. after a stolen laptop. The speaker says the other keys then rotate automatically; the video does not show this happening.",
+   "t": "3:14"
+  },
+  {
+   "idea": "Post-quantum protection is a hybrid of Curve25519 and ML-KEM",
+   "detail": "An attacker would have to break both schemes. The speaker says he does not really understand ML-KEM and is trusting the security experts, so treat this as an unverified summary.",
+   "t": "4:36"
+  },
+  {
+   "idea": "Single-key risk is shown, then waved off for the demo",
+   "detail": "fox key list warns that losing the only key means losing all access. The demo acknowledges the warning and skips backup-key setup, a step a real deployment needs.",
+   "t": "2:11"
+  },
+  {
+   "idea": "Beta status and roadmap",
+   "detail": "The speaker says FOKS is still beta, with mobile apps, sync-based file systems and encrypted chats planned, and that communities could run their own federated servers.",
+   "t": "4:36"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Set up FOKS and create a user",
+   "how": "Install FOKS (the speaker uses Homebrew and says to check the install docs for other platforms). Run `foxctl start` to start the control agent. Run `fox sign up`, press Enter, choose to create a new user, choose a home server (the default is the federated fox.app server, or a custom one), enter an email, optionally an invite code, a username, and a device name for the access key. The captions say `fox` and `foxctl`; the exact binary names should be checked against the docs.",
+   "when": "First-time setup on a workstation, or when evaluating FOKS against a self-hosted alternative."
+  },
+  {
+   "name": "Create an encrypted git repo",
+   "how": "Run `fox git create <repo>` to create the remote repo on the server first. Clone it locally. Cloning shows FOKS initializing, which enables encryption for the repo. Then add, commit and push as usual; encryption happens transparently on push.",
+   "when": "Storing config files, API keys or sensitive files in git without the server being able to read them."
+  },
+  {
+   "name": "Inspect and revoke keys",
+   "how": "Run `fox key list` to show all keys on the server, then revoke a key by its ID. The speaker says other keys rotate automatically after a revoke; the command names were not clearly captured for this step.",
+   "when": "Responding to a lost or stolen device, or auditing which devices hold access."
+  },
+  {
+   "name": "Acknowledge the single-key warning",
+   "how": "When `fox key list` warns that losing the only key means losing access, the demo uses a clear-device-message command to accept the risk. The exact command name is garbled in the captions. In real use, create a backup key first, which the sign-up flow offers.",
+   "when": "Only for throwaway demos. Production accounts need a second key or backup first."
+  }
+ ],
+ "tools": [
+  "FOKS (Federated Open Key Service)",
+  "foxctl",
+  "fox CLI",
+  "Homebrew",
+  "Go",
+  "Curve25519",
+  "ML-KEM",
+  "Keybase",
+  "YubiKey",
+  "fox.app federated server"
+ ],
+ "numbers": [
+  {
+   "claim": "No benchmarks, latency figures, costs, adoption stats or test results are given. The video runs 5:49 and is a setup walkthrough.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Two encryption layers: Curve25519 plus the ML-KEM post-quantum algorithm; an attacker must break both.",
+   "t": "4:36"
+  }
+ ],
+ "hot_takes": [
+  "Hype title (\"Could FOKS Be the FUTURE of Secure Git Hosting?\") and \"game changer\" framing, but the demo is concrete.",
+  "The speaker admits he does not understand ML-KEM and relies on trusting security experts, so the post-quantum claim is not checked in the video.",
+  "Claims that keys rotate automatically on revoke and that a hacked server reveals nothing are not shown in the demo.",
+  "Still beta, and the demo skips backup-key setup, which the video itself flags as the main single-key risk.",
+  "Sponsorship: none visible in the transcript."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS guardrails and the Crucible/exec-gate work touch secrets and credentials for agents. FOKS is a prior-art example of client-held keys and encrypted config storage, but it is not an agent-facing tool.",
+   "action": "Read the FOKS white paper and compare its client-held key model with how AgentOS would store provider API keys if that is designed later."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness has zero-token credential handling. FOKS's client-held keys and encrypted per-repo config are a related pattern for storing secrets that agent runs need.",
+   "action": "Compare ProsHarness's credential handling against the FOKS key model (client-held keys, revoke by ID, backup key); consider whether it is worth a spike for secret storage."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

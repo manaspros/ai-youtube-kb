@@ -1,0 +1,180 @@
+{
+ "one_line": "Paden Gayle argues that shipping AI inside a bank is a discovery problem: find the people who own each decision in week one, shrink the scope, limit the model's authority, and build an evidence pack from sprint one.",
+ "summary": "The talk uses a hypothetical document-exception assistant for a bank to make the case that deployment blockers come from unnamed decision owners, not model quality. The speaker says the demo worked but the project still did not ship because security, data owners and risk reviewers had never been brought into the design. He proposes four week-one decision areas (data, model risk, third-party risk, audit), each with a named person, evidence needed and a next step. Scope is built from observed workflows (shadow the analyst, draft the sequence, shrink to the smallest useful version), and each added step is framed as a new approval question. Autonomy is chosen on a four-rung ladder (suggest, draft, acts with approval, acts), starting at the lowest rung that creates value. Evaluation is treated as operating evidence: a five-file evidence pack with failure modes, detection paths, fallbacks and owners, plus preserved inputs, model version, configuration, output and reviewer action for each decision. A five-question scorecard is offered as a planning heuristic for whether a credible path to production exists.",
+ "speakers": [
+  "Paden Gayle"
+ ],
+ "orgs": [
+  "Accenture",
+  "Bloomberg",
+  "Google",
+  "O'Reilly"
+ ],
+ "format": "talk",
+ "topics": [
+  "governance-compliance",
+  "enterprise-adoption",
+  "evals"
+ ],
+ "tags": [
+  "bank deployment",
+  "discovery",
+  "stakeholders",
+  "autonomy ladder",
+  "human-in-the-loop",
+  "evidence pack",
+  "audit trail",
+  "failure modes",
+  "scope shrinking",
+  "forward deployed engineering",
+  "regulated industries"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The demo working is not the blocker; unnamed decision owners are.",
+   "detail": "A document-exception demo convinced the room, but security (where it runs), data owners (who approved this use) and risk (who reviews a wrong exception) each raised questions that could change what can be built. The design was done before those people had seen it.",
+   "t": "0:32"
+  },
+  {
+   "idea": "Discovery is the engineering: map four decision areas in week one.",
+   "detail": "For data, model risk, third-party risk and audit, find a specific person who can explain the decision, the evidence they need and the next step. Being able to query a dataset does not settle whether the application may use it.",
+   "t": "1:04"
+  },
+  {
+   "idea": "Every data set has an owner, and access is a separate permission from use.",
+   "detail": "The speaker's Bloomberg data-platform work showed that building LLM infrastructure meant knowing which datasets could be used and who could approve that use. Confirm the allowed use and the processing environment before designing retrieval.",
+   "t": "2:43"
+  },
+  {
+   "idea": "Read the architecture diagram row by row to find unowned dependencies.",
+   "detail": "A workflow that has documents, a model and an analyst can be sketched quickly. The question mark appears when a box, such as the risk review, has no named owner. That gap is a dependency that must become a task with a person attached.",
+   "t": "3:51"
+  },
+  {
+   "idea": "When the customer cannot write a spec, use shadow, draft and shrink.",
+   "detail": "Shadow the people doing the work (watch which systems they open, where they judge, what happens when a document is missing). Draft the process as a short sequence, then shrink it to the smallest version that creates value. The written sequence becomes the start of the spec.",
+   "t": "5:31"
+  },
+  {
+   "idea": "Each added step is a new approval question.",
+   "detail": "Summarizing an existing document, reading a second system, drafting customer-facing text and sending automatically are four scopes, each needing different owners and controls. Ask which increment delivers value today and whether an existing control already covers it.",
+   "t": "7:40"
+  },
+  {
+   "idea": "Choose autonomy with a four-rung ladder and start at the lowest rung that creates value.",
+   "detail": "Suggest (the analyst gets a recommendation), draft (the system prepares work the analyst checks and submits), acts with approval (a person authorizes each action), and acts (the system operates within approved limits). Each rung changes the cost of an error and which controls and reviewers must be convinced. Move up only on collected evidence such as override rates, recurring failures and recovery.",
+   "t": "9:19"
+  },
+  {
+   "idea": "A model does not earn more authority by getting better; the workflow's authority decision does.",
+   "detail": "The speaker's recommended design keeps the model and changes the action boundary: it highlights likely exceptions and prepares a draft, while the analyst checks the source, corrects the form and chooses to submit. Human review does not by itself settle the regulatory category or approval.",
+   "t": "10:26"
+  },
+  {
+   "idea": "Make evaluation part of the operating plan with an evidence pack built early.",
+   "detail": "For each failure, name the detection path, the fallback and an owner. Offline targeted cases expose known weaknesses but do not catch every live miss, so affected work stays under manual review. Results are reported per segment (clean documents, scans, rare exceptions, new types) and the weakest segment is led with.",
+   "t": "11:31"
+  },
+  {
+   "idea": "Preserve what actually happened for every consequential decision.",
+   "detail": "Store the input prompts, model version, configuration, output and reviewer action for each run. Re-calling the model later may give a different answer, so the record must be captured at decision time to reconstruct it for audit.",
+   "t": "12:37"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Week-one decision discovery",
+   "how": "For data, model risk, third-party risk and audit, name one person per area who can explain the decision, the evidence they need and the next step. Close each loop by sending the owner a short description of the proposed use and asking what they need from you. Ask concrete questions: where the data lives and who approves reading it, who stopped similar projects and why, which existing controls could cover the workflow, who signs the risk review.",
+   "when": "Before designing retrieval or architecture, in a regulated environment where the sponsor and the demo are ready but security, data and risk have not seen the design."
+  },
+  {
+   "name": "Dependency-mapped architecture diagram",
+   "how": "Draw the system as rows: top row is the workflow (documents to model to analyst). Under each component, name its owner (data owner, platform owner, risk reviewer). Any component without a named owner is marked as a dependency and turned into a task.",
+   "when": "When scoping an AI workflow, to expose which approvals and owners the design depends on while it is still cheap to change."
+  },
+  {
+   "name": "Shadow, draft, shrink",
+   "how": "Shadow a user doing the task and write down the actual sequence, including where they judge, which systems they open and what they do when input is missing. Draft the sequence in a few lines with specific access, output and checker for each step. Shrink to the first version a control owner can correct (for example, a highlighted passage plus draft form that the analyst edits and submits).",
+   "when": "When the customer cannot write a spec for an AI workflow, such as an analyst onboarding or exception-review process."
+  },
+  {
+   "name": "Four-rung autonomy ladder",
+   "how": "Rate each proposed workflow as suggest, draft, acts with approval, or acts. Start at the lowest rung that creates value. Use reviewer overrides, recurring failures and recovery results to decide whether to move up. Define the consequential action, its owner and what happens when the system is wrong.",
+   "when": "When deciding how much authority an agent or model should have in a workflow that touches client or regulated data."
+  },
+  {
+   "name": "Model proposes, human submits boundary",
+   "how": "Keep the model's work inside a drafting role: it highlights the likely case, points to the source passage and prepares a draft. A named human checks the evidence, corrects the draft and chooses to submit. Confirm with control owners that the existing workflow and data access cover this processing.",
+   "when": "When a model's judgment would otherwise trigger an operational action with no per-case check, and an MVP needs to ship first."
+  },
+  {
+   "name": "Five-file evidence pack with failure table",
+   "how": "Maintain five files: intended use with record users, boundaries and prohibited actions; data lineage with approvals per source; failure modes with detection, fallback and owner for each; results by segment with coverage and errors; controls with reviews, thresholds, stopping rules and owners. Each failure row names who receives the alert and who can stop the workflow.",
+   "when": "In sprint one of a regulated AI deployment, so risk teams can review evidence rather than the demo, and each evaluation run regenerates the evidence."
+  },
+  {
+   "name": "Decision-time record capture",
+   "how": "For each run, store the input prompts, model version, configuration, output and the reviewer's action, so the historical decision can be reconstructed without re-calling the model.",
+   "when": "For any agent output that feeds a consequential action or an audit requirement."
+  },
+  {
+   "name": "Segment-first evaluation reporting",
+   "how": "Split results into groups (clean documents, scans, rare exceptions, new document types), measure errors and control behavior in each, lead with the weakest group, and restrict use in any group with too little evidence.",
+   "when": "When an average accuracy number would hide a serious failure in one segment that reviewers care about."
+  },
+  {
+   "name": "Five-question readiness scorecard",
+   "how": "Answer five yes/no questions: is the data owner engaged, are the production environment and its admins named, can the sponsor describe the workflow without saying AI, does the smallest scope fit confirmed controls, and do we know the risk signer and their last decision. Four or five yeses suggests a credible ship path; three means unresolved decisions with owners and dates; zero to two means resolve decisions first, possibly shrinking scope.",
+   "when": "At the end of week one, as a planning heuristic for where to spend the next week of effort. The speaker says it does not predict approval."
+  }
+ ],
+ "tools": [],
+ "numbers": [
+  {
+   "claim": "Four week-one decision areas: data, model risk, third-party risk, audit",
+   "t": "1:04"
+  },
+  {
+   "claim": "Four engineering scopes in the exception-assistant example, from summarizing an existing document to automatically sending a response",
+   "t": "7:40"
+  },
+  {
+   "claim": "Four autonomy rungs: suggest, draft, acts with approval, acts",
+   "t": "9:19"
+  },
+  {
+   "claim": "Five-file evidence pack; five-question week-one scorecard where 4-5 yeses suggests a credible ship path and 0-2 means resolve decisions before committing to delivery",
+   "t": "12:37"
+  }
+ ],
+ "hot_takes": [
+  "Discovery is the engineering. Finding the people who own each decision matters more than the model.",
+  "A model does not become more capable by itself. The team has to decide how much authority this particular workflow gives it.",
+  "Calling the model again later may produce a different answer, so preserve what actually happened rather than regenerating it.",
+  "When someone says security will be fine, ask who will actually review the design and when you can meet them."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already has a Merkle audit log and PII/injection scanning in the L1 proxy. The talk's point that the record must let you reconstruct a decision (input, model version, config, output, reviewer or approver) maps directly onto the audit log schema. The autonomy ladder also maps onto the budget and approval pillars.",
+   "action": "Extend the L1 audit record schema so each consequential call stores input, model version, config hash, output and approver identity, then add a replay-style test that reconstructs one decision from the stored record without re-calling the model."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness has phone-driven approvals and checkpoint/resume. The talk's ladder (suggest, draft, acts with approval, acts) could give those approvals a per-workflow authority level instead of a binary gate.",
+   "action": "Define a per-task authority level (suggest, draft, approve-each, act-within-limits) in ProsHarness plan files and log which rung each run used and where a reviewer overrode it."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The week-one checklist and the segment-first failure reporting are a general-purpose method for scoping any AI deployment in a regulated setting.",
+   "action": "Use the five-question scorecard as a pre-build checklist on the next AI project scoping, and report evaluation results per segment with the weakest segment first."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T16:26:27"
+}

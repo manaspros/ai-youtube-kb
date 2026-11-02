@@ -1,0 +1,162 @@
+{
+ "one_line": "Shipping an agent is where the real work starts. Raphael Kalandadze shows a post-launch loop: a log-monitor agent opens PRs, a fresh-context review agent critiques them, and a session analyzer scores every conversation for health.",
+ "summary": "The speaker argues that launching an agent is the start of the work, and that the feedback loop after launch matters as much as the product. Agent behavior is non-deterministic and the input space is endless, so unit tests, regex checks and scripted conversations only cover a slice of real use. Hidden failures are the worst case: an agent can recover by luck, or mark a feature done without checking it, and a run can look successful while still failing the user. His team uses logs and trajectories as the source of truth, but finding real bugs in them takes reasoning, so the monitoring agent is itself an agent problem. The core loop has a fast path (an hourly log-monitor agent that opens PRs) and a review agent with fresh context that critiques and scores each PR before a human sees it. The slow path is a session analyzer that scores every conversation, groups patterns, and gives a weekly health view. A computer-use agent with a site-specific skill plays the customer to catch UI problems, and he calls the whole setup a meta-harness because every monitoring agent needs access to logs, traces, the database and the UI. The talk is an experience report from one team, with demo data that the speaker says is randomized, and it gives few hard metrics.",
+ "speakers": [
+  "Raphael Kalandadze"
+ ],
+ "orgs": [
+  "Wandero AI"
+ ],
+ "format": "talk",
+ "topics": [
+  "observability",
+  "pr-code-review",
+  "evals",
+  "multi-agent"
+ ],
+ "tags": [
+  "post-launch monitoring",
+  "production feedback loop",
+  "log-monitor agent",
+  "session analyzer",
+  "review agent",
+  "fresh context critic",
+  "computer-use QA agent",
+  "meta-harness",
+  "self-healing agents",
+  "hidden failures"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Shipping is the start of the real work, and the feedback loop after launch matters as much as the product.",
+   "detail": "Building and launching is now the easy part. The speaker says teams should close the loop as soon as possible, because tight daily feedback is what improves the product.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Pre-launch tests cannot cover agent behavior.",
+   "detail": "Agents are non-deterministic and small input changes alter the trajectory. Unit tests, regex rules and scripted conversations only cover one slice of what real customers do.",
+   "t": "2:52"
+  },
+  {
+   "idea": "The most dangerous failures are hidden ones, and a successful-looking run can still fail the user.",
+   "detail": "An agent can recover by luck mid-task, which gives no alert but is an early warning. Agents also mark features complete without verifying them. In the itinerary example, the task finished with a wrong booking and wrong prices, so it counted as a success on the surface.",
+   "t": "3:52"
+  },
+  {
+   "idea": "Logs are the source of truth, but reading them well needs reasoning, so the monitoring agent is itself an agent problem.",
+   "detail": "An agent has to tell a real bug from noise and tell a symptom from a root cause in a trace. Scripts can filter the logs, but judging them takes reasoning.",
+   "t": "5:16"
+  },
+  {
+   "idea": "A review agent with fresh context should check the fix agent's PR.",
+   "detail": "Coding agents are eager to ship fixes. A separate agent that starts with clean context, looks at the PR from another angle, runs focused tests and scores it is less biased by the original problem. It can send the PR back for changes.",
+   "t": "6:37"
+  },
+  {
+   "idea": "Run two loops: a fast local one for bugs and a slow one for overall health.",
+   "detail": "The fast loop checks recent logs on a short schedule and opens PRs or alerts for critical issues. The slow loop reads all sessions and gives a zoomed-out view of system health over days or weeks.",
+   "t": "8:54"
+  },
+  {
+   "idea": "Human review becomes the bottleneck, so the speaker plans to remove people from the loop step by step.",
+   "detail": "The agents produce about ten times more PRs per day than the three-person team can handle. The speaker keeps humans in the loop for now, expects to take them out later, and says the loop should be closed first, then people can step out.",
+   "t": "10:18"
+  },
+  {
+   "idea": "A session analyzer scores every conversation and turns the results into a health dashboard.",
+   "detail": "It scores each session, counts cost, tool calls, sub-agents and summaries, and gives AI insights on patterns. For each pattern it shows why it matters, the root causes, affected sessions and a suggested fix. It is meant to be run weekly or twice a week, not for individual bugs.",
+   "t": "13:02"
+  },
+  {
+   "idea": "Test the product from the user's side with a computer-use agent, and make it faster with a site-specific skill.",
+   "detail": "Logs and code do not show UI problems. A browser agent logs in, opens sessions and checks what the customer sees. A generic browser agent is slow, so the team wrote a skill that knows their site's DOM. Token cost is high.",
+   "t": "15:57"
+  },
+  {
+   "idea": "Give every monitoring agent the full context (logs, trajectories, metrics, database, UI), which he calls a meta-harness.",
+   "detail": "The agent should check the database and trajectories before reaching a conclusion, so its PRs and answers rest on evidence. The speaker says the model alone is not the product. The harness around it, which watches and improves itself, is.",
+   "t": "17:22"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Hourly log-monitor agent that opens PRs",
+   "how": "Run an agent every 15 to 60 minutes over a window of recent logs and trajectories, with read access to the codebase. It diagnoses the cause and opens a PR with a description, metadata, diagrams or tables, and an HTML artifact. Critical issues trigger an immediate alert.",
+   "when": "Use it to catch and fix local bugs fast, when logs and trajectories are structured and the agent has code access."
+  },
+  {
+   "name": "Fresh-context review agent as a PR gate",
+   "how": "A separate agent with no shared context reviews each agent-written PR from a different angle, runs focused tests, and scores and critiques it. It can request changes, and iterates until the PR is ready for a human.",
+   "when": "Use it when coding agents are the PR authors and you want a less biased second check before human review."
+  },
+  {
+   "name": "Session analyzer for health scoring",
+   "how": "Score every conversation with a set of agents, then aggregate the results into a dashboard. It shows the health score, success rate, trends, cost, tool-call stats, sub-agent and summary counts, sentiment, entities, and ranked patterns with root causes and recommended fixes.",
+   "when": "Use it for weekly or biweekly reviews across hundreds or thousands of real sessions, where reading individual logs does not scale."
+  },
+  {
+   "name": "Computer-use QA agent with a site-specific skill",
+   "how": "A browser agent logs in as a user, opens real sessions, extends the conversation, and checks the UI and artifacts. A skill that encodes the site's DOM makes it faster than a generic browser agent.",
+   "when": "Use it when UI problems cannot be seen in logs or code, and when the token cost is acceptable."
+  },
+  {
+   "name": "Meta-harness: connect all context to the monitoring agents",
+   "how": "Give the monitoring agents access to logs, trajectories, metrics, the database and the UI, so each finding is based on evidence the agent checked, not guessed.",
+   "when": "Use it whenever a monitoring agent would otherwise reason from partial data and risk wrong diagnoses."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "HTML artifacts",
+  "log and trajectory store",
+  "browser computer-use agent"
+ ],
+ "numbers": [
+  {
+   "claim": "The PR and review agents produce about 10 times more PRs per day than the three-person team can review.",
+   "t": "10:18"
+  },
+  {
+   "claim": "The log-monitor agent runs every hour, or every 15 minutes, over a one-hour log window.",
+   "t": "8:54"
+  },
+  {
+   "claim": "A PR can be ready about half an hour after the problem is detected.",
+   "t": "7:32"
+  },
+  {
+   "claim": "The session analyzer runs once or twice a week over the full set of sessions.",
+   "t": "15:57"
+  },
+  {
+   "claim": "The system covers hundreds or thousands of real conversations per day.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Shipping is the easiest part today, and the loop after launch matters at least as much as the product.",
+  "The monitoring agent is itself an agent problem, because diagnosing a trace needs reasoning, not just a script.",
+  "A run can be a success on the surface and still fail the user, so unit tests do not catch it.",
+  "The model alone is not the product. The harness around it, which watches itself, is what matters.",
+  "Keep humans in the loop only until the agent loop is reliable, then remove them."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The log-monitor, session analyzer and review agent map onto AgentOS's L4 observability and SkillForge's mining of agent telemetry. The talk is a practical example of the post-launch loop that SkillForge needs.",
+   "action": "Prototype a session analyzer over AgentOS telemetry that scores each session and groups failure patterns, then test whether those patterns are useful as input to the SkillForge skill-worthiness scoring."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already has a critique stage, and the talk's fresh-context review agent that scores each PR matches that design. The talk does not cover checkpoint/resume or approvals.",
+   "action": "Add a fresh-context critic stage that reviews and scores each ProsHarness run's PR without the planning context, and compare its verdicts with the Codex critique on the same runs."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

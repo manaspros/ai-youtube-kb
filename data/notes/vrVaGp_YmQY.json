@@ -1,0 +1,176 @@
+{
+ "one_line": "Tests Strata, an open-source runner that spreads a 125B Qwen MoE across RTX 5090 VRAM, system RAM and SSD, against the cloud-hosted model; local is 3-5x faster on short tasks, with caveats.",
+ "summary": "The speaker runs a 125B-parameter mixture-of-experts model locally on an RTX 5090 using Strata, a free open-source project that splits the model across GPU VRAM, system RAM and SSD. Per token only about 6B parameters are active, so the always-needed weights live in VRAM, frequently routed experts fill the rest of VRAM, the remaining experts sit in RAM, and a large lookup table stays on SSD with rows prefetched a step early. The GPU and CPU work on the same layer at once, coordinated through a shared-memory \"doorbell\" that carries the selected expert IDs. A bundled small helper model adds speculative decoding for about a 1.6-1.8x speedup with identical output. Against the same Qwen 3.8 Flash model served through OpenRouter, the local 2-bit version was faster on most prompts, including a 33-second long-form answer where the cloud model spent its whole 9,000-token budget on reasoning. The speaker is explicit that this is a speed test on a handful of prompts, not a quality benchmark, and that the cloud model is likely a larger quant on shared hardware.",
+ "speakers": [
+  "Andres"
+ ],
+ "orgs": [
+  "Better Stack",
+  "OpenRouter"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "strata",
+  "mixture-of-experts",
+  "expert-offload",
+  "speculative-decoding",
+  "quantization",
+  "qwen",
+  "rtx-5090",
+  "openrouter",
+  "local-llm",
+  "benchmark",
+  "ssd-offload",
+  "reasoning-tokens"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Expert offload tiering by residency",
+   "detail": "Always-needed per-token weights (~3.5 GB) live in VRAM, the remaining VRAM is filled with the most frequently picked experts, all 24,576 experts sit in system RAM, and the rest is on the CPU side. Only ~6B of the 125B parameters are active per token (512 experts per layer, top 10 chosen).",
+   "t": "1:04"
+  },
+  {
+   "idea": "GPU and CPU split each layer through a shared-memory doorbell",
+   "detail": "For each layer the GPU writes the IDs of the 10 chosen experts into a shared-memory slot (the paper calls it a doorbell). The CPU, already waiting, takes the experts not resident on the GPU and computes them in RAM while the GPU handles its own, so both work on the same layer simultaneously.",
+   "t": "2:28"
+  },
+  {
+   "idea": "Large lookup table stays on SSD with prefetch",
+   "detail": "A ~29 GB lookup table is left on the SSD. Each token reads only a few small rows, and those reads are issued one step early so the latency is hidden from the user.",
+   "t": "2:28"
+  },
+  {
+   "idea": "Speculative decoding with a bundled helper model",
+   "detail": "The model ships with a tiny helper that drafts the next few tokens; the big model verifies them in one pass and keeps the agreed ones. Output is claimed to be identical, with about 1.6-1.8x speedup. The speaker measured ~79% agreement in his own test.",
+   "t": "2:28"
+  },
+  {
+   "idea": "VRAM size matters more than GPU speed",
+   "detail": "According to the paper, each extra gigabyte of VRAM holds roughly 700 more experts, so a 32 GB card keeps most experts on the GPU and leaves the CPU little work. The README quotes ~94 tok/s on a 12 GB RTX 5070; the speaker got 250+ tok/s on a 5090 with shorter prompts, and speed degrades somewhat as chats grow.",
+   "t": "3:29"
+  },
+  {
+   "idea": "Setup is a single script with a 2-bit quant and heavy resource needs",
+   "detail": "One script asks for model and size, downloads about 70 GB, and opens a browser chat app. The speaker chose the 2-bit quant (smallest and fastest). Minimums stated: 12 GB VRAM, 32 GB RAM, ~80 GB free disk. The first load can freeze the PC for a couple of minutes, and once running it used ~32 GB VRAM plus ~39 GB RAM.",
+   "t": "4:23"
+  },
+  {
+   "idea": "Cloud reasoning can stall the wall-clock time, not just tokens/sec",
+   "detail": "With thinking on, the cloud model burned the entire 9,000-token limit on reasoning and had not begun the answer after almost three minutes. The speaker concedes this depends on provider configuration. With thinking off, the same prompt took 6.6 s locally vs 37 s in the cloud.",
+   "t": "6:42"
+  },
+  {
+   "idea": "Caveats the speaker himself raises",
+   "detail": "The local model is a 2-bit quant while the cloud model is probably a larger version. The OpenRouter provider shares hardware across users. Prompts were shorter than the README's. Both models answered the bat-and-ball puzzle wrong (10 cents instead of 5), which he attributes to the model rather than the runtime. He frames the result as a speed test only.",
+   "t": "3:29"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Tiered expert placement for MoE models larger than VRAM",
+   "how": "Keep the weights needed for every token in VRAM. Fill leftover VRAM with the most frequently routed experts (ranked by usage). Put the remaining experts in system RAM and serve them from the CPU. Keep very large non-compute tables (here a ~29 GB lookup table) on SSD and read only the few rows each token needs, prefetched one step ahead.",
+   "when": "A MoE model whose total weights exceed VRAM but whose active parameters per token are small (here ~6B of 125B, 10 of 512 experts per layer). Relevant when you already run a GPU and have spare RAM and NVMe."
+  },
+  {
+   "name": "Per-layer GPU/CPU handoff through shared memory",
+   "how": "The GPU writes the selected expert IDs for layer N into a shared-memory signal (doorbell). The CPU, waiting on it, takes the experts that are not resident on the GPU and computes them into RAM while the GPU computes its resident experts in the same layer.",
+   "when": "When split inference across GPU and CPU is needed and you want both devices busy on the same layer instead of serializing transfers. The speaker presents this as the core trick in the Strata paper, as described in the video."
+  },
+  {
+   "name": "Speculative decoding with the model's own small helper",
+   "how": "Use the small draft model that ships with the model to propose the next few tokens. The large model checks all of them in a single forward pass and keeps the prefix it agrees with. The output matches the large model's own output.",
+   "when": "When the local large model is memory-bound and the draft model agrees often enough to pay off. The speaker measured ~79% agreement and a 1.6-1.8x speedup on his setup."
+  },
+  {
+   "name": "Local install and first run (as shown)",
+   "how": "Run the project's single setup script (its name is not shown in the video). Choose the model and size from its prompts (the speaker picked the 2-bit quant). Wait for the ~70 GB download. The script opens a browser chat app. Expect the first load to freeze the machine for a few minutes. Minimums: 12 GB VRAM, 32 GB RAM, ~80 GB free disk.",
+   "when": "Trying the model on one large-VRAM consumer GPU (the speaker used an RTX 5090 with 32 GB VRAM, 62 GB RAM, Core Ultra 9 285K)."
+  },
+  {
+   "name": "Fair side-by-side latency comparison of local vs cloud",
+   "how": "Send an identical prompt to both endpoints from one app that logs wall-clock time, tokens per second and cost. Run one set with reasoning enabled and one with it disabled, and cap max output tokens (he used 9,000). Record when the first answer token arrives, not just total time.",
+   "when": "Benchmarking a local model against a hosted provider. The speaker's own caveats (thinking config varies by provider, shared hardware, quant differences) apply to any repeat of this test."
+  }
+ ],
+ "tools": [
+  "Strata (free, open-source local MoE runner; the paper is referenced but not named)",
+  "Qwen 3.8 Flash (Next), 125B-parameter MoE; transcript spells it 'Quen'",
+  "OpenRouter (hosted Qwen 3.8 Flash endpoint used for the cloud comparison)",
+  "NVIDIA RTX 5090 (32 GB VRAM, test machine)",
+  "NVIDIA RTX 5070 (12 GB, referenced from the Strata README only)",
+  "Intel Core Ultra 9 285K (test machine CPU)",
+  "Speaker's own side-by-side comparison app (speed, time and cost tracking; not named)",
+  "Python (language for the palindrome test prompt)"
+ ],
+ "numbers": [
+  {
+   "claim": "Model is 125B parameters total with ~6B active per token; 512 experts per layer, 10 selected per token.",
+   "t": "1:04"
+  },
+  {
+   "claim": "Smallest decent version of the model is a ~66 GB file; the speaker's 2-bit download was ~70 GB.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Local speed 250+ tok/s on RTX 5090 (32 GB VRAM) vs ~60 tok/s for the same model on OpenRouter; same-prompt wall time 6.6 s vs 33 s; 3-5x faster across most tests.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Shared always-needed per-token weights are ~3.5 GB; the lookup table is ~29 GB on SSD; 24,576 experts in system RAM.",
+   "t": "1:04"
+  },
+  {
+   "claim": "Speculative decoding: 1.6-1.8x faster, identical output; the speaker measured ~79% draft agreement.",
+   "t": "2:28"
+  },
+  {
+   "claim": "README: ~94 tok/s on a 12 GB RTX 5070. Paper: each extra GB of VRAM fits ~700 more experts.",
+   "t": "3:29"
+  },
+  {
+   "claim": "Minimum requirements: 12 GB VRAM, 32 GB RAM, ~80 GB free disk. Observed use: ~32 GB VRAM + ~39 GB RAM.",
+   "t": "4:23"
+  },
+  {
+   "claim": "Palindrome task: ~4 s local vs ~19 s cloud. Logic puzzle: 1.4 s vs 1.5 s. Toaster product description: ~3 s vs ~10 s.",
+   "t": "5:26"
+  },
+  {
+   "claim": "Homelab guide (9,000-token cap): local wrote 8,000+ tokens in 33 s. Cloud spent the full 9,000-token budget on reasoning with no answer after almost 3 minutes. At 54 tok/s the cloud would need ~2.5 min to write the answer.",
+   "t": "6:42"
+  },
+  {
+   "claim": "With thinking disabled: local 6.6 s vs cloud 37 s. Electricity for the 33-second local answer was under 0.1 cents, excluding the GPU's purchase price.",
+   "t": "6:42"
+  }
+ ],
+ "hot_takes": [
+  "VRAM capacity matters more than raw GPU speed, according to the paper: each extra GB holds ~700 more experts. The speaker repeats this as the reason the 5090 far outperforms the README's 5070 figure.",
+  "The local-vs-cloud wall-clock win here comes mostly from reasoning-token behavior on the cloud provider, which the speaker concedes depends on how the provider is set up. Measured with thinking off, the gap is still ~5.6x on one prompt.",
+  "This is a speed comparison on about five prompts with a 2-bit local model against an unknown, probably larger, cloud quant. It says nothing about quality, which the speaker says was close on his few samples.",
+  "Both models answered the bat-and-ball puzzle wrong, which the speaker attributes to the model rather than the tooling."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft is vLLM + Ray Serve on one RTX 5090 with pluggable KV-cache offload. Strata's expert-offload tiering (VRAM for shared weights, RAM for experts, SSD for a lookup table) and its GPU/CPU per-layer handoff are a different offload strategy on the same hardware class, and they are a concrete candidate for the L2B strategy set.",
+   "action": "Benchmark a Strata-style MoE expert-offload config against InferCraft's CPU-offload KV strategy on the same RTX 5090 with the same prompts. Log tok/s, time-to-first-token and VRAM/RAM use per tier, and read the Strata paper's section on the shared-memory handoff."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "This is about local inference runtime internals and does not touch the Claude Code harness, checkpoint/resume, approvals or credential handling.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

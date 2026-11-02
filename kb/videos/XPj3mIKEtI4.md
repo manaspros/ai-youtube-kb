@@ -1,0 +1,45 @@
+# Turning Agent Memory Into Skills That Work — Will Lyon, Neo4j
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `XPj3mIKEtI4` · [watch](https://youtu.be/XPj3mIKEtI4) · **date:** 2026-10-09 · **length:** 18:41 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Will Lyon · **orgs:** Neo4j
+- **topics:** memory, skills-self-improvement, data-engineering · **tags:** neo4j, context-graph, agent-memory, agent-skills, skill-distillation, APE, entity-resolution, knowledge-graph, reasoning-memory, skill-governance, community-detection, MCP
+
+> Neo4j PM Will Lyon argues agent memory should be a typed, traceable context graph, and shows how to distill that graph into governed, step-by-step agent skills rather than static markdown.
+
+## Summary
+Will Lyon, a product manager at Neo4j, starts from the claim that embedding-based memory gives agents recall but not actionable knowledge, because there is no canonical representation of entities and no record of how decisions were made. He proposes a workspace-scoped context graph with three memory types (short-term, long-term, and reasoning memory), where entities are extracted and resolved against a shared ontology and each agent decision is stored as a trace linked to its evidence, tool calls, tokens and timing. The graph can be shared across many agents so they learn from each other's runs. For skills, he presents the APE extension of the Agent Skills standard, which models a skill as a typed execution graph with schema-governed step nodes, and cites a paper reporting a significant gain on SkillsBench over human-curated skills. The distillation approach scopes a subgraph, runs mostly deterministic steps, and uses an LLM only to write claim and description text, then checks coverage and coherence (using community detection to suggest splitting skills). A background curator flags skills as stale when their underlying data changes, is removed, or contradicts, and a registry serves the latest version. He demos the Neo4j Agent Memory Service (NAMs), a free labs service with REST and MCP tools, distilling a patient-intake skill whose steps each trace back to real tool calls and entities. The talk is product-led, but the pattern of grounding each skill step in observed data is concrete and reusable.
+
+## Key ideas
+- **Embedding-based retrieval gives recall, not actionable knowledge** — Agents retrieve similar chunks and hope they act well on them. They lack a canonical representation of entities (the same doctor is referred to several ways), so they need knowledge that is connected, typed and traceable. ([0:12](https://youtu.be/XPj3mIKEtI4?t=12))
+- **Entity resolution and a shared ontology are the core of turning text into a usable graph** — Extract entities and relations from user and assistant messages into a strongly typed graph. Resolve each entity to one canonical record (for example a provider with a name and role), with a domain ontology describing the data model. ([2:27](https://youtu.be/XPj3mIKEtI4?t=147))
+- **Reasoning memory should be a first-class memory type** — Store decision traces: each decision linked to the evidence and policy behind it, the plan, the tool calls and their results, plus token burn and timing. The point is to store the thinking and facts, not only the data. ([3:56](https://youtu.be/XPj3mIKEtI4?t=236))
+- **A shared context graph lets many agents learn from each other** — When hundreds of agents share a tool set, persisting their runs and decision traces in one graph lets one agent's experience inform another's, instead of each agent learning alone. ([5:15](https://youtu.be/XPj3mIKEtI4?t=315))
+- **Skills need to be grounded, deterministic and governed, not just markdown** — The goal is a skill whose steps are backed by observed data, can be debugged step by step, and can be updated when the underlying memory changes. APE models a skill as a typed execution graph with schema-governed step nodes, and the speaker cites a paper reporting a significant gain on SkillsBench over human-curated skills. ([8:00](https://youtu.be/XPj3mIKEtI4?t=480))
+- **Distillation is mostly deterministic; the LLM only writes text** — Pick a starting scope (an entity's subgraph, one conversation, an ontology class, or a whole workspace). Most pipeline stages are deterministic. The LLM is used only to synthesize claims and skill description text. Each component stays linked to its source data. ([12:15](https://youtu.be/XPj3mIKEtI4?t=735))
+- **Score skill quality with coverage and coherence, and govern for staleness** — Coverage checks that every step is grounded. Coherence uses community detection on the source subgraph: if the inputs span several topic communities, suggest splitting the skill. A background curator flags a skill when its source data changes, is removed, or contradicts itself, and a registry serves the latest version. ([10:52](https://youtu.be/XPj3mIKEtI4?t=652))
+
+## Techniques
+- **Typed context graph as agent memory** — Store short-term messages, extracted entities and long-term facts in one workspace-scoped graph, with entity resolution against a shared ontology so each thing has one canonical node. *When:* When agents need to refer to the same people, places or records consistently across sessions, and recall alone gives them no usable structure.
+- **Decision traces as reasoning memory** — For every agent run, persist the plan, each decision with its evidence and policy, tool calls and results, token counts and timing as linked graph nodes. *When:* When you want to audit why an agent acted, replay its reasoning, or let other agents reuse successful runs.
+- **Scope-first skill distillation** — Choose a scope first (an entity's subgraph, a conversation, an ontology class, or the workspace). Run the pipeline deterministically to build the steps and their dependencies, use the LLM only for descriptive text, then package the result in the Agent Skills layout with references loaded progressively. *When:* When turning past agent runs into reusable skills that must be traceable to real tool calls and entities.
+- **Coverage and coherence checks on generated skills** — Verify that each step is backed by source data (coverage). Run community detection over the source subgraph and split the skill when inputs fall into several communities (coherence). *When:* Before publishing a machine-generated skill, to decide whether it is one skill or several.
+- **Staleness-aware skill registry** — Link each skill to the memory nodes that ground it. A background job marks it stale when those nodes change, disappear or contradict each other. Agents load the latest version from the registry at runtime. *When:* When skills are shared across many agents and the underlying knowledge keeps changing.
+- **Typed step schema for skills (APE)** — Represent a skill as a graph of step nodes with a strict schema for each step's action and inputs, extending the open Agent Skills format. *When:* When you need skill steps that can be validated, executed deterministically and inspected individually.
+
+## Numbers
+- APE-typed skills gave a significant increase in tasks completed on SkillsBench over human-curated skills; the talk gives no exact figure ([9:26](https://youtu.be/XPj3mIKEtI4?t=566))
+- Skill distillation runs through a seven-stage pipeline in a background queue ([16:28](https://youtu.be/XPj3mIKEtI4?t=988))
+- Reasoning memory records token burn and timing per decision and tool call ([3:56](https://youtu.be/XPj3mIKEtI4?t=236))
+- Audience poll: most attendees use skills and have written their own; several have had an agent write one for them ([6:41](https://youtu.be/XPj3mIKEtI4?t=401))
+
+## Hot takes
+- Embedding-based retrieval gives recall, not actionable knowledge; agents need connected, typed, traceable memory.
+- A skill should be a typed execution graph with grounded steps, not a markdown file written from memory.
+- In skill distillation, the LLM should only write descriptive text; the structure should come from deterministic steps over the data.
+
+## Tools mentioned
+Neo4j Agent Memory Service (NAMs), Neo4j graph database, Agent Skills open standard (agentskills.io), APE skill protocol, MCP tools, SkillsBench
+
+## Relevance to our work
+- **agentos** (2/3): MemoryMesh already has tiered cross-session memory and provenance. The talk's coverage and coherence checks, plus grounding each skill step in source data, address the open skill-worthiness and success-signal questions in SkillForge. → *Prototype a SkillForge distill step on a small MemoryMesh or telemetry sample: ground each generated step in its source tool calls, run coverage and community-detection coherence checks, and see if they separate skill-worthy clusters from noise.*
+- **prosharness** (1/3): ProsHarness has skill ranking. The APE typed-step idea could make skill steps checkable, but the talk offers no measured numbers. → *Read the APE paper's step schema, and compare it to how ProsHarness currently records skill steps before deciding whether typed steps help the skill ranking.*

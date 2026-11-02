@@ -1,0 +1,124 @@
+{
+ "one_line": "Frédéric Barthelet (Alpic) explains why ChatGPT and Claude render third-party MCP app UI in nested \"double\" iframes: CSP and origin isolation rule out simpler options, and the nesting is the workable compromise.",
+ "summary": "The talk explains how MCP apps (the views-based UI extension, first shipped as the OpenAI Apps SDK and later standardized as an MCP extension) render interactive HTML inside ChatGPT and Claude. A view is HTML tied to a tool call, advertised in the tool list, and injected with the tool result. The speaker walks through why the obvious approaches fail: srcdoc iframes inherit the host origin and CSP, so app scripts are blocked; relaxing CSP exposes the host's storage; sandboxing loses origin-bound APIs, and adding allow-same-origin reopens the escape. Serving each app from its own endpoint would require the host to whitelist every app domain in frame-src. The chosen design is a double iframe: a shared loader script is served from a separate domain, with per-app subdomains for origin isolation, and the app's HTML goes in via srcdoc inside it. Apps declare their external domains (connect-src, script/image/frame domains) in MCP metadata so the host can apply a matching CSP. The speaker shows SkyBridge, Alpic's open-source layer on the Apps SDK, and its CSP Inspector, which compares domains a view actually calls against the declared list. He notes that CSP-related rejections in the ChatGPT app store submission process are common.",
+ "speakers": [
+  "Frédéric Barthelet"
+ ],
+ "orgs": [
+  "Alpic",
+  "OpenAI",
+  "Anthropic"
+ ],
+ "format": "talk",
+ "topics": [
+  "mcp-and-tools",
+  "security-guardrails",
+  "product-ux"
+ ],
+ "tags": [
+  "MCP apps",
+  "iframe",
+  "double iframe",
+  "CSP",
+  "content security policy",
+  "sandbox",
+  "origin isolation",
+  "ChatGPT apps",
+  "Apps SDK",
+  "SkyBridge",
+  "CSP inspector",
+  "srcdoc",
+  "frame-src"
+ ],
+ "key_ideas": [
+  {
+   "idea": "MCP app UI is rendered as views tied to tool calls",
+   "detail": "A view is a small HTML/JS/CSS document. The server advertises it in the tool metadata, and the host renders it in an iframe when that tool is called, injecting the tool result. Views can be cached or fetched on demand.",
+   "t": "2:01"
+  },
+  {
+   "idea": "srcdoc is unsafe because it shares the host origin and CSP",
+   "detail": "An srcdoc iframe inherits the parent's origin and CSP, so the host's nonce-based script-src blocks app JS. Relaxing CSP to allow it would let app code read the host's localStorage and cookies, which is unacceptable.",
+   "t": "6:21"
+  },
+  {
+   "idea": "Sandboxing alone does not solve the origin problem",
+   "detail": "A sandboxed iframe gets an opaque (null) origin, so localStorage, IndexedDB and cookies stop working. Adding allow-same-origin to restore them brings back the escape path, so the sandbox is back to square one.",
+   "t": "7:42"
+  },
+  {
+   "idea": "Per-app endpoints would require an ever-growing frame-src whitelist",
+   "detail": "Serving each app's view from its own domain would force the host to add every app domain to frame-src. The alternative is one controlled proxy domain that hosts the content, which means the host runs infrastructure for untrusted third-party code.",
+   "t": "10:15"
+  },
+  {
+   "idea": "Double iframe: a shared loader on a separate domain",
+   "detail": "The host serves the same small loader script from a separate origin. The loader then injects the app HTML via srcdoc inside itself. The nested frame is isolated from the host, and per-app subdomains keep apps from sharing localStorage or cookies with each other.",
+   "t": "11:22"
+  },
+  {
+   "idea": "Apps must declare their external domains in metadata",
+   "detail": "Each app lists the domains it connects to, loads scripts or images from, or frames. The host turns these into the CSP for the nested frame. Missing a domain means the app works in dev and breaks in production.",
+   "t": "14:00"
+  },
+  {
+   "idea": "Developer tooling can catch CSP gaps before submission",
+   "detail": "ChatGPT's developer mode had removed CSP enforcement, so missing domains only showed up in production. The speaker's SkyBridge CSP Inspector compares domains a view actually calls with the declared list and flags the missing ones, which he says has been a common cause of app store rejections.",
+   "t": "15:18"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Double-iframe isolation for untrusted UI",
+   "how": "Serve a fixed loader script from a separate domain, one subdomain per app for origin separation. The loader writes the untrusted HTML into an inner iframe with srcdoc. The host sets the CSP from the app's declared domains.",
+   "when": "Running third-party HTML or JS inside a host app where it must not reach the host's origin, storage or cookies, and the host cannot whitelist every app domain."
+  },
+  {
+   "name": "Declare-then-enforce external domains",
+   "how": "The app lists every external domain it uses (connect, script, image, frame) in MCP metadata. The host derives the nested frame's CSP from that list, so undeclared calls are blocked.",
+   "when": "Designing any tool or UI extension that loads remote resources and must pass a host's review or CSP."
+  },
+  {
+   "name": "CSP inspection in dev tools",
+   "how": "Compare the domains in metadata with the domains the view actually requests, and show the diff live as the code changes.",
+   "when": "Debugging why a UI works locally but fails in a host's production CSP."
+  }
+ ],
+ "tools": [
+  "MCP Apps extension",
+  "OpenAI Apps SDK",
+  "SkyBridge",
+  "HTML iframe (srcdoc, sandbox, allow-same-origin)",
+  "Content Security Policy (frame-src, script-src, connect-src)"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Sandboxing an iframe with allow-same-origin reopens the escape path, so the sandbox attribute alone does not protect the host.",
+  "Serving third-party UI from your own domain means you are responsible for code you have not reviewed.",
+  "Running ChatGPT or Claude in developer mode with CSP removed hid missing-domain failures until production."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "AgentOS has no UI-view or host-embedding surface; the talk is about a host platform rendering third-party UI.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Relevant background for anyone exposing an MCP server with UI views; the double-iframe pattern and CSP domain declaration are useful reference.",
+   "action": "If we ever ship an MCP server with UI, read the MCP Apps extension spec's CSP metadata section before designing the view."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI and does not render UI views in a host.",
+   "action": ""
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,208 @@
+{
+ "one_line": "Same local Qwen model, same weights and prompt: the outcome changed with the harness around it (feedback loop, tools, session log, context), so the software matters as much as the model.",
+ "summary": "Kai Explains uses a viral Reddit story to argue that a local model's usefulness depends on the harness it runs in. A Qwen 3.8 27B prompt produced a black window in one setup, but the same weights, quantization and prompt on the same machine worked on the first try inside DeepSeek Harness. The speaker says Qwen's headline agentic benchmark gains are real but concentrated in tool-use tasks, and several were evaluated inside Claude Code, so the harness is part of the result. He covers reasoning-effort behavior, the value of a persistent session log, and the limits of the harness (developer preview, weak on large existing codebases). He closes with practical VRAM, quantization and bandwidth guidance. Most evidence is single-user anecdote and self-reported numbers, so treat the cost and speed figures as illustrative.",
+ "speakers": [
+  "Kai"
+ ],
+ "orgs": [
+  "Qwen",
+  "DeepSeek",
+  "Anthropic",
+  "Unsloth"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "agent-architecture",
+  "evals",
+  "context-engineering"
+ ],
+ "tags": [
+  "qwen-3.8",
+  "qwen-3.8-27b",
+  "deepseek-harness",
+  "harness-vs-model",
+  "feedback-loop",
+  "session-log",
+  "reasoning-effort",
+  "quantization",
+  "vram",
+  "memory-bandwidth",
+  "dense-models",
+  "claude-code",
+  "benchmarks",
+  "deepswe",
+  "osworld",
+  "gpqa",
+  "open-weight",
+  "local-coding-agent"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Identical weights, quantization, prompt and hardware produced a black window in one setup and a working ocean scene in another. The only change was the harness, so failures attributed to 'the model' may really be harness failures.",
+   "detail": "Reddit reproduction on an RTX 5090 failed in VS Code Copilot and succeeded on the first attempt in DeepSeek Harness. The harness is defined as the software that determines what the model can see, which tools it reaches, how tasks are split, and how context overflow is handled.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The headline agentic gains are real but concentrated in tool-use tasks. Pure reasoning barely moved, and several agentic scores were measured inside Claude Code, so the harness is part of the benchmark.",
+   "detail": "DeepSWE 1.1 went from 13.3 (Qwen 3.6) to 42.2 (Qwen 3.8); OSWorld computer use went from 63.9 to 84.3. GPQA Diamond went from 87.8 to 89.2, and Qwen 3.7 Plus scored 90.3. Qwen's model card says four agentic evals used the Claude Code harness.",
+   "t": "1:21"
+  },
+  {
+   "idea": "A closed feedback loop (run the code, inspect the result, notice failure, retry) matters more than a model upgrade. The speaker frames the first setup as one that let the model write code but returned almost nothing to it.",
+   "detail": "In the good run, the vision pipeline was not wired up (a launch flag was missing), so the model could not see screenshots. It wrote its own PNG decoder mid-task to check whether the generated water looked right.",
+   "t": "3:59"
+  },
+  {
+   "idea": "Reasoning effort is not a monotonic more-is-better slider. Default effort was very aggressive, and the lowest setting produced the best result on one coding test.",
+   "detail": "Simon Willison's test: about 21 minutes of thinking and roughly 3,000 output tokens at default, versus about 137 seconds with reasoning off. On a Tetris-clone test, the lowest effort was best, and the highest reversed all four movement keys. Extra reasoning can make the model second-guess choices that were already correct.",
+   "t": "5:24"
+  },
+  {
+   "idea": "A permanent session log makes long unattended local runs survivable. Work can be resumed, forked or replayed, and after a crash the log, not the process, is the source of truth.",
+   "detail": "The described harness is MIT licensed with plugin components. One run logged 687 steps (about 88M tokens in, about 822k out, about 5 hours on two used 3090s) building a first-person shooter. The developer later added screenshots to the loop for art direction. The speaker flags the harness as a developer preview with compaction timing issues, Windows errors and a plugin that broke an install.",
+   "t": "6:45"
+  },
+  {
+   "idea": "Local models look far more capable on greenfield tasks than on understanding a medium-sized existing codebase. In one report, Qwen 3.8 spent dozens of hours replanning a mutual TLS task in an existing Go and Python repo, while DeepSeek v4 at 2-bit did it well.",
+   "detail": "The speaker's theory is that the smaller model could not form a confident picture of the existing code, so it kept replanning instead of committing. His recommended pattern is a hybrid: do most of a workflow locally and send only the hard final step to a frontier model.",
+   "t": "8:11"
+  },
+  {
+   "idea": "Fit (capacity) and speed (memory bandwidth) are separate constraints, and a dense model that spills past VRAM can crawl rather than degrade gracefully.",
+   "detail": "Practical VRAM tiers: about 12 GB theoretical minimum, 24 GB practical, 32 GB comfortable, 48 GB comfortable with room, 128 GB for large context and multiple instances. Community 4-bit builds are about 17-19 GB, and the real requirement is closer to 24 GB once KV cache and context are included. Bigger memory buys context and model size, not generation speed.",
+   "t": "10:43"
+  },
+  {
+   "idea": "The closing thesis: a better harness can be built without a new model release, so improving the feedback loop, context management, tools or session resume can make an existing local model far more useful.",
+   "detail": "The speaker says the lesson is that the model is one part of the system, and that judging local AI by benchmark scores or the first response misses whether it can finish the job.",
+   "t": "13:07"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Attribute failures to the harness before blaming the model",
+   "how": "Hold weights, quantization, prompt and hardware fixed, then swap only the harness (for example VS Code Copilot vs DeepSeek Harness) and compare outcomes. Use the same test on both before concluding the model is weak. Report benchmark scores with the harness named.",
+   "when": "Evaluating an open-weight or local model for agent work, or reading vendor benchmark tables where scores come from a specific agent harness."
+  },
+  {
+   "name": "Close the feedback loop so the agent can verify its own output",
+   "how": "Give the agent the ability to run code, read the errors, edit and rerun. For UI work, feed screenshots back into the loop. If the vision path is broken, the agent can still build a fallback (the speaker's example: writing a PNG decoder so it could read screenshots). Judge the setup by whether the model can see what it did, run it, and iterate.",
+   "when": "Any coding or UI task where correctness is visible only after running the output, such as shaders, games or front ends."
+  },
+  {
+   "name": "Persistent session log as source of truth for long runs",
+   "how": "Log every step to a durable session file. After a crash, resume from the log instead of restarting. Fork the log to try an alternative, and replay it to inspect what happened. Multi-hour unattended runs (the speaker cites 687 steps) depend on this.",
+   "when": "Designing checkpoint/resume for long-running local or unattended agent sessions."
+  },
+  {
+   "name": "Sweep reasoning effort on a fixed prompt rather than assuming max is best",
+   "how": "Run the same task at the lowest, default and highest reasoning settings. Compare output quality and wall time (default 21 min vs 137 s with reasoning off in one test). Pick the setting per task type.",
+   "when": "Configuring a reasoning model for coding or agent tasks, especially a local one where tokens are the bottleneck."
+  },
+  {
+   "name": "Size the local model by capacity and bandwidth, then pick quantization",
+   "how": "Budget VRAM for weights plus KV cache plus the context you actually use (a 17-19 GB 4-bit model needs about 24 GB in practice). Quantization guidance from the speaker: Q8 is best quality and largest, Q6 is the usual compromise, Q5 frees memory for context. Keep a dense model fully on GPU, because spilling to CPU can make it crawl. Check memory bandwidth too (RTX 5090 ~1,792 GB/s; RTX 3090 ~1,000 GB/s).",
+   "when": "Buying or configuring hardware for local agent inference, or choosing a quant for a fixed GPU."
+  },
+  {
+   "name": "Hybrid local-then-frontier handoff",
+   "how": "Do most of a workflow on the local model with a good harness, enough context and a sane reasoning setting. Send only the hard final step to a frontier API when the local model stalls. Estimate unattended local hours against API spend (the speaker's own rough calc: about 4 hours is about 130 pounds of Opus API usage).",
+   "when": "Deciding where to spend frontier-model tokens on agent work that is mostly routine."
+  }
+ ],
+ "tools": [
+  "Qwen 3.8 27B (transcript: 'Quen 3.8')",
+  "Qwen 3.6",
+  "Qwen 3.7 Plus",
+  "DeepSeek Harness (transcript: 'DeepSeq Harness'; MIT licensed, plugin components, developer preview)",
+  "DeepSeek v4 (2-bit quant, transcript: 'DeepSeq v4')",
+  "Claude Code (Qwen's benchmark harness for four agentic evals)",
+  "Opus API (cost comparison)",
+  "VS Code Copilot (failed reproduction run)",
+  "Unsloth Q6 build of Qwen 3.8",
+  "Simon Willison's test prompt (reasoning-effort test)",
+  "DeepSWE 1.1 (benchmark)",
+  "OSWorld (computer-use benchmark)",
+  "GPQA Diamond (reasoning benchmark)",
+  "NVIDIA RTX 5090",
+  "NVIDIA RTX 3090 (used, 24 GB)",
+  "NVIDIA RTX 4060 (8 GB VRAM run)",
+  "AMD Radeon 9700 AI Pro (32 GB)",
+  "DGX Sparks (clustered, 15-20 tok/s single-threaded, per Prompt Engineering)"
+ ],
+ "numbers": [
+  {
+   "claim": "DeepSWE 1.1 agentic coding: Qwen 3.6 13.3 vs Qwen 3.8 42.2 (evaluated inside Claude Code harness per Qwen's model card)",
+   "t": "0:00"
+  },
+  {
+   "claim": "OSWorld computer use: 63.9 to 84.3",
+   "t": "1:21"
+  },
+  {
+   "claim": "GPQA Diamond: Qwen 3.6 87.8, Qwen 3.8 89.2, Qwen 3.7 Plus 90.3 (pure-reasoning gain of about 1.4 points)",
+   "t": "1:21"
+  },
+  {
+   "claim": "Failed-run setup: Radeon 9700 AI Pro (32 GB), Unsloth Q6 build, 131,000-token context, about 29 tokens/s. Reproduction on RTX 5090 with about 190,000 context at about 150-160 tokens/s",
+   "t": "2:33"
+  },
+  {
+   "claim": "Reasoning effort test: default about 21 minutes thinking and about 3,000 output tokens; reasoning off about 137 seconds",
+   "t": "5:24"
+  },
+  {
+   "claim": "Long unattended FPS build: 687 steps, about 88M input tokens, about 822k output tokens, about 5 hours of model time on two used 3090s",
+   "t": "6:45"
+  },
+  {
+   "claim": "Cost comparison (speaker's own calculation, not a receipt): 4 hours of unattended local work is about 130 pounds via the Opus API",
+   "t": "8:11"
+  },
+  {
+   "claim": "RTX 4060 8 GB run: about 14.6 GB on disk, 64,000 context, 25 layers offloaded off the GPU, prefill about 150 tok/s, decode about 5 tok/s",
+   "t": "9:28"
+  },
+  {
+   "claim": "Practical VRAM floors: about 12 GB theoretical minimum, 24 GB practical, 32 GB comfortable, 48 GB comfortable, 128 GB for large context and multiple instances. Community 4-bit builds about 17-19 GB",
+   "t": "9:28"
+  },
+  {
+   "claim": "RTX 5090 about 1,792 GB/s bandwidth with reported 96-110 tok/s on this model; RTX 3090 24 GB at about 1,000 GB/s; two 3090s give 48 GB",
+   "t": "10:43"
+  },
+  {
+   "claim": "DGX Sparks (two clustered) about 15-20 tok/s single-threaded on a dense 27B model",
+   "t": "11:52"
+  },
+  {
+   "claim": "Social post with the 'any harness you run' line: 92,000 views and 642 likes (engagement, not evidence)",
+   "t": "2:33"
+  }
+ ],
+ "hot_takes": [
+  "Title overstates the thesis: the video's own conclusion is that a 27B local model is not a replacement for every frontier model, and several benchmark gains depend on the Claude Code harness.",
+  "A better harness can matter as much as a better model (speaker's framing). Supported by one reproduction and anecdotes, not controlled experiments.",
+  "The 'four hours is about 130 pounds of Opus API' claim is self-computed by a developer, and the speaker says not to treat it as universal.",
+  "Qwen's own table makes a case that the harness matters, so vendor benchmark numbers are not comparable across harnesses."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness is a harness around Claude Code with checkpoint/resume. The video's argument that a persistent session log is the source of truth after a crash, plus the closed run-inspect-retry loop, maps directly onto that design. Evidence is anecdotal and from a developer-preview harness.",
+   "action": "Review ProsHarness checkpoint/resume so the session log, not the process, is the source of truth (resume, fork, replay). Add a test that the agent can run its own output and observe failures, and check that the harness keeps working when screenshot or vision inputs are missing."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS InferCraft runs local 27B-class models on one RTX 5090. The useful takeaway is the VRAM/bandwidth sizing and the lesson to attribute failures to the harness, not the model, in evals. The video does not cover serving internals.",
+   "action": "When running InferCraft or MemoryMesh evals, record the harness, reasoning-effort setting and quant alongside each score, so results are comparable. Note the video's VRAM floors (about 24 GB practical for a 4-bit 27B with context) when sizing KV-cache strategies."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,51 @@
+# Turning My Obsidian Vault Into a Local AI Engineer — Filip Makraduli, Superlinked
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `Ndp5VaqFrl0` · [watch](https://youtu.be/Ndp5VaqFrl0) · **date:** 2026-10-12 · **length:** 47:26 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Filip Makraduli · **orgs:** Superlinked
+- **topics:** local-ai, mcp-and-tools, inference-serving, security-guardrails · **tags:** mcp, self-hosted-inference, ocr, pii-redaction, privacy, obsidian, claude-code, per-worker-batching, lora-hot-swap, embeddings, model-routing, token-cost, superlinked
+
+> Filip Makraduli (Superlinked) shows a privacy-first setup: a self-hosted MCP tool server runs OCR, redaction and extraction on sensitive documents in your own cloud, so a Claude Code agent only sees the cleaned output.
+
+## Summary
+The speaker wanted to use Claude Code on an Obsidian vault of sensitive documents without exposing raw files or paying to put scanned pages into the context window. The solution is an MCP server that sits in front of Superlinked's self-hosted inference cluster and exposes tools such as docs-to-markdown (OCR), redaction, entity extraction, captioning and summarization. The agent calls a tool, the heavy work runs on GPUs in the user's VPC, and only the redacted markdown comes back. A live demo redacts an NDA on synthetic data. The talk then argues that inference infrastructure, not storage, is the real bottleneck, and reports that per-worker batching beat a shared queue in their tests. It also covers hot-swapping small models and LoRAs on one GPU and an embedding benchmark claim. Model routing by warm-model state is described as future roadmap, not built. Much of the talk is a pitch for the company's free credits and managed cluster, so vendor numbers need checking.
+
+## Key ideas
+- **Privacy and token cost are the motivation for offloading work** — Institutions may not allow files to reach cloud agents. Pre-processing scans into small markdown in a private cloud keeps the agent context lean and cheap, and avoids sending raw documents to external APIs. ([1:08](https://youtu.be/Ndp5VaqFrl0?t=68))
+- **Inference, not data storage, is the hard part** — Storing notes and linking them is easy. Running open-source inference at scale, with several models, is where the difficulty lies. The speaker argues the inference backbone matters even for API-friendly, agent-first designs. ([5:17](https://youtu.be/Ndp5VaqFrl0?t=317))
+- **Wrap the self-hosted cluster in an MCP tool server, not a skill or plugin** — A dedicated server lets you choose GPUs, worker pools and model placement, and keeps the heavy work off the laptop. The client only sees tool results. The speaker chose MCP over a plugin for this control. ([8:06](https://youtu.be/Ndp5VaqFrl0?t=486))
+- **Keep the MCP server tools-only and stateless** — The server skips sampling and elicitation, so it is a one-way tool endpoint. Streamable HTTP is used for remote hosting instead of stdio, which is local-only. The handshake is standard JSON-RPC. ([12:11](https://youtu.be/Ndp5VaqFrl0?t=731))
+- **Redacted output is the only thing the agent sees** — In the demo, an NDA with phone and ID numbers is OCR'd and redacted on the cluster, and Claude Code receives only the redacted markdown plus label counts. Synthetic data was used. The speaker says the leak-free result is from their own tests only. ([19:51](https://youtu.be/Ndp5VaqFrl0?t=1191))
+- **Per-worker batching beat one shared queue in their tests** — Each worker pool batches its own requests instead of pulling from a single shared queue. The speaker reports lower latency end to end. The speaker also says end-to-end architecture can matter more than per-model optimization in production. ([23:23](https://youtu.be/Ndp5VaqFrl0?t=1403))
+- **Hot-swap small models and LoRAs on one GPU** — Models that fit on one GPU, such as NER, embeddings or small generators, can be swapped in and out. Task-specific LoRAs, such as a German legal-language one, can be tested quickly in production. Autoscaling and cheaper GPUs like L4 spot instances are used for smaller models. ([24:50](https://youtu.be/Ndp5VaqFrl0?t=1490))
+- **Future direction: route tasks to models by eval results and warm-model state** — The roadmap is to pick a model per task based on evals and cost, and to prefer a model already warm on the GPU even if it is pricier than reloading a cheaper one. This is described as not yet built. ([31:03](https://youtu.be/Ndp5VaqFrl0?t=1863))
+- **Reasoning and thinking tokens can break tool outputs** — A summarization tool failed because a thinking-enabled model spent its output on reasoning, so the summary was very short or missing. The speaker's advice is to check thinking settings per model. Judge models can also be biased or reward-hacked, so evals are needed before routing. ([33:48](https://youtu.be/Ndp5VaqFrl0?t=2028))
+
+## Techniques
+- **MCP tool server in front of private inference** — Expose OCR (docs to markdown), redaction, entity extraction, captioning, summarization and QA as MCP tools. The agent calls the tool and gets back only the processed result. The server runs in the user's VPC, and the backing model choice is configured on the cluster. *When:* Sensitive documents need pre-processing before an agent sees them, or OCR-heavy inputs would otherwise inflate token spend.
+- **Per-worker batching instead of a shared queue** — Give each worker pool its own batcher that pulls and batches its own requests, rather than one global queue that workers pull from. *When:* Serving several models or pools where end-to-end latency matters. The speaker's tests found this faster than a shared queue. Verify with your own load test.
+- **Multi-model hot-swapping on one GPU** — Keep several small models or LoRAs loaded on a single GPU and swap between them per request. Autoscale worker pools down when idle. *When:* Many small NER, embedding or generation models, or per-domain LoRAs that need fast A/B testing in production.
+- **Stateless tools-only MCP server over streamable HTTP** — Implement only the tools capability, skip sampling and elicitation, and use the standard streamable HTTP transport for remote hosting. Local development can still use stdio. *When:* A privacy-sensitive tool endpoint that must be remote and must not request extra data back from the client.
+- **Check thinking-token settings per model in tool pipelines** — Before wiring a model into a tool such as summarization, confirm whether thinking is on. If it is, the output budget can go to reasoning and leave little or no answer. *When:* Any tool that expects a short, direct text output from a reasoning-capable model.
+- **Warm-model-aware routing (roadmap)** — Track which models are loaded on which GPU and pick a warm model even if it costs more, to avoid reload latency. Combine with eval-based task-to-model mapping. *When:* Multi-model serving on limited GPUs where cold starts are a large part of latency. The speaker says this is not yet implemented.
+
+## Numbers
+- Embedding models on the platform are claimed to cost roughly 10x less than frontier APIs, with the best per-task model at 99.8% of the frontier model's quality on MTEB tasks. This is a vendor benchmark, and the speaker says more detail is coming. ([27:38](https://youtu.be/Ndp5VaqFrl0?t=1658))
+- Per-worker batching gave lower end-to-end latency than a shared queue in the speaker's tests. No figures given. ([23:23](https://youtu.be/Ndp5VaqFrl0?t=1403))
+- The redaction demo on a synthetic NDA reported 10 redacted spans, with per-label counts shown. ([19:51](https://youtu.be/Ndp5VaqFrl0?t=1191))
+- Example scale: a 10-page PDF with images and tables, where OCR to markdown is cheaper in tokens than sending the scanned pages to the main agent. No measured figure. ([8:06](https://youtu.be/Ndp5VaqFrl0?t=486))
+- Example use of five task-specific LoRAs hot-swapped on one cluster for A/B testing. No measured figure. ([23:23](https://youtu.be/Ndp5VaqFrl0?t=1403))
+
+## Hot takes
+- Infrastructure and inference matter more than the storage or API layer, even for API-friendly, agent-first designs.
+- Open-source OCR models are not a quality sacrifice for document processing, according to the speaker.
+- Per-worker batching can beat one shared queue, and end-to-end architecture can matter more than per-model speed.
+- Judge models and reasoning-enabled tools need evals first, because they can be biased or reward-hacked.
+- Embedding at roughly 10x lower price with 99.8% of frontier quality is a vendor claim that needs independent checking.
+
+## Tools mentioned
+MCP, Claude Code, Obsidian, Superlinked, Terraform, Helm, Kubernetes, Docker, Claude Co-work
+
+## Relevance to our work
+- **agentos** (2/3): InferCraft is a vLLM/Ray-style serving layer with a priority scheduler on one GPU. The talk's per-worker batching versus shared queue claim and multi-LoRA hot-swap directly apply to that design. → *Benchmark per-worker batching against the shared queue in InferCraft's scheduler under mixed-model load, and record end-to-end p95 latency.*
+- **general** (2/3): The pattern of OCR-to-markdown plus redaction on cheap self-hosted models, to cut tokens and keep context clean, fits the cheap-model pipeline interest. → *Test an OCR-to-markdown pre-processing step with a small open model on a sample of scanned documents, and measure tokens saved against output quality.*
+- **prosharness** (1/3): ProsHarness wraps Claude Code. Offloading sensitive documents to an MCP tool that returns only redacted output keeps raw PII out of the harness context. → *Consider an MCP tool in ProsHarness that returns redacted document output, so raw sensitive content never reaches the Claude Code context.*

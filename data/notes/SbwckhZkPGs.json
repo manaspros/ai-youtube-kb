@@ -1,0 +1,184 @@
+{
+ "one_line": "Josh from Better Stack demos NVIDIA's open-source OpenShell agent sandbox, which adds per-request, per-binary policy, supervisor-side credential injection and audit logs on top of containers, then lists its caveats.",
+ "summary": "Better Stack shows NVIDIA's OpenShell (Apache 2.0, Rust), a sandbox for AI coding agents that sits on top of containers rather than replacing them. A plain container cannot tell a GitHub read from a GitHub write to the same address; OpenShell checks each file access, syscall and network connection against a per-agent policy, with rules tied to the calling binary. A supervisor performs all egress decisions and injects real credentials only into matching requests, so the agent never holds the key. The demo runs default-deny, shows a live policy update that adds read-only GitHub access without a restart, and shows a POST being denied and logged. Policy changes are checked by a Z3 solver before going live. The speaker positions it against walls (Docker, Firecracker, Apple container), a lighter option (Anthropic sandbox runtime), and hosted throwaway sandboxes (E2B, Daytona). He flags caveats: telemetry on by default, macOS needing a Landlock-capable Docker Desktop VM with host networking enabled, a vendor-reported ~12% sandbox-creation failure rate, and a 0.x version despite the README's weekly-release claim. His verdict: for a quick laptop sandbox, plain containers or Anthropic's runtime are less work; for real credentials, the per-request rules matter.",
+ "speakers": [
+  "Josh (Better Stack)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "NVIDIA",
+  "Cisco",
+  "CrowdStrike",
+  "Google Cloud",
+  "Microsoft Security",
+  "Anthropic",
+  "GitHub",
+  "Docker",
+  "E2B",
+  "Daytona"
+ ],
+ "format": "review",
+ "topics": [
+  "sandboxing-execution",
+  "security-guardrails",
+  "coding-agents"
+ ],
+ "tags": [
+  "openshell",
+  "agent-sandbox",
+  "egress-policy",
+  "credential-injection",
+  "audit-log",
+  "z3",
+  "macos",
+  "docker-desktop",
+  "landlock",
+  "anthropic-sandbox-runtime"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A container alone cannot distinguish an agent reading a GitHub repo from one creating issues, because both are traffic to the same address; the speaker argues the missing layer is per-request policy.",
+   "detail": "Containers act as a locked room that stops wandering into the host filesystem, but once an agent is handed a token, the container offers no control over which operations it performs.",
+   "t": "0:00"
+  },
+  {
+   "idea": "OpenShell has three parts: a gateway you talk to, a supervisor that makes every policy decision, and the sandbox where the agent runs. The sandbox's only route out goes through the supervisor.",
+   "detail": "File-system and process limits are fixed when the sandbox starts and the agent cannot weaken them; the sandbox runs unprivileged.",
+   "t": "1:19"
+  },
+  {
+   "idea": "The sandbox is default-deny for network, and the policy can be changed live to open one narrow rule without restarting.",
+   "detail": "A read-only GitHub API rule let GET requests through; the POST to create an issue stayed denied. Every denial is written to the logs (openshell logs).",
+   "t": "2:12"
+  },
+  {
+   "idea": "Rules are tied to the calling binary, not just the destination, and the agent never sees real credentials because the supervisor injects them only on matching requests.",
+   "detail": "Prompt injection that asks the agent to leak its API key finds nothing to leak. The sandbox also does not resolve its own DNS; the supervisor resolves names and opens only approved connections.",
+   "t": "3:22"
+  },
+  {
+   "idea": "Before a policy change goes live, a Z3 SMT solver computes what new access the change would actually grant, which catches over-broad wildcards.",
+   "detail": "The check has a 10-second default time limit.",
+   "t": "3:22"
+  },
+  {
+   "idea": "OpenShell is positioned as a layer on top of walls (Docker, Podman, Kubernetes, microVMs, Firecracker, Apple container) that adds per-request rules, key injection and an audit log. Anthropic's sandbox runtime is the lighter per-process option; E2B and Daytona are hosted throwaway sandboxes.",
+   "detail": "The speaker says it is self-hosted, policy-first and built for agents that run for hours.",
+   "t": "4:45"
+  },
+  {
+   "idea": "Caveats: telemetry is on by default and one environment variable disables it; on a Mac the sandboxes run in Docker Desktop's VM and need a Landlock kernel feature plus host networking (off by default); openshell doctor reports green either way.",
+   "detail": "The speaker recommends testing the setup directly rather than trusting doctor.",
+   "t": "6:02"
+  },
+  {
+   "idea": "The vendor's own numbers show about 12% of sandbox creations failing in a two-week window, and the project is labelled an early preview despite a README claiming stable weekly releases; the version is 0.x.",
+   "detail": "The speaker says to believe the version number.",
+   "t": "6:02"
+  },
+  {
+   "idea": "Verdict: for a quick laptop sandbox, Anthropic's sandbox runtime or plain containers are far less work; OpenShell earns its cost when agents hold real credentials or run unattended.",
+   "detail": "The framing is that sandboxes used to answer only whether the agent can reach something; this answers what the agent is allowed to do with it.",
+   "t": "7:24"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Default-deny egress with live, narrow allow rules",
+   "how": "Start the sandbox with no network access. Reproduce the failing call, read the denial in the logs (openshell logs), then add one rule with `openshell policy update` that permits only the needed method and endpoint (e.g. read-only GitHub API). The demo does not require a restart. Confirm the write (POST) is still denied.",
+   "when": "Giving a coding agent access to a SaaS API without granting write access; debugging which exact call an agent is blocked on."
+  },
+  {
+   "name": "Bind network permissions to the calling binary",
+   "how": "Write policy rules keyed on the binary, the endpoint and the method, so the same host is allowed for one process and denied for another. The exact policy file syntax is not shown in the video.",
+   "when": "When several tools in one sandbox talk to the same host and need different privileges."
+  },
+  {
+   "name": "Supervisor-side credential injection",
+   "how": "Keep real API keys out of the sandbox. The supervisor attaches credentials to requests that match an approved endpoint on their way out, so the agent process never has the secret in its environment or memory.",
+   "when": "Running agents that may be prompt-injected, or any agent handed production tokens."
+  },
+  {
+   "name": "Check policy diffs with a solver before applying",
+   "how": "Run each policy change through the Z3 check (built into OpenShell's approval step) with its time limit, reviewing what extra access the new rule grants, such as wildcards that match more than intended.",
+   "when": "Before any policy change to a long-running agent sandbox, especially one containing wildcards."
+  },
+  {
+   "name": "macOS preflight for OpenShell",
+   "how": "Confirm Docker Desktop's VM provides the Landlock kernel feature, enable host networking if policies need it, and disable telemetry using the environment variable (the name is not stated in the video) before relying on the sandbox. Do not rely on `openshell doctor` alone.",
+   "when": "Running OpenShell on a Mac, or any setup where doctor output is the only check."
+  }
+ ],
+ "tools": [
+  "OpenShell (NVIDIA, Apache 2.0, Rust, self-hosted; ~20k GitHub stars at time of video)",
+  "openshell CLI (`openshell policy update`, `openshell logs`, sandbox status, doctor)",
+  "Docker / Docker Desktop",
+  "Podman",
+  "Kubernetes",
+  "Firecracker",
+  "Apple container",
+  "Anthropic sandbox runtime",
+  "E2B",
+  "Daytona",
+  "Z3 SMT solver",
+  "Landlock (Linux kernel feature)",
+  "Claude Code (auto-caption: 'Clawed code')",
+  "Codex",
+  "OpenCode",
+  "GitHub API"
+ ],
+ "numbers": [
+  {
+   "claim": "OpenShell is Apache 2.0, written in Rust, and went public in February; NVIDIA announced it at GTC in March with Cisco, CrowdStrike, Google Cloud and Microsoft Security as partners.",
+   "t": "4:45"
+  },
+  {
+   "claim": "About 20,000+ GitHub stars (vendor-era figure, 'a little over 20,000').",
+   "t": "4:45"
+  },
+  {
+   "claim": "NVIDIA telemetry reports over 550,000 sandboxes created and 4.2 million agent actions denied in a two-week summer window (self-reported, not audited per the speaker).",
+   "t": "4:45"
+  },
+  {
+   "claim": "Z3 policy-change check has a 10-second default time limit.",
+   "t": "4:45"
+  },
+  {
+   "claim": "About 12% of sandbox creations failed in the same two-week window (NVIDIA telemetry).",
+   "t": "6:02"
+  },
+  {
+   "claim": "Project version is 0.x (spoken as '.1.5').",
+   "t": "6:02"
+  },
+  {
+   "claim": "Demo timing: default-deny blocks the GitHub call; one policy update opens read-only access with no restart.",
+   "t": "2:12"
+  }
+ ],
+ "hot_takes": [
+  "Docker alone cannot separate a GitHub read from a write to the same host; per-request policy is the layer that is missing.",
+  "Vendor telemetry (550k sandboxes, 4.2M denials) is not an audit; the speaker says so himself.",
+  "OpenShell's doctor reporting green is not proof the macOS setup works; test it directly.",
+  "For a quick local sandbox, Anthropic's sandbox runtime or plain containers are less work and may be enough."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Crucible is AgentOS's opt-in sandboxed execution layer with exec-gate guardrails. OpenShell is a direct comparable that adds per-binary, per-endpoint policy, supervisor credential injection and a denial audit log.",
+   "action": "Compare Crucible's exec-gate rules with OpenShell's binary-plus-endpoint-plus-method policy model, and check whether Crucible logs every denial with the calling binary."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and lists zero-token credential handling as a feature. OpenShell's supervisor-side injection and per-request rules are a direct design reference, and Anthropic's sandbox runtime is a lighter option for the same wrapper.",
+   "action": "Verify that ProsHarness credentials never enter the Claude Code process environment; prototype its egress rules with Anthropic's sandbox runtime before evaluating OpenShell."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

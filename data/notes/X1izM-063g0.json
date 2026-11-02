@@ -1,0 +1,147 @@
+{
+ "one_line": "Short walkthrough of the TypeScript-only Codex SDK (run, streamed events, sandbox modes, tool calls, a follow-up loop), ending with the host preferring the Claude Agent SDK for its missing features.",
+ "summary": "A 4-minute Better Stack review of OpenAI's Codex SDK, which the host describes as the programmatic counterpart to the Codex CLI, IDE extension and web product, and as TypeScript-only. The host builds a minimal script: an API key read from a .env file, a new thread, and a single run that returns the agent's items and a usage object. He shows that a non-reasoning run uses more input and output tokens than a reasoning run, and lists the three sandbox modes (read-only, workspace-write, danger-full-access). He then covers resuming a thread by ID, forcing a structured response with a custom JSON schema or zod, and switching from run to runStreamed to consume typed events in a for-await loop. The demo adds a tool call (a file count), shows command items appearing before the agent message, and wraps everything in an interactive prompt loop with follow-ups. The verdict is that the SDK lacks features he needs (visible selected model, changing the system prompt, custom tools, hooks, custom slash commands), so he stays with the Claude Agent SDK and will watch the Codex SDK for changes. There are no benchmarks and no head-to-head task results behind the \"clearly better\" claim.",
+ "speakers": [],
+ "orgs": [
+  "OpenAI",
+  "Anthropic",
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "agent-architecture"
+ ],
+ "tags": [
+  "codex-sdk",
+  "claude-agent-sdk",
+  "typescript",
+  "streaming-events",
+  "sandbox-modes",
+  "structured-output",
+  "thread-resume",
+  "agent-sdk-comparison"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The Codex SDK is a TypeScript-only library for controlling the Codex agent programmatically. It is separate from the Codex CLI, the IDE extension and Codex Web.",
+   "detail": "The host frames it as OpenAI's counterpart to the Claude Agent SDK, aimed at CI/CD pipelines, internal tools, or embedding Codex in an app. He says Python is not supported.",
+   "t": "0:00"
+  },
+  {
+   "idea": "A single run returns a list of items plus a usage object, and reasoning output shows up before the final message.",
+   "detail": "The basic script imports Codex, reads the API key from a .env file, starts a thread, and calls run with a prompt. The output is an items array, then the final response, then usage.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Sandbox mode is a per-run setting with three levels: read-only, workspace-write and danger-full-access.",
+   "detail": "The host runs in read-only mode so the agent can only read his files. He points to his Codex CLI video for the sandbox and approval mode details.",
+   "t": "1:27"
+  },
+  {
+   "idea": "Threads can be resumed by ID, and responses can be forced into a schema.",
+   "detail": "Resume uses the thread ID with a resume-thread method. Response format is set with a custom JSON schema, or with zod.",
+   "t": "1:27"
+  },
+  {
+   "idea": "Use runStreamed instead of run for streaming output.",
+   "detail": "runStreamed returns an event stream. A for-await loop logs each event, and every event has a type, with the payload shape (item, thread ID, usage) depending on that type. Filtering on type keeps only the events you need.",
+   "t": "1:27"
+  },
+  {
+   "idea": "Tool calls appear as command items before the agent message.",
+   "detail": "With a prompt that needs a file listing, the stream shows the command the agent ran, then its message and usage. The host drops the other events to keep only the agent message and usage.",
+   "t": "2:51"
+  },
+  {
+   "idea": "The host's verdict rests on missing features, not measured quality.",
+   "detail": "He lists the selected model not being shown in the output, no way to change the system prompt, and no support for custom tools, hooks or custom slash commands. He keeps the Claude Agent SDK for now and will watch the Codex SDK.",
+   "t": "4:10"
+  },
+  {
+   "idea": "Agent Builder is the recommended option for more complex agents.",
+   "detail": "For a more complicated agent, the host points to OpenAI's Agent Builder and to a separate video by another creator on it.",
+   "t": "4:10"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Minimal Codex SDK script",
+   "how": "Import the Codex class and construct it with an API key loaded from a .env file. Call the start-thread method to open a conversation, then call run with the prompt and print the result (the transcript shows the result as an items array followed by a usage object). Method names are as captioned: startThread and run.",
+   "when": "A first working call to the SDK, or a quick check of what a run returns (items, final response, usage)."
+  },
+  {
+   "name": "Choose a sandbox mode per run",
+   "how": "Set the sandbox mode in the run options to one of read-only, workspace-write or danger-full-access. The host uses read-only so the agent cannot change his files. He does not show the option's exact key name.",
+   "when": "Review, analysis or read-only automation, where the agent must not write to the workspace."
+  },
+  {
+   "name": "Resume a thread by ID",
+   "how": "Store the thread ID from a previous run and call the resume-thread method with it, so later prompts continue the same conversation. The transcript mentions this but shows no code.",
+   "when": "Multi-turn agent sessions that must survive process restarts or be split across steps."
+  },
+  {
+   "name": "Structured response via JSON schema or zod",
+   "how": "Pass a custom JSON schema, or a zod schema, as the response format so the final output is typed data.",
+   "when": "Pipelines that parse the agent's answer, such as CI checks that need a fixed shape."
+  },
+  {
+   "name": "Stream typed events with runStreamed",
+   "how": "Replace run with runStreamed, which returns an event stream. Loop over it with for await, log each event, and branch on event.type. Each type carries a different payload (item, thread ID, usage), so read the field that matches the type.",
+   "when": "Live progress output, or showing tool calls and reasoning as they happen instead of waiting for the full response."
+  },
+  {
+   "name": "Interactive loop over one thread",
+   "how": "Read a user prompt, run it on the same thread, print the agent message and usage, then ask for the next prompt. The host's demo asks for a file count (tool call), then a follow-up about the line count of index.ts.",
+   "when": "A simple chat-style agent in a terminal, to check that follow-up turns keep context."
+  }
+ ],
+ "tools": [
+  "Codex SDK (TypeScript)",
+  "Codex CLI",
+  "Codex IDE extension",
+  "Codex Web",
+  "Claude Agent SDK",
+  "OpenAI App SDK",
+  "OpenAI Agent Builder",
+  "zod"
+ ],
+ "numbers": [
+  {
+   "claim": "A run with reasoning off uses more input and output tokens than the run with reasoning on. No figures are given.",
+   "t": "1:27"
+  },
+  {
+   "claim": "Three sandbox modes: read-only, workspace-write, danger-full-access.",
+   "t": "1:27"
+  },
+  {
+   "claim": "Video length 4:26. No benchmarks, latency, cost or task-success figures are reported.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The 'CLEARLY Better' title is not backed by a head-to-head test. The verdict rests on a feature checklist (model visibility, system prompt, custom tools, hooks, slash commands), not on output quality or cost.",
+  "The host calls the Codex SDK TypeScript-only and says Python is not supported, a limit that matters for teams on Python stacks.",
+  "The stated preference for the Claude Agent SDK comes from the host's own feature needs and does not measure either SDK's agent quality.",
+  "Quality is capped at 2 because the piece is a short overview with a hype title and no measured comparison, despite real code walkthrough content."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The video covers sandbox modes (read-only, workspace-write, danger-full-access) on an agent SDK, which is adjacent to Crucible's sandboxed execution and exec-gate guardrails. Only a sandbox-tier comparison is relevant.",
+   "action": "Compare the three Codex SDK sandbox levels with Crucible's exec-gate levels before fixing the default sandbox policy."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness checkpoints and resumes long Claude Code runs. Resume-by-thread-ID and streamed typed events are the same mechanisms it needs for checkpoints and progress reporting, though the video covers the Codex SDK, not Claude Code.",
+   "action": "Check whether the Claude Code side exposes a resume-by-ID handle and a typed event stream, and store that ID in ProsHarness checkpoints."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

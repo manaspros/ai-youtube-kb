@@ -1,0 +1,211 @@
+{
+ "one_line": "Cursor engineer Eric Zakariasson on building a \"software factory\": how to structure repos, grow rules from observed failures, make agents verify their own work, and automate the human loops. Practical, with a product pitch.",
+ "summary": "Eric Zakariasson, a developer-experience engineer at Cursor, describes how the team moved from autocomplete-style use toward agents that ship code with little human reading. He frames autonomy as levels, with most developers currently at pair-programmer stages, and argues the goal is a factory where the human sets intent and reviews outcomes. The core prerequisites he lists are repo structure that agents can navigate, usage patterns and boilerplate to copy, guardrails and rules, skills and MCP access, runnable environments, and above all verifiable systems so agents can test their own work. His practical advice is to let rules emerge from observed failures rather than installing rule packs, to shift from sync to async work with scoped tasks and front-loaded specs, and to isolate each agent in its own VM. He shows automations that replace his own repetitive work (daily summaries, mining merged PR comments, risk-rated agentic code owners, transcript-based rule extraction). The Q&A covers code quality drift from completion bias, team silos over personal rules, enterprise accountability, and cost of cloud agents, and the speaker is candid that much of this is unsolved. Some segments are product demos for Cursor 3, cloud agents and workers, so discount those.",
+ "speakers": [
+  "Eric Zakariasson"
+ ],
+ "orgs": [
+  "Cursor",
+  "Lovable",
+  "Linear",
+  "GitHub"
+ ],
+ "format": "talk",
+ "topics": [
+  "software-factory",
+  "context-engineering",
+  "testing-verification",
+  "coding-agents"
+ ],
+ "tags": [
+  "software factory",
+  "dark factory",
+  "levels of autonomy",
+  "rules",
+  "AGENTS.md",
+  "guardrails",
+  "verification",
+  "playwright",
+  "computer use",
+  "cloud agents",
+  "isolation",
+  "VMs",
+  "agentic code owners",
+  "continual learning",
+  "BugBot",
+  "code review",
+  "async agents",
+  "feature flags",
+  "Linear automation",
+  "team alignment"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Levels of autonomy: most developers sit at pair-programmer stages (levels 2 to 3). The end state is a dark factory where humans give intent and goals and agents build, test and ship.",
+   "detail": "He borrows Dan Shapiro's six-stage framing. As you move up, you become more of a manager who reviews outputs, not diffs, and eventually the factory runs as a black box.",
+   "t": "1:08"
+  },
+  {
+   "idea": "Factory primitives come first: repo structure and in-distribution conventions. Co-located, modular code and standard patterns (a package.json start script, existing auth or test boilerplate) let agents find and copy what they need.",
+   "detail": "If a new engineer can onboard quickly, an agent can too. Standard, familiar layouts make the agent's job easier because it matches what models already know.",
+   "t": "4:37"
+  },
+  {
+   "idea": "Rules should emerge from failures, not be installed in bulk. When an agent goes off track, write a rule for that specific case, like an SOP showing what it may and may not do.",
+   "detail": "He says the install-every-rule-pack habit is the most misunderstood practice. Models now follow specific rules well, so a small, targeted rule set tends to hold.",
+   "t": "7:14"
+  },
+  {
+   "idea": "Verifiable systems are the most under-invested part. Agents need to check their own work through unit, integration, or UI tests, and for UI they should click through the real flow.",
+   "detail": "Backend work has clearer contracts and is easier to verify. For UI he has agents write Playwright end-to-end tests, then run computer-use sessions that record a video for a human to review.",
+   "t": "9:59"
+  },
+  {
+   "idea": "The human role shifts from worker to manager, from sync to async. Scope and parallelize work so that two agents do not touch the same area, and front-load context through a plan or long spec before sending agents off.",
+   "detail": "One unit of work can be one agent. He keeps tribal knowledge in the team and does not outsource important decisions, and says the agent's intent and spec matter more as the models improve.",
+   "t": "17:02"
+  },
+  {
+   "idea": "Isolate each agent in its own VM. Git worktrees on one machine still share databases and caches, which leaks side effects between branches. A full cloud VM with its own services gives clean, reproducible runs that scale to many agents.",
+   "detail": "It costs more and takes setup work to make the environment runnable. Once it is set up, he says it scales to hundreds or thousands of agents.",
+   "t": "21:25"
+  },
+  {
+   "idea": "Automate the human loops: where you copy-paste logs, feedback or specs into an agent, replace that step with a skill, an MCP connector or a scheduled automation. Use mismatches as a flywheel to improve the factory.",
+   "detail": "Examples: a daily summary built from Slack and GitHub, mining human review comments on merged PRs for signal, a risk-rated agentic code owner that routes high-risk PRs to past authors, and transcript-mining jobs that turn corrections into rules.",
+   "t": "22:49"
+  },
+  {
+   "idea": "Quality over velocity: spend tokens up front on tests and red-teaming for critical paths, and let security automations check specific invariants on PRs that touch sensitive files. Keep humans accountable for what ships.",
+   "detail": "He suggests writing critical tests by hand and then letting agents run them repeatedly. A security team runs about ten invariant-checking agents on PRs that change certain files. Humans should still decide on safety, security, databases, payments and authentication.",
+   "t": "39:04"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Failure-driven rule growth",
+   "how": "Each time an agent goes off track, add a specific rule or hook for that case, stored as a checked-in file such as AGENTS.md. Do not preload community rule packs.",
+   "when": "Use when setting up or maintaining agent guardrails on an existing codebase, so the rules track real failures."
+  },
+  {
+   "name": "Reviewer bot enforces house conventions the model lacks",
+   "how": "Models default to standard practice (such as adding foreign keys). A PR review agent carries the team's rule (no foreign keys, for performance) and flags violations on GitHub.",
+   "when": "Use when the desired convention differs from what models do by default, and the gap should be caught at PR time rather than in the prompt."
+  },
+  {
+   "name": "Self-verification with e2e tests and recorded runs",
+   "how": "Have the agent write Playwright tests for critical flows, then drive the UI with computer use and record a video of its own run so a human can check the result quickly.",
+   "when": "Use for UI changes where a human will not read the code, such as checking buttons, loading states, or doc-wide edits (screenshot every instance)."
+  },
+  {
+   "name": "Scoped, parallel async tasks with front-loaded specs",
+   "how": "Plan and spec the work synchronously first, then split it into units that do not touch the same code, and run each as its own agent.",
+   "when": "Use when running five or more agents at once, to avoid merge conflicts and keep each run long enough to be worth the context switch."
+  },
+  {
+   "name": "Per-agent VM with a single dev command",
+   "how": "Give each cloud agent a fresh VM with its own database and services, and wrap startup in one CLI command (for example backend start and frontend start) that the agent can call.",
+   "when": "Use when agents need full-stack runs and must not share state, and when the cost of an isolated VM is acceptable."
+  },
+  {
+   "name": "Agentic code owners with risk tiering",
+   "how": "On each PR, an agent rates risk. Low-risk PRs get improved automatically. High-risk PRs pull in the people who last changed that area for feedback.",
+   "when": "Use when static code owner lists are right most of the time but block work the rest of the time."
+  },
+  {
+   "name": "Loop and stall detection for background agents",
+   "how": "Track wall-clock time, whether the agent is touching any files, and repeated actions. Flag or stop runs that circle without progress, such as one stuck trying to reach a repo it cannot access.",
+   "when": "Use for long-running autonomous agents that can burn time and tokens without producing output."
+  },
+  {
+   "name": "Event-triggered cleanup agents",
+   "how": "Connect a signal to an agent. For example, a feature flag at 100% rollout for two weeks files a Linear issue and starts a cloud agent to remove the flag. Slack messages get triaged and fixed by an agent.",
+   "when": "Use for routine maintenance work that should not wait for a person to start it."
+  }
+ ],
+ "tools": [
+  "Cursor",
+  "Cursor cloud agents",
+  "BugBot",
+  "Playwright",
+  "AGENTS.md",
+  "Linear",
+  "Slack",
+  "GitHub",
+  "Datadog",
+  "Notion",
+  "MCP",
+  "Cursor workers",
+  "Cursor DevTool"
+ ],
+ "numbers": [
+  {
+   "claim": "Most people adopting AI tools sit between level 2 and level 3 of the autonomy ladder (pair programming). Level 4 is delegating most work and reviewing outputs before code. Speaker's estimate, not a measured figure.",
+   "t": "1:08"
+  },
+  {
+   "claim": "The speaker personally runs about 5 to 10 asynchronous cloud agents at any time, plus synchronous work in parallel.",
+   "t": "1:00:55"
+  },
+  {
+   "claim": "Speaker's estimate that Cursor runs multiple thousands of agents a day across copies of the codebase ('I bet'). Unverified.",
+   "t": "21:25"
+  },
+  {
+   "claim": "A computer-use recording session (a demo of about 7 components, one run) was guessed at about $1. The speaker says he would need to look it up. Uncertain.",
+   "t": "51:09"
+  },
+  {
+   "claim": "Code owners were right about 80% of the time, and the other 20% caused merge bottlenecks.",
+   "t": "26:58"
+  },
+  {
+   "claim": "Computer use is slow and consumes a lot of tokens, per the speaker's demo.",
+   "t": "43:42"
+  }
+ ],
+ "hot_takes": [
+  "Install-every-rule-pack is the wrong approach. Rules should come from specific agent failures on your own codebase.",
+  "The bottleneck is shifting from writing code to writing guardrails, rules and verification, and that is where the team should spend effort.",
+  "Agents have completion bias: they finish the task in front of them and do not plan for how the code will evolve. Architecture review has to stay with humans.",
+  "Humans should keep decisions on safety, security, databases, payments and authentication. Agents should not decide them.",
+  "Quality is a better use of agent throughput than raw velocity. Spend tokens on tests and red-teaming before a human gets involved.",
+  "Shared rules across a team are hard. Individuals create private rules that colleagues do not share, which splits the team's factory into silos."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Checkpointed Claude Code runs, schedules and phone approvals map onto the talk's loop and stall detection, scheduled automations, and transcript-driven rule extraction. The talk gives no concrete code for these.",
+   "action": "Add loop and stall detection to ProsHarness long runs: flag a run that has not touched files or changed state for N minutes, and send that flag to the phone approval channel."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Failure-driven rule growth and invariant checks on sensitive paths are close to Crucible's exec-gate guardrails, but the talk offers no new mechanism beyond that.",
+   "action": "Read the talk's section on security sentinel invariant agents (39:04) and consider whether AgentOS exec-gate rules should be path-scoped per file set."
+  },
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "No agent-proxy, budgeting, or storage content in the talk.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 3,
+   "why": "Directly relevant to context engineering and coding-agent setup: failure-driven rules, in-distribution repo conventions, AGENTS.md as a checked-in file, and front-loaded specs are all reusable.",
+   "action": "Audit the current CLAUDE.md and AGENTS.md files: keep only rules tied to observed failures, and add a note for each rule on which failure created it."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The verification section (self-written Playwright tests and recorded computer-use runs) applies to any coding agent that changes UI.",
+   "action": "Add a self-check step to Claude Code workflows that writes and runs a test for the changed flow and attaches the result before the human review."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

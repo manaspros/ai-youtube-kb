@@ -1,0 +1,165 @@
+{
+ "one_line": "Cloudflare's Justin Joyce on scaling go-to-market analysis with curated skill files, a three-agent report pipeline and a self-service agent workspace; a practitioner account with few hard metrics.",
+ "summary": "Justin Joyce, principal sales operations and strategy manager at Cloudflare, describes how the revenue operations team uses AI agents to scale go-to-market (GTM) work. He frames the problem as three things: back-office analysis done by hand in spreadsheets, a context gap for reps switching between calls, and an expert gap between senior sellers and new hires. His framework has three pillars: scale the operations team's analysis, push insights to teams instead of waiting for dashboards, and give GTM staff self-service access to data and expert know-how. The main building blocks are role-specific skill files that embed business logic and the questions the business typically asks, a pre-shaped data layout, a three-agent report pipeline (draft, veracity review, tone), and an internal agentic workspace on Cloudflare Workers and Durable Objects. He says a central, reviewed skill repository is the basis for the whole system, and he claims about 2x efficiency without giving a baseline. The talk ends with plans for deeper Salesforce integration and multi-agent CRM updates, and a warning about uncoordinated skill sprawl.",
+ "speakers": [
+  "Justin Joyce"
+ ],
+ "orgs": [
+  "Cloudflare",
+  "Salesforce"
+ ],
+ "format": "talk",
+ "topics": [
+  "skills-self-improvement",
+  "enterprise-adoption",
+  "multi-agent",
+  "context-engineering"
+ ],
+ "tags": [
+  "go-to-market",
+  "revenue-operations",
+  "skill-files",
+  "skill-curation",
+  "multi-agent-pipeline",
+  "self-service",
+  "weekly-summary",
+  "Cloudflare-Workers",
+  "Durable-Objects",
+  "MCP",
+  "AI-gateway",
+  "Salesforce",
+  "internal-tooling"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Traditional GTM operations do not scale",
+   "detail": "Back-office teams build analysis by hand in Excel or Sheets, which takes hours each week and grows with every new project. Dashboards serve leadership but miss many teams' needs.",
+   "t": "2:15"
+  },
+  {
+   "idea": "Two gaps slow down sellers",
+   "detail": "A context gap comes from switching between a prospect call, a customer call and an adoption call. An expert gap separates senior sellers from ramping reps in how they approach situations.",
+   "t": "3:42"
+  },
+  {
+   "idea": "Role-specific skill files encode business logic",
+   "detail": "Skill files tie business context to the data, for both technical users (SQL) and non-technical sellers. The speaker adds the questions the business actually asks, such as close-date and amount changes on opportunities, and says this covers about 80% of questions, with the rest left for complex strategic work.",
+   "t": "7:19"
+  },
+  {
+   "idea": "Push the story instead of waiting for dashboards",
+   "detail": "A weekly summary highlights pacing to goals, trends, standouts and watches, so people get the story without searching. He argues that adoption of dashboards is uneven, so the story has to be scaffolded across the business.",
+   "t": "8:16"
+  },
+  {
+   "idea": "Shape the data before the agent sees it",
+   "detail": "Data is reshaped by time, business slice (manager, theater) and metric, moving from wide to long for trend work. The filtering and aggregation logic is written up front, which he says handles more than 80% of requests.",
+   "t": "9:32"
+  },
+  {
+   "idea": "Three-agent review pipeline for reports",
+   "detail": "A drafting agent calls MCP tools to gather data, a reviewer agent checks the veracity of the draft, and a tone agent uses a multi-shot prompt to present risks and opportunities evenly. Every LLM call is observable. The team spent 2-3 months reviewing every run before trusting it.",
+   "t": "10:51"
+  },
+  {
+   "idea": "Curated central skill repository with review",
+   "detail": "Skills are submitted to a central alias, reviewed by GTM and operations staff, and kept to one expert-level skill per level to prevent sprawl. He calls skill curation the basis for the agentic workforce, since it makes behaviour more predictable and deterministic.",
+   "t": "13:16"
+  },
+  {
+   "idea": "Scale is not the only goal; sprawl needs a strategy",
+   "detail": "He calls the current period the Cambrian stage, with an explosion of skills and experiments. He argues the team must later step back and set a strategic approach so every team's agent stays aligned with the source of truth in the systems.",
+   "t": "18:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Role-specific skill files with embedded question catalogue",
+   "how": "Write one skill file per role that combines business definitions, column semantics and the questions the business typically asks, tested against real usage. Let non-SQL users query data through the agent.",
+   "when": "When analysts are a bottleneck and most requests repeat a small set of question types."
+  },
+  {
+   "name": "Pre-shaped analytical data for agents",
+   "how": "Reshape data by time, business slice and metric, and convert wide tables to long for trend analysis. Do the filtering and aggregation logic up front so the agent works on clean inputs.",
+   "when": "When agents need consistent, repeatable analysis of team performance data."
+  },
+  {
+   "name": "Draft, verify, then tone multi-agent report pipeline",
+   "how": "Chain three agents: a drafter that gathers data through MCP tools, a reviewer that checks each claim's veracity, and a tone agent with a multi-shot prompt that writes the final message and balances risks against opportunities. Trace every LLM call.",
+   "when": "When generated business narratives must be trusted and read by people who did not write the prompts."
+  },
+  {
+   "name": "Push generated narratives instead of dashboards",
+   "how": "Send a scheduled summary (for example weekly) that gives pacing, trends, standouts and watch items, with drill-down into dashboards or raw data available on demand.",
+   "when": "When dashboards exist but most people never open them."
+  },
+  {
+   "name": "Reviewed central skill catalogue",
+   "how": "Route skill submissions to one shared alias, have domain owners review them, and keep one expert-level skill per seniority level so that duplicates do not accumulate.",
+   "when": "When many teams are building their own agent skills and you need consistent behaviour."
+  },
+  {
+   "name": "Per-user persistent agent workspace",
+   "how": "Give each user an agentic workspace with its own compute and persistent storage (the speaker names Cloudflare Workers and Durable Objects), connected to MCP servers and an AI gateway, with curated skills loaded in.",
+   "when": "When non-engineers need self-service agents that keep state across sessions."
+  }
+ ],
+ "tools": [
+  "Cloudflare Workers",
+  "Cloudflare Durable Objects",
+  "MCP",
+  "AI Gateway",
+  "Salesforce",
+  "Gemini (mentioned as a phone analogy)"
+ ],
+ "numbers": [
+  {
+   "claim": "Back-office analysis takes multiple hours each week per recurring analysis (described, not measured).",
+   "t": "2:15"
+  },
+  {
+   "claim": "Goal stated as cutting work that takes two hours down to about five minutes (aspirational framing).",
+   "t": "5:00"
+  },
+  {
+   "claim": "Skill-file question set aimed at answering about 80% or more of business questions, with the rest handled as complex strategic work.",
+   "t": "7:19"
+  },
+  {
+   "claim": "Automated analysis pipeline handles 80-plus percent of requests, by the speaker's experience.",
+   "t": "10:51"
+  },
+  {
+   "claim": "Pipeline tested for about two to three months, with every run reviewed before it was trusted.",
+   "t": "10:51"
+  },
+  {
+   "claim": "Claimed about 2x efficiency for the teams; no baseline or method given.",
+   "t": "17:00"
+  }
+ ],
+ "hot_takes": [
+  "Skill curation is the basis for the whole agentic workforce.",
+  "Dashboards are adopted unevenly, so the business needs stories pushed to it rather than waiting for people to look.",
+  "We are at the Cambrian stage of agents, with an explosion of skills, and need a strategic approach to alignment with the source of truth.",
+  "Embedding business logic in skill files is what makes agents predictable and deterministic across a team."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "SkillForge needs a governed route from mined telemetry to reusable skills. The talk describes a reviewed central catalogue and warns about skill sprawl, which bears directly on that open question.",
+   "action": "Add a review step and an owner field to skills SkillForge mines before they become reusable, and count skills created per team to watch for sprawl."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The draft, veracity review and tone chain is close to ProsHarness's plan, critique and debate flow. A separate reviewer that checks claims against source data is a concrete pattern to test.",
+   "action": "Add a separate reviewer step after the planning or draft stage that checks each claim against the source data before the final output is produced."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

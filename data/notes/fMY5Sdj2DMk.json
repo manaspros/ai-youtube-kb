@@ -1,0 +1,167 @@
+{
+ "one_line": "Tutorial for writing CLAUDE.md rules that keep Claude Code on task: think-first, simplicity, surgical edits, verifiable goals, git safety, scoped rule files and a corrections log.",
+ "summary": "The video argues that the project instruction file (CLAUDE.md, or AGENTS.md for other agents) decides how well a coding agent follows your intent, and that running /init is not enough. It presents a set of rules it attributes to Andrej Karpathy's skills repo plus the team's own experience: have Claude state assumptions and ask clarifying questions before coding, prefer the simplest solution (rewrite if a 200-line answer could be 50), and make surgical changes that trace only to the user's request while reporting unrelated issues instead of fixing them. It then adds goal-driven execution, meaning Claude turns each task into tests or another verifiable check and iterates until they pass, with browser tools such as the Claude Chrome extension or Puppeteer MCP for UI checks. Other rules cover listing only non-default commands (for example gh instead of git, pnpm instead of npm), appending user corrections to a dedicated learnings file, asking before irreversible git or delete commands, and splitting instructions into path-scoped rule files and per-package CLAUDE.md files in monorepos. Finally it recommends a project description at the top, instructions ordered hard, medium, then low priority, verification (build, tests, lint, types) before reporting done, and keeping the file under about 300 lines. The advice is practical but mostly unmeasured, and a mid-video sponsor segment interrupts it.",
+ "speakers": [],
+ "orgs": [
+  "Klaus (sponsor)"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "context-engineering",
+  "coding-agents",
+  "testing-verification"
+ ],
+ "tags": [
+  "CLAUDE.md",
+  "AGENTS.md",
+  "agent instructions",
+  "prompting",
+  "karpathy-guidelines",
+  "verification",
+  "git-safety",
+  "path-scoped rules",
+  "monorepo",
+  "learnings file",
+  "puppeteer-mcp",
+  "chrome-extension"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The project instruction file is the main lever on agent behavior, and /init alone is insufficient",
+   "detail": "The speaker says a structured, project-specific CLAUDE.md (or AGENTS.md for other agents) is what makes the agent perform; without it you keep fighting the agent on every task. Hard rules only matter if the agent actually follows them.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Make Claude state assumptions and surface interpretations before coding",
+   "detail": "Add an explicit instruction to think before coding: state assumptions, present multiple interpretations if they exist, and ask questions so the user picks the implementation. The aim is to stop the agent from guessing from training-data patterns and then needing course correction. Attributed to Karpathy's skills repo.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Enforce simplicity with a concrete size threshold",
+   "detail": "Ask for the simplest solution and avoid features beyond the request, with proper error handling. The rule of thumb given: if something solvable in 200 lines could be 50, Claude should rewrite it because the approach is wrong. Large verbose solutions are harder to refactor and cost more tokens later.",
+   "t": "1:14"
+  },
+  {
+   "idea": "Surgical changes: every diff line must trace back to the request",
+   "detail": "Agents tend to reformat or tidy adjacent code. The rule: check each change against the user's request; if it does not trace back, do not make it. Unrelated dead code should be mentioned, not removed. The speaker says this keeps the agent's attention from being split.",
+   "t": "2:26"
+  },
+  {
+   "idea": "Goal-driven execution: turn each task into a verifiable success criterion",
+   "detail": "Have Claude define success criteria and convert tasks into checks, e.g. for input validation write tests for invalid inputs with expected return values, then iterate until they pass. Logic can be verified with tests; UI cannot, so a browser tool is needed for visual checks.",
+   "t": "3:32"
+  },
+  {
+   "idea": "Only document what Claude does not already know",
+   "detail": "Skip default dev-server and build commands that Claude already knows. List only the tools and commands you want it to use instead of its defaults, such as gh for GitHub operations instead of git, and pnpm instead of npm when the project uses it.",
+   "t": "4:53"
+  },
+  {
+   "idea": "Treat CLAUDE.md as a living file fed by user corrections",
+   "detail": "When the user says an implementation is wrong, Claude applies the fix and then appends the lesson to a dedicated learnings file that it references later, building a do-not and do-this knowledge base over time. Attributed to the Claude Code creator's workflow.",
+   "t": "6:17"
+  },
+  {
+   "idea": "Require confirmation for irreversible git and delete commands",
+   "detail": "Instruct Claude not to run irreversible commands without asking: force pushes, resetting the head, merging branches, forced removes. If unsure whether a command is destructive, it should ask rather than assume.",
+   "t": "8:34"
+  },
+  {
+   "idea": "Split instructions into path-scoped rule files and per-package CLAUDE.md files",
+   "detail": "Rule files declare their scope on the first line (e.g. API rules) and are referenced from the main CLAUDE.md, so they load only when relevant and avoid context bloat. In monorepos each sub-project gets its own CLAUDE.md, and the root file keeps only broadly applicable rules.",
+   "t": "9:47"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Behavioral rule block for CLAUDE.md (Karpathy-derived)",
+   "how": "Add four rules: (1) think before coding, stating assumptions and presenting interpretations, asking when unclear; (2) simplicity first, no features beyond the request, rewrite if a solution is far larger than needed (speaker's example: 200 lines vs 50); (3) surgical changes, each change must trace to the user's request, mention unrelated dead code instead of deleting it; (4) goal-driven execution, convert each task into a verifiable goal (tests first, then iterate until they pass). Exact wording is not given in the video; it points to Karpathy's skills repo for the originals.",
+   "when": "Any project where the agent over-engineers, drifts into adjacent refactors, or starts coding before the requirements are clear. Speaker says it is added to every project, most of all large ones."
+  },
+  {
+   "name": "Verification gate before reporting completion",
+   "how": "Instruct the agent to run every available check (unit tests, linting, type checks, build) and confirm the feature works, not just that the code exists, before declaring a task done. For UI work, require a visual check through a browser tool: the Claude Chrome extension or Puppeteer MCP.",
+   "when": "Before trusting agent-reported completion, especially for UI changes that cannot be judged from the code alone."
+  },
+  {
+   "name": "List only non-default tooling",
+   "how": "Omit commands the model already knows (dev server, build). Add explicit lines for the tools the project uses instead of defaults: e.g. use the GitHub CLI (gh) for all operations instead of git commands, and pnpm instead of npm.",
+   "when": "When you have installed CLIs or package managers that differ from Claude's defaults, to keep the file short and stop it falling back to defaults."
+  },
+  {
+   "name": "Corrections-to-learnings loop",
+   "how": "Add an instruction: when the user says an implementation is wrong, first apply the correction, then append the lesson to a dedicated learnings file. Reference that file from CLAUDE.md so it is consulted later. The file is a running record of what not to do and the correct approach.",
+   "when": "Long-running projects where the same mistakes recur across sessions; the file grows into a project-specific knowledge base."
+  },
+  {
+   "name": "Destructive-command confirmation rule",
+   "how": "State that irreversible commands require explicit user permission first: force push, resetting the head, merging branches, forced removes. Add that if the agent is unsure whether a command is destructive, it must ask instead of assuming.",
+   "when": "Any repo where an agent has shell and git access, to keep production and branch state safe."
+  },
+  {
+   "name": "Path-scoped rule files and nested CLAUDE.md",
+   "how": "Create separate rule files for areas like API conventions, with the scope declared on the first line. Mention their location in the main CLAUDE.md so the agent knows they exist. In a monorepo, put a CLAUDE.md in each sub-project and keep only broadly applicable rules in the root file.",
+   "when": "Large repos or monorepos where instructions for one area would distract the agent while it works in another."
+  },
+  {
+   "name": "CLAUDE.md structure: description first, priority tiers, length cap",
+   "how": "Place a project description at the very top (what the app does, services, dependencies, how it runs). Order remaining rules as hard (non-negotiable), then medium (important, somewhat negotiable), then low (references). Keep the file under about 300 lines.",
+   "when": "Whenever writing or reviewing a project CLAUDE.md; the speaker says performance degrades past roughly 300 lines."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "CLAUDE.md",
+  "AGENTS.md",
+  "Karpathy skills repo (referenced, not named as a package)",
+  "Claude Chrome extension",
+  "Puppeteer MCP",
+  "Git",
+  "GitHub CLI (gh)",
+  "npm",
+  "pnpm",
+  "Klaus (sponsor, AI agent hosting)",
+  "OpenClaw (sponsor, open-source AI agent)",
+  "Exa (sponsor, built-in tool)",
+  "Apollo (sponsor, built-in tool)",
+  "Clawbert (sponsor, autofix agent)"
+ ],
+ "numbers": [
+  {
+   "claim": "Recommended CLAUDE.md length cap of about 300 lines; performance reportedly degrades beyond it (no measurement shown)",
+   "t": "12:18"
+  },
+  {
+   "claim": "Simplicity threshold: if a solution could be 50 lines instead of 200, rewrite it",
+   "t": "2:26"
+  },
+  {
+   "claim": "Sponsor offer: $15 of OpenRouter credits on sign-up (sponsor claim, not verified)",
+   "t": "7:31"
+  }
+ ],
+ "hot_takes": [
+  "The title promises an 'unfair advantage', but the content is a checklist of generic CLAUDE.md rules with no before/after comparison or measurements; the 300-line limit and the simplicity threshold are asserted, not demonstrated.",
+  "A sponsored segment for Klaus / OpenClaw (7:31 to 8:34) interrupts the tutorial. It is unrelated to CLAUDE.md practice.",
+  "The rules are attributed to Karpathy's skills repo and the Claude Code creator's workflow, but the video gives no links or exact wording, and the claims are second-hand."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Infra project, not a coding-agent workflow. The corrections-to-learnings file is a loose manual analogue of SkillForge turning agent feedback into reusable skills.",
+   "action": "Optional: keep a plain learnings file for coding sessions as a low-cost precursor to SkillForge's governed skill capture; no code change needed now."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI, so its own project instructions and destructive-command handling apply directly. The video's destructive-command rule, verification-before-done gate and hard/medium/low ordering are candidates for its harness defaults.",
+   "action": "Review ProsHarness's CLAUDE.md against this checklist: add the irreversible-command confirmation rule, a verification-before-done gate, and a hard/medium/low ordering with a 300-line cap; consider enforcing the destructive-command check in the harness rather than only in prose."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,174 @@
+{
+ "one_line": "Alex Shaw (Terminal-Bench, Harbor) argues agents behave like ML models, so teams should build environments (instruction, sandbox, verifier) and run parallel rollouts for evals, training data, RL and agentic map-reduce.",
+ "summary": "Alex Shaw of the Laude Institute opens by contrasting 2018 software engineering, where code behavior was predictable before running it, with 2026 agent development, where a model call makes the program's output probabilistic. He quotes Francois Chollet's view that generated code is a black-box artifact to be managed by empirical evaluation, and extends it to agent performance in general. He maps machine-learning concepts onto agent development: training data and evals become environments, weights become skills, prompts, tools and the model, and gradient steps become pull requests. An environment has three parts: an instruction, a sandbox and a verifier, specified as a standard file directory. Harbor is presented as the open-source format and framework that runs these rollouts in parallel with any agent, model and sandbox, with a registry of several hundred eval sets. The talk lists four eval types teams build (internal coding, agent usability of their product, agent-powered features, and internal process automation) and several non-eval uses such as agentic map-reduce over session logs. It closes with downstream uses (SFT, RL, text-based hill-climbing on trajectories) and a list of benchmarks built on Harbor.",
+ "speakers": [
+  "Alex Shaw"
+ ],
+ "orgs": [
+  "Laude Institute",
+  "Terminal-Bench",
+  "Harbor",
+  "Modal",
+  "Tinker",
+  "Ramp",
+  "Cognition",
+  "Scale",
+  "Poolside",
+  "LangChain",
+  "Snorkel",
+  "Handshake",
+  "AfterQuery"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "agent-architecture",
+  "sandboxing-execution",
+  "training-finetuning-rl"
+ ],
+ "tags": [
+  "harbor",
+  "terminal-bench",
+  "rollouts",
+  "environments",
+  "eval-driven-development",
+  "agentic-map-reduce",
+  "reward-hacking",
+  "sandboxes",
+  "trajectories",
+  "ml-analogy"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent performance should be treated as a black-box ML artifact measured empirically",
+   "detail": "Speaker contrasts 2018 code, where a regex's output is certain, with a 2026 model-call program whose output is probabilistic. He extends Chollet's point about generated code to agent behavior in general.",
+   "t": "2:06"
+  },
+  {
+   "idea": "Agent development maps onto ML with new names",
+   "detail": "Training data and evals become environments; weights become skills, prompts, tools and the model choice; the loss becomes environment rewards; the optimizer becomes context-based optimization (a text optimizer, captioned as 'JEPA'); a gradient step becomes a pull request; overfitting becomes reward hacking. Tooling for the left column exists, the right column is early.",
+   "t": "6:23"
+  },
+  {
+   "idea": "An environment is instruction + sandbox + verifier, written as a directory",
+   "detail": "The instruction tells the agent the task, the sandbox is a virtual computer where it acts, and the verifier (tests, rubric or an agent) decides whether it succeeded. Harbor specifies this as a file directory layout that the speaker says has become a fairly standard format, so environments can move between teams.",
+   "t": "7:42"
+  },
+  {
+   "idea": "A rollout is a fixed loop whose trajectory matters as much as the final reward",
+   "detail": "Start sandbox, run agent until a stop condition, keep the trajectory, pass the sandbox to the verifier, stop the sandbox, record reward(s), then aggregate across a dataset. Harbor adds multi-step runs, separate verifier sandboxes, artifact collection and simulated users on top of this base.",
+   "t": "8:56"
+  },
+  {
+   "idea": "Build the eval first, then optimize against it, and welcome all models",
+   "detail": "He quotes Satya Nadella: start with the eval that matters and your ability to grade the outcome, then consider any model. Owning the grader lets a team pick the cost-performance point on the Pareto frontier rather than trust a vendor or public benchmark.",
+   "t": "11:31"
+  },
+  {
+   "idea": "Every company that uses computers should build agent evals",
+   "detail": "He argues nearly all companies qualify, because any computer-based process is a candidate for automation. He lists four eval types that Harbor users build: how well agents build your product (internal codebase benchmarks, e.g. a Ramp SWE-bench-style set), how well agents use your product (headless mode), how well agents power product features, and how well agents automate internal processes.",
+   "t": "12:43"
+  },
+  {
+   "idea": "Harbor also serves as a fan-out engine for non-eval jobs",
+   "detail": "Agentic map-reduce runs many agents in parallel sandboxes, then aggregates results. The demo maps over 32 Codex sessions with a cheap, fast model (Cursor CLI) and reduces them with a stronger model to summarize recurring mistakes into a feedback file. He notes this use case emerged from users rather than being planned.",
+   "t": "16:50"
+  },
+  {
+   "idea": "Trajectories and rewards feed training and optimization downstream",
+   "detail": "People use rollouts for SFT, for RL with rewards (Tinker has an integration), and for evolutionary or hill-climbing loops that use text feedback from trajectories and evals to improve a harness or skill. He also mentions a multi-billion-dollar market in which experts write tasks and sell them to labs.",
+   "t": "18:12"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Environment as a three-part directory (instruction, sandbox, verifier)",
+   "how": "Specify each task as a directory with the instruction for the agent, the sandboxed starting state, and a verifier made of programmatic tests, rubrics, or an agent. Keep it in a shared layout so tasks can be swapped between tools.",
+   "when": "Use when you want evals or training data that are portable across agents, models and sandbox providers."
+  },
+  {
+   "name": "Separate rollout, trajectory capture and verification",
+   "how": "Run the agent in a fresh sandbox until a stop condition, store the full trajectory, then hand the sandbox to a verifier that produces a reward. Aggregate rewards across the dataset to get the eval score.",
+   "when": "Use when you need to diagnose failures later from the trajectory, not just the pass/fail score, or when you may reuse trajectories for SFT or RL."
+  },
+  {
+   "name": "Parallel rollouts with a fire-and-forget launch",
+   "how": "Launch many rollouts at once (the demo uses 64 parallel workers) and let a hosted runner execute them, so results arrive later instead of blocking the terminal.",
+   "when": "Use when a rollout takes a long time and the loop needs to run at high throughput overnight."
+  },
+  {
+   "name": "Agentic map-reduce over agent logs",
+   "how": "Map: a cheap, fast model reviews each session and writes a structured record (mistake, reason, correction). Reduce: a stronger model reads the records and summarizes recurring failure categories into a feedback file. Run each map step in its own sandbox.",
+   "when": "Use when you need to mine many agent sessions for patterns and can afford to spend more compute on the summary step."
+  },
+  {
+   "name": "Own the eval before choosing a model",
+   "how": "Build a grader for the outcome that matters to your business, such as an internal codebase benchmark. Then compare models and coding agents against it instead of trusting public leaderboards.",
+   "when": "Use when picking a coding agent or model for your own product, or when token spend needs to be justified."
+  },
+  {
+   "name": "Design for agent users of your product",
+   "how": "Measure how well agents complete tasks through your product's headless interface, then change the product to fix the failures the eval reveals.",
+   "when": "Use when your product has an API or CLI that agents will call, and you want more agent usage."
+  }
+ ],
+ "tools": [
+  "Harbor",
+  "Terminal-Bench 2.1",
+  "Codex (GPT-5.5 run in the demo)",
+  "Cursor CLI (map step in demo)",
+  "Modal (sandbox backend in demo)",
+  "Tinker (RL integration)",
+  "A frontier model transcribed as 'Fable 5' (reduce step in demo; name may be a caption error)",
+  "LangChain Deep Agents with sandboxes (integration)"
+ ],
+ "numbers": [
+  {
+   "claim": "Harbor registry holds roughly 300 to 400 eval sets (speaker's approximate count)",
+   "t": "10:16"
+  },
+  {
+   "claim": "Two or three new benchmarks launched the same day run on Harbor",
+   "t": "10:16"
+  },
+  {
+   "claim": "Demo eval runs 64 rollouts in parallel on Terminal-Bench 2.1 with Codex and GPT-5.5; the launch feature can run around 10,000 rollouts unattended on Harbor servers",
+   "t": "13:57"
+  },
+  {
+   "claim": "Agent builder and user population is claimed to be probably an order of magnitude larger than the number who ever did machine learning (speaker's estimate)",
+   "t": "6:23"
+  },
+  {
+   "claim": "A market for expert-written tasks sold to model labs is described as multi-billion dollars (speaker's estimate)",
+   "t": "15:21"
+  },
+  {
+   "claim": "Agentic map-reduce demo capped at 32 Codex session logs",
+   "t": "16:50"
+  }
+ ],
+ "hot_takes": [
+  "Agent development is closer to machine learning than to traditional software engineering, so agent behavior should be managed as a black box with empirical evals.",
+  "Nearly every company that uses computers should be building agent evals now, since any computer-based process is a candidate for automation.",
+  "Once you own a grader for your outcome, you no longer need to trust a model vendor's or a public benchmark's claims."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Harbor's environment format (instruction, sandbox, verifier) and rollout loop are a reusable reference for evaluating sandboxed code-execution in Crucible, but the talk does not cover AgentOS's proxy or KV-cache work.",
+   "action": "Read the Harbor docs on the environment directory layout and compare it with what Crucible would need to define an eval task."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI for long runs, and this talk gives a concrete way to evaluate such runs as sandboxed rollouts with stored trajectories and verifiers, which could check checkpoint/resume and plan quality.",
+   "action": "Write one ProsHarness task (instruction, sandbox, verifier) for a checkpoint/resume run and try a parallel rollout of it on Harbor to see if the harness is measurably better."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

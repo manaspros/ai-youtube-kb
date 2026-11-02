@@ -1,0 +1,165 @@
+{
+ "one_line": "Lawrence Jones (Incident.io) on using AI tools to debug and improve multi-prompt AI systems: export UI traces and eval suites as file systems for coding agents, then run parallel backtest analysis pipelines.",
+ "summary": "Lawrence Jones, a founding engineer at Incident.io, explains how his team manages the complexity of their AI SRE product, which runs investigations with hundreds of telemetry queries and very many prompts. He treats evals as AI unit tests stored in YAML next to the Go prompts, but large production-derived evals became unmaintainable, so the team built a small CLI that lets coding agents list, add, and edit test cases without loading the whole suite. The bigger shift was exporting their debugging UIs (traces, interactions, investigations) as plain text file trees, which Claude Code can search and reason over inside a sandbox to find which prompt or tool to change. For fleet-level questions, they run daily backtests and then a Claude Code analysis pipeline defined as markdown playbooks in a repo: roughly 25 parallel subagents analyse each investigation and write results to files, then a clustering stage groups failure modes to explain why an accuracy number moved. The speaker argues that file systems beat MCP or browser agents for bulk context, and that any complex analysis should be written as a repeatable AI runbook.",
+ "speakers": [
+  "Lawrence Jones"
+ ],
+ "orgs": [
+  "Incident.io",
+  "Anthropic",
+  "Netflix",
+  "Etsy",
+  "Skyscanner"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "observability",
+  "coding-agents",
+  "multi-agent"
+ ],
+ "tags": [
+  "eval-driven-development",
+  "file-system-as-context",
+  "backtests",
+  "agent-runbooks",
+  "trace-debugging",
+  "incident-response",
+  "parallel-subagents",
+  "failure-clustering",
+  "prompt-regression"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Evals are AI unit tests, kept next to the prompts",
+   "detail": "Each eval runs a prompt on input data and grades the output with criteria (e.g. style and meaning preserved). Evals live in YAML beside the Go prompt code and gate prompt changes before merge.",
+   "t": "4:43"
+  },
+  {
+   "idea": "Production-derived evals become unmaintainable",
+   "detail": "Real evals often contain a whole incident report, which is the only thing that triggers the bad behaviour. These files grow very large and coding agents hit context limits trying to read them.",
+   "t": "6:02"
+  },
+  {
+   "idea": "A small CLI lets agents work with large eval suites",
+   "detail": "The CLI lists test cases and adds, replaces, or edits one at a time, so the agent never loads the full suite. A runbook (or skill) tells the agent how to use it.",
+   "t": "6:02"
+  },
+  {
+   "idea": "Agent prompt-fix loop: failing eval first, then fix, then regression check",
+   "detail": "The agent writes an eval that reproduces the bug, edits the prompt until it passes, re-runs the full suite to catch regressions, and then consolidates the prompt so it does not bloat.",
+   "t": "7:31"
+  },
+  {
+   "idea": "Multi-prompt systems hide the cause of bad behaviour",
+   "detail": "The chatbot graph has around 10 or more agents (the speaker says it may be 50), and each investigation step expands into hundreds of prompts and tool calls. Knowing which prompt to change is the hard part, not the red-green cycle.",
+   "t": "8:48"
+  },
+  {
+   "idea": "Export UI debugging views as file trees",
+   "detail": "Agents struggle with UI tools, but they are good with files and standard tools. Each AI interaction is downloaded as a self-documenting text file tree, and Claude Code is pointed at it in a sandbox alongside the codebase to find where to change the system.",
+   "t": "9:50"
+  },
+  {
+   "idea": "Backtest pipelines explain metric movements, not just the roll-up",
+   "detail": "A daily backtest gives a single rolled-up accuracy number that does not show why it moved. Downloading all investigations into files and running parallel per-item analysis, then cohort clustering, produces a report on why the system does well or badly on a given customer account.",
+   "t": "12:28"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Eval-tool CLI for agents",
+   "how": "Build a small CLI that can list, get, add, replace, and edit individual test cases in a large eval suite file, so an agent never reads the whole file. Pair it with a runbook or skill that explains the workflow.",
+   "when": "Eval suites have grown large enough that agents hit context limits when they read or edit them directly."
+  },
+  {
+   "name": "Runbook-driven prompt fix",
+   "how": "Have the coding agent (1) write an eval that reproduces the failure, (2) edit the prompt until the eval passes with repeats and an acceptable pass rate, (3) run the whole suite to check for regressions, and (4) consolidate the prompt to keep it simple.",
+   "when": "A prompt behaves wrongly and the change must not break other cases. Use it for any prompt edit that will be merged."
+  },
+  {
+   "name": "Download trace or interaction as a file tree",
+   "how": "Render each AI interaction, including all prompts, tool calls, and sub-steps, as text files in a folder structure that mirrors the UI. Put it in a sandbox with the codebase and let the coding agent search it with ordinary tools.",
+   "when": "A bad interaction needs root-causing across many prompts and tools, and the UI is too slow for humans to inspect."
+  },
+  {
+   "name": "Parallel per-item analysis with file-based resume",
+   "how": "Fan out about 25 subagents, one per investigation or run. Each writes its analysis to a file. Keep these files as checkpoints so a run can stop and restart without redoing finished items.",
+   "when": "You must analyse hundreds or thousands of agent runs in batch, and the analysis must survive interruptions."
+  },
+  {
+   "name": "Cohort clustering over failures",
+   "how": "After the per-item analysis, run a second stage that clusters the findings by failure type or cause. Use the clusters to explain why a metric moved and what to change.",
+   "when": "A backtest or eval metric changes and you need causes, not only the number."
+  },
+  {
+   "name": "Analysis as a repeatable markdown playbook",
+   "how": "Store the analysis flow as markdown playbooks in a repo that a coding agent follows each time, so the same steps run reliably on each new batch.",
+   "when": "The same complex analysis will run again and again, for example on a daily backtest."
+  },
+  {
+   "name": "Investigate, fix, then verify in one session",
+   "how": "In one coding-agent session with the codebase loaded, have the agent analyse the failure, propose the change, make it, and then prove it with the eval red-green loop before opening a PR.",
+   "when": "A root cause has been found in trace or backtest analysis and a code or prompt change is the fix."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "Go",
+  "YAML"
+ ],
+ "numbers": [
+  {
+   "claim": "Team has been building this system for about 1.5 to 2 years",
+   "t": "0:57"
+  },
+  {
+   "claim": "An investigation runs hundreds of telemetry queries (logs, metrics, traces, historical incidents), and behind it are hundreds, if not thousands, of prompts",
+   "t": "0:57"
+  },
+  {
+   "claim": "A human normally needs about an hour to fully understand an incident well enough to judge whether an investigation was right",
+   "t": "2:10"
+  },
+  {
+   "claim": "Chatbot agent graph has about 10 agents, and the speaker says it may be around 50 (too large for the slide)",
+   "t": "8:48"
+  },
+  {
+   "claim": "Daily backtests run across thousands of investigations over hundreds of customer accounts; one roll-up showed 86% accurate RCA on the team's own account",
+   "t": "12:28"
+  },
+  {
+   "claim": "Analysis pipeline starts about 25 parallel agents, one per investigation",
+   "t": "13:48"
+  },
+  {
+   "claim": "Speaker claims a runbook-based approach saves days or weeks of work (his estimate, not measured)",
+   "t": "16:11"
+  }
+ ],
+ "hot_takes": [
+  "File systems are exceptionally good agent context. The speaker says an MCP server or human-use browser agents would have been much less effective than bulk-downloading the data for a coding agent to search.",
+  "Any complex analysis should be written as an AI runbook rather than done ad hoc, and this saves days or weeks.",
+  "Debugging tools should be built for coding agents first, since agents cannot use UI tools well."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "SkillForge needs to mine agent telemetry into skills and has an open question on success signals. The backtest plus per-run analysis plus clustering pattern is a direct way to test candidate success signals offline.",
+   "action": "Prototype an offline SkillForge pass: export a batch of agent runs to text files, run about 25 parallel subagents to label each run against candidate success criteria, then cluster the failures. Use it to compare candidate success signals before building them into the pipeline."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Its per-step file outputs and resume behaviour mirror the speaker's file-per-item checkpoints for parallel subagent runs.",
+   "action": "Check whether ProsHarness checkpoint/resume state for long runs can be written as per-item files that a parallel subagent fan-out fills in and a later stage reads, so resumed runs skip finished items."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

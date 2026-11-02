@@ -1,0 +1,50 @@
+# What REALLY Happened When 16 Claude Agents Tried To Build a C Compiler From Scratch
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `SVREdZHPG1I` · [watch](https://youtu.be/SVREdZHPG1I) · **date:** 2026-03-02 · **length:** 9:10 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Unnamed Better Stack presenter · **orgs:** Anthropic, Better Stack, GNU (GCC)
+- **topics:** multi-agent, testing-verification, coding-agents, agent-architecture · **tags:** parallel-agents, git-task-locking, ralph-loop, test-harness, deterministic-sampling, gcc-oracle, progress-files, role-specialization, c-compiler, autonomy-critique
+
+> Better Stack breaks down Anthropic's experiment with 16 parallel Claude Opus 4.6 agents building a C compiler: git-based task locks, shared test harnesses, GCC as an oracle, and why the presenter says it was not fully autonomous.
+
+## Summary
+Better Stack reconstructs Nicholas Carlini's experiment, in which 16 Claude Opus 4.6 agents ran in Docker containers for about two weeks and produced a C compiler that could build the Linux kernel and run Doom. The agents shared one upstream git repo, each cloned it to a workspace, and a Ralph-style loop gave each one a fresh session per task. Task claiming used a lock file committed to git, so a duplicate claim fails at push time. The presenter highlights the test harness design (quiet output, deterministic random subsets of huge test suites, GCC as a reference for the kernel build), progress files as memory across sessions, and role-specialized agents. He then argues the result is less impressive than it looks: the agents had access to open-source test suites and a GCC binary, a human designed the harness, roles and loop, and the output still relied on GCC's assembler, linker and 16-bit x86 compiler and ran slower than unoptimized GCC. The presenter's account of the locking mechanism is his own inference, since the source does not describe it.
+
+## Key ideas
+- **Parallel agents shared one upstream git repo: each agent clones to its own workspace, works in isolation, and pushes back, resolving merge conflicts itself.** — 16 Docker containers each mounted the shared upstream directory, cloned to a workspace, and pushed changes back. Isolation let agents work without stepping on each other. ([0:57](https://youtu.be/SVREdZHPG1I?t=57))
+- **A Ralph loop kept agents running: finish a task, push, pick the next task, and start a fresh session.** — Long-running agents relied on clearly defined tasks. Each new task got a new session, so no context carried over between tasks. ([0:57](https://youtu.be/SVREdZHPG1I?t=57))
+- **Task claiming used a git-based lock: an agent commits a file named after the task, and a duplicate claim is rejected at push time.** — The presenter says the author never describes this mechanism, so this is his inference from the setup. Git refuses the push when the lock file already exists, and the agent picks another task. ([2:22](https://youtu.be/SVREdZHPG1I?t=142))
+- **Keep test output small for the agent: print only errors, and write the full logs to a file the agent can read on demand.** — The harness drew on high-quality tests from SQLite, LibJPEG and Redis. Limiting output avoids polluting the agent's context window. ([2:22](https://youtu.be/SVREdZHPG1I?t=142))
+- **A deterministic 'fast' mode ran a random 1% or 10% slice of a huge test suite, with the same seed for every agent.** — Each agent ran 10%, so 16 agents together covered 160% of the suite. The shared seed made the sampling reproducible, and the slices gave full coverage faster than one agent running everything. ([3:40](https://youtu.be/SVREdZHPG1I?t=220))
+- **For the Linux kernel build, the team used GCC as an oracle: each agent compiled its own section with its compiler and GCC built the rest, so any breakage pointed to that agent's section.** — This stopped agents from fixing the same bug in parallel and overwriting each other's fixes. The presenter notes this is controversial, since it uses an existing compiler for a task meant to be built from scratch. ([4:42](https://youtu.be/SVREdZHPG1I?t=282))
+- **Fresh sessions have no memory, so the team kept a README and progress files recording what was done and where work stopped.** — New sessions start from those files instead of re-introducing bugs that were already fixed. ([6:00](https://youtu.be/SVREdZHPG1I?t=360))
+- **Once new feature work slowed, agents were given separate roles: one for duplicate-code detection, one for performance, and one to critique the design.** — Specialized reviewers were used to find the problems that parallel feature work tends to create. ([6:00](https://youtu.be/SVREdZHPG1I?t=360))
+
+## Techniques
+- **Git-commit task lock for parallel agents** — Before working, an agent claims a task by committing a lock file named after it and pushing to the shared upstream. A push rejected because the file already exists means another agent has the task, so pick another one. The presenter describes this as the mechanism but notes the author does not spell it out. *When:* Several agents share one repo and there is no central scheduler. Git's push rejection acts as a cheap, atomic claim.
+- **Isolated clones with push-to-upstream** — Each agent or container clones the shared repo to its own workspace, commits there, then pushes. If the push conflicts, the agent resolves the merge itself and pushes again. *When:* Parallel coding agents that must not block each other on a shared working tree.
+- **Ralph loop with a fresh session per task** — Define tasks clearly. An agent finishes one, pushes, then starts a new session on the next task. Repeat until the queue is empty. *When:* Long-running agent work where context drift matters more than continuity. It depends on tasks being well defined.
+- **Quiet test harness with a log file** — The harness prints only failures to the agent's context. Full logs go to a file the agent can open when it needs detail. *When:* Large test suites where verbose output would fill the context window.
+- **Deterministic sharded test subsets** — Add a fast mode that runs a random fraction (1% or 10%) of the tests, with the random seed fixed so every agent gets the same selection. Each agent runs a slice, so combined coverage exceeds 100%. *When:* A full test suite takes hours and you want fast feedback that is still reproducible across agents.
+- **Reference-compiler oracle for partial builds** — Compile part of the target with the new compiler and the rest with a trusted reference (GCC). A failure is then attributed to the new code's section, since the reference is known to be correct. *When:* Building a component whose whole build fails for everyone at once, so that parallel agents don't chase each other's errors.
+- **README and progress files as cross-session memory** — Keep a README and progress files that record the current state, what was done, and where to resume. Each new session reads them first. *When:* Fresh-session agent loops that otherwise forget earlier decisions and reintroduce fixed bugs.
+- **Role-specialized review agents** — When feature work is paused, assign agents single roles: deduplication, performance tuning, or design critique from a given perspective. *When:* Several agents editing one codebase concurrently, where the same code gets touched from many directions.
+
+## Numbers
+- 16 agents ran about two weeks, around the clock, to produce the compiler. ([0:00](https://youtu.be/SVREdZHPG1I?t=0))
+- The fast-mode harness ran 1% or 10% of the test suite per agent. At 10% each, 16 agents together covered 160% of it. ([3:40](https://youtu.be/SVREdZHPG1I?t=220))
+- The compiler's most optimized build was slower than GCC's least optimized build. ([8:29](https://youtu.be/SVREdZHPG1I?t=509))
+- The compiler relied on GCC's assembler and linker, and on GCC's 16-bit x86 compiler to boot Linux. ([8:29](https://youtu.be/SVREdZHPG1I?t=509))
+
+## Hot takes
+- Presenter calls the experiment only partly autonomous, since a human designed the test harness, chose the test suites, started the loop, and assigned roles.
+- Using GCC as an oracle and as the assembler, linker and 16-bit compiler is a fair critique of the 'from scratch' claim. The presenter says he would do the same thing himself if building a compiler.
+- The presenter's suggestion: testing the same setup on a brand-new language with no existing compilers would be a fairer test of whether Claude can build compilers from scratch.
+- Title and intro are hype-heavy ('Anthropic have just done something huge', 'What REALLY happened'). The substance is a reasonable reconstruction, but the locking mechanism is inferred, not sourced.
+
+## Tools mentioned
+Claude Opus 4.6, Claude (Anthropic agent), Docker, Git, GCC, Ralph loop, Linux kernel, SQLite test suite, LibJPEG test suite, Redis test suite, Rust
+
+## Relevance to our work
+- **agentos** (2/3): Parallel agent coordination on a shared repo, deterministic test subsetting and quiet-output harnesses map onto the MemoryMesh/Crucible testing and the 'prove it as a distributed system' thesis, though this is a dev-workflow experiment, not infra. → *Add a fast, seeded, sharded mode to AgentOS's correctness suite so several agents or CI workers cover different slices reproducibly, and have the harness print only failures.*
+- **prosharness** (2/3): ProsHarness wraps Claude Code in long-running loops with checkpoint/resume. The Ralph loop, progress files and git-based task claims are close to its design. → *Check whether ProsHarness uses a progress file that each fresh session reads on resume, and whether it claims tasks atomically when several runs share one repo, for example with a commit-or-push lock file.*
+- **general** (2/3): Multi-agent orchestration patterns: task claiming via git push rejection, role-specialized reviewers, and the oracle-based way of isolating failures. → *Read the Anthropic write-up of this experiment for the actual task-claim mechanism, which this video only infers, before copying it.*

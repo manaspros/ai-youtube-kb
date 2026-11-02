@@ -1,0 +1,150 @@
+{
+ "one_line": "Nishant Gupta (Meta Superintelligence Labs) argues agent evals must score workflow behavior from production telemetry, not model answers or benchmarks, and should run continuously as a control-plane function.",
+ "summary": "The speaker says benchmarks measure model capability while production measures system behavior, so agent teams need to ask whether the system behaved correctly, not whether the answer was right. He describes a failure hierarchy for agents, from memory, retrieval and safety problems at the bottom up to reasoning, planning, tool execution and multi-agent coordination failures. He recommends an SRE-style view that prioritises reliability, latency, cost and recovery over accuracy, and he frames evaluation as a pyramid with benchmarks at the base, scenario-based evals in the middle and production telemetry at the top. Production traces, outcomes, escalations and feedback are presented as the largest and most representative eval data, with humans acting as evaluators who calibrate automated metrics. He argues that agent drift is gradual, so continuous monitoring is needed, and that agent traces should work like distributed tracing. The talk ends with a continuous eval loop and an architecture where evaluation sits in a control plane that observes a separate execution plane. The talk gives no benchmark results, costs or latencies, so its value is in the framing rather than the data.",
+ "speakers": [
+  "Nishant Gupta"
+ ],
+ "orgs": [
+  "Meta Superintelligence Labs"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "observability",
+  "agent-architecture"
+ ],
+ "tags": [
+  "production-evals",
+  "agent-evaluation",
+  "scenario-based-evals",
+  "continuous-evaluation",
+  "agent-tracing",
+  "slo-metrics",
+  "control-plane",
+  "human-in-the-loop"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Benchmarks measure model capability; production measures system behavior",
+   "detail": "A model can rise from 90% to 92% on a benchmark and production reliability can still be poor, because benchmarks miss tool failures, API outages, context changes, user variability and long-running workflows. The question shifts from 'was the answer right' to 'did the system behave correctly'.",
+   "t": "0:03"
+  },
+  {
+   "idea": "Evaluate workflows, not single outputs, and expect a failure hierarchy",
+   "detail": "Agent failures are layered: memory, retrieval and safety at the base; reasoning, planning and incorrect tool execution above; multi-agent coordination failures at the top. Hallucination is only one category, and judging the final output alone misses most production risk.",
+   "t": "1:30"
+  },
+  {
+   "idea": "Adopt an SRE mindset and build evals as a pyramid",
+   "detail": "Track reliability, availability, latency, cost and recovery rather than accuracy. Benchmarks are at the base (scalable but low value), scenario-based evals in the middle, and production telemetry at the top, which the speaker calls the highest-value signal.",
+   "t": "2:31"
+  },
+  {
+   "idea": "Production traffic is the main eval dataset, and humans are evaluators",
+   "detail": "Execution traces, user outcomes, escalations, failures and feedback all become eval data. Humans assess correctness, trust, usefulness and safety, and their reviews calibrate automated metrics and expose their blind spots. The speaker rejects treating humans as a fallback.",
+   "t": "4:02"
+  },
+  {
+   "idea": "Drift is gradual, so evaluation must run continuously",
+   "detail": "Model versions change every few weeks or months, and prompts, tools and user behaviour also change. No single change looks catastrophic, but success rate can decline and escalations and tool failures can rise. Without continuous evaluation, teams often learn about drift only when users complain.",
+   "t": "4:02"
+  },
+  {
+   "idea": "Observability and evaluation are one discipline",
+   "detail": "Evaluating an agent needs visibility into reasoning paths, tool calls, memory access, execution timelines and state transitions. Plain logs are not enough, so agent traces should work like distributed tracing for microservices.",
+   "t": "5:35"
+  },
+  {
+   "idea": "Evaluation is a post-deployment loop, not a pre-release phase",
+   "detail": "Telemetry flags issues, humans review the edge cases, feedback updates the datasets, and offline scenarios validate each change before it ships. The speaker says the loop never stops and calls evaluation an operational capability.",
+   "t": "5:35"
+  },
+  {
+   "idea": "Map each metric to a business outcome and leave accuracy out",
+   "detail": "Task completion measures value delivered, tool success measures reliability, escalation rate measures human burden, and safety violations, latency, cost and recovery rate cover risk, user experience, scalability and resilience. The speaker says accuracy is missing from the list because business success depends on more than accuracy.",
+   "t": "6:38"
+  },
+  {
+   "idea": "Put evaluation in a control plane that governs a separate execution plane",
+   "detail": "A control plane observes the system, collects telemetry, runs simulations and coordinates human review, while the execution plane does the work. The speaker presents this separation as a foundational pattern for production AI systems, though he gives no implementation details.",
+   "t": "6:38"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Scenario-driven offline evals",
+   "how": "Build simulated environments for end-to-end workflows such as customer support, code generation or research. Run the agent inside them and score task completion rate, tool correctness, planning quality and resource usage. Evaluate scenarios rather than individual prompts.",
+   "when": "Before shipping model, prompt or tool changes, to check whether a whole workflow still works."
+  },
+  {
+   "name": "Production telemetry as the eval set",
+   "how": "Capture execution traces, user outcomes, escalations, failures and feedback signals from live traffic and treat them as evaluation data.",
+   "when": "After deployment, as the main source of signal, and to find failure modes that benchmarks miss."
+  },
+  {
+   "name": "Targeted human review to calibrate automated evals",
+   "how": "Route edge cases and low-confidence or failed interactions to human reviewers. Use their judgments on correctness, trust, usefulness and safety to refresh the datasets and check the automated metrics for blind spots.",
+   "when": "When automated metrics may not capture correctness, trust or safety, and to keep the automated judges honest."
+  },
+  {
+   "name": "Continuous evaluation loop",
+   "how": "Telemetry flags issues, humans review them, the feedback updates the datasets, offline scenarios validate the fix, and the change is redeployed. The loop runs continuously.",
+   "when": "When models, prompts or tools change often and reliability can drift without anyone noticing."
+  },
+  {
+   "name": "Agent tracing like distributed tracing",
+   "how": "Record reasoning paths, tool calls, memory access, execution timelines and state transitions for each run, in the way a microservice trace records spans across services.",
+   "when": "To make evals possible and to debug multi-step or multi-agent failures."
+  },
+  {
+   "name": "Evaluation as a control plane",
+   "how": "Separate the components that observe, simulate, evaluate and review (control plane) from the components that do the work (execution plane). The control plane measures and governs behaviour.",
+   "when": "When many agent systems need the same governance and eval layer, rather than a separate one-off test tool per system."
+  }
+ ],
+ "tools": [],
+ "numbers": [
+  {
+   "claim": "Illustrative only: a benchmark moving from 90% to 92% is the kind of gain teams celebrate, yet it does not show production reliability. No measured production data is given.",
+   "t": "0:03"
+  },
+  {
+   "claim": "Agent systems are updated with a new model version every couple of weeks or months, on top of prompt, tool and user-behaviour changes.",
+   "t": "4:02"
+  },
+  {
+   "claim": "Metrics the speaker lists for production agents: task completion, tool success, escalation rate, safety violations, latency, cost and recovery rate. He gives no target values for any of them.",
+   "t": "6:38"
+  }
+ ],
+ "hot_takes": [
+  "Benchmarks are the lowest-value eval signal, and production telemetry is the highest.",
+  "Accuracy should not be the headline metric for agent systems; business outcomes should be.",
+  "Humans are evaluators, not a fallback for when automation fails.",
+  "Evaluation is becoming production infrastructure, not a testing or QA function."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS has L4 observability and RAGAS evals, but no per-workflow task-completion or recovery signal from live traffic. The control-plane framing fits its proxy and manifest design.",
+   "action": "Have the L1 proxy emit a per-request trace record (tool calls, failure or escalation flag, cost, latency) so that a scenario-based eval set can be built from real traffic."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Checkpoint and resume, loops and phone-driven approvals already produce the recovery, escalation and tool-failure signals the talk names as production eval data.",
+   "action": "Log per run: resumes that completed (recovery rate), approval prompts sent to the phone (escalations) and tool failures. Replay failed checkpoints as scenarios in an offline eval set."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Matches the recurring interest in evals for agents. The talk gives a usable split of offline scenarios, production telemetry and human review, but no numbers or method details.",
+   "action": "Use the scenario-over-prompt split (offline scenarios, production telemetry, human calibration) as a checklist when designing the next agent eval harness, and validate its value with your own data."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

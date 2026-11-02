@@ -1,0 +1,43 @@
+# DeepSeek Releases ANOTHER Model - Janus Pro (image gen + multi-modal)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `UkruXt_ZOkE` · [watch](https://youtu.be/UkruXt_ZOkE) · **date:** 2025-11-02 · **length:** 6:15 · **format:** review · **quality:** 3/5 · **depth:** intro
+- **speakers:** Unnamed Better Stack host · **orgs:** DeepSeek, Hugging Face, Meta, NVIDIA
+- **topics:** models-research, local-ai · **tags:** deepseek, janus-pro, multimodal, image-generation, image-understanding, ocr, open-weights, hugging-face, model-license, training-cost
+
+> Hands-on tour of DeepSeek's open Janus Pro multimodal model (image understanding and text-to-image), with its benchmark claims, training cost, and the 384px input limit that caps its OCR.
+
+## Summary
+The host runs DeepSeek's Janus Pro 7B through Hugging Face on a handful of tasks: LaTeX-from-image (checked by rendering the output back), landmark recognition (Big Ben), OCR on printed and handwritten text, and three text-to-image prompts. Image understanding looks good for an open model, while image generation looks softer, with missing fine detail at 784x784 output and results he judges below Flux. The main limitation he flags is a 384x384 input size, which he expects to hurt small-text OCR. On the paper, he cites benchmark leads on both understanding and generation, but notes those benchmarks measure instruction following rather than image quality. He reports the training time and an estimated cost of roughly $120k, quoted as a rough outside calculation. He closes on the paper's own stated limitations (input resolution, low-resolution text images, reconstruction losses) and a remark on open research. The video is a quick first look rather than a reproducible evaluation, with no commands or configs shown.
+
+## Key ideas
+- **Janus Pro is an open multimodal model from DeepSeek in 7B and 1.3B sizes (the host later cites a 1.5B training run, so the size is inconsistent in the video); he tests the 7B model via Hugging Face.** — Downloadable from Hugging Face, with a hosted demo. Hosted demo was slow: about 50 seconds per request, which he attributes mostly to load on the site. ([0:00](https://youtu.be/UkruXt_ZOkE?t=0))
+- **Image input is capped at 384x384 pixels, which he calls a major limitation for complex OCR.** — He expects small or dense text to fail. The model still read a handwritten 'subscribe' correctly, which he calls impressive for an open model. ([1:07](https://youtu.be/UkruXt_ZOkE?t=67))
+- **Image understanding looks strong; image generation looks weaker than its benchmarks suggest.** — Generated images were 784x784 and lacked fine detail. He notes viewers' skepticism that generation is roughly on par with DALL-E 3 despite the benchmark lead. He still considers it good for an open 7B model that can run locally. ([2:06](https://youtu.be/UkruXt_ZOkE?t=126))
+- **Benchmarks show instruction following, not image quality.** — The paper's text-to-image benchmark checks whether dense prompts are followed. He says that is different from producing the best-looking image, which needs human arena-style evaluation. ([3:08](https://youtu.be/UkruXt_ZOkE?t=188))
+- **Training cost is modest by frontier standards: the 1.5B model took 7 days on 16 nodes and the 7B model 14 days on 32 nodes, all A100s.** — He quotes a third-party estimate of about $120k and compares it with DALL-E 3, which he assumes cost millions to train (his own comparison, unsourced). ([4:13](https://youtu.be/UkruXt_ZOkE?t=253))
+- **The paper's conclusion lists limits: 384px input, low-resolution text images, and reconstruction losses in generation.** — He expects the result to be weaker on fine detail, especially faces, and says a higher input resolution may mitigate the problem. The model is under the DeepSeek license, which he summarizes as permissive except for illegal and military use. ([5:23](https://youtu.be/UkruXt_ZOkE?t=323))
+
+## Techniques
+- **Round-trip check for image-to-code output** — Feed a formula image, take the generated LaTeX, and render it back to an image to compare with the original. This verifies structured output without a reference answer. *When:* Evaluating vision-language models on OCR or structured extraction where the output can be re-rendered or re-parsed.
+- **Quick multimodal smoke test set** — Run one image each for formula-to-LaTeX, landmark recognition with a 'where is this and why is it significant' question, printed OCR, handwriting OCR, and text-to-image prompts, including one example prompt from the model card. *When:* A first pass on a new open multimodal model before deeper testing. Good for spotting obvious capability gaps, not for measuring quality.
+- **Check the input resolution before relying on OCR** — Look up the vision encoder's input size (384x384 for Janus Pro here). Small text in larger images will be downscaled, so test OCR with a crop or a rescaled image. *When:* Before using a small open VLM for document or screenshot text extraction.
+
+## Numbers
+- Janus Pro is offered at 7B and 1.3B parameters in the intro; the 7B model is the one tested. Later, the training run is described for a 1.5B model. ([0:00](https://youtu.be/UkruXt_ZOkE?t=0))
+- Image input resolution is limited to 384x384 pixels. ([1:07](https://youtu.be/UkruXt_ZOkE?t=67))
+- Generated image size was 784x784 pixels. ([2:06](https://youtu.be/UkruXt_ZOkE?t=126))
+- Hosted demo took about 50 seconds for the LaTeX request (mostly website load time, per the host) and about 50 seconds for the Big Ben request after acquiring a GPU. ([0:00](https://youtu.be/UkruXt_ZOkE?t=0))
+- Training time: 1.5B model 7 days on 16 nodes; 7B model 14 days on 32 nodes; each node with NVIDIA A100 GPUs. ([4:13](https://youtu.be/UkruXt_ZOkE?t=253))
+- Rough third-party estimate of training cost: about $120,000 USD (not verified by the host). ([4:13](https://youtu.be/UkruXt_ZOkE?t=253))
+
+## Hot takes
+- The host calls the intro news a blow to AI companies; the hype framing is not backed by the tests he runs.
+- He says image generation feels similar to DALL-E 3 and below Flux in quality, which he presents as viewer skepticism he agrees with on the samples.
+- He says Janus Pro beats DALL-E 3 while likely costing far less to train, a comparison that rests on his unsourced assumption about DALL-E 3's cost.
+- Benchmark leads on generation measure instruction following rather than image quality, so they do not establish that the model produces better images.
+
+## Tools mentioned
+Janus Pro (7B; 1.3B/1.5B variants mentioned), DeepSeek, Hugging Face (model download and hosted demo), DALL-E 3 (comparison), Stable Diffusion XL (benchmark comparison), Flux (quality comparison)
+
+## Relevance to our work
+- **agentos** (1/3): L2B/L2A focus on serving and retrieval; a 7B open multimodal model could run on the RTX 5090, but the 384px input cap makes it a weak fit for document OCR in MemoryMesh ingestion. → *If image ingestion is ever needed, benchmark an open VLM on a real screenshot set with and without downscaling before choosing a model for OCR.*

@@ -1,0 +1,221 @@
+{
+ "one_line": "Better Stack walkthrough of JavaScript's ES2027 proposals: Temporal, explicit resource management (using), iterator.zip and Atomics.pause are stage 4; import defer, keyed Promise.all and decorators are stage 3; signals are stage 1.",
+ "summary": "The narrator walks through the features TC39 expects in ES2027, opening with a quiz of Date surprises such as new Date(\"0\") giving year 2000. Temporal reached stage 4 in March after about nine years and replaces the single Date object with PlainDate, PlainTime, Instant, ZonedDateTime and Duration, each doing one job. A flight example shows Temporal handling a London clock change correctly, and the speaker highlights immutability and day-based arithmetic. The stage 4 list also includes explicit resource management (the using keyword, Symbol.dispose, DisposableStack), iterator.zip with its shortest, longest and strict modes, and Atomics.pause for spin-wait loops on shared memory. Stage 3 items are import defer, Promise.all keyed and decorators, and the stage 1 signals proposal is presented as a shared reactive foundation for frameworks. The video is a short news roundup with no code samples, so the details are shallow, and the speaker names browser and runtime support as he sees it.",
+ "speakers": [],
+ "orgs": [
+  "TC39",
+  "Better Stack"
+ ],
+ "format": "news",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "javascript",
+  "ecmascript",
+  "ES2027",
+  "temporal",
+  "date-api",
+  "time-zones",
+  "dst",
+  "explicit-resource-management",
+  "using-keyword",
+  "symbol-dispose",
+  "disposable-stack",
+  "iterator-helpers",
+  "iterator-zip",
+  "atomics",
+  "shared-array-buffer",
+  "spin-lock",
+  "import-defer",
+  "promise-all-keyed",
+  "decorators",
+  "signals",
+  "tc39",
+  "browser-support"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Date is a poor API: new Date(\"0\") is year 2000, and Date.parse coerces the number 0 to a string, so the same two zeros compare as equal. These are the motivating examples for Temporal.",
+   "detail": "Opening quiz; the speaker says the quiz is question 3 of 28 and that it annoyed him. The auto-caption reads 'date.pass', which is Date.parse.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Temporal reached stage 4 in March after about nine years in development, and is the largest of the confirmed features.",
+   "detail": "Speaker says it is ready to ship and that Firefox, Chrome, Node.js and Deno already have it. Bun is 'coming soon' and Safari 'needs to catch up' (per the speaker).",
+   "t": "0:00"
+  },
+  {
+   "idea": "Temporal replaces one Date object with separate types that each do one job: PlainDate, PlainTime, Instant, ZonedDateTime and Duration.",
+   "detail": "Instant is a point in time as nanoseconds since the Unix epoch. ZonedDateTime is a full date-time in a real zone that understands DST. Duration gives date math without ad hoc millisecond arithmetic.",
+   "t": "1:04"
+  },
+  {
+   "idea": "Temporal handles DST across a flight example. A 8pm New York departure plus a 7-hour flight should land at 8am London by naive math, but Temporal gives 7am, which the speaker says is correct because the London clocks change that night.",
+   "detail": "The speaker uses get time zone transition (spoken form) to confirm the London change happened at 1am London time.",
+   "t": "1:04"
+  },
+  {
+   "idea": "Temporal's day-based arithmetic keeps wall-clock intent: pushing an 11am meeting back one day stays at 11am across a clock change instead of shifting to 10am.",
+   "detail": "Temporal treats the operation as days, not 24-hour spans. Immutability is the second advantage the speaker names: every operation returns a new object, so an original date is never mutated behind your back.",
+   "t": "2:07"
+  },
+  {
+   "idea": "Explicit resource management (the using keyword) reached stage 4 in May. A variable declared with using has its Symbol.dispose method called when it goes out of scope, including at the end of a block, on an early return or on an exception.",
+   "detail": "Targets file handles, database connections and streams that otherwise need try/finally blocks or leak. The speaker says it has been available in Firefox, Chrome, Node and Deno for some time.",
+   "t": "2:07"
+  },
+  {
+   "idea": "Async cleanup uses an async dispose method, and DisposableStack composes several resources so they are torn down in reverse order.",
+   "detail": "The speaker frames this as helpers for cleaning up the try/finally code, with no further detail on syntax.",
+   "t": "3:19"
+  },
+  {
+   "idea": "iterator.zip iterates several iterables in parallel and yields an array per step. zipKeyed does the same but yields named objects. Mode controls unequal lengths: shortest (default), longest (with optional padding values) or strict (throws a TypeError).",
+   "detail": "The speaker says zip is currently only usable in Firefox, and that it extends the ES2025 iterator helpers (map, filter, take, drop) with stage 3 proposals for chunking, includes and join.",
+   "t": "3:19"
+  },
+  {
+   "idea": "Atomics.pause is a low-level hint for spin-waiting on shared memory. It is for library authors, shown with a spin lock on a SharedArrayBuffer built on Atomics.compareExchange.",
+   "detail": "Without a hint, a tight spin loop can hammer the CPU; the speaker says Atomics.pause lets the runtime and CPU handle the spin more efficiently. Stage 4 and said to work in Node even though MDN said it should not.",
+   "t": "4:12"
+  },
+  {
+   "idea": "Stage 3 items include import defer (the module is loaded but its top-level code runs on first use, which is lazy execution rather than lazy loading), Promise.all keyed (named results in an object), and standard decorators (stage 3 since 2022, shipped by Bun in February).",
+   "detail": "The speaker argues import defer targets startup time for apps with large dependency graphs and is distinct from dynamic import.",
+   "t": "5:35"
+  },
+  {
+   "idea": "Signals (stage 1) would add a built-in reactive primitive with writable values, computed values and automatic dependency tracking, so frameworks such as Angular, Vue, Svelte and Solid could share one low-level core.",
+   "detail": "The speaker calls this the most exciting proposal but says it may take a long time to land. It is the least certain item in the video.",
+   "t": "5:35"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Replace Date with Temporal types by job",
+   "how": "Use PlainDate for calendar dates with no time or zone, PlainTime for wall-clock times, Instant for a unique point in time, ZonedDateTime for a real zone with DST handling, and Duration for arithmetic. Do date-level math in days rather than adding milliseconds. Remember every operation returns a new immutable object.",
+   "when": "Scheduling or recurring events, cross-timezone flights and meetings, and anywhere a codebase currently adds milliseconds or mutates Date objects."
+  },
+  {
+   "name": "Check DST transitions with getTimeZoneTransition",
+   "how": "The speaker uses the method (spoken as 'get time zone transition') on a ZonedDateTime to find when a zone's offset changes, here the 1am London change.",
+   "when": "Debugging or verifying time-zone logic around a clock change, and confirming Temporal results."
+  },
+  {
+   "name": "Scope-bound cleanup with using and Symbol.dispose",
+   "how": "Declare the resource with the using keyword. The object implements a Symbol.dispose method, which the runtime calls automatically at block end, on early return or on exception. Use the async dispose variant (Symbol.asyncDispose) when cleanup is asynchronous.",
+   "when": "File handles, database connections, streams, or any resource that today needs try/finally or is easy to leak."
+  },
+  {
+   "name": "Compose resources with DisposableStack",
+   "how": "Register several disposable resources in a DisposableStack so they are torn down in reverse order when the stack is disposed.",
+   "when": "A function that opens multiple resources that must be released in dependency order."
+  },
+  {
+   "name": "Parallel iteration with iterator.zip and zipKeyed",
+   "how": "Pass several iterables to iterator.zip to get an array of the next value from each input per step. Use zipKeyed for named objects. Choose mode: shortest (default), longest with optional padding values, or strict to throw a TypeError on unequal lengths.",
+   "when": "Combining parallel arrays such as names, ages and cities into records. Note the speaker says it is currently only available in Firefox."
+  },
+  {
+   "name": "Spin-wait hint with Atomics.pause",
+   "how": "Inside a spin loop on a shared Int32Array in a SharedArrayBuffer, which uses Atomics.compareExchange to acquire a lock, call Atomics.pause on each iteration to tell the runtime and CPU that the wait is intentional.",
+   "when": "Multi-threaded code with workers and shared memory, such as a library's lock implementation, where a tight spin would waste CPU."
+  },
+  {
+   "name": "Named results with Promise.all keyed",
+   "how": "Pass Promise.all an object of promises instead of an array. The result is an object with the same keys, so the code destructures by name rather than by position.",
+   "when": "Several independent async calls whose positional order is hard to track. Stage 3, so verify runtime support first."
+  },
+  {
+   "name": "Lazy execution with import defer",
+   "how": "Mark an import as deferred. The module is fetched at load time, but its top-level code runs only on first use. The speaker contrasts this with dynamic import, which defers the fetch itself.",
+   "when": "Apps with large dependency graphs where startup time is the problem. Stage 3, so check runtime support first."
+  }
+ ],
+ "tools": [
+  "Temporal",
+  "Date",
+  "moment",
+  "luxon",
+  "Firefox",
+  "Chrome",
+  "Node.js",
+  "Deno",
+  "Bun",
+  "Safari",
+  "using keyword",
+  "Symbol.dispose",
+  "Symbol.asyncDispose",
+  "DisposableStack",
+  "iterator.zip",
+  "zipKeyed",
+  "Atomics.pause",
+  "Atomics.compareExchange",
+  "SharedArrayBuffer",
+  "lodash",
+  "MDN",
+  "Promise.all keyed",
+  "import defer",
+  "decorators",
+  "signals",
+  "Angular",
+  "Vue",
+  "Svelte",
+  "Solid"
+ ],
+ "numbers": [
+  {
+   "claim": "Temporal has been in development for nine years and reached stage 4 in March.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Quiz question 3 of 28 is the example used to motivate Temporal.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Flight example: 8pm New York departure, 7-hour flight, London 5 hours ahead. Naive math gives 8am London, Temporal gives 7am, and the London clocks change that night at 1am London time.",
+   "t": "1:04"
+  },
+  {
+   "claim": "The using keyword (explicit resource management) reached stage 4 in May.",
+   "t": "2:07"
+  },
+  {
+   "claim": "Decorators have been stage 3 since 2022, and Bun shipped standard decorators in February.",
+   "t": "5:35"
+  },
+  {
+   "claim": "Four features are locked in at stage 4 for ES2027: Temporal, explicit resource management, iterator.zip and Atomics.pause.",
+   "t": "4:12"
+  },
+  {
+   "claim": "The atomics lock example uses a 4-byte shared memory value as a one-integer lock.",
+   "t": "4:12"
+  }
+ ],
+ "hot_takes": [
+  "The speaker says Temporal fixes the Date API with separate types, calling it groundbreaking and 'just so much better' than the Date object.",
+  "The speaker doubts decorators will ever reach stage 4, having sat at stage 3 since 2022.",
+  "Signals (stage 1) are presented as possibly changing how every framework works, though the video gives no timeline and the speaker admits it may take a long time.",
+  "The speaker says Atomics.pause works in Node even though MDN says it should not, a claim he did not verify further in the video."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "No content in the video touches the Rust proxy, memory, inference or storage parts of AgentOS, and the Atomics and SharedArrayBuffer material is not relevant to its stack.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs loops and schedules around Claude Code, where DST-safe recurrence is a real concern, but the video does not discuss agent runs and it is unknown whether the harness is written in JavaScript.",
+   "action": "If ProsHarness schedule or loop code is JavaScript, check whether it uses Date for recurrence and compare the behaviour with Temporal's ZonedDateTime in Node.js."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

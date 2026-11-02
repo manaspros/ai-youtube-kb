@@ -1,0 +1,191 @@
+{
+ "one_line": "Apify's CEO lists x402 agent-payment flaws (double-spend before settlement, HTTP 402 vs MCP 401 conflict, poor fit for metered jobs) and his team's workarounds, including an agent-facing markdown gateway.",
+ "summary": "Jan Curn, CEO of Apify, gives a sequel to \"MCP isn't good yet,\" arguing that x402 (Coinbase's HTTP-402 agent payment protocol) is promising but has rough edges. He explains why crypto rails suit agent micropayments and walks through the x402 flow: 402 challenge, signed payment, facilitator verification, work, then settlement. The main flaw he shows is a double-spend window, since funds are checked but not reserved until on-chain settlement. He also covers the conflict between the 402 status code and the MCP auth flow's 401, the mismatch between the fixed-fee exact scheme and metered actors, and the upto and batch-settlement schemes. Apify's workarounds were charge-then-refund and an agent-facing markdown site (agi.apify.com) that issues prepaid API tokens. Much of the talk is product promotion for Apify's x402 launch, and the live demo failed.",
+ "speakers": [
+  "Jan Curn"
+ ],
+ "orgs": [
+  "Apify",
+  "Coinbase",
+  "Stripe",
+  "Sentry",
+  "Visa",
+  "Mastercard",
+  "Google",
+  "OpenAI",
+  "Shopify",
+  "Skyfire",
+  "Alipay",
+  "UnionPay",
+  "Tempo"
+ ],
+ "format": "talk",
+ "topics": [
+  "governance-compliance",
+  "security-guardrails",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "x402",
+  "agentic-payments",
+  "micropayments",
+  "double-spend",
+  "HTTP-402",
+  "MCP",
+  "Apify",
+  "Coinbase",
+  "batch-settlement",
+  "upto-scheme",
+  "agent-marketplace",
+  "MPP",
+  "agent-identity"
+ ],
+ "key_ideas": [
+  {
+   "idea": "x402 has a double-spend window",
+   "detail": "Payment is verified but not reserved, so the buyer's funds stay usable until on-chain settlement. One wallet can sign many requests. He says this is unsolved in both the exact and upto schemes.",
+   "t": "9:14"
+  },
+  {
+   "idea": "402 status code conflicts with MCP auth",
+   "detail": "x402 requires HTTP 402 as the first response, while the MCP auth flow expects 401, and a server cannot return both. A common workaround is a separate hostname per payment protocol, which he calls an anti-pattern. He suggests carrying the payment requirement in a header instead of the status code.",
+   "t": "11:36"
+  },
+  {
+   "idea": "Fixed-fee scheme does not fit metered tools",
+   "detail": "Apify actors run for seconds to hours and bill as they go. The original exact scheme charges a fixed fee per call, so it fits simple APIs poorly.",
+   "t": "11:36"
+  },
+  {
+   "idea": "Charge-then-refund workaround",
+   "detail": "They charge a fixed amount under the exact scheme, run the job, then refund the unused balance. It works, but it needs two on-chain transactions, adds settlement time and fees, and requires the client to trust the server to refund.",
+   "t": "13:02"
+  },
+  {
+   "idea": "Upto scheme still leaves the double-spend problem",
+   "detail": "Upto, announced in x402 v2 (Dec 2025) and shipped about two to three months before the talk, lets the client set a maximum and lets the server charge less. He says it does not prevent double-spending, so they went back to the drawing board.",
+   "t": "13:02"
+  },
+  {
+   "idea": "Batch settlement as a likely fix",
+   "detail": "The client deposits into escrow, receives a signed voucher, signs off-chain micropayments against it, and settles in batches, releasing the remaining escrow at the end. Apify had not implemented it yet when he spoke.",
+   "t": "14:29"
+  },
+  {
+   "idea": "Why he thinks crypto fits agent payments",
+   "detail": "Card, PayPal and ACH costs are too high for microtransactions. Chargebacks are a problem with agents because there is no agent identity, so the payment must be one-way. He argues a public, decentralized standard avoids a single company taking fees, and says he is not a crypto supporter himself.",
+   "t": "6:23"
+  },
+  {
+   "idea": "Agent-facing instructions instead of a new API",
+   "detail": "agi.apify.com is one markdown page that tells agents how to buy a prepaid Apify token (a $5 top-up example). That token then works with the normal Apify API or MCP. Agent instructions can change quickly without breaking the API used by tens of thousands of customers.",
+   "t": "15:52"
+  },
+  {
+   "idea": "Build vs buy flips when token subsidies end",
+   "detail": "He predicts that once agents pay the full cost of tokens, buying external services will beat building them in-house, and agentic payments will grow sharply. He says the current ~$1M per month volume is small.",
+   "t": "19:45"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Charge-then-refund for metered jobs",
+   "how": "Charge a fixed amount up front with the exact scheme, run the job, then refund the unused balance to the client's wallet.",
+   "when": "Variable-cost tools on a payment protocol with no safe metered scheme. Accept the extra on-chain transactions and the need for clients to trust the refund."
+  },
+  {
+   "name": "Work-after-settlement for near-zero-cost calls",
+   "how": "Wait for settlement, then do the work and return 200 with a payment response. Double-spend is then harmless for the server, but a failed job leaves the server unpaid.",
+   "when": "Calls with near-zero marginal cost, where the risk of a failed job is acceptable."
+  },
+  {
+   "name": "Agent-facing markdown instructions plus prepaid token",
+   "how": "Serve one markdown page that tells agents how to pay. The payment yields a token for the existing API or MCP server, so the payment layer can change without touching the main API.",
+   "when": "Several payment protocols are still changing and a large existing API has customers who depend on it."
+  },
+  {
+   "name": "Batch micropayments via escrow and signed vouchers",
+   "how": "Deposit into escrow, receive a signed voucher, sign off-chain micropayments against it, settle in batches on-chain, then release the remaining escrow.",
+   "when": "High-frequency small payments where an on-chain write per call is too slow or expensive. Speaker had not yet shipped this."
+  },
+  {
+   "name": "Local wallet with cryptographic key and QR code",
+   "how": "Build a small local wallet tool that holds a key and shows a QR code to fund payments, for testing agent flows.",
+   "when": "No ready-made consumer wallet tooling exists for the protocol yet."
+  }
+ ],
+ "tools": [
+  "x402 (Coinbase)",
+  "MPP (Stripe, Tempo)",
+  "HTTP 402 Payment Required",
+  "MCP",
+  "Apify actors",
+  "agi.apify.com",
+  "Coinbase facilitator"
+ ],
+ "numbers": [
+  {
+   "claim": "Apify marketplace has about 45,000 tools (actors); community earns over $1M per month in payouts",
+   "t": "1:07"
+  },
+  {
+   "claim": "Coinbase launch added about 20,000 tools to the x402 agentic market (from about 2,000, roughly 10x); launch drew about 1M views",
+   "t": "2:37"
+  },
+  {
+   "claim": "x402 has about 20x the transaction count and volume of MPP, per a check the day before the talk",
+   "t": "7:46"
+  },
+  {
+   "claim": "The 402 status code has sat unused in the HTTP spec for about 30 years",
+   "t": "7:46"
+  },
+  {
+   "claim": "x402 exact scheme launched May 2025; v2 announced Dec 2025; upto shipped about 2-3 months before the talk",
+   "t": "13:02"
+  },
+  {
+   "claim": "Batch settlement scheme introduced about two months before the talk",
+   "t": "14:29"
+  },
+  {
+   "claim": "Demo example: $10 local wallet, $1 allocated for a token, $5 prepaid top-up on the AGI site",
+   "t": "17:16"
+  },
+  {
+   "claim": "Setup takes about 10 minutes for a newcomer; x402 transaction volume is about $1M per month (speaker's estimate)",
+   "t": "18:40"
+  }
+ ],
+ "hot_takes": [
+  "x402's use of HTTP 402 is good for marketing but a design mistake; payment requirements should travel in headers, not the status code.",
+  "A hostname per payment provider (x402.*, mcp.*, mpp.*) is an anti-pattern, like having 20 Amazons for 20 credit cards.",
+  "Crypto is the one payment rail suited to agent micropayments, because card rails are too expensive and chargebacks are unworkable without agent identity.",
+  "For agent-facing services, markdown instructions for agents can replace a stable versioned API because agents can pick up changes.",
+  "Build-vs-buy flips toward buying external services once token subsidies end."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS L1 has budgets. The talk shows a double-spend race when a budget or balance is checked but not reserved before work runs.",
+   "action": "When designing budget enforcement in Govrix Scout, reserve budget before work starts, not just check it, and test concurrent requests against one shared budget."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content on payments, approvals or harness design that applies to ProsHarness.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "Agent payment protocols are not among the recurring interests.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

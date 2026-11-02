@@ -1,0 +1,48 @@
+# Fallow: The Code Intelligence Tool Every Claude User Needs
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `-lCfwIoDXq8` · [watch](https://youtu.be/-lCfwIoDXq8) · **date:** 2026-05-02 · **length:** 6:02 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** ? · **orgs:** Better Stack, VoidZero
+- **topics:** claude-code, pr-code-review, dev-tools · **tags:** fallow, static-analysis, dead-code, code-duplication, complexity, maintainability, claude-code-hooks, claude-code-skills, branch-audit, baseline, ci, github-action, runtime-coverage, javascript, typescript
+
+> Better Stack walks through Fallow, a Rust-built static analyzer for JS/TS (dead code, duplication, complexity), and shows how it works as a guardrail for Claude Code runs and branch-level PR audits.
+
+## Summary
+The presenter introduces Fallow, a Rust-based static analysis tool for TypeScript and JavaScript that covers dead code, duplication, and complexity in one pass, replacing a stack of knip, jscpd and ESLint. He runs its summary report on a project he built mostly with Claude Code, which gives a health score and per-file refactoring candidates, with cache state kept in a new dot-directory. He chooses not to trust the automatic fix command, previews it with a dry run, and instead installs the Fallow skill and has Claude Code fix duplication in three non-test files on a feature branch, taking about four minutes. He then shows the branch-level audit against main, baselines for CI, and a hooks generator for Claude Code. He closes by noting that the features are all static analysis, that runtime intelligence based on V8 coverage is a paid add-on, and that the JS/TS-only scope is a limitation, while still calling it a tool he will use much more.
+
+## Key ideas
+- **Fallow is a single static analyzer for JS/TS covering dead code, duplication, and complexity, built in Rust with 90+ framework and package plugins, replacing a combination of knip, jscpd and ESLint.** — The presenter's pitch is consolidation: one tool instead of three to stop agents shipping bad code. He notes the JS/TS-only scope is the main drawback for AI-assisted coders who work in other languages. ([0:00](https://youtu.be/-lCfwIoDXq8?t=0))
+- **The health score is derived from cyclomatic and cognitive complexity, which feed a maintainability index; the summary flagged 41 files as needing refactoring.** — The presenter expands the CRAP acronym as change risk anti-patterns. He says the duplication output is easier for an agent to act on than the health output because it gives exact files and line numbers. The transcript's wording on the score ("41 above the threshold") is ambiguous. ([1:24](https://youtu.be/-lCfwIoDXq8?t=84))
+- **He does not trust the automatic fix command to run unattended, because the tool has no knowledge of what each function does.** — He previews the fix with the dry-run flag, which shows it would remove a batch of exports, and chooses to route fixes through the agent instead. ([2:23](https://youtu.be/-lCfwIoDXq8?t=143))
+- **Pairing Fallow with an agent works through the Fallow skill, which carries guardrails, agent rules and common pitfalls, plus a prompt that asks for study first, a targeted fix, a feature branch, and tests.** — Claude Code loaded the skill, requested duplication output as JSON, and finished in about four minutes with three files fixed. It skipped the other flagged files, mainly test files, where duplication may be intentional. The resulting PR had +54/-43 lines, about 20 of them from a config file that ignores test files. ([2:23](https://youtu.be/-lCfwIoDXq8?t=143))
+- **Branch-level audit and baselines keep feedback limited to what a change introduced, which suits large existing codebases.** — The audit command compares the current branch against main by default and takes a base flag for other branches. Baselines let CI pick up only new issues, so existing debt can be fixed over time. A GitHub Action gives PR annotations, and workspaces and health badges are supported. ([3:42](https://youtu.be/-lCfwIoDXq8?t=222))
+- **A setup command generates Claude Code hooks, so the agent runs Fallow without being prompted each time.** — The presenter presents this as the way to avoid repeatedly telling Claude to use Fallow. He does not show the generated hooks. ([3:42](https://youtu.be/-lCfwIoDXq8?t=222))
+- **All default features are static analysis that never executes code; runtime intelligence adds production-traffic coverage but is a paid feature.** — Runtime intelligence uses V8 runtime coverage from real traffic, merged into the health report through a sidecar that can run locally or be deployed anywhere. It is paid, which the presenter says makes sense. Fallow parses with Oxc, so analysis never leaves JavaScript. ([4:51](https://youtu.be/-lCfwIoDXq8?t=291))
+
+## Techniques
+- **Snapshot the project with the summary report** — Run fallow via bunx with the summary flag from the repo root for a one-screen report of dead code, duplication and a complexity health score. It creates a dot-directory with cache and snapshot data, so repeat runs are faster. The presenter notes this directory shows up in git status. *When:* First look at an unfamiliar or agent-written codebase, before deciding what to clean up.
+- **Drill into one category with machine-readable output** — Run the health subcommand for per-file health issues, or the dupes subcommand with JSON output for file and line-number data an agent can parse. The presenter names the CRAP metric (change risk anti-patterns) as documented. *When:* When handing a specific class of issue to a coding agent.
+- **Preview fixes with dry run before any write** — Run the fix command with the dry-run flag to list what would be removed (for example, unused exports) before applying anything. Apply changes through the agent rather than blindly. *When:* Any time an automated fixer would touch code the tool does not understand.
+- **Guard an agent run with the Fallow skill and a scoped prompt** — Install the Fallow skill so Claude Code loads guardrails and pitfalls. The prompt the presenter used, paraphrased: study the project to understand how the code works, then run Fallow to deduplicate while making sure core behaviour is preserved, put changes on a feature branch, run the tests, and open a PR. Tell the agent to skip test files, where duplication may be intentional. *When:* When asking Claude Code to clean up findings from a static analyzer on a real repo.
+- **Scope a config file to ignore noise** — Add a Fallow configuration file (name not spoken) that ignores test files for future reports, which the presenter did in about 20 lines. The same file can set dependency ignores, custom duplication and health thresholds, and boundaries that declare which directories may import from which. He used defaults otherwise. *When:* When the default report is too noisy for a given repo, or to enforce module boundaries.
+- **Audit only the current branch against main** — Run the audit command, which reports issues on the branch versus main so only introduced issues are shown. Use the base flag to compare against a different branch. *When:* Reviewing a PR or an agent-produced branch, so the fix scope stays limited to what changed.
+- **Generate Claude Code hooks for Fallow** — Run the setup hooks command to generate Claude Code hooks that run Fallow automatically (the generated hook contents are not shown). *When:* When you want Fallow to run on every agent edit without re-prompting.
+- **CI with baselines and PR annotations** — Use the Fallow GitHub Action for PR annotations. Record a baseline of current issues so CI fails only on new ones. Workspaces and health-badge export are also supported. *When:* Adopting the tool on a large existing codebase with a lot of current debt.
+
+## Numbers
+- Fallow supports over 90 plugins for frameworks and popular packages. ([0:00](https://youtu.be/-lCfwIoDXq8?t=0))
+- Health score of 41 reported on the presenter's project; the summary said 41 files need refactoring (wording ambiguous). ([1:24](https://youtu.be/-lCfwIoDXq8?t=84))
+- Claude Code run finished fixing 3 files in about four minutes, skipping other flagged files, mostly test files. ([2:23](https://youtu.be/-lCfwIoDXq8?t=143))
+- Resulting PR diff: +54 / -43 lines, of which about 20 lines are a config file ignoring test files. ([3:42](https://youtu.be/-lCfwIoDXq8?t=222))
+
+## Hot takes
+- Less appealing for AI-assisted coders because it only supports JavaScript and TypeScript (speaker's view).
+- Does not trust the automatic fix command to run unattended because the tool lacks context on what functions do.
+- The presenter calls it a great tool he will use much more, while noting the feature set is large and it stays JS/TS-only.
+- Runtime intelligence is a paid feature, which he says makes sense.
+- Quality is capped at a modest level because it is a short, feature-tour review with one live demo and no benchmarks.
+
+## Tools mentioned
+Fallow, Claude Code, knip, jscpd, ESLint, bunx, Oxc, VS Code extension, Cursor, MCP server, V8 runtime coverage, GitHub Action, VoidZero
+
+## Relevance to our work
+- **prosharness** (1/3): ProsHarness wraps Claude Code runs, and the branch-audit plus generated-hooks pattern is a relevant post-run gate idea if its target repos are JS/TS. → *If ProsHarness targets JS/TS repos, try running a branch audit against main as a post-run gate, and check whether the generated Claude Code hooks fit its existing hook setup.*

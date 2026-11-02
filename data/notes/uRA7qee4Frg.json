@@ -1,0 +1,148 @@
+{
+ "one_line": "Hands-on comparison of Vector and the OpenTelemetry Collector on three tasks: nginx log structuring, Docker metrics to Prometheus, and traces to Jaeger. Vector wins logs and metrics; OTel handles traces better but is harder to set up.",
+ "summary": "Better Stack compares Vector (Datadog, Rust) and the OpenTelemetry Collector (Go) by running both through three tasks in a local Docker Compose setup. Both use YAML configs and follow a collect, process, export model for logs, metrics and traces. For nginx logs, Vector's VRL transform is short and readable, while the OTel Collector needs a file receiver, several regex parsers and a time parser, and cannot read the Docker socket. For Docker metrics to Prometheus, Vector needs a much smaller config, while the OTel setup adds a batch processor and Prometheus OTLP receiver changes. For traces to Jaeger, the OTel Collector sends OTLP directly, while Vector needs a transform into a Jaeger-friendly format. The verdict is that Vector wins for logs and metrics, while the OTel Collector is the better fit for traces and for teams committed to the OpenTelemetry ecosystem, despite its harder configuration and weaker docs. The video includes a short sponsored segment for Better Stack as a unified UI.",
+ "speakers": [],
+ "orgs": [
+  "Datadog",
+  "OpenTelemetry Community",
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "observability",
+  "dev-tools"
+ ],
+ "tags": [
+  "vector",
+  "opentelemetry-collector",
+  "logging",
+  "metrics",
+  "tracing",
+  "prometheus",
+  "jaeger",
+  "nginx",
+  "docker",
+  "vrl",
+  "telemetry-gen",
+  "observability-pipeline"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Vector and the OTel Collector share a YAML config model and collect, process, export pipeline for logs, metrics and traces, and both are performant and open source.",
+   "detail": "Vector is Rust and built by Datadog. The OTel Collector is Go and built by the OpenTelemetry community. The similarities end at the config model; the speaker then compares them on three concrete tasks.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Structuring nginx logs is much easier in Vector.",
+   "detail": "Vector uses a docker_logs source filtered to the nginx container, a remap transform with a VRL function that builds a formatted message from the original message field, and a console sink. The OTel Collector cannot read the Docker socket, so it needs the nginx log file mounted, a filelog receiver, regex parsers for the line and the HTTP method, path and protocol, a time parser, and a console exporter.",
+   "t": "1:27"
+  },
+  {
+   "idea": "VRL and Vector's built-in functions, filtering, sampling and documentation make log transformation the main Vector advantage.",
+   "detail": "The speaker calls VRL a joy to write and points to its built-in functions and to log filtering and sampling. He also says Vector's documentation is good, while the OTel regex-based approach is harder to read.",
+   "t": "2:53"
+  },
+  {
+   "idea": "Docker metrics to Prometheus need far more config with the OTel Collector than with Vector.",
+   "detail": "The OTel path uses the Docker stats receiver over the Docker socket, a Prometheus exporter with TLS set to insecure for plain HTTP, and a batch processor that is optional at low volume but generally recommended. Prometheus also needs a target for the collector and the OTLP receiver enabled. Vector uses its docker_stats source over a metrics URL, which requires Docker to export metrics, and a Prometheus exporter sink.",
+   "t": "4:18"
+  },
+  {
+   "idea": "Better Stack is pitched as a single web UI for logs from Vector or the OTel Collector and for metrics dashboards. This is a sponsored segment.",
+   "detail": "The sponsored segment describes log search and filtering, metrics dashboards, status pages, alerts and incident management, and mentions a generous free tier without figures. The sponsorship is a plug, not evidence about the tools being compared.",
+   "t": "4:18"
+  },
+  {
+   "idea": "Traces are where the OTel Collector wins: it sends OTLP to Jaeger directly, while Vector needs a transform.",
+   "detail": "Telemetry-gen sends OTLP over gRPC. The OTel Collector uses an OTLP receiver on the gRPC port and an OTLP exporter to Jaeger, and Jaeger must have OTLP enabled. Vector can receive OTLP over gRPC and HTTP but sending traces to Jaeger over HTTP is harder and works only after converting to a Jaeger-friendly format. Vector's trace support is described as limited.",
+   "t": "5:42"
+  },
+  {
+   "idea": "The verdict is split: Vector for logs and metrics, the OTel Collector for traces and for OTel-committed teams.",
+   "detail": "The speaker says the OTel Collector has better trace support but is more complicated today, with documentation that is not straightforward. He expects the collector and its docs to improve and says it makes more sense if you are committed to the OpenTelemetry ecosystem.",
+   "t": "6:38"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Vector nginx log structuring",
+   "how": "Run Vector in a container with volumes for the Docker socket and the config file. Use a docker_logs source filtered to the nginx container, a remap transform that calls a VRL function (the speaker's example is named pass_nginx_log) to build a new formatted message field from the original message field, and a console sink reading from the transform output.",
+   "when": "Converting unstructured reverse-proxy or container logs to structured logs without writing regex parser chains."
+  },
+  {
+   "name": "OTel Collector nginx log parsing",
+   "how": "Mount the nginx log file into the collector container, since the Docker socket is not usable for logs. Add a filelog receiver, a regex_parser to split the raw line into fields, a time_parser to normalize the timestamp, and a second regex_parser to extract the HTTP method, path and protocol. Wire the receiver to a console exporter in a logs pipeline.",
+   "when": "When the collector is already the standard ingest point and file-based log parsing is acceptable."
+  },
+  {
+   "name": "Docker metrics to Prometheus via OTel Collector",
+   "how": "Mount the Docker socket into the collector and add a Docker stats receiver. Add a batch processor, then a Prometheus exporter with TLS set to insecure for plain HTTP. Create a metrics pipeline receiver to batch to exporter. In prometheus.yml, add the collector as a scrape target with optional labels for querying and enable the OTLP receiver.",
+   "when": "Shipping container metrics through the OpenTelemetry pipeline into an existing Prometheus setup."
+  },
+  {
+   "name": "Docker metrics to Prometheus via Vector",
+   "how": "Enable Docker to export metrics at a URL, then configure Vector's docker_stats source against that URL and a prometheus_exporter sink. The speaker says this config is much smaller than the OTel version.",
+   "when": "Simple container-metrics scraping into Prometheus where the smallest config matters more than OTel compatibility."
+  },
+  {
+   "name": "Traces to Jaeger via OTel Collector",
+   "how": "Point telemetry-gen (OpenTelemetry's telemetry generator) at the collector. Add an OTLP receiver with the gRPC port exposed, an OTLP exporter to the Jaeger endpoint, and a traces pipeline connecting them. Enable OTLP in the Jaeger container, then trigger traces with telemetry-gen and check the Jaeger UI.",
+   "when": "Routing OTLP traces from OTel-instrumented services into Jaeger without a format conversion step."
+  }
+ ],
+ "tools": [
+  "Vector",
+  "Vector Remap Language (VRL)",
+  "OpenTelemetry Collector",
+  "Docker",
+  "Docker Compose",
+  "Nginx",
+  "Prometheus",
+  "Jaeger",
+  "telemetry-gen (OpenTelemetry telemetry generator)",
+  "Better Stack",
+  "Datadog Agent (mentioned only as a hypothetical source)",
+  "OTLP",
+  "Docker stats receiver (OTel)",
+  "Docker stats source (Vector)"
+ ],
+ "numbers": [
+  {
+   "claim": "The video is 7:27 long and contains no benchmarks, latency or throughput figures. Both tools are called 'quite performant' without measurement.",
+   "t": "0:00"
+  },
+  {
+   "claim": "The task setup is three tasks (nginx logs, Docker metrics to Prometheus, traces to Jaeger) on one local Docker Compose stack, with nginx forwarding to a sample app.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Better Stack is described as having a generous free tier, with no figures stated.",
+   "t": "4:18"
+  }
+ ],
+ "hot_takes": [
+  "Vector is clearly the better choice for log and metric transformation, and the OTel Collector's regex-based log parsing is painful by comparison.",
+  "OTel Collector documentation is not straightforward, and its configuration is harder to use today, though the speaker expects this to improve.",
+  "Vector's trace support is limited, and sending traces to Jaeger in Vector is harder than it should be.",
+  "The Better Stack segment is a sponsored plug, not part of the technical comparison.",
+  "If you are committed to the OpenTelemetry ecosystem, the OTel Collector makes more sense even though it is harder to configure."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L4 observability is listed as Prometheus/Grafana plus OTel, and the video compares the two pipeline options for exactly that stack, including OTLP to Jaeger and Prometheus scraping.",
+   "action": "Decide per signal before building L4: test the OTel Collector for OTLP traces into Jaeger, and compare Vector's docker_stats-to-Prometheus config for container metrics against it."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The video is about observability pipelines for logs, metrics and traces and has no link to checkpoint/resume, planning, or Claude Code harness work.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

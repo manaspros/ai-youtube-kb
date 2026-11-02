@@ -1,0 +1,167 @@
+{
+ "one_line": "Arman Vaziri (Ramp) on building go-to-market orchestration: an internal CDP, durable background agents on Temporal, scoped retrieval, and an MCP that turns employee experiments into productized use cases.",
+ "summary": "Arman Vaziri, who leads product and sales-led growth engineering at Ramp, describes go-to-market orchestration as describing a campaign in plain intent and having it distributed across outbound, ads, web and in-app channels. He argues the bottleneck is coordination after the idea, not the idea itself, and that the fix starts with a consistent data foundation. Ramp built an internal customer data platform on Postgres with Kafka for real-time signals, batch enrichment jobs, and a warehouse path via dbt, Snowflake and reverse ETL. The team solved one concrete workflow first (pre-meeting briefs for account managers) and then reused its pieces for other teams. The agent layer runs durable threads on Temporal, scopes tools per agent, supports human-in-the-loop pauses, and retrieves account-specific context from a vector store (TurboPuffer) using combined vector, attribute and keyword search. Nightly background agents fan out per account, combining system-owned skills with user-written instructions. Employees reach the same tools through a GTM MCP server, and the usage traces show which problems people are solving so the team can productionize them. The talk gives no benchmarks; its numbers are scale and history statements.",
+ "speakers": [
+  "Arman Vaziri"
+ ],
+ "orgs": [
+  "Ramp"
+ ],
+ "format": "talk",
+ "topics": [
+  "enterprise-adoption",
+  "agent-architecture",
+  "data-engineering",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "go-to-market",
+  "gtm-orchestration",
+  "customer-data-platform",
+  "durable-execution",
+  "background-agents",
+  "scoped-retrieval",
+  "skill-library",
+  "human-in-the-loop",
+  "entity-matching",
+  "bandit",
+  "guardrails"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The bottleneck is coordination after an idea exists, not idea generation",
+   "detail": "Teams across product, data, engineering and GTM have many ideas. The hard part is finding the audience, getting people to follow the playbook, and producing the enablement material, so the goal is to cut coordination cost.",
+   "t": "1:04"
+  },
+  {
+   "idea": "Build a consistent data substrate before any agent work",
+   "detail": "Ramp's first problem was messy, inconsistent source-of-truth data across CRM, product, enrichment, web and buying signals. They built an internal CDP on Postgres that keeps transactional guarantees and referential integrity across entities and records where each fact came from and when it arrived.",
+   "t": "5:17"
+  },
+  {
+   "idea": "Solve one team's problem first, then extend horizontally",
+   "detail": "Pre-meeting briefs for account managers came first. Teams share common workflows (outbound, meeting prep), so patterns built for one team are mirrored to others, and each new team needs its own skills and data integrations.",
+   "t": "3:52"
+  },
+  {
+   "idea": "Durable execution with each model and tool call as a checkpointed activity",
+   "detail": "Every agent thread runs on Temporal, with each tool call and model call as an activity. If a worker dies, the thread resumes from the last completed step with its accumulated state instead of reprocessing from the start.",
+   "t": "9:35"
+  },
+  {
+   "idea": "Scope retrieval to the account instead of loading the raw corpus",
+   "detail": "Enablement material, playbooks and call transcripts are chunked, embedded and stored in a vector store. Agents combine vector, attribute and keyword search filtered to one account, which avoids pulling the full corpus into context. The speaker says this is both inefficient and expensive otherwise.",
+   "t": "11:01"
+  },
+  {
+   "idea": "Run nightly background agents and let users customize them in text",
+   "detail": "A nightly job fans out one agent per account. Each agent uses system-owned meeting-prep skills plus custom instructions users write as text, which drove adoption because people can express their preferred brief format.",
+   "t": "12:27"
+  },
+  {
+   "idea": "Expose the same tools to employees and use their MCP traces to find what to productionize",
+   "detail": "A GTM MCP server gives employees the same tools the background agents use. Usage traces show the problems people are solving, and the team turns the best of those prompts and skills into shared, productionized use cases.",
+   "t": "13:58"
+  },
+  {
+   "idea": "Use multi-armed bandit thinking and guardrails for multi-channel campaigns",
+   "detail": "Campaigns run across channels with consistent audience targeting. Agents balance exploring new campaigns against exploiting known returns, and guardrails enforce compliance, rules of engagement, and avoiding repeated outreach.",
+   "t": "17:20"
+  },
+  {
+   "idea": "Small teams should start with narrow automations and stitch them together",
+   "detail": "The speaker's advice to a small company is to pick one very specific problem and automate it, as Ramp did with automated outbound when it had two people and GPT-3.5. A perfect architecture built over a year is not practical; vertical solutions get connected later.",
+   "t": "18:24"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Durable thread with checkpointed activities",
+   "how": "Run each agent job as a workflow (Temporal here). Wrap every model call and tool call as its own activity so a restart resumes from the last completed activity with saved state.",
+   "when": "Long-running or background agent jobs where a worker can die mid-run and re-running from scratch would be slow or costly."
+  },
+  {
+   "name": "Account-scoped hybrid retrieval",
+   "how": "Chunk and embed unstructured sources (transcripts, emails, playbooks). At query time, filter by entity (account) and combine vector, attribute and keyword search, returning only scoped snippets.",
+   "when": "Large unstructured corpora where the agent needs context for one entity and loading everything would be too big or too expensive."
+  },
+  {
+   "name": "Per-agent tool scoping with human pause and resume",
+   "how": "Give each agent its own set of tools, integrations and skills. Include a pause point that waits for human input, then resumes the run.",
+   "when": "Agents that touch different systems per role, or any step that needs human sign-off such as a CRM write."
+  },
+  {
+   "name": "System skills plus user text instructions",
+   "how": "Ship owned skills at system level and let users add their own formats or preferences as plain-text instructions that the agent combines at run time.",
+   "when": "Output formats differ per user and adoption depends on people shaping the output."
+  },
+  {
+   "name": "Nightly per-entity fan-out",
+   "how": "A scheduled job starts one agent per account, each with tools, data access and skills, and writes the precomputed artifact (e.g. a meeting brief) for the user to read.",
+   "when": "Recurring prep work where results can be computed ahead of time and reused by many downstream consumers."
+  },
+  {
+   "name": "Persist derived entity matches",
+   "how": "Map noisy identifiers (for example attendee emails to accounts) once with fuzzy matching, store the result, and let every downstream consumer read it instead of recomputing.",
+   "when": "Entity-resolution steps that are expensive or ambiguous, such as emails shared across several businesses."
+  },
+  {
+   "name": "Shared tool surface via MCP plus usage mining",
+   "how": "Expose the same tools that background agents use through an MCP server for employees. Use the remote tool-call reasoning to find repeated problems and promote the best prompts and skills into shared use cases.",
+   "when": "An internal platform where teams build their own agents and the platform team wants to learn which problems to productionize next."
+  },
+  {
+   "name": "Explore vs exploit with guardrails across channels",
+   "how": "Keep several campaign options live, allocate traffic with a bandit-style explore/exploit rule, and enforce compliance and contact-frequency rules in the guardrail layer.",
+   "when": "Multi-channel outreach where the same audience can be reached from several campaigns."
+  }
+ ],
+ "tools": [
+  "Temporal",
+  "Postgres",
+  "Kafka",
+  "TurboPuffer",
+  "dbt",
+  "Snowflake",
+  "reverse ETL",
+  "MCP",
+  "GPT-3.5"
+ ],
+ "numbers": [
+  {
+   "claim": "The talk gives no benchmarks, latencies or cost figures. The concrete numbers are scale and history: the addressable market is the entire US, expanding internationally.",
+   "t": "6:46"
+  },
+  {
+   "claim": "Ramp's automated outbound began three years before the talk with two people using GPT-3.5.",
+   "t": "18:24"
+  },
+  {
+   "claim": "Talk length is 19:55.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "You can't spend a year building a perfect system architecture. Build vertical solutions first and stitch them together.",
+  "The most valuable data a company holds is unstructured (call transcripts, emails, notes), so retrieval over it matters more than most structured pipelines.",
+  "Usage of an internal MCP is a product signal. The prompts and skills people build on it show what to productionize."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The talk's account-scoped hybrid retrieval (vector, attribute and keyword filters applied before the agent sees context) matches the MemoryMesh hybrid BM25 plus pgvector retrieval, and the speaker's point about avoiding full-corpus context is directly applicable.",
+   "action": "Add entity or attribute filters to the MemoryMesh hybrid retrieval path so the agent gets scoped snippets, then benchmark context size and latency against the current unscoped path."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Each model and tool call as a checkpointed activity that resumes from the last completed step is close to ProsHarness checkpoint/resume for long Claude Code runs.",
+   "action": "Compare ProsHarness's checkpoint barrier design with Temporal-style per-call activities, and decide whether each model and tool call should be a resumable unit."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

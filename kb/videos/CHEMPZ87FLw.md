@@ -1,0 +1,47 @@
+# Jack Dorsey's New App Is Coming for Slack and GitHub (buzz)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `CHEMPZ87FLw` · [watch](https://youtu.be/CHEMPZ87FLw) · **date:** 2026-08-02 · **length:** 12:24 · **format:** review · **quality:** 3/5 · **depth:** intro
+- **speakers:** Andrus (Better Stack presenter, named only in the closing line; the caption may misspell it) · **orgs:** Block, Better Stack, OpenAI, Google, OpenRouter
+- **topics:** multi-agent, coding-agents, security-guardrails, token-cost-efficiency · **tags:** buzz, nostr, agent-identity, agent-client-protocol, goose, openrouter, git-hosting, agent-workspace, multi-agent-chat, audit-log, token-limits
+
+> Hands-on walkthrough of Block's open-source Buzz, a Slack-like workspace for humans and AI agents built on Nostr with signed audit trails. Covers agent setup, a two-model coding contest, and a warning about runaway token use.
+
+## Summary
+The presenter tries Buzz, an Apache 2.0 workplace app from Block (Jack Dorsey's company) that looks like Slack but is built on the Nostr protocol. Every message, reaction, code change and approval is stored as a signed event in one searchable audit log. Each human and agent has its own keypair, and agent actions also carry a second signature that ties them to the human owner. The app is agent-agnostic (Claude Code, OpenAI Codex, Block's Goose via Agent Client Protocol) and has built-in Git hosting where each feature branch can become a channel. The demo sets up a community on Block's hosted relay, creates agents with personas and different model harnesses, and runs a coding contest between two models. A third agent audits both apps for security, and the narrow result is used to judge the models. The presenter notes that agents debated the results and retained memory across chats. He also reports that multi-agent messaging exhausted his token budget, so he recommends hard stop limits. He calls the app early and says it is too soon to tell whether it will catch on.
+
+## Key ideas
+- **Buzz is a Slack-style workspace where humans and agents share channels, threads, DMs and search, built on the Nostr protocol.** — No accounts: a single identity keypair belongs to the user, and the relay provider account is separate. Buzz cannot recover a lost key. ([0:00](https://youtu.be/CHEMPZ87FLw?t=0))
+- **Every action is a signed Nostr event in one shared, searchable audit log.** — Messages, reactions, code changes and approvals all land in the same log, which the presenter presents as the main differentiator. ([1:02](https://youtu.be/CHEMPZ87FLw?t=62))
+- **Agent actions carry a second signature tying them to the human owner.** — Each human and agent has its own keypair, independent of the platform. The agent's action is co-signed to its owner, which Block calls a cryptographic paper trail neither could produce alone. The presenter compares it to a verifiable passport for an AI. ([1:02](https://youtu.be/CHEMPZ87FLw?t=62))
+- **Agent-agnostic by design, via the Agent Client Protocol.** — It works with Claude Code, OpenAI Codex and Block's Goose, so users are not locked into one vendor's assistant. ([2:08](https://youtu.be/CHEMPZ87FLw?t=128))
+- **Git hosting is built in, and each feature branch can become its own channel.** — Patches, CI results and review comments sit next to the conversation that produced them. The pitch is aimed at GitHub as well as Slack. ([2:08](https://youtu.be/CHEMPZ87FLw?t=128))
+- **Self-hostable and open, and still early.** — Apache 2.0 source on GitHub. You can run your own Nostr relay or use Block's hosted relay, which is in beta and free. The version tested is 0.4.x. ([2:08](https://youtu.be/CHEMPZ87FLw?t=128))
+- **Agent configuration is per agent: a name, persona instructions, a harness and a model.** — The presenter used Goose with OpenRouter for a Gemini model, and a Codex harness with its default model for the auditor. Each agent gets its own identity key on creation, which should be saved. ([5:43](https://youtu.be/CHEMPZ87FLw?t=343))
+- **Two agents building the same spec in one channel, with a third audit agent, works as a model comparison.** — The result was narrow and based on one run. The presenter weighed the audit score with cost and the number of iterations to pick a winner. ([7:00](https://youtu.be/CHEMPZ87FLw?t=420))
+- **Multi-agent chat can burn tokens quickly, so set hard stop limits.** — Agents keep messaging each other and piling up requests until the token limit is reached. The presenter's fix is strict per-agent limits and a hard stop on each task. ([11:16](https://youtu.be/CHEMPZ87FLw?t=676))
+
+## Techniques
+- **Bootstrap a Buzz community** — Download the app or compile from source. Create an identity key (there is no password). Choose a default harness and model. Create a community on a relay, either self-hosted or Block's hosted relay (requires a relay-provider sign-up). Set a profile, then launch the community, which starts with three default helper agents: Fizz, Honey and Bumble. *When:* First-time setup for a human plus agent workspace, or when evaluating Buzz against Slack.
+- **Custom agent with persona, harness and model** — Create an agent with a name, a short instruction block (e.g. 'skilled web developer focused on clean code and security'), a harness (Goose, or Codex), and a model (e.g. an OpenRouter model through Goose). Save the agent's identity key on creation. Assign work by posting in a channel; eyes or comment emojis confirm the agent has picked it up. 'View activity' shows its live log. *When:* Assigning specialized agents to tasks inside a shared channel.
+- **Head-to-head model contest, then cross-model audit** — Create a channel for the challenge. Give two agents on different models the same spec (here, build an auth system with no third-party providers and a working demo). Add a third agent with a security-audit persona on a different harness (Codex) and ask it to review both codebases and rank them. Read the rank together with cost metrics and the number of fix iterations. *When:* Comparing models or agent setups on one task when the output can be audited.
+- **Stop runaway multi-agent loops** — Set strict limits per agent (token or turn caps) and a hard stop condition for each task, so agents cannot keep sending each other requests until the budget runs out. The presenter does not show the exact setting. *When:* Any setup where several agents can message each other, to avoid exhausting the token budget.
+
+## Numbers
+- Three default helper agents (Fizz, Honey, Bumble) appear on community launch. ([4:38](https://youtu.be/CHEMPZ87FLw?t=278))
+- Dinesh's first output (GLM 5.2) had a startup script that failed on the presenter's machine and two security vulnerabilities. It needed one fix iteration to work. ([8:00](https://youtu.be/CHEMPZ87FLw?t=480))
+- The auditor ranked GLM 5.2's app above Gemini 3.6 Flash's, but only narrowly. The presenter also noted Gemini Flash was much more expensive on OpenRouter's cost metrics. ([8:50](https://youtu.be/CHEMPZ87FLw?t=530))
+- Buzz is at version 0.4.x. Hosted relay beta is free. Source is Apache 2.0. ([2:08](https://youtu.be/CHEMPZ87FLw?t=128))
+- The video is 12:24 long. No benchmarks, latency figures or token counts are given. The token overrun is reported only as 'exceeded my token limits'. ([11:16](https://youtu.be/CHEMPZ87FLw?t=676))
+
+## Hot takes
+- Per-agent keypairs with a human co-signature may matter more than the Slack-like UI, since it makes agent actions attributable.
+- The 'coming for Slack and GitHub' title outruns the content: the presenter says the app is in its infancy and it is too early to tell whether people will adopt it.
+- The model verdict rests on one run and a narrow audit margin, so it is weak evidence. The presenter himself adds cost and iteration counts to reach a winner.
+- Multi-agent workspaces without hard stops can exhaust token budgets quickly, which the presenter learned directly.
+
+## Tools mentioned
+Buzz, Nostr protocol (the video says 'Noster'), Nostr relay (Block's hosted relay, in beta), BitChat (Bluetooth mesh app that adopted Nostr 2 as a fallback transport), Agent Client Protocol, Claude Code, OpenAI Codex, Goose (Block's agent framework), OpenRouter, Gemini 3.6 Flash (as named in the video), GLM 5.2 (as named in the video), GPT 5.6 Sol (as named in the video), Slack, GitHub
+
+## Relevance to our work
+- **agentos** (2/3): Buzz's audit design (signed events in one searchable log, plus a human co-signature on agent actions) overlaps AgentOS's Merkle audit log and attribution goals, and it is a concrete alternative model for agent provenance. → *Read the Nostr event model and compare its dual-signature agent identity with AgentOS's Merkle audit log, to see whether each agent action in the audit trail should carry a human-owner signature.*
+- **prosharness** (2/3): ProsHarness wraps the Claude Code CLI, and Buzz is also harness-agnostic through Agent Client Protocol. The cross-model audit pattern (a Codex auditor reviewing another model's output) matches ProsHarness's plan-critique-debate flow. → *Compare ProsHarness's CLI wrapper with Agent Client Protocol wiring, and consider adding a per-task hard stop limit for agent-to-agent message loops.*

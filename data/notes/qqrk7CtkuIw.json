@@ -1,0 +1,190 @@
+{
+ "one_line": "Anthropic's Mike Krieger on how Labs builds: delegate end states to agents, be less constrained with tools, share intent instead of 2,000-line PRs, and run fast persevere-or-pivot cycles.",
+ "summary": "Mike Krieger (Anthropic, ex-Instagram co-founder) is interviewed on stage by an unnamed host about how Anthropic builds, mostly from his experience running Labs. He describes moving from step-by-step task delegation to describing a goal, letting the agent work, and then reviewing the trade-offs it chose. He argues first-generation AI products were boxed in too tightly on tools and access, and that agents need more freedom to be \"unreasonable\" (for example, a VM with bash so the agent can write its own fallback script). As a weekend experiment he had a dynamic workflow port a Python codebase of a couple hundred thousand lines to TypeScript, looping through port, verify, and cross-read until it was deployable. On review, he says the bottleneck is humans conceptualizing the change, so teams share Claude Code artifacts that explain intent, trade-offs, and production measurement rather than raw large PRs. Labs runs two-week \"persevere or pivot\" reviews with small bet pods and no managers over project teams, and the talk closes with notes on startups (user understanding, not code, is the hard part), unshipping old primitives, and burnout. Practical content is anecdotal, with no benchmarks.",
+ "speakers": [
+  "Mike Krieger",
+  "Unnamed host (interviewer)"
+ ],
+ "orgs": [
+  "Anthropic",
+  "Instagram"
+ ],
+ "format": "interview",
+ "topics": [
+  "software-factory",
+  "coding-agents",
+  "pr-code-review",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "delegation",
+  "end-state-prompting",
+  "unreasonable-agents",
+  "python-to-typescript-port",
+  "monkeytype",
+  "runtime-type-capture",
+  "code-review-bottleneck",
+  "claude-code-artifacts",
+  "agent-as-teammate",
+  "tagging-agents",
+  "labs-bets",
+  "persevere-or-pivot",
+  "feature-flags",
+  "dynamic-config",
+  "unship",
+  "vertical-ai",
+  "finance",
+  "burnout"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Delegation shifts from step-by-step task handoff to stating the end state and letting the agent work it out.",
+   "detail": "The speaker used to break problems down himself, then moved to describing the goal, letting the model surface trade-offs and questions along the way, and reviewing where it landed. Models sometimes finish with trade-offs he has to ask them to explain more simply.",
+   "t": "1:23"
+  },
+  {
+   "idea": "First-generation AI products are boxed in too tightly, which makes users less ambitious than they could be.",
+   "detail": "Constrained tool access (can write code but not run it, can introspect but not act) makes it hard to ask for big things. Giving the agent more degrees of freedom, such as a VM that can run bash, lets it recover, e.g. writing its own script when a built-in PDF parser fails. He sees teaching users to be 'unreasonable' as a product-team job.",
+   "t": "2:40"
+  },
+  {
+   "idea": "A large mechanical port can be done in a weekend with a looping workflow: port, verify, double-check, cross-read both versions.",
+   "detail": "He ported a Python codebase of a couple hundred thousand lines to TypeScript (for a deployment story he wanted) by running a dynamic workflow that churned through the code over a weekend and was finished on Monday. The key idea is the verify and read-both-versions loop, not one shot.",
+   "t": "3:55"
+  },
+  {
+   "idea": "For LLM-driven migrations, production runtime types and segmented tests are the best guide to the boundary.",
+   "detail": "At Instagram he built MonkeyType, which captured the types actually used in production and mapped them to code annotations. He suggests the same pattern for LLM cross-compiling: use production data and segmented tests. The hardest part is finding a boundary where the migration can be incremental instead of swapping everything overnight.",
+   "t": "4:58"
+  },
+  {
+   "idea": "Pre-measure everything and treat runtime knobs and feature flags as first-class, because you cannot tell whether a number is abnormal without the metric.",
+   "detail": "Lessons from Instagram's early launch outages: add metrics before you need them, and make config changeable in seconds through dynamic config and rollouts. He sees the same need in AI systems, where trade-offs keep changing and runtime configuration matters.",
+   "t": "6:21"
+  },
+  {
+   "idea": "Most internal usage is delegated through tagging Claude in shared channels, which treats the agent as a proactive teammate, not a personal CLI.",
+   "detail": "Teams tag Claude in a shared channel to hand off work, and the more advanced pattern gives Claude ownership of an area: monitor a feedback channel, take on tasks proactively, and update code when an API changes. Interactive Claude Code is still used for tight back-and-forth iteration.",
+   "t": "8:56"
+  },
+  {
+   "idea": "Code review is bottlenecked on humans understanding the change, so share intent, trade-offs and production results instead of big diffs.",
+   "detail": "Large PRs (e.g. 2,000 lines) are hard for reviewers to conceptualize. The team now shares a Claude Code artifact with an explanation, intent and trade-offs, then measures in production. Reviewers use Claude to investigate their questions, keeping review human-driven for architecture-touching changes and fixing forward for cosmetic ones.",
+   "t": "10:13"
+  },
+  {
+   "idea": "Labs organizes around short bets with a rotating pod, not by managers over projects, and reviews every project every two weeks to persevere or pivot.",
+   "detail": "Each bet has a directly responsible lead who usually manages no one. Projects are shut down often, which the team treats as the intended outcome of fast prototyping. Products that gain traction get dedicated headcount and more structure later.",
+   "t": "11:27"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Describe the end state, then review the trade-offs",
+   "how": "State the goal and acceptance end state, let the agent run long, ask it to surface decision points, then have it explain the trade-offs it chose, asking for simpler explanations where needed.",
+   "when": "Large, multi-step tasks where you care about the outcome more than each step."
+  },
+  {
+   "name": "Give agents a full environment instead of a narrow tool set",
+   "how": "Give the agent a VM, bash, and the ability to write scripts so it can recover when a built-in tool fails, rather than limiting it to a fixed tool list.",
+   "when": "Building agent products where users ask for unreasonable outcomes and the agent gets stuck on missing capabilities."
+  },
+  {
+   "name": "Port-verify-cross-read loop for large code migrations",
+   "how": "Run a dynamic workflow that ports code, verifies the result, double-checks it, and reads old and new code side by side in repeated passes until it converges.",
+   "when": "Mechanical rewrites of a large codebase (e.g. language or runtime change) with an existing test suite."
+  },
+  {
+   "name": "Capture production runtime types to guide migrations",
+   "how": "Record the types actually observed at runtime and map them to code annotations or types, then use these as ground truth for type or conversion work and segment tests by production traffic.",
+   "when": "Adding types or converting code in a live system where production behavior is the real spec."
+  },
+  {
+   "name": "Share intent, trade-offs and production measurements in place of raw diffs",
+   "how": "Publish a short artifact per change with intent, explanation, trade-offs and how it will be measured in production. Reviewers then ask an agent to investigate their specific questions.",
+   "when": "Reviewing agent-written or large changes where a line-by-line read is not feasible."
+  },
+  {
+   "name": "Tiered review: deep human review for architecture, fix-forward for cosmetic",
+   "how": "Split changes by risk. Architecture-touching changes get careful human review, cosmetic or visual changes ship and get fixed forward if needed.",
+   "when": "High-volume agent-written PRs where full review of every line is not possible."
+  },
+  {
+   "name": "Agent as a shared teammate in team channels",
+   "how": "Let the agent be tagged in team channels, own a feedback channel or API surface, and act proactively, such as acting on API changes, with persistent context.",
+   "when": "Team workflows where asynchronous, multiplayer delegation is the main use."
+  },
+  {
+   "name": "Instrument before you need it; use flags and dynamic config",
+   "how": "Add metrics ahead of load and make runtime configuration changeable within seconds, with rollouts and feature flags as first-class mechanisms.",
+   "when": "Launching or operating services where outages are costly and trade-offs change often."
+  },
+  {
+   "name": "Short bets with two-week persevere-or-pivot reviews",
+   "how": "Organize work as time-boxed bets with small cross-functional pods and a lead without direct reports; review every project each cycle and wind down the ones that do not work.",
+   "when": "Fast prototyping inside a larger org where projects are often cancelled and reorgs should be avoided."
+  },
+  {
+   "name": "Unship primitives superseded by newer ones",
+   "how": "Remove older product features, such as a styles feature replaced by skills, when newer primitives cover the same use with better agent integration.",
+   "when": "Product lines where generations of AI primitives overlap and add complexity."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude Design",
+  "Cowork",
+  "Claude Code artifacts",
+  "Bun",
+  "MonkeyType",
+  "Slack",
+  "Python",
+  "TypeScript"
+ ],
+ "numbers": [
+  {
+   "claim": "Ported a Python codebase of a couple hundred thousand lines to TypeScript over a weekend with a dynamic workflow (speaker's phrasing: 'a couple hundred thousands of lines'). No quality or success metrics given.",
+   "t": "3:55"
+  },
+  {
+   "claim": "Host states that 60-something percent of Anthropic's code is written via this tagging-style delegation. This is the host's claim during the interview, not verified by the speaker.",
+   "t": "7:35"
+  },
+  {
+   "claim": "Host cites about 3,000 feature flags in the product. This is the host's framing, not confirmed by the speaker.",
+   "t": "7:35"
+  },
+  {
+   "claim": "Labs reviews every project on a two-week cadence (persevere or pivot), and projects are shut down most cycles.",
+   "t": "11:27"
+  },
+  {
+   "claim": "Weekly all-hands on Wednesdays with a 'week in AI' slide.",
+   "t": "21:59"
+  }
+ ],
+ "hot_takes": [
+  "Agent products are over-constrained on tools and access today, which limits what users will ask for.",
+  "Writing code was never the limiting factor for startups; understanding users and domain is.",
+  "Engineering teams are now bottlenecked on humans understanding changes, not on review time, so share intent and trade-offs instead of diffs.",
+  "Companies should delete product primitives from older AI generations (e.g. styles replaced by skills) rather than keep them alongside newer ones."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Speaker's point on pre-measuring and runtime-tunable knobs for launches and load maps loosely to AgentOS's Govrix budget and routing controls, but the talk gives no infra specifics.",
+   "action": "Make Govrix budget and routing thresholds reloadable at runtime and add their metrics before the next Locust load test."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The end-state delegation, verify-and-cross-read porting loop, and persevere-or-pivot cadence all map onto ProsHarness's plan, critique and checkpoint flow for long runs.",
+   "action": "Try an end-state mode for ProsHarness plans where the agent works to the goal, then surfaces its trade-off decisions for review at a checkpoint."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

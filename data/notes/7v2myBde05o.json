@@ -1,0 +1,184 @@
+{
+ "one_line": "A sponsored live demo from Gravitee's CTO showing that agent governance (identity, rate limits, caching, prompt-size and topic gates) belongs in the gateway, not in prompts or policy docs.",
+ "summary": "Sam, CTO of Gravitee, skips slides and runs five live scenarios comparing an agent that enforces policy itself with the same agent behind a gateway. He argues that policy documents and prompt instructions do not hold at runtime, so access should be enforced through a scoped, per-task identity at the gateway. The demos cover prompt-injection-driven deletes (blocked with a 403 while the agent still completes the permitted part), PII exfiltration, a buggy agent looping on requests (rate-limited to 3 per minute), semantic caching of repeated questions, and oversized or off-topic prompts rejected before any downstream LLM call. He closes with a scale argument (about 144 agents per human identity), per-tool trimming of MCP servers, and shadow-AI edge management. The talk is a vendor pitch: he admits the customer data is mocked in places, gives few latency or accuracy figures, and does not explain how the topic-relevance check works.",
+ "speakers": [
+  "Sam (CTO, Gravitee)"
+ ],
+ "orgs": [
+  "Gravitee",
+  "Databricks",
+  "Anthropic",
+  "Groq",
+  "Redis"
+ ],
+ "format": "review",
+ "topics": [
+  "security-guardrails",
+  "governance-compliance",
+  "infra-cost-scaling",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "ai-gateway",
+  "agent-identity",
+  "prompt-injection",
+  "rate-limiting",
+  "semantic-cache",
+  "token-budget",
+  "mcp-tool-scoping",
+  "shadow-ai",
+  "sponsored",
+  "live-demo"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Enforce agent policy in the infrastructure layer, not in the prompt, skills, or markdown policy files.",
+   "detail": "Policy documents are not read at runtime, and models try to be helpful, so they will do what the prompt asks. The speaker's position is that controls belong in the gateway, where the agent's identity is scoped.",
+   "t": "1:16"
+  },
+  {
+   "idea": "Prompt injection through a tool the user is allowed to call is stopped by a per-task, scoped identity at the gateway.",
+   "detail": "The ungoverned agent deleted every booking when asked, because the user had permission to the tool. The gated agent discovered the same tool, but the gateway returned 403 because the admin token was only valid for the task. The agent then completed the part it could do and said so.",
+   "t": "2:39"
+  },
+  {
+   "idea": "Data exfiltration is blocked at the gateway, not after the LLM has already returned the data.",
+   "detail": "A request for the full guest list with emails and card details came back in full from the ungoverned agent. The gateway blocked the gated agent's request for lack of permission. The speaker says the data was mocked, and that the 'live' claim covers the flow, not the data.",
+   "t": "5:22"
+  },
+  {
+   "idea": "A buggy looping agent gets rate-limited at the gateway, before it spends tokens downstream.",
+   "detail": "Eight identical requests, about 1,000 tokens (roughly one cent) in the ungoverned case. The gateway allowed three per minute and blocked the rest, so none reached the LLM. The speaker's point is that per-request cost compounds across many agents.",
+   "t": "6:42"
+  },
+  {
+   "idea": "Semantic caching at the gateway serves near-duplicate prompts from Redis.",
+   "detail": "Repeated 'list my bookings' requests went from about 1,000 tokens each to about 200 tokens when served from cache. Similarity is a 0 to 1 setting that can be tuned per agent, audience or user. Telemetry can be exported to Datadog, Splunk or Prometheus.",
+   "t": "9:19"
+  },
+  {
+   "idea": "Prompt size and topic relevance can be policies at the gateway, rejected before any downstream spend.",
+   "detail": "A 2,000-token prompt (10 minutes of chat transcript) was blocked with advice to split the task, so no downstream call was made. An off-topic weather question was also rejected before reaching the model, because it does not match the hotel-booking use case.",
+   "t": "10:40"
+  },
+  {
+   "idea": "Agent sprawl makes hard-coded governance unworkable, so a central gateway is required.",
+   "detail": "The speaker cites a colleague's figure of about 144 agents per human identity, and argues that agents creating agents make per-agent controls fail. He also argues that logs must be auditable for regulation and retraining.",
+   "t": "12:44"
+  },
+  {
+   "idea": "Restricting which MCP tools are exposed reduces both blast radius and token cost.",
+   "detail": "A third-party CRM MCP server exposes 64 tools, and all of them go into context on every call. The gateway's MCP studio lets an operator publish a smaller tool set for each agent.",
+   "t": "14:44"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Per-task scoped agent identity via token exchange",
+   "how": "The user's request is exchanged for a short-lived JWT whose claims cover only the task being run. Admin-level tools are gated by that token, and the gateway returns 403 for any tool call outside the scope. Identity can come from any IDP or from the gateway itself. The speaker shows this with the request flow, the tool calls and the 200/403 codes in the packet view.",
+   "when": "Agents can reach powerful tools (delete, export, admin) and the user is authorized for those tools in general, but not for this specific task."
+  },
+  {
+   "name": "Gateway-level rate limiting on agent requests",
+   "how": "The policy is a per-user or per-permission cap, shown as 3 requests per minute. Requests over the cap are rejected at the gateway, so no LLM call or downstream tokens are spent.",
+   "when": "Buggy or looping agents, or any workload where spend should be bounded per user or audience."
+  },
+  {
+   "name": "Semantic cache keyed on prompt similarity",
+   "how": "Similar prompts are matched by a similarity score on a 0 to 1 scale (1 is near-identical), and matches are served from a Redis-backed cache built into the gateway. The threshold can be set per agent, audience or user. Cache hits are logged with the rest of the traffic.",
+   "when": "FAQ-style or help-desk workloads where many users ask the same question, and where zero latency and zero LLM cost are worth a small risk of a wrong cached answer."
+  },
+  {
+   "name": "Pre-request prompt size and relevance policies",
+   "how": "Prompt length is checked against a token limit before the request is forwarded. A separate relevance check compares the request to the agent's stated use case and rejects off-topic input. Rejected requests return guidance, such as splitting the task into smaller steps. The talk does not say how the relevance check is implemented.",
+   "when": "Users paste huge context, or an agent is used as a general-purpose assistant where costs are not justified by its purpose."
+  },
+  {
+   "name": "Narrowing MCP servers to a per-agent tool subset",
+   "how": "Put a gateway-hosted MCP layer in front of a third-party MCP server, and expose only the tools each agent needs (the talk's example: 64 tools cut down to a few).",
+   "when": "Large third-party MCP servers whose full tool list adds significant context and widens what a compromised or confused agent can call."
+  },
+  {
+   "name": "Export gateway telemetry to existing observability stack",
+   "how": "Request and policy events are logged at the gateway and exported to Datadog, Splunk or Prometheus. The speaker mentions OpenTelemetry for following multi-hop A2A and agent-to-agent calls.",
+   "when": "You need an auditable record of which agent called which tool under which identity, for compliance or debugging of multi-agent chains."
+  }
+ ],
+ "tools": [
+  "Gravitee AI Gateway",
+  "Anthropic Claude (Sonnet)",
+  "Groq (inference)",
+  "Databricks",
+  "Redis (built-in semantic cache)",
+  "MCP (Model Context Protocol)",
+  "A2A (agent-to-agent protocol)",
+  "OpenTelemetry",
+  "Datadog",
+  "Splunk",
+  "Prometheus",
+  "Kubernetes",
+  "OpenAI API spec (for transformation across providers)",
+  "Google Gemini",
+  "OpenAI"
+ ],
+ "numbers": [
+  {
+   "claim": "Survey: 88% of organizations have an agent in production taking action, and only 14% of those have governance around it (speaker's company survey).",
+   "t": "0:08"
+  },
+  {
+   "claim": "Ungoverned buggy agent, 8 identical requests, about 1,000 tokens (about one cent) spent with no rate limit.",
+   "t": "6:42"
+  },
+  {
+   "claim": "Gateway rate limit set at 3 requests per minute; the rest were blocked before any LLM call.",
+   "t": "7:59"
+  },
+  {
+   "claim": "Repeated 'list all my bookings' request: about 1,000 tokens (about one cent) when served downstream, about 200 tokens in and out when served from the semantic cache.",
+   "t": "9:19"
+  },
+  {
+   "claim": "Oversized prompt of about 2,000 input tokens (10 minutes of transcript) with 312 output tokens was blocked at the gateway, so no downstream tokens were spent.",
+   "t": "10:40"
+  },
+  {
+   "claim": "A third-party CRM MCP server exposes 64 tools, and all of them are sent in context on every call.",
+   "t": "14:44"
+  },
+  {
+   "claim": "About 144 agents per human identity (figure attributed to a colleague).",
+   "t": "12:44"
+  }
+ ],
+ "hot_takes": [
+  "Sponsored talk: the 'live, not scripted' framing is partly undercut by the speaker's own admission that the guest data was mocked. Quality is capped at 2 for this reason.",
+  "The thesis (enforce at the gateway, not in prompts or policy docs) is reasonable. The evidence is five hand-picked demos with no latency overhead, false-positive rate, cache hit-rate or topic-check accuracy reported.",
+  "The speaker says the platform does not lock you in, but the whole argument is for one vendor's gateway, and it is not stated what is open source.",
+  "The 144-agents-per-human figure is second-hand and unsourced in the talk."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 3,
+   "why": "Govrix Scout (L1) is already a proxy with budgets, PII/prompt-injection scanning and routing, so this talk covers the same ground: per-task scoped identity, rate limits, semantic caching, and size/topic gates at the proxy.",
+   "action": "Compare Govrix Scout's budget and PII checks with this gateway's request-size limit and topic-relevance gate, and add a test where a permitted tool call is denied because the task scope does not cover it."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The idea of short-lived, task-scoped credentials instead of standing permissions could apply to Claude Code subagents run by ProsHarness, and to its zero-token credential handling.",
+   "action": "Look at whether each ProsHarness subagent run can receive a credential scoped to that run's task, rather than a standing token."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Restricting MCP servers to a per-agent tool subset is a general pattern for cutting context cost and blast radius.",
+   "action": "Read the MCP tool-scoping guidance in the talk and audit how many tools each agent here exposes from its MCP servers."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

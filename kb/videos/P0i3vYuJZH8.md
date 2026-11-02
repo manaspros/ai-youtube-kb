@@ -1,0 +1,67 @@
+# Your $200 ChatGPT Plan is now worth less!
+
+- **channel:** [Kai Explains](../channels/kai.md) · **id:** `P0i3vYuJZH8` · [watch](https://youtu.be/P0i3vYuJZH8) · **date:** 2026-10-29 · **length:** 25:37 · **format:** review · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Channel host, Kai (unnamed in transcript) · **orgs:** OpenAI, Anthropic, SemiAnalysis, Artificial Analysis
+- **topics:** token-cost-efficiency, coding-agents, governance-compliance · **tags:** codex, chatgpt-pro, usage-limits, pricing, credits, prompt-cache, cost-per-task, subscription, model-routing, claude-max
+
+> OpenAI halves the Codex allowance for grandfathered $200 Pro plans from Oct 30, 2026, and the undocumented 28-day reset run ends with it. The video works out per-model cost math and a checklist for what to do.
+
+## Summary
+The host explains that OpenAI cut the usage allowance for grandfathered Pro 200 subscribers from 20x to 10x of Plus, effective October 30, 2026, and cut GPT-6 Pro messages from 200 to 100 per week. The official help page said only "lower"; the concrete numbers came from a tweet by the Codex lead and an email. A separate, undocumented run of near-daily allowance resets (28 days, Oct 5 to Nov 1) ended at the same time, and a community tracker counted 12 reset days in 23 days. The core analysis treats the allowance as a budget in API dollars, since Codex credit prices are exactly 25x the API prices. Because 96.6% of tokens in agent sessions are cache reads (SemiAnalysis data), cached-input price dominates cost, which makes GPT-6.1 Sol look much better than the flagship GPT-6 Astra. Artificial Analysis cost-per-task numbers show Sol at max effort matching Astra at high effort for about 39% of the cost, but no 6.1 model reaches Astra's max-effort score of 57. The grandfathered 62,500-credit grant (about $2,500) covers only about 58% of the estimated allowance value removed through December 31. The host's advice is to make Sol the default, trial Terra on real work, spend the credits on hard tasks, and judge the plan on the first clean week in November. Several figures are secondhand (SemiAnalysis, Artificial Analysis, a tweet) and are not independently checked in the video.
+
+## Key ideas
+- **Pro 200 allowance halved for grandfathered subscribers** — Subscribers active between Sep 22 and Sep 29 drop from 20x to 10x of Plus on Oct 30. GPT-6 Pro messages fall from 200 to 100 per week. The official help page said only that new plans get a 'lower' allowance, with no numbers. ([2:43](https://youtu.be/P0i3vYuJZH8?t=163))
+- **The undocumented 28-day reset run was part of what users relied on** — The Codex lead promised one improvement or a full meter reset each day for 28 days starting Oct 4. The host argues the resets were never documented or sold, so ending them is a larger change than the headline 50% cut. ([4:04](https://youtu.be/P0i3vYuJZH8?t=244))
+- **Reset math shows a ceiling, not an average** — A community tracker (codexresets.com) logged 12 reset days in the 23 days from Oct 5 to Oct 27, against 3.3 plan weeks. A heavy user who drained the meter before each reset could get up to about 4.7x the plan allowance in October. Most users did not drain it every time. ([5:31](https://youtu.be/P0i3vYuJZH8?t=331))
+- **Codex credits are exactly 25x API prices** — Every model's credits-per-million-tokens on the rate card is 25 times its API price. The allowance is therefore a budget in API dollars spent at list price, and the cut is a cut in dollars of API spend. ([8:00](https://youtu.be/P0i3vYuJZH8?t=480))
+- **Cache reads dominate agent token cost** — SemiAnalysis measured a month of agent work: 96.6% of tokens were cache reads (the codebase re-read on each turn) and 0.3% were output. The cached-input price therefore drives most of the cost. GPT-5.6 Sol cached input went from 40 cents to 20 cents to 10 cents per million tokens across three launches. ([10:34](https://youtu.be/P0i3vYuJZH8?t=634))
+- **The baseline month changes the answer** — Against August, half the dollars buys about 1.5x the tokens on Sol. Against late September, when Sol was already the model, it buys about 76% of the tokens, a 24% cut. The host says the comparison is honest only if the baseline is stated. ([11:35](https://youtu.be/P0i3vYuJZH8?t=695))
+- **GPT-6.1 Terra launched four days before the cut at half Sol's price** — Terra is priced at $1 input, $5 output, and $0.05 cached per million tokens, half of Sol on every line. Artificial Analysis scores Terra high at 42 and Sol high at 50, and Terra max at 51. Terra is cheaper per token, but capability is the limit. ([12:57](https://youtu.be/P0i3vYuJZH8?t=777))
+- **Cost per completed task favors Sol over Astra** — Artificial Analysis: Astra high scores 55 at about $3.24 per task, and Sol max scores 55 at about $1.27 per task. Astra max scores 57, and no 6.1 model reaches that score. The host says the two-point gap matters most to the hardest work. ([14:04](https://youtu.be/P0i3vYuJZH8?t=844))
+- **The 62,500-credit grant covers about 58% of the estimated value removed** — Grandfathered subscribers get 62,500 credits (about $2,500 at 25:1), which expire Dec 31. SemiAnalysis estimated the new plan at about $2,084 per month of Sol usage for a heavy workload, which implies about $4,300 of allowance value removed from Oct 30 to Dec 31. ([15:24](https://youtu.be/P0i3vYuJZH8?t=924))
+- **Plan prices now give the same allowance per dollar** — Plus is 1x for $20, Pro 100 is 5x for $100, and Pro 200 is 10x for $200. The old 20x tier was the only one with a better per-dollar rate. The repriced Pro 500 holds only about 21% more Astra usage than the old $200 plan for 2.5x the price, according to SemiAnalysis. ([16:30](https://youtu.be/P0i3vYuJZH8?t=990))
+
+## Techniques
+- **Convert a subscription allowance into API dollars** — Take the plan's allowance in credits and divide by the 25 credits-per-dollar rate (here the rate card is exactly 25x API price). Multiply by each model's per-million-token price, or better, use Artificial Analysis cost-per-task numbers. This gives tasks-per-allowance for each model rather than tokens. *When:* Comparing a plan change or choosing a model under a fixed subscription budget.
+- **Weight cost by cache-read share** — Measure the session token mix (input, cached input, output). If cache reads are most of the tokens, as the video says for agent sessions (96.6%), compare models mainly on cached-input price, then on output price. Example: 1M tokens of agent work cost about 57 cents on GPT-5.6 Sol and about 19 cents on GPT-6.1 Sol. *When:* Estimating cost for long multi-turn coding-agent sessions, or choosing a default model.
+- **State the baseline when comparing a price change** — Report the change against at least two baselines: the period before the change and the model you actually used before it. The video's example gives a 50% cut against August and a 24% cut against late September. *When:* Writing about or evaluating a pricing or allowance change.
+- **Default cheap, escalate only on demonstrated failure** — Make the mid-tier model (Sol) the default. Use the flagship (Astra) only when the cheaper model fails in a way that changes the output. Trial the cheapest model (Terra) on the real workload for about a week, and count the share of tasks it completes. *When:* Setting model-routing policy for a coding agent under a usage budget.
+- **Keep your own log of allowance burn and resets** — Record the date and model for each run and the allowance remaining at reset, as the community tracker did from the reset posts. Compare the first clean period after a change against the period before it, rather than relying on the usage bar. *When:* Judging a subscription plan whose terms change without clear documentation.
+
+## Numbers
+- Pro 200 allowance drops from 20x to 10x of Plus (half) for grandfathered subscribers, effective Oct 30, 2026 ([2:43](https://youtu.be/P0i3vYuJZH8?t=163))
+- GPT-6 Pro messages drop from 200 to 100 per week ([2:43](https://youtu.be/P0i3vYuJZH8?t=163))
+- Codex reset tracker: 12 reset days in the 23 days Oct 5 to Oct 27 (plan = about 3.3 weekly allowances); ceiling of about 4.7x plan allowance during October for a heavy user ([5:31](https://youtu.be/P0i3vYuJZH8?t=331))
+- Heavy user resets every 1.9 days on average during the run; week of usage lasts about 1 day after the cut, and about 1 day per week after Nov 1 ([6:40](https://youtu.be/P0i3vYuJZH8?t=400))
+- Codex rate card credits are exactly 25x API per-token prices ([8:00](https://youtu.be/P0i3vYuJZH8?t=480))
+- Astra price unchanged at $10 input and $50 output per million tokens ([9:28](https://youtu.be/P0i3vYuJZH8?t=568))
+- Agent session tokens: 96.6% cache reads, 0.3% output (SemiAnalysis, one month of agent work) ([10:34](https://youtu.be/P0i3vYuJZH8?t=634))
+- GPT-5.6 Sol cached input 40 cents, then 20 cents (GPT-6 Sol), then 10 cents per million tokens (GPT-6.1 Sol) ([10:34](https://youtu.be/P0i3vYuJZH8?t=634))
+- 1M agent tokens cost about 57 cents on GPT-5.6 Sol and about 19 cents on GPT-6.1 Sol; half-dollar buys about 1.5x the tokens vs August ([11:35](https://youtu.be/P0i3vYuJZH8?t=695))
+- Against late September (Sol baseline), half the dollars buys about 76% of tokens, a 24% cut ([11:35](https://youtu.be/P0i3vYuJZH8?t=695))
+- GPT-6.1 Terra priced at $1 input, $5 output, $0.05 cached per million tokens, half of Sol on every line; launched Oct 26 ([12:57](https://youtu.be/P0i3vYuJZH8?t=777))
+- Artificial Analysis: Terra high 42, Sol high 50, Terra max 51 ([12:57](https://youtu.be/P0i3vYuJZH8?t=777))
+- Artificial Analysis cost per task: Astra high 55 at about $3.24; Sol max 55 at about $1.27 (about 39% of Astra's cost); Astra medium 51 at about $2.73; Terra max 51 at about $0.96 ([14:04](https://youtu.be/P0i3vYuJZH8?t=844))
+- Astra max effort scores 57; no GPT-6.1 model in the index reaches 57 ([14:04](https://youtu.be/P0i3vYuJZH8?t=844))
+- Half Sol budget at max effort finishes about 1.3x the tasks of the full Astra budget; half Terra budget about 1.4x ([14:04](https://youtu.be/P0i3vYuJZH8?t=844))
+- Grant of 62,500 credits (about $2,500 API value, at 25:1), expiring Dec 31 ([15:24](https://youtu.be/P0i3vYuJZH8?t=924))
+- SemiAnalysis: new Pro 200 about $2,084/month of GPT-6.1 Sol usage for a heavy workload; old plan held double; about $4,300 of allowance value removed from Oct 30 to Dec 31 ([15:24](https://youtu.be/P0i3vYuJZH8?t=924))
+- Grant covers about 58% of the removed value; roughly 13B tokens of Sol or under 2B tokens of Astra at that agent mix ([16:30](https://youtu.be/P0i3vYuJZH8?t=990))
+- Plan pricing: Plus 1x for $20, Pro 100 5x for $100, Pro 200 10x for $200 (equal allowance per dollar) ([16:30](https://youtu.be/P0i3vYuJZH8?t=990))
+- Repriced Pro 500 (2.5x the price of old Pro 200) holds about 21% more Astra usage; Ultra Fast Mode burns allowance about 8x faster (SemiAnalysis) ([17:56](https://youtu.be/P0i3vYuJZH8?t=1076))
+- Sotio poll: most Pro users declined 2x usage in exchange for bringing back the five-hour window ([20:27](https://youtu.be/P0i3vYuJZH8?t=1227))
+
+## Hot takes
+- The 50% headline is misleading as a single number. The cut is 50% against August, but about 24% against late September, and the reset run it replaced was never part of the product.
+- OpenAI's help page saying only 'lower' is a documentation failure, and the host says this matters more than the price change itself.
+- The timing of Terra's launch four days before the cut makes the cut near zero in token terms for work Terra can do. The host calls this convenient or clever, maybe both.
+- Pro 200 was selling freedom to spend the whole allowance in one burst (no five-hour window), not the 20x number on the label.
+- The host's conclusion that the industry is converging on baseline-plus-multiplier pricing is an interpretation; the convergence is shown in list prices, not in measured usage.
+- Caveats: several figures come from secondhand sources (SemiAnalysis, Artificial Analysis, a tweet) and from models named in the video, which the host did not verify. The transcript also has auto-caption errors that were fixed in these notes: Sotio is likely the Codex lead named in the video, Entropics Cloud Max is Claude Max, Tera is Terra, codecs is Codex, and HAVD is half.
+
+## Tools mentioned
+OpenAI Codex (agentic coding system), ChatGPT Pro 200 / Pro 100 / Pro 500 / Plus plans, GPT-6 Astra (flagship), GPT-6.1 Sol, GPT-6.1 Terra, GPT-6 Sol, GPT-6 Luna, GPT-5.6 Sol, Claude Max 20x / Claude Pro (Anthropic), codexresets.com (community reset tracker), Artificial Analysis benchmark index (cost per task), SemiAnalysis (token-mix and allowance measurements)
+
+## Relevance to our work
+- **agentos** (2/3): AgentOS L1 (Govrix Scout) already has budgets and strategy routing. The video's per-task cost ranking and cache-read weighting are directly relevant to budget and routing logic. → *Add a cost-per-completed-task metric to L1 routing that weights cached-input price by cache-read share, and check whether cache reads dominate spend before tuning output tokens.*
+- **prosharness** (2/3): ProsHarness wraps the Claude Code CLI and runs long loops, so usage limits and plan changes affect its runs. The video's advice to judge a plan on a clean period and to track resets applies to it directly. → *Log per-run model, token mix, and remaining allowance in ProsHarness so a plan change or reset shows up in data, and set the default model to the cheapest one that passes a checkpoint eval.*

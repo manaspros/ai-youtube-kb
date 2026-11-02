@@ -1,0 +1,153 @@
+{
+ "one_line": "Exa's forward-deployed engineer explains why coding agents miss recent changes past their model cutoff, and how query-targeted web search snippets, plus explicit search rules, close that gap. Partly a product pitch.",
+ "summary": "Jakub Hojsan (Exa) argues that coding and code-review agents lag about six months behind the model's knowledge cutoff, so they cannot review recent PRs or dependency changes without search. He says adding a web search tool is not enough: the agent also needs rules about when to search, since native search may not know newer model or package versions. Exa's approach returns short, query-specific highlights from pages rather than full pages, using a computational extraction step for raw highlights and an optional LLM distillation step on top. He claims this gives a full search trace for telemetry, lower cost than native search at scale, and a single API that works across model providers. He describes a multi-stage retrieval pipeline (query embedding, keyword filtering, semantic search, re-ranking) over a curated index of tens of billions of documents. The talk closes with a product plug for Exa Agent, MCP access, and natural-language-to-schema structured output. The speaker's claims about latency and quality are not backed by benchmarks in the talk.",
+ "speakers": [
+  "Jakub Hojsan"
+ ],
+ "orgs": [
+  "Exa",
+  "Cursor",
+  "Cognition",
+  "Warp",
+  "CodeRabbit",
+  "OpenAI",
+  "Anthropic",
+  "SimilarWeb",
+  "Particle",
+  "Crunchbase"
+ ],
+ "format": "talk",
+ "topics": [
+  "rag-retrieval",
+  "mcp-and-tools",
+  "coding-agents"
+ ],
+ "tags": [
+  "web-search",
+  "knowledge-cutoff",
+  "highlights",
+  "code-review-agents",
+  "search-api",
+  "re-ranking",
+  "structured-output",
+  "exa",
+  "product-pitch"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Coding and review agents are stuck at the model's knowledge cutoff, which lags release by about six months.",
+   "detail": "Repos keep changing after the cutoff (a dependency bump, a vector store PR), so the model cannot review those diffs from its own knowledge. The speaker says the gap is structural, not a bug in any one model.",
+   "t": "0:12"
+  },
+  {
+   "idea": "Return small, query-specific snippets from pages instead of whole pages.",
+   "detail": "The search returns a few highlights that answer the query. The speaker's example is about 500 characters fed to the model instead of roughly 100,000. An interpretation step can distill the page to what the model needs.",
+   "t": "2:41"
+  },
+  {
+   "idea": "Adding a search tool to an agent is not enough; the agent also needs rules for when to search.",
+   "detail": "Native search may be missing from the harness, and the model may not know that newer versions exist (his example: it says a Sonnet version does not exist). He suggests a rule such as: when a diff bumps a dependency, check the upstream source and ground the review in it.",
+   "t": "4:12"
+  },
+  {
+   "idea": "Native web search is a black box; a third-party search API gives a full trace.",
+   "detail": "Native search returns some sources but no content, and can take up to 10 seconds. The speaker says a search API returns the exact queries, sources and highlights passed to the model, which can go into telemetry for debugging.",
+   "t": "4:12"
+  },
+  {
+   "idea": "Highlights are picked computationally, without an LLM, so the speaker claims no added latency.",
+   "detail": "At runtime the system pulls matching lines from a page. The speaker says this works for any page or query, such as an About page for a bio or a phone number, and for a large repo where you want only the relevant part.",
+   "t": "5:38"
+  },
+  {
+   "idea": "A single search API keeps the agent independent of the model provider.",
+   "detail": "The speaker says the same fixed API and parameters work whichever model is in use, so switching to a new model does not change the search integration.",
+   "t": "5:38"
+  },
+  {
+   "idea": "Search quality comes from a multi-stage pipeline: embedding, filtering, semantic search, re-ranking.",
+   "detail": "The query is embedded, then keyword filtering and semantic search run, then re-ranking drops irrelevant results. The index is curated and smaller than Google's, but the speaker says its quality is high. He gives no metrics.",
+   "t": "10:38"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Two-part search instructions for agents",
+   "how": "Add the search tool and also write explicit rules in the agent prompt: when to search (e.g. a dependency bump in a diff, or a model or version name the model does not recognise) and what to do with the result (verify against the upstream source before the review claim).",
+   "when": "Use when an agent must review or act on facts after the model's training cutoff, or when the native tool set does not include search."
+  },
+  {
+   "name": "Query-targeted highlight extraction",
+   "how": "Fetch the page, pick the lines or passages relevant to the query, and return only those, with no LLM in the loop. Optionally add an interpretation step that distills the snippets into an answer.",
+   "when": "Use for large pages or repos where full content is too costly, and where you want to keep latency and token use low."
+  },
+  {
+   "name": "Full retrieval trace logging",
+   "how": "Keep the exact queries, sources returned and the highlights that went into the prompt, and send them to telemetry.",
+   "when": "Use when you need to debug why an agent gave a wrong answer based on search results."
+  },
+  {
+   "name": "Natural-language schema for structured output",
+   "how": "Describe the fields you want in plain language to generate a JSON schema (the speaker gives limits of up to 10 fields for deep and up to 100 for agents). Set additional properties to true to allow extra fields.",
+   "when": "Use to extract structured records from web results without writing the schema by hand."
+  }
+ ],
+ "tools": [
+  "Exa search API",
+  "Exa Agent",
+  "MCP server",
+  "Claude Code",
+  "CodeRabbit",
+  "Cursor"
+ ],
+ "numbers": [
+  {
+   "claim": "Model knowledge cutoff lags release by about six months (from a graph shown in the talk).",
+   "t": "0:12"
+  },
+  {
+   "claim": "Native search can take up to 10 seconds and returns sources but no content.",
+   "t": "4:12"
+  },
+  {
+   "claim": "Speaker's example: about 500 characters of highlights fed to the model instead of about 100,000 characters for the full page.",
+   "t": "2:41"
+  },
+  {
+   "claim": "Speaker claims zero added latency for computational highlight extraction (no benchmark shown).",
+   "t": "5:38"
+  },
+  {
+   "claim": "Index holds tens of billions of documents, curated, smaller than Google's index (speaker's claim).",
+   "t": "10:38"
+  },
+  {
+   "claim": "Structured output schema limits: up to 10 fields on deep, up to 100 on agents.",
+   "t": "10:38"
+  }
+ ],
+ "hot_takes": [
+  "Adding a web search tool to an agent does nothing unless the agent is also told when to search.",
+  "Native web search from model providers is a black box and gets expensive at scale.",
+  "Returning the relevant 500 characters beats feeding the model a 100,000-character page.",
+  "Coding agents are months out of date by default, so review of recent changes needs live search."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk's multi-stage retrieval (embedding, keyword filter, semantic search, re-rank) and per-query highlights touch MemoryMesh's hybrid BM25 + pgvector retrieval, but the talk gives no metrics or code.",
+   "action": "Compare MemoryMesh's re-rank stage against the filter-semantic-rerank flow in the talk, and log retrieval traces for each query so the same debugging is possible."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The 'add the tool and also write rules for when to use it' point applies to a harness around Claude Code, which may need explicit verification rules for model names and dependency versions.",
+   "action": "Add a CLAUDE.md or skill rule that tells the Claude Code run when to verify model names and dependency versions with a search, and what to check before the claim is accepted."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

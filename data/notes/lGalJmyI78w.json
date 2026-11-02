@@ -1,0 +1,179 @@
+{
+ "one_line": "Practitioner checklist for setting up Claude Code harnesses on large codebases: layered CLAUDE.md, hooks, path-scoped skills, plugins, LSP, MCP, sub-agents, and periodic pruning.",
+ "summary": "The speaker argues that agents break down as codebases grow and that the harness around the model matters as much as the model. He contrasts embedding-based RAG retrieval, which he says has been replaced, with the filesystem navigation (find, grep, bash) that Claude Code uses. He then walks through five harness pieces: a short CLAUDE.md (about 300 lines, with per-subdirectory files in monorepos), hooks that enforce behavior (including a Stop hook that writes session learnings back to CLAUDE.md), skills that load on demand and can be path-scoped, plugins that bundle skills, hooks and MCP servers for a team, and LSP for IDE-like code navigation. Last, he covers custom MCP servers for internal systems, sub-agents with their own context (including overriding the built-in Explore agent with a project map), per-directory test suites, a codebase map for unconventional languages, and reviewing the setup every few months. The video is a checklist of practices with no benchmarks, and it is a secondhand summary of an Anthropic talk it does not link.",
+ "speakers": [],
+ "orgs": [
+  "Anthropic",
+  "MacPaw"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "context-engineering",
+  "multi-agent",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "claude-code",
+  "CLAUDE.md",
+  "hooks",
+  "skills",
+  "plugins",
+  "LSP",
+  "MCP",
+  "sub-agents",
+  "monorepo",
+  "codebase-map",
+  "harness"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Filesystem navigation beats embedding RAG for coding agents at scale",
+   "detail": "Speaker says RAG (embed the codebase, retrieve similar chunks) fails on large repos and causes hallucinated modules, while Claude Code uses bash find/grep to narrow down and load only the needed snippets. He claims RAG has been 'completely replaced' without offering evidence.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The harness matters as much as the model",
+   "detail": "Output quality depends on the harness combined with the model (he names Claude Code, Codex and Gemini CLI). A strong model in a weak harness does not help, so build a project-specific harness rather than relying on defaults or open-source harnesses such as superpowers.",
+   "t": "2:15"
+  },
+  {
+   "idea": "Keep CLAUDE.md short and layer it per directory",
+   "detail": "CLAUDE.md is loaded at session start and stays in context, so it should hold only cross-cutting conventions and knowledge, about 300 lines at most. In monorepos, each subdirectory gets its own CLAUDE.md so the agent loads focused instructions only where it is working. Revisit it as models change, since instructions written for older models waste tokens.",
+   "t": "3:18"
+  },
+  {
+   "idea": "Hooks enforce behavior that CLAUDE.md instructions cannot guarantee",
+   "detail": "Instructions in CLAUDE.md can get lost in attention, while hooks force an action. Session-start hooks load context, exit-code-2 hooks feed errors back to Claude to iterate, pre-tool-use hooks can block edits to protected files, and a Stop hook prompts Claude to reflect and update CLAUDE.md with the session's learnings.",
+   "t": "4:46"
+  },
+  {
+   "idea": "Put project procedures in path-scoped skills, not CLAUDE.md",
+   "detail": "Skills use progressive disclosure: they load only when needed. Project-specific procedures belong there, and a skill's description can name a path (e.g. a deployment directory) so it never loads elsewhere. He says skill-creator is now built into Claude Code.",
+   "t": "6:07"
+  },
+  {
+   "idea": "Bundle team configuration as a plugin",
+   "detail": "A plugin packages skills, hooks and MCP servers into one distributable unit so teammates get the same context on install. Plugins can be uploaded manually or synced from a GitHub repo, installed with the plugin command, and browsed in marketplaces; Claude Code ships with official plugins (frontend design, code review, code simplifier, Playwright).",
+   "t": "7:21"
+  },
+  {
+   "idea": "Set up LSP before writing code, especially for unusual languages",
+   "detail": "LSP gives the agent the same definition and import navigation a developer gets in an IDE. Without it, the agent pattern-matches on text and can land on the wrong symbol. Speaker says this matters most for unconventional languages and should be configured before the project starts.",
+   "t": "8:25"
+  },
+  {
+   "idea": "Build internal MCP servers only after the app works",
+   "detail": "MCP servers can expose internal docs, analytics, APIs or write actions that the agent cannot otherwise reach. Build and share them for the team, but configure them only once the base app runs, or the MCP implementation may fail.",
+   "t": "9:41"
+  },
+  {
+   "idea": "Sub-agents protect the main context; override built-ins with project-specific ones",
+   "detail": "Sub-agents have isolated context windows and return only their final output, so the main orchestrator stays lean and independent tasks can run in parallel. You can set their tools, model and instructions, and override built-in agents such as Explore with one that describes your project layout.",
+   "t": "10:57"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Layered CLAUDE.md",
+   "how": "Keep the root CLAUDE.md to cross-cutting conventions (about 300 lines or fewer). Add a CLAUDE.md in each monorepo subdirectory that follows the same rules, so it loads only when the agent works there.",
+   "when": "Large monorepos or codebases with several architectures, where one root file floods the context with irrelevant detail."
+  },
+  {
+   "name": "Stop-hook learning loop",
+   "how": "Configure a Stop hook (a shell script) that runs after each session and prompts Claude to reflect on what was done, then write the learnings into CLAUDE.md so the same mistakes are not repeated. Speaker does not show the config.",
+   "when": "When the same agent mistakes recur across sessions and you want the harness to capture lessons automatically."
+  },
+  {
+   "name": "Hooks for enforcement",
+   "how": "Use a SessionStart hook to load context (for example, which files to read). Use a PreToolUse hook to block edits to files Claude should not touch. Use a hook that exits with code 2 to send its error message back to Claude so it iterates. Hooks can also run lint and tests. Speaker shows no config keys, so use the names as given.",
+   "when": "When a rule must always be followed and CLAUDE.md wording is being ignored, or when the agent needs an automatic feedback loop."
+  },
+  {
+   "name": "Path-scoped skills",
+   "how": "Move project-specific procedures out of CLAUDE.md into skill files. Put the target directory path in the skill description so the skill activates only when work touches that path. Create skills with the built-in skill-creator, then restart the session to load them.",
+   "when": "When a procedure matters only for one part of the repo, such as deployment, and should not consume tokens elsewhere."
+  },
+  {
+   "name": "Team plugin distribution",
+   "how": "Bundle skills, hooks and MCP servers into a plugin. Distribute it by manual upload or by syncing a GitHub repo. Teammates install it with the plugin command, and extra marketplaces can be added with the add-marketplace command. Speaker gives no exact command syntax.",
+   "when": "When several engineers work on the same repo and need identical agent context."
+  },
+  {
+   "name": "LSP before code",
+   "how": "Configure a language server for every language the project uses before any code is written, so the agent navigates by symbol and definition rather than by text match.",
+   "when": "Projects in unconventional or less-common languages (he names C++ as an example for the codebase map), and any project where the agent resolves symbols wrongly."
+  },
+  {
+   "name": "Custom sub-agents with an overridden Explore agent",
+   "how": "Define sub-agents with their own tools, model and instructions. Create one named Explore whose instructions describe your directory layout; it overrides the built-in Explore agent. Have the main agent orchestrate and delegate to sub-agents, which can run in parallel.",
+   "when": "Large projects where generic exploration wastes tokens and parallel work speeds things up."
+  },
+  {
+   "name": "Per-subdirectory tests and codebase map",
+   "how": "Keep test suites separate per subdirectory so they can be scoped and avoid timeouts when everything runs together. Write a codebase map file, acting as a table of contents, that records where each file lives. Skip the map for React or Next.js, which agents already know well.",
+   "when": "Large repos, and unconventional languages where the model lacks prior knowledge of the layout."
+  },
+  {
+   "name": "Quarterly harness pruning with ignore files",
+   "how": "Review the whole setup every few months and remove CLAUDE.md lines, hooks or other pieces the newer model no longer needs. Use .gitignore and .agentignore to keep the agent and version control away from files they should not touch.",
+   "when": "Whenever the model changes or the setup has grown stale."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "Gemini CLI",
+  "superpowers",
+  "CLAUDE.md",
+  "Claude Code hooks (SessionStart, PreToolUse, Stop, exit-code-2)",
+  "skill-creator",
+  "Claude Code plugins and plugin marketplace",
+  "LSP (Language Server Protocol)",
+  "MCP (Model Context Protocol)",
+  "Explore sub-agent (built-in, overridable)",
+  ".gitignore",
+  ".agentignore",
+  "frontend-design plugin",
+  "code-review plugin",
+  "code-simplifier plugin",
+  "Playwright plugin",
+  "Sonnet 4.5",
+  "Opus",
+  "CleanMyMac (sponsor, not relevant to the technical content)"
+ ],
+ "numbers": [
+  {
+   "claim": "Recommended CLAUDE.md length is about 300 lines or fewer",
+   "t": "3:18"
+  },
+  {
+   "claim": "Speaker's hook examples include an exit-code-2 hook that feeds errors back to Claude, but no numeric benchmark or cost figure is given anywhere in the video",
+   "t": "4:46"
+  }
+ ],
+ "hot_takes": [
+  "Quality is capped at 2 because of a mid-video sponsored segment for CleanMyMac (about 3:18 to 4:46). The title 'Anthropic Just Revealed The Best Claude Code Setup' oversells a checklist, and the video is a secondhand summary of an Anthropic talk it never links or checks.",
+  "The claim that RAG has been 'completely replaced' by filesystem navigation is asserted without evidence or a benchmark, and overstates the case for current coding agents.",
+  "The claims that hooks 'force' behavior and that LSP is critical for unconventional languages are plausible practitioner advice, but the speaker shows no measurements.",
+  "It is advice from the speaker's own projects ('these are things we ourselves have been using'), with no before-and-after comparison."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness is a harness around the Claude Code CLI, and this video is a checklist of exactly those harness parts: CLAUDE.md layering, hooks, skills, plugins, sub-agents and MCP.",
+   "action": "Audit ProsHarness's harness against the five pieces. Add a Stop hook that writes session learnings back to CLAUDE.md, and move project-specific procedures from CLAUDE.md into path-scoped skills."
+  },
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "The video covers single-repo coding-agent harness setup and says nothing about proxies, budgets, memory tiers, inference or the storage layer.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

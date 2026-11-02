@@ -1,0 +1,157 @@
+{
+ "one_line": "Gus Iwanaga (commercetools) on intent-driven generative UI: an orchestrator picks data and components, and the LLM emits a validated declarative UI spec, not free-form UI. Main lessons are on placement, the component catalog as contract, and changing team roles.",
+ "summary": "Gus Iwanaga, GM at commercetools, argues that most SaaS UIs are still static and that the cognitive load of learning many apps should move to the software. He demos a generative UI product where a query like \"create a sales report for Q1\" makes an orchestrator extract intent, pull data from first- and third-party tools (including MCP servers), and hand that context to a UX agent. Early prototypes were inconsistent: the same query in four phrasings produced different layouts and dates, which he judged unshippable. He lays out three control levels for rendering (pick a component from a catalog, declarative UI spec, or open HTML in a sandboxed iframe) and says his team chose the declarative middle. The pipeline validates the spec against a Zod component catalog and renders native React components so output stays on the design system. The hard problems he names are information architecture (solved with an atomic-design-style layout hierarchy of templates, slots, sub-slots and components) and treating the catalog and its curation as the central asset. He also says the team no longer designs pixels, and that the work moved to schema curation, rules, and synthetic query-to-component data.",
+ "speakers": [
+  "Gus Iwanaga"
+ ],
+ "orgs": [
+  "commercetools"
+ ],
+ "format": "talk",
+ "topics": [
+  "product-ux",
+  "mcp-and-tools",
+  "agent-architecture"
+ ],
+ "tags": [
+  "generative-ui",
+  "declarative-ui",
+  "ui-protocols",
+  "a2ui",
+  "json-render",
+  "openui",
+  "atomic-design",
+  "component-catalog",
+  "zod",
+  "mcp-apps",
+  "intent-classification",
+  "information-architecture"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Most SaaS UI is still static, so users carry the cognitive load of learning many apps. Generative UI can move that load to the software.",
+   "detail": "Speaker frames the problem through screenshots of complex CRM-style screens and onboarding costs. The claim is that AI makes it possible to change the interface per intent instead of per app.",
+   "t": "2:46"
+  },
+  {
+   "idea": "Generative UI from a free-form prompt is not shippable as is. The same query phrased four ways gave different time ranges and layouts.",
+   "detail": "His early prototype turned 'Q1' into January to March and changed the KPI cards and charts between runs. He judged it unfit for production. Consistency across turns is treated as a hard requirement.",
+   "t": "6:38"
+  },
+  {
+   "idea": "An orchestrator separates intent extraction, tool selection and data assembly from rendering.",
+   "detail": "It extracts intent, locates first- or third-party tools (agents or MCP servers), and gathers the outputs as context. A separate UX agent then decides how to render that context.",
+   "t": "8:52"
+  },
+  {
+   "idea": "There are three control levels for generated UI: pick from a catalog, declarative spec, or open HTML.",
+   "detail": "Pick-from-catalog gives the most control and suits booking-style flows. Full autonomy means the LLM writes the layout (his example: an org chart). Open-ended means an MCP tool returns HTML rendered in a sandboxed iframe. He picked the declarative middle, citing B2B configuration complexity and the need for control.",
+   "t": "11:39"
+  },
+  {
+   "idea": "The declarative path keeps output on the design system: the LLM emits a UI spec that is validated against a Zod component catalog, then rendered as native React components.",
+   "detail": "Mapping goes from retrieved entities to eligible catalog components. The orchestrator broadcasts a UI description that must conform to the protocol and the catalog schema. Because the LLM does not write the copy or the native components, dates and wording stay fixed. Named protocols include A2UI (Google), JSON Render (Vercel) and OpenUI.",
+   "t": "15:14"
+  },
+  {
+   "idea": "Placement (information architecture) is the first hard problem once the agent picks components. The fix was a layout hierarchy and templates.",
+   "detail": "They borrowed atomic design and built layout, then slots, sub-slots and components. Because the orchestrator produces components first, they flip the order at mapping time: components map to sub-slots, sub-slots to slots, slots to templates. The UX agent is taught a template catalog, which codifies the team's UX knowledge.",
+   "t": "17:47"
+  },
+  {
+   "idea": "The catalog is the contract between agent and UI, so every property and the layout's own components need curation. He calls it the heartbeat of the system.",
+   "detail": "Because the catalog defines what the agent can say, schema attributes matter. Curation of the catalog is what turns a demo into something meaningful.",
+   "t": "20:26"
+  },
+  {
+   "idea": "The team stopped designing pixels. Their work shifted to schema, catalog curation, rules, synthetic query generation and interaction patterns, and this change also affected PMs and designers.",
+   "detail": "Synthetic queries are generated to map to each component. He stresses people, product and process as the three levers, with a lightweight process.",
+   "t": "21:49"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Declarative UI spec validated against a component catalog",
+   "how": "The LLM outputs a UI description that references catalog components and their props. Validate it against a schema (Zod in their case) and render native components from the design system. Do not let the model write raw markup.",
+   "when": "When output must follow a design system and copy, dates or numbers must not drift between runs."
+  },
+  {
+   "name": "Three-tier control spectrum for generated UI",
+   "how": "Pick the rendering mode by how much control the business needs: (1) agent picks a catalog component and it renders as-is; (2) declarative spec validated against the catalog; (3) MCP tool returns HTML rendered in a sandboxed iframe, with full LLM control.",
+   "when": "Choose per product. Booking-style flows fit tier 1, B2B configuration-heavy flows fit tier 2, and open-ended exploration fits tier 3."
+  },
+  {
+   "name": "Intent-to-UI orchestration pipeline",
+   "how": "Stage 1: extract intent from the query. Stage 2: locate and call tools, including MCP servers, and collect their outputs as context. Stage 3: map retrieved entities to eligible catalog components. Stage 4: a UX agent produces the UI spec. Stage 5: render natively.",
+   "when": "When one query should assemble data from several systems into a dashboard-like view."
+  },
+  {
+   "name": "Layout hierarchy with templates, built bottom-up",
+   "how": "Model the page as layout to slots to sub-slots to components, plus a library of templates. Map components upward to sub-slots, then slots, then templates, so the agent picks a template and fills slots.",
+   "when": "When an agent chooses components but placement must stay consistent with UX rules."
+  },
+  {
+   "name": "Synthetic query-to-component data for curation",
+   "how": "Generate example queries that should map to each catalog component, and use them to test and tune the mapping logic.",
+   "when": "When the catalog grows and you need coverage checks on how queries map to UI components."
+  }
+ ],
+ "tools": [
+  "MCP",
+  "Zod",
+  "React",
+  "A2UI",
+  "JSON Render (Vercel)",
+  "OpenUI",
+  "ChatGPT",
+  "Claude"
+ ],
+ "numbers": [
+  {
+   "claim": "commercetools is an API-first company with 300+ APIs (the speaker says the count is still growing).",
+   "t": "5:18"
+  },
+  {
+   "claim": "One query phrased four ways produced four different layouts, with Q1 turning into January to March in one variant.",
+   "t": "6:38"
+  },
+  {
+   "claim": "The project started in August of the previous year, after a discussion with the founder.",
+   "t": "5:18"
+  },
+  {
+   "claim": "The talk is 23:19 long. The speaker says he had about 30 minutes, so the time budget was cut.",
+   "t": "0:08"
+  }
+ ],
+ "hot_takes": [
+  "The software should adapt to people, not people to the software, and AI makes that possible now.",
+  "Fully delegating UI to an LLM is risky for companies because you cannot control output or outcome. Keep designers in control.",
+  "Non-deterministic UI needs a per-product choice of control level, and most teams should not choose full autonomy.",
+  "The team no longer designs pixels. The main work is catalog curation and rules, and the non-technical roles change too."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS is infra for agents. The talk's declarative spec plus schema validation is an output-contract pattern that could fit an agent UI surface, but AgentOS does not yet render UI.",
+   "action": "If AgentOS ever returns UI, have agents emit a catalog-validated spec, not raw HTML, and log which catalog components were chosen."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness has phone-driven approvals. A validated spec of approval cards (catalog-limited) could be safer than free-form content when the agent drives the UI.",
+   "action": "When designing phone approval cards, define a small component catalog with a schema the agent must fill, and validate it before rendering."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The catalog-as-contract idea (the tool or component schema bounds what the model can emit, and curation drives quality) applies to any agent-to-UI or agent-to-tool boundary.",
+   "action": "Read the talk's topic on generative UI protocols (A2UI, JSON Render, OpenUI) before choosing a UI output format for any agent feature."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,45 @@
+# From Transcription to Live Music: Gemini's Audio Stack — Thor Schaeff, Google DeepMind
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `Bc6Ojl2XS1w` · [watch](https://youtu.be/Bc6Ojl2XS1w) · **date:** 2026-06-18 · **length:** 19:34 · **format:** demo · **quality:** 2/5 · **depth:** intro
+- **speakers:** Thor Schaeff · **orgs:** Google DeepMind, Google
+- **topics:** voice-multimodal, data-engineering, models-research · **tags:** gemini, audio, speech-to-speech, tts, structured-output, live-api, lyria, google-ai-studio, gemma-4, agent-skills
+
+> Google DeepMind's Thor Schaeff tours Gemini's audio stack: one-call structured audio extraction, director's-note TTS, a native speech-to-speech Live model, and a live tool call to Lyria music generation.
+
+## Summary
+Thor Schaeff, who works on developer experience for the Gemini API and Google AI Studio, gives a 19-minute demo-driven tour of Google DeepMind's audio models. He frames audio understanding as more than transcription: the model should pick up speech context, emotion, pacing and speaker identity. His first demo is a single Gemini 3 Flash Preview request that returns a summary, speaker labels, timestamps, language, emotion and translations, shaped by a response schema. He then shows text-to-speech steered by a natural-language director's note and scene description on top of a small set of base voices, and a native speech-to-speech Live model that takes audio and video in over a WebSocket and reasons without a separate LLM stage. The talk ends with a live jukebox demo where the Live model calls a tool that generates a song with Lyria 3. Most of the content is product showcase with little quantitative data, and the speaker says he does not trust audio benchmarks, so the practitioner value lies mainly in the prompting and integration patterns.
+
+## Key ideas
+- **Audio understanding aims past transcription to speech context, emotion, pacing and accents, and Gemini handles overlapping speakers and language switches.** — The speaker says the goal is models that comprehend, richly transcribe and reason over audio. He shows this with overlapping speech and mixed languages, which he says the model handles well. ([0:00](https://youtu.be/Bc6Ojl2XS1w?t=0))
+- **One request can return many structured audio fields.** — A single Gemini 3 Flash Preview call with a response schema returned a summary, speaker names from context, timestamps, language, emotion and an English translation for non-English sections. The output filled his UI directly. ([6:22](https://youtu.be/Bc6Ojl2XS1w?t=382))
+- **Emotion labels from the model can be wrong for some languages and accents.** — The speaker's German was misread as angry in his normal experience, and his demo French line was labeled neutral when he wanted sad. Prompting for a label does not guarantee the label matches how the speaker meant it. ([5:05](https://youtu.be/Bc6Ojl2XS1w?t=305))
+- **TTS voice control now comes from directing a small base-voice set rather than picking from a large voice library.** — The speaker describes roughly 30 base voices that the model is directed to act out. He uses Gemini 3 Flash to write the TTS system prompt from a short request, and the prompt contains an audio profile, a scene, director's notes and the transcript. ([7:29](https://youtu.be/Bc6Ojl2XS1w?t=449))
+- **Native speech-to-speech reasons inside the audio model, unlike a cascaded pipeline.** — Gemini 3.1 Flash Live takes text, audio and video over a WebSocket and returns audio plus a transcript. The speaker contrasts this with speech-to-text, then an LLM, then text-to-speech, where intelligence sits in the middle stage. ([11:33](https://youtu.be/Bc6Ojl2XS1w?t=693))
+- **Screen and camera input for live audio are capped at about 1 frame per second.** — The live model ingests video frames alongside audio at a maximum of one frame per second. The speaker demos a camera-aware persona that comments on his outfit and switches to German on request. ([14:22](https://youtu.be/Bc6Ojl2XS1w?t=862))
+- **Install vendor-published API skills into coding agents for real-time audio work.** — Google has published coding-agent skills for its Gemini APIs, including the Live API. The speaker says real-time audio is harder to get right, and these skills steer coding agents toward working patterns. ([15:38](https://youtu.be/Bc6Ojl2XS1w?t=938))
+- **A realtime voice model can call a generation tool mid-conversation.** — In the Live Jukebox demo the Live model collects a request, then calls a tool that generates a song with Lyria 3. Lyria 3 Clip makes 30-second jingles and Lyria 3 Pro makes full-length songs. ([16:41](https://youtu.be/Bc6Ojl2XS1w?t=1001))
+
+## Techniques
+- **Single-call structured audio extraction** — Pass the audio in one request with a response schema that asks for speaker labels, timestamps, language, emotion, translation and summary. Fill the UI from the structured output. *When:* When one recording needs several derived fields and you want to avoid a chain of separate transcription and classification calls.
+- **Director's-note TTS prompting** — Write a prompt with an audio profile, a scene description, a director's note on delivery, and the transcript. Use a frontier model to draft that prompt from a short persona request, then send it to TTS on a base voice. *When:* When you need a specific accent or persona and do not want to search a large voice catalog.
+- **Realtime model with a generation tool** — Give a speech-to-speech Live session a tool definition for a music generator. The model collects the user's request, calls the tool, and speaks the result back. *When:* When a voice agent must produce media such as a song or jingle mid-conversation.
+- **System-instruction persona on a live audio model** — Set a speaking style such as an accent in the system instruction, then stream audio and camera frames. The model adapts tone and language in the same session. *When:* When you want a low-latency conversational persona with multimodal context from camera or screen.
+- **Install vendor API skills into coding agents** — Add the published Gemini API skills, including the Live API one, to the coding agent before building real-time features. *When:* When an agent is writing code against an API whose real-time behavior is easy to get wrong.
+
+## Numbers
+- Roughly 30 base voices for Gemini TTS, steered by direction rather than picked from a large library. ([7:29](https://youtu.be/Bc6Ojl2XS1w?t=449))
+- Live model ingests video frames at a maximum of 1 frame per second alongside audio. ([14:22](https://youtu.be/Bc6Ojl2XS1w?t=862))
+- Lyria 3 Clip generates 30-second jingles; Lyria 3 Pro generates full-length songs. ([15:38](https://youtu.be/Bc6Ojl2XS1w?t=938))
+- Gemma 4 was released about a week before the talk and includes on-device audio understanding. ([1:06](https://youtu.be/Bc6Ojl2XS1w?t=66))
+- Gemini 3.1 Flash Live launched a couple of weeks before the talk, as a full-duplex speech-to-speech model taking text, audio and video. ([11:33](https://youtu.be/Bc6Ojl2XS1w?t=693))
+
+## Hot takes
+- The speaker says he cannot really trust audio benchmarks and judges the models by demos instead.
+- He argues that putting reasoning inside a speech-to-speech model is a real difference from a cascaded STT, LLM and TTS pipeline, not only a latency gain.
+- Persona-driven TTS on a small base-voice set is presented as a better path than maintaining a large voice library.
+
+## Tools mentioned
+Gemini API, Google AI Studio, Gemini 3 Flash Preview, Gemini 3.1 Flash Live, Gemini Live API (WebSocket), Lyria 3 / Lyria 3 Pro, Gemma 4, Veo 3.1 Lite, Gemini coding-agent skills
+
+## Relevance to our work
+- **prosharness** (1/3): Vendor-published API skills installed into coding agents are a data point for how skill catalogs are used and ranked. → *Look at how Google structures its published Gemini API skills and compare the format with the skills ProsHarness ranks.*

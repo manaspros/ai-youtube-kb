@@ -1,0 +1,182 @@
+{
+ "one_line": "Uber's engineers walk through six building blocks (model gateway, MCP gateway, agent devpods, skills marketplace, context graph, Cortana) behind its managed software factory, then show one feature built end-to-end by an agent.",
+ "summary": "Uber's Uday Kiran Medisetty and Adam Huda describe the platform pieces behind Uber's managed software factory, with an emphasis on shared infrastructure rather than any single agent. The first half covers six building blocks: a model gateway, an MCP gateway, pre-provisioned agent environments, a managed skills marketplace, a context graph, and Cortana, the company AI assistant. Adam then follows one feature (a World Cup stadium pickup-location idea) from a Slack idea through business research, Figma mockups, and a Minion coding agent that produces a draft PR. The validation story moves checks into an inner loop (simulator screenshots against Figma, staging integration, smaller-model review) so CI sees less load, and a self-healing CI step handles remaining failures. The talk closes with maintenance: managed, scheduled skills that run on Sunday to clean up things like feature flags, with bounded diff counts and reviewer outcomes fed back as labels. The speakers say the remaining bottlenecks are CI capacity, experiment throughput, and the decision of what to build. Most numbers are self-reported internal figures with no methodology given.",
+ "speakers": [
+  "Uday Kiran Medisetty",
+  "Adam Huda"
+ ],
+ "orgs": [
+  "Uber"
+ ],
+ "format": "talk",
+ "topics": [
+  "software-factory",
+  "mcp-and-tools",
+  "pr-code-review",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "uber",
+  "software-factory",
+  "model-gateway",
+  "mcp-gateway",
+  "skills-marketplace",
+  "context-graph",
+  "minion",
+  "cortana",
+  "devpod",
+  "inner-loop-outer-loop",
+  "self-healing-ci",
+  "maintenance-agents",
+  "pii-redaction",
+  "token-optimization"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Put all model traffic behind one OpenAI/Anthropic-compatible gateway",
+   "detail": "Every internal tool and external use goes through one endpoint, which runs identity, PII redaction and safety checks before the request reaches a vendor. Each request is attributed to a project, user and team, so spend and guardrails can be managed across the portfolio.",
+   "t": "1:12"
+  },
+  {
+   "idea": "Agent tool access is a token-cost problem as well as an auth problem",
+   "detail": "Many MCP servers add up to a large token tax. Uber moved from direct MCP connections to one discovery MCP, then to CLI wrappers so tool output stays out of context, and finally to an auto-installed skill that writes Python for the most token-heavy use cases.",
+   "t": "3:58"
+  },
+  {
+   "idea": "Agents need pre-warmed, isolated environments with repos and indexes ready",
+   "detail": "Agent work runs in pre-provisioned Kubernetes pods that already have repositories snapshotted and search indexes built, so an agent can start in seconds. A combined cross-repo environment serves agents and engineers who work across several repos.",
+   "t": "5:27"
+  },
+  {
+   "idea": "Treat skills as a managed lifecycle, not loose files",
+   "detail": "Skills go through lint checks and automated review before reaching a marketplace, and personas auto-install defaults. The next step is collecting traces and comments as continuous evals to feed skill improvements.",
+   "t": "6:21"
+  },
+  {
+   "idea": "A single context graph replaces many per-system context-gathering calls",
+   "detail": "Context that was scattered across 20 to 30 systems is joined into one graph with 150 node and edge types. The speaker reports lower tokens, fewer turns and lower latency with the graph on an internal eval.",
+   "t": "7:44"
+  },
+  {
+   "idea": "Move checks into an inner loop so CI runs fewer, better-prepared changes",
+   "detail": "The agent validates visual output in a simulator against Figma and checks front-end and back-end integration in staging before pushing. The team says this is to protect CI capacity and avoid pushing unvalidated work through it.",
+   "t": "14:17"
+  },
+  {
+   "idea": "Give reviewers evidence of the agent's self-checks on the PR itself",
+   "detail": "Each autonomous PR carries a table listing the checks it passed, including screenshots, so the human reviewer can see the work was refined beyond the first generation.",
+   "t": "15:29"
+  },
+  {
+   "idea": "Maintenance runs as managed, bounded scheduled loops",
+   "detail": "Teams opt in through one managed surface. Runs happen on Sunday when CI has spare capacity, and diff volume is capped so engineers are not flooded on Monday. Landed or rejected diffs and reviewer comments become labels for improving the skill.",
+   "t": "15:29"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Single gateway with middleware chain and project attribution",
+   "how": "Route all LLM traffic through one compatible endpoint. Add middlewares in order: workload identity, a PII anonymizer (20-plus types), and a guard built from several small safety models, with a strict latency budget (under 100 ms). Require a project ID on every call for attribution and caching.",
+   "when": "When many teams or harnesses call models and you need per-team cost tracking, PII controls and guardrails without changing each client."
+  },
+  {
+   "name": "Progressive MCP projection (direct, discovery, CLI, generated code)",
+   "how": "Auto-crawl internal APIs and SaaS tools into MCP servers behind one gateway that handles token exchange. Then use one discovery MCP that finds and invokes other tools, project the most-used tools into CLI calls so results stay out of context, and generate Python scripts for the heaviest use cases.",
+   "when": "When the tool count is in the hundreds to thousands and MCP schema overhead or large tool responses dominate token spend."
+  },
+  {
+   "name": "Pre-warmed agent workspaces",
+   "how": "Keep a pool of pods with repos already snapshotted and search indexes already built. Hand one to an agent when a task starts, so the task does not wait for a clone or index build.",
+   "when": "When agents need quick, isolated, parallel environments on large monorepos."
+  },
+  {
+   "name": "Skill marketplace with lint, review and trace feedback",
+   "how": "Gate skills through lint and automated review, make discovery and install a single command, auto-install persona defaults, and log skill traces and comments to build continuous evals for each skill.",
+   "when": "When many engineers write overlapping skills and quality and duplication become a problem."
+  },
+  {
+   "name": "Shared context graph queried before tool calls",
+   "how": "Put structure from many systems (code, services, data lake, docs, tickets, incidents) into one graph with typed nodes and edges. Let skills query the graph first to find services, owners and table relations, then compare tokens, turns and latency with and without the graph.",
+   "when": "When agents spend many turns finding context across many systems before doing the actual work."
+  },
+  {
+   "name": "Split review between an inner loop and an outer loop",
+   "how": "In the inner loop, run a smaller, faster model for quick review before pushing. In the outer loop at CI or the PR gate, run a larger reasoning model with a deeper review skill. Also run visual and integration checks before CI.",
+   "when": "When review cost and latency matter and CI capacity is limited."
+  },
+  {
+   "name": "Managed scheduled maintenance loops with bounded output",
+   "how": "Make loops opt-in through one managed surface. Schedule them for low-load times such as Sunday, cap the number of diffs reaching engineers per cycle, and record which diffs landed to label the skill's quality.",
+   "when": "When automated cleanup such as flag removal or migrations should run company-wide without flooding reviewers."
+  }
+ ],
+ "tools": [
+  "Uber Minion (cloud coding agent)",
+  "Cortana (internal AI assistant)",
+  "DevPod / pre-provisioned Kubernetes pods",
+  "SPIRE (workload identity)",
+  "Bazel",
+  "Figma",
+  "Slack",
+  "MCP gateway / OmniMCP",
+  "Python code-mode skill"
+ ],
+ "numbers": [
+  {
+   "claim": "More than 70% of PRs are now produced by local or cloud agents; lines of code per engineer doubled year over year (self-reported, few thousand engineers across 12 sites)",
+   "t": "0:12"
+  },
+  {
+   "claim": "More than 250 automated migrations covering roughly 9 million lines of code",
+   "t": "0:12"
+  },
+  {
+   "claim": "Model gateway: 800-plus internal projects, more than 100 million model requests per day, PII redaction across 20-plus types, guard runs in under 100 ms",
+   "t": "1:12"
+  },
+  {
+   "claim": "1,000-plus MCP tools; more than 40% fleet-wide token savings from the MCP optimizations",
+   "t": "3:58"
+  },
+  {
+   "claim": "Skills marketplace holds about 2,500 skills with more than 20,000 skill executions per day",
+   "t": "6:21"
+  },
+  {
+   "claim": "Context graph: 150 unique node and edge types and about 40 million entries; tokens, turns and latency all improved on internal evals with the graph",
+   "t": "7:44"
+  },
+  {
+   "claim": "Cortana: 300 unique personas created in the last month and more than 20,000 sessions per day",
+   "t": "10:33"
+  }
+ ],
+ "hot_takes": [
+  "The speaker says the real bottleneck is no longer whether teams can build something but whether they should build it.",
+  "The speaker frames many MCP servers as a 'token tax' and argues that projecting tools into CLIs keeps tool output out of the agent's context."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "",
+   "action": "Compare Govrix Scout's middleware chain and per-project attribution against Uber's ordering (identity, anonymizer, guard) and add a latency-budget test. Use landed/rejected outcomes as a candidate success signal for SkillForge skill scoring."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs checkpointed long agent loops. Uber's bounded scheduled maintenance loops (off-peak runs, capped diffs, reviewer outcomes as labels) and PR checks table as evidence map directly onto that.",
+   "action": "Add an off-peak schedule and a per-cycle cap on output to ProsHarness loops, and have each run emit a checks table as its completion evidence."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The tiered review (a small model inline, a larger reasoning model at the PR gate) is a cheap-model pipeline pattern, but the talk gives no measured quality or cost numbers for it.",
+   "action": "Try a two-tier review on one repo, with a small model pass before push and a stronger model at the PR gate, and measure miss rate against cost."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

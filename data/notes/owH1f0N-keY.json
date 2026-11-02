@@ -1,0 +1,161 @@
+{
+ "one_line": "Google DeepMind's Android team on using Gemini Nano on-device via ML Kit GenAI and Firebase hybrid fallback, with Q&A on battery, shared-model scheduling and device reach.",
+ "summary": "Two Google speakers give a short overview of on-device AI on Android, then take audience questions. They explain the split between on-device models (Gemini Nano through the AICore system service, accessed via ML Kit GenAI APIs) and cloud models, and recommend on-device when available with cloud fallback. The main case for on-device is privacy, offline use and zero per-call cost, with tasks that need short context as the best fit. The speakers say the model is shared system-wide so apps do not each ship a multi-gigabyte model, and that the system schedules requests with foreground apps prioritised over background ones. Battery impact is acknowledged: occasional interactive use is fine, while continuous background batch work drains quickly. Limits discussed include device coverage (the GenAI models need recent flagship devices), no embedding API yet, and custom models requiring the developer to do their own device testing.",
+ "speakers": [
+  "Florina Muntenescu",
+  "Oli Gaymond"
+ ],
+ "orgs": [
+  "Google DeepMind",
+  "Google"
+ ],
+ "format": "talk",
+ "topics": [
+  "inference-serving",
+  "local-ai",
+  "product-ux"
+ ],
+ "tags": [
+  "on-device",
+  "gemini-nano",
+  "android",
+  "ml-kit",
+  "aicore",
+  "hybrid-inference",
+  "firebase-ai-logic",
+  "litert-lm",
+  "battery",
+  "privacy",
+  "gemma-4"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Default pattern is hybrid: run on-device when the local model is available, otherwise fall back to cloud.",
+   "detail": "Firebase AI Logic hybrid inference (launched a couple of weeks before the talk) makes that choice per request. The speakers frame it as the way to keep reach across devices while still using local inference where possible.",
+   "t": "1:06"
+  },
+  {
+   "idea": "On-device is worth it for privacy, offline use and zero per-call cost, but only for tasks that fit a small model and short context.",
+   "detail": "Sensitive data such as banking information stays on the device, and offline work becomes possible. Translation and personalisation are cited as typical fits.",
+   "t": "2:14"
+  },
+  {
+   "idea": "The model is one shared system resource, not a per-app download.",
+   "detail": "Gemini Nano is delivered through the AICore system service, so every app calls the same model. Requests are run in isolation and input and output are not stored on the device. The speaker says the smallest useful models are about 1 GB and shipped ones nearer 3-4 GB, which an app developer would find hard to justify shipping alone.",
+   "t": "3:38"
+  },
+  {
+   "idea": "The Prompt API is the general entry point, but it is limited to recent hardware.",
+   "detail": "It takes text and image input and returns text only. Task-specific APIs (summarisation, proofreading, rewrite) also exist. Gemini Nano currently runs on Pixel 9 and 10 class devices and some other OEM devices, so the cloud fallback is what extends reach.",
+   "t": "4:57"
+  },
+  {
+   "idea": "Battery cost depends on usage pattern: interactive bursts are fine, continuous background batch work is not.",
+   "detail": "Users calling the model 10-20 times a day is not a concern. Batch jobs that are not latency-sensitive are suggested for overnight runs while charging. The speakers say the platform queues and schedules calls, and that the system can attribute battery use to an app, similar to GPS or Wi-Fi.",
+   "t": "9:06"
+  },
+  {
+   "idea": "Foreground calls get priority over background calls on the shared model.",
+   "detail": "If another app is using the model, a background request waits in the queue. The app the user is actively using is prioritised. Developers do not manage this themselves.",
+   "t": "11:51"
+  },
+  {
+   "idea": "The on-device layer is meant to be the base that agents and skill systems are built on, not the agent itself.",
+   "detail": "When asked about skills, the speakers said skills are effectively prompt content composed by a higher-level app. The APIs are designed as low-level building blocks for others to build on.",
+   "t": "14:30"
+  },
+  {
+   "idea": "RAG is possible now by putting retrieved text into the prompt, but there is no embedding API yet.",
+   "detail": "The speakers say an embedding API is planned, which would let developers use an embedding model such as EmbeddingGemma directly. Until then, similarity search needs to be done outside the on-device API.",
+   "t": "15:50"
+  },
+  {
+   "idea": "Device coverage differs by model type: classic ML Kit models reach most devices, GenAI models need recent flagships.",
+   "detail": "Classic vision, OCR and text models are said to run on over a billion devices. GenAI APIs need flagship devices from the last couple of years. Custom models via LiteRT-LM require the developer to test across devices and profile battery impact.",
+   "t": "17:22"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Runtime hybrid routing with cloud fallback",
+   "how": "Check whether the on-device model is available at runtime. Send the request to the on-device model if so, otherwise to a cloud model through Firebase AI Logic, so one feature works across devices.",
+   "when": "When the feature must work on devices without the local model, but local inference is preferred for privacy, latency or cost."
+  },
+  {
+   "name": "Use the ML Kit GenAI Prompt API for on-device structured tasks",
+   "how": "Send natural-language prompts with text or image input to Gemini Nano. Use it for entity extraction, content analysis and image understanding. Use the task-specific APIs (summarise, proofread, rewrite) when they match the job.",
+   "when": "For short-context, private or offline tasks such as extracting fields from a banking screenshot or summarising text on the device."
+  },
+  {
+   "name": "Offload non-urgent batch work to background, charging-time windows",
+   "how": "Queue large, non-latency-sensitive jobs and run them in the background, for example overnight while the phone charges. Keep interactive calls for user-initiated moments.",
+   "when": "When processing many items where each result is not needed immediately, to limit battery impact."
+  },
+  {
+   "name": "Prompt-stuffed retrieval as a stopgap RAG",
+   "how": "Retrieve relevant text with your own search or index outside the on-device API, then pass the retrieved text into the Prompt API as part of the prompt.",
+   "when": "Before an on-device embedding API is available, if you need grounded answers over local content."
+  },
+  {
+   "name": "Device testing and profiling for custom models",
+   "how": "For custom models through LiteRT-LM, test across a range of devices and profile battery and latency yourself, since the platform does not do this for custom models.",
+   "when": "When you need a model that is not covered by AICore and must reach a wider device range."
+  }
+ ],
+ "tools": [
+  "Gemini Nano",
+  "AICore",
+  "ML Kit GenAI APIs",
+  "Prompt API",
+  "Firebase AI Logic",
+  "LiteRT-LM",
+  "AI Edge Gallery",
+  "Gemma 4"
+ ],
+ "numbers": [
+  {
+   "claim": "Smallest useful on-device models are about 1 GB; shipped models are close to 3-4 GB in total.",
+   "t": "10:35"
+  },
+  {
+   "claim": "Typical user interaction with on-device AI is around 10-20 uses per day, which the speaker says is not a concerning battery load.",
+   "t": "9:06"
+  },
+  {
+   "claim": "Classic ML Kit vision, OCR and text models run on a very large device base (described as over a billion devices).",
+   "t": "17:22"
+  },
+  {
+   "claim": "Gemini Nano GenAI APIs currently need recent flagship devices; the speakers name the Pixel 9 and Pixel 10 generation plus some other OEMs.",
+   "t": "4:57"
+  }
+ ],
+ "hot_takes": [
+  "A 3-4 GB on-device model is not something an app developer should ship alone; a single system-managed model is the right trade-off (speaker's view).",
+  "Continuous background use of on-device AI will drain the battery quickly, so the feature design has to avoid it (speaker's view)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "InferCraft covers local inference and scheduling on one GPU; this talk describes the same idea of a shared model with system-level queueing and foreground priority, but for phones.",
+   "action": "Read the AICore scheduling and foreground-priority design as a reference when designing InferCraft's 4-class priority scheduler, then decide whether any of it applies to a single-GPU server."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Talk is about on-device mobile inference and does not touch the Claude Code harness, checkpointing or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Cheap-model pipeline idea: batch non-urgent jobs in off-peak windows and keep interactive calls separate; the same split applies to Haiku batch work.",
+   "action": "Note the batch-versus-interactive split from the battery discussion as a design check for any cheap-model batch pipeline."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

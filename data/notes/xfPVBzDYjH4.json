@@ -1,0 +1,149 @@
+{
+ "one_line": "A Google DeepMind developer-experience lead demos the Gemini Live API for real-time voice and vision agents, covering native-audio sessions, tool calls, live translation and stateful image generation. Mostly a product showcase with a few useful architecture points.",
+ "summary": "Thor Schaeff from Google DeepMind's developer experience team walks through Gemini models for real-time, multimodal agents, mostly through live demos. He covers Gemini TTS, the newly shipped Nano Banana Lite (faster image generation and editing) and Gemini Live Translate, which detects the speaker's language and translates in near real time. The core technical section explains the Live API: a stateful WebSocket session that takes streamed text, audio and video frames and returns audio chunks plus a transcript. He contrasts this native-audio model with a cascaded speech-to-text, LLM, text-to-speech pipeline, arguing that the understanding lives in the audio model, which allows fluid switching across 90 preview languages, barge-in and tool calls. Demos show a live story-illustrating agent calling the Interactions API, a radio-DJ agent that calls Lyria 3 for music, and Google Search grounding as a built-in function call. Most of the talk is a product pitch, and the claims are shown rather than benchmarked.",
+ "speakers": [
+  "Thor Schaeff"
+ ],
+ "orgs": [
+  "Google DeepMind",
+  "LiveKit",
+  "Pipecat"
+ ],
+ "format": "demo",
+ "topics": [
+  "voice-multimodal",
+  "models-research",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "gemini",
+  "gemini-live-api",
+  "voice-agents",
+  "native-audio",
+  "function-calling",
+  "live-translate",
+  "interactions-api",
+  "text-to-speech",
+  "image-generation",
+  "lyria",
+  "google-ai-studio",
+  "barge-in",
+  "grounding",
+  "livekit",
+  "pipecat"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Native audio model vs cascaded voice pipeline",
+   "detail": "Live API uses a native audio model rather than STT, then LLM, then TTS. The speaker says the intelligence sits in the audio model itself, which lets it understand speech directly and switch languages fluidly.",
+   "t": "14:54"
+  },
+  {
+   "idea": "Live API is a stateful WebSocket session",
+   "detail": "One session takes text, audio and video frames in real time and streams back audio chunks plus a transcript. The client is responsible for playing the chunks back.",
+   "t": "13:35"
+  },
+  {
+   "idea": "Barge-in and tool calls inside a live voice session",
+   "detail": "Users can interrupt the model mid-speech. The session also supports function calls, so a voice agent can call an external API during a conversation, such as a music generator or a CRM lookup.",
+   "t": "11:01"
+  },
+  {
+   "idea": "Live Translate detects language and translates as you speak",
+   "detail": "The model starts translating once it has enough context of what is being said. The listener picks a target language from a QR-code page, and the speaker never needs to name the source language.",
+   "t": "7:12"
+  },
+  {
+   "idea": "Stateful Interactions API chains generations for visual consistency",
+   "detail": "Passing the previous interaction ID into the next call gives the model the earlier context. The speaker uses this to keep characters and style consistent across several image generations.",
+   "t": "5:46"
+  },
+  {
+   "idea": "Image generation latency is the practical bottleneck in live demos",
+   "detail": "Nano Banana Lite is pitched as cutting latency for image generation and editing. Even so, the speaker says generation still takes about two to three seconds, which is why a live agent needs a tool-call pattern for it.",
+   "t": "4:47"
+  },
+  {
+   "idea": "Grounding with Google Search as a built-in function call",
+   "detail": "Enabling search grounding lets the model answer questions about current events, such as today's weather, without writing a custom tool. The speaker frames it as a built-in function call.",
+   "t": "17:45"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Stateful WebSocket session for real-time multimodal agents",
+   "how": "Open one session, stream text, audio and video frames up over the WebSocket, and stream audio chunks plus transcript back to the client. Use the transcript for logs or UI.",
+   "when": "Building low-latency voice or vision agents where a request/response API adds too much delay."
+  },
+  {
+   "name": "Tool call from a live voice agent to a slow generator",
+   "how": "Give the live agent a function declaration. When the user asks for something, such as a song, the agent calls the external generation API (Lyria 3 in the demo) and speaks the result when it returns.",
+   "when": "Voice agents that must trigger slow backend work (music, image, ticket creation) while keeping the conversation going."
+  },
+  {
+   "name": "Chaining generations with the previous interaction ID",
+   "how": "Store the interaction ID from each Interactions API response and pass it into the next call so the model keeps the earlier context.",
+   "when": "Multi-step generation where consistency across outputs matters, such as illustrating a story with the same characters."
+  },
+  {
+   "name": "Native audio vs cascaded voice pipeline",
+   "how": "Send raw audio to a native audio model instead of chaining STT, LLM and TTS. The speaker suggests this makes language switching and interruption easier, but gives no measurements.",
+   "when": "Real-time conversational agents that need multilingual speech and barge-in, where the speaker's claims would be tested against latency and accuracy before adopting."
+  }
+ ],
+ "tools": [
+  "Gemini Live API",
+  "Gemini 3.1 Flash Live",
+  "Gemini 3.5 Live Translate",
+  "Gemini TTS",
+  "Nano Banana Lite",
+  "Omni Flash",
+  "Lyria 3",
+  "Gemini Interactions API",
+  "Google AI Studio",
+  "LiveKit",
+  "Pipecat"
+ ],
+ "numbers": [
+  {
+   "claim": "Image generation via Interactions API takes about two to three seconds",
+   "t": "4:47"
+  },
+  {
+   "claim": "Live API supports 90 languages in preview",
+   "t": "14:54"
+  },
+  {
+   "claim": "Gemini TTS now has lower latency than before, with streaming and inline audio steering (no figure given)",
+   "t": "0:12"
+  }
+ ],
+ "hot_takes": [
+  "Native audio models should replace cascaded STT, LLM and TTS pipelines for real-time conversational agents (speaker's claim, no benchmark shown)",
+  "Demo apps built in AI Studio are less useful as business products, but their individual components (multilingual, barge-in, tool calls) are reusable"
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Voice and real-time session APIs are not in the AgentOS layers; the talk is a Gemini product showcase.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No checkpoint, plan/critique, or Claude Code harness content.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Shows a stateful interaction-ID chaining pattern and a native-audio versus cascaded pipeline comparison, with no measurements.",
+   "action": "If voice agents come up, check the Live API docs for the native-audio session model and compare its latency against our cascaded pipeline before choosing one."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

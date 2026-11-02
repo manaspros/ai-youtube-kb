@@ -1,0 +1,156 @@
+{
+ "one_line": "Snorkel shows a 4B model, RL-trained on single-table financial tool-use tasks for under $500, beating a 235B model. The gain came from fixing tool discipline, not reasoning.",
+ "summary": "Kobie Crawford of Snorkel presents research with UC Berkeley's RLM/Agentica team on making a 4B-parameter model outperform a 235B model (Qwen3, transcribed as \"QEN3\") on financial-analysis tool use. The large model guessed a nonexistent table, never inspected the available tools, and then hallucinated an answer, so the authors treat this as a behavior problem rather than a reasoning problem. They trained the 4B model with GRPO on a self-contained FinQA environment, using a verified dataset built with domain experts in the loop. Single-table-only training beat mixing in multi-table questions and beat a curriculum. The tuned model learned to list tables, inspect schemas, run queries, and recover from column errors. Its pass@1 roughly doubled on both the single-table set and the harder multi-table FinQA reasoning set, and each run cost under $500. The speaker also argues for rubric-based evals, which split a response into sub-questions to locate the behavior to target, while RL still optimizes a single scalar reward. The talk is partly promotional for Snorkel's data offering, but it reports concrete before-and-after behavior and numbers.",
+ "speakers": [
+  "Kobie Crawford"
+ ],
+ "orgs": [
+  "Snorkel",
+  "UC Berkeley (RLM / Agentica)",
+  "Prime Intellect",
+  "OpenEnv",
+  "Hugging Face",
+  "PyTorch"
+ ],
+ "format": "talk",
+ "topics": [
+  "training-finetuning-rl",
+  "evals",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "GRPO",
+  "RL for tool use",
+  "FinQA",
+  "financial analysis",
+  "small models",
+  "behavior-targeted RL",
+  "single-table curriculum",
+  "rubric evals",
+  "OpenEnv",
+  "self-contained environment",
+  "text-to-SQL agent",
+  "Qwen3"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A bigger model was not the fix. A 4B model tuned for tool use beat a 235B model on the same financial tool-use questions.",
+   "detail": "The goal was to get a smaller model to match a larger one on cost, speed, and on-prem deployability. RL was chosen because the target was changing behavior rather than adding knowledge.",
+   "t": "2:29"
+  },
+  {
+   "idea": "The large model's failure was tool discipline, not reasoning.",
+   "detail": "The 235B model queried a table that did not exist, never listed the available tools, retried once more without success, and then made up an answer. Its reasoning was strong but unused.",
+   "t": "6:14"
+  },
+  {
+   "idea": "Data quality means expert-written tasks plus a verification pass.",
+   "detail": "Domain experts (including PhD-level and industry practitioners) write the questions. A separate step checks that each task can be queried and has a verifiable answer before training.",
+   "t": "10:00"
+  },
+  {
+   "idea": "The tuned 4B model's gain came from a fixed sequence of tool calls: list tables, inspect schema, query, then self-correct.",
+   "detail": "After an error about a nonexistent revenue column, the model read the error and corrected the column name. The speaker says this discipline is what drives success on these questions.",
+   "t": "14:14"
+  },
+  {
+   "idea": "Single-table-only training beat mixed and curriculum training, and the gain carried over to harder multi-table questions.",
+   "detail": "In the ablation, single-table-only training gave the largest uplift. The multi-table benchmark also roughly doubled, so the speaker concludes that fixing one core failure mode generalizes.",
+   "t": "16:12"
+  },
+  {
+   "idea": "Rubric evals help find which behavior to target, but RL still uses a single score.",
+   "detail": "Breaking each response into yes/no sub-questions shows where it fails. Those findings decide which data to generate. The RL reward stays a single value, which GRPO expects.",
+   "t": "18:40"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Behavior-targeted RL with GRPO on a tool environment",
+   "how": "Start from a small base model (4B). Build an environment that exposes the tools and the database, with no external dependencies. Train with GRPO on verifiable question-answer pairs. Run the RL framework from UC Berkeley's RLM group.",
+   "when": "When a model's failure is about how it uses tools rather than what it knows, and you need a cheap, self-hosted model."
+  },
+  {
+   "name": "Single-table-first training data",
+   "how": "Train only on single-table questions instead of a mixed or curriculum set. The speaker reports this gave the best results on both the easy and the harder multi-table sets.",
+   "when": "When the target skill is basic tool discipline, and harder multi-step cases are expected to generalize from it."
+  },
+  {
+   "name": "Verification pass on generated tasks",
+   "how": "After experts write tasks, check each one for queryability and a verifiable answer before using it for training.",
+   "when": "Before RL, whenever training data is written by people or generated and bad tasks would waste compute."
+  },
+  {
+   "name": "Rubric decomposition for diagnosis",
+   "how": "Break a response's correctness into a list of yes/no sub-questions (for example, did it list tables, did it recover from an error). Use the per-item results to decide what data to generate. Keep a single scalar reward for the RL update.",
+   "when": "When a final pass/fail score does not show why the model fails."
+  },
+  {
+   "name": "Publish the environment as a portable package",
+   "how": "Package the environment as self-contained so it runs anywhere, and publish it to shared hubs (OpenEnv, Prime Intellect, Hugging Face Spaces).",
+   "when": "When you want others to reuse an RL environment for tool-use training."
+  }
+ ],
+ "tools": [
+  "GRPO",
+  "RLM framework (UC Berkeley)",
+  "FinQA environment (Snorkel)",
+  "OpenEnv",
+  "Prime Intellect",
+  "Harbor",
+  "GetTableNames / GetTableInfo tools",
+  "Qwen3"
+ ],
+ "numbers": [
+  {
+   "claim": "Parameter counts compared: a 4B model versus a 235B model (Qwen3) on tool use for financial analysis.",
+   "t": "2:29"
+  },
+  {
+   "claim": "RL run took about 21 hours (as auto-captioned) and cost under $500 per run.",
+   "t": "11:22"
+  },
+  {
+   "claim": "Pass@1 roughly doubled on FinQA, and the 4B model outperformed the 235B model.",
+   "t": "14:14"
+  },
+  {
+   "claim": "Multi-table FinQA reasoning benchmark rose from 13.9 to 26.6 percentage points after training (transcribed as a 'percentage jump').",
+   "t": "17:13"
+  },
+  {
+   "claim": "Benchmark sizes: FinQA has 290 samples; FinQA reasoning (multi-table) has 79 samples.",
+   "t": "12:42"
+  }
+ ],
+ "hot_takes": [
+  "Sometimes the answer is not a bigger model; the right behavior training on a smaller one can beat it.",
+  "For this task, tool discipline mattered more than reasoning strength.",
+  "Single-table-only training beat mixed and curriculum training.",
+  "A useful RL run for under $500 is now practical for teams hosting their own models."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS plans RAGAS evals and failure-mode analysis for its own agents. The rubric breakdown of tool-use failure is a concrete method to try there.",
+   "action": "Add per-step rubric checks to the agent eval suite (for example, did the agent list tools before querying, and did it recover from an error) and report them next to the final pass/fail."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs Claude Code in long checkpointed runs. The talk's main finding is that agents skip tool discovery and invent answers, which a harness could check for.",
+   "action": "Add a check in the ProsHarness plan step that the agent inspects available tools and schema before issuing actions, and log cases where it does not."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Relevant to the recurring interest in small cheap models for pipelines: a 4B model can be made to beat a 235B model on one narrow task for about $500 of RL.",
+   "action": "Read the Snorkel/UC Berkeley write-up and the OpenEnv FinQA environment to see whether a small-model RL run is worth trying for a narrow agent task."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

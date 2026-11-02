@@ -1,0 +1,142 @@
+{
+ "one_line": "Armanas Povilionis (Alithea Bio) argues that cross-organization agent work needs signed, verifiable receipts, and demos Froglet, an open protocol for agents to discover, buy and verify services.",
+ "summary": "The speaker, from life-sciences firm Alithea Bio, argues that scientific automation is collaborative across organizations, so adding more local tools to agents is not enough. He proposes giving agents budgets and the ability to find, negotiate with and pay external providers, with a verifiable chain of receipts for each step. His solution is Froglet, an open protocol that sits between existing payment rails, agent harnesses and transports rather than replacing them. Every Froglet node is the same software that can act as provider, requester or marketplace, and each node has a key pair so that every artifact in a quote, deal, execution and receipt is signed. Discovery goes through a marketplace, but after a requester picks a service the communication is direct between the two nodes. The live demo ran a trivial two-number addition service from a remote trial node and a local Docker node, with Claude calling it through a Froglet MCP server. The talk makes broad claims, such as bespoke collaboration costing millions and years, and the demo was a toy service, so the evidence is thin and the talk reads closer to a product pitch with a useful framing.",
+ "speakers": [
+  "Armanas Povilionis"
+ ],
+ "orgs": [
+  "Alithea Bio"
+ ],
+ "format": "talk",
+ "topics": [
+  "security-guardrails",
+  "multi-agent",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "froglet",
+  "verifiable-receipts",
+  "signed-artifacts",
+  "agent-marketplace",
+  "agent-to-agent-payments",
+  "mcp",
+  "life-sciences",
+  "open-protocol",
+  "provenance",
+  "docker"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Collaboration across organizations is the real bottleneck, not local tooling",
+   "detail": "The speaker's analogy: a cook with better knives is local efficiency, while science is closer to a Michelin restaurant that depends on suppliers and repeatable quality. The gap is aligning a supply chain across siloed data, algorithms and compute, which needs verifiable receipts.",
+   "t": "1:25"
+  },
+  {
+   "idea": "Give agents budgets, not only tools",
+   "detail": "He expects agents to manage their own budgets to discover services, request data, negotiate terms and pay for work across organizational boundaries, and to keep a record of what happened. He describes token budgets per task as a primitive version of this.",
+   "t": "3:34"
+  },
+  {
+   "idea": "Froglet is a thin interface layer that integrates rather than replaces",
+   "detail": "It is an open protocol for discover, transact and receipt. It is meant to plug into different payment rails, agent harnesses, execution environments and transports. Nodes do not need the same software stack, only the same interface.",
+   "t": "5:04"
+  },
+  {
+   "idea": "One node binary with switchable roles, and signed chains",
+   "detail": "A Froglet node can act as provider, requester or marketplace. A marketplace is just a node offering a listing service. Each node generates a key pair, every step is signed, and the chain counts as valid only if no data point was tampered with.",
+   "t": "7:38"
+  },
+  {
+   "idea": "Marketplace for discovery, direct peer connection for the deal",
+   "detail": "Providers publish their services to a marketplace using the same protocol. Requesters query the marketplace for the list, then talk directly to the provider, so quote, deal, execution and receipt happen in one peer-to-peer interaction with no third party in the path.",
+   "t": "8:44"
+  },
+  {
+   "idea": "An LLM should be the main interface to the protocol",
+   "detail": "Froglet is exposed as an MCP server or plugin in agent harnesses. The speaker says the primary human interface should be an LLM that drives usage as provider or requester, which keeps the protocol out of the model's context window.",
+   "t": "9:50"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Signed per-step receipts for agent transactions",
+   "how": "Give each node a key pair at creation and sign every artifact in the quote, deal, execution and receipt sequence, so the full chain can be checked for tampering.",
+   "when": "Multi-party agent work where a result has to be trusted or audited by a party that did not run it."
+  },
+  {
+   "name": "Marketplace as discovery only, direct peer deals",
+   "how": "Providers publish listings to a shared marketplace. Requesters read the list from it, then negotiate and execute directly with the chosen provider.",
+   "when": "Discovering external services without routing every request and payment through a central broker."
+  },
+  {
+   "name": "Same node, role chosen at runtime",
+   "how": "One software build can run as provider, requester or marketplace. A single node can hold several roles at once, as shown by the demo node that was both provider and consumer.",
+   "when": "Reducing the number of distinct services to deploy in a small network of organizations."
+  },
+  {
+   "name": "Typed payload with schema and deal ID, polled asynchronously",
+   "how": "The requester builds a payload that names the service schema, the target provider and the input, submits it, gets a deal ID, and polls until the result is ready.",
+   "when": "Calling remote services whose execution time depends on load, such as a small cloud node."
+  },
+  {
+   "name": "Expose the protocol through MCP and let the LLM drive it",
+   "how": "Ship the node as an MCP server or harness plugin and have the agent perform discovery, invocation and checks via tool calls. The speaker asked Claude to check status, publish a service from a template and invoke it.",
+   "when": "When the agent should call external services without putting the protocol details into its context."
+  }
+ ],
+ "tools": [
+  "Froglet",
+  "MCP",
+  "Claude",
+  "Docker",
+  "OpenClaw",
+  "NemoClaw"
+ ],
+ "numbers": [
+  {
+   "claim": "Setting up a sharing and transaction flow costs a few thousand tokens and takes minutes (speaker's claim, not measured)",
+   "t": "10:55"
+  },
+  {
+   "claim": "Bespoke closed-source scientific collaboration can take years and millions before any reusable workflow exists (speaker's claim, not measured)",
+   "t": "5:04"
+  },
+  {
+   "claim": "Remote trial identity token lasts 15 minutes",
+   "t": "11:04"
+  },
+  {
+   "claim": "Demo deal for 7 + 5 returned the correct answer 12 after a polling loop; no latency figures given",
+   "t": "12:05"
+  }
+ ],
+ "hot_takes": [
+  "Agents should be given budgets to buy services across organizations, not just better tools.",
+  "Verifiable receipts, not more tool calls, are what make collaborative science with agents possible.",
+  "The primary interface for humans to a protocol like this should be an LLM, not a dashboard."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS already has a Merkle audit log. Per-execution signed receipts that can be checked by a counterparty is a related idea, though Froglet targets cross-org trust rather than local audit.",
+   "action": "Skim the Froglet receipt format on froglet.dev and compare it with the Merkle audit log design for AgentOS governance."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Checkpoint and resume of long runs could produce signed, tamper-evident checkpoint records, similar to the receipt chain described.",
+   "action": "Consider whether ProsHarness checkpoints should be hash-chained or signed so a resumed run can be verified."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The speaker's argument that multi-party agent work needs verifiable provenance is a useful framing, but the talk offers no evaluation and the demo is a toy service.",
+   "action": "Treat as background reading on agent provenance and do not adopt the protocol without an independent check of its signing scheme."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

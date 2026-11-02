@@ -1,0 +1,49 @@
+# Cloudflare Just Challenged Jev, So I Tested Their New Model (Clef)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `Uihz1NkhFM0` · [watch](https://youtu.be/Uihz1NkhFM0) · **date:** 2026-10-05 · **length:** 7:59 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Andres · **orgs:** Better Stack, Cloudflare, TypeSafe AI, Anthropic
+- **topics:** models-research, evals, token-cost-efficiency · **tags:** cloudflare-clef, system-1-model, classification, llm-as-judge, open-weights, latency-benchmark, free-tier, thumbnail-analysis, tone-detection, prompt-injection
+
+> Better Stack pits Cloudflare's open-weight Clef against Jev on 200 comments and 225 thumbnails: Jev wins on speed, cost and tone; Clef is close and reads images.
+
+## Summary
+The presenter introduces "System 1" models, Clef (Cloudflare, 27B and a 9B Flash variant, open weights, up to four images) and Jev (TypeSafe AI, released September 15). Unlike chatbots, these models take a piece of content plus a list of questions and return a probability for each possible answer. He runs both on 200 real comments from the channel, asking five questions per comment (spam, worth replying to, says the video got something wrong, tone, toxicity). Claude Opus 5.5 serves as the referee, so "correct" means agreeing with that model, not with human labels. Jev is about 7x faster end-to-end (7.2s vs 27.2s, including network latency) and about 6.5x cheaper per comment, while Clef's run was free inside Cloudflare's daily neuron allowance. On accuracy Jev agreed with the referee 86% of the time and Clef 83%; Clef wins three of five questions, and its weak spot is tone (49%), where it over-predicts "neutral." Both flagged a prompt-injection joke comment as spam. In a second test Clef judged 225 unlabeled thumbnails, and its "yes, this will win" picks performed no better than the channel average, though screenshot-led thumbnails did better than diagram-led ones. The verdict: Jev is faster, cheaper and better on tone, while Clef is close on accuracy, can see images and can be self-hosted, which makes it a fair pick for apps already on Cloudflare.
+
+## Key ideas
+- **System 1 models are not chatbots. You send content plus a question set (yes/no, pick-one from a list, or a scale rating), and get back a probability for every answer.** — Clef comes in 27B and 9B Flash sizes, accepts up to four images, and is open-weight, so it can run on your own hardware. Jev is a comparable model, released September 15. ([1:02](https://youtu.be/Uihz1NkhFM0?t=62))
+- **Jev is cheaper per token, but Clef is the only one of the two that can read images.** — Jev's size is undisclosed; third-party listings put its per-token price at roughly 6x lower than Clef's. Image input is the main reason to pick Clef. ([2:22](https://youtu.be/Uihz1NkhFM0?t=142))
+- **The test design: 200 real channel comments, five questions each, scored by agreement with Claude Opus 5.5 as a referee rather than human labels.** — Agreement with a strong referee model is a proxy for correctness. Results are reported per question, not as a single aggregate. ([2:22](https://youtu.be/Uihz1NkhFM0?t=142))
+- **Speed and cost. Jev finished in 7.2s and Clef in 27.2s, both including the network hop from the presenter's machine. Clef's run cost $0 under Cloudflare's free allowance.** — He says Cloudflare's own benchmarks show the opposite, and that an app running on Cloudflare should see much lower latency. He used the large Clef, not Flash. Jev was about 6.5x cheaper per comment. Clef used about 14 of the 10,000 daily neurons per comment, roughly 700 calls a day free. ([3:14](https://youtu.be/Uihz1NkhFM0?t=194))
+- **Overall accuracy was close (Jev 86%, Clef 83%), but the gap is almost entirely tone: Clef scored 49% because it defaults to neutral.** — Clef won three of five questions. On a comment calling Jev a copycat, Clef said neutral with 90% confidence, while Jev read it as critique. Sarcasm and sharp criticism are where Clef's neutral bias shows. ([4:28](https://youtu.be/Uihz1NkhFM0?t=268))
+- **A prompt-injection joke posted on the channel was flagged as spam by both models. The referee read it as a joke.** — Adversarial or meta-humor content is a weak spot for both classifiers. Any spam or injection filter built on these models needs a human-review path for borderline cases. ([4:28](https://youtu.be/Uihz1NkhFM0?t=268))
+- **Thumbnail prediction: Clef is useful for describing images, not for predicting performance.** — It said yes to 176 of 225 unlabeled thumbnails, but only 49% of those beat the channel's typical video, which is the base rate. Its top pick hit 2.4x typical views, but the next four underperformed. Screenshot-led thumbnails averaged 1.4x typical views and diagram-led ones 0.9x. The presenter says topic matters more than thumbnail and treats the finding as a hint, not a rule. ([5:45](https://youtu.be/Uihz1NkhFM0?t=345))
+
+## Techniques
+- **Probability-output classification for triage** — Pass one piece of content plus a fixed question set, and specify each question's answer type: yes/no, one option from a defined list, or a scale rating. Read the per-answer probabilities and set your own threshold per question, rather than parsing free-text answers. Ask one question per field instead of one big prompt. *When:* High-volume, low-stakes labeling where you want cheap, fast, consistent output, for example spam, toxicity, tone or reply-worthiness on user comments. Good as a first-pass filter in front of a stronger model or a human.
+- **Per-question agreement against a referee model** — With no human labels, run a strong model (here Claude Opus 5.5) as referee on the same items. Compute agreement per question, not one overall score, since the aggregate hid a 49% tone score. Report which questions each candidate wins. *When:* Comparing cheap classifiers or small models when you have no labeled data. Treat the result as agreement with the referee, which is only a proxy for accuracy.
+- **Separate latency and cost measurement, including the network** — Time the full batch end to end from your client, and include the network round trip. Convert usage into per-item cost, and check any free-tier quota: 10,000 neurons per day at about 14 neurons per call gives roughly 700 free calls a day. *When:* Before choosing a model for a batch workload, and when deciding whether a free tier covers a job. Provider-published benchmarks may not match what your app sees.
+
+## Numbers
+- Clef is 27B parameters; Clef Flash is 9B. Both accept up to four images and are open-weight. ([1:02](https://youtu.be/Uihz1NkhFM0?t=62))
+- Jev is roughly 6x cheaper per token than Clef, per third-party listings. ([1:02](https://youtu.be/Uihz1NkhFM0?t=62))
+- Test size: 200 random comments, five questions each. ([2:22](https://youtu.be/Uihz1NkhFM0?t=142))
+- End-to-end time for the 200-comment run: Jev 7.2s, Clef 27.2s (includes network latency; large Clef used). ([3:14](https://youtu.be/Uihz1NkhFM0?t=194))
+- Jev about 6.5x cheaper per comment. Clef cost $0 within the free allowance of 10,000 neurons/day, at about 14 neurons per comment (~700 calls/day). ([3:14](https://youtu.be/Uihz1NkhFM0?t=194))
+- Agreement with referee: Jev 86%, Clef 83%. Clef wins 3 of 5 questions. Clef tone accuracy 49%. ([4:28](https://youtu.be/Uihz1NkhFM0?t=268))
+- Clef called a copycat-accusation comment neutral with 90% confidence. ([4:28](https://youtu.be/Uihz1NkhFM0?t=268))
+- Thumbnail test: 225 unlabeled thumbnails; Clef said yes to 176, and 49% of those beat the channel's typical video (a coin flip, matching the channel average). Top pick 2.4x typical views. ([5:45](https://youtu.be/Uihz1NkhFM0?t=345))
+- Thumbnail groups: screenshot-led 1.4x typical views; diagram-led 0.9x typical views. ([5:45](https://youtu.be/Uihz1NkhFM0?t=345))
+
+## Hot takes
+- Clef's tone result (49%) is the main weakness. The presenter says it defaults to neutral, the "Switzerland of AI models."
+- The ground truth is another LLM (Claude Opus 5.5), not human labels, so "accuracy" here means agreement with that referee.
+- The presenter says Cloudflare's own benchmarks show Clef faster than his test, and that his network hop adds latency. He concedes that Clef would likely be faster on Cloudflare infrastructure.
+- Using Clef to predict thumbnail performance is not reliable. Topic matters more than thumbnail, and the presenter does not plan to replace the thumbnail process with it.
+- The sample is one channel's comments (200) and no confidence intervals are given; the findings are indicative, not conclusive.
+
+## Tools mentioned
+Clef (Cloudflare, 27B and 9B Flash, open weights, up to 4 images), Jev (TypeSafe AI, released September 15, size undisclosed), Claude Opus 5.5 (used as referee), Cloudflare free daily allowance (10,000 neurons), YouTube (comments and thumbnails source)
+
+## Relevance to our work
+- **general** (2/3): Relevant to the recurring interest in cheap-model (Haiku) pipelines and LLM-as-judge evaluation. The main lesson: aggregate accuracy can hide a weak question (tone at 49%), and the referee is a proxy, not ground truth. → *When a cheap model is a classifier in a pipeline, score each question or label separately against a stronger referee on a sample, and include latency and cost per item in the comparison.*
+- **agentos** (1/3): Govrix Scout's PII and prompt-injection scan is the closest fit. The video shows that a cheap probability-output classifier can be fast and cheap, but it also shows weak spots (neutral bias, joke-as-spam) that a guard would have to handle. → *Before using a small classifier for the Govrix PII/prompt-injection scan, build a 200-item labeled set and report per-category agreement, especially on borderline and adversarial inputs, rather than one aggregate score.*

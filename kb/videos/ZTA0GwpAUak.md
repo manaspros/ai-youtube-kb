@@ -1,0 +1,49 @@
+# Bringing Continual Learning into Enterprises — Samuel Denton, Applied Compute
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `ZTA0GwpAUak` · [watch](https://youtu.be/ZTA0GwpAUak) · **date:** 2026-08-18 · **length:** 19:03 · **format:** talk · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Samuel Denton · **orgs:** Applied Compute
+- **topics:** training-finetuning-rl, coding-agents, enterprise-adoption · **tags:** continual-learning, distillation, self-distillation, online-distillation, hinting, privileged-information, LLM-judge, SWE-bench, Qwen-3.5, KL-divergence, per-step-hints, relevance-mass
+
+> Samuel Denton (Applied Compute) lays out a 2x2 of offline/online hints and traces for distilling production agents, with SWE-bench and hyperlink-format results showing online hints win on on-policy behavior.
+
+## Summary
+Samuel Denton from Applied Compute presents a framework for continual learning in enterprises built on distillation. He sorts approaches along two axes: offline versus online traces, and offline versus online hints (the privileged information used to build a smarter teacher). The result is a 2x2 grid, and the speaker says the company works mainly in the offline-hint/offline-trace quadrant, which gives value on day one, and the online-hint/online-trace quadrant, which raises the ceiling continuously. A key claim is that this works without a golden answer or rubric per task, which he says most distillation work assumes. Two experiments back this up. In one, an offline hint nudged Qwen 3.5 on SWE-bench to call a finish tool before turn 40, raising task-complete rate from about 22% to 60% with test pass rate holding steady. In the other, an online hint built from each rollout raised correct hyperlink formatting from about 15% to about 80%, while a single offline hint applied to every rollout helped much less. He also covers tricks: a judge picks where in the rollout to inject a hint, distillation runs only on the next step or few steps, and an LLM judge filters which teacher tokens to learn from. The talk closes with a hiring pitch.
+
+## Key ideas
+- **Distillation can be placed on a spectrum from offline (one batch of production traces) to online (inference and training run as one loop).** — Offline is where most enterprises are today. Fully online means the model updates while it serves traffic, so each production trace feeds the next request. ([1:01](https://youtu.be/ZTA0GwpAUak?t=61))
+- **Two independent axes: where the trace comes from, and where the hint comes from.** — Hints can be static priors (for example, a support agent that gives refunds too easily, or known rubrics) or built dynamically from the online rollout. Crossing the two axes gives four quadrants, with the speaker's focus on quadrant 1 (offline hint, offline trace) and quadrant 4 (online hint, online trace). ([3:39](https://youtu.be/ZTA0GwpAUak?t=219))
+- **Value splits into improving now on existing data and raising the ceiling later with online updates.** — Offline production traces can be used on day one with no replay environment. Online distillation then keeps raising the ceiling as the deployed model serves traffic. ([9:31](https://youtu.be/ZTA0GwpAUak?t=571))
+- **The method is built to avoid needing a golden answer per task.** — The speaker says distillation work often assumes a golden answer or rubric exists for every task. The hint and judge setup is meant to work without one. ([9:31](https://youtu.be/ZTA0GwpAUak?t=571))
+- **A hint given to the teacher can steer reasoning toward a tool call without changing the tool-call tokens.** — The student was trained on the original production trace, which never called the finish tool. The hinted teacher shifted the reasoning path toward calling it, so the student learned the behavior without the tokens being forced. The speaker calls this surprising. ([13:18](https://youtu.be/ZTA0GwpAUak?t=798))
+- **Online hints beat offline hints on behavior that is out of distribution for the base model.** — For hyperlink formats that earlier SFT or reward shaping had broken overall coding performance on, a per-rollout hint worked far better than one fixed hint applied to every rollout. ([14:42](https://youtu.be/ZTA0GwpAUak?t=882))
+- **Inject hints per step, not at the start of the rollout.** — A judge picks the point in the rollout to inject the hint, and distillation runs on the next step or a few steps ahead. The speaker says this is the turn where the teacher should teach. The KL learning signal drops as the distance from the hint grows. ([15:39](https://youtu.be/ZTA0GwpAUak?t=939))
+- **Filter teacher tokens with an LLM judge (relevance mass self-distillation).** — Teachers often put preference mass on connector words unrelated to the target behavior. A judge selects which tokens to learn from. This lets the student learn an out-of-distribution behavior with less catastrophic degradation. ([16:47](https://youtu.be/ZTA0GwpAUak?t=1007))
+
+## Techniques
+- **Offline hint on offline production traces** — Take a stored batch of production traces and build a teacher by conditioning on a hint that describes the behavior to change. Distill the teacher into the student. No replay environment is needed. *When:* Day-one improvement on an existing trace dump, for a targeted behavior such as wrapping up earlier or not over-issuing refunds.
+- **Turn-budget nudge hint** — Hint text says the agent is near its turn limit, to finalize and verify, then call the finish tool. In the SWE-bench test the hint was given to the teacher only, and the student learned the finish-tool behavior from the original trace. *When:* An agent that runs too long and never calls its completion tool, and you need it to finish under a turn budget without regressing test pass rate.
+- **One-step on-policy rollout from an offline trace** — Pick a point in an old trace, let the current on-policy model roll out one step, and build the hint from that step. Distill on that step. *When:* You want better results than a fully offline hint but cannot replay the full environment.
+- **Online hint from each rollout** — After the on-policy model finishes a rollout, write a hint about what it did and what to do next time (for example, the format it should use for links). Distill the teacher, conditioned on that hint, into the student on that production trace. *When:* A behavior is far from what the base model was post-trained on, and SFT or a reward on the format degraded general coding ability.
+- **Judge-chosen hint placement with next-step distillation** — An LLM judge decides which step of the rollout gets the hint. Distill only that next step or a few steps forward, not the whole rollout. *When:* Long agent rollouts where a single hint at the start has weak effect on the step that matters.
+- **Relevance-mass token selection (self-distillation)** — Teacher logits are weighted by an LLM judge that marks which tokens matter for the target behavior. Connector-word preferences unrelated to the target are dropped from the loss. *When:* Self-distillation pushes the student into an out-of-distribution behavior and degrades general capability.
+
+## Numbers
+- Qwen 3.5 thinking model on SWE-bench sometimes took up to 80 turns to submit; the target was a finish-tool call before turn 40. ([10:45](https://youtu.be/ZTA0GwpAUak?t=645))
+- Task-complete tool call rate rose from about 22% to about 60% with an offline hint, while test pass rate stayed flat or rose slightly. ([12:01](https://youtu.be/ZTA0GwpAUak?t=721))
+- With an online hint per rollout, correct hyperlink formatting rose from about 15% to about 80%. ([14:42](https://youtu.be/ZTA0GwpAUak?t=882))
+- A single offline hint applied to every rollout moved the same hyperlink behavior only a little. ([15:39](https://youtu.be/ZTA0GwpAUak?t=939))
+- Talk length 19:03; the speaker's experiments cover SWE-bench (coding) and one customer's coding-agent hyperlink format. ([0:08](https://youtu.be/ZTA0GwpAUak?t=8))
+
+## Hot takes
+- Most distillation work assumes a golden answer exists for every task, which is often not true in practice.
+- Hint-conditioned teachers can change the reasoning path toward a tool call without the tool-call tokens themselves being forced.
+- Offline one-step rollouts look like a cheat that works better than pure offline hints, since they are closer to on-policy.
+- Infra that merges serving and training will make online distillation the way to keep raising the ceiling.
+
+## Tools mentioned
+SWE-bench, Qwen 3.5 (thinking model)
+
+## Relevance to our work
+- **agentos** (1/3): EvolveCraft (self-improving agents) and SkillForge (mine telemetry into skills) are the same loop: learn from production traces. The offline/online hint taxonomy is a useful frame for that design. It is not an infra change. → *Read the offline-hint versus online-hint section (3:39 to 9:31) when deciding how EvolveCraft should learn from mined traces. Start with offline hints on stored traces, then consider a judge-chosen hint step later.*
+- **prosharness** (1/3): The turn-budget hint idea (nudge the agent to wrap up and call a finish tool near its limit) could apply to long Claude Code runs in the harness. The talk tests this only as a training-time hint, not as an inference-time prompt, so the gain is unproven for ProsHarness. → *Test a near-budget wrap-up prompt on a long checkpointed run and measure how often the run calls its finish or checkpoint step before the limit, with no change to pass rate.*
+- **general** (1/3): Judge-selected intervention points and token-level filtering of teacher signal are general ideas for cheap-model pipelines, but this needs a training loop to apply. → *Read the per-step hinting and relevance-mass sections (15:39 to 16:47) if a cheap-model fine-tuning or distillation pipeline is planned.*

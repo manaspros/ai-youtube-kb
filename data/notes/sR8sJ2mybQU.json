@@ -1,0 +1,227 @@
+{
+ "speakers": [
+  "Kai Explains presenter (name not stated in transcript)"
+ ],
+ "one_line": "Kai Explains on picking local-LLM hardware in 2026 (Mac Studio vs RTX vs rented cloud GPUs), with measured vLLM vs llama.cpp and multi-GPU scaling results and a budget-based buying guide.",
+ "summary": "The presenter explains why local coding models became practical in 2026, citing an 80B MoE Qwen3 Coder Next that fits in about 46 GB at Q4 and a 27B dense Qwen 3.6 that fits in 16 GB. He describes his own mistake of serving a 20 GB model on a 24 GB GPU with vLLM, which ran at 19 tok/s against 120 tok/s for llama.cpp on the same card, and explains that vLLM's CUDA graphs silently fall back to eager execution when VRAM headroom is too small. He then compares hardware: a 128 GB M4 Max Mac Studio (546 GB/s bandwidth, roughly 15-28 tok/s on dense 70B at Q4), a single RTX 5090 (32 GB, about $2,000), a four-3090 build whose throughput barely improves past two cards because of PCIe sync overhead, and an AMD Strix Halo box (215 GB/s) that only runs MoE models well. The cloud section gives H100 rental prices and a breakeven of about $2,160/month for a $3/hr instance. His closing recommendations are budget-tiered, and he frames local as a complement that handles about 80% of daily work while frontier models handle the hard 20%. The transcript is cut off at 12:53, so the final outro is missing.",
+ "orgs": [
+  "Anthropic",
+  "OpenAI",
+  "NVIDIA",
+  "Apple",
+  "AMD",
+  "Vast AI",
+  "RunPod",
+  "Lambda Labs"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "token-cost-efficiency",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "local-llm",
+  "hardware-buying-guide",
+  "llama-cpp",
+  "vllm",
+  "cuda-graphs",
+  "apple-silicon",
+  "mlx",
+  "rtx-5090",
+  "rtx-3090",
+  "multi-gpu",
+  "pcie",
+  "moe",
+  "quantization-q4",
+  "memory-bandwidth",
+  "cloud-gpu",
+  "breakeven",
+  "hybrid-routing",
+  "qwen3-coder-next",
+  "qwen-3.6"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Two 2026 changes made local coding models practical: an 80B MoE coder model (Qwen3 Coder Next) that fits in about 46 GB at Q4, and a 27B dense model (Qwen 3.6) that fits in 16 GB.",
+   "detail": "The presenter says the MoE model is roughly on par with Claude Sonnet on coding benchmarks, but later puts it about 2 SWE-bench points behind Sonnet 4.6. He also claims the 27B dense model beats the larger MoE on real coding tasks.",
+   "t": "0:00"
+  },
+  {
+   "idea": "On a single 24 GB card, vLLM was about 6-7x slower than llama.cpp for the same model.",
+   "detail": "A 20 GB model gave 19 tok/s on vLLM and 120 tok/s on llama.cpp. He spent weeks tuning vLLM before he tried llama.cpp.",
+   "t": "2:36"
+  },
+  {
+   "idea": "vLLM's CUDA graphs need contiguous VRAM. When the weights plus KV cache leave no headroom, vLLM silently falls back to launching each operation eagerly, so its advantages never turn on.",
+   "detail": "The rule he gives: with one or two consumer GPUs, use llama.cpp. Use vLLM with 48 GB workstation cards or cloud instances that have plenty of memory headroom.",
+   "t": "3:53"
+  },
+  {
+   "idea": "Token generation is mostly memory-bandwidth bound because the weights are read on every token. Bandwidth, not compute, is what separates the hardware options.",
+   "detail": "M4 Max has 546 GB/s, Strix Halo 215 GB/s. Unified memory on Apple Silicon lets the CPU and GPU share the full RAM pool without a PCIe copy.",
+   "t": "5:12"
+  },
+  {
+   "idea": "Do not buy a rumored or unbenchmarked chip. He says the RTX 5090's numbers on Qwen3 Coder Next at 32K-64K context were not yet verified when he recorded, and the M4 Ultra specs were inconsistent across sources.",
+   "detail": "The advice is to run your own benchmark before trusting spec-sheet or forum numbers. He treats the M4 Max 128 GB as the verified ceiling.",
+   "t": "6:24"
+  },
+  {
+   "idea": "Splitting one model across consumer GPUs over PCIe barely scales. Going from two RTX 3090s to four gave no gain and was sometimes slower.",
+   "detail": "Throughput was 70-72 tok/s on one card, 90-96 on two, and 88-97 on four. Data-center cards have NVLink, consumer boards do not. Stop at two cards unless you need 400K+ context and are distributing the KV cache.",
+   "t": "7:47"
+  },
+  {
+   "idea": "On bandwidth-limited hardware, use MoE models only. Dense models are bottlenecked, while MoE models activate only a fraction of their parameters per token.",
+   "detail": "On Strix Halo, dense 70B at Q4 gets about 5 tok/s, while a 122B MoE at Q4 gets nearly 30 tok/s. He says the presenter's own numbers are the basis for this claim, and the 122B figure is as stated in the transcript.",
+   "t": "9:10"
+  },
+  {
+   "idea": "Rent versus buy comes down to a monthly breakeven. A $3/hr instance running 720 hours costs about $2,160/month, and owning pays back in 3-12 months if API spend is consistently above that.",
+   "detail": "The hidden cost is cold start on community cloud tiers, which takes 30 seconds to 3 minutes. Keeping a warm instance removes the savings for spiky workloads.",
+   "t": "10:23"
+  },
+  {
+   "idea": "Local is a complement to frontier APIs, not a replacement. The suggested split is about 80% local and 20% to a frontier model such as Opus.",
+   "detail": "Local gives unlimited tokens at long context, privacy for proprietary code, offline use, and fine-tuning on your own code. It falls short on hard multi-step agent work, where it loops or loses the thread.",
+   "t": "12:53"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Pick the serving framework by VRAM headroom",
+   "how": "Use llama.cpp when the model plus KV cache sits on one or two consumer GPUs. Use vLLM only with a 48 GB workstation card or a cloud instance with spare memory. If vLLM is slow on a single card, check whether its CUDA graphs failed to build and it is running eagerly. The transcript gives no flags or config keys.",
+   "when": "Single 24-32 GB consumer GPU serving a 20+ GB quantized model. Also applies when a vLLM benchmark looks suspiciously low."
+  },
+  {
+   "name": "Estimate decode speed from memory bandwidth, then confirm with your own benchmark",
+   "how": "Tokens/s is roughly bandwidth divided by the bytes read per token. Compare dense and MoE models on the same bandwidth. Measure tok/s on the exact model, quant and context length you plan to run before committing money.",
+   "when": "Comparing hardware such as a Mac, a 5090 and an AMD box, or when a spec-sheet or Reddit number is the only evidence."
+  },
+  {
+   "name": "Pair MoE models with bandwidth-limited hardware",
+   "how": "Choose MoE architectures such as a 122B MoE at Q4 on a 215 GB/s machine. Avoid dense 70B on such a machine, since it drops to about 5 tok/s.",
+   "when": "Buying an AMD Strix Halo or any unified-memory box with well below Apple-class bandwidth."
+  },
+  {
+   "name": "Cap consumer multi-GPU at two cards, or run one server per GPU",
+   "how": "Do not tensor-split one model across four PCIe consumer cards. For a team, run a separate llama.cpp server instance bound to each card, with no vLLM and no NVLink assumption.",
+   "when": "Shared inference for 3-5 people on a budget. Use more than two cards only for 400K+ context with distributed KV cache."
+  },
+  {
+   "name": "Breakeven check before renting or buying",
+   "how": "Compute monthly rental cost as hourly price times 720. Compare it with current consistent API spend. Own hardware if spend is above the breakeven for 3-12 months. Rent if spend is below it or if the workload is spiky, and add the cold-start cost.",
+   "when": "Deciding between buying hardware and renting a cloud GPU such as Vast AI, RunPod or Lambda."
+  },
+  {
+   "name": "Split work between local and frontier models",
+   "how": "Send about 80% of routine work (autocomplete, refactors, boilerplate, review) to a local model. Send the hard multi-step 20% to a frontier model such as Opus.",
+   "when": "Team or solo setups where API cost matters but complex agent tasks still need top-tier quality."
+  }
+ ],
+ "tools": [
+  "Qwen3 Coder Next (80B MoE, Q4 about 46 GB, 70.6 SWE-bench as stated)",
+  "Qwen 3.6 27B dense (16 GB, 77.2 SWE-bench as stated; transcript spells it 'Quen 3.627B')",
+  "Claude Sonnet 4.6",
+  "Claude Opus",
+  "GPT-4 (mentioned only as an example of a frontier API)",
+  "vLLM",
+  "llama.cpp",
+  "Apple MLX",
+  "CUDA graphs",
+  "NVLink",
+  "PCIe",
+  "Mac Studio M4 Max 128 GB",
+  "M4 Ultra (rumored, unverified)",
+  "M5 chip",
+  "NVIDIA RTX 5090 (32 GB)",
+  "NVIDIA RTX 4090 (24 GB)",
+  "NVIDIA RTX 3090 (used)",
+  "AMD Strix Halo (Framework desktop, 128 GB)",
+  "Vast AI",
+  "RunPod",
+  "Lambda Labs"
+ ],
+ "numbers": [
+  {
+   "claim": "Qwen3 Coder Next: 80B MoE, about 46 GB at Q4. Stated SWE-bench score 70.6.",
+   "t": "0:00 / 12:53"
+  },
+  {
+   "claim": "Qwen 3.6 27B dense: about 16 GB, over 25 tok/s on an M5 chip, stated SWE-bench score 77.2.",
+   "t": "1:26 / 12:53"
+  },
+  {
+   "claim": "Local model about 2 SWE-bench points behind Sonnet 4.6.",
+   "t": "1:26"
+  },
+  {
+   "claim": "20 GB model on a 24 GB RTX 4090-class card: vLLM 19 tok/s vs llama.cpp 120 tok/s (6-7x).",
+   "t": "2:36"
+  },
+  {
+   "claim": "Mac Studio M4 Max 128 GB: about $4,000-5,000, 546 GB/s bandwidth, dense 70B at Q4 about 15-28 tok/s.",
+   "t": "5:12"
+  },
+  {
+   "claim": "RTX 5090 32 GB: about $2,000.",
+   "t": "6:24"
+  },
+  {
+   "claim": "Four RTX 3090 split across cards: 1 card 70-72 tok/s, 2 cards 90-96, 4 cards 88-97.",
+   "t": "7:47"
+  },
+  {
+   "claim": "Used RTX 3090 pair costs about $1,400-1,800, four cost over $3,000.",
+   "t": "7:47"
+  },
+  {
+   "claim": "AMD Strix Halo: $1,099-1,999, 128 GB, 215 GB/s. Dense 70B Q4 about 5 tok/s, 122B MoE Q4 nearly 30 tok/s.",
+   "t": "9:10"
+  },
+  {
+   "claim": "Cloud H100 rental: Vast AI about $1.49/hr, RunPod about $1.99/hr, Lambda Labs $2.99/hr.",
+   "t": "10:23"
+  },
+  {
+   "claim": "Breakeven: $3/hr x 720 hours = $2,160/month. Owning pays back in 3-12 months above that spend.",
+   "t": "10:23"
+  },
+  {
+   "claim": "Cold start on community cloud tiers: 30 seconds to 3 minutes.",
+   "t": "10:23"
+  },
+  {
+   "claim": "Budget tiers: solo under $5,000 (M4 Max or 5090 build about $3,500). Team of 3-5 under $15,000 (two used 3090s, $3,000-4,000 total). Rent if API spend is under $2,000/month or the workload is spiky.",
+   "t": "11:31"
+  }
+ ],
+ "hot_takes": [
+  "Local models can match Claude Sonnet on coding. This is contradicted in the same video, where he says the best local model is about 2 SWE-bench points behind Sonnet 4.6.",
+  "Most benchmark and throughput numbers are the presenter's own or secondhand, with no sources linked. He admits the RTX 5090 figures were unverified when recorded, so treat them as directional.",
+  "The claim that MLX is sometimes ahead of llama.cpp for long-context inference has no numbers attached.",
+  "Prices and cloud rates are a snapshot at recording time (Sept 2026), and cloud pricing changes fast.",
+  "The breakeven math assumes constant 24/7 utilization.",
+  "The transcript ends at 12:53 mid-sentence ('So, after all'), while the video is 13:48 long, so the closing summary is missing from the notes."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 3,
+   "why": "InferCraft (L2B) runs vLLM + Ray Serve on a single RTX 5090. This talk says vLLM silently drops CUDA graphs on a single consumer card without VRAM headroom, and that llama.cpp was 6-7x faster on a 24 GB card. That directly challenges InferCraft's serving choice on this hardware.",
+   "action": "Benchmark vLLM (with and without CUDA graphs / enforce-eager) against llama.cpp on the RTX 5090 with Qwen3 Coder Next Q4, at 32K and 64K context. Record whether graphs are captured and the tok/s for each, before relying on vLLM in InferCraft."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs Claude Code loops, and some subagent or loop steps could move to a cheaper local model. The talk is anecdotal and is not about agent harnesses.",
+   "action": "Test whether routine loop or subagent tasks such as refactors or boilerplate could run on a local Qwen model, while planning and critique stay on Claude."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

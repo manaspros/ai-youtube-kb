@@ -1,0 +1,176 @@
+{
+ "one_line": "Red Hat's Sally Ann O'Malley runs OpenClaw agents in Podman containers, keeps API keys as secret refs, and lifts the same setup to Kubernetes; the talk is a live demo with a pitch for containers as the default agent sandbox.",
+ "summary": "The speaker, a Red Hat engineer, argues that AI agents (here OpenClaw, an MIT-licensed agent project) should run in containers by default, because containers give reproducible environments, portability across laptop and Kubernetes, and an explicit boundary on what the host exposes. She keeps her API keys in Podman secrets, mounts them into the container, and points OpenClaw's secret-ref feature at them so keys never sit in plain config or logs. Her team-level vision is a company baseline image (approved MCP servers, auth, team skills) that individuals then personalize. She demoed a small installer that starts a Podman pod, turns exported env vars into OpenClaw secret refs, sets OpenRouter as the primary model with Anthropic as fallback, and optionally wires OpenTelemetry to Jaeger; she also showed an SSH sandbox option. The live demo ran out of time, so model switching and the Kubernetes side were only partly shown. The Mac limitation (containers there run inside a VM, which makes spawning containers from containers hard) is a useful caveat. Speaker-reported anecdotes include an NVIDIA team running about 10 engineers' OpenClaws in Kubernetes for model evals; the Docker path of the installer was not tested by her.",
+ "speakers": [
+  "Sally Ann O'Malley"
+ ],
+ "orgs": [
+  "Red Hat",
+  "OpenClaw",
+  "NVIDIA",
+  "Docker"
+ ],
+ "format": "demo",
+ "topics": [
+  "sandboxing-execution",
+  "security-guardrails",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "openclaw",
+  "podman",
+  "podman-secrets",
+  "secret-refs",
+  "containers",
+  "kubernetes",
+  "openshift",
+  "reproducible-environments",
+  "sandbox",
+  "ssh-sandbox",
+  "volumes-backup",
+  "team-baseline-image",
+  "opentelemetry",
+  "jaeger",
+  "openrouter",
+  "gemma",
+  "mac-vm-caveat"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Run agents in containers by default: reproducible, portable across laptop, x86, Mac and Kubernetes, and the container gives a natural sandbox where host access has to be stated explicitly.",
+   "detail": "She says the container boundary is the sandbox and that every host resource (mounts, secrets, network) must be granted on purpose. She treats this as the same argument Red Hat already makes for securing any application.",
+   "t": "3:53"
+  },
+  {
+   "idea": "Keep API keys out of the agent's config: store them as Podman secrets, mount them into the container, and have OpenClaw refer to them through its secret-ref feature.",
+   "detail": "Each credential becomes a pointer to an outside secret. She admits this is not perfect but says it keeps keys out of logs and visible config. The same pattern carries over to Kubernetes secrets.",
+   "t": "6:18"
+  },
+  {
+   "idea": "Develop locally in a container, then lift the same workload to Kubernetes or OpenShift, so the security and scaling story is the same at both ends.",
+   "detail": "She cites an NVIDIA contact whose team runs about 10 engineers' OpenClaw instances in Kubernetes, checking in with model evals. This is speaker-reported, not her own measurement.",
+   "t": "8:46"
+  },
+  {
+   "idea": "Store all runtime state in a named volume (PVC in Kubernetes) so backup and recovery are simple; she backs hers up nightly with a systemd service.",
+   "detail": "Her agent directory (skills, tools, MCP server configs) is also mounted into the container, so the whole setup is up at startup.",
+   "t": "11:11"
+  },
+  {
+   "idea": "Team baseline: one curated agent image per company (approved MCP servers, company auth, team skills, access to shared tools), fanned out to new hires and then personalized per person.",
+   "detail": "She contrasts this with new hires copying a colleague's repo and assembling the setup by hand. She frames it as team standards, portable environments and reproducible onboarding.",
+   "t": "12:08"
+  },
+  {
+   "idea": "Mac caveat: on macOS every container runs inside a VM, so spawning a container from inside a container does not work the way it does on Linux.",
+   "detail": "She has not solved this for her Mac setup and says nested containers work on Linux. Her installer runs with npm run dev locally on the Mac when she does not use a container.",
+   "t": "13:32"
+  },
+  {
+   "idea": "A one-command installer turns exported env vars into OpenClaw secret refs and sets providers: OpenRouter primary, Anthropic fallback, an optional local endpoint, and an optional OpenTelemetry collector with Jaeger.",
+   "detail": "She chose not to test the telemetry option live to save time. She says the installer was written for Podman but intended to work with Docker, and a Docker user has not yet confirmed it.",
+   "t": "16:11"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Podman secrets + secret-ref indirection for agent API keys",
+   "how": "Create each API key as a Podman secret, mount it into the container, and configure the agent's provider credentials as secret refs that resolve at runtime, so the raw key never appears in the agent config or logs.",
+   "when": "Any containerized agent that calls paid model APIs or other services and needs credentials without putting them in files or env listings."
+  },
+  {
+   "name": "Container as the agent sandbox with explicit host grants",
+   "how": "Run the agent in a container and grant access only through explicit mounts, volumes, secrets and SSH keys, instead of running it natively on the host.",
+   "when": "Running agents on a work laptop or shared machine where the agent should not reach the rest of the host."
+  },
+  {
+   "name": "Mount the agent's tool directory at startup",
+   "how": "Keep skills, tools and MCP server configs in one host directory and mount it into the container, so the agent comes up with its full toolset every time.",
+   "when": "Reproducible agent setups that need the same skills and MCP servers across machines or restarts."
+  },
+  {
+   "name": "Named volume for runtime state with scheduled backup",
+   "how": "Keep all agent runtime state in one container volume (PVC in Kubernetes) and back it up on a schedule, here a nightly systemd service.",
+   "when": "Long-lived agents whose memory, sessions and configuration must survive container restarts or moves."
+  },
+  {
+   "name": "Local-to-Kubernetes lift with the same image",
+   "how": "Build and test the agent container locally, then deploy the same image to Kubernetes or OpenShift with the same secret and volume setup.",
+   "when": "Moving an agent from a developer machine to a shared cluster for multiple users."
+  },
+  {
+   "name": "Company baseline image with per-user layer",
+   "how": "Publish one approved agent image with company MCP servers, auth and team skills, then let each person add personal config on top.",
+   "when": "Rolling out agents to a team with shared standards and fast onboarding."
+  },
+  {
+   "name": "SSH sandbox for remote execution",
+   "how": "Give the agent SSH keys and known_hosts for a target machine so all its commands run in that remote workspace.",
+   "when": "The agent should act on a separate machine rather than the container's own filesystem."
+  },
+  {
+   "name": "Installer that converts env vars to secret refs and sets providers",
+   "how": "A script reads exported API-key env vars, creates OpenClaw secret refs for each, starts a Podman pod with a port and mapped secrets, and sets model providers with a fallback.",
+   "when": "Standardizing agent startup across a team so credentials are never typed into config files."
+  }
+ ],
+ "tools": [
+  "OpenClaw",
+  "Podman",
+  "Podman secrets",
+  "Docker",
+  "Kubernetes",
+  "OpenShift",
+  "kind",
+  "systemd",
+  "OpenRouter",
+  "Anthropic",
+  "Gemma",
+  "OpenTelemetry",
+  "Jaeger",
+  "inferRS (speaker's friend's project, mentioned only)",
+  "npm"
+ ],
+ "numbers": [
+  {
+   "claim": "NVIDIA team (speaker-reported via a friend) runs about 10 engineers, each with an OpenClaw instance in Kubernetes doing model evals; the speaker says it does the work of six engineers.",
+   "t": "8:46"
+  },
+  {
+   "claim": "The OpenClaw repo gets about 100 new commits per hour; after a couple of days away the speaker pulled and found about 10,000 new commits.",
+   "t": "13:32"
+  },
+  {
+   "claim": "Model status check on the demo instance took about two seconds.",
+   "t": "18:13"
+  },
+  {
+   "claim": "Speaker has worked at Red Hat about 10 years, the last three on AI work.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Run every agent in containers by default; it is the natural sandbox and the reason to containerize is the same as for any application.",
+  "Podman secrets plus secret refs are better than plain environment variables for API keys, even if the setup is not perfect.",
+  "Agents will run everywhere and talk to each other; the need for security and scale at that point is what Kubernetes is for.",
+  "AI is not replacing engineers; it frees them for more creative work (speaker's view, after saying she has not written code in months)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS L2C Crucible and the sandbox/guardrail pillars overlap with containerized agent sandboxes and secret handling, but the talk shows no benchmarks or new mechanism beyond the basic container pattern.",
+   "action": "When next touching how AgentOS injects provider API keys into containers, test a Podman-secret mount plus a secret-ref indirection and compare it with the current approach."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Secret-ref handling and mounting credentials at container start matches ProsHarness's zero-token credential handling goal, but the talk does not address checkpoint/resume or approvals.",
+   "action": "Check that ProsHarness resolves credentials by reference at run start and never writes them into run logs or checkpoints, using the secret-ref pattern from the talk as the reference design."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

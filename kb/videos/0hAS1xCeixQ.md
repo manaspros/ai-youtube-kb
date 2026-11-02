@@ -1,0 +1,43 @@
+# Traycer is INSANE… Cursor AI is Not Enough Anymore
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `0hAS1xCeixQ` · [watch](https://youtu.be/0hAS1xCeixQ) · **date:** 2025-11-02 · **length:** 8:22 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Traycer, HeroUI
+- **topics:** coding-agents, context-engineering, testing-verification · **tags:** traycer, planning-layer, clarifying-questions, phased-plan, requirements-md, self-review, severity-levels, handoff, claude-code, cursor, heroui, nextjs, tailwind-css, version-conflict, ide-extension
+
+> A product walkthrough of Traycer, an IDE extension that runs a planning stage (gap-filling questions, phased plan), implementation, and a self-review pass before or alongside coding agents such as Claude Code and Cursor.
+
+## Summary
+The host builds a small content-management MVP with Traycer, an IDE extension that sits in front of a coding agent. The main claim is that a plan written by a human almost always has gaps, and that an agent fills those gaps with its own choices, so Traycer tries to close them before any code is written. The workflow starts with a requirement.md file, after which Traycer asks clarifying questions (tech stack and other details), rewrites the prompt, and produces a phased roadmap. Each phase can be run by Traycer itself or handed off to an existing agent such as Claude Code or Cursor. The host uses HeroUI, a less common component library, to test whether the planning holds up against an unfamiliar library. A verification stage then reviews the generated code and classifies issues as minor, major or critical, and the host applies fixes by handing them to Claude Code. A final scenario upgrades Tailwind CSS on purpose, after which Traycer diagnoses the version conflict, changes package.json to downgrade HeroUI and Tailwind to compatible versions, and the app runs again. The video is a single-project demo with no benchmarks, cost data or comparison to alternatives, despite the title.
+
+## Key ideas
+- **Plan gaps are where agents go wrong. An unspecified detail is filled by the agent with its own guess, which can produce something different from what was wanted. Traycer is pitched as a planning layer that finds and closes these gaps before coding starts.** — The host frames the problem as missing context per task, not model capability. The planning layer also has a feedback loop that asks the human when something is unclear. ([0:00](https://youtu.be/0hAS1xCeixQ?t=0))
+- **A clarifying-questions stage comes before any plan. The tool reads a requirement.md file, asks about the stack and implementation details, and rewrites the prompt from the answers.** — The host says that skipping this step would leave large gaps in the plan. The refined prompt is what later stages use. ([1:16](https://youtu.be/0hAS1xCeixQ?t=76))
+- **The plan is split into ordered phases such as project foundation, then design implementation, then later stages. Each phase can be executed by Traycer or handed to an existing agent.** — The host shows two implementation options: run the phases in Traycer's own implementation process, or hand the plan off to Claude Code or Cursor. The host uses the built-in option for the first build and the handoff later. ([2:28](https://youtu.be/0hAS1xCeixQ?t=148))
+- **Each task produces traceable artifacts. The tool confirms its understanding, writes a plan spec with its reasoning, tracks amendments with M (modified) and N (new) badges and file-level references, and generates a README for the run. It also adds a .gitignore on its own.** — The amendment references show which files changed and why. The host presents this as useful for review, not as a benchmark. ([3:38](https://youtu.be/0hAS1xCeixQ?t=218))
+- **A verification stage reviews the agent's own code and sorts findings into minor, major and critical. The host says it caught a critical error, using the HeroUI provider instead of the NextUI provider, and a Tailwind plugin configuration problem.** — The host reports that without this pass the whole project would break. Fixes are then applied, either one by one or all at once through Claude Code. ([4:58](https://youtu.be/0hAS1xCeixQ?t=298))
+- **Version-conflict repair is shown as a regression scenario. The host upgrades Tailwind CSS on purpose, Traycer analyses the error and proposes a fix, and after the user approves it, the tool edits package.json to downgrade HeroUI and Tailwind to compatible versions.** — The host checks the fix by running the dev command in the terminal and reports that the design still works. The demo covers one conflict on one project. ([6:04](https://youtu.be/0hAS1xCeixQ?t=364))
+
+## Techniques
+- **Clarify-before-plan requirements file** — Write the requirement in a requirement.md file, then let the planning tool ask questions about stack, library choices and missing details. Answer them, and use the rewritten prompt as the basis for the plan. *When:* Before any agent-driven build, especially when the stack includes a less common library the model may not know well.
+- **Phased plan as the unit of execution** — Have the planner break the project into ordered phases (foundation and dependencies first, then design, then features). Run them one at a time instead of giving the agent the whole goal at once. *When:* For multi-step app builds where each phase's output is a dependency of the next.
+- **Plan handoff to a coding agent** — Keep the plan as the shared artifact. Run it in the planning tool's own implementation mode, or hand it to Claude Code or Cursor. Use the same handoff for fixes. *When:* When you want a planning layer that is independent of the coding agent that writes the code.
+- **Severity-classed self-review pass** — After the build, run a review over the generated code. Sort findings into minor, major and critical. Fix the critical ones first, and fix all findings in one pass through a coding agent if the list is long. *When:* After each phase, before you trust the output. The host's example is a wrong component-library provider that breaks the whole app.
+- **Change tracking with M/N badges** — Review each run's file-level amendments, where modified files are marked M and new files N, and read the stated reasoning for each change before accepting it. *When:* When you need to audit what an agent changed across a multi-file run.
+- **Version-conflict repair by dependency pinning** — After an upgrade breaks the build, have the tool diagnose the incompatibility, then pin both conflicting packages to compatible versions in package.json, and confirm by running the dev command. *When:* When a framework plugin and a styling engine (here HeroUI and Tailwind CSS) no longer agree after an upgrade.
+
+## Numbers
+- Verification classifies issues into three severity levels: minor, major and critical. ([4:58](https://youtu.be/0hAS1xCeixQ?t=298))
+- The implementation step offers two options: Traycer's built-in implementation or handoff to an existing agent (Claude Code or Cursor). ([2:28](https://youtu.be/0hAS1xCeixQ?t=148))
+- No benchmarks, latency, token counts, prices or adoption figures are given. The only quantitative detail is the three-level severity scale and the two implementation options. ([0:00](https://youtu.be/0hAS1xCeixQ?t=0))
+
+## Hot takes
+- Title says 'Traycer is INSANE... Cursor AI is Not Enough Anymore', but the video never compares Traycer to Cursor on output, cost or speed. Thin evidence for a headline claim.
+- Single-project demo: one MVP, one unfamiliar library (HeroUI), one version conflict. Nothing shows the planning step working across varied tasks or failing.
+- The fix pass for the code review is done by Claude Code, not by Traycer, so the verification step's fix quality is credited to a different tool.
+- Vendor-style framing ('Tracer solves this') with a sign-up requirement and no measured outcomes.
+
+## Tools mentioned
+Traycer (IDE extension, sign-up required), Next.js, TypeScript, Tailwind CSS (v3 before the intentional upgrade), HeroUI (named as Hero UI), NextUI (mentioned as the wrong provider), shadcn (mentioned as a common library), Claude Code, Cursor
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness already plans and critiques (plan, critique with Codex, debate). Traycer's clarify-questions stage before the plan and its severity-classed post-build review are concrete variants of that flow. → *Add a clarifying-questions step before ProsHarness's plan stage that lists the stack and unstated details, and record the answers in the plan artifact so the Codex critique can check them.*

@@ -1,0 +1,233 @@
+{
+ "one_line": "Panel debate on whether agent \"loops\" (Ralph-style, bash-while-true) are hype or working practice; the consensus is loops work for verifiable tasks, need deterministic feedback and human-owned architecture, and are not yet a full software factory.",
+ "summary": "A 1-hour Oxford-style debate hosted by Ali Howe (Insecure Agents podcast) with Dex Horthy (Human Layer), Geoff Huntley (creator of the Ralph loop), Ian Livingstone (Keycard) and Greg Pstrucha (Sentry). The pro-loop side (Huntley, Livingstone) argues loops are a core development pattern that already underlies CI, review and linting, and that they will spread as models get better at verifiable work. The skeptical side (Horthy, Pstrucha) argues the hype outruns the discipline, that non-deterministic verification compounds errors, that token costs are unsustainable at scale, and that humans must keep ownership of architecture. Panelists converge on a few practical points: verifiability decides where loops work, deterministic checks should close the loop, context windows should stay small and fresh per iteration, and teams should start with small incremental loops rather than end-to-end factories. Security and attribution were raised as open problems: agents cannot be trusted to stay aligned, secrets should not sit in files, shared agent memory lacks access control, and Git allows only one signer per commit. The format is entertaining and opinion-heavy, so most value is in the concrete heuristics and the disagreements rather than in hard data.",
+ "speakers": [
+  "Dex Horthy",
+  "Geoff Huntley",
+  "Ian Livingstone",
+  "Greg Pstrucha",
+  "Ali Howe"
+ ],
+ "orgs": [
+  "Human Layer",
+  "Keycard",
+  "Sentry",
+  "Insecure Agents",
+  "Anthropic",
+  "Shopify",
+  "Canva",
+  "PostHog",
+  "GitHub"
+ ],
+ "format": "panel",
+ "topics": [
+  "software-factory",
+  "testing-verification",
+  "context-engineering",
+  "agent-architecture"
+ ],
+ "tags": [
+  "ralph-loop",
+  "loops",
+  "oxford-debate",
+  "verification",
+  "back-pressure",
+  "pre-commit-hooks",
+  "context-window",
+  "smart-zone",
+  "dumb-zone",
+  "compaction",
+  "shared-memory",
+  "agent-attribution",
+  "git-signing",
+  "supply-chain",
+  "software-factory",
+  "token-cost",
+  "static-types",
+  "security-scanning"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Loops are not new; development already runs on them",
+   "detail": "Ian Livingstone argues software has always been a try-learn-apply loop: CI/CD, PR review, design review, customer feedback and linting are all feedback loops. AI mainly removes human judgment from steps that used to need it, and software is unusually verifiable.",
+   "t": "10:45"
+  },
+  {
+   "idea": "Verifiability decides where loops work",
+   "detail": "Pstrucha says loops are reliable when checks are deterministic (types, linters, simulation tests) and cheap. Adding more non-deterministic verification compounds error: a 5% per-step error rate can reach roughly 50% failure after 10 to 20 iterations.",
+   "t": "25:19"
+  },
+  {
+   "idea": "Make the loop close on your domain rules through feedback the agent can read",
+   "detail": "Huntley's approach: pre-commit hooks that print a prompt-style message back to the agent (for example a forbidden dependency boundary) rather than just failing. Humans find hooks slow, but agents do not mind. The engineer's job becomes keeping the loop on the rails.",
+   "t": "22:38"
+  },
+  {
+   "idea": "Use fresh context per iteration with the file system as state",
+   "detail": "Ralph's core pattern is to restart the agent each iteration with the desired state, have it check the current state, do one step, and save progress to disk. Horthy calls the window below roughly 100k tokens the 'smart zone' and says he keeps hard tasks under about 60k. Compaction is lossy, so Huntley avoids it and allocates context deliberately, leaving headroom.",
+   "t": "27:21"
+  },
+  {
+   "idea": "Watch for dumb-zone symptoms such as test hacking",
+   "detail": "Horthy's sign of the dumb zone is an agent that, deep in a session (around 200k tokens), starts hacking tests, dismissing failures as pre-existing, or flailing. The number is a starting guideline; experienced users build intuition for it.",
+   "t": "28:46"
+  },
+  {
+   "idea": "Models have different tastes, so re-test without your scaffolding for each release",
+   "detail": "Huntley runs new models bare, with no skills or markdown, to see their default behaviour. Example: one model became timid when addressed in uppercase while another wanted emphatic prompts. He advises reading model cards for integrators.",
+   "t": "32:50"
+  },
+  {
+   "idea": "Loops fail loudly, and paying for verification can be a deliberate choice",
+   "detail": "Pstrucha disputes the 'fail quietly' claim: builds and checks make failures visible. His team runs security scanning on PRs before and after landing (about $5 per PR) because it catches real issues humans miss. Loops suit well-specified problems with strong test suites, such as ports with existing tests; prototypes should be thrown away and re-specified if kept.",
+   "t": "36:15"
+  },
+  {
+   "idea": "Shared agent memory and attribution are unsolved; humans keep liability",
+   "detail": "Livingstone suggests Markdown files as a memory substrate with per-file access control, noting Git allows only one signer per commit. He argues agents cannot carry liability, so the human who designed the loop is accountable. Pstrucha adds that the profession does not really carry personal liability either.",
+   "t": "39:11"
+  },
+  {
+   "idea": "Architecture decisions stay with humans because agents add complexity without bound",
+   "detail": "Pstrucha says the key human decisions are what not to build and where to spend complexity versus simplicity. Agents keep adding to the stack unless constrained.",
+   "t": "41:48"
+  },
+  {
+   "idea": "Start with small incremental loops for 2 to 3x gains, not a full factory",
+   "detail": "Horthy's warning: teams that spend three months building an end-to-end factory without testing it with users end up with something nobody uses. He advises building small loops throughout the system, aiming for 2 to 3x speed while keeping the code readable and owning the architecture.",
+   "t": "47:59"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Fresh-context loop with file-system state",
+   "how": "Each iteration starts a new agent session that receives the desired end state, reads the current state from disk (for example a plan file or git), performs one step, saves progress, and exits. A thin non-LLM loop restarts it.",
+   "when": "Long unattended runs where context rot or overflow would otherwise degrade work."
+  },
+  {
+   "name": "Back-pressure hooks that talk back",
+   "how": "Pre-commit hooks, linters and type checks return explicit prompt-style guidance (for example a boundary rule the change violated) so the agent can correct itself before the loop is allowed to close.",
+   "when": "Agent loops that should not finish until domain and architecture rules hold."
+  },
+  {
+   "name": "Deterministic controller around the LLM step",
+   "how": "Non-LLM code decides whether to continue, assembles small prompts from new inputs such as PR comments, and checks completion. Huntley's idea is a PID-style controller that decides whether the loop should keep running.",
+   "when": "Follow-up work triggered by external events, such as review comments that arrive hours after a PR is opened."
+  },
+  {
+   "name": "Context budget with headroom",
+   "how": "Cap each session well below the model's maximum window, around 100k tokens as a starting point. Batch large data into pieces that fit, and do not rely on compaction for fidelity.",
+   "when": "Batch processing of large data sets, or any hard task where quality drops in long sessions."
+  },
+  {
+   "name": "Bare-model baseline on each new release",
+   "how": "Strip skills, markdown instructions and custom prompts, then run the new model on a task to see its defaults before re-adding scaffolding.",
+   "when": "A new model is released and the team is deciding what instructions to keep."
+  },
+  {
+   "name": "Explicit cost decision for high-value verification",
+   "how": "Run expensive scanners on PRs (about $5 per PR in Pstrucha's case) when they reliably catch real issues that human review misses, and accept the cost as a deliberate choice.",
+   "when": "Security or correctness checks on agent-written code where a missed bug is costly."
+  },
+  {
+   "name": "Start small and iterate on real users",
+   "how": "Build small incremental loops inside existing workflows and put them in front of teammates early, rather than designing a full autonomous pipeline in isolation.",
+   "when": "Rolling out agent automation to an engineering team."
+  },
+  {
+   "name": "Vendor code and minimise open-source dependencies",
+   "how": "Keep dependencies in the repo so the agent can modify them directly, and generate small utilities to specification instead of importing packages.",
+   "when": "Reducing supply-chain exposure, for example to npm attacks."
+  },
+  {
+   "name": "Prefer statically typed languages for agent-maintained code",
+   "how": "Choose languages with strong type systems (the speaker cites Rust and Haskell) because types act as machine-checkable verification for agent changes.",
+   "when": "Choosing a stack for a codebase that agents will change heavily."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Ralph loop (bash while-true)",
+  "pre-commit hooks",
+  "PostHog",
+  "Notion",
+  "Sentry",
+  "Git",
+  "npm",
+  "Rust",
+  "Haskell",
+  "Python",
+  "TypeScript"
+ ],
+ "numbers": [
+  {
+   "claim": "Huntley says running a loop works out to about $10.42 per hour, a calculation he did about a year earlier.",
+   "t": "20:21"
+  },
+  {
+   "claim": "Huntley's team ported Python libraries to TypeScript during a hackathon by running loops.",
+   "t": "20:21"
+  },
+  {
+   "claim": "Illustrative math: a 5% per-step error rate can reach about 50% failure after 10 to 20 loop iterations.",
+   "t": "25:19"
+  },
+  {
+   "claim": "Horthy's guideline is to keep context around 100k tokens, under 60k for the hardest problems; he has gone over 300k when riffing, and says dumb-zone symptoms appear around 200k.",
+   "t": "27:21"
+  },
+  {
+   "claim": "Security scanning on PRs costs about $5 per PR.",
+   "t": "36:15"
+  },
+  {
+   "claim": "Horthy says most engineers see a 2 to 3x speedup from coding agents, and that chasing 100x leads to optimisation traps.",
+   "t": "46:35"
+  },
+  {
+   "claim": "Pstrucha puts an engineer's monthly token budget question in terms of $10K, $100K or $1M per month, which he says is not sustainable at scale.",
+   "t": "14:41"
+  },
+  {
+   "claim": "Huntley compares usable context to about an eighth of a 720K floppy disk, and says two Star Wars scripts (around 150 KB of text) fill a window.",
+   "t": "31:24"
+  },
+  {
+   "claim": "Horthy says he has been using no open-source software for about 10 months, generating what he needs instead.",
+   "t": "58:40"
+  }
+ ],
+ "hot_takes": [
+  "Loops fail loudly, not quietly, so the 'silent failure' critique is wrong (Pstrucha).",
+  "Static types are a form of verification, and building loops in Python or Ruby is a clown show (Horthy).",
+  "Git only allows one signer per commit, which is a problem for agent-written code (Livingstone).",
+  "Engineers do not really carry personal liability, so 'we are engineers' is a stretch (Pstrucha).",
+  "Agents should not be given secrets as files; the most concrete security step is to avoid them (Livingstone).",
+  "Most people should not use coding tools on a laptop as things stand, but the real risk is the existing npm supply chain (Huntley).",
+  "The 'just write loops' advice is not safe to give to millions of people; it only fits people who already know how to tune them (Huntley)."
+ ],
+ "quality": 3,
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Speakers stress that per-loop token spend needs governance, and that shared agent memory needs per-agent attribution, which fits AgentOS budgets and audit log.",
+   "action": "Add per-loop token ceilings and a loop-level attribution record (agent id, human owner, intent) to the Govrix budget and Merkle audit path, then test that a loop failing verification is cut off."
+  },
+  {
+   "project": "prosharness",
+   "score": 3,
+   "why": "The talk's central patterns (fresh context per iteration, file-system state, deterministic continue/stop controller, back-pressure hooks, follow-up loops on PR comments) map directly onto ProsHarness checkpoint/resume and loop scheduling.",
+   "action": "Wrap each claude CLI iteration in a non-LLM controller that reads state from disk, builds a fresh short prompt, logs context size, and stops or checkpoints near about 100k tokens; add pre-commit hooks that return explanatory prompt text."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Strong practitioner heuristics on loop design (verification, context budget, human ownership of architecture) that apply to any coding-agent workflow.",
+   "action": "Read the anatomy segment (about 29:57 to 33:54) before designing any new autonomous coding loop."
+  }
+ ],
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

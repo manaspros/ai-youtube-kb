@@ -1,0 +1,235 @@
+{
+ "one_line": "Boris, who created Claude Code at Anthropic, shares a short workflow: give the agent a way to verify its work, keep CLAUDE.md lean and team-maintained, use plan mode and scoped permissions, and run parallel or background sessions.",
+ "summary": "A host (AI LABS) walks through tips attributed to Boris, the creator of Claude Code at Anthropic. The central idea is that the agent needs a verification loop, such as tests, a bash command, a browser check or screenshots, so it can detect and fix its own errors instead of the user doing it. The second theme is CLAUDE.md: keep it project-specific and short (about 2.5k tokens, by his count), include stack, structure, conventions and a \"don't do\" list, and have the whole team add to it whenever Claude makes a mistake. He avoids dangerously-skip-permissions and instead sets allow, ask and deny rules in a shared project settings.json. His workflow is to plan first in plan mode, iterate until the plan is valid, then execute in auto-accept edits mode, while running several sessions in parallel and pushing long jobs to background or cloud agents. For long runs he mentions background verification tasks, a Stop hook that triggers verification, and the Ralph Wiggum plugin. The video ends with a promotional segment for the host's agency.",
+ "speakers": [
+  "Boris (creator of Claude Code, Anthropic), as introduced by the host"
+ ],
+ "orgs": [
+  "Anthropic",
+  "AI LABS",
+  "Automata"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "testing-verification",
+  "context-engineering",
+  "multi-agent"
+ ],
+ "tags": [
+  "claude-code",
+  "CLAUDE.md",
+  "plan-mode",
+  "verification",
+  "permissions",
+  "settings.json",
+  "subagents",
+  "slash-commands",
+  "background-agents",
+  "cloud-sessions",
+  "stop-hook",
+  "ralph-wiggum",
+  "linters",
+  "parallel-sessions",
+  "opus-4.5",
+  "tips"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Give Claude a way to verify its work",
+   "detail": "Tell the agent to write tests alongside code, or to use checks such as a bash command, so it gets a feedback loop. He argues this raises output quality noticeably. Humans work the same way, so expect small errors and let the loop catch them.",
+   "t": "0:00"
+  },
+  {
+   "idea": "CLAUDE.md should state the verification plan up front",
+   "detail": "Add an instruction that before any work, Claude must say how it will verify that work. This makes the feedback loop a standing default instead of something you have to remember each session.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Verification depends on the domain",
+   "detail": "For code it can be tests or a shell command. For UI it can be a browser-driving extension, mobile simulator MCPs (token-heavy), or TDD with screenshots. Each domain needs its own check.",
+   "t": "1:27"
+  },
+  {
+   "idea": "CLAUDE.md is per repo and must stay lean",
+   "detail": "It should hold the tech stack, project layout, team code style, and especially what Claude should not do. His own file is about 2.5k tokens. Each microservice (front end, back end) can have its own CLAUDE.md.",
+   "t": "2:35"
+  },
+  {
+   "idea": "Use permission rules instead of skipping permissions",
+   "detail": "Set allow, ask, and deny rules for commands at the project level in .claude/settings.json and commit it so the team shares the same rules. He avoids dangerously-skip-permissions, especially in production.",
+   "t": "2:35"
+  },
+  {
+   "idea": "Claude Code as an orchestrator over other tools",
+   "detail": "He connects Claude Code to Slack and Notion through MCP servers and to BigQuery and Sentry through their CLIs, so one session can drive several systems. The host uses the same setup to manage video ideas in Notion.",
+   "t": "3:36"
+  },
+  {
+   "idea": "Plan first, iterate until the plan is valid, then execute",
+   "detail": "Most back-and-forth happens in plan mode. He starts execution only after the plan checks out, then runs in auto-accept edits mode. He treats the agent like a junior developer.",
+   "t": "4:50"
+  },
+  {
+   "idea": "Parallel sessions, cloud sessions, and background agents",
+   "detail": "He runs about five sessions at once and numbers the terminal tabs so notifications map to a tab. Long tasks go to cloud web sessions connected to GitHub, which push a branch for review. The teleport command pulls a cloud session back into the local terminal.",
+   "t": "4:50"
+  },
+  {
+   "idea": "Long-running tasks: background verification, stop hooks, and loops",
+   "detail": "Three approaches: (1) have Claude write its own verification tests and run them as background tasks that report back to the main agent; (2) use a Stop hook to trigger verification when Claude finishes a turn; (3) use a Ralph Wiggum style loop, which he says removes the human from the loop.",
+   "t": "6:18"
+  },
+  {
+   "idea": "Linters and formatters catch the last errors before CI",
+   "detail": "He runs language-specific linters and formatters so that code passes the GitHub CI pipeline. The point is that models already write mostly correct code, and the tools handle the remainder.",
+   "t": "7:31"
+  },
+  {
+   "idea": "Simple built-ins cover most of the value",
+   "detail": "Slash commands stored in .claude/commands can be committed to git and shared. Subagents with narrow instructions handle tasks like architecture checks, refactors, and build validation. The host says these built-ins give most of the productivity gain.",
+   "t": "7:31"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Verification line in CLAUDE.md",
+   "how": "Add a rule to CLAUDE.md that before doing any work, Claude states how it will verify that work (tests, a command, a browser check). Repeat the rule across sessions.",
+   "when": "Any repo where you want self-checking output without re-prompting each time."
+  },
+  {
+   "name": "Tests-first or tests alongside each feature",
+   "how": "Tell Claude to write tests for each thing it implements. Non-coders can ask Claude which tests to write, and it will propose a test for each implemented behavior. Use TDD: write tests first, then the implementation.",
+   "when": "Python or other code projects where a test suite can run locally or in CI."
+  },
+  {
+   "name": "Browser or screenshot verification for UI",
+   "how": "Use Claude's browser extension so Claude can navigate the site and check the result. For UI, add screenshot checks in the TDD loop. Mobile simulator MCPs are an option, but he calls them token-heavy.",
+   "when": "Web UI or mobile UI work where a test alone cannot show the result."
+  },
+  {
+   "name": "Team-maintained CLAUDE.md",
+   "how": "Whenever Claude does something wrong, add a rule to CLAUDE.md. Have the team contribute several times a week, assign each member a file to own, and keep the file near 2.5k tokens. Use one CLAUDE.md per microservice (front end, back end).",
+   "when": "Shared repos where the same mistakes recur across sessions and people."
+  },
+  {
+   "name": "Mistakes from PR review go into CLAUDE.md",
+   "how": "Run the Claude Code GitHub action on PRs. When a reviewer finds a mistake, ask Claude to add it to CLAUDE.md.",
+   "when": "Teams using GitHub PR review who want review findings to become standing rules."
+  },
+  {
+   "name": "Project-scoped allow/ask/deny permissions",
+   "how": "Write allow, ask, and deny rules for shell commands in the project's .claude/settings.json and commit the file. Use this instead of dangerously-skip-permissions.",
+   "when": "Any repo where agents run shell commands, especially production-adjacent ones."
+  },
+  {
+   "name": "Plan mode before execution",
+   "how": "Switch to plan mode and describe the task. Iterate on the plan until it is valid. Then start execution in auto-accept edits mode, not in skip-permissions mode.",
+   "when": "Non-trivial features where a bad approach would be expensive to undo."
+  },
+  {
+   "name": "Parallel sessions with numbered tabs",
+   "how": "Run about five Claude Code sessions in parallel, one per terminal tab. Number the tabs so each notification can be traced to its session.",
+   "when": "Several independent tasks running at once."
+  },
+  {
+   "name": "Cloud background agents with teleport",
+   "how": "Connect Claude Code on the web to GitHub and point it at a repo. Put long tasks in background agents. Claude pushes a new branch for review. Use the teleport command to bring a cloud session into the local terminal. He also starts tasks from his phone.",
+   "when": "Long-running tasks you do not want to babysit, followed by review of the pushed branch."
+  },
+  {
+   "name": "Background verification tasks",
+   "how": "Ask Claude to create verification tests for its own work and run them as background tasks that report to the main agent when done.",
+   "when": "Long coding runs where you want checks to run without blocking the main thread."
+  },
+  {
+   "name": "Stop hook for verification",
+   "how": "Configure a stop hook that triggers the verification step whenever Claude finishes a response.",
+   "when": "Runs where verification should happen automatically at each stopping point."
+  },
+  {
+   "name": "Loop plugin for autonomous runs",
+   "how": "Use the Ralph Wiggum plugin, which loops until verification passes. He says it removes the human from the loop. The host used it to check UI output during development.",
+   "when": "Autonomous runs with an objective success check, such as a UI or test pass."
+  },
+  {
+   "name": "Per-language linters and formatters",
+   "how": "Run linters and formatters for each language so code passes CI. Use the model for the bulk of the code and the formatters for what remains.",
+   "when": "Repos with CI gates that fail on style or lint errors."
+  },
+  {
+   "name": "Committed slash commands",
+   "how": "Store repeated workflows as slash commands in .claude/commands/ and commit them so the team shares them. He uses a GitHub slash command as an example.",
+   "when": "Workflows you run many times a day."
+  },
+  {
+   "name": "Narrow subagents",
+   "how": "Create subagents that each have their own instructions for a narrow job, such as checking architecture, refactoring written code, or validating that a build works.",
+   "when": "Steps that need instructions different from the main session's."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "CLAUDE.md",
+  "Claude Code GitHub action",
+  "Claude Code on the web (cloud sessions)",
+  "Claude browser extension",
+  "Opus 4.5",
+  "Sonnet",
+  "Haiku",
+  "Ralph Wiggum plugin",
+  "MCP servers (Slack, Notion)",
+  "BigQuery CLI",
+  "Sentry CLI",
+  "GitHub",
+  "linters and formatters (language-specific, unnamed)"
+ ],
+ "numbers": [
+  {
+   "claim": "His CLAUDE.md is about 2.5k tokens.",
+   "t": "2:35"
+  },
+  {
+   "claim": "He runs about five Claude Code sessions in parallel.",
+   "t": "4:50"
+  },
+  {
+   "claim": "He uses Opus 4.5 with thinking enabled for everything. It is slower than Sonnet and Haiku, but he says it makes fewer errors, so the total steering time is lower.",
+   "t": "4:50"
+  },
+  {
+   "claim": "Formatters and linters are said to clean up the remaining 10% of code errors after the model writes the code. This is a rough rhetorical figure, not a measurement.",
+   "t": "7:31"
+  },
+  {
+   "claim": "The team adds to CLAUDE.md multiple times a week.",
+   "t": "2:35"
+  }
+ ],
+ "hot_takes": [
+  "Verification is the main lever: give the agent a test or check and it improves, which is why the advice is repeated across the video.",
+  "Skipping permissions is called dangerous, especially in production, and project-scoped allow/ask/deny rules are the recommended alternative.",
+  "Opus 4.5 for everything is justified only by a claim that fewer errors cuts total steering time. No measurement is shown.",
+  "The host calls Claude Code badly named because people use it for orchestration, not only code. This is opinion, not data.",
+  "The Ralph Wiggum style loop 'removes the human from the loop entirely.' This is the host's claim, and the video shows no evidence for it.",
+  "Quality is capped at 2 because the video ends with a promotional segment for the host's agency (Automata), which the rules treat as sponsored. The workflow tips themselves are practical and concrete."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code CLI and needs checkpoint/resume, loops and approvals. This video covers the same patterns: a Stop hook that triggers verification, background verification tasks, plan-before-execute, and scoped permission rules.",
+   "action": "Compare ProsHarness's loop and schedule design with a Stop-hook verify step: run the project's tests when a turn ends, and gate continuation on the result."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "This is a general Claude Code workflow talk. Its verify-before-work and team-maintained CLAUDE.md rules are generic and apply to the AgentOS repo.",
+   "action": "If the AgentOS repo has a CLAUDE.md, add a rule that Claude states its verification plan (tests or a command) before starting work."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

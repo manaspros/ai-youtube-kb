@@ -1,0 +1,189 @@
+{
+ "one_line": "OpenProse founders argue agents should be given declarative Markdown contracts plus triggers, not step-by-step prompts; the talk is largely a product demo of their hosted runner.",
+ "summary": "Dan (creator of OpenProse), with Raymond and Jose, presents OpenProse, a Markdown-based language for describing multi-agent workflows as declarative contracts (the desired outcome, inputs, outputs, required skills and tools) rather than procedural steps. The runtime and compiler are themselves a large prompt, and the speakers say it is harness-agnostic, so the same contract can run on Claude Code, Codex or a custom harness. Jobs are a contract plus a trigger (cron or webhooks, such as GitHub issues and PRs), and the demo shows a grumpy-reviewer PR job and a quant-model documentation workflow for regulated banks. The speakers argue that verification should happen in fresh sessions checked against the contract, and that an expensive model's successful trace can be codified into pinned steps to cut cost. Much of the talk is a pitch for the hosted run.pros.md service, and most quantitative claims are unbenchmarked.",
+ "speakers": [
+  "Dan",
+  "Raymond",
+  "Jose"
+ ],
+ "orgs": [
+  "OpenProse"
+ ],
+ "format": "talk",
+ "topics": [
+  "context-engineering",
+  "agent-architecture",
+  "multi-agent",
+  "evals"
+ ],
+ "tags": [
+  "openprose",
+  "declarative-prompting",
+  "contracts",
+  "markdown-as-code",
+  "event-driven-agents",
+  "webhooks",
+  "cron-jobs",
+  "llm-as-verifier",
+  "trace-codification",
+  "subagents",
+  "compliance-docs",
+  "spec-driven-development",
+  "harness-agnostic"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Name the outcome, do not script the steps",
+   "detail": "Speakers frame good agent prompting as writing declarative contracts that state the end state, goal and constraints, and letting a capable model choose the how. Telling the model how to do it wastes cost, because a cheaper model could often find the path itself. Contracts are meant to compose, borrowing composition-over-inheritance from classic software engineering.",
+   "t": "3:37"
+  },
+  {
+   "idea": "The program is Markdown, and the runtime is a prompt",
+   "detail": "An OpenProse program is plain Markdown, read as event-driven multi-agent workflows rather than chat. The compiler and VM are also a large prompt, so the coding agent itself compiles the program. Programs can declare sub-agents, skills and mandatory tools, and the program refuses to run if a declared dependency is missing.",
+   "t": "5:47"
+  },
+  {
+   "idea": "A job is a contract plus a trigger",
+   "detail": "Triggers are cron schedules or webhooks (GitHub issues and PRs, Slack, Stripe-style events). Example jobs: a GitHub issue becomes a commit, and a PR gets an adversarial review. Writing the trigger and the contract together is presented as the unit of an event-driven 'code factory'.",
+   "t": "10:54"
+  },
+  {
+   "idea": "Codify a successful loose run into a pinned how",
+   "detail": "Start with an expensive model and a loose contract. Once it succeeds, capture the agent trace and compress it into explicit, more deterministic procedural steps, which lowers the cost of later runs. The speakers say this moves the spectrum from pure what toward how, but they give no cost numbers.",
+   "t": "15:15"
+  },
+  {
+   "idea": "Bring your own harness; stay out of the harness",
+   "detail": "OpenProse does not want its prompt to be Claude-Code-specific, because Claude Code and Codex have different sub-agent systems. The layer is positioned as a meta-harness compiled by whatever harness the user brings. The runtime prompt is about 70k-80k tokens and is being trimmed.",
+   "t": "18:01"
+  },
+  {
+   "idea": "Verify with fresh sessions against the contract",
+   "detail": "Reviews are run in new sessions that judge the output against the written contract, not in the session that produced it, which avoids the same model confirming its own work. The demo ran dozens of PRs over a few days; some needed up to 14 review rounds before the reviewer agents passed them. Submitting a PR to a staging server for an agent to use the system and self-test is also shown.",
+   "t": "23:18"
+  },
+  {
+   "idea": "Contracts compose into a DAG; templates capture workflow shapes",
+   "detail": "Intermediate contracts act as checkpoints in a DAG (like n8n, but with agents flexible on the how). Common multi-agent shapes such as fan-out/fan-in, adversarial review, and loop-until-condition can be written as reusable programs. Plain harnesses need sub-agents and isolated context to support these shapes.",
+   "t": "44:15"
+  },
+  {
+   "idea": "Compliance documentation as a contract, with a kernel as index",
+   "detail": "A bank use case, documenting quant models for regulators, is treated as a set of regulatory requirements written as an OpenProse program. The agent receives only a public kernel (a Markdown bootloader that indexes other documents and best practices) plus the program, then runs. A SOFR-curve doc was demoed, with no internal data shown.",
+   "t": "34:17"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Contract-first workflow spec",
+   "how": "Write a Markdown program that declares the goal, the inputs, the required outputs and the constraints, plus the exact sub-agents, skills and CLIs the run must use (for example, require a specific search CLI and forbid generic web search). Leave the procedure open. Have the program refuse to run if any declared dependency is missing rather than degrading silently. Use an agent that follows a best-practices guide to iterate the contract. The speakers' CLI for this is a pros write command; a pros run command with a kernel path executes a program.",
+   "when": "Recurring, auditable, multi-step workflows where you know the outcome but not the path, or where the same contract must run on different harnesses or models."
+  },
+  {
+   "name": "Codify a golden trace into pinned steps",
+   "how": "Run the task once with a strong model and loose contract. Save the session as a golden trace. Turn that trace into explicit procedural steps (the 'how' section) and rerun the workflow on a cheaper model, checking that the output still meets the contract.",
+   "when": "Repeated workflows where the first successful run was expensive and you want the same result at lower cost. Measure the cost and quality delta, since the speakers give no figures."
+  },
+  {
+   "name": "Event-driven job = contract + trigger",
+   "how": "Define each job as a contract file plus a trigger: a cron schedule, or a webhook such as a GitHub issue opened or PR filed. In the speakers' setup, GitHub PR webhooks are a one-click configuration. Pick the model for the job from a list in the job settings. Confirm any step that spends money before the job is deployed.",
+   "when": "Reactive automation (issue triage, PR review, scheduled reports) where you want no always-on chat session."
+  },
+  {
+   "name": "Fresh-session verifier against the contract",
+   "how": "Do not let the producing session approve its own output. Spawn a new agent session for review, give it only the contract and the artifact (for example, the PR diff), and have it return pass/fail against the contract. Repeat rounds until the reviewer passes, and let the parent agent decide when to exit.",
+   "when": "Agent-written code or documents that need an independent check, such as PR reviews or quality gates before shipping."
+  },
+  {
+   "name": "Kernel as a bootloader index",
+   "how": "Keep one public Markdown kernel that tells the agent how to read the program, where the best-practice docs and contract-authoring guide live, and how to find other documents. Start a run by pointing the agent at the kernel, then the program (in the speakers' Codex demo, a boot-the-kernel instruction followed by a run command on the program). The kernel is written for agents, not humans, which the speakers found people objected to when it was formatted for readers.",
+   "when": "Shared operating procedures or regulatory documentation that many agents will load, to keep each program small and consistent."
+  },
+  {
+   "name": "Templated multi-agent shapes",
+   "how": "Express a fan-out/fan-in, adversarial review, or loop-until-condition workflow as a program with named sub-agent roles. Example content pipeline: a researcher sub-agent restricted to a chosen search CLI and skill, a writer sub-agent given recent exemplar articles to imitate, and a copy-editor sub-agent. The parent agent loops until the article meets the contract.",
+   "when": "Content, research or report pipelines where roles are clear and the quality bar can be written as a contract."
+  },
+  {
+   "name": "Cheap verifier or router (planned, not shipped)",
+   "how": "The speakers plan a small, fast 'Jev' decision model (name as transcribed) to act as a verifier at the end of a job, or as a router that sends GitHub issue events to the issue job and PR events to the PR review job. It would also decide whether upstream state changed, acting as a cheap semantic cache for downstream reruns. They say this is not built yet.",
+   "when": "When full LLM runs are too costly for pass/fail checks or change detection; treat as a future design, not a tested pattern."
+  }
+ ],
+ "tools": [
+  "OpenProse",
+  "run.pros.md (hosted OpenProse runner)",
+  "pros CLI (pros write, pros run)",
+  "npx skills (skill install mechanism)",
+  "Claude Code",
+  "Codex",
+  "Exa (search)",
+  "DSPy (contrasted)",
+  "n8n (contrasted)",
+  "pi (agent harness without sub-agents, transcribed as 'pie')",
+  "Matt Pocock's skill workflow (grill-me, TDD) used as an example",
+  "Haiku (cheaper model mentioned)",
+  "Fable (model name as transcribed)",
+  "'Jev' decision model (name as transcribed, unclear)",
+  "OpenAI models (top three in job model picker)",
+  "Anthropic dynamic workflows (six patterns, referenced)"
+ ],
+ "numbers": [
+  {
+   "claim": "Runtime kernel or system prompt for the OpenProse runner is about 70,000 to 80,000 tokens; speakers say they are trying to shrink it.",
+   "t": "18:01"
+  },
+  {
+   "claim": "Dozens of PRs in a few days were run through the review loop; some needed up to 14 review rounds before reviewers passed them.",
+   "t": "23:18"
+  },
+  {
+   "claim": "A roughly 100,000-token prefix is mentioned as the scale where text-as-RL-data and gisting become relevant; the speakers say they have not reached that volume.",
+   "t": "28:23"
+  },
+  {
+   "claim": "A large bank has about 4,000 models that must each be re-documented yearly; the speakers say this costs large banks $10M to $50M a year (speaker's estimate, not sourced).",
+   "t": "37:09"
+  },
+  {
+   "claim": "The quant documentation output was judged by quants in the room and benchmarked against historical results and team time, but no figures are given.",
+   "t": "37:09"
+  },
+  {
+   "claim": "Anthropic's dynamic workflows post names six workflow shapes that the speakers say can all be expressed as programs.",
+   "t": "45:42"
+  }
+ ],
+ "hot_takes": [
+  "Mostly a product demo for run.pros.md; the generic ideas are sound, but the speakers give no comparative benchmarks, cost deltas, or failure rates.",
+  "The claim that codifying a golden trace drives costs down is asserted, not measured.",
+  "The bank ROI ($10M to $50M per year, 4,000 models, 'shockingly good' results) is vendor-sourced and unverified.",
+  "Claims 'bring your own harness' and no Claude-Code-specific prompting, while the runtime is a 70k to 80k token prompt, which is a large fixed context cost on every run.",
+  "The speakers concede that the same contract gives different results on different models (Haiku vs Fable) and that a pinned endpoint can change, so reliability is not guaranteed.",
+  "A quality score cap is not triggered (no sponsor segment), but substance is mostly the creator's own product, so the score stays at practitioner level."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Contract-plus-trigger jobs and codifying a golden agent trace into pinned steps overlap with SkillForge's goal of turning telemetry into governed reusable skills.",
+   "action": "Prototype a SkillForge step that converts a successful expensive-model agent trace into a pinned step list, then measure cost and pass rate against the loose run on a cheaper model."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already plans around Claude Code, critique and loops; this talk's fresh-session verifier and contract-plus-trigger job model map directly onto its critique and schedule features.",
+   "action": "Add a fresh-session verifier step to ProsHarness: a new Claude Code or Codex session receives only the task contract and the produced artifact and returns pass or fail. Store scheduled and webhook jobs as contract-plus-trigger records."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Directly supports the team's interest in cheap-model (Haiku) pipelines: the speakers argue a cheap model can run a workflow once its how has been codified from a strong model's run.",
+   "action": "Pick one repeatable Haiku pipeline, run it once with a stronger model to capture the trace, and compare pinned-step Haiku runs against the loose run for cost and output quality."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

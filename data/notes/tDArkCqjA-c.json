@@ -1,0 +1,196 @@
+{
+ "one_line": "Workshop on building a Gmail and Google Calendar agent in n8n, then gating sensitive tool calls behind human approval steps that the model cannot skip.",
+ "summary": "Liam McGarrigle of n8n walks through building a small email and calendar agent in n8n's visual builder. The agent gets Gmail and Calendar nodes as tools, and each tool exposes only the fields the builder declares. Sensitive actions such as sending email or creating events sit behind a human review node that intercepts the tool call before it runs. The model is not told the gate exists in the mechanical sense, so it cannot skip it. Tool names and descriptions are the only per-call context the model sees, so the speaker keeps behavioural rules inside tool descriptions rather than one central system prompt. He also covers memory windows, injecting the current date, and debugging through the execution log. The second half covers extensions: waiting approvals with timeouts, approvals for channels with no buttons, sub-agents as tools, and exposing workflows over MCP. Much of the talk is a product demo, but the approval-gate pattern and its edge cases are concrete.",
+ "speakers": [
+  "Liam McGarrigle"
+ ],
+ "orgs": [
+  "n8n"
+ ],
+ "format": "workshop",
+ "topics": [
+  "security-guardrails",
+  "agent-architecture",
+  "mcp-and-tools",
+  "context-engineering"
+ ],
+ "tags": [
+  "n8n",
+  "human-in-the-loop",
+  "approval-gate",
+  "tool-calling",
+  "tool-descriptions",
+  "gmail",
+  "google-calendar",
+  "openrouter",
+  "slack",
+  "mcp",
+  "sub-agents",
+  "workflow-automation",
+  "no-code"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Put the human gate on the tool, not in the prompt",
+   "detail": "The review step sits between the agent and the tool. The model calls the tool, the gate intercepts it, and the tool cannot run until a person approves. The speaker says the model does not need to know the gate exists, and that prompt-only instructions are weaker.",
+   "t": "42:09"
+  },
+  {
+   "idea": "Scope tools field by field",
+   "detail": "Each tool parameter is declared separately, so the model can only set the fields the builder exposes. The speaker contrasts this with a coding agent given broad API access, where the model can do anything the API allows. The cost is more setup work per field.",
+   "t": "25:54"
+  },
+  {
+   "idea": "Tool descriptions are the per-tool prompt",
+   "detail": "The node name becomes the tool name and the description is sent with every LLM call. The speaker keeps email style rules in the email tool's description, not in the central system message, so the tool and its rules can be copied between agents.",
+   "t": "28:40"
+  },
+  {
+   "idea": "Fix wrong arguments with per-field descriptions",
+   "detail": "When the model fills a field wrongly, add a description to that field. Google Calendar's API calls the event title 'summary', so the model wrote a summary of the event. A description saying this is the title fixed it, and the field key can also be renamed.",
+   "t": "36:30"
+  },
+  {
+   "idea": "Tell the model a human is reviewing",
+   "detail": "Models hold back from acting when they expect an action to go out unreviewed. The speaker adds a line to the tool description saying the message will not send automatically and a human is in the loop, which stops the model from stalling.",
+   "t": "43:20"
+  },
+  {
+   "idea": "Approval waits should be durable and visible",
+   "detail": "A waiting approval pauses the run as a wait state and resumes after the decision. The execution log records when the wait started and stopped, so approval delays can be measured from the logs.",
+   "t": "1:03:14"
+  },
+  {
+   "idea": "Bound the wait with an auto-deny timeout",
+   "detail": "Without a limit, approvals nobody answers pile up. The speaker suggests auto-denying after a set time, such as 10 minutes. He was unsure whether waiting executions count against a self-hosted concurrency limit and said he would follow up.",
+   "t": "1:09:15"
+  },
+  {
+   "idea": "Approve through a sub-workflow when there are no buttons",
+   "detail": "For a phone call or any channel with no buttons, the LLM cannot be allowed to approve itself. The speaker's answer is a separate confirm sub-workflow that asks the person, returns true or false, and branches on an if node, exposed to the agent as a tool.",
+   "t": "1:15:30"
+  },
+  {
+   "idea": "Sub-agents as tools, each with its own model",
+   "detail": "Specialised agents, such as calendar, email or GitHub, are exposed as tools to a main agent. Each sub-agent can use a different model and has a smaller context, so the main agent's context does not grow with every domain.",
+   "t": "1:17:59"
+  },
+  {
+   "idea": "Inject the current time instead of asking the model for it",
+   "detail": "LLMs usually do not know today's date, so a query for today's emails can return results from years ago. The speaker passes the current date and time into the prompt with an expression.",
+   "t": "32:23"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Approval gate in front of sensitive tools",
+   "how": "Place a human review node on the edge in front of each side-effecting tool, such as send email or create event. Offer approve, decline and optionally a free-text decline. Leave read-only or low-stakes tools, such as archive, ungated. The gate sits in the tool path, so the model cannot skip it.",
+   "when": "Any agent that sends messages, writes calendar or CRM records, or takes other irreversible actions on a user's behalf."
+  },
+  {
+   "name": "Free-text decline as feedback",
+   "how": "Instead of a button, the reviewer types a reply. The reply counts as a denial and the agent retries with that reply as context, for example asking for markdown-free output. The speaker notes the model still favoured the tool description over the correction.",
+   "when": "Quick corrections in chat, when a reviewer wants the agent to try again rather than abort."
+  },
+  {
+   "name": "Dry runs with dummy data before real accounts",
+   "how": "Test the agent with dummy events and recipients, then decline the gated action so nothing is sent. The execution log shows which tools ran and with what inputs.",
+   "when": "Before connecting an agent to a real inbox or calendar, or when changing a tool's prompt or fields."
+  },
+  {
+   "name": "Rules in tool descriptions, not one system prompt",
+   "how": "Put behavioural rules for a tool, such as tone, placeholder bans and approval notes, in that tool's description. Keep the central system prompt for role and general behaviour. Each tool then carries its own rules when copied to another agent.",
+   "when": "Multi-tool agents where rules differ per tool and tools are reused across agents."
+  },
+  {
+   "name": "Per-field descriptions for argument mistakes",
+   "how": "When the model fills a field wrongly, add a description to that field saying what it means. Rename the key if the API name is misleading.",
+   "when": "A tool gets the wrong value in one field, typically because the upstream API name is confusing."
+  },
+  {
+   "name": "Wait with an auto-deny timeout",
+   "how": "Set the approval wait to expire after a fixed time and deny automatically. This stops unanswered approvals from building up indefinitely.",
+   "when": "Any human-in-the-loop flow where the reviewer may not respond, especially in self-hosted setups with concurrency limits."
+  },
+  {
+   "name": "Confirm sub-workflow as a tool",
+   "how": "Wrap the approval in a sub-workflow that asks the person through any channel and returns true or false. The agent calls it as a tool, and an if node branches on the result. The LLM never sets the answer.",
+   "when": "Channels with no buttons, such as voice calls or SMS, where the approval must still come from a human."
+  },
+  {
+   "name": "Sub-agent per domain as a tool",
+   "how": "Build each specialised agent as its own workflow with its own model and tools. Expose each one to a parent agent as a tool so the parent's context stays small.",
+   "when": "When one agent covers several domains, or when different domains need different models for cost or quality."
+  },
+  {
+   "name": "Date and time injection via expression",
+   "how": "Insert the current date and time into the system prompt or tool input with an expression, so the model does not guess the date.",
+   "when": "Any agent that answers questions about schedules, deadlines or recent events."
+  },
+  {
+   "name": "Memory window sizing",
+   "how": "The simple memory window in the demo was 5 messages. The speaker suggests about 50 for chat, since longer windows cost more tokens on every call. A database-backed memory can be used if the chat history must be read outside the agent.",
+   "when": "Chat agents where conversation length varies and token cost matters."
+  }
+ ],
+ "tools": [
+  "n8n",
+  "OpenRouter",
+  "Gmail",
+  "Google Calendar",
+  "Slack",
+  "Notion",
+  "Postgres",
+  "Redis",
+  "Claude",
+  "Claude Code",
+  "Luxon",
+  "Swagger"
+ ],
+ "numbers": [
+  {
+   "claim": "n8n founded in 2019, before ChatGPT, as an integration tool",
+   "t": "9:04"
+  },
+  {
+   "claim": "Latest stable n8n version at the time: 2.14.2",
+   "t": "4:58"
+  },
+  {
+   "claim": "Demo simple memory window set to 5 messages; speaker suggests about 50 for longer chats, and notes you pay tokens for all past messages",
+   "t": "18:32"
+  },
+  {
+   "claim": "Example approval wait timeout: auto-deny after 10 minutes",
+   "t": "1:09:15"
+  },
+  {
+   "claim": "Workshop length about 1 hour 19 minutes including Q&A",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Giving a coding agent direct access to a calendar lets it do whatever it wants, whereas per-field tools limit it to the fields you set.",
+  "Destructive or sensitive actions should always go through a human review step, while low-stakes actions like archiving can stay autonomous.",
+  "Models will avoid sending without asking unless the tool description says a human is in the loop.",
+  "Visual workflow builders are a good fit for agents because you can see what an agent did and fix it, which the speaker calls where the winners will be."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Exec-gate guardrails in Crucible need a way to hold a sensitive tool call for a human decision. The talk's interception layer, timeout and free-text deny address that directly.",
+   "action": "Put an approval hold in front of exec-gate-flagged tool calls: the model cannot bypass it, the hold auto-denies after a timeout, and a typed reply counts as a deny with feedback."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Phone-driven approvals are already a planned feature. The talk shows the gate pattern, timeout behaviour and the open concurrency question directly.",
+   "action": "Model phone approvals as a gate in front of side-effecting tool calls, with a wait timeout that auto-denies, a typed decline that feeds back into the next attempt, and a check on whether paused runs count against limits."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

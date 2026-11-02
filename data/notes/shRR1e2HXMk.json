@@ -1,0 +1,187 @@
+{
+ "one_line": "OpenAI's Dominik Kundel walks through what happens when a message is sent to Codex: context assembly, sub-agents, computer use, sandboxing, auto-review, WebSocket transport, goal loops and compaction.",
+ "summary": "Dominik Kundel of OpenAI explains the internals of the open-source Codex harness (Rust, Apache 2) by following one user message through the system. Two protocols are involved: the app server between UI and harness, and the Responses API between harness and inference. Context construction is driven by three pressures: size, flexibility across skills and MCPs, and cacheability. The harness defers tool loading and caps the skills list. Agent actions cover async sub-agents and background terminals, browser use via code in a persistent REPL, and file edits via apply-patch and shell inside an OS-level sandbox. To reduce approval fatigue, an auto-review sub-agent judges escalated actions using authorization context and the transcript. WebSocket mode addresses network overhead once inference became fast. The talk closes with /goal loops, which re-inject a continuation prompt until the model calls an update-goal tool, and server-side auto compaction. The speaker is a product presenter, so the detail is high-level, and he says the state of the art changes quickly.",
+ "speakers": [
+  "Dominik Kundel"
+ ],
+ "orgs": [
+  "OpenAI"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "coding-agents",
+  "context-engineering",
+  "sandboxing-execution"
+ ],
+ "tags": [
+  "codex",
+  "responses-api",
+  "app-server",
+  "context-construction",
+  "deferred-tools",
+  "tool-search",
+  "subagents",
+  "computer-use",
+  "apply-patch",
+  "sandbox",
+  "seatbelt",
+  "bubblewrap",
+  "auto-review",
+  "websocket",
+  "goal-loop",
+  "compaction",
+  "open-source-harness"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Two protocols drive a Codex turn",
+   "detail": "The app server carries messages from the UI to the harness, and the Responses API carries requests from the harness to inference. Both are designed as open interfaces, so third-party UIs and clients can build on the harness.",
+   "t": "1:14"
+  },
+  {
+   "idea": "Context construction is governed by size, flexibility and cacheability",
+   "detail": "Model instructions are fixed and cache well. Skills and the tool registry grow unpredictably as users add skills and MCP servers, so the harness has to bound them to control cost and avoid contradictory context.",
+   "t": "4:31"
+  },
+  {
+   "idea": "Deferred tools and a capped skills list keep context small",
+   "detail": "Tools can be marked deferred so they stay out of the context window until found by tool search. The skills list is capped at about 2% of the max context window, and descriptions shrink as the list grows.",
+   "t": "5:43"
+  },
+  {
+   "idea": "Async work runs through spawn, send-input, wait and shutdown tools",
+   "detail": "The main agent can spawn sub-agents, send them input, wait on them or shut them down, so it can keep working while they run. Background terminals use the same pattern of sending stdin and waiting for output.",
+   "t": "6:47"
+  },
+  {
+   "idea": "Computer use is shifting from one-action tools to code execution",
+   "detail": "The older computer-use tool allowed one declared action at a time. Browser use now writes JavaScript against a persistent Node REPL that keeps state across turns, so the agent can inspect a page once and then script scraping on later pages.",
+   "t": "8:34"
+  },
+  {
+   "idea": "Auto-review replaces full-access mode for escalated actions",
+   "detail": "When a sandboxed action needs escalation, a separate read-only sub-agent is spun up. It cannot spawn sub-agents and receives the user-authorization context, a risk taxonomy and the transcript with tool calls, then returns a judgment. Routine actions are approved automatically, and data exfiltration is kept out of that path.",
+   "t": "12:34"
+  },
+  {
+   "idea": "Once inference is fast, the network becomes the bottleneck",
+   "detail": "At around 1,000 tokens per second on Cerebras, per-call network overhead dominated. WebSocket mode keeps a persistent connection with stateful context, so only changed items such as new tool results are sent.",
+   "t": "15:18"
+  },
+  {
+   "idea": "Goal loops re-inject the objective until the model signals done",
+   "detail": "With /goal, the harness injects a continuation prompt containing the objective after each pass. The loop ends only when the model calls an update-goal tool. The speaker advises concrete, verifiable goals rather than long essays.",
+   "t": "16:46"
+  },
+  {
+   "idea": "Server-side auto compaction keeps long runs going",
+   "detail": "Compaction can be triggered manually or automatically on the server, using the way the model was trained for it. It replaces the old context window with a compaction item that carries forward what is needed.",
+   "t": "18:15"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Deferred tool loading with tool search",
+   "how": "Mark tools as deferred so they are not in the context window. The model discovers them through a tool-search tool, either the built-in one or your own. The speaker says any tool can be marked deferred in the Responses API since GPT-5.4.",
+   "when": "When MCP or plugin installs make the tool registry grow and cost context."
+  },
+  {
+   "name": "Capping the skills list as a share of the context window",
+   "how": "Limit the skills list to a fixed fraction of the max context window, here about 2%. When the list exceeds the cap, shorten the descriptions gradually.",
+   "when": "When users may install many skills and the skills list would otherwise crowd out task context."
+  },
+  {
+   "name": "Sub-agent tool set: spawn, send input, wait, shutdown",
+   "how": "Give the agent tools to create child agents, send them new content, wait for them to finish, and shut them down. The same pattern covers background terminals.",
+   "when": "When the main agent should keep working while delegated tasks run in parallel."
+  },
+  {
+   "name": "Code-execution computer use with a persistent REPL",
+   "how": "Expose a stateful REPL, such as Node or Python, and let the agent write scripts against the browser or desktop. The agent learns the page structure once and scripts later steps.",
+   "when": "When one-action-at-a-time computer-use tools are too slow for multi-step browser tasks."
+  },
+  {
+   "name": "Auto-review sub-agent for escalated actions",
+   "how": "When a sandboxed action needs escalation, start a read-only reviewer that cannot spawn sub-agents. Give it the user's authorization context, a risk taxonomy, the transcript and the pending tool calls, and ask for a risk judgment that decides approve or escalate.",
+   "when": "When approval fatigue pushes users to full-access mode and you still need guardrails against exfiltration and destructive actions."
+  },
+  {
+   "name": "Stateful WebSocket transport for agent loops",
+   "how": "Hold one persistent connection to the responses endpoint. After the first request, send only new items such as tool results, not the full history each time.",
+   "when": "When a run makes many small tool calls and network round trips dominate latency."
+  },
+  {
+   "name": "Goal loop with an explicit done tool",
+   "how": "Store an objective, re-inject a continuation prompt after each turn, and stop only when the model calls an update-goal tool. Write objectives that are concrete and checkable, so completion is easy to detect.",
+   "when": "For long autonomous runs where the agent must keep going until a verifiable condition holds."
+  },
+  {
+   "name": "Server-side compaction item",
+   "how": "Trigger compaction manually or automatically. Replace the old window with a compaction item that holds the needed state for later turns.",
+   "when": "For runs that last hours or days and cannot fit in one context window."
+  }
+ ],
+ "tools": [
+  "Codex",
+  "OpenAI Responses API",
+  "Codex app server",
+  "ripgrep",
+  "PowerShell",
+  "Node REPL",
+  "Chromium",
+  "Seatbelt (macOS sandbox)",
+  "Bubblewrap (Linux sandbox)",
+  "Cerebras (GPT-5.3 Codex Spark)",
+  "Ollama",
+  "LM Studio",
+  "NVIDIA"
+ ],
+ "numbers": [
+  {
+   "claim": "Skills list is capped at about 2% of the maximum context window; descriptions shrink as the list grows.",
+   "t": "5:43"
+  },
+  {
+   "claim": "Tool search: any tool can be marked deferred_loading in the Responses API since GPT-5.4.",
+   "t": "5:43"
+  },
+  {
+   "claim": "GPT-5.3 Codex Spark runs on Cerebras at about 1,000 tokens per second, after which the network rather than inference was the bottleneck.",
+   "t": "15:18"
+  },
+  {
+   "claim": "In the WebSocket demo, the continuation sends one item where the HTTP version sent nine items back (demo example, not a benchmark).",
+   "t": "16:46"
+  }
+ ],
+ "hot_takes": [
+  "Once inference is fast, the network round trip, not the model, becomes the bottleneck in agent loops.",
+  "Goal objectives should be concrete and verifiable, not long essays, so the harness can tell when the work is done.",
+  "Approval fatigue is a bigger practical problem than model capability, and a read-only reviewer sub-agent can handle most escalations."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Crucible's exec-gate guardrails and the L1 approval path need a way to decide on escalated actions without asking the user each time. Codex's auto-review design is a concrete pattern for that.",
+   "action": "Prototype a read-only exec-gate reviewer for Crucible: it gets the user's authorization context, a risk taxonomy and the pending tool call, and returns approve or escalate, with no spawn rights."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs loops and long checkpointed runs around Claude Code. A verifiable goal and an explicit done signal would make those loops stop on a real condition.",
+   "action": "Add an explicit goal-complete tool to ProsHarness loops: the harness re-injects the objective each pass and stops only when the agent calls that tool, with each loop's goal written as a checkable condition."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Shows the context-budget tactics (deferred tools, skills list capped as a share of the window) that apply to any agent that loads many tools or skills.",
+   "action": "Check how many tokens our CLAUDE.md, skills list and tool definitions take per session and cap the skill descriptions as a share of the context window."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

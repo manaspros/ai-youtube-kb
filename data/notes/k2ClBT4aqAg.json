@@ -1,0 +1,154 @@
+{
+ "one_line": "Postman's engineer describes an API context graph over 115+ microservices, grounded in code and telemetry, that improves coding-agent answers on API discovery, shape analysis and impact assessment, with a token-efficiency gain and a staleness warning.",
+ "summary": "Kamalakannan Nandagopal (Postman) argues that coding agents struggle in distributed systems because the context they need is spread across many repos and services, and that API definitions are the natural context layer. Postman built an API context graph covering its 115+ microservices and thousands of endpoints, linking each endpoint to its implementing code line, service-to-service calls, data stores and client apps. A rule keeps every node grounded in either code or production telemetry. The team evaluated with eval cases mined from real PRs and design discussions, scored 0 to 5, and plotted quality against tokens, comparing Postman's agent, Claude Code with plain GitHub code search, and Claude Code with the graph exposed as a skill. The graph helped most on impact assessment and API shape analysis, where it used roughly half to a third of the baseline's tokens. A failure case showed that a stale graph (new consumers added after the eval was written) hurts results and erodes developer trust, so syncing and removals matter as much as initial population. Across the top 10 repos, about 75% of PRs touched API surface. Running the agent over the whole graph produced a 21-page architecture report covering dependency cycles, risky migrations, single points of failure and telemetry blind spots. The speaker says cheaper runs let teams move these checks earlier, to PR time and the local dev loop. The talk is a vendor-hosted case study with limited published numbers.",
+ "speakers": [
+  "Kamalakannan Nandagopal"
+ ],
+ "orgs": [
+  "Postman"
+ ],
+ "format": "talk",
+ "topics": [
+  "context-engineering",
+  "coding-agents",
+  "evals"
+ ],
+ "tags": [
+  "API context graph",
+  "microservices",
+  "coding agents",
+  "grounding",
+  "eval design",
+  "token efficiency",
+  "staleness",
+  "impact analysis",
+  "API discovery",
+  "architecture review"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Coding agents do well on greenfield work or single-repo fixes but struggle with production systems split across many microservices, repos, and environments.",
+   "detail": "The speaker traces the path from autocomplete to refactors to autonomous agents, then says the real limit is cross-service context, not code generation.",
+   "t": "0:12"
+  },
+  {
+   "idea": "Human-written docs and per-user agent memory both fall short for teams; the speaker says purely LLM-written docs degrade over time (citing research, not verified here).",
+   "detail": "He says no standard exists yet for sharing agent memory across a team or org, and skills and MCPs are only as good as the context behind them.",
+   "t": "2:55"
+  },
+  {
+   "idea": "In microservices, APIs define each service's responsibility, so they are the best context layer for agents.",
+   "detail": "API calls between systems reveal workflows and user journeys that span several services, so the team built the graph around endpoints and their calls.",
+   "t": "4:23"
+  },
+  {
+   "idea": "Every node in the graph must be grounded in a hard source: a code line or a production trace.",
+   "detail": "This rule is the basis for trusting the graph; LLM-indexed summaries without a code or telemetry anchor were not accepted.",
+   "t": "5:34"
+  },
+  {
+   "idea": "Evals were built from real merged PRs and design-review decisions, with the retrospective outcome as ground truth.",
+   "detail": "Each case is scored 0 to 5 and tokens are recorded, then plotted as quality versus cost. The comparison includes a generic coding agent using plain code search, and the same agent with the graph exposed as a skill.",
+   "t": "6:44"
+  },
+  {
+   "idea": "The graph helps most on impact and shape questions, where plain code search does poorly.",
+   "detail": "For API shape analysis, a schema property that grew to 15 attributes was traced across consumers with the graph. For impact assessment, the agent reached similar quality with roughly half to a third of the tokens.",
+   "t": "9:25"
+  },
+  {
+   "idea": "A stale graph causes visible failures, so keeping it in sync with ground truth is a core requirement.",
+   "detail": "New consumers added after the eval was written produced a failure where the agent used many tokens and got the answer wrong. Removed APIs and dependencies matter as much as new ones.",
+   "t": "12:08"
+  },
+  {
+   "idea": "Whole-ecosystem analysis is a payoff of the graph: a 21-page architecture review with actions per role.",
+   "detail": "The report flagged dependency cycles, long migrations, single points of failure, and telemetry blind spots. It is one example that the speaker presents as a sign of the approach's value, not as a measured result.",
+   "t": "14:27"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Code- and telemetry-grounded API context graph",
+   "how": "Catalog each production service and every endpoint, link each endpoint to its implementing code line, map service-to-service calls and data-store access, and reject any node not backed by code or a trace.",
+   "when": "Multi-service systems where agents must answer cross-repo questions such as who calls this API and what breaks if it changes."
+  },
+  {
+   "name": "Retrospective PR-based eval with quality-vs-tokens plot",
+   "how": "Mine real PRs and design decisions for developer intent and actual outcome, use the outcome as ground truth, score each run 0 to 5, record tokens, and plot results with a pass line.",
+   "when": "Comparing agent setups (plain search, MCP, skill, context layer) on realistic engineering tasks rather than synthetic benchmarks."
+  },
+  {
+   "name": "Context layer exposed as a skill next to a generic coding agent",
+   "how": "Package the graph as a skill for a generic coding agent and run the same eval cases with and without it, so the context layer is the only variable.",
+   "when": "Testing whether a shared context source helps an existing coding agent without building a custom agent."
+  },
+  {
+   "name": "Treat graph staleness as an eval regression",
+   "how": "When an eval fails, check whether the ground truth changed after the eval was written (new consumers, removed APIs) before blaming the agent.",
+   "when": "Any context store that is populated once and then drifts from the codebase."
+  },
+  {
+   "name": "Run expensive architecture checks cheaper and earlier",
+   "how": "Reduce tokens per query with a graph so the same check can run per PR or in the local dev environment instead of only on demand.",
+   "when": "When cost per check limits how often a quality check can run."
+  }
+ ],
+ "tools": [
+  "Postman API context graph",
+  "Claude Code",
+  "GitHub code search",
+  "Postman AI agent"
+ ],
+ "numbers": [
+  {
+   "claim": "More than 115 microservices and thousands of REST endpoints power Postman's cloud features.",
+   "t": "0:12"
+  },
+  {
+   "claim": "Across the top 10 repos, about 75% of PRs had some effect on API surface or added an API integration.",
+   "t": "13:27"
+  },
+  {
+   "claim": "On impact assessment, the graph-equipped agent reached similar quality using roughly half to one third of the tokens of the code-search baseline (approximate, from the slide description).",
+   "t": "12:08"
+  },
+  {
+   "claim": "Evals are scored on a 0 to 5 scale and plotted against tokens per run; no absolute scores are stated.",
+   "t": "11:10"
+  },
+  {
+   "claim": "The whole-ecosystem architecture review produced a 21-page report.",
+   "t": "14:27"
+  }
+ ],
+ "hot_takes": [
+  "Purely LLM-written documentation degrades over time, so human curation is needed.",
+  "Agent memory is still limited to one individual user; no standard exists for sharing it across an engineering org.",
+  "Every data point in an agent's context graph should trace back to a line of code or a production trace, not to an LLM summary."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "SkillForge and MemoryMesh need provenance; the grounding rule is a useful design check, but the talk does not cover AgentOS-style infra.",
+   "action": "Read the grounding and staleness section (5:34 and 12:08) before deciding how MemoryMesh provenance should trace each fact to its source."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The quality-vs-tokens scatter with a pass line is a simple way to compare harness setups on cost and quality.",
+   "action": "Adopt the quality-versus-tokens plot for comparing ProsHarness plan-critique-debate runs, using PR-derived ground truth."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The retrospective PR-based eval design and the note that stale context causes failures apply to any agent evaluation.",
+   "action": "Build eval cases from real merged PRs with outcomes as ground truth, and log whether context was current at the time each eval ran."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

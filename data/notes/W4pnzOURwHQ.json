@@ -1,0 +1,206 @@
+{
+ "one_line": "Insurance claims data is messy, so AI claims work needs layered extraction, duplicate detection, human verification, and calibrated tiered benchmarks before cross-claim analytics pay off.",
+ "summary": "Denys Linkov, who leads the AI program at Wisedocs, argues that medical and property-casualty claims are among the hardest enterprise data problems, and that most insurers have not finished basic digital transformation. He walks through the messiness: non-standard forms across US states, duplicate and co-mingled patient records (up to 50%+ duplicates depending on jurisdiction), scanned faxes, and single claim files so large (one he saw was 8 GB) that they cannot fit in a context window. His proposed approach is a layered pipeline: OCR and preprocessing, extraction models and VLMs, classifiers, summaries, then human verification, with analytics built on top only once per-claim data is trustworthy. He presents MLCR, a six-tier medical-claims QA benchmark built with Artificial Analysis, scored on accuracy, completeness, and conciseness against expert answers, with a private held-out tier and calibrated triple-judge verification. Frontier accuracy on the hardest tier reportedly rose from about 20% at launch to about 75% a few months later. Once extraction is solid, he says cross-claim analysis (provider networks, diagnosis co-occurrence, cost trends) becomes possible, though he admits most of the industry has not reached that point. The talk is part pitch for Wisedocs and part sincere field report on regulated, human-in-the-loop AI.",
+ "speakers": [
+  "Denys Linkov"
+ ],
+ "orgs": [
+  "Wisedocs",
+  "Artificial Analysis"
+ ],
+ "format": "workshop",
+ "topics": [
+  "data-engineering",
+  "evals",
+  "enterprise-adoption",
+  "governance-compliance"
+ ],
+ "tags": [
+  "insurance-claims",
+  "medical-claims",
+  "document-extraction",
+  "data-quality",
+  "deduplication",
+  "llm-as-judge",
+  "human-in-the-loop",
+  "benchmark-design"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Digital transformation is unfinished in most companies, so AI on top of messy data is premature",
+   "detail": "Speaker notes that many firms have not finished cloud migration, data lakes, or digitization (faxes still a >$7B market, EHR adoption only reached the 80-90s around COVID). He argues the data prerequisites must come first.",
+   "t": "2:22"
+  },
+  {
+   "idea": "Duplicate and co-mingled records are the core data-quality failure",
+   "detail": "Duplicates can reach 50%+ depending on jurisdiction, partly because claimants must repeatedly chase status. Records from different patients get mixed (a HIPAA risk), and a single upstream error can break a whole claim. Detection at intake is needed to stop bad data from propagating.",
+   "t": "16:14"
+  },
+  {
+   "idea": "Claim files exceed what a single LLM call can handle",
+   "detail": "Claims mix images, X-rays, ultrasounds, and scans; one file he saw was 8 GB. Long-context prompting over a whole file is not a practical approach, so the work must be decomposed.",
+   "t": "20:07"
+  },
+  {
+   "idea": "Layered abstraction pipeline with verification at each level",
+   "detail": "Pipeline order: OCR and preprocessing, then NLP and extraction models or VLMs, classifiers, per-document summaries, human verification, and finally analysis layers. Information density rises going up, and AI is most useful at the top once lower layers are verified.",
+   "t": "34:02"
+  },
+  {
+   "idea": "MLCR benchmark: tiered difficulty, private held-out tier, three-axis scoring",
+   "detail": "Six tiers of claim questions, from injury date to multi-step clinical reasoning. Easy tiers are open-sourced, harder tiers are held privately with Artificial Analysis to limit benchmaxxing. Answers are scored on accuracy, completeness, and conciseness against expert-validated answers.",
+   "t": "24:03"
+  },
+  {
+   "idea": "Frontier accuracy on the hardest tier moved very fast, so evals go stale quickly",
+   "detail": "At launch the best high-reasoning accuracy was about 20%. A few months later it was around 75%. He reads this as a reason to keep re-running evals, since it means more of the hard questions can become productized with a human still reviewing.",
+   "t": "25:42"
+  },
+  {
+   "idea": "Calibrate the judges against experts before trusting them",
+   "detail": "Accuracy is judged against human-verified answers using a calibrated set of judges (triple-judge verification). He stresses that upstream extraction errors compound downstream, so each step must be calibrated, and this needs domain experts working alongside engineers.",
+   "t": "27:21"
+  },
+  {
+   "idea": "Cross-claim analytics only become possible after per-claim extraction is solid",
+   "detail": "Once data is structured, he describes analyses of out-of-area treatment, lawyer/doctor/chiropractor co-working networks, diagnosis co-occurrence (ICD codes), and year-over-year cost changes by provider, used for counterfactual network and billing decisions.",
+   "t": "28:31"
+  },
+  {
+   "idea": "Match the model type to the task, and pick for cost as well as accuracy",
+   "detail": "He separates classification, extraction, and decision tasks, says LLMs are not the right tool for everything, and says cost pushed Wisedocs to train its own models for some steps. He criticizes the default of using reasoning tokens on every problem.",
+   "t": "41:41"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Layered extraction with per-level verification",
+   "how": "Chain OCR/preprocessing -> extraction (NLP models or VLMs) -> classifiers -> document summaries -> human check -> analytics. Each layer is verified before the next consumes it, and density of information increases up the stack.",
+   "when": "Input documents are too large or heterogeneous for one prompt, and downstream decisions depend on upstream fields being right."
+  },
+  {
+   "name": "Tiered benchmark with a private held-out tier",
+   "how": "Write difficulty tiers of domain questions. Open-source the easy tiers and keep harder tiers private, hosted by a third party. Score each answer on accuracy, completeness, and conciseness against expert-validated answers.",
+   "when": "Building document-QA evals where models may hallucinate facts that are absent from the source and where benchmark gaming is a risk."
+  },
+  {
+   "name": "Calibrated multi-judge verification",
+   "how": "Use several LLM judges (triple-judge), but first calibrate them against a set of expert-verified answers so you know their agreement with humans before relying on them.",
+   "when": "LLM-as-judge is used to score extraction or QA outputs at scale in a domain where experts disagree or accuracy matters."
+  },
+  {
+   "name": "Back-test on historical samples before pilot",
+   "how": "Run the pipeline on a few sample files from the customer, then review field-by-field alignment with business definitions (e.g., date of injury vs. date of report). Agree definitions before a broader pilot.",
+   "when": "Onboarding a new customer or data source where the same field name means different things to different stakeholders."
+  },
+  {
+   "name": "Duplicate and co-mingling detection at intake",
+   "how": "Detect repeat submissions and records from other patients before they enter the claim, so bad data is caught at the source rather than cleaned later.",
+   "when": "Ingesting data from many upstream providers that resubmit or follow up repeatedly."
+  },
+  {
+   "name": "Human-in-the-loop surfacing with page references",
+   "how": "The system flags conflicts (e.g., two doctors disagreeing on a diagnosis) with pointers to the page, and a human makes the decision. Keep the pipeline auditable rather than a black box.",
+   "when": "Regulated decisions where the system should inform, not decide."
+  }
+ ],
+ "tools": [
+  "Artificial Analysis MLCR benchmark",
+  "GPT models",
+  "Anthropic models",
+  "ChatGPT",
+  "Gemini",
+  "Claude"
+ ],
+ "numbers": [
+  {
+   "claim": "Global fax market is over $7B",
+   "t": "3:26"
+  },
+  {
+   "claim": "EHR adoption was about 8% in 2008; hit the 80-90s only around COVID",
+   "t": "4:00"
+  },
+  {
+   "claim": "50 US states means roughly 50 different workers' comp intake forms",
+   "t": "4:33"
+  },
+  {
+   "claim": "Loss ratios hover around 50% for insurers",
+   "t": "5:40"
+  },
+  {
+   "claim": "Property & casualty is about a $1T premium market",
+   "t": "9:01"
+  },
+  {
+   "claim": "Plaintiff-side attorney fees: about 9-15% in California workers comp; about one-third to 40% in other jurisdictions",
+   "t": "14:35"
+  },
+  {
+   "claim": "Duplicate records can be 50% or higher depending on jurisdiction",
+   "t": "16:14"
+  },
+  {
+   "claim": "A single claim PDF in their database was 8 GB",
+   "t": "20:07"
+  },
+  {
+   "claim": "A claims adjuster may handle around 200 claims at a time",
+   "t": "21:49"
+  },
+  {
+   "claim": "MLCR has six tiers of questions; accuracy at launch on the hardest tier was about 20%, rising to about 75% a few months later at high reasoning",
+   "t": "25:42"
+  },
+  {
+   "claim": "Example insurer: about $1B premiums and roughly 20,000 claims paid per year",
+   "t": "28:31"
+  },
+  {
+   "claim": "Large insurers can spend hundreds of millions on legal fees",
+   "t": "40:36"
+  },
+  {
+   "claim": "Speaker estimates a human in the loop removes about 70% of regulatory concerns",
+   "t": "38:57"
+  },
+  {
+   "claim": "Turnaround requirements: Texas can be a few hours; other states 7 or 21 days",
+   "t": "43:20"
+  }
+ ],
+ "hot_takes": [
+  "Many companies should finish cloud, data lake, and digitization work before any AI deployment; AI on messy data is premature.",
+  "Ask 'is AI the right solution?' first; the talk argues the business problem should drive the choice.",
+  "LLMs are not the right solution for everything; classifiers remain valuable and cheaper, and token-heavy reasoning on every problem was a costly habit.",
+  "Benchmarks built on clean data overstate real-world performance; real claims need cleanup steps upstream.",
+  "A human in the loop plus auditability addresses most regulatory concerns (speaker's own estimate of about 70%).",
+  "Insurers that stay slow on claims invite fraud and repeat submissions, so digital speed is a fraud control too."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The MLCR design (tiered difficulty, private held-out tier, expert-calibrated judges, separate completeness scoring) maps directly onto MemoryMesh's RAGAS evals for retrieval QA.",
+   "action": "Add a private held-out tier and expert-validated answers to MemoryMesh's eval set, and score completeness separately from accuracy and conciseness."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The talk's pattern of a human decision with page-level citations of the evidence is similar to phone-driven approvals in ProsHarness.",
+   "action": "When a plan or approval is surfaced to the phone, show the specific evidence (file/line/span) the agent relied on, not just the summary."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Calibrating LLM judges to expert answers before trusting them, and choosing classifier vs extractor vs LLM by task type and cost, applies to any cheap-model pipeline.",
+   "action": "Before using an LLM judge in a pipeline, label 50-100 samples with expert or ground-truth answers and measure judge agreement; route simple classification to a small model."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku",
+ "_usd": 0.012450290000000001,
+ "_at": "2026-10-18T16:06:59"
+}

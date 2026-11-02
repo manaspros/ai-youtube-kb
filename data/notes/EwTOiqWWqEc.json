@@ -1,0 +1,204 @@
+{
+ "one_line": "Walkthrough of running Kimi K3 inside Claude Code via a local proxy on a Kimi subscription, then using the Hallmark anti-slop design skill to push Kimi, Opus and Codex off their default visual styles.",
+ "summary": "The host argues every model has recognizable default design patterns, and that a design skill is needed to push output off them. He recaps Kimi K3's claimed performance and pricing ($3/$15 per million tokens) against GPT 5.6 and Fable 5, and reports that Kimi Code, Kimi's own terminal harness, felt slow (about 10 minutes versus about 3 for Claude Code or Codex on one task) and mishandled context and subagents. Instead he runs Kimi inside Claude Code through CLIProxy API, a local tool that turns an existing coding-tool login into a local API endpoint, so usage stays on the flat subscription. He then installs the Hallmark skill, explains its four verbs (default, audit, redesign, study), and runs it on a Next.js landing page with Kimi, Opus 4.8 and Codex. His baseline comparison is one run per model, with no measured design scores. The sponsored segment is mid-video, and the channel plugs its paid community at the end.",
+ "speakers": [],
+ "orgs": [
+  "Moonshot AI",
+  "Anthropic",
+  "OpenAI",
+  "Google",
+  "Artificial Analysis",
+  "LM Arena",
+  "Unsplash",
+  "Pixum",
+  "Jolly Memory"
+ ],
+ "format": "review",
+ "topics": [
+  "claude-code",
+  "skills-self-improvement",
+  "vibe-coding-app-building",
+  "coding-agents"
+ ],
+ "tags": [
+  "kimi-k3",
+  "kimi-code",
+  "claude-code",
+  "cliproxy-api",
+  "hallmark-skill",
+  "anti-slop-design",
+  "frontend-design",
+  "landing-page",
+  "model-routing",
+  "subscription-proxy",
+  "codex",
+  "opus-4.8",
+  "context-management",
+  "skill-invocation"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Every model has default design patterns that show up in its output, so a design-specific skill is needed to push it off those defaults.",
+   "detail": "The host says Opus, Sonnet and GPT all repeat their own layouts, colors and visual habits regardless of which model is used. He calls Kimi K3 strong at front end, with its claimed edge coming from screenshotting its own output and self-correcting.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Kimi K3 is claimed to match the top tier at the lowest price, but the speaker does not verify the ranking himself.",
+   "detail": "He cites Artificial Analysis for intelligence and LM Arena for front-end preference, with Kimi placed just behind Fable 5 and GPT 5.6 on intelligence and ahead of them on LM Arena design rankings. Pricing is $3/$15 per million tokens for Kimi, versus $5/$30 for GPT 5.6 and $10/$50 for Fable 5.",
+   "t": "1:05"
+  },
+  {
+   "idea": "Kimi Code is the slow path. The speaker blames hosting on Kimi's own servers and a rough harness.",
+   "detail": "One task took about 10 minutes in Kimi Code versus about 3 in Claude Code or Codex. Context broke when switching models, and the subagent count it reported did not match what it claimed (it said five after appearing to spawn many).",
+   "t": "2:33"
+  },
+  {
+   "idea": "Run Kimi inside Claude Code through a local proxy so the flat subscription covers usage instead of per-token API billing.",
+   "detail": "CLIProxy API takes a logged-in coding tool and exposes it as a local API. Setup: install via brew, log in with the Kimi login command, start the server, generate a local API key (the speaker suggests letting an agent do this), then point Claude Code's base URL at localhost, set the auth token to that key, and set the model to Kimi K3.",
+   "t": "3:40"
+  },
+  {
+   "idea": "Environment changes made for the Claude Code session last only for that terminal session.",
+   "detail": "The base URL, token and model overrides are not permanent. A new terminal goes back to normal Claude use.",
+   "t": "5:08"
+  },
+  {
+   "idea": "Hallmark is a design skill with four verbs. Study mode treats a reference site as inspiration rather than something to clone.",
+   "detail": "Verbs: default (build a new UI), audit (check code against anti-patterns and return a report you choose fixes from), redesign (fresh direction, rerun questions and workflow), and study (pull style from a site you like without copying it). The skill ships 100+ references, a library of design styles, and a 58-check gate before output.",
+   "t": "5:08"
+  },
+  {
+   "idea": "The pre-flight step asks for audience, use case and tone, so put those in the prompt to skip the questions.",
+   "detail": "Pre-flight reads existing design files, decides what to keep, and in the test locked in Next.js and dropped the rest of the template. It then pulls the theme from references and builds, and finishes by running the 58 checks.",
+   "t": "10:05"
+  },
+  {
+   "idea": "Skills do not auto-trigger reliably with non-Claude models in Claude Code, and auto-compaction does not run, so context needs manual care.",
+   "detail": "The speaker invokes Hallmark by its slash command to make sure it loads before building. Once the window fills, answers drift from instructions and turn generic, so start a fresh session or manage context yourself.",
+   "t": "11:32"
+  },
+  {
+   "idea": "In the test, the skill produced a visibly better Opus design, at the cost of a much longer run.",
+   "detail": "Opus 4.8 without the skill took about six minutes and produced a site with classic Opus patterns (palette, gradient background, rounded boxes), which the separate AI-slop detector also flagged. The Hallmark run was much slower but more intentional, with better button interactivity. Hallmark also avoids Unsplash placeholders and asks the user to supply their own images.",
+   "t": "11:32"
+  },
+  {
+   "idea": "Codex has its own default style, which Hallmark changed. The skill did not remove the remaining blue-and-white look.",
+   "detail": "Codex defaults to green and white, leans on SVGs and small type. With the skill installed in .agents and a plain prompt, the Codex app (which has browser tools) produced a site the speaker rated much better. Its audit still flagged responsiveness, which first passes tend to miss.",
+   "t": "14:02"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run a non-Claude model inside Claude Code via a local subscription proxy",
+   "how": "1) Install CLIProxy API with brew. 2) Run the Kimi login command and sign in on the page that opens. 3) Start the CLIProxy server and keep it running. 4) Generate a local API key for that setup (the speaker asks Claude Code to do this). 5) In Claude Code, change the request base URL to localhost, paste the key as the Anthropic auth token, and set the model to Kimi K3. 6) Run claude. Exact env var names are not spoken on screen; the speaker just says base URL, auth token and model. Settings last only for that terminal session.",
+   "when": "You want to try a model that lives on a flat-rate subscription, but Claude Code's harness is more reliable than that vendor's own CLI. Avoid it if you need persistent config across terminals."
+  },
+  {
+   "name": "Install Hallmark for the right agent",
+   "how": "Copy the install command from the Hallmark GitHub repo and paste it in a terminal. At the agent prompt, choose the agent you need. Kimi Code and Codex install into .agents with no change. For Claude Code, select Claude Code too, which installs into the .claude folder. The skill's SKILL.md holds how-to-invoke details.",
+   "when": "Adding a design-quality skill to a project for one or more coding agents."
+  },
+  {
+   "name": "Invoke a skill manually with its slash command when the model is not Claude",
+   "how": "Type the skill's slash command explicitly at the start of the task instead of relying on auto-invocation, so the skill loads before the first build step.",
+   "when": "Using a non-Claude model in Claude Code, where the auto-trigger logic is tuned for Claude models and may not fire."
+  },
+  {
+   "name": "Prompt Hallmark with the three pre-flight answers",
+   "how": "State the audience, the site's purpose and the tone in the first prompt. If you leave them out, the skill asks them itself during pre-flight.",
+   "when": "Starting a landing page build with a design skill, to skip an interactive round."
+  },
+  {
+   "name": "Run the audit verb, then pick which findings to fix",
+   "how": "Ask for an audit. The skill loads its anti-pattern references, produces a report of flagged patterns (high and low confidence), and you choose which fixes to apply. In the test, the fixes swapped the font, replaced Unsplash images with another stock site (Pixum), and improved mobile responsiveness.",
+   "when": "After an initial build, to check a design against known AI-slop patterns before shipping."
+  },
+  {
+   "name": "Use the study verb, not a clone request",
+   "how": "Point the skill at a site you like and ask it to study the style. Hallmark is set to take the site as a reference, not copy it, so the result should be original.",
+   "when": "You want a style direction from a reference site without copying its code or layout."
+  },
+  {
+   "name": "Manage context manually on long design sessions",
+   "how": "Auto-compaction does not run for Kimi in Claude Code. When answers start drifting from the instructions or turning generic, start a fresh session or otherwise reduce the context.",
+   "when": "Long iterative design runs with a non-Claude model in Claude Code."
+  }
+ ],
+ "tools": [
+  "Kimi K3",
+  "Kimi Code",
+  "Claude Code",
+  "Codex",
+  "Codex app",
+  "CLIProxy API",
+  "Hallmark",
+  "Next.js",
+  "Opus 4.8",
+  "Sonnet 4.5",
+  "GPT 5.6",
+  "Fable 5",
+  "Gemini 3.6",
+  "Unsplash",
+  "Pixum",
+  "AI-slop detector skill",
+  "Jolly Memory",
+  "brew"
+ ],
+ "numbers": [
+  {
+   "claim": "Kimi K3 context window is 1 million tokens.",
+   "t": "1:05"
+  },
+  {
+   "claim": "Pricing per million tokens: Kimi K3 $3 input / $15 output; GPT 5.6 $5 / $30; Fable 5 $10 / $50 (vendor list prices as stated).",
+   "t": "1:05"
+  },
+  {
+   "claim": "Kimi Code took about 10 minutes on one task; Claude Code or Codex took about 3 minutes on the same task.",
+   "t": "2:33"
+  },
+  {
+   "claim": "Kimi Code reported spinning up 5 subagents after appearing to launch many more.",
+   "t": "3:40"
+  },
+  {
+   "claim": "Hallmark ships 100+ reference files and runs a 58-check gate before returning output.",
+   "t": "7:32"
+  },
+  {
+   "claim": "Opus 4.8 without the skill took about 6 minutes to build the landing page.",
+   "t": "11:32"
+  },
+  {
+   "claim": "The AI-slop detector flagged multiple high and low confidence patterns on the no-skill Opus output.",
+   "t": "11:32"
+  }
+ ],
+ "hot_takes": [
+  "Quality capped at 2 because the video includes a sponsored segment (Jolly Memory, around 7:32 to 8:52). The rest of the content is practitioner-level, but the benchmark and design claims rest on one run per model.",
+  "Claims that Kimi's design style is distilled from Opus 4.8 are presented as fact with no evidence shown.",
+  "The subagent discrepancy in Kimi Code (5 reported versus many appeared) is one anecdote.",
+  "The Hallmark '58 checks' and '100+ references' figures come from the skill's own description; the video does not verify them.",
+  "Kimi K3 is called the best front-end model based on LM Arena and vendor-reported figures; the host admits Kimi's design patterns are not yet well established.",
+  "The video ends with a plug for the channel's paid community (AI LABS Pro)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "CLIProxy API is a local proxy that turns subscription logins into an API endpoint, similar to AgentOS's single base_url proxy idea. Nothing else in the video touches AgentOS's pillars.",
+   "action": "Note CLIProxy API as prior art for a subscription-backed provider in AgentOS's proxy; no code change needed yet."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code. The video shows that base-URL and model overrides are session-scoped and that skills do not auto-trigger for non-Claude models, both relevant to a harness's launch and skill handling.",
+   "action": "Check ProsHarness's Claude Code launch path: make sure model and base-URL overrides and manual skill invocation are handled explicitly, not assumed to persist."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

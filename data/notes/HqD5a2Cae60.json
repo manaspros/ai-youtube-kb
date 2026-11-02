@@ -1,0 +1,212 @@
+{
+ "one_line": "AI LABS walks through four ways to get better websites and UIs from Claude Code: refresh design skills from model prompting guides, use design.md files, plan functional UIs as HTML mockups, and clone existing UIs. Mostly anecdotal, with a sponsor segment.",
+ "summary": "The presenter argues that a harness (the process and skills wrapped around a model) goes stale as models change, and that the default model output drifts toward a safe, average design. An official front-end design skill, which is just a prompt with no references, produced a noticeably better landing page than the model did unaided in their test. Their workflow is to feed a new model's prompting guide and the skill prompt back to Claude and ask for an updated skill, and to check older guides for fixes that were dropped from newer ones. For marketing pages they use design.md brand files applied after generation, effort settings (low to medium for simple tasks, x-high for animation), and a GSAP skill that loads conditionally. For functional UI (dashboards, apps) they plan first, build HTML mockups, generate several variants in a gallery viewer, and convert the approved mockup to shadcn components with the shadcn skill. Verification is set up through an instruction in CLAUDE.md and a verifier subagent that checks output against design.md. Cloning a marketing site uses a single-file capture CLI plus sitemap.xml, and auth-gated apps are cloned from carefully captured screenshots of each state. Most quantitative claims are the authors' own informal tests, and the video includes a paid community plug and a sponsor segment for Kimi K2.6.",
+ "speakers": [
+  "unnamed AI LABS presenter"
+ ],
+ "orgs": [
+  "Anthropic",
+  "AI LABS",
+  "Kimi",
+  "shadcn",
+  "GetDesign",
+  "Notion"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "vibe-coding-app-building",
+  "claude-code",
+  "skills-self-improvement",
+  "context-engineering"
+ ],
+ "tags": [
+  "design-skills",
+  "prompting-guides",
+  "design-md",
+  "gsap",
+  "shadcn",
+  "ui-cloning",
+  "claude-md",
+  "subagent-verification",
+  "effort-level",
+  "gallery-viewer",
+  "html-mockups"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Models drift to the safest average design. The presenter calls this converging on the distribution, and says a generic prompt with no skill still produces a bland result.",
+   "detail": "Test prompt: landing page for a plantation site, told to be creative and not to load skills. The output had contrast problems and some images failed to load.",
+   "t": "0:00"
+  },
+  {
+   "idea": "An official front-end design skill, with no references or external resources, is just a prompt. In their test it produced a clearly more polished result with subtle animations.",
+   "detail": "This is the main evidence for the claim that a well-written skill prompt changes output quality.",
+   "t": "1:25"
+  },
+  {
+   "idea": "Refresh a design skill for each new model by feeding it the vendor prompting guide. Paste the skill prompt and the guide into Claude and ask for a rewritten version tuned to that model.",
+   "detail": "Result was a layout that turned page elements into cards, with small details such as a CTA styled as a postcard with a stamp.",
+   "t": "1:25"
+  },
+  {
+   "idea": "Older prompting guides still contain fixes that newer guides dropped. Opus 4.8's guide asked for several design alternatives before committing; the Fable 5 guide omits this, and the model still converges on the same style.",
+   "detail": "By the presenter's testing, roughly two in three generated sites still came out with very similar styling. The fix was never really in the newer guide.",
+   "t": "2:53"
+  },
+  {
+   "idea": "design.md files lock brand language down to fonts and components, which matters because the font drives most of the perceived quality. Use them only for marketing and landing pages, and apply them after the page is generated.",
+   "detail": "Sources named: GetDesign.md, a site with design.md files for many brands. Not recommended for functional UI, where the design skill makes dashboards look nice but hard to use.",
+   "t": "2:53"
+  },
+  {
+   "idea": "Effort is the main control lever. Use low to medium for simple tasks and x-high for animation tasks, which the presenter says need fewer retries. Animation in marketing pages should use GSAP, not CSS.",
+   "detail": "The marketing skill has a rule that loads the GSAP skill automatically when an animation is needed. The presenter says the skill setup came from repeatedly hitting 5-hour usage limits.",
+   "t": "4:21"
+  },
+  {
+   "idea": "Functional UI runs in a separate pipeline: plan, build HTML mockups with a design.md as source of truth, validate the mockups, then convert the approved mockup into the app.",
+   "detail": "They also generate several variants and open them together in an internal gallery viewer for side-by-side comparison. The presenter says sub-agents are no longer needed for this with about a million tokens of context.",
+   "t": "5:48"
+  },
+  {
+   "idea": "Use the shadcn skill to turn the final HTML mockup into shadcn components almost one-to-one. This replaces an earlier, more elaborate workflow built around a shadcn MCP implementation plan. Do not overdo animation in productivity UIs.",
+   "detail": "The shadcn skill carries context packaged by the shadcn creators. The functional UI skill is wired to the shadcn skill so most of the workflow is automatic.",
+   "t": "8:44"
+  },
+  {
+   "idea": "Make self-verification explicit: put a verify instruction and product context in CLAUDE.md, and have a sub-agent check output against design.md rather than trusting the main agent.",
+   "detail": "The presenter prefers CLAUDE.md over a separate product.md for product context. The functional UI skill makes the model read CLAUDE.md on every task, and points it at a folder of HTML mockup files for reuse.",
+   "t": "10:11"
+  },
+  {
+   "idea": "To clone a marketing site, capture HTML, CSS and images with a single-file capture CLI, and use sitemap.xml to discover other pages. For auth-gated apps, capture screenshots of each state (hover, interactions, layout changes) and drag them into Claude instead of pasting them.",
+   "detail": "Dragging gives the model file paths, so screenshots can be copied into the clone folder as references. The model then produces an initial HTML version of the interface.",
+   "t": "11:39"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Refresh a design skill from the model's prompting guide",
+   "how": "Paste the general-purpose design skill prompt and the target model's prompting guide into Claude. Say the guide is for that model and ask for an updated version of the skill. Use the rewritten prompt as the new skill.",
+   "when": "Each time a new model ships. Use it to keep a design skill from going stale."
+  },
+  {
+   "name": "Mine older prompting guides for dropped fixes",
+   "how": "Read the prompting guides for previous models as well as the latest one. Look for behavioral fixes that were removed from newer guides, such as asking for several design alternatives before committing, and re-apply them to your skill prompt.",
+   "when": "When a newer model still shows a known behavior the latest guide no longer mentions."
+  },
+  {
+   "name": "Set effort by task type",
+   "how": "Use low to medium effort for simple tasks. Use x-high for animation work, which the presenter says gives fewer retries.",
+   "when": "When choosing the effort level for a coding or design task with Claude."
+  },
+  {
+   "name": "Conditionally load a sub-skill from a rule",
+   "how": "In the marketing UI skill, add a rule saying when GSAP should be used. When the condition is met, the GSAP skill is loaded automatically alongside it.",
+   "when": "When one skill needs specialized knowledge only for some tasks, such as animation."
+  },
+  {
+   "name": "Apply design.md after generation for marketing pages",
+   "how": "Let the design skill generate the landing page first. Then apply a design.md brand file (such as one from GetDesign.md) to lock down fonts, colors, spacing and components. Do not apply it to functional dashboards.",
+   "when": "Landing pages where the brand look must be fixed. Skip for app UIs that need usability first."
+  },
+  {
+   "name": "Functional UI pipeline: plan, mockups, gallery, port",
+   "how": "1) Write a plan. 2) Ask Claude for HTML mockups, not the app. 3) Keep a design.md as the source of truth for all mockups so variants stay visually consistent. 4) Generate several variants and open them together in a viewer for side-by-side comparison. 5) Pick one and convert it to the app with the shadcn skill.",
+   "when": "Building dashboards, admin tools or community interfaces where UX choices are unclear up front."
+  },
+  {
+   "name": "Consistent variants via a shared design.md",
+   "how": "When generating multiple UX alternatives, point each generation at the same design.md. The colors, spacing, typography and components then stay consistent while the interaction patterns differ.",
+   "when": "Exploring several UX directions and comparing them."
+  },
+  {
+   "name": "CLAUDE.md as product context and verify contract",
+   "how": "Put a self-verification instruction and a description of the product in CLAUDE.md. Have the functional UI skill read CLAUDE.md on every task. Keep HTML mockups in a folder that the skill can reference, and keep design.md in the project.",
+   "when": "Projects that use design skills and need the agent to check its own output."
+  },
+  {
+   "name": "Verify with a sub-agent against design.md",
+   "how": "Instead of having the main agent check its own output, spawn a sub-agent to verify the output. Point it at design.md as the reference to compare against.",
+   "when": "Before accepting generated UI as done."
+  },
+  {
+   "name": "Clone a marketing site with a capture CLI and sitemap",
+   "how": "Use the single-file capture CLI named in the video to save the page's HTML, CSS and images. If the site has several pages, fetch sitemap.xml and use it to find and capture the other pages.",
+   "when": "Cloning a public marketing site."
+  },
+  {
+   "name": "Clone an auth-gated app from screenshots",
+   "how": "Capture screenshots of every state of the interface, including hover states and how interactions change the layout, such as two-column layouts. Drag the images into Claude so the paths are accessible, then have the model copy them into the clone folder as references and generate an initial HTML version.",
+   "when": "Cloning an app behind login, where only screenshots are available."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude",
+  "Fable 5",
+  "Opus 4.8",
+  "Anthropic front-end design skill",
+  "design.md",
+  "GetDesign.md",
+  "GSAP",
+  "Single File CLI (as named in the video)",
+  "sitemap.xml",
+  "HTML",
+  "CLAUDE.md",
+  "shadcn skill",
+  "shadcn MCP",
+  "shadcn/ui",
+  "gallery viewer (internal, not released)",
+  "Kimi K2.6 (sponsor)",
+  "Community AI Labs Pro (paid community, mentioned)",
+  "Notion (design inspiration only)"
+ ],
+ "numbers": [
+  {
+   "claim": "Roughly two out of three generated sites still show very similar styling after the Fable 5 guide, by the presenter's informal testing. Sample size not stated.",
+   "t": "2:53"
+  },
+  {
+   "claim": "Presenter says the skill setup came from repeatedly hitting 5-hour usage limits during trial and error.",
+   "t": "4:21"
+  },
+  {
+   "claim": "Sponsor claim: Kimi K2.6 costs about one-eighth the price of Opus. It is not independently verified.",
+   "t": "5:48"
+  },
+  {
+   "claim": "Sponsor claim: Kimi products can spin up 300 agents in parallel. Not verified.",
+   "t": "5:48"
+  },
+  {
+   "claim": "Sponsor claim: sign-up through the link gives an extra 10% quota bonus on a first purchase.",
+   "t": "5:48"
+  }
+ ],
+ "hot_takes": [
+  "Presenter's framing that the harness matters more than the model is asserted, not measured.",
+  "The 'two out of three sites look similar' figure is an informal test with no stated method or sample size.",
+  "The claim that sub-agents no longer matter with a million-token context is asserted without evidence.",
+  "Sponsor segment (Kimi K2.6, with unverified price and parallel-agent claims) and a paid community plug are both present, so treat recommendations in those parts as marketing.",
+  "Much of the advice is generic prompt-engineering for design. The concrete, reusable parts are the prompting-guide rewrite loop, the mockup-first functional UI flow, and the CLAUDE.md verify contract."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Skill maintenance across model releases (rewrite a skill from each new vendor guide, and re-apply fixes from older guides) is a small, related idea for a skill-mining system.",
+   "action": "Skim the prompt-rewrite-from-vendor-guide loop as a manual baseline before designing any automated skill revision in SkillForge."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The harness-goes-stale argument, the CLAUDE.md verify contract, and the sub-agent verifier against a reference file all map onto ProsHarness's checkpoint and verification steps.",
+   "action": "Add a harness step that re-checks skills and CLAUDE.md against the newest model's prompting guide, and make a verifier sub-agent compare output against a reference file before a run is marked done."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

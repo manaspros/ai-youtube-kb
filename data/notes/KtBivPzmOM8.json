@@ -1,0 +1,217 @@
+{
+ "one_line": "Oracle workshop on memory-aware agent harnesses for AML: treat the harness (loop, memory tiers, skill retrieval, context budget) as the thing to engineer, not the frontier model.",
+ "summary": "Nacho Martinez (Oracle) runs a hands-on workshop on building agent harnesses around a fraud and anti-money-laundering agent that reads bank transactions and drafts suspicious activity reports. He argues the model is a fixed reasoning core, while the harness (agent loop, memory, tool and skill retrieval, context assembly) is where teams have control and where results actually change. He covers the agent stack, the files-versus-databases question for shared state, and a short-term versus long-term memory split (episodic, procedural, semantic). His main claim is that large context windows degrade performance, so tools, skills and memory should be retrieved on demand through vector search and hybrid retrieval, with compaction or summarization for old context. He also explains instruction hierarchy (system prompt, then user, with skills lowest), prompt-prefix caching economics, and why a pre-vetted SQL/tool surface beats free-form SQL generation. He closes by advising people to start from a minimal harness and strip it down rather than adopt a large one. The talk is practitioner-level and includes some vendor framing about Oracle's stack.",
+ "speakers": [
+  "Nacho Martinez"
+ ],
+ "orgs": [
+  "Oracle",
+  "DeepLearning.AI"
+ ],
+ "format": "workshop",
+ "topics": [
+  "agent-architecture",
+  "memory",
+  "context-engineering",
+  "rag-retrieval"
+ ],
+ "tags": [
+  "agent harness",
+  "memory tiers",
+  "episodic memory",
+  "procedural memory",
+  "semantic memory",
+  "skill retrieval",
+  "toolbox",
+  "skillbox",
+  "vector search",
+  "hybrid search",
+  "RRF",
+  "compaction",
+  "context summarization",
+  "instruction hierarchy",
+  "prompt caching",
+  "AML",
+  "fraud detection",
+  "SQL tools",
+  "MCP",
+  "Codespaces",
+  "Oracle",
+  "OCI",
+  "Pi harness",
+  "Claude Code",
+  "Codex",
+  "Hermes agent",
+  "OpenClaw"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The harness, not the model, is the lever.",
+   "detail": "He says the frontier model is largely fixed, while the harness controls tool use, memory and perception. He claims the same model can do better or worse on a task depending only on harness configuration.",
+   "t": "11:15"
+  },
+  {
+   "idea": "Concurrent writers to one file need a database-style solution.",
+   "detail": "Git worktrees are the workaround agents use for multiple writers to one file. He says file writes lack transactional guarantees, so ACID databases already solve this problem and should be reconsidered for shared agent state. Files stay good for unstructured data.",
+   "t": "14:35"
+  },
+  {
+   "idea": "Memory split into short-term and long-term tiers, with long-term split into episodic, procedural and semantic.",
+   "detail": "The context window is short-term memory and is lost when a conversation ends. Long-term memory holds episodes and tool logs (episodic), skills and workflows (procedural), and user preferences and facts (semantic). He suggests starting with only two structures.",
+   "t": "16:49"
+  },
+  {
+   "idea": "More context makes the model worse even inside the advertised limit.",
+   "detail": "He cites studies showing a problem solved from near-zero tokens beats the same problem with 256k tokens already loaded. He says the context budget should stay small, and treats the 1M figure as a KV-cache-driven ceiling, not a target.",
+   "t": "18:28"
+  },
+  {
+   "idea": "Retrieve tools and skills on demand instead of loading them all.",
+   "detail": "Skills run roughly 3,000 to 5,000 tokens each, so a library of around a hundred would exhaust the window. He embeds tool and skill descriptions in a vector store and pulls the top-k (default 3) for each loop iteration. He says there is no reranker by default, but one can be added.",
+   "t": "20:45"
+  },
+  {
+   "idea": "Promote memory by writing raw text first, then add a recall step in the loop.",
+   "detail": "Keep memories as plain text in long-term storage, vectorize later, and add a recall step between observe and reason. Recalled items enter the context only if their vector distance falls under a threshold.",
+   "t": "41:00"
+  },
+  {
+   "idea": "Hybrid retrieval beats either keyword or semantic search alone.",
+   "detail": "He combines embedding search with keyword search and fuses the rankings with Reciprocal Rank Fusion (RRF). He admits this costs more compute and says it improves retrieval quality.",
+   "t": "46:03"
+  },
+  {
+   "idea": "Start from a minimal harness and strip it down.",
+   "detail": "He says building from scratch lets you cut around 90% of what a general harness includes. He compares a minimal harness with about 6k tokens in its first request against others near 30k to 40k, and says constrained unattended agents need automatic summarization and a hard step limit.",
+   "t": "37:36"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Two-tier memory with promote-to-long-term",
+   "how": "Keep short-term memory as the context window. When something is worth keeping, write it as raw text to a long-term store, then vectorize it. Recall it through an explicit recall step between observe and reason, and inject it only when vector distance is under a threshold.",
+   "when": "When you are starting an agent with memory and want to avoid premature abstraction; begin with two structures and add complexity only when retrieval fails."
+  },
+  {
+   "name": "Vector-indexed skill and tool box with top-k retrieval",
+   "how": "Embed the descriptions of every tool and skill. On each loop iteration, run a similarity search and load only the top-k (default 3) into context. Optionally add a reranker to narrow to the single most relevant item.",
+   "when": "When the catalogue of tools or skills is too large to load into the context window."
+  },
+  {
+   "name": "Hybrid keyword plus embedding retrieval with RRF",
+   "how": "Run BM25-style keyword search and embedding search over the same corpus, then fuse the two ranked lists with Reciprocal Rank Fusion.",
+   "when": "When pure semantic search misses exact terms or pure keyword search misses meaning, and extra compute per query is acceptable."
+  },
+  {
+   "name": "Compaction or summarization of old context",
+   "how": "Summarize the conversation into a short digest that replaces it, or chunk old turns into a database or file under an ID and retrieve them later by ID plus offset, the way you would read a file.",
+   "when": "For long-running or unattended agents where the context would otherwise grow past the point where quality holds."
+  },
+  {
+   "name": "Skill distillation from past runs",
+   "how": "After a good run, write a SKILL.md capturing the approach and preferences, and add it to the skill box. It is then found by vector search the next time a similar task appears.",
+   "when": "When the same kind of task recurs (for example front-end work) and your style preferences should carry over."
+  },
+  {
+   "name": "Pre-vetted query tools instead of free-form SQL",
+   "how": "Expose a fixed set of tested SQL queries as tools through MCP or a similar interface, so the agent selects a query rather than writing new SQL that may fail on a particular engine.",
+   "when": "When an agent queries a database whose SQL dialect has subtle engine-specific behavior."
+  },
+  {
+   "name": "Bounded agent loop for unattended runs",
+   "how": "Cap the loop at a fixed number of iterations (eight in the workshop) and a per-iteration reasoning time (60 seconds), so a background agent cannot run up unbounded cost.",
+   "when": "For agents that run 24/7 without a human in the loop."
+  },
+  {
+   "name": "Stable request prefix for caching",
+   "how": "Keep tool definitions and skill text identical from one request to the next so the provider can serve the large shared prefix from cache, and keep the varying user input at the end.",
+   "when": "When each request repeats a large block of tools and system text and cost matters."
+  }
+ ],
+ "tools": [
+  "Oracle Database",
+  "OCI (Oracle Cloud)",
+  "GitHub Codespaces",
+  "OpenAI chat completions API",
+  "vector store",
+  "MCP",
+  "RRF",
+  "Claude Code",
+  "Codex",
+  "Pi harness",
+  "Hermes agent",
+  "OpenClaw"
+ ],
+ "numbers": [
+  {
+   "claim": "Skill definitions run about 3,000 to 5,000 tokens each, so loading a hundred skills would exceed the context window.",
+   "t": "20:45"
+  },
+  {
+   "claim": "In some cases tools and skills take more than 50% of the context window.",
+   "t": "21:51"
+  },
+  {
+   "claim": "He says the advertised 256k or 1M windows still degrade badly, and that a problem solved from near-zero tokens does better than one with 256k already loaded.",
+   "t": "18:28"
+  },
+  {
+   "claim": "Tools and skills make up about 80% of each API request, which is cached on the provider side.",
+   "t": "35:22"
+  },
+  {
+   "claim": "He estimates the request would cost four to five times more without that caching.",
+   "t": "36:29"
+  },
+  {
+   "claim": "Tool outputs and retrieved docs take about 35,000 to 100,000 tokens per request in his description.",
+   "t": "37:01"
+  },
+  {
+   "claim": "The minimal Pi harness sends about 6,000 tokens in the first request, versus about 30,000 to 40,000 for other harnesses.",
+   "t": "37:36"
+  },
+  {
+   "claim": "Default top-k for tool and skill retrieval is 3.",
+   "t": "39:19"
+  },
+  {
+   "claim": "Workshop agent loop limits: maximum 8 iterations and 60 seconds of reasoning per iteration.",
+   "t": "20:09"
+  },
+  {
+   "claim": "Embeddings used for skill search are described as 384 to over 1,000 dimensions.",
+   "t": "45:28"
+  }
+ ],
+ "hot_takes": [
+  "Files are good for unstructured data, but shared writes to files reinvent a database problem that was solved about 30 years ago.",
+  "A bigger context window is not free: performance drops as context grows, so keep it small even when a large limit is available.",
+  "Most teams should not build a full harness; they should build small, task-specific harnesses and start from scratch to strip out what they do not need.",
+  "Skills sit at the lowest level of the instruction hierarchy, below system prompt and user messages, so they should be treated as a plug-in pool rather than always-on instructions."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already uses BM25 plus pgvector hybrid retrieval and tiered memory. The talk offers a two-tier promote-then-recall pattern with a distance threshold and a top-k skill box that maps onto SkillForge and MemoryMesh.",
+   "action": "Compare MemoryMesh's recall path against this talk's recall-step-with-distance-threshold pattern, and test whether an RRF fusion step improves retrieval quality on the existing BM25 plus pgvector results."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness handles long runs and skill ranking. The talk's bounded loop (iteration and time caps), top-k skill retrieval, and minimal-harness argument apply directly to checkpointed runs and skill ranking.",
+   "action": "Add a per-iteration cap and per-step timeout to the ProsHarness loop, and evaluate top-k vector retrieval of skills against the current skill ranking."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The talk gives a practitioner view of how context size hurts quality and how memory and skill retrieval manage it, which matches the recurring interest in context engineering.",
+   "action": "Before designing shared state for parallel agents, read the files-versus-database argument at 14:35 and decide where transactional storage is needed."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T16:26:27"
+}

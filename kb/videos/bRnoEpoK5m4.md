@@ -1,0 +1,46 @@
+# The Pipeline Is Dead - Iris ten Teije, Sky Valley Ambient Computing
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `bRnoEpoK5m4` · [watch](https://youtu.be/bRnoEpoK5m4) · **date:** 2026-07-18 · **length:** 19:50 · **format:** talk · **quality:** 3/5 · **depth:** intro
+- **speakers:** Iris ten Teije · **orgs:** Differ, Sky Valley Ambient Computing, JFrog, Salesforce
+- **topics:** product-ux, agent-architecture, observability · **tags:** adaptive-software, per-user-divergence, stem-and-divergences, software-distribution, feature-flags, provenance, merge-intent, trust-autonomy, developer-boundaries
+
+> Argues the one-version-for-everyone software pipeline ends as code gets cheap; proposes a canonical stem with per-user, bounded, reversible divergences and names the hard problems: provenance, testing, measurement, trust, coordination.
+
+## Summary
+Iris ten Teije of Differ argues that the frozen-artifact release pipeline (CI, registries, app store reviews) exists because producing a correct change was expensive, and that this cost assumption is collapsing. She proposes deploying one canonical "stem" and letting each user run their own divergence of it, adapted live, instead of shipping one version for everyone or gating variants behind flags. Her answer to the brittleness objection is structural: divergences should be bounded, isolated and individually reversible, with developer-set limits on what may adapt. She gives CRM examples where the system learns from skipped fields and access patterns, and where users request changes within the developer's boundaries. The talk then lists open problems she says her team works on: the source of truth (stem plus immutable divergences, queried like a graph), correctness across many variants, measuring whether a change is a real uplift against company metrics, the autonomy-versus-control trust question, and coordination via "merge intent, merge outcome". No benchmarks or production data are shown; the evidence is analogy, anecdote and a hypothetical CTO objection.
+
+## Key ideas
+- **The frozen one-version-for-everyone artifact was a consequence of expensive, rare code production, not a law of software.** — Build pipelines separated development from distribution because making a correct change was costly. As change cost approaches the cost of running, that reason weakens and development can happen where the software runs. ([3:25](https://youtu.be/bRnoEpoK5m4?t=205))
+- **Brittleness comes from unmanaged divergence inside one tangled artifact, not from AI-generated code as such.** — The proposed alternative is a stem plus bounded divergences, each isolated and individually reversible, so a bad variant cannot silently corrupt the stem or reach other users. The blast radius becomes one context. ([8:31](https://youtu.be/bRnoEpoK5m4?t=511))
+- **Developers set the boundaries of adaptation.** — Examples: some form fields can never be dropped, and areas such as payments are off limits. Adaptation runs only inside these limits and within the purpose the software was built for. ([9:58](https://youtu.be/bRnoEpoK5m4?t=598))
+- **Adaptation is driven by observed behavior and by user requests.** — In the CRM example, the system notices an investor always logs founder intros and skips certain fields, so it surfaces intro paths and the fields she uses. Users can also ask for changes that the system implements without a developer. ([11:28](https://youtu.be/bRnoEpoK5m4?t=688))
+- **With no single artifact, the source of truth becomes a graph query, not a version number.** — The software is the stem plus all immutable divergences. Each divergence is inspectable and attributable, and any adaptation should trace back to the signal and recommendation that produced it. ([12:54](https://youtu.be/bRnoEpoK5m4?t=774))
+- **Anyone can make a change now; the hard part is knowing it is an improvement.** — Correctness must be checked across the stem and its divergences. Desirability needs a goal metric such as retention, churn or support-ticket volume, and that goal differs by product. ([15:01](https://youtu.be/bRnoEpoK5m4?t=901))
+- **Coordination should merge intent and outcome, not code.** — Users need not run the same commit. Each variant converges on the same goal through its own path, which replaces pushing one release to every version. ([17:32](https://youtu.be/bRnoEpoK5m4?t=1052))
+- **Generation is the easy part; observability, validation, coordination and provenance are the substrate that is hard.** — The speaker says that calling a model to write code is the easy 80%. The remaining work of stem-plus-divergence substrate, provenance and validation is presented as the business. ([17:32](https://youtu.be/bRnoEpoK5m4?t=1052))
+
+## Techniques
+- **Stem plus bounded, reversible divergences** — Deploy one canonical base. Each user or segment gets an immutable overlay that can be inspected, attributed and rolled back live without a deploy. Keep each overlay isolated from the others. *When:* When you need per-user software at scale without forking the codebase or maintaining many builds by hand.
+- **Developer-declared adaptation boundaries** — Mark which fields, flows or features may be changed at runtime and which are fixed, for example required fields and payments. Check every runtime adaptation against these rules. *When:* Before letting an agent or the system change a live UI or workflow automatically.
+- **Behavior-driven personalization with a spirit-of-the-software check** — Watch usage signals such as skipped fields and frequently opened records. Reorder or hide elements accordingly. Accept user change requests only if they fit the developer's limits and the product's original purpose. *When:* In horizontal SaaS, such as a CRM, serving many personas without adding R&D headcount.
+- **Traceable adaptation provenance** — Record the signal, the recommendation and the resulting adaptation as linked, immutable entries. Support queries of the form 'what does this user run and why'. *When:* When bug reports describe software that exists only for one user, so you must reproduce that exact variant.
+- **Goal-metric gating for changes** — Define the metric each product area should move, such as retention, churn or ticket volume. Judge each adaptation by uplift on that metric, not only by whether the code is correct. *When:* Before rolling out a generated or adapted change to many users.
+- **Recommend-first autonomy as a trust ladder** — Start with recommendations only, then allow autonomous changes once the system is legible and reliable enough that humans step back. *When:* When introducing agents that modify production behavior.
+- **Coordination by intent and outcome** — Set shared goals rather than requiring identical code across variants. Each variant reaches the goal through its own path. *When:* When many differing versions of one product must converge on the same objectives.
+
+## Numbers
+- The speaker's own fintech background: a decade in fintech, early at a digital bank that was scaled and exited (no metrics given). ([0:00](https://youtu.be/bRnoEpoK5m4?t=0))
+- Hypothetical CTO objection: running a million AI-generated variants of one codebase. Not a measured figure. ([8:31](https://youtu.be/bRnoEpoK5m4?t=511))
+- Claim that per-user software wins over one-size-fits-all 'on every metric that mattered' on the social feed. No data or source is given. ([4:54](https://youtu.be/bRnoEpoK5m4?t=294))
+- Framing of the next period: 20 years spent shipping one version for everyone, the next 20 years for the right version for anyone. A rhetorical timeline, not a measurement. ([19:05](https://youtu.be/bRnoEpoK5m4?t=1145))
+
+## Hot takes
+- The one-version-for-everyone release pipeline was an economic constraint that is now ending, not a fact about software.
+- Brittle AI-generated systems are a structure problem (unbounded, tangled artifacts), and bounded per-user divergences can be safer than a single shared artifact.
+- Generating code is the easy 80%; observability, validation, provenance and coordination are where the real work is.
+- Software should converge on shared outcomes rather than identical commits across versions.
+
+## Relevance to our work
+- **agentos** (1/3): Its L1 proxy and manifest-toggled pillars resemble per-tenant configuration. The talk's bounded, reversible overrides with developer-set limits could apply to per-user manifests, but the talk gives no mechanism or data. → *Consider modeling per-tenant manifest overrides as immutable, attributable, individually reversible layers over a shared base, with a list of non-overridable pillars.*
+- **prosharness** (1/3): Checkpoint and resume of long runs and approval flows relate to reversible, attributable state. The link is loose; the talk is about product software, not agent harnesses. → *Optional: consider whether harness run state can be stored as immutable checkpoints so any run can be inspected or rolled back without a re-run.*
+- **general** (1/3): The 'merge intent, merge outcome' idea and the stem-plus-boundaries framing are relevant to how agent-written changes are scoped and governed. → *Read the talk's open-problems section (15:01 to 17:32) as a checklist for any agent system that changes live behavior: correctness, desirability, trust, coordination.*

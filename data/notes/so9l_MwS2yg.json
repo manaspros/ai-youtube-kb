@@ -1,0 +1,183 @@
+{
+ "one_line": "Zack Proser (WorkOS) argues human attention, not agent capacity, is the bottleneck, and shares remote Claude Code from a phone, verification gates, and session-log mining to protect focus.",
+ "summary": "Zack Proser, on WorkOS's Applied AI team, says agents now scale almost without limit, but the developer's attention degrades under load and is the real constraint. He gives a concrete example: he asked Claude Code, which had Slack and Linear access, to fix a sentence-case bug, and it reproduced the issue, fixed it, and verified the result without him steering it. He describes a stack of \"signal layers\" (cheap monitoring of Slack and tickets), voice-first input, and remote control, where a session started at the desk can be driven from a phone while walking away. He lays out three verification gates (lint/build/unit tests via hooks, a browser click-through, and a separate reviewing agent checked against a written constitution), and says speed requires safety. He recommends a scheduled pass over saved Claude Code JSONL conversation logs to find struggle, extra thinking, and missing skills, and notes the built-in skill-creation tool. The Q&A covers early-career skill building (don't delegate what you can't already do), overnight agent loops on tickets tagged \"agent ready\", voice use, and parallel work with git worktrees and agent teams.",
+ "speakers": [
+  "Zack Proser"
+ ],
+ "orgs": [
+  "WorkOS",
+  "Anthropic",
+  "OpenAI"
+ ],
+ "format": "talk",
+ "topics": [
+  "claude-code",
+  "software-factory",
+  "testing-verification",
+  "skills-self-improvement"
+ ],
+ "tags": [
+  "developer-attention",
+  "claude-code",
+  "remote-control",
+  "verification-gates",
+  "session-log-analysis",
+  "voice-coding",
+  "burnout",
+  "worktrees",
+  "agent-loops",
+  "mcp-slack-linear"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Human attention is the hard constraint, not agent throughput",
+   "detail": "Agents can loop until they meet the criteria they are given, but judgment, taste, and knowing a problem is truly solved stay with the human. Linear scaling of what you take on will burn you out fast.",
+   "t": "3:35"
+  },
+  {
+   "idea": "Closed-loop bug fixing via MCP access plus explicit verification criteria",
+   "detail": "Giving Claude Code Slack and Linear access and an instruction to verify its own work and not stop until done let it reproduce, fix, and confirm a bug end to end. The speaker came back to a finished loop without a follow-up prompt.",
+   "t": "0:59"
+  },
+  {
+   "idea": "Signal layers filter the noise of many tools",
+   "detail": "An agent reads Slack mentions, DMs and tickets on a loop, deduplicates asks against Linear, and surfaces only the high-priority items. This protects focus from the constant context switches that agents make worse.",
+   "t": "5:02"
+  },
+  {
+   "idea": "Remote control turns walk-away time into work time",
+   "detail": "A Claude Code session started at the desk runs on the dev machine with full file access. It can be reached from a phone on another network, so the developer can send new design ideas and review PRs while away from the desk.",
+   "t": "9:41"
+  },
+  {
+   "idea": "Verification gates scale from cheap checks to independent review",
+   "detail": "Gate 1 is lint, build and unit tests run via hooks on every change. Gate 2 requires a browser click-through to confirm nothing broke, such as login. Gate 3 is a separate agent that checks the work against a written set of rules, similar to a constitution. Speed requires safety.",
+   "t": "10:47"
+  },
+  {
+   "idea": "Mine your own saved agent sessions for the harness to improve",
+   "detail": "Claude Code saves conversations locally as JSONL. A scheduled pass, or a session-end hook that writes key points to a markdown store, can find where you spent extra thinking, went back and forth on ambiguity, or lacked a skill. The fixes then go back into skills or tools.",
+   "t": "13:02"
+  },
+  {
+   "idea": "Use the built-in skill tooling to build, evaluate and improve skills",
+   "detail": "The speaker notes Claude Code has a built-in skill that creates, evaluates and improves skills from a natural-language prompt. He recommends using it to close the gaps that session review finds.",
+   "t": "14:15"
+  },
+  {
+   "idea": "Scale bigger work with worktrees, agent teams and CI, not chat alone",
+   "detail": "For large cross-stack features, use git worktrees so agents run in parallel without touching each other's files, give each team clear prompts, and rely on unit tests and continuous integration against a spec. Humans then supply the review and correction.",
+   "t": "24:03"
+  },
+  {
+   "idea": "Learn the hard way first, then delegate",
+   "detail": "His advice for early-career engineers is not to use AI for something they cannot already do. Build battle-tested skills, then use the tools to speed up work in areas where you already have the judgment to catch bad output.",
+   "t": "16:55"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Three-tier verification ladder for agent output",
+   "how": "Gate 1: hooks run lint, build and unit tests on every change. Gate 2: the prompt requires a browser click-through of key flows such as login (Claude Code can be started with a --chrome flag for its own browser). Gate 3: a separate reviewing agent checks the diff against a written rules document and returns feedback to act on.",
+   "when": "When agent-written code must ship without line-by-line human review, and you want the agent to prove it is done before reporting success."
+  },
+  {
+   "name": "Closed-loop ticket fixing with explicit done criteria",
+   "how": "Connect the agent to Slack and the issue tracker through MCP. Give it the bug, the acceptance criteria, and an instruction to verify and not stop until verified. It reads the ticket, reproduces, fixes, and confirms the outcome in the same session.",
+   "when": "For bounded bugs with a checkable outcome, to save developer attention on triage and follow-up."
+  },
+  {
+   "name": "Remote-controlled session from a phone",
+   "how": "Start a Claude Code session with the remote-control flag or config setting on the dev machine. Continue it from a phone on any network, send messages, and review PRs there. Leave natural-language PR comments that tag the coding agent.",
+   "when": "When you want agents to keep working while away from the desk, and design ideas that come up on walks can be applied without a return trip."
+  },
+  {
+   "name": "Scheduled session-log retrospective",
+   "how": "Either run a weekly or daily agent pass over saved Claude Code JSONL logs with a prompt that looks for churn, excess thinking tokens, back-and-forth clarification, and missing skills or tools. Or use a session-end hook to save key points and struggles to Markdown, then analyse that store on a schedule.",
+   "when": "When you want the agent harness and skills to improve from routine work without relying on memory to review it."
+  },
+  {
+   "name": "Ticket-tagged overnight agent loop",
+   "how": "Create linear tickets with subtasks for bugs and features, tag ready ones 'agent ready', and run a loop every 15 minutes that picks up tagged work. Review the output in the morning and merge the small share that passes.",
+   "when": "When backlog work is well-specified and you accept a low merge rate in exchange for unattended throughput."
+  },
+  {
+   "name": "Parallel large features with worktrees and agent teams",
+   "how": "Give each agent its own git worktree so runs do not conflict. Assign each team a clearly scoped prompt. Lean on unit tests and continuous integration as the shared check against a spec, and keep a human in the loop for correction.",
+   "when": "For features that touch the whole stack, where one agent on one branch would be too slow or would collide with other work."
+  },
+  {
+   "name": "Voice-first brainstorm, then written artifact",
+   "how": "Brain-dump ideas by voice (the speaker uses ChatGPT advanced voice mode on walks, and a local open-source speech tool), then ask the model to turn the discussion into a succinct transcript or architecture note to paste into the coding agent.",
+   "when": "When you think best away from the keyboard, and want the result to feed a coding session."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude Opus 4.6",
+  "Slack MCP",
+  "Linear MCP",
+  "GitHub Mobile",
+  "Cursor",
+  "Codex",
+  "Vercel bot",
+  "OpenClaw",
+  "Twilio",
+  "ChatGPT advanced voice mode",
+  "git worktrees",
+  "hooks",
+  "Chrome integration for Claude Code"
+ ],
+ "numbers": [
+  {
+   "claim": "Speaker's typing peak was about 90 words per minute; on a typical day with voice-first tools he reaches about 184 words per minute.",
+   "t": "6:18"
+  },
+  {
+   "claim": "Simon Wilson reportedly runs four parallel agents and is wiped out by 11 a.m. (quoted secondhand).",
+   "t": "3:35"
+  },
+  {
+   "claim": "Speaker produced a 32-minute film last year showing PRs reviewed from a phone in the woods.",
+   "t": "9:41"
+  },
+  {
+   "claim": "A proposed agent loop runs every 15 minutes all day and night on tickets tagged 'agent ready'. This is the speaker's planned setup, not a measured result.",
+   "t": "21:15"
+  },
+  {
+   "claim": "Speaker reports he merges only a small percentage of overnight cron-generated content after review. No exact figure is given.",
+   "t": "21:15"
+  }
+ ],
+ "hot_takes": [
+  "The agents are not the bottleneck anymore; we are.",
+  "Speed requires safety: without verification gates, faster agents just ship more breakage.",
+  "Don't use AI to do something you don't already know how to do. You need the scar tissue to catch hallucinations.",
+  "Burnout will arrive faster with LLMs unless you deliberately protect yourself, so intentional pacing is the real productivity skill."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code with checkpoint/resume, loops/schedules and phone-driven approvals. The talk covers the same ground: remote control from a phone, ticket-tagged loops every 15 minutes, a session-log review pass, and a three-tier verification ladder.",
+   "action": "Add a three-tier completion check to ProsHarness runs: (1) hooks for lint, build and unit tests; (2) a browser check of the key flow; (3) a separate reviewer agent that grades the diff against a written rules file. Start by adding gates 1 and 3 to one checkpointed plan."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "SkillForge's open question is what success signal to mine from telemetry. The talk offers one heuristic, that back-and-forth turns and extra thinking tokens before a task succeeds point to skill gaps. It gives no measured evidence.",
+   "action": "Test whether turn count and thinking-token spend per completed task, pulled from saved Claude Code JSONL logs, separate tasks that needed a new skill from those that did not, using a small hand-labelled set."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The session-end hook that saves struggle points to Markdown, and the weekly retrospective pass, are cheap, reusable habits for improving CLAUDE.md and skills in any agent workflow.",
+   "action": "Add a session-end hook that appends the key decisions and the struggle points of each Claude Code session to a dated Markdown file, then review that file weekly to decide what belongs in CLAUDE.md or a skill."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

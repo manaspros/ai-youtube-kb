@@ -1,0 +1,50 @@
+# BREAKING: OpenAI BUYING Windsurf, NEW Coding Tool, o3 and o4-mini
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `FesaebCzgH0` · [watch](https://youtu.be/FesaebCzgH0) · **date:** 2025-11-02 · **length:** 8:11 · **format:** news · **quality:** 2/5 · **depth:** intro
+- **speakers:** ? · **orgs:** OpenAI, Anthropic, Google, Windsurf, Cursor, GitHub
+- **topics:** coding-agents, models-research, token-cost-efficiency · **tags:** openai, o3, o4-mini, codex-cli, benchmarks, swe-bench, aider-polyglot, aime, humanitys-last-exam, pricing, tool-use, ocr, react
+
+> Launch-day walkthrough of OpenAI's o3 and o4-mini: o3 uses OCR, crop-and-zoom and web search on one screenshot; open-source Codex CLI is tried on a React repo and a Pong feature; benchmarks and prices come from launch slides.
+
+## Summary
+The host demos OpenAI's o3 and o4-mini in ChatGPT, starting with a poster screenshot that o3 answers by running OCR, cropping and zooming into plot regions, and searching the web, which took about 7 minutes. A bouncing-ball-in-hexagon physics prompt is then passed by o3, o4-mini-high and Claude 3.7 Sonnet (reasoning), which the host takes as a sign that the test is saturated. The main subject is Codex CLI, an open-source terminal coding agent: the host runs it on a large React repo (it lists directories to explain the structure), then asks it to add three features to a Pong game, which takes about 10 minutes and needs one re-prompt. The closing section reads benchmark numbers (SWE-bench Verified, Aider polyglot, AIME, Humanity's Last Exam) and per-million-token prices off the launch slides, without independent runs. The file header dates the video 2025-11-02, but the content describes the o3 and o4-mini launch, so verify the date before using it. The cold open also mentions reported talks for OpenAI to buy Windsurf, which the host says are only in talks.
+
+## Key ideas
+- **o3 and o4-mini are launched in ChatGPT, and OpenAI ships Codex CLI as a Claude Code rival** — Host frames o3 as state-of-the-art and o4-mini as a smaller, cost-efficient reasoning model. Codex CLI is presented as a lightweight terminal coding agent tuned for o3 and o4-mini, with GPT-4.1 API support said to be coming. ([0:00](https://youtu.be/FesaebCzgH0?t=0))
+- **o3 acts as a tool-using agent on images, not a single-shot model** — On a poster screenshot it runs OCR, crops and zooms into plot regions when text is too small, and searches the web. The host says this keeps context limited to the part needed at each step. This is observed ChatGPT behavior, not a technique the host built. ([1:14](https://youtu.be/FesaebCzgH0?t=74))
+- **Tool-heavy reasoning has a large latency cost** — The poster research question took about 7 minutes. The host's guess is that OpenAI's demo took about 1 minute because the model is throttled at launch. This is not verified. ([2:26](https://youtu.be/FesaebCzgH0?t=146))
+- **The bouncing-ball-in-hexagon prompt no longer separates the models** — o3 (about 49 seconds of thinking), o4-mini-high and Claude 3.7 Sonnet (reasoning) each produce working physics on the first try. The host concludes the benchmark has run out of room. ([3:24](https://youtu.be/FesaebCzgH0?t=204))
+- **Codex CLI is open source and can run from a local clone you can patch** — It is installed with npm and started with the codex command. The default approval mode is suggest. The host cloned the repo and fixed a bug in the source himself before using the tool. ([4:27](https://youtu.be/FesaebCzgH0?t=267))
+- **Codex explores a large codebase by listing directories and reading files** — Asked to explain the React repo, it ran ls across directories and read files to build its answer, taking about a minute. It also pulls specific lines into context with targeted reads. ([4:27](https://youtu.be/FesaebCzgH0?t=267))
+- **A multi-part feature request needs review, and some parts can be missed** — The Pong feature request (overlay on first load, 3-second countdown between points, insult after an AI win) took about 10 minutes and ended with a diff view. The difficulty change did not take effect on the first run, so the host had to ask again. ([5:46](https://youtu.be/FesaebCzgH0?t=346))
+- **Launch benchmark numbers put o3 ahead on coding and math** — Read from slides: SWE-bench Verified is o3 69.1%, o4-mini 68.1%, and Claude 3.7 Sonnet 62.3% without custom scaffolding. On Aider polyglot, o3 high is 81.3% (79.6% diff) against Gemini 2.5 Pro's 74% (68.6% diff). AIME is o4-mini near 100%, o3 98.4%, and HLE with tools is o3 24.9% against Gemini 2.5 Pro 18.8%. ([5:46](https://youtu.be/FesaebCzgH0?t=346))
+- **Per-million-token pricing separates o3 from o4-mini by roughly 9x** — o3 is $10 per million input and $40 per million output. o4-mini is $1.10 input and $4.40 output. The host also cites o1 Pro as $154 input and $600 output per million, which may be a slip and should be checked. ([7:02](https://youtu.be/FesaebCzgH0?t=422))
+
+## Techniques
+- **Iterative image crop and OCR loop** — Send a screenshot or figure to the model with a clear question. Expect it to OCR the whole image first, then crop and zoom into the regions it cannot read yet, running OCR on each crop until it has what it needs. Observed in ChatGPT with o3 on a dense poster, not a documented API pattern. *When:* When the answer sits in small figures or plots inside a large image and you want the model to keep only the relevant crops in context.
+- **Codex CLI first run on an unfamiliar repo** — Install Codex CLI with npm (the exact package name is not shown), cd into the repo, run `codex`. Leave the default approval mode, which is suggest, so each action needs confirmation. Start by asking it to explain the codebase structure, then give the feature request as separate, testable behaviors. Play or run the result, check the diff view, and re-prompt for any behavior that is missing. *When:* Adding a few features to a large or unfamiliar codebase where you can verify the result by running it. The host reports about 10 minutes for a small multi-part change.
+- **Patch the open-source CLI from a local clone** — Clone the Codex CLI repo, build it locally, and fix bugs in the source as needed (the host did this for a bug he hit on first use). *When:* When you rely on an open-source agent tool and hit a blocking bug before a fix ships.
+- **One-shot physics prompt as a quick smoke test** — Give the same bouncing-ball-in-hexagon prompt to each model and run the output to check whether the physics and the script work. *When:* Only as a fast sanity check. The host says current models pass it, so use a harder test to tell models apart.
+
+## Numbers
+- SWE-bench Verified: o3 69.1%, o4-mini 68.1%, Claude 3.7 Sonnet 62.3% (no custom scaffolding), as shown on slides ([5:46](https://youtu.be/FesaebCzgH0?t=346))
+- Aider polyglot: o3 high 81.3% (diff 79.6%); o4-mini 68.9% (diff 68.2%); previous leader Gemini 2.5 Pro 74% (diff 68.6%). The host said 'Ada Polygot'. ([5:46](https://youtu.be/FesaebCzgH0?t=346))
+- AIME: o4-mini near 100%, o3 98.4%, Gemini 2.5 Pro 92% without tools ([7:02](https://youtu.be/FesaebCzgH0?t=422))
+- Humanity's Last Exam with tools: o3 24.9%, Gemini 2.5 Pro 18.8% ([7:02](https://youtu.be/FesaebCzgH0?t=422))
+- Pricing per million tokens: o3 $10 input, $40 output; o4-mini $1.10 input, $4.40 output; o1 Pro cited as $154 input, $600 output (speaker figure, possibly wrong) ([7:02](https://youtu.be/FesaebCzgH0?t=422))
+- Poster research question: about 7 minutes end to end in ChatGPT; host estimates about 1 minute in OpenAI's demo ([2:26](https://youtu.be/FesaebCzgH0?t=146))
+- Hexagon bouncing-ball prompt: o3 thought for 49 seconds before producing a working script ([3:24](https://youtu.be/FesaebCzgH0?t=204))
+- Codex CLI Pong feature request took about 10 minutes ([5:46](https://youtu.be/FesaebCzgH0?t=346))
+
+## Hot takes
+- Speaker says o3 'really is the coding king' based only on launch-slide benchmarks, with no independent runs on the host's side.
+- Speaker says the hexagon bouncing-ball test has run out of room because all three models pass it, which argues against using it to compare models.
+- Speaker calls o3's tool use 'deep research without doing deep research'. It is the host's framing, based on one demo.
+- Quality is capped at 2: a 'BREAKING' news-style title, about half the runtime is benchmark slides and pricing, and the hands-on Codex test is a single run on one repo.
+
+## Tools mentioned
+o3, o4-mini, o4-mini-high, Codex CLI, ChatGPT, Claude Code, Claude 3.7 Sonnet (reasoning), Gemini 2.5 Pro, GPT-4.1, npm, Windsurf, Cursor, GitHub Copilot
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness uses Codex as the critic in its plan, critique and debate loop, and this talk gives hands-on behavior for Codex CLI: approval mode, codebase exploration and the ~10 minute feature run. → *Trial Codex CLI in its default suggest approval mode as the critic step, time a run, and check whether ProsHarness can drive its approval prompts non-interactively.*
+- **agentos** (1/3): Per-token prices for o3 and o4-mini are input for cost-aware routing, which is a pillar of Govrix Scout (budgets and strategy routing). → *Add the o3 and o4-mini per-million prices from 7:02 to the Govrix Scout routing cost table, and benchmark o4-mini as the cheap tier before routing to o3.*

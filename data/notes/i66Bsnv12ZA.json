@@ -1,0 +1,120 @@
+{
+ "one_line": "Epic Games' Lore, a Rust, MIT-licensed, centralized-but-local-first version control system for large binary game assets; a walkthrough of its demo plus an honest take that it is pre-1.0 and benchmarks are unverified.",
+ "summary": "Better Stack walks through Lore, an open-source version control system Epic Games built in Rust for large binary assets such as textures, audio, video and 3D models. The demo runs a local demo server with one install command, commits a 100 MB file, and shows that content-defined chunks hashed with ZStandard and stored in a Merkle tree avoid storing full copies on each change. Branching, staging, committing and switching run locally, so day-to-day work does not need the server. The speaker frames Lore as a centralized system with one server of record that sits between Perforce and Git, and notes it is MIT licensed with SDKs. The caveats are that it is pre-1.0 with APIs that may change, has no Git interop, is self-hosted only, and that its performance claims come mostly from Epic with no independent benchmarks. The speaker's verdict is to try it on a non-critical project rather than replace Perforce or Git.",
+ "speakers": [
+  "Better Stack host (unnamed)"
+ ],
+ "orgs": [
+  "Epic Games",
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools",
+  "data-engineering"
+ ],
+ "tags": [
+  "version-control",
+  "git-alternative",
+  "perforce",
+  "git-lfs",
+  "large-binary-assets",
+  "merkle-tree",
+  "chunking",
+  "deduplication",
+  "zstandard",
+  "rust",
+  "self-hosted",
+  "game-dev"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Git and Git LFS were built for small text diffs, so large binary assets (textures, audio, video, 3D models) cause repo bloat, slow clones and quota pain.",
+   "detail": "Perforce works for studios but is costly and needs a dedicated maintainer. Lore is positioned as a response to this gap.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Lore chunks files, hashes them, compresses them with ZStandard, and stores them in a content-addressed Merkle tree, so unchanged chunks are reused across versions.",
+   "detail": "Demo: a 100 MB file generated with dd is committed; later versions only store the changed chunks rather than a full new copy.",
+   "t": "2:17"
+  },
+  {
+   "idea": "Lore is centralized with one server of record, but most operations (stage, commit, branch, switch, diff) run locally, so it works offline and feels fast.",
+   "detail": "The speaker places it between Perforce (central access control) and Git (fast local operations).",
+   "t": "3:41"
+  },
+  {
+   "idea": "Lore can hydrate files on demand, so a clone of a very large repo does not require downloading every asset up front.",
+   "detail": "You pull only the parts of the project you are working on.",
+   "t": "4:49"
+  },
+  {
+   "idea": "Lore is pre-1.0. APIs may change, there is no Git interop (no history import from an existing Git repo), and it is self-hosted only.",
+   "detail": "The desktop GUI seen in circulation is not part of the MIT-licensed open-source release. That release includes the core library, server, CLI and SDKs.",
+   "t": "4:49"
+  },
+  {
+   "idea": "Performance claims for huge repos come mostly from Epic, and the speaker says there are no solid independent benchmarks yet.",
+   "detail": "The speaker's recommendation is to test it on a non-critical or new project before considering it for production.",
+   "t": "6:05"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run a local Lore demo server",
+   "how": "Install Lore with a single install command, start the demo mode server (it runs on local ports, needs no account, key or cert, and stores data in a temporary folder that is lost on stop). Verify it is alive by hitting its health endpoint. The speaker does not spell out the exact command names. Production: run `lore server` with a config file and persistent storage directories or object storage, and keep the same CLI workflow.",
+   "when": "Evaluating Lore on a non-critical project or prototyping large-binary version control."
+  },
+  {
+   "name": "Basic Lore workflow",
+   "how": "Create a repo folder and commit a large binary (the demo uses dd to generate a 100 MB file). Create a branch with `lore branch create <name>`, switch to it, modify and stage a text file, commit it, then switch back. The commands mirror Git's flow (stage/commit/branch/switch/diff) and run locally.",
+   "when": "Trying the Git-like workflow on large-asset repos. The speaker says the flow is roughly the same as Git."
+  }
+ ],
+ "tools": [
+  "Lore (Epic Games, Rust, MIT license, pre-1.0)",
+  "Git",
+  "Git LFS",
+  "Perforce",
+  "ZStandard",
+  "dd",
+  "Fortnite (mentioned as Epic's game)"
+ ],
+ "numbers": [
+  {
+   "claim": "Demo file size is 100 MB, generated with dd and committed.",
+   "t": "2:17"
+  },
+  {
+   "claim": "Binary assets in games can be hundreds of MB or several GB each.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Lore is pre-1.0 and has no independent benchmarks. Performance claims are from Epic.",
+   "t": "6:05"
+  }
+ ],
+ "hot_takes": [
+  "Version control for huge binary assets is not a solved problem, even though Git works well for text.",
+  "Lore is not a replacement for a production Perforce setup yet.",
+  "Epic's performance claims lack independent verification."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Game-asset VCS. No link to the agent proxy, memory, inference or observability pillars.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Checkpointing agent runs is a related idea. Lore's content-addressed chunk store is a tangential pattern for artifact checkpoints.",
+   "action": "If ProsHarness snapshots large run artifacts, consider content-addressed chunking with dedup as the storage approach. Lore is a reference, not a dependency."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

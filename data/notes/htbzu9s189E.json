@@ -1,0 +1,143 @@
+{
+ "one_line": "Walkthrough of connecting the open-source apple-mcp server to Cursor so an agent can read and act on Apple Contacts, Notes, Messages and Reminders; mostly setup steps, with a useful note on restructuring a tool's navigation.",
+ "summary": "The presenter installs a GitHub project called apple-mcp, an MCP server that exposes native Apple apps (Contacts, Notes, Messages, Calendar, Reminders and others) to an AI agent, and wires it into Cursor's MCP settings as a command-type server. Working setup needs the full absolute path to the server's index.ts, a Cursor restart after config changes, and Cursor's Composer set to agent mode. The demo sends a greeting message and fetches reminders from inside Cursor, with macOS permission prompts appearing for each Apple app. Because the upstream README listed some features as to-do, the presenter asked the agent to implement them by copying the structure of the existing utility modules. The Notes tool first returned every note unsorted, which the presenter fixed by restructuring it into a hierarchy (list folders, open a folder, list notes, read one) while keeping search. The video is a single-user, anecdotal demo with no evaluation, benchmarks or discussion of the security implications of giving an agent message-sending access.",
+ "speakers": [],
+ "orgs": [
+  "Apple"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "mcp-and-tools",
+  "coding-agents"
+ ],
+ "tags": [
+  "apple-mcp",
+  "cursor",
+  "mcp-server",
+  "macos",
+  "apple-notes",
+  "apple-messages",
+  "agent-tool-design",
+  "permissions",
+  "bun",
+  "claude-desktop",
+  "windsurf"
+ ],
+ "key_ideas": [
+  {
+   "idea": "An MCP server can expose native macOS apps (Contacts, Notes, Messages, Calendar, Reminders) to a coding agent, so the agent can act on personal data from inside the IDE.",
+   "detail": "The project was found via a post on X. The presenter notes the install command differs for Claude Desktop but pastes the same config into Cursor.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Cursor only runs the MCP tools in agent mode; the server shows red until tools are detected, then turns green.",
+   "detail": "Composer must be switched to agent mode, or the MCP tools are not used. Initially only contacts, notes and messages were available.",
+   "t": "1:21"
+  },
+  {
+   "idea": "Each Apple app access triggers a macOS permission prompt; the presenter had already granted permission and so was not asked again.",
+   "detail": "The video does not discuss what it means for an agent to send messages or read contacts, and the permission grant is the only gate shown.",
+   "t": "1:21"
+  },
+  {
+   "idea": "Configuration needs the full absolute path to the server entry file, and changes need a Cursor restart before they take effect.",
+   "detail": "The presenter clones the repo, runs the local dev setup through bun install, gets the path with realpath index.ts, and re-adds the server with that path. Calendar, reminders and other tools then appear.",
+   "t": "2:37"
+  },
+  {
+   "idea": "A tool's failure can be its structure, not its API: the Notes search returned everything at once, so the fix was hierarchical navigation.",
+   "detail": "The presenter initially debugged and re-prompted several times, then found the implementation was unstructured rather than broken. The new flow lists folders, opens one, lists its notes and reads a note, while the search still works.",
+   "t": "5:26"
+  },
+  {
+   "idea": "Model choice affected reliability in one anecdote: with Claude 3.5 Sonnet, the chat ended mid-retrieval once or twice, and the same request worked with GPT-4.",
+   "detail": "This is a single-user observation with no repeated trials. The presenter says it seems fine on retry and does not dig further.",
+   "t": "4:00"
+  },
+  {
+   "idea": "An agent can extend an MCP server from its README to-do list by following the pattern of existing completed modules.",
+   "detail": "The presenter asks the agent to read the README's features section, take the unchecked items, and generate new utilities that match contacts, messages and notes.",
+   "t": "4:00"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Register a local MCP server in Cursor",
+   "how": "Open Cursor Settings, go to Features, then the MCP Servers section, and click add new. Give it any nickname (the presenter uses 'Apple MCP'), set Type to 'command', and paste the run command. Wait for the status to turn from red to green once tools are detected. Restart Cursor after any change to the entry. The exact runtime prefix in the command is not clearly audible in the transcript; the presenter says to enter the runtime followed by the full path to index.ts.",
+   "when": "Wiring any local stdio MCP server into Cursor, especially one whose README gives a relative path that will not resolve from Cursor's working directory."
+  },
+  {
+   "name": "Get the absolute entry path for an MCP server",
+   "how": "Clone the repo, run the local development commands from its README up to bun install (the last command is left out because Cursor runs it), move into the project directory, and run realpath index.ts. Copy the full path it prints into the Cursor command entry.",
+   "when": "Cursor cannot resolve a relative path to a local MCP server, or the server works from the terminal but not from the IDE."
+  },
+  {
+   "name": "Use agent mode to call MCP tools",
+   "how": "Switch Cursor's Composer from chat to agent mode before prompting. The presenter reports that MCP tools do not run otherwise. Prompts such as 'send a greeting message to my friend' then use the contacts lookup and then the messages send tool in sequence.",
+   "when": "Testing an MCP server in Cursor, or when tools appear in the list but never run."
+  },
+  {
+   "name": "Extend an MCP server by having the agent copy existing modules",
+   "how": "Point the agent at the repo's README, ask it to read the features list and implement the items marked as to-do, and tell it to follow the structure of the completed utility files (contacts, messages, notes). Review the output afterward; the presenter then re-prompted for fixes.",
+   "when": "An MCP server has a clear pattern across its tool modules and a list of unfinished features, and you want the agent to fill the gaps in the same style."
+  },
+  {
+   "name": "Restructure a search-everything tool into hierarchical navigation",
+   "how": "Replace a single search-all tool with a sequence of narrower tools: list folders, open one folder and list its items, then read one item. Keep the search tool as a separate entry point. The presenter asked for this in a prompt and then tested each step (folders, notes in one folder, note contents).",
+   "when": "An agent tool returns a flat, unsorted list of many items (notes, files, messages). Narrowing the tool surface makes results easier for the model to navigate."
+  }
+ ],
+ "tools": [
+  "Cursor",
+  "apple-mcp (GitHub repo, MCP server for Apple apps)",
+  "Claude Desktop",
+  "Windsurf",
+  "Docker MCP server (already added in Cursor, unrelated to the Apple setup)",
+  "Claude 3.5 Sonnet",
+  "GPT-4",
+  "bun",
+  "realpath",
+  "Apple Notes",
+  "Apple Contacts",
+  "Apple Messages",
+  "Apple Calendar",
+  "Apple Reminders"
+ ],
+ "numbers": [
+  {
+   "claim": "Three Apple integrations (contacts, notes, messages) were present on first connection; calendar, reminders and several other tools appeared after the local clone and setup.",
+   "t": "1:21 and 2:37"
+  },
+  {
+   "claim": "Reminders check fetched two items from Apple Notes (one open, one in the completed section).",
+   "t": "4:00"
+  },
+  {
+   "claim": "Claude 3.5 Sonnet ended the chat mid-retrieval once or twice; GPT-4 handled the same request. Single-user anecdote, no repeated trials.",
+   "t": "4:00"
+  }
+ ],
+ "hot_takes": [
+  "The title ('insane integration', 'crazier day by day') is hype. The video is one repo walkthrough with no evaluation and caps at quality 2.",
+  "The video shows an agent sending a text message after a single one-time macOS permission grant, and does not discuss the risk of that access. This is the part most relevant to our security-guardrails work.",
+  "Structure beat model choice: the presenter's fix for the unsorted Notes output was restructuring the tool's navigation, not switching models or changing the prompt alone."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Permission-gated local tools that touch personal data (messages, contacts) are the case the exec-gate guardrails in Crucible and Govrix would have to handle, and the video shows only a one-time grant.",
+   "action": "Check whether our MCP tool calls that send messages or write data go through a per-call approval gate, not a one-time grant like the Apple prompt shown at 1:21."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness uses phone-driven approvals and zero-token credential handling; the video's per-app permission prompt is a simpler version of the same approval problem.",
+   "action": "Compare ProsHarness's approval flow for side-effecting tools with the per-app macOS permission model at 1:21 and decide whether approvals should be scoped per tool call or per session."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

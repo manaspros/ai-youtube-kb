@@ -1,0 +1,50 @@
+# Software Engineering Is Becoming Factory Engineering — Zach Lloyd, Warp
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `tUPPVhBBcoM` · [watch](https://youtu.be/tUPPVhBBcoM) · **date:** 2026-10-04 · **length:** 20:37 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Zach Lloyd · **orgs:** Warp, Google, Uber
+- **topics:** software-factory, skills-self-improvement, pr-code-review, observability · **tags:** software factory, spec-driven development, product spec vs tech spec, triage agent, observer agent, skill loop, open source agent workflow, human-in-the-loop gates, computer use verification, control plane vs data plane, efficiency metrics
+
+> Warp's founder argues software engineering is becoming factory engineering: agent loops run from triage to spec to implementation to monitoring, with humans gating stuck points and observer agents improving the skills.
+
+## Summary
+Zach Lloyd (founder of Warp, ex-Google Docs engineering lead) argues that software engineering is turning into building and managing "software factories," meaning automated loops that take ideas from triage through spec, implementation, review, verification, shipping and monitoring, with humans placed at specific gates. He describes Warp's own public factory, built while open-sourcing its terminal, which handles issues and PRs for a large contributor base. He says open source became workable only once automation absorbed the usual pains of noisy issues, sloppy PRs and review load. For anyone building their own factory, he sketches the components: inputs, a control plane, cloud sandboxes, a harness and model choice, and a data plane that lets agents remember and learn. He also stresses measuring output per human hour and per token, and closing the loop with skill-improvement agents. The talk is a practitioner's framing with a few product plugs and mostly opinion, with few hard numbers.
+
+## Key ideas
+- **Thesis: software engineering becomes factory engineering. Engineers build and tune the system of agents that builds the product, not just the product itself.** — Interactive agents (sitting and prompting) are the current phase; the speaker expects a shift to automated loops within months to a year. He predicts every sizable project, open source or not, will have a software factory at its core, the way CI/CD became standard. ([0:08](https://youtu.be/tUPPVhBBcoM?t=8))
+- **The factory is a loop: ideas in, agents triage and spec, humans review the spec, agents implement, agent plus human review, agents verify, human checks product, ship, monitor, then feed results back to the top.** — Blue steps in his diagram are the human gates. Human gates sit where work gets stuck, and the monitoring output re-enters as new input. ([3:31](https://youtu.be/tUPPVhBBcoM?t=211))
+- **Open source is a reason to build a public factory, and cheap software makes product alone a weak moat.** — If building is cheap, cloning is trivial, so advantages must come from distribution, ecosystem, brand, data or capital. Warp open-sourced after about five years of closed development to build ecosystem, and the automations made the open model manageable. ([4:58](https://youtu.be/tUPPVhBBcoM?t=298))
+- **Automation fixes the usual open-source costs: noisy issues, sloppy PRs, and review hell.** — The factory is what made the open-source leap feasible for Warp. Maintainers and contributors can both be helped by agents. ([7:43](https://youtu.be/tUPPVhBBcoM?t=463))
+- **Triage splits work in two: easy, unambiguous issues go straight to implementation; hard ones get a spec first.** — An agent reads each incoming issue and routes it. Humans then review the spec before code is written. ([9:04](https://youtu.be/tUPPVhBBcoM?t=544))
+- **Write two specs: a product spec for the invariants the product must keep, and a tech spec for architecture and code shape.** — An agent writes both, a human reviews them, and then a cloud implementation agent produces the diff. Review starts with an agent, and humans are pulled in on a risk basis. ([10:33](https://youtu.be/tUPPVhBBcoM?t=633))
+- **Verification and monitoring close the loop: agents run the UI and capture screenshots or video, and watch production for crashes and usage.** — Agents do not stop at ship time. Monitoring output feeds the next cycle, so the factory keeps improving. ([10:33](https://youtu.be/tUPPVhBBcoM?t=633))
+- **Infrastructure has five parts: input channels, a control plane for distributing work, cloud sandboxes for execution, the harness and model choice, and a data plane for memory and learning.** — He advises most organizations to buy or build a simple version and focus on their own product, since scaling this infrastructure is a large job. ([11:57](https://youtu.be/tUPPVhBBcoM?t=717))
+- **Skill loops: observer agents watch factory agents' outcomes and improve their skills for the next run.** — Example: a code review agent's comments get corrected by a senior engineer, and an observer agent updates the reviewer from those corrections. Tuning the factory to the team's domain is ongoing engineering work. ([12:56](https://youtu.be/tUPPVhBBcoM?t=776))
+
+## Techniques
+- **Software factory loop with human gates** — Chain agent steps as a graph: triage, spec, implement in a cloud sandbox, agent review then human review, verification (computer use, screenshots, video), CI/CD, monitoring. Route work to a human only where it gets stuck or carries risk. Feed monitoring output back into triage. *When:* Projects of significant size with a steady stream of issues, where review and verification are the bottleneck.
+- **Triage routing by ambiguity** — A triage agent reads each incoming issue. If it is easy and unambiguous, it goes straight to implementation. If it is hard, an agent writes a spec first. *When:* Mixed backlogs where some tasks are trivial and others need design.
+- **Product spec plus tech spec** — Have an agent write a product spec (the invariants the product must keep) and a tech spec (architecture and code shape). A human reviews both before implementation starts. *When:* Before handing non-trivial work to a coding agent, to set constraints it must not break.
+- **Observer agent skill loop** — Run factory agents with skills. Run observer agents that read how the skills are applied and where humans correct the output. Use the observations to revise the skill for the next run. *When:* Any agent whose output is regularly corrected by people, such as code review bots, and where you want corrections to persist.
+- **Verification by running the product** — Have agents exercise the built UI through computer use and produce screenshots or video as evidence, alongside CI and CD. *When:* Apps with a UI, where tests alone do not show the feature works.
+
+## Numbers
+- Over 60,000 GitHub stars for Warp, with a couple hundred contributors ([1:09](https://youtu.be/tUPPVhBBcoM?t=69))
+- Over 800,000 active developers using Warp ([1:09](https://youtu.be/tUPPVhBBcoM?t=69))
+- Warp built closed for about five years before open-sourcing ([6:18](https://youtu.be/tUPPVhBBcoM?t=378))
+- Speaker has not written a line of code in the last six months, and has been an engineer for over 20 years ([0:08](https://youtu.be/tUPPVhBBcoM?t=8))
+- Warp open-sourced its terminal a couple months before the talk ([0:08](https://youtu.be/tUPPVhBBcoM?t=8))
+
+## Hot takes
+- Every company and open source project will have a software factory at its core, the way CI/CD became standard.
+- Building software is getting cheap enough that cloning is trivial, so a great product alone is no longer a moat.
+- Software engineers will write less code but ship more, and the job becomes engineering the system of agents.
+- Most organizations should not build scalable factory infrastructure themselves and should focus on their own product.
+- Warp is hiring more people than ever, and AI-driven layoffs are not what they see.
+
+## Tools mentioned
+Warp, Claude Code, CI/CD, GitHub, Computer use
+
+## Relevance to our work
+- **agentos** (2/3): The talk's data plane (agents remembering what they did and learning) and observer-agent skill loop map onto SkillForge's open question about success signals and skill-worthiness scoring. → *Trial an observer agent that reads human corrections to a skill's output as a candidate success signal for SkillForge, and compare it with the current telemetry signal on a small set of runs.*
+- **prosharness** (2/3): Its human gates at stuck points, its loops and schedules, and its plan-critique flow match this talk's factory loop closely. Splitting triage from spec before planning is not yet in the harness. → *Add a triage step that sends easy tasks straight to implementation, and sends hard ones through a product-spec and tech-spec stage before the plan and critique stage.*
+- **general** (1/3): The talk measures shipped output per human hour and per token cost, a simple efficiency metric for agent work. → *Log tokens and human minutes per merged change in ProsHarness runs to get one efficiency number over time.*

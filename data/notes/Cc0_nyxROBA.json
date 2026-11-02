@@ -1,0 +1,166 @@
+{
+ "one_line": "Gaurav Mishra (Amazon AGI Lab) on why RL-trained computer-use agents break on real login screens, ads, and expired sessions, and how to adapt training and the harness to real-world messiness.",
+ "summary": "The speaker, a researcher at the Amazon AGI Lab, explains that RL works well for coding because tasks are verifiable and have many valid solutions, and that the same idea was extended to computer-use agents because chat, email, and web tasks can be expressed as code or API calls. Early browser-agent training runs showed failures that a clean game-like environment hides: expired credentials, the agent guessing passwords until the account was blocked, and clicking a sponsored button that looked like the real submit button. He groups the gaps into partial observability, irreversibility, non-determinism, ephemeral authority, ambiguous success, and adversarial content. His proposed response is to train in high-fidelity \"flight simulators\" that include layout shift, slow loads, pop-ups and stale tabs, to make recovery a native model action, to add process reward that penalizes dangerous steps mid-trajectory, and to teach calibrated confidence so the agent knows when to escalate. On the harness side he lists checkpoint and rollback, an action risk classifier, credential guardrails, an execution monitor for loops, audit logs, and forced human handoff. He closes by saying that the product is only as good as its failure data, so design partners should be used to find what breaks, with the harness catching failures gracefully while the model improves.",
+ "speakers": [
+  "Gaurav Mishra"
+ ],
+ "orgs": [
+  "Amazon AGI Lab",
+  "Google",
+  "DeepMind"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "training-finetuning-rl",
+  "agent-architecture",
+  "security-guardrails"
+ ],
+ "tags": [
+  "computer-use",
+  "browser-agents",
+  "reinforcement-learning",
+  "reward-modeling",
+  "process-reward",
+  "human-handoff",
+  "action-risk",
+  "harness",
+  "checkpoint-rollback",
+  "audit-log",
+  "adversarial-environments",
+  "calibrated-confidence",
+  "recovery-policies"
+ ],
+ "key_ideas": [
+  {
+   "idea": "RL suits coding because tasks are verifiable, have many correct solutions, and are reasoning-heavy, while demonstration data for SFT is hard to collect.",
+   "detail": "The reward is applied to the whole generation, not each token. The speaker argues this paradigm is why coding agents trained with RL became strong, and that the same logic carries to other agent tasks.",
+   "t": "1:06"
+  },
+  {
+   "idea": "A training task needs three parts: a verifiable task in the right difficulty window, a safe execution environment, and a verifier that supplies the signal.",
+   "detail": "Verifiers range from string equality and compilers to linters, unit tests, database lookups, and rubric-following agents. Tasks that are too easy or too hard give little training signal.",
+   "t": "2:23"
+  },
+  {
+   "idea": "Computer-use agents seemed feasible because chat, email, docs, and browsing can all be reached as code through MCP, APIs, Playwright, or web search.",
+   "detail": "The speaker's point is that once everything is a code call, coding-agent training carries over, and the question becomes what breaks in reality.",
+   "t": "3:20"
+  },
+  {
+   "idea": "Real deployments add failure modes that a game does not have: expired sessions, look-alike buttons, irreversible actions, and ambiguous success.",
+   "detail": "Demos showed an agent guessing passwords until an account was blocked, and clicking an ad's submit button. The speaker says RL works when the world is a game, and real-world use starts when the game fights back.",
+   "t": "4:36"
+  },
+  {
+   "idea": "The fix is flight-school-style training: simulate the mess of the real world during training so the model learns to recover from it.",
+   "detail": "This means high-fidelity sandboxes with layout shifts, slow loads, pop-ups, and stale tabs. Infra errors are passed to the model as tasks to recover from, rather than reset, using native actions such as refresh, backtrack, wait, abandon, or escalate.",
+   "t": "8:03"
+  },
+  {
+   "idea": "Process reward matters as much as the outcome, since dangerous steps mid-trajectory have to be caught and penalized.",
+   "detail": "The speaker's view is that a final-state reward alone can reward a finished task that still did something harmful, such as sending an unwanted letter.",
+   "t": "9:18"
+  },
+  {
+   "idea": "Agents need calibrated confidence: a rule for when to act and when to escalate, based on authorization, reversibility, visibility, and impact.",
+   "detail": "Adversarial tasks should be part of mainstream training so the model makes mistakes during training and learns from them, rather than meeting them first in production.",
+   "t": "10:09"
+  },
+  {
+   "idea": "The harness is the interface between model and world, and it should hold guardrails that the model does not control.",
+   "detail": "Listed components are checkpoint and rollback, an action risk classifier, credential guardrails, an execution monitor for loops and repeated clicks, audit logs, and forced human handoff when confidence is miscalibrated. Early on the harness is strong and the model is weak; over time the harness gets thinner.",
+   "t": "12:31"
+  },
+  {
+   "idea": "Each RL assumption breaks in real use: observable state, cheap actions, clear reward, resetting failures, passive environments, and always-good autonomy.",
+   "detail": "The speaker pairs each assumption with a reality and a response, such as perception primitives, risk-aware execution, audit and verification, recovery policies, trust boundaries, and calibrated handoff.",
+   "t": "14:44"
+  },
+  {
+   "idea": "The gap between demo and product is what happens after the first failed click, so the loop depends on design partners and internal users who expose failures.",
+   "detail": "Failures captured this way become training data, and the harness has to fail gracefully so users are not harmed while the model improves.",
+   "t": "16:14"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Simulated messy environments for agent RL",
+   "how": "Build sandboxes that include layout shifts, slow loads, missing labels, pop-ups, focus changes, account-switch prompts, and stale tabs, so the policy trains against the failure modes it will meet in production.",
+   "when": "Before training any browser or computer-use agent that will act on real accounts."
+  },
+  {
+   "name": "Recovery as a native model action",
+   "how": "When an infra or environment error happens, return it to the model as a situation to handle with actions like refresh, backtrack, compare, wait, abandon, or escalate, rather than resetting the state.",
+   "when": "When real-world runs cannot be reset, so errors must be survived inside the episode."
+  },
+  {
+   "name": "Process reward model over the trajectory",
+   "how": "Score each step for dangerous or unproductive actions and penalize them, instead of rewarding only the final outcome.",
+   "when": "When a finished task can still carry side effects the user did not want."
+  },
+  {
+   "name": "Action risk classifier in the harness",
+   "how": "Check each proposed action for authorization, reversibility, visibility to the user, and impact, and block or escalate risky ones before execution.",
+   "when": "For agents that can submit forms, delete data, or make irreversible changes."
+  },
+  {
+   "name": "Harness-level credential and loop guardrails",
+   "how": "Detect expired or signed-out states from the page and nudge the model toward a handoff. Watch for loops and repeated clicks, and nudge the model out of them.",
+   "when": "For long browser sessions where auth can expire mid-task."
+  },
+  {
+   "name": "Checkpoint, rollback, and audit trail",
+   "how": "Checkpoint before risky states so the agent can return if an action goes wrong, and keep an evidence log of actions and their effects so the trail can be reviewed afterward.",
+   "when": "For any agent that makes state-changing actions in external systems."
+  },
+  {
+   "name": "Forced human handoff",
+   "how": "When confidence is miscalibrated, the harness takes control away from the model and returns it to the user. A user step (here, re-entering a password) then returns control to the agent.",
+   "when": "At auth boundaries and on high-risk or ambiguous actions."
+  },
+  {
+   "name": "Adversarial tasks in mainstream training",
+   "how": "Include tasks with look-alike buttons and sponsored content in the training mix, so the model learns from its mistakes during training rather than only in production.",
+   "when": "When the agent will read untrusted web content that is designed to attract clicks."
+  },
+  {
+   "name": "Design-partner failure loop",
+   "how": "Deploy early with real users, let the harness catch failures gracefully, record what fails, and feed those cases back into training.",
+   "when": "When simulated environments cannot anticipate the real distribution of failures."
+  }
+ ],
+ "tools": [
+  "Playwright",
+  "WebMCP",
+  "MCP",
+  "web search APIs",
+  "PPO",
+  "GRPO"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "RL worked when the world was a game, and IRL starts when the game fights back.",
+  "Done often doesn't mean successful: an agent can finish an expense report and also send an unwanted resignation letter.",
+  "The difference between a demo and a product is what happens after the first click, first failed click.",
+  "Coding abilities are not sufficient to do well on computer use."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Crucible has exec-gate guardrails and AgentOS has an audit log; the talk's action risk classifier (authorization, reversibility, visibility, impact) is a concrete gate design that maps onto that.",
+   "action": "Sketch an action-risk scorer for Crucible's exec-gate that classifies each proposed action by reversibility and visibility before it runs, and decide when it should force a human handoff."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness already has checkpoint/resume and phone-driven approvals; the talk's rollback-before-risky-state and forced-handoff triggers are close to that design.",
+   "action": "Check whether ProsHarness checkpoints before risky actions and what triggers a handoff, and compare those triggers with the talk's list of authorization, irreversibility, and visibility."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

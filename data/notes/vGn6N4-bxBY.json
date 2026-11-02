@@ -1,0 +1,141 @@
+{
+ "one_line": "PayPal's Jay Mok and Ben Coumes propose a stakes-and-counterparty matrix for deciding how much proof an agent's payment authorization needs, ending with verifiable mandates for high-stakes, open-ecosystem transactions.",
+ "summary": "The talk frames agent authorization around three questions: did the human authorize this, is it allowed now within scope, and can it be proven later. The speakers argue the right answer depends on context, mainly stakes (low or high) and whether the ecosystem is open or closed. They walk through three tiers: Claude Code connectors and tool permissions (low stakes, system logs and revert are enough), a travel-data marketplace using a payment vault and OAuth scopes (medium stakes, closed ecosystem, existing transaction logs for disputes), and a high-stakes open-ecosystem case where they recommend FIDO verifiable intents and AP2 mandates. The mandate is a layered, selectively disclosed credential: a credential-provider layer, a user-signed instruction layer, and an optional agent-signed layer, so each party checks only its own part. They describe PayPal's approval token, which lets a user pre-approve payment instructions before the agent has picked an item or merchant, and say it is about to ship with Gemini. They close by arguing the same model applies to any hard-to-reverse action, such as medical orders, e-signatures or securities trades. The talk is short and conceptual, with a fair amount of PayPal product promotion.",
+ "speakers": [
+  "Jay Mok",
+  "Ben Coumes"
+ ],
+ "orgs": [
+  "PayPal",
+  "Gemini (Google)",
+  "ChatGPT (OpenAI)",
+  "Nevermind (partner, as transcribed)",
+  "FIDO Alliance"
+ ],
+ "format": "talk",
+ "topics": [
+  "security-guardrails",
+  "governance-compliance",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "agent-authorization",
+  "payments",
+  "mandates",
+  "verifiable-intent",
+  "selective-disclosure",
+  "stakes-matrix",
+  "oauth-scopes",
+  "audit-evidence",
+  "human-in-the-loop",
+  "reversibility"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent authorization reduces to three questions",
+   "detail": "Did the human authorize this, is it allowed right now within scope (time limit, amount, merchant or product intent), and can we prove it later if something goes wrong, such as in a dispute.",
+   "t": "1:09"
+  },
+  {
+   "idea": "The answer depends on context: stakes and ecosystem openness",
+   "detail": "The speakers use stakes (low or high) and counterparty (open or closed ecosystem, whether the parties already know each other) as the two axes. The badge analogy: inside a trusted building, a badge check is enough; meeting a stranger on the street needs something verifiable.",
+   "t": "2:33"
+  },
+  {
+   "idea": "Low stakes in a closed ecosystem needs only logs and reversibility",
+   "detail": "Claude Code connectors and per-tool allow/deny/ask permissions are set once by the human. Because the actions can be reverted, system logs are enough and no cryptographic proof is needed.",
+   "t": "5:04"
+  },
+  {
+   "idea": "Medium stakes: money moves, but a known platform vouches for both sides",
+   "detail": "A payment vault stores buyer credentials, which only become useful when access is granted through OAuth scopes in a closed partner ecosystem. Scopes come from the user's mandate, and disputes are handled with existing transaction logs rather than cryptographic receipts.",
+   "t": "6:29"
+  },
+  {
+   "idea": "High stakes with strangers needs a verifiable, layered mandate",
+   "detail": "The speakers say the industry should converge on FIDO verifiable intents and AP2 mandates. The credential is layered: a trusted credential provider issues the outer layer, the user signs the instructions, and the agent signs the autonomous action. Each party verifies only the layer it cares about, so no direct trust relationship is needed.",
+   "t": "10:36"
+  },
+  {
+   "idea": "Pre-authorize before the agent has found a merchant",
+   "detail": "PayPal's approval token flips the usual synchronous checkout. The user confirms the agent's instructions first, and PayPal returns an opaque, approved payload with the amount, expiry and intended merchant. The speakers say this ships to production soon, starting with Gemini users who pick PayPal.",
+   "t": "11:37"
+  },
+  {
+   "idea": "The model generalises to any hard-to-reverse action",
+   "detail": "The speakers say the same tiering applies to medical orders, e-signatures and securities trading: wherever an agent action is hard to undo, the evidence bar goes up.",
+   "t": "14:25"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Stakes x counterparty evidence matrix",
+   "how": "Classify each agent action by stakes (reversible or not, money or not) and by whether the counterparty is in a known, closed ecosystem. Use the result to pick the evidence level: logs and revert for low stakes, platform-enforced mandates for medium stakes, cryptographic verifiable mandates for high stakes with strangers.",
+   "when": "When deciding how much authorization and audit machinery a new agent action needs before shipping."
+  },
+  {
+   "name": "Scoped, time-bound, amount-capped mandates",
+   "how": "Each authorization carries an expiry, a spending cap, and a merchant or product-intent restriction. The agent is allowed to act only within those limits.",
+   "when": "Any agent that can spend money or take an irreversible action on the user's behalf."
+  },
+  {
+   "name": "Layered selective-disclosure credentials",
+   "how": "Build a signed token in layers: an issuer layer, a user-signed instructions layer, and an optional agent-signed layer for autonomous steps. Each verifier checks only the layer relevant to it, so parties do not need to share the full mandate.",
+   "when": "When multiple parties with no prior relationship must each check one part of an agent's authority."
+  },
+  {
+   "name": "Pre-authorize intent before the action target is known",
+   "how": "Ask the human to approve the instructions and limits first, and return an opaque approved token. The agent later uses the token to act only on a matching item or merchant.",
+   "when": "Autonomous shopping or booking, where the target is discovered after the human has given consent."
+  },
+  {
+   "name": "Scoped OAuth access to stored credentials",
+   "how": "Keep credentials in a vault and grant access only through OAuth scopes tied to the mandate, so partner agents never hold raw secrets.",
+   "when": "A platform mediates agent payments between known participants."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "FIDO verifiable intents",
+  "AP2 mandate",
+  "PayPal approval token",
+  "PayPal vault",
+  "OAuth",
+  "Passkeys",
+  "GitHub",
+  "Jira",
+  "Linear"
+ ],
+ "numbers": [
+  {
+   "claim": "Verifiable-intent credential has three layers: issuer, user-signed instructions, optional agent-signed autonomous step",
+   "t": "10:36"
+  },
+  {
+   "claim": "PayPal approval token payload carries amount, expiry and intended merchant (opaque string, approved only by PayPal)",
+   "t": "11:37"
+  }
+ ],
+ "hot_takes": [
+  "A badge is not enough trust for a stranger; agent payments with unknown counterparties need verifiable, signed proof.",
+  "The high-stakes tier (verifiable intents and AP2 mandates) is only seen in theory, not yet in production, per the speakers."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The L1 gateway already has budgets, a Merkle audit log and an exec-gate. The stakes tiers and scoped, expiring mandates map directly onto those pillars.",
+   "action": "Add a stakes tier to the AgentOS budget and exec-gate policy: reversible actions get logs only, while money-moving or hard-to-reverse actions require a scoped, time-bound, amount-capped approval, which the Merkle audit log records as evidence."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness has phone-driven approvals and checkpoint/resume. The talk's 'did the human authorize, is it in scope now, can we prove it later' questions fit a checkpoint approval step.",
+   "action": "Store each phone approval as a time-bound, scope-limited record (action class, expiry, budget) alongside the checkpoint, and re-check it on resume before the run continues."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,134 @@
+{
+ "one_line": "Vercel's Next.js eval found a passive AGENTS.md doc index beat on-demand skills (100% vs. skills that were often never invoked); skills suit explicit workflows, AGENTS.md suits framework knowledge.",
+ "summary": "Better Stack summarizes a Vercel experiment on giving coding agents version-matched Next.js documentation. Skills were invoked only 56% of the time, and in evals they gave zero improvement over no skill, sometimes performing worse. Explicitly telling the agent to use the skill raised the trigger rate to 95% and the pass rate to 79%, but the result was fragile: wording changes shifted behavior a lot. Putting a compressed index of documentation file paths in AGENTS.md (always in the system prompt), plus an instruction to prefer retrieval over pre-training knowledge, scored 100% on their evals and perfect build, lint and test results. The speaker speculates the gain comes from removing the decision point: the knowledge is persistent context instead of something the model must choose to load. The recommended split is skills for explicit user-triggered workflows (upgrade, migrate, apply best practices) and AGENTS.md for passive framework knowledge. The advice is to compress context, design for retrieval rather than memory, and test everything with evals.",
+ "speakers": [
+  "Better Stack host (unnamed)"
+ ],
+ "orgs": [
+  "Vercel",
+  "Better Stack",
+  "Anthropic"
+ ],
+ "format": "review",
+ "topics": [
+  "context-engineering",
+  "skills-self-improvement",
+  "evals",
+  "coding-agents"
+ ],
+ "tags": [
+  "agents.md",
+  "claude.md",
+  "agent skills",
+  "skill invocation rate",
+  "retrieval vs pre-training",
+  "documentation index",
+  "next.js",
+  "evals",
+  "context bloat",
+  "passive context"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Skills were rarely invoked: the agent decided whether to load a skill, and in Vercel's evals the skill was never used 56% of the time.",
+   "detail": "Skills are modular instruction/script bundles loaded on demand. Because the agent chooses when to load them, many runs never see the skill, and an unused skill gave zero improvement over baseline and sometimes did worse (possible noise or distraction).",
+   "t": "1:20"
+  },
+  {
+   "idea": "Forcing skill use in the prompt helped numerically but was brittle.",
+   "detail": "An explicit 'use the skill' instruction raised trigger rate to 95% and eval pass rate to 79%. Different wordings gave very different results; 'you must use the skill' made the agent skip project context, so the prompt had to name both the skill and the project context.",
+   "t": "1:20"
+  },
+  {
+   "idea": "AGENTS.md (CLAUDE.md equivalent) works better because there is no decision point.",
+   "detail": "Its contents are always in the system prompt, so the agent doesn't have to decide to fetch the docs. The risk is context bloat, so the file should hold an index, not the documentation itself.",
+   "t": "2:21"
+  },
+  {
+   "idea": "A compressed documentation index in AGENTS.md scored 100% on evals.",
+   "detail": "The index is a list of file paths to version-matched docs on disk, plus an instruction to prefer retrieval-led reasoning over pre-training-led reasoning for Next.js tasks. The agent scored 100% on the evals and got perfect build, lint and test results. The speaker expected this to behave like skills and was surprised.",
+   "t": "3:16"
+  },
+  {
+   "idea": "The likely mechanism is persistent context versus on-demand retrieval.",
+   "detail": "The speaker says AI is a black box and this is speculation. The knowledge is already in the reasoning context, so the model does not have to choose to load it.",
+   "t": "3:16"
+  },
+  {
+   "idea": "Skills and AGENTS.md are complementary, not competing.",
+   "detail": "Skills suit explicit user-triggered workflows such as upgrading Next.js, migrating to the app router, or applying framework best practices. Passive framework knowledge belongs in AGENTS.md, which the speaker expects to keep outperforming skills on current models.",
+   "t": "4:36"
+  },
+  {
+   "idea": "Recommendations for framework authors and skill writers.",
+   "detail": "Don't wait for skills to improve; compress context as much as possible; design for retrieval, not memory; and test everything with evals.",
+   "t": "4:36"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Passive documentation index in AGENTS.md",
+   "how": "Put a list of file paths to version-matched documentation files in AGENTS.md (or CLAUDE.md). Add an instruction such as 'prefer retrieval-led reasoning over pre-training-led reasoning for <framework> tasks'. Keep the index small and point to the files on disk rather than inlining the docs, to avoid context bloat. The speaker also says Vercel provides a tool to download the docs and a prebuilt AGENTS.md for a given Next.js version; the tool is not named in the video.",
+   "when": "When an agent needs framework or library knowledge that may be newer or older than its training data, and the knowledge should always be available rather than triggered by a decision."
+  },
+  {
+   "name": "Split context by trigger type",
+   "how": "Use skills for explicit, user-requested workflows (upgrade, migrate, apply best practices). Use AGENTS.md/CLAUDE.md for general framework knowledge that should always be in context.",
+   "when": "When designing a set of agent instructions and deciding what goes in a skill versus the always-loaded context file."
+  },
+  {
+   "name": "Measure skill trigger rate, not just existence",
+   "how": "Track how often the agent actually invokes a skill (trigger rate) alongside eval pass rates, against a no-skill baseline. Compare prompt wordings that ask for the skill, and check that they don't cause other context to be skipped.",
+   "when": "Before shipping a skill, or when a skill appears to have no effect on agent output."
+  }
+ ],
+ "tools": [
+  "Next.js",
+  "Agent Skills (open standard, Anthropic)",
+  "Vercel skills CLI and skills repository (named as 'skill CLI' in the transcript)",
+  "AGENTS.md",
+  "CLAUDE.md"
+ ],
+ "numbers": [
+  {
+   "claim": "Skill never invoked in 56% of eval runs.",
+   "t": "1:20"
+  },
+  {
+   "claim": "Skill gave zero improvement over no-skill baseline in evals; sometimes performed worse than baseline.",
+   "t": "1:20"
+  },
+  {
+   "claim": "With an explicit 'use the skill' prompt: skill trigger rate 95%, eval pass rate 79%.",
+   "t": "1:20"
+  },
+  {
+   "claim": "AGENTS.md documentation index with a retrieval instruction: 100% on all evals, with perfect build, lint and test scores.",
+   "t": "3:16"
+  }
+ ],
+ "hot_takes": [
+  "Vercel's Next.js eval is secondhand here: the video gives no task count, model, harness or variance, so the 56% and 100% figures are unverified in this source.",
+  "The speaker reports that the explicit 'use the skill' fix is fragile, which undercuts the skill-based approach even when it raises the numbers.",
+  "The 'dumber, simpler approach wins' framing is the speaker's editorial; the mechanism is admittedly speculative.",
+  "The video is a short explainer of one vendor's result; it does not show it holds beyond Next.js docs."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "SkillForge mines agent telemetry into reusable skills, and this result suggests skills often go unused, so a skill's success signal needs to include whether it was invoked.",
+   "action": "When designing SkillForge's success signal, record skill trigger rate (was the skill invoked at all) separately from task outcome, and compare against a no-skill baseline."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness has skill ranking and wraps Claude Code; this finding bears directly on whether a skill is actually used and on keeping framework context in CLAUDE.md.",
+   "action": "Add trigger rate (did Claude Code invoke the ranked skill) to skill-ranking evals, and test a passive CLAUDE.md doc index against the skill on the same tasks."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

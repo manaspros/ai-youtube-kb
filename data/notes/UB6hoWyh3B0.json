@@ -1,0 +1,180 @@
+{
+ "one_line": "Wells Fargo built a ~1B-parameter transformer pre-trained from scratch on customer transaction data as a reusable backbone; it beat its production XGBoost fraud model on detection rate and false positives.",
+ "summary": "Freddy Lecue of Wells Fargo describes building the bank's first foundation model on tabular transaction data instead of text. The goal is one backbone, pre-trained on billions of debit, credit, digital and check transactions, that can be fine-tuned for fraud, credit line increases, anti-money laundering and marketing. The model is a decoder-only transformer with about 1B parameters, pre-trained from scratch with the next-transaction objective, and the speaker says the tokenization and post-training are the real work. The main hard part was designing the vocabulary: deciding which transaction fields become tokens, how high-cardinality fields like zip codes are grouped, and how to keep the vocabulary trainable. The model replaced hand-engineered features with raw fields, which the speaker says let attention capture relationships between a transaction and the customer's history, something gradient-boosted trees miss unless those relationships are hand-encoded. On fraud classification it beat the XGBoost production model on detection rate and false positives, which the speaker ties to millions of dollars in savings. Latency detail is contradictory in the talk: it is first said to beat XGBoost on latency, then to be about 10x slower but within the 250 ms decline budget. Evidence is a single internal case study with no published baselines or exact figures.",
+ "speakers": [
+  "Freddy Lecue"
+ ],
+ "orgs": [
+  "Wells Fargo"
+ ],
+ "format": "talk",
+ "topics": [
+  "data-engineering",
+  "models-research",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "tabular foundation model",
+  "transaction modeling",
+  "fraud detection",
+  "tokenization",
+  "pre-training from scratch",
+  "chinchilla scaling",
+  "XGBoost baseline",
+  "decoder-only",
+  "financial services",
+  "case study"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Foundation models need not be language-based; bank transaction data is mostly tabular, and one backbone can serve many downstream tasks.",
+   "detail": "Motivation: replace many siloed per-task models (credit scoring, fraud, AML, marketing) with one pre-trained transaction backbone that every team reuses.",
+   "t": "0:08"
+  },
+  {
+   "idea": "A transformer on transactions beat the production XGBoost model on fraud detection and latency.",
+   "detail": "The speaker says the transformer gave a higher detection rate and fewer false positives than XGBoost. Latency is stated as better here but later as about 10x slower (within the 250 ms budget), so treat the latency claim as unclear.",
+   "t": "2:10"
+  },
+  {
+   "idea": "Pre-train from scratch on own data; the next-transaction objective is a means, not the goal.",
+   "detail": "They reuse open architectures but no pretrained weights. The next-token/next-transaction pre-training teaches representations, which are then fine-tuned or post-trained per downstream task.",
+   "t": "4:47"
+  },
+  {
+   "idea": "Use raw fields, not hand-built features, and let attention learn the interactions.",
+   "detail": "Fields are grouped along five dimensions: who (customer/merchant), what, how (channel), when and where. Thousands of engineered features were reduced to a smaller set of raw units.",
+   "t": "6:02"
+  },
+  {
+   "idea": "Tokenization is the secret sauce: deciding what each token encodes and keeping the vocabulary trainable.",
+   "detail": "Numerical, categorical and high-cardinality fields (zip code, IP, amount, time delta) each need a token scheme. A zip-code-per-token vocabulary is too large, so codes are grouped by distribution. Each transaction maps to token IDs and then embedding lookups.",
+   "t": "8:11"
+  },
+  {
+   "idea": "Model size and token budget came from Chinchilla-style scaling, then were tuned empirically.",
+   "detail": "They started from the usual 20 tokens per parameter, then found they needed far more tokens per parameter in this domain. The model is about 1B parameters, chosen as the smallest size that gave the largest boost, with an 11B version in progress.",
+   "t": "9:31"
+  },
+  {
+   "idea": "Why transformers help fraud: attention reaches the customer's past transactions, which GBDT loses.",
+   "detail": "A GBDT only sees the current transaction unless the history is hand-encoded. The transformer attends from the current transaction to past transactions, and at inference the input is the customer's transaction sequence.",
+   "t": "13:22"
+  },
+  {
+   "idea": "Results are framed as detection rate and false positives, which map directly to cost.",
+   "detail": "A false positive means a blocked legitimate transaction, which costs a support call and lost revenue. The speaker says the gain is millions of dollars, without giving a figure.",
+   "t": "15:38"
+  },
+  {
+   "idea": "One pre-trained backbone is now being reused for several downstream tasks across the bank.",
+   "detail": "Fraud detection is done. Credit line increase, anti-money laundering and marketing are under investigation on the same foundation.",
+   "t": "16:49"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Transaction tokenization for tabular data",
+   "how": "Map each transaction's fields (numerical, categorical, zip code, IP, amount, time delta) to vocabulary tokens. Use one token for low-cardinality categories (about 8 types) and more tokens or grouped tokens for large domains. Group high-cardinality values such as zip codes by distribution rather than one token each. Then do token ID lookup and embedding lookup per transaction.",
+   "when": "Pre-training a foundation model on structured or tabular records where the vocabulary is domain-specific and too big to tokenize naively."
+  },
+  {
+   "name": "Raw-field representation instead of hand-engineered features",
+   "how": "Start from the smallest set of raw information units across dimensions (who, what, how, when, where). Let transformer attention learn the interactions instead of building engineered cross-features.",
+   "when": "When existing feature-engineering pipelines are costly, and the model must reuse the same representation across many tasks."
+  },
+  {
+   "name": "Decoder-only pre-training on a transaction sequence, then task fine-tuning",
+   "how": "Pre-train a decoder-only transformer from random init on the next transaction/token, with the context being the customer's prior transactions. Keep the pre-trained backbone and fine-tune or post-train a head per downstream task such as fraud classification, credit line increase or AML.",
+   "when": "When one proprietary event-sequence dataset supports many downstream tasks and a single backbone is wanted."
+  },
+  {
+   "name": "Scaling-law sizing with empirical correction",
+   "how": "Start from Chinchilla-style tokens-per-parameter estimates, then run experiments. The speaker found they needed substantially more tokens per parameter than the initial 20x guess. Pick the model size by the smallest size that gives the biggest downstream lift.",
+   "when": "Choosing parameter count and training-token budget for a new domain where published scaling curves may not apply."
+  },
+  {
+   "name": "Standard large-scale training recipe",
+   "how": "Mixed precision, distributed data parallel, maximized macro-batch size, RoPE, Flash Attention, activation checkpointing. The auto-captions say Muron (probably AWS Neuron) for faster compute. Evaluate with perplexity on pre-training and accuracy dashboards on downstream tasks. The speaker stresses that this part is not novel.",
+   "when": "Baseline recipe for training a transformer of about 1B parameters on a GPU cluster."
+  },
+  {
+   "name": "Benchmark against the production GBDT on business metrics",
+   "how": "Compare the new model to XGBoost on detection rate and false-positive rate at the operating point, plus decision latency against the 250 ms budget. Convert the deltas into cost (blocked legitimate transactions, call-center and lost-revenue effects).",
+   "when": "Replacing a production classifier where false positives have a direct cost."
+  }
+ ],
+ "tools": [
+  "XGBoost (production baseline)",
+  "Transformer / decoder-only architecture",
+  "Chinchilla scaling laws",
+  "Flash Attention",
+  "RoPE",
+  "Mixed precision",
+  "Distributed data parallel",
+  "Activation checkpointing",
+  "Muron (auto-caption; likely AWS Neuron)",
+  "GPU cluster",
+  "Wells Fargo transaction foundation model (internal, ~1B params; 11B in progress)"
+ ],
+ "numbers": [
+  {
+   "claim": "Billions of transactions per month, about 1 million accounts, hundreds of transactions per client per month (debit, credit, check, digital).",
+   "t": "4:47"
+  },
+  {
+   "claim": "Model size about 1 billion parameters (smallest size giving the highest boost); 11B version in progress.",
+   "t": "10:45"
+  },
+  {
+   "claim": "Initial tokens-per-parameter assumption was 20x; the speaker says they ended up needing much more (auto-captions say about 10x more, which is garbled).",
+   "t": "9:31"
+  },
+  {
+   "claim": "Zip codes: US has more than the roughly 2,800 zip-code groupings they used.",
+   "t": "9:31"
+  },
+  {
+   "claim": "Decision latency budget under 250 ms per transaction.",
+   "t": "14:37"
+  },
+  {
+   "claim": "Pre-training takes a couple of days to a couple of weeks on the GPU cluster.",
+   "t": "16:49"
+  },
+  {
+   "claim": "Savings described as millions of dollars from fewer false positives and higher detection rate; no exact figures given.",
+   "t": "15:38"
+  }
+ ],
+ "hot_takes": [
+  "For structured transaction data, a domain-specific transformer pre-trained from scratch can beat a tuned GBDT on fraud, and the reason given is that attention reaches past transactions.",
+  "The secret sauce is tokenization and post-training, not the architecture, which the speaker calls nothing fancy.",
+  "Language-model recipes (next-token pre-training, then SFT/RLHF) transfer to structured event data, but the vocabulary has to be designed from scratch.",
+  "Latency claims contradict each other within the talk (better than XGBoost at 2:10; about 10x slower at 14:37). No baseline numbers are given."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The tokenization and scaling-law approach to structured data is loosely relevant to the entity resolution and data-quality interests, and is not a current AgentOS pillar.",
+   "action": "Read the tokenization section (8:11) before any entity-resolution or structured-data model work, and keep it as background reading."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The talk is about model pre-training and has no connection to the Claude Code harness, checkpointing or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The lesson that a new model should be judged on business metrics against the production baseline is broadly useful for evaluating any replacement model.",
+   "action": "Build an eval that compares new models to the current production baseline on the actual cost metric (false positives and detection rate), not offline accuracy alone."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

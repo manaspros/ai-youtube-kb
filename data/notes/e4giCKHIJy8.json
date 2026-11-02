@@ -1,0 +1,203 @@
+{
+ "one_line": "A walkthrough of Google Antigravity as a coding agent, using Cursor's published harness principles: plan-first with commented revisions, on-demand context, TDD, Git as knowledge base, and skills-based debug mode.",
+ "summary": "The host argues that Antigravity (Google's AI code editor, running Gemini 3 and free to use) became worth taking seriously once its agent harness was tuned, and applies principles from Cursor's published harness article to it. A harness is described as three parts: built-in instructions and rules, the tools the agent can call (file edit, search, terminal), and how the user prompts and follows up. The main workflow is plan-first: review a detailed generated plan, comment on lines to revise it, and re-plan rather than patch with follow-up prompts. Context should come from the agent's own grep and semantic search rather than manual file tagging, and a new conversation should start for each logical unit of work or when the agent gets confused. Rules live in .agent/rules as markdown and skills in .agent/skills as SKILL.md files, loaded on demand. The host also uses TDD with tests committed to Git before implementation, screenshots as UI input, Git commits and reusable workflows, watching agents and reviewing with an agent, parallel agents on separate branches, and a debug-mode skill. About a quarter of the runtime is a sponsored segment for an unrelated AI video tool. The evidence is one user's experience, with no benchmarks.",
+ "speakers": [
+  "Unnamed AI LABS host"
+ ],
+ "orgs": [
+  "Google",
+  "Anthropic",
+  "Cursor",
+  "Luma AI"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "context-engineering",
+  "testing-verification",
+  "skills-self-improvement"
+ ],
+ "tags": [
+  "google-antigravity",
+  "agent-harness",
+  "plan-mode",
+  "tdd",
+  "git-workflows",
+  "context-management",
+  "agent-skills",
+  "debug-mode",
+  "parallel-agents",
+  "ai-code-review",
+  "sponsored"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A harness is three things: built-in instructions and rules, the tools the agent can call, and how the user prompts and follows up. It should be tuned to the model, because models differ (for example, shell-trained models prefer grep).",
+   "detail": "Different models respond differently to the same prompt. Some do better with XML prompts and others with markdown, so the harness should match the model in use. The speaker credits a tuned harness for Antigravity's recent improvement, but the source for that claim is Cursor's article, which is not shown.",
+   "t": "1:07"
+  },
+  {
+   "idea": "Plan first, then revise the plan instead of patching the output.",
+   "detail": "Planning mode analyzes the instructions and existing codebase and produces a detailed plan. The user comments on any line that does not match the goal, and the agent folds those comments into a revised plan. If the implementation is wrong, go back to planning mode and edit the plan rather than sending follow-up prompts.",
+   "t": "2:35"
+  },
+  {
+   "idea": "Do not tag files by hand. Let the agent pull context on demand with grep and semantic search.",
+   "detail": "Tagging a 200+ line component loads the whole file, when the task may need only one 50-line function. Agents can grep for the specific function they need, which keeps the context window smaller.",
+   "t": "3:58"
+  },
+  {
+   "idea": "Start a fresh conversation for each logical unit of work or when the agent starts repeating mistakes. Use the agent's results as the signal for when to reset.",
+   "detail": "Keep the same conversation only when continuing the same feature, reusing its context, or debugging what the agent just built. Old chats can be referenced by name, so the agent reads only the parts it needs.",
+   "t": "3:58"
+  },
+  {
+   "idea": "Rules and skills extend the agent and are loaded only when relevant.",
+   "detail": "Project or global rules are markdown files in the .agent folder (rules subfolder). Skills follow Anthropic's open standard: a SKILL.md with a name and description, plus referenced scripts and references. The agent loads a skill only when it decides the skill applies, which keeps context under control.",
+   "t": "5:25"
+  },
+  {
+   "idea": "TDD with agents works because the tests give a clear target. Lock the tests in Git before the agent writes code.",
+   "detail": "The agent writes tests from described inputs, outputs and behaviors, with no implementation code. The tests are run first and fail. They are committed so the agent cannot quietly change them, and the agent is told not to modify tests while it writes the endpoint, iterating until everything passes.",
+   "t": "7:50"
+  },
+  {
+   "idea": "Git is a knowledge base for the agent and a safety net. Wrap repeated Git tasks in reusable workflows.",
+   "detail": "Commits give the agent history, mark stable versions and allow reverts. Structured commit messages are enforced by a workflow that includes examples, and security and review checks run before commit. Similar workflows cover PRs, worktrees and branches, and dependency updates.",
+   "t": "8:58"
+  },
+  {
+   "idea": "Watch the agent and interrupt it when it drifts. Then run a review pass with the agent, plus automated PR review bots.",
+   "detail": "The review workflow sorts issues by severity, lists the checks to run, and can run linters and tests. The host also uses PR bots (called bugbots) and names CodeRabbit, Sentry and GitHub's built-in review as options.",
+   "t": "10:26"
+  },
+  {
+   "idea": "Run several agents in parallel, each on its own branch. Shared workspaces are not isolated.",
+   "detail": "Antigravity's agents share one workspace, so the host has each agent work on a separate branch and merges only after the project's checks pass. Different models are assigned to the tasks they suit best.",
+   "t": "11:42"
+  },
+  {
+   "idea": "Debug mode is a skill, since Antigravity has no native one. It works evidence-first, with hypotheses, logging and a multi-phase plan.",
+   "detail": "The skill's SKILL.md and its scripts and references guide the agent to add logging, form hypotheses and check them against evidence before changing code. The host says this beats guessing at fixes.",
+   "t": "12:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Comment-driven plan revision",
+   "how": "Switch the agent to planning mode and read the full generated plan. Comment on each line that misses the goal, let the agent regenerate the plan, and repeat until it matches. Only then tell the agent to implement. If the result is wrong, edit the plan and re-plan rather than sending follow-up prompts.",
+   "when": "Any non-trivial feature, or whenever an agent's output drifts from what was wanted."
+  },
+  {
+   "name": "On-demand context instead of manual file tagging",
+   "how": "Describe the target function or behavior and let the agent grep or run semantic search to load only the needed segments. Do not attach whole files to the prompt.",
+   "when": "Large files or codebases where tagging whole files would fill the context with unused lines."
+  },
+  {
+   "name": "Conversation reset policy",
+   "how": "Open a new conversation per feature or per logical unit of work. Reset when the agent repeats mistakes or gets confused. Keep one conversation only for the same feature, shared context, or debugging what was just built. To reuse earlier work, reference the old conversation by name.",
+   "when": "Long sessions where accumulated context starts causing errors."
+  },
+  {
+   "name": "Project rules as markdown in .agent/rules",
+   "how": "Write one markdown file per guideline (for example, WCAG compliance for frontend work) in the project-scope .agent/rules folder. Antigravity supports local and global scope. The agent folds the rule into its plans, for example adding labels to form inputs.",
+   "when": "Standards that must hold on every task, such as accessibility or style conventions."
+  },
+  {
+   "name": "Skill folders following Anthropic's open standard",
+   "how": "Create a folder under .agent with a SKILL.md (name, description, instructions) plus optional scripts and reference files. Invoke it by naming the skill and the task, as in asking for a test-specialist skill to write tests. The agent loads it only when relevant.",
+   "when": "Repeatable specialized workflows such as testing plans, debugging or domain checks."
+  },
+  {
+   "name": "TDD with a committed test baseline",
+   "how": "Step 1: ask the agent to write tests from described inputs, outputs and behaviors, and tell it not to write implementation code. Step 2: run the tests and confirm they fail. Step 3: commit the tests to Git. Step 4: ask for the implementation while forbidding changes to the tests. Step 5: repeat verification until all tests pass.",
+   "when": "Adding endpoints or features where the success criteria can be written as tests before code exists."
+  },
+  {
+   "name": "Screenshot as design and bug input",
+   "how": "Paste a screenshot of the target section into the agent and ask for an exact implementation. For UI bugs, paste a screenshot of the problem rather than describing it in words.",
+   "when": "Matching a visual design, or fixing UI issues that are hard to describe in text."
+  },
+  {
+   "name": "Git workflows as reusable commands",
+   "how": "Wrap repeated Git steps (structured commit messages with examples, pre-commit security and review checks, PR, worktree and branch handling, dependency updates) in named workflows the agent runs in one step. Name the workflow in the prompt to execute it.",
+   "when": "Projects where commit format and review checks should be consistent across many agent-driven commits."
+  },
+  {
+   "name": "Agent-run code review with severity sorting",
+   "how": "After the agent finishes, run a custom review workflow that groups issues by severity, lists the checks to perform, and includes linters and tests. Add an automated PR review bot on every pull request.",
+   "when": "Reviewing agent-written code before merge."
+  },
+  {
+   "name": "Parallel agents on separate branches",
+   "how": "Give each agent a different task and a different branch, since they share a workspace. Assign each model the tasks it does best. Merge only after each branch passes the project's checks.",
+   "when": "Several independent features or fixes that can run at the same time."
+  },
+  {
+   "name": "Skill-based debug mode",
+   "how": "Build a debug skill (SKILL.md, scripts and references) that tells the agent to gather evidence, generate hypotheses, add logging statements and follow a multi-phase plan. Invoke it whenever a bug is hard to pin down.",
+   "when": "Unexpected behavior where guessing at fixes has not worked."
+  },
+  {
+   "name": "Watch the agent and redirect early",
+   "how": "Monitor the agent while it runs. Interrupt when it heads the wrong way and redirect it toward the goal.",
+   "when": "Any long-running agent task."
+  }
+ ],
+ "tools": [
+  "Google Antigravity (AI code editor with planning mode, rules, skills and workflows)",
+  "Gemini 3 (model used in Antigravity)",
+  "Claude Code",
+  "Claude Opus",
+  "Cursor",
+  "Cursor's agent harness article (referenced, not named as a product)",
+  "Anthropic's long-running agent harness (referenced)",
+  "Anthropic's open Agent Skills standard (SKILL.md)",
+  "Git",
+  "GitHub (built-in PR code review)",
+  "CodeRabbit",
+  "Sentry",
+  "bugbots (PR review bots, name as used by the speaker)",
+  "Mermaid (diagrams)",
+  "Luma AI Dream Machine Ray3 Modify (sponsor segment)"
+ ],
+ "numbers": [
+  {
+   "claim": "Antigravity runs Gemini 3 and is free to use, which the host says drove its rapid adoption.",
+   "t": "0:00"
+  },
+  {
+   "claim": "A signup component over 200 lines was tagged in full, but the agent needed only one function of about 50 lines.",
+   "t": "3:58"
+  },
+  {
+   "claim": "A sponsored segment for Luma AI Ray3 Modify runs about 1 minute 20 seconds (roughly 2:35 to 3:58).",
+   "t": "2:35"
+  }
+ ],
+ "hot_takes": [
+  "The claim that Antigravity 'improved significantly' because of the harness is not supported: no before/after results or benchmarks are shown, and the harness credit rests on another company's article.",
+  "Much of the content is generic practice (plan first, TDD, Git, code review, parallel agents) with Antigravity as a label, not Antigravity-specific evidence.",
+  "Sponsored segment (Luma AI Ray3 Modify, about 2:35 to 3:58) is unrelated to coding, which caps quality at 2 under the rules.",
+  "The host calls Claude Code 'arguably the best' and says it is expensive, with no cost or quality data behind either claim.",
+  "The debug-mode skill is presented as making debugging 'much more reliable', with no evidence beyond the host's own use."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Coding-workflow content for individual developers. Nothing about infrastructure, the proxy, memory or serving.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code with plan, critique and debate steps. This video's plan-review-revise loop and its three-part harness framing overlap with that design.",
+   "action": "Compare ProsHarness's plan -> critique -> debate step with the comment-to-revise loop at 2:35. Consider letting the user annotate a plan artifact inline before execution, and re-plan instead of patching."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

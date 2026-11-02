@@ -1,0 +1,228 @@
+{
+ "one_line": "Hands-on workshop on building and training a tiny GPT-2-style character-level LLM from scratch in PyTorch on a laptop or Colab, covering tokenizer, transformer blocks, training loop, and decoding.",
+ "summary": "The speaker, who leads speech-to-text work at ElevenLabs, runs a 1h21m workshop that trains a roughly 1.8M-parameter decoder-only transformer on Shakespeare text with no pretrained weights, using only PyTorch and basic libraries. He walks through the four building blocks (tokenizer, architecture, training loop, inference) and explains why a character-level tokenizer suits a small, data-limited model, while BPE suits large models. The code is split into model.py, train.py and generate.py, and the speaker says it runs in about 15 minutes on a free Colab T4. He gives concrete training diagnostics (expected starting loss, loss milestones, where validation loss shows overfitting) and recommends temperature sampling over greedy decoding for creative output. The session closes with a Q&A on post-training and reasoning data, multimodal encoders, and audio losses, plus a community challenge to generate the best verse with a fixed seed. The talk is educational and practical, with a brief self-promotional aside about ElevenLabs' transcription model.",
+ "speakers": [
+  "Angelos Perivolaropoulos"
+ ],
+ "orgs": [
+  "ElevenLabs",
+  "OpenAI",
+  "Google",
+  "Scale AI"
+ ],
+ "format": "workshop",
+ "topics": [
+  "training-finetuning-rl",
+  "models-research"
+ ],
+ "tags": [
+  "from-scratch-training",
+  "gpt-2-architecture",
+  "character-tokenizer",
+  "bpe",
+  "cosine-lr-schedule",
+  "adamw",
+  "validation-loss",
+  "overfitting",
+  "temperature-sampling",
+  "top-k",
+  "greedy-decoding",
+  "seeds",
+  "post-training",
+  "reasoning-data",
+  "multimodal-encoder",
+  "tts-losses",
+  "pytorch",
+  "colab",
+  "uv"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Goal of the workshop is to build a small GPT-2-style LLM from scratch so the four building blocks (tokenizer, architecture, training loop, inference) become concrete.",
+   "detail": "Pure PyTorch, no pretrained weights or Transformers library. The speaker says this covers about 80% of how a research engineer at a big lab builds a model; what remains is optimization and scale.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Character-level tokenization is a deliberate trade-off for a small, data-limited model.",
+   "detail": "The vocabulary is about 65 characters, so the 65x65 (4,225) bigram space can be covered several times by about 1M characters. Larger models need BPE, which learns common multi-character tokens from data. The speaker notes that character tokens make it harder for attention to link meaningful word groups such as 'sky is blue'.",
+   "t": "9:17"
+  },
+  {
+   "idea": "Embedding table size is a real parameter-budget constraint, so tokenizer vocabulary size matters for small models.",
+   "detail": "With embedding dimension 384, a 65-token vocab gives about 25k embedding parameters. A GPT-2 vocab of 50k would give about 19M, more than three times this model.",
+   "t": "14:16"
+  },
+  {
+   "idea": "Most of the difference between model generations comes from post-training and data, not from the pretraining architecture.",
+   "detail": "The speaker says pretraining is largely similar across recent models and that the fine-tuning or post-training stage, using high-quality data, drives large benchmark gains. Reasoning is taught this way on top of a base model, with chain-of-thought data written by expert labelers.",
+   "t": "11:48"
+  },
+  {
+   "idea": "Training is next-token prediction with the targets offset by one position, and the expected loss starts at ln(vocab size).",
+   "detail": "With 65 characters, random guessing gives a loss of about 4.17. The speaker describes the loss path: character frequencies around 3.3, common bigrams like 'th' around 2.5, real words around 1.5 to 2, and coherent text near 1.0 to 1.2.",
+   "t": "40:49"
+  },
+  {
+   "idea": "Validation loss on held-out data, not training loss, is the signal for overfitting and for choosing a checkpoint.",
+   "detail": "Training loss kept falling while validation loss rose after about 2,400 steps, the optimum for this run. The speaker says model output became less creative past that point. Loss below about 1.0 on this dataset signalled overfitting.",
+   "t": "51:43"
+  },
+  {
+   "idea": "Sampling settings control output quality. Greedy decoding gives bland LLM text, and temperature around 0.7 with top-k is a practical default.",
+   "detail": "Greedy decoding always takes the top token, which suits transcription (one correct answer) but makes LLM generation boring. Temperature and top-k sampling add variety while keeping very unlikely tokens out. Fixed seeds make output reproducible.",
+   "t": "52:46"
+  },
+  {
+   "idea": "The workshop challenge defines reproducible verification: the model must be trained by the participant, and each submission is a seed plus prompt plus checkpoint.",
+   "detail": "Outputs are regenerated with a fixed seed and prompt to prove they came from the participant's own model, and submissions are voted on in a bracket. The speaker frames this as a way to pick up optimization ideas such as BPE, dropout, longer context and learning-rate changes.",
+   "t": "1:01:03"
+  },
+  {
+   "idea": "Other modalities plug into a transformer by encoding them into the same embedding space and writing the vectors into the input sequence.",
+   "detail": "A video or audio encoder produces vectors from frames or spectrogram chunks, which replace placeholder token embeddings in the text sequence. The transformer only sees vectors, not modality labels. Audio and TTS models often use losses such as L2 on mel spectrograms instead of cross-entropy.",
+   "t": "1:13:52"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Character-level tokenizer via stoi/itos dictionaries",
+   "how": "Build a sorted set of characters in the training data, map each to an integer with enumerate, and invert the map for decoding. No learned merges are needed.",
+   "when": "Small models on small datasets where the vocabulary is tiny and bigram coverage matters more than sequence length."
+  },
+  {
+   "name": "Decoder-only transformer with pre-norm residual blocks",
+   "how": "Each block applies layer norm, causal multi-head self-attention, a residual add (x = x + attention), another layer norm, then an MLP with its own residual. Token and positional embeddings are summed at the input, and an LM head outputs logits.",
+   "when": "Baseline GPT-style model; a good starting point before adding optimizations."
+  },
+  {
+   "name": "Offset-by-one next-token targets with cross-entropy",
+   "how": "Take a window of tokens as input and the same window shifted by one as targets, then compute cross-entropy over the logits and drop the final position.",
+   "when": "Standard causal language-model pretraining from raw text."
+  },
+  {
+   "name": "Linear warmup then cosine decay with AdamW",
+   "how": "Ramp the learning rate up over about 100 steps, then decay it with a cosine schedule to the max step count (5,000 here). Stop decaying short of zero if you plan to restart training.",
+   "when": "Default schedule for small transformer training runs."
+  },
+  {
+   "name": "Validation-loss checkpointing and overfit detection",
+   "how": "Hold out a split, compute validation loss periodically, save a checkpoint about every 1,000 steps, and run sample generations on each checkpoint. Keep the checkpoint where validation loss is lowest.",
+   "when": "Any training run on a small dataset where memorization is easy."
+  },
+  {
+   "name": "Loss-curve triage",
+   "how": "Flat training loss means a likely bug. Training loss falling while validation loss rises means overfitting. Sharp spikes suggest a data or training bug. A plateau means more data or a bigger model is needed.",
+   "when": "Diagnosing a training run before changing the architecture."
+  },
+  {
+   "name": "Temperature and top-k sampling for generation",
+   "how": "Divide logits by a temperature (about 0.7), apply top-k to drop unlikely tokens, then sample. Use a fixed seed to make a result reproducible.",
+   "when": "Creative or open-ended generation from an LLM, where greedy decoding is too repetitive."
+  },
+  {
+   "name": "Seed-pinned, prompt-logged output for reproducibility",
+   "how": "Record the checkpoint, prompt, temperature and seed alongside each output so anyone can regenerate it exactly.",
+   "when": "Comparing model outputs or claiming a result that others must verify."
+  },
+  {
+   "name": "Encoder-to-embedding injection for multimodal inputs",
+   "how": "Pass video frames or audio through a separate encoder transformer, take its final hidden vectors, and write them over placeholder embedding positions in the text sequence.",
+   "when": "Adding vision or audio input to a text-only transformer without changing its core architecture."
+  },
+  {
+   "name": "Modality-specific losses for audio and distillation",
+   "how": "Use L2 loss between mel spectrograms for TTS-style training, and KL divergence between teacher and student token distributions for distillation.",
+   "when": "Training audio generators, or compressing a large model into a smaller one."
+  }
+ ],
+ "tools": [
+  "PyTorch",
+  "uv",
+  "NumPy",
+  "tqdm",
+  "tiktoken",
+  "Google Colab",
+  "Python 3.12",
+  "Karpathy nanoGPT (referenced)"
+ ],
+ "numbers": [
+  {
+   "claim": "Dataset is about 1M characters of Shakespeare, a 65-character vocabulary, so 4,225 possible bigrams.",
+   "t": "10:49"
+  },
+  {
+   "claim": "Embedding dimension 384: token embeddings 65 x 384 = about 25k parameters. Positional embeddings 256 x 384 = about 98k.",
+   "t": "14:16"
+  },
+  {
+   "claim": "GPT-2 50k vocab with embedding size 384 would add about 19M parameters.",
+   "t": "14:16"
+  },
+  {
+   "claim": "Model config: 6 layers, 6 attention heads, 384 embedding size, block size 256. Total about 1.8M parameters. The speaker says '10 million' at one point and corrects to 1.8M when summing the parts.",
+   "t": "36:34"
+  },
+  {
+   "claim": "Training: batch size 64 sequences of length 256, 100-step warmup, cosine decay to 5,000 max steps, checkpoint every 1,000 steps.",
+   "t": "42:19"
+  },
+  {
+   "claim": "Random-guess starting loss is ln(65), about 4.17.",
+   "t": "44:24"
+  },
+  {
+   "claim": "Loss milestones: about 3.3 for character frequencies, about 2.5 for common bigrams such as 'th', 1.5 to 2 for words, 1.0 to 1.2 for decent output, and below 1.0 indicates overfitting on this dataset.",
+   "t": "50:13"
+  },
+  {
+   "claim": "Validation loss about 3.5 at 200 steps, decent output by about 800 steps, validation minimum (overfit onset) at about 2,400 steps.",
+   "t": "51:43"
+  },
+  {
+   "claim": "Training takes about 15 minutes on a free Colab T4 GPU before results are usable. Local training needs about 16 GB RAM.",
+   "t": "58:10"
+  },
+  {
+   "claim": "A smaller starter model of about 0.5M parameters uses 2 layers and 2 attention heads.",
+   "t": "58:10"
+  },
+  {
+   "claim": "Recommended temperature is about 0.7 for generation.",
+   "t": "54:12"
+  },
+  {
+   "claim": "Speaker's aside: Gemini 3 to 3.1 showed roughly double performance on some benchmarks, attributed to post-training data and not architecture. This is an unverified claim by the speaker.",
+   "t": "11:48"
+  }
+ ],
+ "hot_takes": [
+  "Pretraining architectures across recent frontier models are nearly identical; post-training data is where the real gains come from.",
+  "Greedy decoding is a poor default for LLM generation and is only appropriate for tasks like transcription with one correct answer.",
+  "Validation loss is a better stopping signal than training loss on small models, and a training loss below about 1.0 on tiny text data suggests overfitting.",
+  "Character-level tokenization is a deliberate trade-off that works for small models but scales poorly for general LLMs."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk covers sampling controls and checkpoint selection for small models, which touch InferCraft's serving side only indirectly. It has no content on KV cache, speculative decoding or scheduling.",
+   "action": "When writing InferCraft or MemoryMesh eval harnesses, log temperature, top-k and seed with every generated output so runs can be reproduced."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The talk is about model training internals and does not touch the Claude Code harness, checkpoint/resume of agent runs, or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Loss-curve triage and validation-based stopping apply to any training or fine-tuning run. The reproducibility-by-seed challenge format is a useful eval pattern.",
+   "action": "Read the talk's diagnostics section (loss curves as triage) before the next fine-tuning or classifier run that uses the entity-resolution or data-quality pipeline."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

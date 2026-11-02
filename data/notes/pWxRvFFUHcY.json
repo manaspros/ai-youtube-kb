@@ -1,0 +1,140 @@
+{
+ "one_line": "Demo of TanStack Start server components: server functions return server-rendered trees, and composite components with slots let client components render inside without server-side use client boundaries.",
+ "summary": "A Better Stack walkthrough of TanStack's server component API, framed as an alternative to Next.js's server-first model. The presenter builds a small TanStack Start app: a server function wraps a component in the render-server-component helper, a route loader fetches it, and the only new API is that helper and the composite-component helpers. He shows that putting a client component inside a server component fails (useState error), that the usual use-client fix works but nests server and client code, and that composite components solve this with slots (children, render props, component props). The slot types let the server pass data such as post and author IDs to client code without double-fetching. He ends with streaming: return the promise instead of awaiting it and wrap it in Suspense for skeletons. The evidence is one demo app with no benchmarks or production numbers, and his verdict is mostly developer-experience opinion.",
+ "speakers": [
+  "Better Stack host (unnamed in transcript)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "TanStack"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "tanstack-start",
+  "react-server-components",
+  "server-functions",
+  "composite-components",
+  "slots",
+  "streaming-suspense",
+  "use-client",
+  "nextjs-comparison"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Opt-in granular server components, not server-first by default",
+   "detail": "TanStack's pitch is to use RSCs as granularly as JSON fetching, so the client-first app stays intact and server rendering is added only where wanted. The presenter contrasts this with Next.js, where server is the default and use client marks the interactive parts.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The only new API is the render-server-component helper inside a normal server function",
+   "detail": "A server function calls the render helper on a component and returns the result. A route loader awaits that function and the component renders from loader data. Everything else is ordinary TanStack Start server-function code, so the same component could be fetched as plain JSON.",
+   "t": "1:06"
+  },
+  {
+   "idea": "Move server-only logic into the server function and pass results as props",
+   "detail": "Node-only calls such as os.hostname and server-only env vars run inside the server function. The result goes to the component as props, so the component is a bare component that works on either side and the server boundary is explicit in the code.",
+   "t": "3:07"
+  },
+  {
+   "idea": "Client components inside a server component break, and use client is the fallback",
+   "detail": "Adding onClick and useState to a server-rendered component fails with a useState error. Extracting the interactive part into its own component marked use client works, but a server component then ends up controlling client code, and the boundary gets hard to follow in larger trees.",
+   "t": "3:07"
+  },
+  {
+   "idea": "Composite components: the server returns a template with slots and the client fills them",
+   "detail": "The server returns a composite source built with the create-composite-component helper, not a renderable component. The client renders it with the composite component helper, passing the source as a prop and client children as the slot. Children inside a composite no longer need use client, and the server does not need to know what fills the slot.",
+   "t": "4:16"
+  },
+  {
+   "idea": "Render-prop and component-prop slots pass server data into client code without double-fetching",
+   "detail": "A render-prop slot is a function the server calls with data such as postId and authorId. The client runs it and renders its element, so the post page can show a follow-author button without fetching the post JSON a second time. A component-prop slot passes a component type that accepts those props. The presenter says the server treats slots as opaque and only supplies data.",
+   "t": "7:52"
+  },
+  {
+   "idea": "Render props vs component props is mostly preference",
+   "detail": "Render props let the composite transform the server data before passing it on. Component props let the server pass data straight into a component the client chooses. The presenter sees no other difference in the docs.",
+   "t": "10:05"
+  },
+  {
+   "idea": "Streaming by returning the promise instead of awaiting it",
+   "detail": "Promise.all can split a page into several server components returned as an object from one server function. For a slow component, the server returns the promise rather than awaiting it. The client reads it with the React use hook inside a Suspense boundary, so skeletons show and each component loads when ready.",
+   "t": "10:05"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Server component via server function plus loader",
+   "how": "Write a TanStack Start server function that calls the render-server-component helper with your component and returns the result. In the route loader, await that server function and return it. In the component, read it with the router's useLoaderData hook and render it. Keep any Node-only logic inside the server function and pass its output as props, so the component itself has no server-only imports. The transcript does not show the exact import names. The install step, described as adding packages and editing the Vite config, is also not named in the transcript.",
+   "when": "When one component needs server-only data or secrets and you want the server boundary to be explicit in the code, without adopting server-first rendering across the app."
+  },
+  {
+   "name": "Composite component with children slot",
+   "how": "Define the layout component so it takes children. In a server function, call the create-composite-component helper with that component and return the result as the source. In the route loader, fetch it the same way. Render it on the client with the composite component helper, passing the source as the source prop and the interactive client components as children. Remove the use client directive from those children, since rendering inside a composite makes them client components.",
+   "when": "When a server-rendered layout needs interactive client components placed inside it, and you want to avoid a server component owning client code."
+  },
+  {
+   "name": "Render-prop slot for passing server data to client code",
+   "how": "In the composite definition, accept a function prop such as renderActions and call it where the slot should render, guarded with an optional check so it is safe when omitted. On the server side, pass a function that takes the data (here postId and authorId) and returns the client component element. The server supplies the arguments during rendering; the function runs on the client.",
+   "when": "When a client component needs data that the server already fetched for the page, such as an author name, without a second fetch."
+  },
+  {
+   "name": "Component-prop slot",
+   "how": "In the composite definition, accept a prop typed as a React component that takes the data props (postId, authorId). Pass the component itself from the client. The server passes only the data, and the composite renders the component with it.",
+   "when": "When the server should provide data but the client should choose which component receives it, and you do not need to transform the data first."
+  },
+  {
+   "name": "Streaming slow server components with the use hook and Suspense",
+   "how": "In the server function, do not await the render-server-component call for a slow piece. Return the promise. For a page with several sections, split them into separate render calls, combine with Promise.all if needed, and return them as one object. On the client, read each promise with the React use hook inside a Suspense boundary with a skeleton fallback.",
+   "when": "When one part of a page is slow and should not hold back the rest of the page render."
+  }
+ ],
+ "tools": [
+  "TanStack Start",
+  "TanStack Router (loader, useLoaderData)",
+  "TanStack Query",
+  "React Server Components",
+  "React use hook and Suspense",
+  "Next.js (comparison only)"
+ ],
+ "numbers": [
+  {
+   "claim": "Video length is 12:12; no benchmarks, latency or cost figures are given.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Server components need only three new functions, with the rest being ordinary TanStack Start server functions.",
+   "t": "11:11"
+  },
+  {
+   "claim": "The presenter says the client-side useState failure occurs when a client component is placed directly inside a server component, which is the reason for the composite approach.",
+   "t": "3:07"
+  }
+ ],
+ "hot_takes": [
+  "Title says 'WAY better than NextJS', but the verdict rests on one demo app and API ergonomics; the video gives no performance, production or scale data.",
+  "The presenter calls the composite approach more work than use client, then argues the payoff is developer experience. That is an opinion, not measured.",
+  "The caching claim (caching the GET response on a CDN) is stated but not demonstrated.",
+  "The 'opaque slots' argument is the presenter's reading of the docs and his demo, not a tested guarantee."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "TanStack server components are a frontend React framework feature and do not touch AgentOS's proxy, memory, inference or observability layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No overlap with the Claude Code CLI harness, checkpointing, plan/critique loops or approvals.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

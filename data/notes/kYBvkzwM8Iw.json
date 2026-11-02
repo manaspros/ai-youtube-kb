@@ -1,0 +1,155 @@
+{
+ "one_line": "A Better Stack walkthrough of configuring WezTerm (a Lua-configured, GPU-accelerated Rust terminal) to look like Warp, rebind keys, and use its built-in remote multiplexer as a tmux replacement.",
+ "summary": "The presenter moves from Warp to WezTerm and walks through a Lua config file in the home directory: font, line height, color scheme, cursor colors, and removing the title bar and tab bar. He then changes keybindings so closing a pane skips the confirmation prompt and splits are easier to reach, and adds a clear-screen shortcut. He shows the WezTerm CLI and remote multiplexing over an SSH domain, which he says mostly removes his need for tmux. He compares WezTerm with Ghostty (an early stability problem with AeroSpace, which he admits may be outdated) and Warp (which he keeps for debugging and AI features). The claims that WezTerm is the fastest terminal he has used and that it replaces tmux are anecdotal, with no benchmarks. The video is a single-user config walkthrough rather than the head-to-head comparison its title suggests.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "wezterm",
+  "terminal",
+  "lua-config",
+  "tmux",
+  "multiplexer",
+  "ghostty",
+  "warp",
+  "fish",
+  "ssh",
+  "keybindings",
+  "asciicast"
+ ],
+ "key_ideas": [
+  {
+   "idea": "WezTerm is configured entirely in Lua, with almost no settings UI",
+   "detail": "A fresh install looks basic. Settings go in a ~/.wezterm.lua file that builds a config table and returns it. The presenter says WezTerm picked up his fish shell config, autocomplete plugin and Starship prompt without extra setup.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Warp-like look is reproduced with a few config keys",
+   "detail": "He sets font size, line height, a Nerd Font and the TokyoNight Night color scheme, then fixes the cursor border so it matches the cursor color in split panes. He removes the title bar with window decorations set to RESIZE and hides the tab bar.",
+   "t": "1:24"
+  },
+  {
+   "idea": "Keybindings are the main customization point",
+   "detail": "Closing a pane (Cmd+W) can skip the confirmation prompt. Horizontal and vertical splits get Cmd-style shortcuts, using the current pane's domain so splits stay local or remote. Cmd+K is bound to clear. He notes the command palette (Shift+Ctrl+P) lists actions and that a leader key is possible, as in Neovim.",
+   "t": "2:51"
+  },
+  {
+   "idea": "The built-in remote multiplexer is the main reason to use it over tmux",
+   "detail": "After installing WezTerm on a remote server and defining that server as a domain in the config, running wezterm connect to that domain lets new tabs and splits open inside the remote session without re-SSHing. He says this almost removes his need for tmux.",
+   "t": "4:16"
+  },
+  {
+   "idea": "Ghostty and Warp are both rejected for different reasons",
+   "detail": "His early Ghostty trial hit a problem with the AeroSpace window manager that the docs' fix did not solve. He says he has not rechecked since. Warp stays in his toolkit for debugging and its AI features, but he prefers WezTerm's rendering, customizability and speed.",
+   "t": "5:43"
+  },
+  {
+   "idea": "Quick select and image protocols are built in",
+   "detail": "Shift+Ctrl+Space opens a quick-select mode for common patterns such as paths and hashes. WezTerm also supports several inline image protocols, ligatures and hyperlinks.",
+   "t": "5:43"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Minimal ~/.wezterm.lua skeleton",
+   "how": "Create ~/.wezterm.lua. Load the WezTerm API, create a local config from the config builder, set keys on it, and return it at the end of the file. Save and the change applies. The presenter demonstrates a font size change this way.",
+   "when": "Starting a new WezTerm config. The config builder gives validation of config keys."
+  },
+  {
+   "name": "Warp-style visuals",
+   "how": "Set font_size = 19, line_height = 1.2, font = wezterm.font 'Black Mono Nerd Font' (transcribed name; check the exact family), color_scheme = 'TokyoNight Night' (as spoken). Set the cursor background to a light blue and set the cursor border to the same color, otherwise split panes show a white border. Set window_decorations to RESIZE to drop the title bar, and enable_tab_bar = false to hide tabs.",
+   "when": "Making WezTerm look clean and close to Warp, with no chrome. The cursor border fix matters once you use splits."
+  },
+  {
+   "name": "Close pane without confirmation",
+   "how": "Under config.keys, bind Cmd+W to the close-current-pane action with the confirmation disabled (the speaker pasted a binding he had saved earlier; the exact action name was not shown). The command palette (Shift+Ctrl+P) lists available actions.",
+   "when": "Using tabs and panes often and finding the kill-tab prompt annoying."
+  },
+  {
+   "name": "Split bindings with domain awareness",
+   "how": "Bind Cmd+D to a vertical split and Shift+Cmd+D to a horizontal split. Set the split's domain to the current pane's domain so new panes stay on the same local or remote host. (The transcript contradicts itself on which key makes which split; the demo shows Cmd+D = vertical, Shift+Cmd+D = horizontal.)",
+   "when": "Splitting panes into local or remote SSH sessions without tmux-style prefix keys."
+  },
+  {
+   "name": "Clear-screen binding",
+   "how": "Bind Cmd+K to send the clear command to the shell (likely a SendString action that sends clear plus a newline; not shown explicitly).",
+   "when": "Restoring a Cmd+K clear shortcut, which the presenter says his setup lacked."
+  },
+  {
+   "name": "Fish PATH for the WezTerm CLI",
+   "how": "Add the directory that contains the wezterm binary to the fish config (path not named in the video). Without it the CLI does not work from fish.",
+   "when": "Using wezterm cli subcommands, such as the multiplexer server, from fish."
+  },
+  {
+   "name": "Remote multiplexing without tmux",
+   "how": "1) Define the remote server as an SSH domain in the WezTerm config. 2) Install WezTerm on the remote host. 3) Run wezterm connect <domain-name>. 4) Create tabs and splits as usual; they stay on the remote host.",
+   "when": "Working on remote servers and wanting tabs and splits to persist without re-SSH and without tmux. Note the video gives no details on session persistence after the local window closes."
+  },
+  {
+   "name": "Terminal session recording with the CLI",
+   "how": "Use the wezterm CLI to record and replay terminal sessions in asciicast format, to open new windows, and to list or kill panes on the multiplexer server. Exact commands were not shown.",
+   "when": "Recording demos or sharing terminal sessions in a reproducible format."
+  }
+ ],
+ "tools": [
+  "WezTerm",
+  "Lua (config language)",
+  "fish shell",
+  "Starship",
+  "Warp",
+  "Ghostty",
+  "tmux",
+  "AeroSpace",
+  "Neovim",
+  "TokyoNight Night (color scheme, as spoken)",
+  "Nerd Font (named 'Black's Mono Nerd Font' in the auto-captions)",
+  "asciicast"
+ ],
+ "numbers": [
+  {
+   "claim": "Demo font size set to 19, line height 1.2",
+   "t": "0:00"
+  },
+  {
+   "claim": "Line height set to 1.2",
+   "t": "1:24"
+  },
+  {
+   "claim": "Presenter calls WezTerm the fastest terminal he has used. Anecdotal, no benchmark given.",
+   "t": "5:43"
+  },
+  {
+   "claim": "Video length is 7:12. No latency, memory or throughput measurements are shown.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "WezTerm's built-in multiplexer almost makes tmux unnecessary (anecdotal, one user's experience).",
+  "WezTerm is the fastest terminal he has used, with no benchmark behind it.",
+  "Ghostty was unstable with AeroSpace, but he admits he has not retested since his early trial.",
+  "The title promises a combined comparison against Ghostty, Warp and tmux, but the video is a single-user config walkthrough with light comparison."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Terminal emulator configuration. Nothing for the proxy, memory, inference or storage layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs long Claude Code sessions. A terminal with built-in remote multiplexing is a possible alternative to tmux for keeping those sessions alive, but the video does not address agent workflows.",
+   "action": "Low priority: if ProsHarness needs a persistent remote session host for long Claude Code runs, compare WezTerm's multiplexer (wezterm connect over an SSH domain) with tmux before choosing."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

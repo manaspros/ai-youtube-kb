@@ -1,0 +1,48 @@
+# GPT-4.1 is GREAT at Coding... (and long context!)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `8cty1srbCv4` · [watch](https://youtu.be/8cty1srbCv4) · **date:** 2025-11-02 · **length:** 5:32 · **format:** news · **quality:** 3/5 · **depth:** intro
+- **speakers:** Unnamed Better Stack host · **orgs:** OpenAI, Anthropic, Cursor, Windsurf, Google
+- **topics:** coding-agents, models-research, token-cost-efficiency · **tags:** gpt-4.1, gpt-4.1-nano, gpt-4.1-mini, openai, cursor, front-end-coding, long-context, model-pricing, swe-bench, needle-in-a-haystack, instruction-following, tailwind
+
+> Short overview of OpenAI's GPT-4.1, 4.1 mini and 4.1 nano: a single-prompt Cursor front-end comparison against GPT-4o and Claude 3.7 Sonnet, plus vendor-reported coding, instruction-following, long-context and pricing figures.
+
+## Summary
+The host introduces OpenAI's GPT-4.1 family (4.1, 4.1 mini, 4.1 nano), which launched with up to 1M tokens of context and is positioned as a step up from GPT-4o. He runs one front-end prompt (a styled contact form with inputs, sliders and checkboxes, Tailwind, all in page.tsx) in Cursor across GPT-4.1, GPT-4o and Claude 3.7 Sonnet and judges GPT-4.1's output the best-looking, while noting a responsiveness bug and leftover template text. He then relays OpenAI's and Windsurf's benchmark claims: a 60% gain over GPT-4o on Windsurf's internal benchmark, SWE-bench Verified at 54.6% vs 33.2%, and large gains on Aider Polyglot and instruction-following evals. Pricing is covered as a spread from $2/$8 per million tokens for the base model down to $0.10/$0.40 for nano. Long-context claims (needle-in-a-haystack and OpenAI MRCR) are cited but not tested. The evidence is one demo run per model plus vendor-published numbers.
+
+## Key ideas
+- **OpenAI released three models at once: GPT-4.1, 4.1 mini and 4.1 nano, the first nano model from OpenAI. All three support up to 1M tokens of context, and GPT-4.5 preview is being deprecated in the API.** — The host says all three beat GPT-4o and GPT-4o mini, with the biggest gains in coding and instruction following, and that the long-context handling is also improved. He attributes the release partly to competitive pressure from Gemini. ([0:00](https://youtu.be/8cty1srbCv4?t=0))
+- **A single front-end prompt in Cursor favoured GPT-4.1 on visual quality, but the result is one run and the host's own judgement.** — The prompt asked for a modern contact form with email and name inputs, sliders, checkboxes and Tailwind, all in page.tsx. GPT-4.1 produced a nicer-looking form with working controls, though the layout was not responsive and template text was left in. GPT-4o's output had a white card in dark mode, weak input styling and unreadable grey-on-white text. Claude 3.7 Sonnet removed the template text. ([1:18](https://youtu.be/8cty1srbCv4?t=78))
+- **The host suspects GPT-4.1's styling resembles shadcn/ui, which he takes as a sign that such UI examples were in the training data. He gives no evidence for this.** — He says the identical prompts make the training-data explanation plausible, and that aesthetic preference will vary. He still calls GPT-4.1 the best of the three. ([2:36](https://youtu.be/8cty1srbCv4?t=156))
+- **Vendor-published coding numbers show large gains over GPT-4o. The host reads them out without independent verification.** — The Windsurf internal benchmark reportedly scored GPT-4.1 about 60% higher than GPT-4o. On SWE-bench Verified the scores are 54.6% vs 33.2%. On Aider Polyglot, GPT-4.1 more than doubles GPT-4o and is about 8% ahead of GPT-4.5. The claimed improvements also cover fewer extra edits, diff-format compliance and consistent tool use. ([2:36](https://youtu.be/8cty1srbCv4?t=156))
+- **Pricing is a large spread across the family. Nano is positioned as OpenAI's cheapest and fastest model, and the host compares the family against Claude 3.5 and 3.7, which he calls expensive.** — Base GPT-4.1 costs $2 per million input tokens and $8 per million output. Mini is $0.40 and $1.60. Nano is $0.10 and $0.40. ([3:41](https://youtu.be/8cty1srbCv4?t=221))
+- **Instruction-following and long-context results are presented as vendor claims. The video does not test them.** — GPT-4.1 improves significantly over GPT-4o on hard prompts, almost matching GPT-4.5 and the reasoning models on that category. The needle-in-a-haystack retrieval works at every position across the 1M window for all three models. On OpenAI MRCR, GPT-4.1 beats GPT-4o up to 128k tokens and keeps that performance out to 1M. ([4:37](https://youtu.be/8cty1srbCv4?t=277))
+
+## Techniques
+- **Identical-prompt cross-model UI comparison** — Send the same prompt to each candidate model in the same editor and project (the host used Cursor), then compare the rendered output on visual polish, whether the requested controls work, leftover placeholder text, dark-mode handling and contrast. Record generation time for each run. *When:* Choosing a model for front-end or UI generation before committing to it. Use several prompts and runs, since the host's single-prompt result is anecdotal.
+- **Contrast and readability check on generated UI** — Inspect the generated markup for text colour against background. The host caught grey text on a white background, which he called unreadable and not accessible. *When:* Reviewing any model-generated front-end code, since models can produce low-contrast styling that looks plausible at a glance.
+- **Pair vendor benchmarks with per-model pricing** — Read the benchmark gains alongside the input and output price per million tokens for each tier, then compare cost per task across tiers (the host compares base, mini and nano). *When:* Deciding which model tier to route cheap or bulk work to, and whether a stronger model's gain justifies its price.
+
+## Numbers
+- Context window: up to 1M tokens across the 4.1 family ([0:00](https://youtu.be/8cty1srbCv4?t=0))
+- Generation time in Cursor: about 20 s for GPT-4.1 (host notes it may be slowed by load), about 10 s for GPT-4o ([1:18](https://youtu.be/8cty1srbCv4?t=78))
+- Windsurf internal coding benchmark: GPT-4.1 about 60% higher than GPT-4o (vendor-reported) ([2:36](https://youtu.be/8cty1srbCv4?t=156))
+- SWE-bench Verified: GPT-4.1 54.6% vs GPT-4o 33.2% ([3:41](https://youtu.be/8cty1srbCv4?t=221))
+- Aider Polyglot: GPT-4.1 more than doubles GPT-4o and beats GPT-4.5 by about 8% ([3:41](https://youtu.be/8cty1srbCv4?t=221))
+- Pricing, GPT-4.1: $2 per 1M input tokens, $8 per 1M output tokens ([3:41](https://youtu.be/8cty1srbCv4?t=221))
+- Pricing, GPT-4.1 mini: $0.40 input, $1.60 output per 1M tokens ([3:41](https://youtu.be/8cty1srbCv4?t=221))
+- Pricing, GPT-4.1 nano: $0.10 input, $0.40 output per 1M tokens (OpenAI's cheapest and fastest model per the host) ([3:41](https://youtu.be/8cty1srbCv4?t=221))
+- OpenAI MRCR: GPT-4.1 beats GPT-4o up to 128k tokens and holds performance to 1M tokens (vendor-reported) ([4:37](https://youtu.be/8cty1srbCv4?t=277))
+
+## Hot takes
+- The UI verdict rests on one prompt, one run per model, and the host's own taste. He says aesthetic preference will vary.
+- All benchmark numbers (Windsurf, SWE-bench, Aider Polyglot, MRCR, needle-in-a-haystack) are vendor-reported and read out without independent reproduction.
+- The title promises long-context strength, but no long-context test is run in the video. The claim is only cited from OpenAI's materials.
+- The shadcn/ui training-data explanation is speculation from a visual resemblance, with no evidence offered.
+- Cursor timings are affected by server load, as the host admits, so the 20 s vs 10 s comparison is not a clean latency measurement.
+
+## Tools mentioned
+GPT-4.1, GPT-4.1 mini, GPT-4.1 nano, GPT-4.5 (preview, being deprecated in the API), GPT-4o, GPT-4o mini, Claude 3.7 Sonnet, Cursor, Windsurf, Tailwind CSS, shadcn/ui (transcribed as 'Shadzien'), Gemini (mentioned as competitor, not tested)
+
+## Relevance to our work
+- **agentos** (1/3): The 4.1 nano/mini price spread ($0.10/$0.40 vs $2/$8 per million tokens) is a useful input for AgentOS strategy routing and budget tiers. The video itself offers no routing or budget evidence. → *Add gpt-4.1-nano and gpt-4.1-mini as cheap tiers in the Govrix Scout strategy-routing config, then measure cost per task on our own evals before routing real traffic to them.*
+- **general** (1/3): The video recommends checking UI output for contrast and placeholder leftovers, and warns against relying on vendor long-context benchmarks. Both apply to any agent or model we adopt. → *Before adopting a model for long-context work, run our own needle-in-a-haystack and multi-position retrieval test at the sizes we actually use, instead of relying on vendor MRCR numbers.*

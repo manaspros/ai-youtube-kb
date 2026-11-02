@@ -1,0 +1,43 @@
+# Shadcn Isn’t Just a Library Anymore… Here’s How to 10x Your UI
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `V8rGgwQ-VJ0` · [watch](https://youtu.be/V8rGgwQ-VJ0) · **date:** 2025-11-02 · **length:** 9:25 · **format:** tutorial · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** ? · **orgs:** shadcn/ui, TweakCN, Cursor
+- **topics:** mcp-and-tools, context-engineering, vibe-coding-app-building · **tags:** shadcn, mcp, cursor, react-ui, rule-files, tweakcn, tailwind, component-library, plan-first
+
+> Shows how a shadcn/ui MCP server (component demos and blocks) plus Cursor rule files and a plan-first workflow produces better React UI, then how TweakCN restyles the result.
+
+## Summary
+The host argues that coding agents like Cursor often produce broken shadcn/ui implementations, and proposes a shadcn MCP server as the fix. The key tool is "get component demo", which returns real usage code for a component so the agent copies a known-good pattern; blocks (multi-component compositions such as login or dashboard) get their own list and get tools. The workflow has three parts: a Cursor rule file that forces MCP lookups and demo-first implementation, a planning pass in which Claude writes a component-level UI/UX plan with no code, and an implementation pass in which the agent re-queries the tools as it builds each block. Once the structure exists, the host uses TweakCN to customize the theme and pastes its generated settings back into the project. The demo is a single anecdotal project with no measurements, and install details are only partly shown on screen.
+
+## Key ideas
+- **Agents often get shadcn/ui wrong when left to memory, so supply fresh component context through an MCP server.** — The host says Cursor 'consistently messes up' shadcn implementations (broken components, styling issues) when simply told to build with shadcn. The MCP server is presented as the fix because it provides proper context and implementation patterns from the start. ([0:00](https://youtu.be/V8rGgwQ-VJ0?t=0))
+- **The get-component-demo tool is the main value: it returns real usage code for a component.** — Host contrasts simple components (button, where the demo tool matters less) with dialog, which has a specific required structure. Claim: seeing exact usage patterns leaves 'virtually no chance' of errors. This is an anecdotal claim, not measured. ([2:14](https://youtu.be/V8rGgwQ-VJ0?t=134))
+- **Blocks are pre-built multi-component compositions (login page, dashboard) with their own list and get tools.** — A login block is a mix of components rather than one component. The host reused a login block and a dashboard block, adding more components to the dashboard. ([3:26](https://youtu.be/V8rGgwQ-VJ0?t=206))
+- **Rule files act as a program for the agent, enforcing the lookup order.** — Three rules: (1) auto-use the MCP server for any shadcn work, (2) during planning, use existing components and prefer blocks over custom builds, (3) before implementing, call the demo tool to check real usage. The host says this stops the agent from skipping the fetch-context step. ([3:26](https://youtu.be/V8rGgwQ-VJ0?t=206))
+- **Split the work into a no-code plan first, then implementation.** — Claude brainstormed the app and produced a UI/UX plan (mcpstore.md). A second prompt asked for a plan that names components and their placement, with no code, which Cursor then used as the implementation spec. The host frames this as context engineering for front-end work. ([4:45](https://youtu.be/V8rGgwQ-VJ0?t=285))
+- **The agent re-queries the MCP tools after finishing each set of blocks and components, not just once up front.** — The host says the rule file makes this happen automatically. Result claim: the full build succeeded in one attempt with one back-and-forth needed for configuration issues. Without the MCP the host expects many component and responsive-layout errors. ([5:56](https://youtu.be/V8rGgwQ-VJ0?t=356))
+- **Do the structure first, then theme. TweakCN handles visual identity separately.** — TweakCN customizes the base shadcn components. The host copies the install command into Cursor. If Cursor cannot install the theme, the fallback is to paste the settings code shown and have Cursor apply it to the files directly. ([6:55](https://youtu.be/V8rGgwQ-VJ0?t=415))
+
+## Techniques
+- **Fetch-before-build loop with the shadcn MCP** — Add the shadcn MCP server to Cursor (Settings, then Tools and Integrations, then add MCP server). Paste the config from the repo's Claude desktop configuration section; the host says Claude Code and Windsurf use the same config. Use the tools: list components (46 total in the host's count), get component, get component demo, and list and get blocks. Before writing any shadcn code, call the demo tool for the component being used and build from its example. Set a GitHub personal access token in the config for a 5,000 requests/hour limit instead of the lower unauthenticated limit. The host did not show the exact JSON keys or package name on screen. *When:* Any React UI built with shadcn/ui, especially components with required composition patterns such as dialog, where agents otherwise guess wrong.
+- **Rule file that forces the MCP lookup order** — Write a Cursor rule file with three instructions: (1) when working with shadcn components, always use the MCP server; (2) during planning, use existing components wherever possible and prefer blocks over custom builds; (3) when implementing, call the get-component-demo tool first and use its output in the code. Reference the rule file in each prompt. The host also re-runs the tools as each block is completed. *When:* Multi-step UI builds where the agent tends to skip lookups and drift from the library's documented patterns.
+- **Plan first, with components named and no code** — Step 1: brainstorm the app with a chat model (the host used Claude) and get a full UI/UX plan (the host saved it as mcpstore.md). Step 2: prompt the agent, with the rule file referenced, to produce an implementation plan that lists the shadcn components and blocks used and where each goes, with no code. Step 3: tell the agent to implement that plan, which again triggers tool lookups. *When:* Greenfield front-end work where the component inventory and layout should be settled before any code is written.
+- **Theme with TweakCN after the structure is done** — Customize the base components on TweakCN with its settings. Click the code option and copy the install command into Cursor. If Cursor cannot install it, copy the settings code shown on the site and ask Cursor to apply those changes to the files directly. *When:* After the component structure is complete, to give a shadcn project its own look instead of the default one.
+
+## Numbers
+- The shadcn MCP server lists 46 components. ([2:14](https://youtu.be/V8rGgwQ-VJ0?t=134))
+- A GitHub personal access token raises the MCP request limit to 5,000 requests per hour. ([1:04](https://youtu.be/V8rGgwQ-VJ0?t=64))
+- The host's full build succeeded in one attempt, with one return visit for configuration issues. Anecdotal, one project, no baseline. ([5:56](https://youtu.be/V8rGgwQ-VJ0?t=356))
+- The host says the channel has 97 channel-membership members. Not technical, included for completeness. ([5:56](https://youtu.be/V8rGgwQ-VJ0?t=356))
+
+## Hot takes
+- The demo tool is called revolutionary and error-eliminating, which rests on one project and no before/after comparison.
+- Cursor 'consistently messes up' shadcn without the MCP. Anecdotal, and no other agent or config was tested.
+- Rule files are described as a way to 'program' the agent, so lookup discipline becomes a matter of prompt configuration rather than the tool.
+
+## Tools mentioned
+shadcn/ui, shadcn UI MCP server (GitHub repo), Cursor, Claude (chat, used for the initial plan), Claude desktop MCP configuration, Windsurf, Claude Code, TweakCN, GitHub personal access token
+
+## Relevance to our work
+- **general** (2/3): Shows a general context-engineering pattern: an MCP-served canonical-example lookup, plus plan-first with no code, reduces agent errors. Applies to any library-heavy coding task. → *Add a CLAUDE.md rule requiring the agent to fetch the library's example or doc before writing code for any library we use heavily, and test it on one component.*
+- **prosharness** (1/3): The rule file that forces tool lookups before implementation is a loose analog to ProsHarness skill gating; the pattern is shown only for one UI workflow. → *Compare the shadcn rule-file pattern (fetch canonical examples before acting) with how ProsHarness gates skills, and note whether a per-task lookup rule would reduce misuse.*

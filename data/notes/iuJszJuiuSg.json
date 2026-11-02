@@ -1,0 +1,151 @@
+{
+ "one_line": "Better Stack walkthrough of Archify, an open-source agent skill where the coding agent emits validated typed JSON that a local compiler renders into HTML architecture diagrams; useful for PR and design-review artifacts, not for READMEs or mapping huge repos.",
+ "summary": "Josh from Better Stack installs Archify, an agent skill (one npx command, no model weights) that works from Claude Code, Cursor and Codex. The agent describes the system as strict typed JSON, Archify validates it (failing closed with diagnostics, rule codes and supported repairs), and only then a local compiler produces self-contained HTML. He tests it with a narrow question about a cache-miss path in a repo, asking for 8-12 nodes and only components that can be proven. Nodes can carry repo evidence (commit plus line range), and the UI supports search, upstream/downstream inspection, route playback, PNG export and a share card. He also shows diffing two validated snapshots to see added, removed, moved or rerouted nodes, and recommends committing the JSON so the architecture survives into later sessions. His caveats: it cannot know your real architecture, a valid graph can still describe the wrong system, it does not render inside a README (Mermaid is better there), and it should not be pointed at a huge repo with \"map everything\". His rule of thumb is one question per diagram file.",
+ "speakers": [
+  "Josh (Better Stack)"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "coding-agents",
+  "context-engineering",
+  "dev-tools"
+ ],
+ "tags": [
+  "archify",
+  "architecture-diagrams",
+  "agent-skills",
+  "claude-code",
+  "structured-output",
+  "json-schema",
+  "mermaid",
+  "code-review",
+  "prs",
+  "repo-evidence"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The model should not draw the diagram. It emits a typed graph as JSON, that is validated, and only then compiled to HTML. Invalid graphs fail instead of producing a pretty but wrong picture.",
+   "detail": "Archify is framed as LLVM for system maps: the agent is the front end, the JSON is the IR, and the HTML is the compiled output. Strict schemas reject unknown fields.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Ask a narrow question, not for a whole-repo map.",
+   "detail": "The example prompt asks for 8-12 nodes about what happens on a cache miss, only boxes that exist in the repo, and omits anything it cannot prove.",
+   "t": "0:53"
+  },
+  {
+   "idea": "Repo evidence is what separates a checked node from a plausible one.",
+   "detail": "Nodes can reference a commit and a line range. Without that proof, a node gets no SRC badge, however convincing the label sounds.",
+   "t": "2:00"
+  },
+  {
+   "idea": "The layout is left to the compiler, not the model.",
+   "detail": "The speaker says a themed Mermaid version with automatic layout was no better than plain Mermaid.",
+   "t": "3:49"
+  },
+  {
+   "idea": "Diffing validated snapshots is the stronger use case for code review.",
+   "detail": "Given a before-state and an after-state (for example, adding a retry worker), Archify reports added, removed, moved and rerouted nodes, rather than two independently generated pictures.",
+   "t": "3:49"
+  },
+  {
+   "idea": "Commit the JSON to keep the architecture alive across sessions.",
+   "detail": "The JSON is the editable source of truth. The HTML and PNG are outputs. The speaker prefers to keep the JSON in version control.",
+   "t": "3:49"
+  },
+  {
+   "idea": "Clear limits: Archify does not know your architecture, and it does not render in READMEs.",
+   "detail": "A valid graph can still describe the wrong system. GitHub renders Mermaid inside a README, but not Archify HTML. Pointing it at a huge repo with a vague question produces garbage.",
+   "t": "4:59"
+  },
+  {
+   "idea": "Rule of thumb: one question per diagram file.",
+   "detail": "If you cannot say which question the diagram answers, do not generate it.",
+   "t": "6:07"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Schema-validated diagram IR",
+   "how": "Have the agent emit architecture as strict typed JSON (unknown fields fail). Validate it with a separate step that returns diagnostics (rule codes plus supported repairs). Only a valid graph is compiled to HTML by a local compiler. Commit the JSON as the editable source.",
+   "when": "When the diagram will be reviewed, shared or reused in later agent sessions, and you need it to stay accurate rather than just look good."
+  },
+  {
+   "name": "Evidence-gated nodes",
+   "how": "Require each node to cite repo evidence (commit plus line range). Nodes without it are not given the verified badge, regardless of how plausible the label is.",
+   "when": "When the architecture answer has to be checkable against code, for example in a PR."
+  },
+  {
+   "name": "Narrow architecture question prompt",
+   "how": "Prompt along these lines: 'Use Archify, architecture diagram 8 to 12 nodes max. What happens on a cache miss in this service? Only include boxes that exist in this repo. If you can't prove a component, omit it. Deliver a self-contained HTML.' Keep to one question per file.",
+   "when": "Whenever you ask an agent for a diagram. Constrain node count, scope and proof requirements up front."
+  },
+  {
+   "name": "Diff two architecture snapshots",
+   "how": "Generate a validated snapshot before the change and another after it (for example, after adding a retry worker). Compare the two to get added, removed, moved and rerouted nodes and edges, then review that delta.",
+   "when": "In code review or design review, to see what a change does to the system's shape."
+  },
+  {
+   "name": "Install as an agent skill",
+   "how": "Install with a single npx command. Since it is a skill rather than an app, the same skill runs from Claude Code, Cursor or Codex.",
+   "when": "When you want a diagram tool that fits into the coding agent you already use, with no separate editor."
+  }
+ ],
+ "tools": [
+  "Archify",
+  "Claude Code",
+  "Cursor",
+  "Codex",
+  "Mermaid",
+  "GitHub"
+ ],
+ "numbers": [
+  {
+   "claim": "Archify has picked up 44,000 GitHub stars in a few months (stated by the speaker).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Typical diagram size target: 8 to 12 nodes for one question.",
+   "t": "0:53"
+  },
+  {
+   "claim": "Share card export is described as 1200 by 36 (as spoken; likely 1200x630).",
+   "t": "2:58"
+  },
+  {
+   "claim": "There are five diagram modes: architecture, workflow, sequence, data flow and life cycle.",
+   "t": "3:49"
+  },
+  {
+   "claim": "Install is a single npx command; there are no model weights, and Node is the only requirement.",
+   "t": "6:07"
+  }
+ ],
+ "hot_takes": [
+  "Mermaid is better for README diagrams, since Archify HTML does not render on GitHub.",
+  "A validated architecture graph can still describe the wrong system. You still have to read it.",
+  "Auto-generated architecture from a huge repo is 'a bad question', not a tool failure.",
+  "Do not install Archify just for prettier versions of diagrams you already have. Use it for checked, shareable artifacts in PRs and design docs."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Mostly a diagram tool for coding agents, but the validated-JSON-IR-then-compile pattern is relevant to documenting AgentOS's pillars. The agent-facing use is adjacent.",
+   "action": "Consider a JSON schema for the AgentOS pillar architecture (L1-L4), validated in CI, so that generated diagrams cannot drift from the manifest."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Validated-IR-then-render pattern and diff-two-snapshots for review could apply to ProsHarness plan/critique artifacts. Light relevance only.",
+   "action": "Consider whether ProsHarness plan artifacts should also be typed JSON with schema validation before they are rendered or reviewed."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

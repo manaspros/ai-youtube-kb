@@ -1,0 +1,209 @@
+{
+ "one_line": "Kai rebuilds DeepSeek's \"437x smaller KV cache\" ratio from config files, shows the denominator compares a 2023 dense model to a 2026 MoE, and explains how sparse layers and 4-bit storage cut per-token cache cost.",
+ "summary": "The host reproduces DeepSeek's headline 437x KV-cache reduction from the published model configs: about 389,120 bytes per token for V1 versus 890 bytes per token for V4.1 Flash. He argues the ratio is misleading because it compares a 2023 dense model with a 4K context against a 2026 sparse mixture-of-experts model with a 1M context. The 890-byte figure comes from four stacked cuts: only 4 of 40 layers own a cache, the generation side reuses pre-fill keys, adjacent token pairs are merged, and entries are stored at 4 bits. Against its real predecessor (V4 Flash) the reduction is about 4x in HBM and about 8x in persistent cache. The cache savings translate into large concurrency gains on an 8x H200 node (about 915 vs 40 sessions against V3), but the same architecture performs badly for a single local user, where weights must stream from disk. The video also covers the sparse-attention and replay limitations DeepSeek documents, output-token cost, and a correction about V4 Pro not being retired.",
+ "speakers": [
+  "Kai (host, Kai Explains)"
+ ],
+ "orgs": [
+  "DeepSeek",
+  "Hugging Face",
+  "NVIDIA",
+  "Artificial Analysis"
+ ],
+ "format": "review",
+ "topics": [
+  "inference-serving",
+  "token-cost-efficiency",
+  "local-ai",
+  "models-research"
+ ],
+ "tags": [
+  "kv-cache",
+  "sparse-attention",
+  "mixture-of-experts",
+  "quantization",
+  "deepseek",
+  "long-context",
+  "concurrency",
+  "hardware-sizing",
+  "output-token-pricing",
+  "dense-vs-moe"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The 437x figure is a ratio of two configs and rebuilds exactly from them",
+   "detail": "V1 is 2 (K and V) x 95 layers x 8 KV heads x 128 dims x 2 bytes = 389,120 bytes per token; V4.1 Flash is 890 bytes per token; 389,120 / 890 = 437.2. The speaker stresses the arithmetic needs only the config files and one division.",
+   "t": "1:15"
+  },
+  {
+   "idea": "The denominator compares unlike models",
+   "detail": "V1 (Nov 2023 per the speaker) is dense with a 4,096-token context; V4.1 Flash is a 2026 sparse MoE with a 1,048,576-token context. He argues the comparison says little about what a user would experience, and that the paper itself contains the more relevant comparison.",
+   "t": "2:42"
+  },
+  {
+   "idea": "Per-token cache cost falls through four stacked architectural cuts",
+   "detail": "(1) Only 4 of 40 layers (2, 8, 14, 20) own a KV cache; the other 36 reuse shared keys, either rescoring them or inheriting a shortlist and writing zero bytes. (2) The 40 layers split into 20 pre-fill and 20 generation layers, and generation borrows projected keys from pre-fill's final hidden state rather than building its own global keys. (3) Adjacent token pairs merge into one entry, so 1M tokens become 500K entries. (4) Survivors are stored at 4 bits with a shared 8-bit scale per 16 channels, about 4x below 16-bit.",
+   "t": "2:42"
+  },
+  {
+   "idea": "The honest comparison is against the direct predecessor, V4 Flash",
+   "detail": "The paper's figures put V4.1 Flash at about one quarter of the HBM and about one eighth of the persistent cache copy of V4 Flash, roughly 4x rather than 437x. The speaker says the 4x number is the one to use for hardware sizing.",
+   "t": "6:29"
+  },
+  {
+   "idea": "Cache savings matter most for concurrency, which changes the economics",
+   "detail": "On an 8x H200 node (1,128 GB HBM, about 313 GB of weights, about 815 GB free) at 890 MB per full 1M-token session, the speaker estimates about 915 concurrent sessions versus about 40 for DeepSeek V3 (671 GB weights at 8-bit, 11.5 GB per full 163,840-token session). He calls this a business model change, since cache cost per session stops dominating the price. He lists activation memory, fragmentation and indexer state as ignored, so the figure is a ceiling.",
+   "t": "7:44"
+  },
+  {
+   "idea": "The same architecture is poor for a single local user",
+   "detail": "A developer reportedly ran V4.1 Flash on a 16 GB Mac mini by streaming weights from SSD: 23 seconds per token and 108 seconds to the first token. At concurrency 1 the fixed cost of the architecture is paid with none of the batching benefit, and the weight footprint, not the cache, is the constraint.",
+   "t": "8:56"
+  },
+  {
+   "idea": "The usual escape hatch of further quantization is already spent",
+   "detail": "The experts ship at 4 bits and the download is about 475 GB. Quantizing everything, including the Ngram lookup tables, to 4 bits still gives about 385 GB, which the speaker says only a 512 GB M5 Ultra Mac Studio can hold as a single consumer machine.",
+   "t": "9:56"
+  },
+  {
+   "idea": "Sparse selection and cache replay introduce real limitations",
+   "detail": "DeepSeek's limitations section names two failure modes. Layer 20 keeps its best 2,048 blocks and deeper layers rescore 16,384 candidates, so an entry outside that pool cannot be recovered; the speaker says this is not lossy but simply absent. Bounded replay recomputes the local sliding window approximately, so the same prompt can return slightly different numbers depending on cache hits.",
+   "t": "11:11"
+  },
+  {
+   "idea": "Output tokens can dominate cost for verbose models",
+   "detail": "Artificial Analysis measured V4.1 Flash at 208 output tokens per second and about 250M tokens to finish its benchmark, against a median of about 140M. Output is priced at $0.60 per million tokens versus very cheap input, so long-input, short-output workloads benefit most and chatty ones should be watched on the output column.",
+   "t": "12:09"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Compute KV bytes per token from the model config",
+   "how": "bytes per token = 2 (K and V) x cache-owning layers x KV heads x head dim x bytes per element. Use the number of layers that actually store a cache, not total layers. The speaker's V1 example: 2 x 95 x 8 x 128 x 2 = 389,120 bytes.",
+   "when": "Before comparing KV-cache strategies or sizing a serving node, so the comparison is grounded in the shipped config rather than a headline ratio."
+  },
+  {
+   "name": "Normalise cache comparisons to the same generation and to the same max context",
+   "how": "Compare against the direct predecessor, and report total cache at max context: bytes per token x max tokens (V1: 389,120 x 4,096 = 1.59 GB; V4.1 Flash: 890 x 1,048,576 = 0.93 GB).",
+   "when": "When evaluating a claimed efficiency gain, to see whether it holds for the workload you will run."
+  },
+  {
+   "name": "Size node concurrency as free HBM divided by per-session cache",
+   "how": "free memory = total HBM minus model weights (for example 1,128 GB minus 313 GB = 815 GB). Concurrent sessions = free memory / per-session cache at full context (815 GB / 890 MB = about 915). Treat the result as a ceiling and subtract activation memory, fragmentation and indexer state.",
+   "when": "When deciding whether to self-host a long-context model or to estimate serving capacity and cost per session."
+  },
+  {
+   "name": "Separate the single-user and multi-user cost models",
+   "how": "Single-user local runs are bounded by whether all weights fit in RAM or VRAM; multi-user serving is bounded by cache per session. A sparse, cache-light architecture can be fast in batch and very slow at concurrency 1 if weights stream from SSD.",
+   "when": "Before deciding where a model runs: a shared inference server versus a single developer machine."
+  },
+  {
+   "name": "Check the failure modes of sparse selection and replay",
+   "how": "Ask whether an entry excluded from a shortlist at a shared layer can be recovered by deeper layers (in this case it cannot). Run the same prompt repeatedly across cache-hit and cache-miss paths and compare outputs to detect non-determinism.",
+   "when": "When evaluating or deploying sparse-attention or replay-based inference, especially where reproducibility or evals matter."
+  },
+  {
+   "name": "Track output tokens separately from input tokens",
+   "how": "Measure output tokens per task (the speaker cites benchmark totals of 250M vs a median of 140M) and price them at the output rate, since output costs far more per token than cached input.",
+   "when": "When choosing a model for pipelines: retrieval, summarisation and classification with long inputs and short outputs versus chatty agents."
+  }
+ ],
+ "tools": [
+  "DeepSeek V1 (dense, grouped-query attention, 4,096 context per speaker)",
+  "DeepSeek V4.1 Flash (sparse MoE, 40 layers, 1M context, 4-bit experts)",
+  "DeepSeek V4 Flash (predecessor to V4.1 Flash)",
+  "DeepSeek V4 Pro (flagship; reversed retirement per speaker)",
+  "DeepSeek V3 (671 GB at 8-bit, 163,840-token limit)",
+  "Hugging Face (config files)",
+  "NVIDIA H200 SXM (141 GB HBM3E per card, 8-card node)",
+  "Apple M5 Ultra Mac Studio (512 GB)",
+  "Mac mini (16 GB, SSD weight streaming in developer test)",
+  "Artificial Analysis (benchmark for output tokens per second)"
+ ],
+ "numbers": [
+  {
+   "claim": "Headline ratio 437.2x: V1 at 389,120 bytes per token vs V4.1 Flash at 890 bytes per token",
+   "t": "1:15"
+  },
+  {
+   "claim": "Cache-owning layers in V4.1 Flash: 4 of 40 (layers 2, 8, 14, 20)",
+   "t": "2:42"
+  },
+  {
+   "claim": "Context ratio: 1,048,576 tokens (V4.1 Flash) vs 4,096 tokens (V1), a 256x increase",
+   "t": "5:14"
+  },
+  {
+   "claim": "Full cache at max context: V1 about 1.59 GB; V4.1 Flash about 0.93 GB (41% less total memory)",
+   "t": "5:14"
+  },
+  {
+   "claim": "Quantization step: 4-bit with shared 8-bit scale per 16 channels, about 4x compression vs 16-bit",
+   "t": "2:42"
+  },
+  {
+   "claim": "vs predecessor V4 Flash: about one quarter the HBM and one eighth the persistent cache copy (about 4x, not 437x)",
+   "t": "6:29"
+  },
+  {
+   "claim": "8x H200 SXM node: 141 GB per card, 1,128 GB total",
+   "t": "6:29"
+  },
+  {
+   "claim": "Weights about 313 GB; about 815 GB free; about 915 concurrent 1M-token sessions at 890 MB each",
+   "t": "7:44"
+  },
+  {
+   "claim": "DeepSeek V3 on same node: 671 GB weights at 8-bit, 11.5 GB per full 163,840-token session, about 40 concurrent users",
+   "t": "7:44"
+  },
+  {
+   "claim": "Single-user test on 16 GB Mac mini (SSD streaming): 23 s per token, 108 s to first token",
+   "t": "8:56"
+  },
+  {
+   "claim": "Download about 475 GB as shipped; about 385 GB if everything is 4-bit",
+   "t": "9:56"
+  },
+  {
+   "claim": "Layer 20 keeps best 2,048 blocks; deeper layers rescore 16,384 candidates",
+   "t": "11:11"
+  },
+  {
+   "claim": "Artificial Analysis: 208 output tokens per second; about 250M tokens to finish benchmark vs median about 140M",
+   "t": "11:11"
+  },
+  {
+   "claim": "Output price $0.60 per million tokens; input much cheaper",
+   "t": "12:09"
+  },
+  {
+   "claim": "Quoted cached-input price for this model: three-tenths of a cent per million tokens",
+   "t": "1:15"
+  }
+ ],
+ "hot_takes": [
+  "The 437x headline compares a 2023 dense 4K-context model with a 2026 1M-context MoE; against its direct predecessor the reduction is about 4x in HBM and about 8x in persistent cache.",
+  "Cheap long-context pricing comes from concurrency economics, not just compression; the same architecture is a poor fit for a single local user.",
+  "Video-thumbnail framing of the number went unchallenged in most coverage; the speaker argues the denominator should be read first.",
+  "Speaker claims two large videos wrongly reported V4 Pro as retired; DeepSeek reversed the decision before the cutover date (his claim, not independently verified in the video)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft is a vLLM stack with pluggable KV-cache strategies on one RTX 5090. This video gives a config-based bytes-per-token model, layer-ownership counting and a concurrency ceiling calculation that can be reused for capacity planning and comparison of cache strategies.",
+   "action": "Add a KV capacity calculator to InferCraft that counts only cache-owning layers from the model config, reports concurrent sessions per node as (memory minus weights) / per-session cache, and compares against the same-generation baseline."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Focused on local inference hardware and KV caches, with no bearing on the Claude Code harness work.",
+   "action": ""
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,174 @@
+{
+ "one_line": "Sarvam's Krishna Prasad Srinivasan on training Servam Vision, a 3B state-space document-OCR model built from scratch for English and 22 Indian languages, using block-level OCR, a four-stage curriculum and RL with machine-checkable rewards.",
+ "summary": "The speaker, a GM at Sarvam, presents Servam Vision, a 3B-parameter vision-language model for document OCR. It uses a state-space model (SSM) language backbone instead of a transformer, so compute grows linearly and memory stays constant on long visual-token inputs. The team bet on block-level OCR with separate layout and reading-order modules feeding a small VLM, rather than a monolithic page-level VLM. Training runs in four stages: text-only pretraining, continual pretraining on image-text pairs, supervised fine-tuning on OCR samples, and RL with rewards that unit tests can check. The speaker argues the real moat is the data engine for low-resource Indic scripts and a curated eval layer. Reported results include SOTA claims on OlmOCR-Bench and OmniDocBench and an unbeaten lead on 22 Indian languages against frontier models, all self-reported. The talk closes with sovereignty arguments and deployments that have digitized 35M pages.",
+ "speakers": [
+  "Krishna Prasad Srinivasan"
+ ],
+ "orgs": [
+  "Sarvam"
+ ],
+ "format": "talk",
+ "topics": [
+  "data-engineering",
+  "training-finetuning-rl",
+  "models-research",
+  "voice-multimodal"
+ ],
+ "tags": [
+  "document-ocr",
+  "state-space-model",
+  "ssm",
+  "vlm",
+  "indic-languages",
+  "low-resource-languages",
+  "rlvr",
+  "synthetic-data",
+  "block-level-ocr",
+  "sovereign-ai",
+  "olmocr-bench",
+  "omnidocbench",
+  "curriculum-training"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Block-level OCR beats page-level monolithic VLMs for this task",
+   "detail": "The team bet early (late 2025) on block-level OCR with separate layout and reading-order modules around a small VLM, instead of one model that reads whole pages. The speaker says many 2026 models converged on the same pattern.",
+   "t": "3:05"
+  },
+  {
+   "idea": "SSMs trade lossy recall for linear compute on long visual-token documents",
+   "detail": "Transformers cost grows with the square of sequence length, and long pages can reach 5k-10k visual tokens. An SSM keeps one state updated token by token, so compute is linear and memory is constant. The speaker says the lossy recall is acceptable for block-level OCR.",
+   "t": "4:18"
+  },
+  {
+   "idea": "Staged curriculum: build the language prior before the model sees pixels",
+   "detail": "Stage 1 is text-only pretraining (13T tokens across English, Indic text, math and code). Stage 2 is continual pretraining on 300M image-text pairs. Stage 3 is SFT on 100M OCR samples across 22 languages and document components. Stage 4 is RL. The speaker argues a strong language prior helps the model resolve smudged or ambiguous text.",
+   "t": "5:41"
+  },
+  {
+   "idea": "The moat is the data engine and the eval layer, not the RL recipe",
+   "detail": "The speaker calls RL a standard recipe. The real differentiators are pipelines that create synthetic and real-document data for languages with no labels, and curated evals meant to measure end-user usefulness, not just benchmark scores.",
+   "t": "7:59"
+  },
+  {
+   "idea": "OCR suits RLVR because correctness is machine-checkable",
+   "detail": "Each sampled output is scored with unit-test-style rewards, such as character error rate, table structure, or equation correctness. The model is then reinforced toward outputs above the group average. Real complex documents are preferred over synthetic ones for building these reward tests.",
+   "t": "8:56"
+  },
+  {
+   "idea": "Fidelity over helpfulness: OCR should not silently correct text",
+   "detail": "Transliteration and translation are not used, because a mistake in the image should be extracted as-is rather than changed by the model. The speaker says transliteration-based data is now appearing in OCR training, and its quality is still unclear.",
+   "t": "17:28"
+  },
+  {
+   "idea": "Sovereignty is the adoption driver for government and insurance buyers",
+   "detail": "Customers want control over where data goes, when it is used, and how much is used. The speaker says this demand, plus the lack of Indic document coverage in frontier models, drove adoption.",
+   "t": "17:28"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Block-level OCR with layout and reading-order modules",
+   "how": "Run separate layout and reading-order modules to find blocks, then send each block to a small VLM for recognition. Do not rely on one model to read whole pages.",
+   "when": "Long, dense documents where page-level VLM inference is too expensive or the output must be grounded per block."
+  },
+  {
+   "name": "Four-stage training curriculum for a domain VLM",
+   "how": "Pretrain the language backbone on text only, then continually pretrain on image-text pairs, then SFT on task samples, then RL. Each stage builds on the previous one.",
+   "when": "Building a specialised vision-language model from scratch, where the language backbone must be strong before vision training."
+  },
+  {
+   "name": "RLVR with unit-test rewards",
+   "how": "Sample a group of outputs per input, score each with deterministic checks (for example character error rate, table structure, math equivalence), and reinforce outputs that beat the group average. Repeat.",
+   "when": "Tasks where correctness can be checked by code, such as OCR, extraction or structured output."
+  },
+  {
+   "name": "Real complex documents as RL reward sources, synthetic documents for SFT",
+   "how": "Use synthetic documents for supervised post-training. For RL, use real complex documents so the reward tests reflect real layouts and content.",
+   "when": "Post-training where real labelled data is scarce but reward signals must be realistic."
+  },
+  {
+   "name": "Human-in-the-loop workbench with confidence scores and block grounding",
+   "how": "Show per-block confidence and grounding back to the source image, and let reviewers proofread with an agent, so errors can be fixed before ingestion.",
+   "when": "Enterprise document digitization where output must be auditable."
+  }
+ ],
+ "tools": [
+  "Servam Vision",
+  "Akshar (agentic document workbench)",
+  "OlmOCR-Bench",
+  "OmniDocBench",
+  "Qwen",
+  "Gemma"
+ ],
+ "numbers": [
+  {
+   "claim": "Servam Vision has 3B parameters and runs on a single GPU; the speaker claims it beats models about 100x larger on document AI",
+   "t": "0:16"
+  },
+  {
+   "claim": "Well under 1% of the common corpus used to train frontier models has Indian-language representation (cited from a published language distribution study)",
+   "t": "1:41"
+  },
+  {
+   "claim": "Visual tokens per long page can reach 5,000-10,000, which makes transformer compute and memory costly",
+   "t": "5:41"
+  },
+  {
+   "claim": "Stage 1 text pretraining: 13 trillion tokens",
+   "t": "5:41"
+  },
+  {
+   "claim": "Stage 2 continual pretraining: 300 million image-text pairs",
+   "t": "6:36"
+  },
+  {
+   "claim": "Stage 3 SFT: 100 million OCR samples across 22 Indian languages plus English",
+   "t": "6:36"
+  },
+  {
+   "claim": "OlmOCR-Bench score at launch: 84.3 (SOTA claim, self-reported)",
+   "t": "10:04"
+  },
+  {
+   "claim": "OmniDocBench score at launch: 93.2 (SOTA claim, self-reported)",
+   "t": "10:04"
+  },
+  {
+   "claim": "Claimed unbeaten lead on 22 Indian languages against Gemini, ChatGPT and Opus (no numbers given)",
+   "t": "10:04"
+  },
+  {
+   "claim": "More than 35 million pages digitized by large enterprises and governments about four months after launch",
+   "t": "11:28"
+  },
+  {
+   "claim": "Training data is about 40% Indic, with the rest English, math and code (answer to a Q&A question)",
+   "t": "19:58"
+  }
+ ],
+ "hot_takes": [
+  "Frontier models do not handle complex Indian-language documents well, and sovereign data-creation is needed before personalised agents in local languages are possible.",
+  "For OCR, RL with machine-checkable rewards scales far better than most post-training work, because correctness is deterministic.",
+  "Block-level small-model OCR beats the page-level monolithic VLM trend for production document work.",
+  "The speaker argues the data engine and evals are the real moat, not the training recipe."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The RLVR-with-deterministic-rewards pattern and the emphasis on eval as the moat are loosely related to AgentOS SkillForge's open question about a success signal for skill-worthiness. The talk is about training a vision model, which is outside AgentOS's current scope.",
+   "action": "Optional read: note how deterministic unit-test rewards define success in RLVR, and consider whether the same checks could define a success signal for SkillForge skill mining."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Model training and OCR do not touch ProsHarness's Claude Code harness, checkpointing, or approval flows.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,132 @@
+{
+ "one_line": "Brendan Rappazzo presents Loophole, an open-source game where two adversarial agents hunt contradictions in a legal code codified from the user's morals, then extends it to chatbot prompts, contracts, and simulated Senate votes.",
+ "summary": "The speaker built Loophole, a terminal game where the user writes moral principles in natural language and one agent drafts a formal legal code from them. Two adversarial agents then search for loopholes (immoral but legal) and overreach (moral but illegal) using synthetic case-law examples. A judging agent either auto-patches the code with a git-style diff or escalates real contradictions or under-specification to the user. The motivation is that enumerating nuanced morals case by case is cognitively prohibitive, and he argues recent LLMs are now capable enough for this kind of high-level moral reasoning. He describes three extension branches: generating codified system prompts for customer-facing chatbots (compared to GEPA), stress-testing contracts and terms of service before signing, and simulating legislators and voters. In the legislative branch, Claude builds moral systems for current senators from public voting records, and hill-climbing a Medicare bill's wording moved the simulated vote from about 50-50 to passing with 52 votes. A later experiment built 500 persona-based moral systems per state from an NVIDIA US persona dataset. No formal evaluation or benchmark is shown, the results are demo-level, and the speaker says he is biased toward his project.",
+ "speakers": [
+  "Brendan Rappazzo"
+ ],
+ "orgs": [
+  "Morgan Stanley",
+  "NVIDIA"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "governance-compliance",
+  "multi-agent",
+  "context-engineering"
+ ],
+ "tags": [
+  "adversarial-agents",
+  "red-teaming",
+  "legal-codification",
+  "moral-reasoning",
+  "contracts",
+  "chatbot-system-prompts",
+  "hill-climbing",
+  "persona-simulation",
+  "open-source",
+  "ai-governance"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Adversarial pair as a stress test for a rule set",
+   "detail": "One agent hunts for immoral-but-legal outcomes (loopholes) and another for moral-but-illegal outcomes (overreach), both generating synthetic cases against the drafted code.",
+   "t": "0:12"
+  },
+  {
+   "idea": "Judge decides between auto-patch and human escalation",
+   "detail": "A judging agent first tries to patch the legal code automatically when the draft was just an imperfect translation. It escalates to the user only when the problem is under-specification or a genuine contradiction in the morals.",
+   "t": "4:22"
+  },
+  {
+   "idea": "Case-by-case moral judgement does not scale, so codify it",
+   "detail": "Enumerating preferences one case at a time is cognitively prohibitive. The speaker frames a legal system as a codification of moral beliefs and treats the nuance problem as a hard translation task, with case law as the usual remedy.",
+   "t": "1:38"
+  },
+  {
+   "idea": "Codified system prompts for chatbots",
+   "detail": "Write what the bot should and should not discuss in plain language, have the system draft a formal system prompt, then use adversarial agents to try to make it break either rule. The speaker sees this as analogous to GEPA, aimed at codified prompts.",
+   "t": "7:59"
+  },
+  {
+   "idea": "Pre-signing contract checks",
+   "detail": "Run your codified preferences against a company's new terms of service, or against a counterparty's codified terms, to surface contradictions before agreeing. He says this gives better information even when there is no room to negotiate.",
+   "t": "9:14"
+  },
+  {
+   "idea": "Hill-climbing bill language against simulated voters",
+   "detail": "Each senator's codified system is checked against a bill. The system then rewrites the language to avoid violating core tenets and ranks the changes by how many votes each one adds, so the user can choose trade-offs.",
+   "t": "13:07"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Adversarial loophole and overreach search",
+   "how": "Prompt two adversarial agents with opposite goals, one to find immoral-but-legal cases and one to find moral-but-illegal cases, and have them generate synthetic case-law examples against a formal rule set.",
+   "when": "Stress-testing any written policy, spec, or rule set for contradictions and gaps before relying on it."
+  },
+  {
+   "name": "Judge with auto-patch first, human escalation second",
+   "how": "A judging agent checks each finding. It applies a git-style patch when the fix is a translation error and asks the user only for real contradictions or under-specification.",
+   "when": "Long-running spec-maintenance loops where most fixes are mechanical but a few need a human decision."
+  },
+  {
+   "name": "Formalize natural-language values into numbered legal text first",
+   "how": "Ask the model to turn short moral statements into structured articles and sections written in precise language, then test that artifact instead of the raw prose.",
+   "when": "Making fuzzy preferences or guidelines testable and diffable."
+  },
+  {
+   "name": "Persona-conditioned rule generation for simulation",
+   "how": "Give each synthetic persona (for example, 500 per state from a persona dataset) its own generated moral and legal system, then run a proposal against every persona and measure agreement.",
+   "when": "Simulating how a population would react to a proposal or document before it is released."
+  },
+  {
+   "name": "Hill-climbing text against an adversarial judge",
+   "how": "Repeatedly edit the wording of a proposal and re-run it against every stakeholder system, keeping edits that reduce violations and ranking the edits by their effect on the vote count.",
+   "when": "Optimizing a document toward a target such as approval or agreement when the verifier is an LLM."
+  }
+ ],
+ "numbers": [
+  {
+   "claim": "Simulated Medicare bill vote moved from about 50-50 to passing with 52 votes after hill-climbing the bill language against per-senator moral systems.",
+   "t": "13:07"
+  },
+  {
+   "claim": "Persona experiment used 500 personas per US state, each with its own generated moral system and legal contract, drawn from an NVIDIA US persona dataset.",
+   "t": "14:36"
+  }
+ ],
+ "hot_takes": [
+  "Current LLMs are now smart enough to do high-level moral reasoning and turn a person's values into a usable legal code.",
+  "Most political disagreement is about core values people actually share, and the real differences only show up in nuanced cases that a stress test can surface.",
+  "A stress-tested contract with a counterparty's terms can surface disagreements before signing, which gives people better information even when they cannot negotiate."
+ ],
+ "tools": [
+  "Claude",
+  "GitHub"
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The adversarial loophole search is a red-team style probe that could be applied to guardrail rules, but the talk offers no measured results for guardrails.",
+   "action": "Optional: build a small attacker agent that tries to slip requests past the AgentOS exec-gate and PII rules, and log which rules it breaks."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The attacker and judge loop resembles ProsHarness's plan, critique, and debate steps, and it adds an explicit auto-fix versus escalate decision.",
+   "action": "Compare the debate step with an adversarial-attacker role and a judge that auto-patches the plan and only asks for approval on real conflicts."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The auto-patch-or-escalate judge pattern is a reusable design for agent loops that run unattended but still need human decisions at true conflicts.",
+   "action": "Read the Loophole GitHub repo to check how the judge decides between auto-patching and escalation before reusing the pattern."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,156 @@
+{
+ "one_line": "Tutorial on nuqs, a type-safe URL search-param state hook for React frameworks. It keeps UI state in the query string so it survives refresh, bookmarks and back/forward, and covers parsing, throttling, history mode and server-component sync.",
+ "summary": "The presenter argues that URL search parameters are a usable persistent state store for React apps, and that useState loses state on refresh, bookmark or navigation. The demo swaps useState for useQueryState from the nuqs package (transcribed as \"Nux\"), with a query key and a default value. nuqs needs a framework adapter in the root layout; the demo uses the Next.js App Router. The video covers typed parsers (parseAsBoolean and friends, JSON via Zod, custom parsers) because all query values arrive as strings. It explains that browsers rate-limit history updates, Safari most severely, and that nuqs queues URL writes while keeping local UI state responsive. Further options cover a throttle for expensive fetches, history set to replace or push, and shallow routing, which is on by default and must be turned off to sync values to server components through a shared search-params cache. The video closes by pointing to serialize, URL key aliasing and SEO guidance in the docs. Coverage is a single-library walkthrough with no benchmarks or comparisons.",
+ "speakers": [
+  "Unnamed Better Stack presenter"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "react",
+  "nextjs",
+  "url-state",
+  "query-params",
+  "typescript",
+  "zod",
+  "state-management",
+  "nuqs",
+  "tanstack-router",
+  "remix",
+  "react-router"
+ ],
+ "key_ideas": [
+  {
+   "idea": "URL search params as persistent state",
+   "detail": "Component state held in useState resets on refresh and is lost on bookmark, share or back/forward. Storing the same values in the query string makes them survive all of these, so the URL becomes a state store.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Swap useState for useQueryState with a key and default",
+   "detail": "nuqs's useQueryState has the same call shape as useState. It takes a query key (e.g. size) and a default (e.g. medium). The presenter's size and color examples persist and restore correctly after a refresh.",
+   "t": "1:05"
+  },
+  {
+   "idea": "Query values are strings, so parsing needs to be explicit",
+   "detail": "Every query param arrives as a string. A boolean default for a modal breaks types, and a truthy string like 'true' or any random string makes the modal stay open. nuqs parsers (parseAsBoolean with a default) fix the type and reject invalid values.",
+   "t": "2:20"
+  },
+  {
+   "idea": "Browsers rate-limit history updates",
+   "detail": "The history API throttles frequent URL writes, and the limit differs by browser, with Safari the worst. Naive per-keystroke URL updates are therefore unreliable. nuqs queues URL updates and keeps the UI state updating immediately.",
+   "t": "3:27"
+  },
+  {
+   "idea": "Throttle expensive reactions to param changes",
+   "detail": "The default throttle is fine for local UI state. If each change triggers a server request or fetch, raise the throttle. The demo sets 5000 ms so a fast-typing input sends one update after the pause instead of a request per change.",
+   "t": "4:28"
+  },
+  {
+   "idea": "history option controls back-button behavior",
+   "detail": "The default is replace, which rewrites the current history entry, so pagination back-button skips earlier pages. push adds a history entry per change, which suits navigation like pagination or modals, but would be noisy for a text input.",
+   "t": "5:37"
+  },
+  {
+   "idea": "Shallow routing is on by default and blocks server sync",
+   "detail": "shallow defaults to true, so param changes are client-only and server components never see them. Setting shallow to false sends each change to the server, but that requires a server-side cache to read the values.",
+   "t": "6:47"
+  },
+  {
+   "idea": "Share parser definitions between server and client",
+   "detail": "The server uses a search-params cache from nuqs/server (createSearchParamsCache) built from the same parser object as the client, and parses the page's searchParams with it. The client hook reuses the same parser definitions, so both sides agree on types and defaults.",
+   "t": "8:08"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Install and wrap the framework adapter",
+   "how": "Install nuqs with your package manager. For Next.js App Router, import the nuqs adapter in layout.tsx and wrap the app with it. Docs have adapters for React Router, Remix and Vite-based React setups. TanStack has its own first-party type-safe search params, so the presenter says to use nuqs only if you are not on TanStack.",
+   "when": "Set up once per project, before any useQueryState call, so routing integration works."
+  },
+  {
+   "name": "Replace useState with useQueryState plus a parser",
+   "how": "Replace const [size, setSize] = useState('black') with useQueryState using a key name and a default value. For typed values, pass a parser such as parseAsBoolean, then call .withDefault(...) (presenter: 'parse as Boolean, with default, parse back false'). Use the same call shape as useState for reads and writes.",
+   "when": "Any UI state that should survive refresh, be bookmarkable or shareable: selected options, open modals, filters, page numbers."
+  },
+  {
+   "name": "Throttle URL writes for fetch-triggering params",
+   "how": "Pass an options object as the second argument (for useQueryState, or to the parser's .withOptions() when using the traditional hook). Set the throttle milliseconds option, shown as 5000. The presenter notes the UI stays responsive while the URL and server request wait for the throttle.",
+   "when": "A text input or slider changes a param that triggers a server request, a server-component re-render or a fetch."
+  },
+  {
+   "name": "Choose history mode per param",
+   "how": "Use history: 'push' for params that represent navigation (page number, open modal) so the back button steps through them. Keep the default replace for fast-changing input values so the back button is not flooded.",
+   "when": "Pagination, modals or tabs (push). Text inputs and search boxes (replace, the default)."
+  },
+  {
+   "name": "Sync params to server components",
+   "how": "1) Set shallow: false on the client hook. 2) Define parsers on the server side with createSearchParamsCache from 'nuqs/server' (import from nuqs/server to avoid a 'use client' boundary). Use parseAsFloat for lat/lng, and set defaults. 3) In page.tsx, await cache.parse(searchParams) with the Next.js searchParams. 4) In nested server components, read cache.all() (destructure) or cache.get(key). 5) On the client, reuse the same parser object so both sides agree.",
+   "when": "Next.js or other server-rendered apps where a server component must read the same value the client changed. The presenter notes this is only needed when the server must see params; client-only state can skip it."
+  },
+  {
+   "name": "Use serialize and URL keys for links",
+   "how": "Use the documented serialize function to build query strings for links that should carry state. Use URL keys to alias long param names to short query keys. The docs also cover SEO and reusing hooks, which the presenter does not demo.",
+   "when": "Generating deep links to filtered or paginated views, or shortening long URLs."
+  }
+ ],
+ "tools": [
+  "nuqs (React URL search-param state library; version not stated)",
+  "Next.js (App Router, adapter and server-component cache demo)",
+  "React Router (adapter supported)",
+  "Remix (adapter supported)",
+  "TanStack (Router) with first-party type-safe search params, referenced but not used",
+  "Zod (JSON parsing for query params via a parser)",
+  "React (useState comparison, hooks)",
+  "Safari (history rate-limit example)"
+ ],
+ "numbers": [
+  {
+   "claim": "Throttle set to 5000 ms in the demo, so input changes reach the URL and server component only after the pause (example for expensive server requests)",
+   "t": "5:37"
+  },
+  {
+   "claim": "Throttle example uses 5 seconds (5000 ms) for server-request-triggering params",
+   "t": "4:28"
+  },
+  {
+   "claim": "Default history mode is replace; push adds one history entry per change",
+   "t": "5:37"
+  },
+  {
+   "claim": "Default shallow is true, so the server does not receive param changes unless set to false",
+   "t": "6:47"
+  },
+  {
+   "claim": "Search query parameters described as a state approach over 30 years old",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Title 'The BEST Type-Safe URL State Manager' is hype: the video makes a single-library walkthrough and claims no comparison or benchmark.",
+  "Presenter says the 'best state manager' is search query parameters, a framing that overstates the case; the library is one implementation of a well-known pattern.",
+  "Presenter says TanStack already has first-party type-safe search params, which undercuts the 'best' claim for TanStack users."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "A frontend React URL-state tutorial with no tie to the AgentOS proxy, memory, inference or storage layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness is a CLI harness around Claude Code with no described web UI; this pattern does not change what it builds.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

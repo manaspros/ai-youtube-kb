@@ -1,0 +1,165 @@
+{
+ "one_line": "Better Stack walks through Anthropic's Claude Managed Agents: building a Slack-connected agent with no hand-written orchestration code, its per-session-hour pricing, and the session/harness/orchestrator architecture with runtime credential vaulting.",
+ "summary": "The presenter introduces Claude Managed Agents, a hosted product for building custom agents that run on Anthropic's infrastructure, and positions it against self-hosted OpenClaw. He builds a read-only agent over a private GitHub repo of personal data that answers questions through a Slack bot, scaffolding it with the managed-agent onboarding skill in a recent Claude Code version, which generates TypeScript setup and runtime files. The setup script creates the environment and agent in the Claude Console, where the system prompt and model can be edited with version history (three versions after two edits, including a switch from Opus to Sonnet). Pricing is standard API token rates plus $0.08 per session-hour while a session runs; idle sessions are not charged and Pro/Max/Team subscriptions do not cover it. The architecture has three parts: an append-only session log, a stateless harness that runs Claude and routes tool calls, and an orchestrator that can replace a failed harness, which then resumes from the log. Credentials live in a vault and are injected at tool-call or sandbox runtime, so the model never sees them, including its own API key. The presenter's conclusions are that it is easy to use but billed as API tokens and limited to a curated integration set, with OpenClaw as the more open option. The evidence is one personal demo with no benchmarks.",
+ "speakers": [
+  "Better Stack presenter (name not given in transcript)"
+ ],
+ "orgs": [
+  "Anthropic",
+  "Slack",
+  "OpenAI",
+  "Notion"
+ ],
+ "format": "review",
+ "topics": [
+  "agent-architecture",
+  "claude-code",
+  "security-guardrails",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "claude-managed-agents",
+  "session-harness-orchestrator",
+  "credential-vault",
+  "runtime-credential-injection",
+  "session-hour-pricing",
+  "slack-bot",
+  "read-only-toolset",
+  "agent-versioning",
+  "durable-sessions"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Claude Managed Agents is presented as the next step after the Agent SDK: custom agents are configured largely in the UI or via a generated SDK project, and they run on Anthropic's managed infrastructure.",
+   "detail": "Positioned as Apple-like (managed, low setup) versus OpenClaw as Linux-like (self-hosted, tinkerer). Tools, system prompt and model are set in the Claude Console and MCP servers can be hooked up there too.",
+   "t": "0:03"
+  },
+  {
+   "idea": "The agent is scaffolded through a Claude Code skill rather than written by hand. The skill walks through tools, skills, files and repos, then environment and identity.",
+   "detail": "It recommends a pre-built toolset and permissions, drafts a system prompt, suggests a model, and asks for credentials and the implementation language (TypeScript here). The presenter chose the read-only toolset and Sonnet.",
+   "t": "1:28"
+  },
+  {
+   "idea": "The scaffold produces two files: a setup script that provisions the environment, agent and skills on Anthropic's side, and a runtime script that connects to the Anthropic servers and relays results to Slack.",
+   "detail": "Running setup returns an environment ID and an agent ID. Slack app credentials go in a local env file that the runtime reads.",
+   "t": "4:15"
+  },
+  {
+   "idea": "Pricing has two parts. Tokens are billed at standard API rates, and each session-hour costs $0.08 while running. Idle sessions are free, and Pro, Max or Team subscriptions do not cover managed agents.",
+   "detail": "The presenter calls this disappointing for a Pro subscriber and says it is reasonable if a cheaper model such as Sonnet or Haiku is used.",
+   "t": "5:20"
+  },
+  {
+   "idea": "The architecture is split into three parts. The session is an append-only log that acts as the system's memory. The harness is a stateless router that runs Claude and sends tool calls, MCP calls and sandbox work to the right place. The orchestrator decides the harness mode and starts a new harness if one fails.",
+   "detail": "The presenter says the harness is custom-built for managed agents rather than being Claude Code itself. He says he will explain why later in the video, but does not do so in the transcript.",
+   "t": "6:33"
+  },
+  {
+   "idea": "Crash recovery follows from keeping the session log separate from the harness. When a harness dies, a new one reads the log to find out what happened and where to resume.",
+   "detail": "Presented as a benefit of the architecture for scale across many models and environments, not measured.",
+   "t": "7:59"
+  },
+  {
+   "idea": "Credentials sit in a vault and are injected at runtime at the tool call, MCP or sandbox level. The model and harness never see the keys, including the Anthropic API key.",
+   "detail": "Example given: a weather MCP key is used inside the tool call. The UI stores credentials for cloud-run agents. A local agent uses its own env file.",
+   "t": "7:59"
+  },
+  {
+   "idea": "The main trade-off is that managed agents are curated and billed as API usage. Anything outside the built-in integrations needs custom code, which is where OpenClaw is stronger.",
+   "detail": "Integrations shown include Notion, Slack and MCP servers. OpenClaw is described as having many channels, including Telegram, Discord and WhatsApp.",
+   "t": "9:21"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Scaffold a managed agent via the Claude Code skill",
+   "how": "Update Claude Code to a version that includes the built-in managed-agent skill. Run `/claude-api managed agents onboarding` and answer its prompts: tools, skills, files and repos, then environment and identity. Give it the task description, a repo URL, and the implementation language (TypeScript was used). Accept or adjust the suggested toolset, system prompt and model. The skill then generates a setup file and a runtime file using the TypeScript Claude SDK.",
+   "when": "Starting a simple custom agent that needs tools and a repo, when you do not want to learn the Agent SDK first."
+  },
+  {
+   "name": "Read-only toolset for a retrieval agent",
+   "how": "Choose the pre-built toolset with read, glob and grep enabled, and disable write, edit and bash. The skill suggested this for a read-only retrieval agent, and the presenter accepted it.",
+   "when": "An agent should answer questions from a repo or knowledge base without being able to change it."
+  },
+  {
+   "name": "Run setup once, then the runtime",
+   "how": "Run the setup file once to create the environment and agent, and record the returned environment ID and agent ID. Put the Slack app credentials in a local env file. Start the runtime file to run the Slack bot. Use the Claude Console Sessions view to inspect each run's tool calls and messages.",
+   "when": "Deploying a managed agent that is driven by an external channel such as Slack."
+  },
+  {
+   "name": "Iterate in the Console and keep version history",
+   "how": "Edit the system prompt, model and tools directly in the Claude Console agent page. Each change creates a new agent version (three versions after two edits in the demo). Switching from Opus to Sonnet was done to cut token cost.",
+   "when": "Testing agent behaviour quickly without redeploying code, and comparing configurations by version."
+  },
+  {
+   "name": "Runtime credential injection (vault pattern)",
+   "how": "Store secrets in the platform's credential vault rather than in prompts or the model context. Inject them at the point of use: inside the tool or MCP call, or inside the sandbox. The model and harness never receive the values, including the model's own API key.",
+   "when": "Any agent that calls third-party APIs and must not leak keys into model context or logs."
+  },
+  {
+   "name": "Separate durable session log from the executor",
+   "how": "Keep run state as an append-only log outside the process that runs the model. Let an orchestrator start a fresh executor when one fails, and have it read the log to resume from the last step.",
+   "when": "Long-running agent runs that must survive crashes, restarts or executor replacement."
+  }
+ ],
+ "tools": [
+  "Claude Managed Agents",
+  "Claude Console",
+  "Claude Code (managed-agent onboarding skill, `/claude-api managed agents onboarding`)",
+  "Claude Agent SDK",
+  "TypeScript Claude SDK",
+  "Claude Opus",
+  "Claude Sonnet",
+  "Slack (Slack app and bot)",
+  "Notion (built-in integration)",
+  "MCP servers",
+  "OpenClaw",
+  "GitHub (private repo as data source)",
+  "bash / read / glob / grep / write / edit pre-built toolset"
+ ],
+ "numbers": [
+  {
+   "claim": "Session runtime is billed at $0.08 per session-hour, only while the session is running. Idle sessions are not charged.",
+   "t": "5:20"
+  },
+  {
+   "claim": "Token usage is billed at standard Claude API rates. Pro, Max and Team subscriptions do not cover managed-agent tokens.",
+   "t": "5:20"
+  },
+  {
+   "claim": "The demo agent reached three versions after two configuration edits (system prompt and model Opus to Sonnet). No latency or cost figures were given.",
+   "t": "5:20"
+  }
+ ],
+ "hot_takes": [
+  "Managed Agents is framed as Apple-like and OpenClaw as Linux-like. The presenter says there is no need to learn an SDK or use a terminal.",
+  "The presenter says subscription limits should cover managed agents, and calls the API-only billing disappointing.",
+  "The presenter predicts managed agents will last, while OpenAI agents may be dead. He asks viewers to say so in the comments.",
+  "The demo agent over-disclosed medical detail in its Slack answer, which the presenter calls too much information but says works well.",
+  "The architecture is described from Anthropic's own article, which is linked in the description but not named in the transcript. The presenter adds no independent verification of the harness, failover or vault claims."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness does checkpoint/resume of long Claude Code runs. The session-log-plus-replaceable-harness split and the resume-from-log pattern are a direct design reference. Runtime credential injection matches its zero-token credential handling.",
+   "action": "Compare ProsHarness's checkpoint format with an append-only run log that a fresh harness can read to resume. Check that credentials are injected at tool-call time so the model never sees them."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS L1 has budgets and metering. Per-session-hour pricing that is zero while idle is a concrete metering model for a managed agent runtime.",
+   "action": "Consider whether AgentOS budgets should meter session-hours as well as tokens, with idle time excluded."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Shows the current Anthropic managed-agent architecture and its trade-offs against self-hosted agents. Useful context for build-vs-host decisions.",
+   "action": "Read the Anthropic managed-agents architecture article that the video links, since the video does not name it, and compare it with the ProsHarness and AgentOS designs."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

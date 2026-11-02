@@ -1,0 +1,157 @@
+{
+ "one_line": "Resolve AI engineer argues production ops, not coding, is the bottleneck, and shows always-on cloud background agents that run on schedules, events and messages, with deployment monitoring as the lead use case.",
+ "summary": "Justin Smith of Resolve AI argues that AI-accelerated coding pushes more load onto production operations, which he says is where engineers spend most of their time. He separates a background-agent task into execution (tools and access) and production context (knowing whether something matters), and says context is the harder part. Resolve's background agents are triggered by schedules, event streams such as deploys or Slack messages, or direct messages, and run always-on in a cloud sandbox with a filesystem and a shared memory/learning layer. The main example is deployment monitoring: on each release the agent reads the change, picks telemetry to check for that change, and keeps watching over time instead of running a fixed CI/CD baseline. Other examples are morning reports, weekly on-call handoffs, recurring health checks, and a passive first responder that answers engineering questions in Slack only when it is confident, otherwise it DMs a human to confirm. Tasks are configured by talking to the agent, and feedback in a thread edits the standing task. The talk is partly a product pitch and gives no benchmarks; its claims rest on the speaker's experience and one unspecified survey.",
+ "speakers": [
+  "Justin Smith"
+ ],
+ "orgs": [
+  "Resolve AI",
+  "Splunk",
+  "VMware"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "observability",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "background-agents",
+  "on-call",
+  "sre",
+  "deployment-monitoring",
+  "always-on-agents",
+  "slack-bot",
+  "sandbox",
+  "knowledge-system",
+  "mcp",
+  "ops-automation"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Operating production, not writing code, is the real cost of software work.",
+   "detail": "The speaker cites a survey (source not named) saying about 70% of engineer time goes to running shipped code: on-call, incidents, scaling, runbooks, alerts and escalations. He argues AI coding raises the volume of changes, so production load grows.",
+   "t": "1:24"
+  },
+  {
+   "idea": "A background-agent task has two parts: execution and production context.",
+   "detail": "Execution means knowing what to do and having tool access. Production context means knowing whether a signal matters, for example a metric that 'feels off'. He says the agent needs both, and that context is the more important part.",
+   "t": "12:59"
+  },
+  {
+   "idea": "Background agents are defined by when they run, how they run, and what they know.",
+   "detail": "They are triggered by a schedule, an event stream (deploy pipeline, Slack), or a direct message. They run always-on in the cloud inside a sandbox with a filesystem so they can organise their own work. A shared knowledge and memory layer lets lessons from one task carry into others.",
+   "t": "15:21"
+  },
+  {
+   "idea": "Deployment monitoring is the lead use case, because CI/CD baseline checks are generic.",
+   "detail": "On each release the agent reads the change, picks the telemetry that would show whether that change is healthy, and builds a plan for that release. It also covers changes that bypass CI/CD, such as feature flags and infra changes. He says the goal is to patch gaps in existing pipelines, not replace them.",
+   "t": "17:40"
+  },
+  {
+   "idea": "Monitoring is open-ended: the agent decides how long to keep watching.",
+   "detail": "Checks are not hard-coded waits. The agent might wait an hour for a rare issue or return after three days to see whether a deploy's expected effect held. Autonomy is set by the user.",
+   "t": "19:03"
+  },
+  {
+   "idea": "Passive question-answering is gated by confidence, and the agent confirms with a human before replying.",
+   "detail": "The agent watches critical Slack channels. If it is confident it answers; if not, it DMs the engineer to confirm before posting. Engineers stop being the bottleneck without having to be @-mentioned.",
+   "t": "16:22"
+  },
+  {
+   "idea": "Behaviour is tuned in the conversation thread, and the feedback is saved to the task.",
+   "detail": "Asking for shorter output in the thread changes the agent's underlying task definition, so later runs follow the new instruction. Tasks are also set up by talking to the agent, which explores the environment and asks what the user wants.",
+   "t": "20:28"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Trigger-typed background agent",
+   "how": "Give each agent three entry points: a cron-like schedule (morning report, Thursday on-call handoff), an event stream (deploy events, Slack messages), and direct messages. Run it always-on in a sandbox with its own filesystem.",
+   "when": "Recurring ops work that has no single owner and no page to fire, such as health checks and handoffs."
+  },
+  {
+   "name": "Per-change check plan generated from the diff",
+   "how": "On each deploy event, the agent reads what changed, chooses the signals that could show a problem for that change (e.g. checkout latency, error rate, a downstream Kafka pipeline), and then monitors them over time.",
+   "when": "Releases that go out through several paths (CI/CD, feature flags, infra changes) where static alert baselines miss things."
+  },
+  {
+   "name": "Time-bounded watch with agent-chosen duration",
+   "how": "Set the agent to watch a signal for a window (e.g. a week) or let it choose how long to wait before re-checking, then have it stop itself.",
+   "when": "Watching a risky change or a third-party dependency for a period, not on a fixed interval."
+  },
+  {
+   "name": "Confidence-gated reply with human confirmation",
+   "how": "The agent watches public channels and only replies when its confidence clears a threshold. Below it, it DMs the expert with a draft answer and asks for confirmation.",
+   "when": "Engineering support where experts are interrupted too often, but wrong answers are costly."
+  },
+  {
+   "name": "Feedback in the thread edits the standing task",
+   "how": "Respond to an agent's output in its thread with the change you want (e.g. 'too verbose, make it shorter'). The agent updates its own task so future runs follow it.",
+   "when": "Tuning recurring reports and alerts without editing config files."
+  },
+  {
+   "name": "Expose agent capabilities over MCP",
+   "how": "Make the platform's tools and learned context available as MCP servers so a custom agent harness can call them for production context.",
+   "when": "You run your own agent harness and want production context without rebuilding it."
+  }
+ ],
+ "tools": [
+  "Slack",
+  "Microsoft Teams",
+  "GitHub release tags",
+  "Kafka",
+  "CI/CD pipelines",
+  "feature flag systems",
+  "MCP servers",
+  "Granola"
+ ],
+ "numbers": [
+  {
+   "claim": "About 70% of engineer time goes to running production code (on-call, incidents, scaling, runbooks, alerts), not writing code. Source is a survey the speaker mentions but does not name.",
+   "t": "1:24"
+  },
+  {
+   "claim": "Example watch windows: an agent watches a third-party service for about a week after a change; another waits about an hour for a rare issue; another re-checks a deploy after three days.",
+   "t": "15:21"
+  },
+  {
+   "claim": "On-call handoff report runs weekly, on Thursdays.",
+   "t": "11:47"
+  },
+  {
+   "claim": "No benchmarks, latencies, costs or adoption figures are given in the talk.",
+   "t": "22:45"
+  }
+ ],
+ "hot_takes": [
+  "Coding was never the big bottleneck; running software in production is.",
+  "Replacing CI/CD is not the goal. Agents should patch the gaps in existing pipelines.",
+  "Each company is unique, so the best agent use cases come from learning each environment, not from standard templates.",
+  "Context is more important than execution for background agents."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness has loops and schedules. The talk's trigger model (schedule, event, message) and time-bounded watch that stops itself are a direct comparison for that design.",
+   "action": "Check how ProsHarness loops and schedules decide when to stop. Try a watch-window stop condition, and add an event trigger alongside the schedule trigger. Expect about half a day of work for a small prototype."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The sandboxed always-on runtime and shared memory across tasks overlap with Crucible and MemoryMesh. The talk gives no measurements, so the value is in the design shape only.",
+   "action": "When scoping SkillForge skill-worthiness, note the talk's rule that lessons learned in one task are reused across others. Compare that with MemoryMesh cross-session tiers."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The execution vs production-context split is a reusable way to think about what an agent needs before it acts.",
+   "action": "Before adding tools to an agent, write down what context it needs to judge whether a signal matters, and treat that as a separate piece of work from tool access."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

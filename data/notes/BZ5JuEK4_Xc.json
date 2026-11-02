@@ -1,0 +1,158 @@
+{
+ "one_line": "Better Stack walks through Deno 2.9's new `deno desktop` command for building TypeScript desktop apps, comparing it to Electron: a 70 MB binary versus 248 MB, similar startup, with a caveat that the test apps are tiny.",
+ "summary": "Warren from Better Stack introduces Deno 2.9's `deno desktop` command, which packages a TypeScript app as a desktop application without shipping Chromium by default. He builds the same note-taking app in Electron and in Deno to compare. Deno exposes a global `Dino` object for window, tray, dialog and notification APIs, plus a `bind` method for calling from the web view into backend code. Rendering defaults to the OS web view, with a bundled-Chromium option via CEF. Packaging is driven by flags or a `dino.json` file, and Windows and Linux installers are built in pure Rust so they can be cross-built from any host. On the test app, the Deno binary is 70 MB versus 248 MB for Electron, and startup times are nearly identical (375 ms vs 364 ms). Warren notes that the Deno benchmarks are its own and that the apps are too small to show how results scale. He calls the project experimental but says it is already enough to start building real apps.",
+ "speakers": [
+  "Warren (Better Stack)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Deno",
+  "Electron",
+  "Apple"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "deno",
+  "desktop-apps",
+  "electron",
+  "typescript",
+  "webview",
+  "chromium",
+  "cef",
+  "cross-compilation",
+  "supply-chain",
+  "dependency-age"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Deno 2.9 adds a `deno desktop` command that turns a TypeScript entry file into a desktop app, and it auto-detects frameworks such as Next.js and Remix in the current directory.",
+   "detail": "No separate scaffold is needed. The speaker says it works with a hello-world file, and that framework projects are picked up automatically. The command is new in 2.9.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The global `Dino` object gives desktop APIs (window control, tray, native alerts), and `bind` provides a simpler backend call path than Electron's IPC.",
+   "detail": "The speaker says Electron's IPC needs three steps and Deno's `bind` is a simpler alternative. His note app calls a binding on create and saves the note to disk from the backend.",
+   "t": "1:10"
+  },
+  {
+   "idea": "Deno's default renderer is the OS web view, which is why it ships smaller than Electron. Bundling Chromium through CEF is an opt-in trade-off for identical rendering.",
+   "detail": "The default uses WebView2 on Windows and WebKit on macOS and Linux. The CEF option brings consistent rendering across OSes at the cost of more bloat. Electron ships about 180 MB of Chromium before any app code.",
+   "t": "2:35"
+  },
+  {
+   "idea": "Packaging is handled by a flag or a `dino.json` file, and any host can build the Windows and Linux installers.",
+   "detail": "Installers are authored in pure Rust, so cross-building (for example, Windows from a Mac) does not need platform tooling. An all-targets flag builds every supported platform.",
+   "t": "2:35"
+  },
+  {
+   "idea": "On the identical note app, the Deno binary is about 70 MB versus 248 MB for Electron, and startup is essentially the same.",
+   "detail": "Warren averaged several launches: Deno 375 ms, Electron 364 ms. He says the results may diverge as apps grow, and that the Deno 2.9 performance numbers (about 2x faster cold start, up to 3.1x less memory on JSON POST) come from Deno's own benchmarks.",
+   "t": "3:48"
+  },
+  {
+   "idea": "Production features come built in: auto-update, error reporting, system menus, trays, dialogs and notifications. The project still labels itself experimental and lacks Electron's feature depth.",
+   "detail": "The speaker's judgment is that this is enough to start building real applications. He also mentions CSS module imports in 2.9 and a single `dino install` command that migrates a project away from npm, pnpm, yarn and bun.",
+   "t": "4:40"
+  },
+  {
+   "idea": "A minimum dependency age is on by default in response to recent supply-chain incidents. Dependencies must be older than the set threshold (his example is 72 hours) before they can be installed.",
+   "detail": "The setting can be disabled by setting the min release age to zero. This is a dependency-hygiene default that is independent of the desktop features.",
+   "t": "5:36"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Build a desktop app from one TypeScript file",
+   "how": "Run `deno desktop` and point it at a TypeScript entry file. Deno auto-detects the framework if the directory holds Next.js, Remix or a similar project. For live development, append the HMR flag (the flag name is not spoken in the video) to get hot reload.",
+   "when": "Starting a desktop wrapper for an existing web frontend, or prototyping a small local tool, when you want to avoid Electron's bundled Chromium."
+  },
+  {
+   "name": "Call backend code from the web view with `bind`",
+   "how": "Register a binding on the Deno backend and call it from the front end when the UI event fires (the speaker's example: create note). The backend then writes to disk. The speaker contrasts this with Electron's three-step IPC bridge.",
+   "when": "A web-view UI needs filesystem or other privileged work done in the backend without the Electron IPC setup."
+  },
+  {
+   "name": "Choose the renderer per build",
+   "how": "Default: the OS web view (WebView2 on Windows, WebKit on macOS and Linux). For identical rendering on every OS, pass the `backend` flag with the value `CEF` to bundle Chromium through the Chromium Embedded Framework. Expect a larger binary.",
+   "when": "Use the default for small size and native look. Use CEF when visual consistency across operating systems matters more than size."
+  },
+  {
+   "name": "Package for one or several platforms with flags or dino.json",
+   "how": "Pass the `output` flag with the target type: app and DMG on macOS, EXE or MSI on Windows, AppImage, DEB or RPM on Linux. Use the all-targets flag to build every platform. Cross-building (for example, Windows from macOS) works because the installers are written in pure Rust. Put the same settings in a `dino.json` file: app name and identifier, output targets, release URL and error-reporting URL.",
+   "when": "Shipping a desktop build from CI or a laptop without per-OS toolchains, or when the number of CLI flags gets unwieldy."
+  },
+  {
+   "name": "Keep the default dependency age guard",
+   "how": "Dino enables a minimum dependency age by default (72 hours in the speaker's example), so freshly published packages cannot be installed. To opt out, set the min release age to zero in the Deno config. The speaker does not show the exact config key.",
+   "when": "Projects that install a lot of packages automatically, where a supply-chain attack on a brand-new release would be costly. Keep the default unless you need the newest package versions immediately."
+  }
+ ],
+ "numbers": [
+  {
+   "claim": "Electron ships about 180 MB of Chromium before any app code is written.",
+   "t": "1:10"
+  },
+  {
+   "claim": "Deno 2.9 vs 2.8 (Deno's internal benchmarks): about 2x faster cold starts, and up to 3.1x less memory when executing POST requests that respond with JSON.",
+   "t": "3:48"
+  },
+  {
+   "claim": "Identical note-taking app binary size: Deno 70 MB vs Electron 248 MB.",
+   "t": "3:48"
+  },
+  {
+   "claim": "Average startup over several launches: Deno 375 ms vs Electron 364 ms (tiny apps, so the speaker warns results may diverge at scale).",
+   "t": "3:48"
+  },
+  {
+   "claim": "Default minimum dependency age is enforced in the example as 72 hours, and can be set to zero to disable it.",
+   "t": "5:36"
+  }
+ ],
+ "tools": [
+  "Deno 2.9",
+  "deno desktop",
+  "Dino (global runtime object)",
+  "Electron",
+  "Chromium",
+  "CEF (Chromium Embedded Framework)",
+  "WebView2",
+  "WebKit",
+  "Next.js",
+  "Remix",
+  "dino.json",
+  "npm",
+  "pnpm",
+  "yarn",
+  "bun",
+  "CSS module imports",
+  "dino install"
+ ],
+ "hot_takes": [
+  "Deno Desktop is already good enough to build real apps even though Deno still calls it experimental.",
+  "Most of Electron's size gap comes from its bundled Chromium, and Deno's default of using the OS web view is the main reason for the difference.",
+  "The startup-time parity result says little about real apps: the test apps are tiny and the speaker says results may change as they grow.",
+  "The 2.9 performance numbers are Deno's own internal benchmarks, not independent tests."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "AgentOS is a proxy, storage and inference stack. A desktop app framework does not touch any of its layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness has phone-driven approvals and could eventually need a desktop control panel. The dependency-age default is the one part that could apply now.",
+   "action": "Check whether ProsHarness's own npm/bun installs should set a minimum release age (72 hours was the example), as a guard against freshly published malicious packages."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

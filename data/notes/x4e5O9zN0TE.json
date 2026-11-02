@@ -1,0 +1,152 @@
+{
+ "one_line": "Long-running, stateful agents need controlled scenario suites, balanced scorecards and a ratchet loop, not just prompt tweaks; the speaker's case study is a game-village multi-agent system tuned by an outer auto-research loop.",
+ "summary": "Erina Karati (ex-Microsoft, ex-Supercell) presents Project Paradox, a Supercell AI Innovation Lab framework for autonomous game agents with per-agent RAG memory, emotion vectors, trust/belief scores and importance-scored memories. Over long horizons the agents lost social consistency: rumors hardened into facts and sources were forgotten. The team wrapped the system in an auto-research loop, inspired by Karpathy's auto-research, that runs controlled scenarios, collects structured traces, scores behavior, proposes a small policy change, reruns, and keeps the change only if the scorecard improves and guardrails hold. The core argument is that memory alone is not enough: agents must preserve provenance (first-hand vs second-hand, confidence, verified vs uncertain) and separate raw episodic memory from current beliefs. They stress balanced scorecards over one \"agent quality\" metric and freezing the harness, scenarios and metrics while exposing only a small editable policy surface. The speaker explicitly says they do not yet have repeated loop results, so the talk is a method proposal with one anecdote rather than a proven benchmark.",
+ "speakers": [
+  "Erina Karati",
+  "Nachala Manikhandan"
+ ],
+ "orgs": [
+  "Supercell",
+  "Microsoft"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "skills-self-improvement",
+  "memory",
+  "multi-agent"
+ ],
+ "tags": [
+  "auto-research",
+  "long-horizon agents",
+  "scenario suites",
+  "behavioral scorecard",
+  "provenance",
+  "belief state",
+  "ratchet loop",
+  "game agents",
+  "multi-agent simulation",
+  "policy surface"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Long-horizon agents fail in ways single-turn evals miss",
+   "detail": "Per-agent RAG memory and a short-term plan worked for brief play, but over longer runs a rumor about mangoes lost its source and became a stated fact, and agents forgot facts they had learned.",
+   "t": "5:58"
+  },
+  {
+   "idea": "Auto-research as an outer meta loop, not another agent",
+   "detail": "The auto-research layer sits outside the simulated village. It reads full run traces, compares them with scenario ground truth, proposes a constrained protocol change, and reruns to see whether society-level behavior improved.",
+   "t": "7:13"
+  },
+  {
+   "idea": "Keep only changes that survive measurement (ratchet)",
+   "detail": "Each candidate change is scored and kept only if the scorecard improves and guardrails hold; otherwise it is reverted. Rollback is treated as mandatory because one fix can damage another behavior, such as faster fact spread leaking private info.",
+   "t": "9:54"
+  },
+  {
+   "idea": "Use controlled scenarios with ground truth instead of letting agents wander",
+   "detail": "Scenarios such as public-fact diffusion, rumor uncertainty and replanning after a blocked route make social behavior measurable. Open-ended simulation can look good in demos but is hard to evaluate.",
+   "t": "11:16"
+  },
+  {
+   "idea": "Balanced scorecard, one metric per behavior",
+   "detail": "Metrics include reach after N steps (diffusion), source retention (provenance), uncertainty preservation and false-certainty rate (rumors), action consistency and time to re-plan (planning), and containment (privacy). Optimizing one metric alone makes agents overshare or create stale memories.",
+   "t": "12:42"
+  },
+  {
+   "idea": "Freeze the harness and expose only a small policy surface",
+   "detail": "The loop may edit memory-write and retrieval policy, communication prompts, trust rules, attribution rules and planning triggers. It may not rewrite the codebase, the scenarios or the metrics, which blocks gaming the evaluation.",
+   "t": "14:58"
+  },
+  {
+   "idea": "Memory is not enough: store provenance and belief state",
+   "detail": "Agents need to know whether a fact was first-hand or second-hand, verified or uncertain, and should separate raw episodic memories from current beliefs. Hedging is required when retelling uncertain claims.",
+   "t": "16:10"
+  },
+  {
+   "idea": "Generalizes to other stateful agents (support, personal, research, coding, workflow)",
+   "detail": "The speaker argues that any agent whose state affects future action needs scenario suites and behavioral scorecards, with examples like policy-update provenance, commitments, citations and handoffs.",
+   "t": "19:00"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Controlled scenario suite with ground truth",
+   "how": "Define small scenarios with known truth (for example, Agent A learns the bakery closes tomorrow; does the right agent learn it, cite the source and change its plan?). Run the agents, then score against the known answer.",
+   "when": "Evaluating multi-agent or long-running stateful behavior where a single answer-quality score hides failures."
+  },
+  {
+   "name": "Balanced behavioral scorecard with guardrails",
+   "how": "Measure several separate dimensions (reach, source retention, uncertainty preservation, false-certainty rate, re-plan time, containment). Accept a change only if the target metric improves and the guardrail metrics do not regress.",
+   "when": "Any auto-optimization loop, so the optimizer cannot game one number."
+  },
+  {
+   "name": "Frozen-harness ratchet loop",
+   "how": "Freeze the harness, scenarios and metrics. Let an outer loop edit only a small policy surface, rerun the suite, and keep the change if it passes the scorecard. Otherwise revert.",
+   "when": "Self-improvement of an agent system where the optimizer might rewrite the evaluation or the codebase."
+  },
+  {
+   "name": "Structured run-trace logging",
+   "how": "Log observations, conversations, memory writes, retrievals and belief updates for each run, so an outer analyzer can compare what happened with the ground truth.",
+   "when": "Before building any automated analysis of agent behavior."
+  },
+  {
+   "name": "Importance-scored memory with a threshold cache",
+   "how": "The LLM rates each event's importance. Memories above a threshold go into a separate high-priority store, so important context is retrieved more reliably later.",
+   "when": "Long-lived agents where routine memories would crowd out critical ones."
+  },
+  {
+   "name": "Provenance and confidence tags on memories",
+   "how": "Store the source, whether the info was first-hand or second-hand, a confidence level, and whether it is verified or uncertain. When the agent retells a claim, it must carry the hedge.",
+   "when": "Agents that pass information between each other or answer questions about who said what."
+  },
+  {
+   "name": "Separate episodic memory from current belief",
+   "how": "Keep raw episodic memories apart from a derived belief layer that holds what the agent currently holds to be true, with trust and emotion scores that the LLM updates after each interaction.",
+   "when": "Agents that must track what is true, uncertain or outdated over time."
+  }
+ ],
+ "tools": [
+  "Project Paradox (in-house framework)",
+  "RAG-backed per-agent memory",
+  "auto-research loop (Karpathy-inspired)"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Memory alone (RAG) does not give long-horizon agent behavior; agents also need provenance and a separate belief state.",
+  "A single vague 'agent quality' metric hides the failures that matter; use a balanced scorecard.",
+  "Self-improvement loops should freeze the harness, scenarios and metrics, and expose only a small policy surface.",
+  "Any agent whose stored state affects future action (support, personal, research, coding, workflow) has the same problem."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already has tiered cross-session memory with conflict resolution and provenance. The talk's point that source and first-hand vs second-hand status must survive recall applies directly.",
+   "action": "Add source, first-hand/second-hand and confidence fields to MemoryMesh memory writes, then write a small scenario where a fact passes through two agents and check that the source and hedge survive retrieval."
+  },
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "EvolveCraft and SkillForge need a success signal and a way to keep only changes that help. The ratchet loop with a frozen harness and a guardrailed scorecard answers both questions.",
+   "action": "Design the EvolveCraft/SkillForge success signal as a balanced scorecard with guardrail metrics. Freeze the harness and the eval set, and allow the loop to edit only the skill-selection or prompt policy."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs long Claude Code jobs with checkpoints and loops. A frozen scenario set with a pass/fail scorecard could gate changes to its loop prompts, but the talk does not cover that setting.",
+   "action": "Read the talk's ratchet and frozen-harness section, then consider a fixed regression scenario set for ProsHarness plan/critique prompts before accepting prompt edits."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Practical method for evaluating stateful agents: scenarios with ground truth, a multi-metric scorecard, and rollback. It is applicable to most agent evals.",
+   "action": "Write one controlled scenario with ground truth for a stateful behavior in an existing agent, and track 3-4 separate metrics, including one guardrail, instead of a single pass rate."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

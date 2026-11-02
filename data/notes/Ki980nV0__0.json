@@ -1,0 +1,175 @@
+{
+ "one_line": "Dhruv Batra (Yutori) argues the long-tail web will be driven by pixel-based computer-use agents rather than new APIs, and shows his Navigator model's accuracy and cost per task.",
+ "summary": "Batra argues against the view that agents will get clean APIs for most of the web. He says MCP and protocol proposals help only the most popular sites, while the long tail of institutional and small-business sites will stay as HTML, images, scanned PDFs and JavaScript-rendered pages. He shows examples where the answer is not in the page HTML at all, because it is computed in the browser from async JSON, so the rendered pixels are the real source of truth. His claim is that a general pixels-in, clicks-out model generalises better than hand-written scaffolds. He describes Navigator, which takes screenshots and emits clicks and scrolls, and a later version that can also run JavaScript on demand and fan out to parallel cloud-browser instances. He says the OnlineMind2Web benchmark is saturated at 97% human-eval, and that cost and latency per task (about $0.80 versus $2.30) are the real lever. He ends with a prediction: the web will be \"agentified\" as a structured task layer, with hundreds of browsers behind it, returning results in under 100 ms for under a penny. Most numbers are his own model's results and are not independently checked.",
+ "speakers": [
+  "Dhruv Batra"
+ ],
+ "orgs": [
+  "Yutori"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "evals",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "computer-use",
+  "browser-agents",
+  "navigator",
+  "web-agents",
+  "apis-vs-ui",
+  "onlinemind2web",
+  "cost-per-task",
+  "vision-agents",
+  "cloud-browsers",
+  "mcp-skepticism"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The web will not get APIs for the long tail, so agents will have to drive the UI.",
+   "detail": "He grants that the most popular sites may expose APIs, and that MCP and similar protocols will keep growing (about 20 competing payment protocols, by his count). He still argues that most institutions change too slowly to expose endpoints, and that the long tail will be reached through computer-use models instead.",
+   "t": "0:56"
+  },
+  {
+   "idea": "Many pages do not contain their data in the HTML, so reading the source is not enough.",
+   "detail": "On an NBA score page, the initial HTML is an empty placeholder; the browser fetches JSON asynchronously afterwards. On a product page, the in-stock state is computed by a rendering script from a quantity field in JSON, and the text 'sold out' never appears in the source.",
+   "t": "8:28"
+  },
+  {
+   "idea": "Pixels are the source of truth because the web was built for human eyes, and scaffolds do not generalise.",
+   "detail": "He frames the page as a rendering engine, closer to a game engine than to text. Hand-written scrapers and wrappers fail on the long tail, so he argues the most general input (screenshots) is the bitter-lesson choice for web agents.",
+   "t": "11:23"
+  },
+  {
+   "idea": "A general navigator model takes screenshots in and emits clicks and scrolls out.",
+   "detail": "Navigator's first version (released last November) acted like a human. He demos a discount-code check across a site that needs search, add-to-cart and code application, which takes roughly 20 to 40 steps. He says solvable-in-principle is the test, with accuracy gaps still present in practice.",
+   "t": "12:39"
+  },
+  {
+   "idea": "Adding a run-JavaScript action lets the model batch work, while the screenshot still verifies the result.",
+   "detail": "The next version can write a small function to fill several form fields at once, using an execute-JS action in a Chrome extension. He says the screenshot is the check: whether the code ran is not what matters, what the user sees is.",
+   "t": "14:07"
+  },
+  {
+   "idea": "Parallel navigators in cloud sandboxes give superhuman throughput.",
+   "detail": "An orchestrator launches many navigator instances at once, each with its own cloud sandbox browser, clicking through many sites in parallel. He says no human could run that many sessions.",
+   "t": "15:08"
+  },
+  {
+   "idea": "Cost and latency per task are the lever, not small accuracy gains.",
+   "detail": "His model is a smaller footprint than trillion-parameter frontier models and is much faster. He claims accuracy within statistical noise of Opus 4.7 and GPT 5.5 on browser benchmarks, and about $0.80 per task against $2.30 over 20 to 30 steps.",
+   "t": "17:35"
+  },
+  {
+   "idea": "He predicts the agentified web will be a structured task layer hidden behind browsers.",
+   "detail": "You issue a task in natural language or with parameters, hundreds of browsers click like humans behind the scenes, and you get structured output in under 100 ms for under a penny. He says that is what people will call an API.",
+   "t": "20:12"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Screenshot-in, action-out computer-use loop",
+   "how": "The model receives the current screenshot and outputs clicks, scrolls and typing. It repeats for about 20 to 40 steps until the task is done.",
+   "when": "Sites with no API and no stable DOM structure, where you need a general solution across many unknown sites."
+  },
+  {
+   "name": "Code-on-demand as a browser action",
+   "how": "Give the agent an execute-JS action in the page. It writes a small function for repetitive or batch DOM work, such as filling several form fields in one step.",
+   "when": "Batch form entry or repetitive DOM operations where one click per field is slow. The screenshot still checks the outcome."
+  },
+  {
+   "name": "Pixel-based success check",
+   "how": "Judge whether the task succeeded from the rendered screenshot, not from HTML or the agent's own report.",
+   "when": "Verifying a browser-agent run finished, since the DOM can hide or compute the data."
+  },
+  {
+   "name": "Parallel sandboxed-browser fan-out",
+   "how": "An orchestrator spawns many agent instances, each with its own cloud sandbox browser, and runs them concurrently on different sites.",
+   "when": "The same task must run across many independent sites, such as checking many government procurement pages."
+  },
+  {
+   "name": "Read the async data call, not the initial HTML",
+   "how": "If the page's visible data is missing from the initial HTML, inspect what the browser fetches after load. He points to JSON endpoints and computed states, like a quantity field driving a greyed-out option.",
+   "when": "Extracting information from single-page apps or pages that render state with scripts."
+  },
+  {
+   "name": "Cost-per-task as the headline metric",
+   "how": "Measure latency per step and cost per completed task across models, then compare a smaller model against frontier models on the same task set.",
+   "when": "Choosing a model for high-volume agent work where small accuracy differences fall within noise."
+  }
+ ],
+ "tools": [
+  "Navigator (Yutori computer-use model)",
+  "OnlineMind2Web benchmark",
+  "Chrome extension for browser actions",
+  "MCP servers and web MCP",
+  "Opus 4.7 and GPT 5.5 (comparison models)",
+  "Cloud sandbox browsers"
+ ],
+ "numbers": [
+  {
+   "claim": "About 20 competing payment protocols, per the speaker's count, in addition to MCP and web MCP",
+   "t": "0:56"
+  },
+  {
+   "claim": "US has about 15,000 to 20,000 school districts (his example of an enterprise long-tail target)",
+   "t": "5:55"
+  },
+  {
+   "claim": "About 200 million active websites and about 1 billion total",
+   "t": "7:01"
+  },
+  {
+   "claim": "Navigator's first version was released last November, acting screenshot-in and clicks-out",
+   "t": "12:39"
+  },
+  {
+   "claim": "A discount-code validity task takes about 20 to 40 browser steps",
+   "t": "12:39"
+  },
+  {
+   "claim": "Navigator N1.5 scores 97% human-eval on OnlineMind2Web; 8 of 300 trajectories are incorrect. He says the benchmark is saturated.",
+   "t": "16:14"
+  },
+  {
+   "claim": "Tasks of about 30 to 50 steps are in use; cost per task about $0.80 for his model against $2.30 for a frontier comparison (20 to 30 steps)",
+   "t": "17:35"
+  },
+  {
+   "claim": "Predicted agentified-web target: under a penny per task and under 100 ms latency",
+   "t": "20:12"
+  }
+ ],
+ "hot_takes": [
+  "The argument that agents will call clean APIs across the web is delusional for most of the long tail.",
+  "Computer-use benchmarks such as OnlineMind2Web are saturated and should be retired.",
+  "Pixel-in, click-out is the bitter lesson for web agents: scaffolds around existing websites do not generalise.",
+  "Cost and latency per task matter more than small accuracy gains between frontier and small models.",
+  "The future web is a hidden layer of browser agents returning structured results, which people will simply call an API."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Crucible's sandboxed execution could host browser-agent sandboxes, and the talk's parallel cloud-browser fan-out is a related pattern, but browser agents are not on the AgentOS roadmap.",
+   "action": "Read the talk's per-task cost framing and note whether browser-agent workloads belong in Crucible's exec-gate plans; no build change needed yet."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness checkpoints and verifies long Claude Code runs. The talk's point is that the rendered outcome, not the agent's own report, is the source of truth.",
+   "action": "For any ProsHarness run that drives a UI, consider using a screenshot or observable-state check as the completion gate before marking a checkpoint done."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The talk's cost comparison (about $0.80 versus $2.30 per task) and its argument for smaller models fit cheap-model pipeline work, though the evidence is the speaker's own model.",
+   "action": "When comparing Haiku-class models for agent steps, measure cost per completed task and per-step latency, not only per-call accuracy; the talk's numbers are unverified and should be checked on our own tasks."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

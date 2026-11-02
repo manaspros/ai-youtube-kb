@@ -1,0 +1,249 @@
+{
+ "one_line": "Expo developer advocate Beto on React Native in 2025: safe OTA updates with EAS Update, prebuild instead of eject, store submission, and the Flutter-vs-RN debate. Vendor-side anecdotes, little AI content.",
+ "summary": "Better Stack podcast episode with Beto, a developer success engineer at Expo, on the state of React Native and Expo in late 2025. The technical core covers over-the-air JavaScript updates via EAS Update, which are safe only when the new bundle matches the native code already in users' binaries, and prebuild as the replacement for eject. Beto also covers Expo Go's limits, Expo Launch (GitHub repo to TestFlight, iOS only at the time), and Apple's faster beta review compared with Google Play's tester requirement. The hosts argue that Flutter draws its own widgets so OS redesigns hit it, while React Native uses native controls, and Beto describes Expo UI as the effort to expose native views. Other segments cover widgets and Apple Watch via Apple Targets, a small icon-generation CLI called SnapAI, and personal anecdotes about the speaker's career and video setup. Almost nothing here concerns AI engineering beyond Apple's on-device model and AI app generators building on Expo.",
+ "speakers": [
+  "Richard",
+  "James Andrews",
+  "Beto"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Expo",
+  "Apple",
+  "Google",
+  "Shopify",
+  "Walmart",
+  "Klarna",
+  "Microsoft",
+  "Meta",
+  "Airbnb",
+  "Starlink",
+  "Coinbase",
+  "Bluesky",
+  "Motion VFX"
+ ],
+ "format": "interview",
+ "topics": [
+  "dev-tools",
+  "vibe-coding-app-building"
+ ],
+ "tags": [
+  "react-native",
+  "expo",
+  "ota-updates",
+  "eas-update",
+  "prebuild",
+  "expo-go",
+  "testflight",
+  "app-store",
+  "flutter",
+  "liquid-glass",
+  "expo-ui",
+  "apple-targets",
+  "icon-generation",
+  "podcast"
+ ],
+ "key_ideas": [
+  {
+   "idea": "OTA updates swap only the JavaScript bundle, so the bundle must be compatible with the native code already in the installed binary. Shipping JS that calls a native module the old binary lacks makes it fail, so adding native modules requires a new store build.",
+   "detail": "Speaker's example: a binary shipped without the push-notifications native module will break if a later OTA bundle calls it.",
+   "t": "8:04"
+  },
+  {
+   "idea": "Apple tolerates interpreted-code updates only within limits. The speaker's rule of thumb is that OTA suits quick fixes, typos and promos, while full refactors or new native modules need a fresh build and review.",
+   "detail": "He hedges the '80% of the screen can change' figure as his own rough estimate, not a published rule.",
+   "t": "9:17"
+  },
+  {
+   "idea": "EAS Update is Expo's hosted OTA service. The app installs expo-updates and can check for updates passively on relaunch, force an update prompt, or show a settings-screen button. The CLI bundles the project and targets only binaries it is compatible with.",
+   "detail": "No exact CLI command is spoken in the segment; it is described as running the EAS Update CLI.",
+   "t": "10:46"
+  },
+  {
+   "idea": "Prebuild replaces eject. Expo generates the iOS and Android native projects on demand, so developers can install Expo or community native libraries without leaving the Expo workflow.",
+   "detail": "The transcript says 'pre-build'; the command is npx expo prebuild. The speaker says you can then pre-build and compile for submission.",
+   "t": "13:30"
+  },
+  {
+   "idea": "Expo Go is a sandbox app that loads your JS bundle over a QR code, but it ships only Expo's modules. Any other native library needs a prebuilt, compiled development build on the device.",
+   "detail": "Limitation stated directly by the speaker.",
+   "t": "14:57"
+  },
+  {
+   "idea": "Apple's on-device Foundation Models are reachable from Expo only through a custom native module. Structured output needs a hand-written Swift 'generable' struct because the app cannot predict which schemas users need.",
+   "detail": "Speaker says this is the main iOS capability Expo cannot provide out of the box as of the recording.",
+   "t": "12:11"
+  },
+  {
+   "idea": "Expo UI is in progress to expose native views, not just native modules, so apps pick up platform looks such as Liquid Glass. It is in beta on iOS, and an Android beta was planned for SDK 55.",
+   "detail": "Roadmap statements from the speaker; not verified.",
+   "t": "17:51"
+  },
+  {
+   "idea": "Store submission: Expo Launch builds from a public GitHub URL (iOS only at the time) and returns a TestFlight link. Beto says Apple's beta review fell from about 7 to 14 days to 1 to 2 days, while Google Play requires about 10 testers before publishing.",
+   "detail": "Speaker says TestFlight external testing can reach up to 10,000 people via a public link.",
+   "t": "21:52"
+  },
+  {
+   "idea": "The cross-platform argument: Flutter paints its own widgets to mimic iOS, so each Apple redesign means re-implementing them. React Native uses the underlying native controls, so recompiling with a new Xcode picks up the redesign for free, which is the speaker's claim.",
+   "detail": "The hosts jokingly conclude Liquid Glass 'might have killed Flutter'; no evidence beyond assertion is given.",
+   "t": "26:00"
+  },
+  {
+   "idea": "Widgets, Live Activities and Apple Watch apps are added as extra native targets through Apple Targets, a community package by Evan Bacon (an Expo engineer). It supports sharing state between widget and app, and Watch users get iPhone push notifications without extra integration.",
+   "detail": "Speaker points to examples he will link in the show notes; not reproduced here.",
+   "t": "49:16"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Ship JS-only fixes with EAS Update and expo-updates",
+   "how": "Install expo-updates in the app. Choose a check strategy: passive (update on next launch), forced (prompt the user), or a settings-screen button. Publish with the EAS Update CLI, which bundles the project and targets binaries it is compatible with. Keep the change JS-only; any new native module needs a store build.",
+   "when": "Quick bug fixes, typos, promos such as a modal banner. Not for large refactors or new native dependencies."
+  },
+  {
+   "name": "Check native compatibility before each OTA bundle",
+   "how": "Before publishing a bundle, confirm every native module it imports is already in the binary users have installed. If you add a native dependency, release a new build through the store.",
+   "when": "Any time you add a dependency to an app that already has users on older binaries."
+  },
+  {
+   "name": "Prebuild instead of ejecting",
+   "how": "Run npx expo prebuild to generate the ios/ and android/ folders from the project config. Install Expo or community native libraries normally. Treat the native folders as generated output, and regenerate them before building for submission.",
+   "when": "You need a native library that Expo Go does not include, and you want to stay in the Expo workflow."
+  },
+  {
+   "name": "Iterate in Expo Go, then switch to a dev build",
+   "how": "Start the dev server and scan the QR code in the Expo Go app on a real device. Expo Go only includes Expo modules, so when you need other native code, prebuild and compile a development build onto the device.",
+   "when": "Fast UI iteration early on, then native features once they are needed."
+  },
+  {
+   "name": "First store submission with Expo Launch",
+   "how": "Make the GitHub repo public, since it must be open source at deploy time. Paste the repo URL into Expo Launch, supply an Apple developer account and app details, and deploy. You get a TestFlight link to test on a device and invite up to 10,000 external testers. iOS only at the time of recording.",
+   "when": "A first-time iOS release where you want to avoid manual signing and submission work."
+  },
+  {
+   "name": "Add widgets, Live Activities and Apple Watch targets with Apple Targets",
+   "how": "Add the Apple Targets community package by Evan Bacon to the Expo project. It creates extra native targets for widgets, Shortcuts and Watch apps, and can share state between the widget and the app. The speaker says examples will be in the show notes.",
+   "when": "You need app extensions beyond the main iOS app target."
+  },
+  {
+   "name": "Generate app icons from one source image with SnapAI",
+   "how": "Run npx SnapAI (the speaker says 'MPX SnapAI'). The CLI wraps OpenAI's image API and writes the icon into the assets folder. Start from a 1024 by 1024 PNG for iOS. For an adaptive Android icon, make a smaller version so it fits the safe area. The same asset can drive the splash screen.",
+   "when": "A new Expo or React Native app where you want the icon set generated instead of uploading to an online resizer."
+  }
+ ],
+ "tools": [
+  "Expo",
+  "Expo Launch",
+  "Expo Go",
+  "EAS Update",
+  "expo-updates",
+  "Expo UI",
+  "Expo Router",
+  "Expo API routes",
+  "Expo modules (native module API)",
+  "React Native",
+  "React Native Skia (Shopify)",
+  "React Native macOS and Windows (Microsoft)",
+  "Flutter",
+  "SwiftUI",
+  "UIKit",
+  "Jetpack Compose",
+  "Gradle",
+  "Xcode 26",
+  "Android Studio",
+  "TestFlight",
+  "Apple Foundation Models",
+  "Apple Targets (Evan Bacon)",
+  "SnapAI (CLI, uses OpenAI image API)",
+  "OpenAI image API",
+  "Next.js",
+  "Bolt",
+  "Replit",
+  "Create (AI app generator, as transcribed)",
+  "Vibecode (as transcribed 'ViveCode')",
+  "A0.dev",
+  "FlexApp",
+  "Jenkins",
+  "Cognito",
+  "AWS Amplify",
+  "Firebase",
+  "Final Cut Pro",
+  "Design Studio (Motion VFX)",
+  "Camtasia",
+  "Premiere",
+  "DaVinci Resolve",
+  "OBS",
+  "Stream Deck (Elgato)",
+  "Amaran lights",
+  "Shure SM7B",
+  "Sennheiser shotgun mic",
+  "Jetty mic",
+  "Sony ZV-E10 II",
+  "Sony ZV-1",
+  "Sigma 16mm f/1.4 lens"
+ ],
+ "numbers": [
+  {
+   "claim": "About 20 AI app generators (Bolt, Replit, Create, Vibecode, A0.dev, FlexApp and others) partner with or build on Expo. Speaker's count.",
+   "t": "1:24"
+  },
+  {
+   "claim": "Expo says it offers close to 100 cross-platform native modules. Speaker's estimate.",
+   "t": "20:32"
+  },
+  {
+   "claim": "Google Play requires at least about 10 testers before a production submission. Speaker recalls 10 and says it was a big news item.",
+   "t": "21:52"
+  },
+  {
+   "claim": "Apple review time: speaker says it used to take about 7 days to 2 weeks and is now 1 to 2 days, at least for beta review.",
+   "t": "21:52"
+  },
+  {
+   "claim": "TestFlight external beta testing via a public link can reach up to 10,000 downloads.",
+   "t": "21:52"
+  },
+  {
+   "claim": "Speaker says Android is about 80% of the world's users (framing for why native apps need a second build).",
+   "t": "24:34"
+  },
+  {
+   "claim": "Speaker's unsourced claim that a single React Native codebase yields about 50% fewer engineers and about 50% lower maintenance cost.",
+   "t": "28:45"
+  },
+  {
+   "claim": "Speaker says Expo's icon CLI input is a 1024 by 1024 PNG; the adaptive icon needs a smaller version to fit the safe area.",
+   "t": "35:35"
+  },
+  {
+   "claim": "Speaker's anecdote: three Spanish-language videos re-voiced in English reached about 30K views each after three months.",
+   "t": "32:47"
+  }
+ ],
+ "hot_takes": [
+  "'Flutter is dead' is said as a joke and the hosts agree; no data is given. Earlier (27:28) the speaker says Flutter will not die soon but will fall behind until it solves the native-look problem.",
+  "Expo's developer advocate is promoting Expo's own products, so claims such as 'React Native picks up OS redesigns for free' and Expo UI's roadmap are vendor-side and unverified.",
+  "Speculation that Google's 10-tester rule can be gamed with fake testers (23:06). Not verified.",
+  "Airbnb's move off React Native is attributed to wanting faster native-API access and the cost of two teams. The hosts say they do not know the real reason (27:28).",
+  "Quality is capped by the off-topic fit to our projects: most content is mobile app-store mechanics and personal anecdotes, not AI engineering. Not sponsored."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Expo and React Native mobile tooling; no agent infrastructure, serving, memory, telemetry or gateway content.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Nothing on Claude Code CLI wrapping, checkpointing or agent harnesses.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

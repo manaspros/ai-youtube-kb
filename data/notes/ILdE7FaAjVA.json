@@ -1,0 +1,141 @@
+{
+ "one_line": "RunPod's intro walkthrough of deploying an open LLM (Qwen via vLLM) as a serverless GPU endpoint from its Hub in under five minutes; mostly a product pitch, with a useful look at cold starts and autoscaling settings.",
+ "summary": "Audry Hsu of RunPod introduces the company as a GPU cloud and walks through the product lines: pods, serverless, clusters and the Hub. She focuses on serverless, which autoscales workers, bills per second only while a worker handles a request, and can keep some workers warm. The live demo deploys a Qwen model from a Hub listing, raising the max context length through a vLLM flag, then sends queued requests. The first request waited about 41 seconds in the queue, mostly cold start (container creation and model download), and execution took about 1.5 seconds. The talk is a short product intro, with a second session promised on the Python SDK. Company figures are self-reported and the talk gives no independent benchmarks.",
+ "speakers": [
+  "Audry Hsu"
+ ],
+ "orgs": [
+  "RunPod"
+ ],
+ "format": "demo",
+ "topics": [
+  "inference-serving",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "serverless GPU",
+  "cold start",
+  "vLLM",
+  "autoscaling",
+  "Hugging Face",
+  "model deployment",
+  "RunPod Hub",
+  "endpoint"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Serverless GPU endpoints suit bursty or real-time inference because workers scale to zero and you pay only while a request is being handled.",
+   "detail": "Idle workers spin down, so no cost accrues when idle. Max-worker caps and spending caps limit scale-up. Active (always-on) workers avoid cold starts at a standing cost.",
+   "t": "5:08"
+  },
+  {
+   "idea": "Cold start dominates first-request latency for a freshly deployed model.",
+   "detail": "The first request waited about 41 seconds in the queue while containers were created and the model downloaded, versus about 1.5 seconds of actual execution. Later requests were much faster.",
+   "t": "11:21"
+  },
+  {
+   "idea": "Hub listings are pre-vetted, ready-to-deploy repos with a Dockerfile and defaults, and the speaker presents them as the fastest way to start.",
+   "detail": "Each listing is a GitHub repo with a Dockerfile and environment-variable configuration. Deploying one from the Hub is the quick path shown in the demo.",
+   "t": "7:21"
+  },
+  {
+   "idea": "Deployment config options are passed straight through as vLLM serve flags.",
+   "detail": "The speaker raised the max model length (context window) in the advanced options, and says the other settings such as max LoRA values map to vLLM flags too.",
+   "t": "8:28"
+  },
+  {
+   "idea": "The default GPU pool is H100s with A100s as fallback, and pricing is a fraction of a cent per second.",
+   "detail": "Billing covers only the time a worker is running and handling requests. Max workers can scale to a set number (15 in the demo).",
+   "t": "9:40"
+  },
+  {
+   "idea": "Endpoints are plain HTTP APIs with built-in per-endpoint telemetry.",
+   "detail": "The console shows request count, execution time and delay time per endpoint. Requests queue while workers initialize.",
+   "t": "11:21"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Serverless GPU autoscaling with warm workers",
+   "how": "Set a max-worker cap and spending cap, and keep a small number of active workers so the model stays loaded and responds without a cold start.",
+   "when": "Production inference APIs with spiky traffic where the cold-start penalty is unacceptable for some requests."
+  },
+  {
+   "name": "Deploy a model from a pre-vetted Hub listing",
+   "how": "Fork or deploy a community or RunPod-maintained repo that already has a Dockerfile, then override env vars or vLLM flags such as max model length in the advanced options.",
+   "when": "Standing up an open-source model quickly without writing a serving stack."
+  },
+  {
+   "name": "Cold-start awareness in latency budgets",
+   "how": "Measure queue delay and execution time separately in endpoint telemetry. Treat the first request after scale-from-zero as an outlier when judging p95 latency.",
+   "when": "Any scale-to-zero deployment where latency SLOs are being measured."
+  }
+ ],
+ "tools": [
+  "RunPod",
+  "vLLM",
+  "Hugging Face",
+  "Docker"
+ ],
+ "numbers": [
+  {
+   "claim": "Over 500,000 developers on the platform",
+   "t": "2:26"
+  },
+  {
+   "claim": "30+ data centers worldwide",
+   "t": "2:26"
+  },
+  {
+   "claim": "120 million USD annual recurring revenue (company claim)",
+   "t": "2:26"
+  },
+  {
+   "claim": "Under five minutes from Hub listing to a working serverless endpoint (speaker's demo)",
+   "t": "11:21"
+  },
+  {
+   "claim": "First request queued about 41 seconds, mostly cold start",
+   "t": "11:21"
+  },
+  {
+   "claim": "Execution time about 1.5 seconds once warm",
+   "t": "11:21"
+  },
+  {
+   "claim": "Default GPUs H100 with A100 backup; billing is a fraction of a cent per second",
+   "t": "9:40"
+  },
+  {
+   "claim": "Max workers example: scale up to 15",
+   "t": "9:40"
+  }
+ ],
+ "hot_takes": [
+  "GPU shortages are like COVID toilet-paper hoarding, and the market will recover as buyers better estimate compute needs."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS L2B InferCraft runs vLLM on a single local GPU. This talk shows a managed serverless vLLM option with cold-start behavior, which is a useful comparison point but not a change to the build.",
+   "action": "Compare the cold-start and queue-delay numbers here against InferCraft's serving latency when designing the scale-to-zero story, and decide whether the project needs a cold-start metric."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No overlap with the Claude Code harness, checkpointing, or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Practical reference for serverless GPU deploys of open models with vLLM. Useful background for cheap-model pipelines, but the talk is a product intro.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,154 @@
+{
+ "one_line": "Side-by-side walkthrough of Windsurf (Codeium) and Cursor, both VS Code forks: inline edits and tab completion are about even, while Windsurf's Cascade agent felt more context-aware and cheaper on paper.",
+ "summary": "The presenter opens the same small React project in Windsurf and Cursor and compares them feature by feature. Inline completion, inline edit (Cmd+I in Windsurf, Cmd+K in Cursor) and terminal command prompts behave almost identically, and the presenter says the chosen model matters more than the IDE. The main difference is Windsurf's Cascade agent, which builds a project from a vague prompt, runs terminal commands with per-step accept, and corrects its own output. Cursor's Composer, in the same test, has less project context: it reached for Tailwind in a plain-CSS project. Cascade also picks up manual edits when asked to \"continue my work\". The pricing comparison favours Windsurf on both free and Pro tiers, with Cascade capped at 1,000 steps per month. The evidence is one presenter, one project and one run per task, so it is anecdotal, and the prices may have changed since the video's date.",
+ "speakers": [],
+ "orgs": [
+  "Codeium"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "context-engineering",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "windsurf",
+  "cursor",
+  "cascade",
+  "composer",
+  "ai-ide",
+  "vs-code-fork",
+  "inline-edit",
+  "agentic-coding",
+  "pricing",
+  "react",
+  "vite",
+  "tailwind"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Windsurf and Cursor are both VS Code forks, and the presenter found their core completion, inline-edit and terminal features nearly identical. Output differences came mostly from the model selected.",
+   "detail": "Windsurf's Super Complete and Cursor's Tab both do next-edit prediction. Windsurf's first suggestion was wrong (it proposed replacing the URL input), and the presenter says experience varies run to run. Inline edits (Cmd+I vs Cmd+K) produced the same layout change with a different gap value. The presenter says model choice matters more than the editor.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Windsurf positions Cascade as its differentiator: it combines chat, inline edit and an agent that can create files and run terminal commands.",
+   "detail": "Cascade has a chat-only mode for developers who don't want AI editing their code. Its write mode, which the presenter calls 'agentic', can scaffold a project from a vague prompt. The presenter says Cursor's Composer can't create a project or run commands in the same way.",
+   "t": "4:34"
+  },
+  {
+   "idea": "Cascade checks its own output against the original request and can be redirected mid-run without losing context.",
+   "detail": "It caught that its first output didn't match the goal and fixed it. When it started create-react-app, the presenter stopped the run and asked for Vite, and it carried on with the same task context.",
+   "t": "5:47"
+  },
+  {
+   "idea": "The presenter's main complaint is that Cascade's terminal is unclear. Stopping a step doesn't stop a dev server the agent started, and the terminal isn't the integrated VS Code terminal, so Ctrl+C and history don't work.",
+   "detail": "This points to a general problem with agent-run processes: a step's stop control may not terminate the process it spawned. Any harness that runs long-lived processes needs an explicit kill path.",
+   "t": "5:47"
+  },
+  {
+   "idea": "Project context matters more than the model in the presenter's test. Cursor's Composer used Tailwind to fix a styling bug in a plain-CSS project, and Cascade read the project's conventions without being told.",
+   "detail": "This is one anecdotal run, not a benchmark. The presenter attributes Composer's mistake to having 'less context of what our project was'.",
+   "t": "8:09"
+  },
+  {
+   "idea": "Cascade's 'continue my work' picks up edits the user made by hand and propagates them: it found the new date field in app.jsx and updated the item component to match. Cursor needed a prompt before it did the same.",
+   "detail": "The continuation prompt is a plain-language request that relies on the agent reading the diff or the files the user changed.",
+   "t": "8:09"
+  },
+  {
+   "idea": "Pricing favours Windsurf in the presenter's comparison, but Cascade's 1,000-step monthly limit counts terminal commands as steps, so it is a real budget.",
+   "detail": "Figures quoted in the video: Windsurf Pro at $10 a month (described as half Cursor's price), 1,000 Cascade steps per month, unlimited autocomplete and chat on the free tier. Cursor free: 2,000 completions and 50 slow premium requests. Cursor Pro: 500 fast premium requests per month, unlimited slow ones, and daily o1-mini uses (the transcript's '10.01 mini' is a caption error).",
+   "t": "9:25"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Inline edit with a model picker",
+   "how": "Select the code to change, press Cmd+I (Windsurf) or Cmd+K (Cursor), describe the change in the prompt box, and choose the model in the dropdown. Review the proposed diff and click Accept, then save. In Windsurf the default model in this test was a 'Codium Fast' model, and Claude or GPT can be selected from the same dropdown. In Cursor the test used Claude 3.5 Sonnet.",
+   "when": "Small, targeted edits to a selection, such as making two buttons sit side by side. The presenter found no meaningful quality gap between the two editors for this."
+  },
+  {
+   "name": "Terminal command prompt with undo context",
+   "how": "Open the terminal's AI prompt (Cmd+I in Windsurf, Cmd+K in Cursor), describe the command in plain language (e.g. resetting the last commit), choose a model, and submit. The command is pasted in for you to run. Then send a follow-up like 'undo that' in the same prompt. Windsurf kept the earlier command in context and reversed it.",
+   "when": "Git and shell operations where you don't remember the exact syntax, and when you want to chain a follow-up instruction that depends on the previous command."
+  },
+  {
+   "name": "Agentic scaffold with per-step accept and mid-run redirect",
+   "how": "In Cascade's write mode, give a deliberately vague prompt (the presenter used 'create me a to-do app using React'). Accept each proposed terminal command and file change as it appears. If the agent picks the wrong tool (here create-react-app), press Stop and ask for the one you want (here Vite). The agent keeps its context and proposes new commands. Use 'Accept all' at the end and run the dev server it started (localhost:5173 in the demo).",
+   "when": "Bootstrapping small projects where you want the agent to decide the file layout. Keep a close eye on terminal steps, because the stop control may not kill processes the agent started (see the terminal pain point in the video)."
+  },
+  {
+   "name": "Continue-my-work after manual edits",
+   "how": "Make a change yourself (e.g. add a Date.now() field in app.jsx). Then open the agent panel and send 'continue my work'. The agent reports which files you changed and proposes the matching edit in related files (e.g. the to-do item component to display the new field).",
+   "when": "Iterating on a codebase where you edit some files by hand and want the agent to propagate the change to dependent code without restating the context."
+  },
+  {
+   "name": "Chat-only mode for AI suggestions without edits",
+   "how": "Use Cascade's chat mode (not write mode), select a model, and ask for suggestions. The agent doesn't modify files, so you apply changes yourself.",
+   "when": "Developers who want AI suggestions in the editor but don't trust agents to write to the repo, and who want to avoid copy-pasting from a separate chat app."
+  }
+ ],
+ "tools": [
+  "Windsurf (Codeium editor)",
+  "Cascade (Windsurf agent: chat, write and terminal modes)",
+  "Super Complete (Windsurf next-edit prediction)",
+  "Cursor",
+  "Tab (Cursor next-edit prediction)",
+  "Composer (Cursor agent)",
+  "Claude 3.5 Sonnet",
+  "GPT-4o",
+  "React",
+  "Vite",
+  "create-react-app (rejected by the agent in the demo)",
+  "Tailwind CSS",
+  "VS Code"
+ ],
+ "numbers": [
+  {
+   "claim": "Windsurf Pro is $10 a month and the presenter says that is half Cursor's price.",
+   "t": "10:19"
+  },
+  {
+   "claim": "Cascade Pro includes 1,000 steps per month; each terminal command counts as a step.",
+   "t": "10:19"
+  },
+  {
+   "claim": "Cursor Pro: 500 fast premium requests per month, unlimited slow premium requests, and daily o1-mini uses (caption reads '10.01 mini').",
+   "t": "10:19"
+  },
+  {
+   "claim": "Cursor free tier: 2,000 completions and 50 slow premium requests.",
+   "t": "9:25"
+  },
+  {
+   "claim": "Windsurf free tier: unlimited rapid autocomplete, unlimited in-editor chat and unlimited inline commands, plus Cascade in chat-only mode. The presenter notes these may run on a different model than Claude.",
+   "t": "9:25"
+  }
+ ],
+ "hot_takes": [
+  "Windsurf's Cascade gives a better user experience and a better understanding of the project than Cursor's Composer, without needing file references (presenter's personal experience).",
+  "The editors are nearly identical, so the choice of AI model matters more than which IDE you use.",
+  "Windsurf is the better value on both free and Pro tiers, but Cascade's 1,000-step limit makes it less 'unlimited' than advertised.",
+  "Windsurf calls itself the first agentic IDE; the presenter repeats this without testing it against other tools.",
+  "Pricing and tier details are as quoted on the video's date (2025-11-02) and may be out of date."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Cascade counts each terminal command as a step against a monthly quota, which is a tool-call-level budget rather than a token budget. AgentOS L1 budgets could count tool calls as well as tokens.",
+   "action": "Consider letting AgentOS budgets count agent tool calls or steps as well as tokens, using Windsurf's 1,000-step Cascade quota as a reference."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Shows a step-by-step agent run in which the user stops and redirects mid-run (e.g. create-react-app to Vite) without losing context, and where a stop control did not kill a dev server the agent had started. Both are relevant to ProsHarness checkpoint/resume and process cleanup.",
+   "action": "Check that ProsHarness checkpoint/resume handles a mid-run user redirect and cleans up long-running child processes the Claude Code CLI started, not only the step state."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

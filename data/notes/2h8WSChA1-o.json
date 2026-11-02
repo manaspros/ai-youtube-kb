@@ -1,0 +1,129 @@
+{
+ "one_line": "A Sentry MCP walkthrough: an agent in Cursor creates a Sentry project, installs the Next.js SDK, wires the DSN, triggers test errors, then reads an issue's trace and proposes a fix. Vendor-led, with a paid SEER feature.",
+ "summary": "The host argues that vibe-coded apps break in ways the builder cannot debug, because the AI may forget its own code or lack context. Sentry is presented as the fix: it records error frequency, timing, origin and history, and the new Sentry MCP server lets an agent read that context. In a Cursor demo the agent authenticated through the MCP, checked the user and organization, found no projects, created one, installed the Next.js SDK, wrote config files, fetched the DSN, edited the app and added three buttons that trigger test errors. The host then shows installation (copy the JSON config from Sentry's docs into mcp.json, approve the CLI access prompt, toggle the server if it stays red) and lists the tools. In the last segment an intentionally broken app produced an issue, and the agent used Get Issue Details to identify a type error and propose a fix that was accepted. The video says nothing about permissions or review for auto-created projects, and it pitches the product throughout.",
+ "speakers": [
+  "Unnamed AI LABS host"
+ ],
+ "orgs": [
+  "Sentry",
+  "Cursor",
+  "Anthropic"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "observability",
+  "mcp-and-tools",
+  "coding-agents"
+ ],
+ "tags": [
+  "sentry",
+  "mcp",
+  "error-monitoring",
+  "vibe-coding",
+  "debugging",
+  "nextjs",
+  "cursor",
+  "claude-code",
+  "seer"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Vibe-coded apps often run with hidden bugs, and debugging code you did not write is the hard part. The host's diagnosis is that the AI may not fully understand its code or may forget it because of context window limits.",
+   "detail": "Framed as the motivation for error monitoring. Presented as a claim, not measured.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Sentry records how often an error happened, when, where it came from, and its full history. The host's point is that an agent with access to that stack trace and repetition data can fix the issue with much better context than from raw logs or a .md file.",
+   "detail": "The host argues a proper error system beats logging errors to a markdown file or running bug bots.",
+   "t": "1:23"
+  },
+  {
+   "idea": "The Sentry MCP lets the agent do setup that is normally manual. The agent checked the user (who am I), found the organization, found no projects, then created a project, installed the Next.js SDK, wrote the config files and edited app code.",
+   "detail": "The demo covers the whole sequence from project creation to code changes without UI steps.",
+   "t": "2:41"
+  },
+  {
+   "idea": "The DSN, which the host calls a kind of API key for sending errors, was fetched automatically and written into the config. The agent also offered to test error logging and added three buttons that throw errors, and the resulting issues appeared in the dashboard.",
+   "detail": "Shows the agent's test loop: wire up, trigger, confirm the issues show up.",
+   "t": "4:09"
+  },
+  {
+   "idea": "Installing the MCP takes a Sentry account (no project needed) and copying the JSON config from Sentry's docs into the client's mcp.json. The server may show red at first and then needs an approval in the terminal, and toggling it off and on can fix a stuck state.",
+   "detail": "The host says the install is the same across the verified clients listed in the docs.",
+   "t": "5:12"
+  },
+  {
+   "idea": "The tools fall into two groups. Platform tools include Who Am I, Find Organizations, Find Projects, Create DSN and Create Project. Issue tools include Find Errors, Get Issue Details and Begin Seer Issue Fix. With issue details, the LLM can read the trace and suggest a fix without a paid AI feature.",
+   "detail": "In the demo, Get Issue Details returned the issue ID, organization, summary, occurrences and a trace, which the agent used to identify a type error (something 'is not a function').",
+   "t": "6:24"
+  },
+  {
+   "idea": "SEER, Sentry's AI issue-analysis feature, is a paid add-on and was rejected in the demo until enabled. The host says the basic issue data is enough for Cursor or Claude Code to fix the issue alone.",
+   "detail": "The host's own test: the SEER fix attempt failed, then Get Issue Details plus a proposed fix worked.",
+   "t": "7:27"
+  },
+  {
+   "idea": "Use the setup from the start of a project so the agent knows Sentry is in use and wires it in correctly. Once the agent has the error context, the accepted fix restored the app.",
+   "detail": "The host's closing advice: set up monitoring early and let the agent know it is there.",
+   "t": "8:35"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Let the agent provision Sentry through the MCP",
+   "how": "Authenticate the Sentry MCP, then ask the agent to check the user (Who Am I), find the organization and projects, create a project, run the Next.js SDK install, write config files, fetch the DSN, and add test error triggers. Confirm issues appear in the Sentry dashboard. Exact commands and prompts are not shown.",
+   "when": "Starting a new app where you want error monitoring from day one and do not want to do the dashboard and SDK steps by hand."
+  },
+  {
+   "name": "Install the Sentry MCP into a client",
+   "how": "Create a Sentry account (no project needed). Copy the JSON config from Sentry's MCP docs into the client's mcp.json (the demo used Cursor, which had an empty mcp.json). Let it start, approve the MCP CLI access request in the terminal, and if it still shows inactive, toggle it off and on. The host says the same config works across the verified clients listed in the docs. Exact config keys are not shown in the video.",
+   "when": "Adding Sentry as an agent tool in Cursor or another MCP client that the Sentry docs list as verified."
+  },
+  {
+   "name": "Debug an error from its issue data, not the raw code",
+   "how": "Ask the agent to fetch Get Issue Details for an issue ID. It returns the summary, occurrences and a trace. Ask it for a proposed fix, review it, then accept. Find Errors and Get Issue Details were the tools used. Begin Seer Issue Fix needs paid SEER.",
+   "when": "The app is broken at runtime and you want the agent to fix the crash from real production or dev error data."
+  },
+  {
+   "name": "Set a verification step after the agent wires monitoring",
+   "how": "After setup, have the agent add temporary buttons or code paths that throw known errors. Check the Sentry issues list to confirm events arrive. Then remove the test triggers. The host did this, but did not show removal.",
+   "when": "Before trusting that error monitoring works, especially after an agent edited config or SDK code it wrote."
+  }
+ ],
+ "tools": [
+  "Sentry",
+  "Sentry MCP server",
+  "Sentry SDK",
+  "Next.js",
+  "Python SDK",
+  "Cursor",
+  "Claude Code",
+  "SEER",
+  "mcp.json"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Vendor-led walkthrough of Sentry's own MCP with product praise throughout (\"this thing is amazing\"). Not labeled as sponsored in the transcript, but it reads as a product promo, so quality is capped at 2.",
+  "The only example is a simple type error. The video does not show a harder bug, a wrong fix, or what happens when the agent proposes a bad change.",
+  "Auto-creating a Sentry project, installing packages and editing code are presented as pure upside. The video never mentions permission review, cost, or project sprawl.",
+  "The demo's real value is showing an agent working from production-style error context (trace, count, history) rather than from logs alone. Claims about context window forgetting are generic and not supported."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Crucible and the L4 observability stack (OTel, Prometheus) could get agent-readable error context, but this video is about a hosted error tracker, not the self-hosted stack.",
+   "action": "Compare Sentry's issue data model (occurrence counts, trace, first/last seen) with what our OTel traces carry, to decide what an agent should read when debugging AgentOS failures."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code and handles checkpoint/resume. An error-tracking MCP tool is one way to feed runtime failures back into an agent loop before a resume.",
+   "action": "Consider exposing a read-only error-issue tool to the ProsHarness Claude Code run so a failed step can pull its own error context on resume."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

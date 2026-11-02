@@ -1,0 +1,187 @@
+{
+ "one_line": "Abed Matini (Ogilvy) shows a local, framework-free RAG FAQ bot: Docling to Markdown, structure-aware chunking, hybrid BM25 plus vector search fused with RRF, Python guardrails, and Langfuse telemetry.",
+ "summary": "The speaker argues that dropping a whole document into a hosted chatbot wastes tokens before any question is asked and hides how the document was chunked. His alternative is a local pipeline: Docling converts PDFs, Word files and images to Markdown, then chunks are chosen per document and stored in PostgreSQL. He demos four chunking strategies (heading-based Q&A, paragraph, fixed 512-character windows with overlap, sentence groups) and shows that heading-based chunks give traceable, correct answers while a whole-handbook upload returns noisy, untraceable chunks. Retrieval is hybrid: vector similarity plus BM25 keyword match, merged with Reciprocal Rank Fusion in Python, with a small top-k (two) for compliance-sensitive answers and a larger k suggested for product catalogs. Agent loops are replaced by plain Python functions behind toggles to cut latency and hallucination risk, and guardrails (regex, term dictionaries, an LLM classifier) run before any prompt reaches the model, with tests. Telemetry through self-hosted Langfuse records conversation IDs, model, retrieved chunks and latency. The stack is two small local models (a Qwen2.5 0.5B chat model and BGE-M3 embeddings) running on CPU in Docker.",
+ "speakers": [
+  "Abed Matini"
+ ],
+ "orgs": [
+  "Ogilvy"
+ ],
+ "format": "talk",
+ "topics": [
+  "rag-retrieval",
+  "data-engineering",
+  "observability",
+  "security-guardrails"
+ ],
+ "tags": [
+  "hybrid-search",
+  "rrf",
+  "bm25",
+  "chunking",
+  "docling",
+  "markdown-first-ingest",
+  "ollama",
+  "qwen2.5",
+  "bge-m3",
+  "langfuse",
+  "postgres",
+  "guardrails",
+  "faq-bot",
+  "local-models",
+  "cpu-inference"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Ingest documents locally before the chatbot sees them",
+   "detail": "Uploading a raw PDF to a hosted chat costs tokens before any question is asked and gives no view of how it was chunked. Converting to Markdown locally with Docling first makes chunks inspectable and cheap.",
+   "t": "1:07"
+  },
+  {
+   "idea": "Chunking strategy matters more than the model",
+   "detail": "A whole 28-page handbook uploaded as one document produced chunks full of meaningless text (signature lines, dates), slower and less accurate answers, and chunks that could not be traced back to a source. Splitting by structure and cleaning the data fixed this.",
+   "t": "12:48"
+  },
+  {
+   "idea": "Heading-based Q&A chunks make answers traceable",
+   "detail": "Each heading and its answer becomes one chunk, so a question returns the answer plus the exact chunk it came from. When retrieval fails, you can see which chunk was missed and why.",
+   "t": "14:13"
+  },
+  {
+   "idea": "Use keyword search and vector search together, fused with RRF",
+   "detail": "Vector search finds similar meanings, but IDs, product names, brands and numbers need exact matching. He merges BM25 and vector results with Reciprocal Rank Fusion in Python, then keeps only the top few.",
+   "t": "30:39"
+  },
+  {
+   "idea": "Set top-k per use case",
+   "detail": "Two results is enough for an HR FAQ. A product catalog with 20 to 50 near-identical items needs a wider window, or the right product never surfaces. For medical or compliance use he keeps it narrow to limit liability.",
+   "t": "31:00"
+  },
+  {
+   "idea": "Replace LLM agent loops with plain functions where possible",
+   "detail": "Current date, calculations and lookups are deterministic, so they run as Python functions behind on/off settings. Each extra agent loop adds 20 to 30 seconds locally and more room for hallucination. Functions are testable and fully controllable.",
+   "t": "26:43"
+  },
+  {
+   "idea": "Put guardrails in code before the prompt, not in the system prompt",
+   "detail": "Escalation (for example, a medical question), off-topic queries and prompt injection are blocked by regex, term lists and an LLM classifier before anything reaches the model. The system prompt stays short, and the rules can be unit-tested.",
+   "t": "37:42"
+  },
+  {
+   "idea": "A smaller model with pre-vetted context can outperform a bigger one",
+   "detail": "He moved from a 7B to a 0.5B Qwen2.5 model because the 7B was slow on a small server. With clean retrieved context, the small model says it does not know rather than inventing an answer.",
+   "t": "39:10"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Markdown-first ingestion with Docling",
+   "how": "Convert PDF, DOCX, PPTX and image files to Markdown locally with Docling. Run a vision model over screenshots to get text. Store chunks with IDs and section metadata in Postgres.",
+   "when": "Use when documents are messy or uploads cost money, and you need to see how the content will be chunked before indexing."
+  },
+  {
+   "name": "Per-document chunking strategy selection in admin",
+   "how": "Give the admin UI a choice of strategy per upload: heading/Q&A, paragraph, fixed 512-character windows with overlap, or sentence groups. Pick the strategy that matches the document's structure.",
+   "when": "Use for a mixed corpus, such as FAQs, policies with long paragraphs, and emailed screenshots that have no headings."
+  },
+  {
+   "name": "Q&A-shaped chunks for FAQ content",
+   "how": "Convert FAQ content into question-and-answer pairs, or chunk by heading so each heading and answer forms one chunk. Each answer then carries its reference.",
+   "when": "Use for policy or handbook FAQs where traceability and correct citation matter more than recall."
+  },
+  {
+   "name": "Hybrid retrieval with RRF fusion in Python",
+   "how": "Run a BM25 keyword query and a vector cosine-similarity query in parallel, then fuse the ranked lists with Reciprocal Rank Fusion. Return the top few fused results.",
+   "when": "Use when queries mix semantic intent with exact tokens such as product IDs, brand names, numbers or medication names."
+  },
+  {
+   "name": "Deterministic functions instead of agent loops",
+   "how": "Implement date, calculator and lookup tools as plain functions. Expose each as a toggle in settings, and let the LLM only generate the final answer.",
+   "when": "Use when a step has one right answer and latency or hallucination matters more than open-ended planning."
+  },
+  {
+   "name": "Pre-LLM guardrail layer with rigid tests",
+   "how": "Run regex intent matches, term dictionaries and a small LLM classifier on the incoming query before generation. Block or route matches (such as medical escalation), and cover each rule with a test that states what is blocked and why.",
+   "when": "Use for any user-facing bot where blocked topics and prompt injection must be predictable and auditable."
+  },
+  {
+   "name": "Per-conversation telemetry with self-hosted Langfuse",
+   "how": "Log conversation ID, session, model, retrieved chunk IDs, top-k value and latency for each request. Keep it local, so no data leaves the environment. Estimate cost when external models are used.",
+   "when": "Use to debug why a chunk was or was not retrieved, to compare models, and to see how users interact with the bot."
+  },
+  {
+   "name": "Two-model local stack in Docker",
+   "how": "Run a small chat model (Qwen2.5 0.5B via Ollama) and a small embedding model (BGE-M3) on CPU. Start FastAPI, React, Postgres and Langfuse with one Docker command.",
+   "when": "Use for a cheap internal FAQ or staging environment where GPU access is unavailable and cost per query should be near zero."
+  }
+ ],
+ "tools": [
+  "Docling",
+  "Python",
+  "FastAPI",
+  "React",
+  "PostgreSQL",
+  "Docker",
+  "Ollama",
+  "Qwen2.5",
+  "BGE-M3",
+  "Langfuse",
+  "GitHub Codespaces"
+ ],
+ "numbers": [
+  {
+   "claim": "Full 28-page handbook uploaded as one document gave noisy, untraceable chunks (signature and date text), while heading-based chunks gave a clean, referenced answer",
+   "t": "12:48-17:19"
+  },
+  {
+   "claim": "Fixed chunking uses 512-character windows with 64 overlap. The speaker says '64% overlap' once, then describes 32 + 32 = 64 overlap; treat the exact figure as ambiguous",
+   "t": "18:48-20:55"
+  },
+  {
+   "claim": "Default retrieval returns top 2 chunks for the FAQ bot",
+   "t": "15:54"
+  },
+  {
+   "claim": "Chat model is Qwen2.5 0.5B, about 400 MB; a 7B model was tried first, was slower on a small server, and was swapped out",
+   "t": "27:52-41:56"
+  },
+  {
+   "claim": "A local LLM agent loop takes 20 to 30 seconds per request, which the speaker cites as the reason to use Python functions",
+   "t": "26:43"
+  },
+  {
+   "claim": "Stack needs only two models, a small chat model and a small embedding model (BGE-M3), and runs on CPU without a GPU",
+   "t": "43:24"
+  }
+ ],
+ "hot_takes": [
+  "You don't need the biggest model. Vet and retrieve the data first, and a 0.5B model can answer well and admit when it does not know.",
+  "Most agent steps should be plain Python functions. A multi-agent LLM loop is slow and hallucination-prone for work with a deterministic answer.",
+  "Guardrails belong in code before the prompt, not in a long system prompt. Rigid tests beat hoping the model follows instructions.",
+  "Uploading whole documents to a hosted chatbot wastes tokens and hides retrieval quality. Structure the data first."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already does hybrid BM25 plus pgvector retrieval. The talk's RRF fusion, per-use-case top-k and Markdown-first ingest map directly onto that design, and the pre-LLM guardrail layer parallels the Govrix Scout PII and prompt-injection scan.",
+   "action": "Benchmark MemoryMesh's hybrid merge against RRF over BM25 and pgvector results, and test whether a per-bucket top-k setting improves answers on ID and number queries."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Cheap-model pipelines: a small local model with pre-vetted context can outperform a larger model on answer safety and cost, which matches the Haiku pipeline interest. Context-engineering point: keep the system prompt short and move rules into testable code.",
+   "action": "Run a small trial that compares Haiku on pre-retrieved, cleaned chunks against Haiku on raw documents, scoring answer accuracy and refusal behaviour."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The talk argues for deterministic plain functions over LLM sub-agent loops when a step has a single right answer, which applies to ProsHarness plan and step execution. The talk does not cover checkpoint or resume.",
+   "action": "Identify ProsHarness plan steps that are deterministic, such as date, file or status checks, and implement them as plain functions instead of LLM calls."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

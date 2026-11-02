@@ -1,0 +1,191 @@
+{
+ "one_line": "Better Stack tests two beta on-device models from Desert Ant Labs: WHO (speaker diarization) and I (photo tagging, duplicates, aesthetic score). Fast local demos, but benchmarks are vendor-sourced and the license has a monthly check.",
+ "summary": "The presenter reviews two new small models from Desert Ant Labs, both on SDK 4.0 and still labeled beta. WHO does speaker diarization only: it gives numbered speakers with start and end times, no transcription and no names. The vendor claims about 950x real time on an M5 Pro, and it is roughly on par with PyAnnote on the AMI meeting set but much worse on 20-speaker earnings calls and distant microphones. The presenter pairs WHO with Apple's built-in macOS speech transcriber in a small Mac app he built, and the speaker-labelled transcript on a 4-speaker podcast looked correct. I is a multi-task image model that classifies a photo as screenshot, receipt, document or photo, tags it across 558 categories, scores aesthetics, checks faces for smiles and closed eyes, and groups near-duplicates. It runs natively and in the browser through LiteRT.js with WebGPU and a WebAssembly fallback, and the web demo sorted 105 photos in 16.1 seconds. The video's caveats are the beta status, a source-available (not open source) license that is free up to 100,000 monthly active devices, and a monthly license check that sends no audio or photos. Most numbers are vendor benchmarks plus one presenter demo, and a few of the figures do not reconcile.",
+ "speakers": [
+  "Andres"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Desert Ant Labs",
+  "Detail",
+  "Google",
+  "Apple"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "voice-multimodal"
+ ],
+ "tags": [
+  "speaker-diarization",
+  "image-tagging",
+  "on-device-ai",
+  "litert-js",
+  "webgpu",
+  "apple-neural-engine",
+  "beta-models",
+  "photo-management",
+  "privacy",
+  "source-available-license"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Ship small single-job models that run on the user's device instead of one large cloud model",
+   "detail": "The vendor's pitch is no per-call API bill and data that never leaves the device. The team comes from Detail, a video editing app, which explains the audio and video focus of their 18-model catalog.",
+   "t": "1:09"
+  },
+  {
+   "idea": "WHO only answers 'who spoke when'",
+   "detail": "It does no transcription and knows no names. It returns numbered speakers with start and end times down to 10 ms, and marks both speakers when they talk over each other. Text has to come from a separate ASR model.",
+   "t": "1:09"
+  },
+  {
+   "idea": "Diarization quality depends heavily on recording conditions",
+   "detail": "Vendor numbers: on AMI, WHO scores 12.6% error vs 13.1% for PyAnnote, so it is slightly ahead. On earnings calls with up to 20 speakers it is 27.7% vs 7.3%, and it struggles with distant microphones. It fits podcasts, interviews and remote calls where each person has a close mic.",
+   "t": "2:37"
+  },
+  {
+   "idea": "Diarizer plus a platform ASR gives a speaker-labelled transcript",
+   "detail": "The presenter runs WHO next to Apple's built-in macOS speech transcriber in a Mac app that takes a podcast or video file. Each transcript line gets a speaker, the user can rename speakers, and clicking a speaker plays that moment back. Everything runs locally.",
+   "t": "4:04"
+  },
+  {
+   "idea": "One call to I returns a full photo report",
+   "detail": "It classifies the image as screenshot, receipt, document or real photo. It tags across 558 categories, gives an aesthetic score, checks each face for smiling or closed eyes, groups near-duplicate or burst shots and picks a best shot. It does not do OCR: a receipt is detected, but its text is not read.",
+   "t": "5:01"
+  },
+  {
+   "idea": "Use a 0.5 threshold for surfacing tags and 0.9 for automatic actions",
+   "detail": "Vendor guidance: treat tag confidence of 0.5 or higher as a positive match. Use a stricter 0.9 for anything automatic, such as hiding a sensitive photo without asking. The vendor reports screenshot tags correct 98% of the time and receipt tags 100% at 0.5.",
+   "t": "6:12"
+  },
+  {
+   "idea": "The same model runs in the browser via LiteRT.js",
+   "detail": "I runs in the browser and in Node. LiteRT.js (Google's web runtime) uses WebGPU when available and falls back to WebAssembly. The presenter's web app sorts a dropped folder into receipts, screenshots, documents, pets, blurry shots, closed eyes and duplicates, all locally.",
+   "t": "6:12"
+  },
+  {
+   "idea": "The aesthetic and blur labels are subjective and were not validated in the demo",
+   "detail": "The presenter is unsure whether a shot he expected to be blurry counts as blurry. It gave one image 50/100 for aesthetics and noted that documents score low. The video shows no evaluation against labelled data.",
+   "t": "8:52"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Diarize then merge with ASR by timestamp",
+   "how": "Run a diarizer (WHO) for speaker turns with start and end times, and a separate ASR (Apple's built-in speech transcriber) for text. Attach each transcript segment to the speaker whose turn overlaps it, then render with clickable playback and renamable speakers. The video does not show the merge code; the join is inferred from the description.",
+   "when": "Podcasts, interviews and remote calls where each speaker has a close mic and you need speaker labels but not names. Avoid for large, distant-mic or many-speaker recordings, given the vendor's own error numbers."
+  },
+  {
+   "name": "Two-threshold tagging policy",
+   "how": "Surface a tag for human review at confidence 0.5 or above. Require 0.9 or above before any automatic action such as hiding, deleting or blocking. Pick the thresholds per tag from your own benchmark, since the vendor numbers cover only screenshot and receipt tags.",
+   "when": "Any pipeline that acts on classifier output without a human check, such as photo privacy filtering or auto-triage."
+  },
+  {
+   "name": "Browser-side batch triage with WebGPU fallback",
+   "how": "Serve the model through LiteRT.js in a web app. On first load the model downloads and is cached. Use WebGPU when the browser supports it and fall back to WebAssembly otherwise. Process a dropped folder client-side, so no images are uploaded.",
+   "when": "Privacy-sensitive photo sorting, or any batch classification that must stay in the browser or on the device."
+  },
+  {
+   "name": "One-call multi-signal triage for photo cleanup",
+   "how": "Use a single model call to get a type label, tags, a per-face attribute check (smiles, closed eyes), near-duplicate grouping and a best-shot pick. Then filter the library by those labels.",
+   "when": "Cleaning up a large personal photo library, such as bursts or duplicates, where OCR is not needed."
+  }
+ ],
+ "tools": [
+  "Desert Ant Labs SDK 4.0 (beta)",
+  "WHO (speaker diarization model, Desert Ant Labs)",
+  "I (image classification and tagging model, Desert Ant Labs)",
+  "PyAnnote (open-source diarization library, comparison baseline)",
+  "Apple built-in speech transcriber (macOS)",
+  "LiteRT.js (Google's web runtime for models)",
+  "WebGPU",
+  "WebAssembly",
+  "Chrome",
+  "Node",
+  "Apple Neural Engine",
+  "Who Said What Where (the presenter's Mac app; GitHub link in the description)"
+ ],
+ "numbers": [
+  {
+   "claim": "WHO diarization speed claim: about 950x real time on an M5 Pro MacBook",
+   "t": "1:09"
+  },
+  {
+   "claim": "57-minute NASA podcast episode diarized in 6.4 s, including MP3 decode (vendor blog)",
+   "t": "1:09"
+  },
+  {
+   "claim": "AMI meeting diarization error: WHO 12.6% vs PyAnnote 13.1%",
+   "t": "2:37"
+  },
+  {
+   "claim": "Earnings calls with up to 20 speakers: WHO 27.7% error vs PyAnnote 7.3%",
+   "t": "2:37"
+  },
+  {
+   "claim": "Presenter demo: WHO labels speakers in 11.9 s, 393x real time on an M2 Max MacBook Pro",
+   "t": "4:04"
+  },
+  {
+   "claim": "Apple speech transcriber in the demo runs at about 48x real time",
+   "t": "4:04"
+  },
+  {
+   "claim": "I classifies 558 tag categories per call",
+   "t": "5:01"
+  },
+  {
+   "claim": "I per-photo tagging: about 5.5 ms on an M6 Mac neural engine (caption reads '5.5 million'), 41 ms in Chrome with WebGPU; vendor says about 10,000 photos in under a minute",
+   "t": "6:12"
+  },
+  {
+   "claim": "Vendor benchmarks at 0.5 threshold: screenshot tag 98% correct, receipt tag 100% correct; recommended stricter cutoff 0.9 for automatic actions",
+   "t": "6:12"
+  },
+  {
+   "claim": "Web demo: 105 photos sorted in 16.1 s (about 6.5 photos/s); presenter extrapolates 26 minutes for 10,000 photos",
+   "t": "7:40"
+  },
+  {
+   "claim": "Aesthetic score example: one photo scored 50/100",
+   "t": "8:52"
+  },
+  {
+   "claim": "License: free up to 100,000 monthly active devices, unlimited inference; monthly license check that sends no audio or photos",
+   "t": "9:52"
+  }
+ ],
+ "hot_takes": [
+  "Most numbers are vendor benchmarks or one presenter demo. The only independent-looking check is a single self-chosen podcast. WHO loses badly on large, distant-mic calls, and the vendor's own post shows that.",
+  "The 950x real-time claim does not reconcile with the 6.4 s figure: 57 minutes in 6.4 s is about 534x, unless the audio length or the measurement differs. The source of the 950x figure is unclear.",
+  "The caption 'Eye tags a photo in 5.5 million' is almost certainly 5.5 milliseconds. Only that figure fits the 'about 10,000 photos in under a minute' claim, since 41 ms per photo would take about 6.8 minutes.",
+  "The web demo throughput (about 6.5 photos/s) is far below the 41 ms/photo benchmark (about 24 photos/s). The video does not explain the gap; the browser pipeline overhead or the hardware is the likely cause, which the video does not state.",
+  "The license is source-available, not open source, and beta. It has a monthly license check. The presenter notes this but treats it as a minor caveat.",
+  "Quality 3: a solid practitioner walkthrough with real local demos. It is not a sponsored or hype piece, but the evidence is vendor-supplied and the video has no reproducible steps; the GitHub repo link in the description is the only route to the code."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "On-device classifiers with confidence thresholds are a relevant design pattern for AgentOS's PII and prompt-injection scanning. The video gives no evidence about security classifiers, so the fit is weak.",
+   "action": "When a PII or injection scanner's output drives automatic blocking, use a stricter confidence cutoff than the one used for surfacing candidates for review. Check whether our scanners expose confidence scores at all."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Speaker diarization and photo tagging do not touch ProsHarness checkpointing, planning or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Small local models for cheap triage steps fit the recurring interest in Haiku-style cheap-model pipelines. The video is about media, not text extraction, and gives no quality data for text tasks.",
+   "action": "If any extraction or triage step is a cheap classification, benchmark a small local model against the Haiku call on our own labelled sample before switching."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

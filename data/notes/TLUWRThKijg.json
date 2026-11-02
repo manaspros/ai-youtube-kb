@@ -1,0 +1,159 @@
+{
+ "one_line": "Better Stack argues against Radix UI in favor of Base UI, a headless React component library from the original Radix/Floating UI/MUI creators, comparing render props, data-driven collections, multi-select, and function-based styling.",
+ "summary": "The host says Radix is effectively unmaintained after its parent company acquisition, citing GitHub activity: Base UI closed 58 issues and merged 154 PRs in the last month, while Radix closed none and merged none. He presents Base UI as a headless library that supplies component behavior and accessibility while the developer supplies the design, and says it is similar enough to Radix that migration should be straightforward. The main API differences he demonstrates are the render prop replacing asChild (with a function form that exposes component state), data-driven collections passed to the root, a multi-select prop, and className accepting a state-aware function. He also notes extra components (Combobox, Autocomplete), form-library and animation support, and compares the approach to React Aria, which he says has a steeper learning curve. His closing advice is to use Base UI for new projects, but not to migrate working Radix apps immediately, and to consider migrating if you need a combobox or autocomplete.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "WorkOS",
+  "Radix UI",
+  "Base UI",
+  "React Aria",
+  "shadcn/ui",
+  "Material UI",
+  "Floating UI"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools",
+  "vibe-coding-app-building"
+ ],
+ "tags": [
+  "radix",
+  "base-ui",
+  "headless-ui",
+  "react",
+  "accessibility",
+  "react-aria",
+  "tailwind",
+  "tailwind-variants",
+  "migration",
+  "shadcn",
+  "component-library",
+  "render-prop"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Base UI is a headless React component library from the original creators of Radix, Floating UI and Material UI, so it provides behavior and accessibility while you provide the design.",
+   "detail": "The host argues this matters more now because LLMs still handle many accessibility edge cases poorly. He also says Radix is itself a headless library, so the choice is about maintenance rather than concept.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The main reason to switch is maintenance activity, not features.",
+   "detail": "He says Radix is in a zombie state after its parent company (WorkOS, per the host) acquired it and the team largely left. He cites GitHub activity: Base UI closed 58 issues and merged 154 PRs in the last month, while Radix closed none and merged none. He says Radix's co-creator now works on Base UI. These are the host's claims and were not verified.",
+   "t": "0:54"
+  },
+  {
+   "idea": "Base UI replaces Radix's asChild with a render prop, which makes element substitution explicit.",
+   "detail": "With asChild, merged props are easy to miss when skimming code. The render prop names the element or component to render directly. The host calls this a small change but a good one for readability.",
+   "t": "2:03"
+  },
+  {
+   "idea": "The render prop can take a function that receives component state, so you can choose the element and conditionally render based on state.",
+   "detail": "His example is a Switch thumb. The function exposes state such as checked, disabled and filled, which lets him render a different icon when the switch is checked.",
+   "t": "3:25"
+  },
+  {
+   "idea": "Passing the collection to the root, not only to the children, lets the component know its items before render, which he says helps performance and SSR.",
+   "detail": "In his Select example the items array is passed to the root and also mapped in the children, so the data is used twice. He says React Aria's pattern, where the parent provides items and children are a function, is cleaner. He does not quantify the performance gain.",
+   "t": "4:47"
+  },
+  {
+   "idea": "Multi-select and extra components (Combobox, Autocomplete) are available in Base UI and were missing in Radix.",
+   "detail": "Multi-select is a multiple prop on the Select root. He presents this as a benefit of active maintenance because the team responds to user requests.",
+   "t": "5:50"
+  },
+  {
+   "idea": "className can be a function that receives component state, which can replace long data-attribute selector strings in Tailwind.",
+   "detail": "He contrasts a long Tailwind string keyed on data-checked with a conditional function that reads checked and disabled directly. He says this pairs well with tailwind-variants, where variants map to checked and disabled, though he presents it as a matter of taste.",
+   "t": "7:13"
+  },
+  {
+   "idea": "Base UI sits between React Aria (more powerful, steeper learning curve) and Radix (simple), and he recommends it for new projects but not for an immediate migration of working Radix apps.",
+   "detail": "He says Radix is not completely broken. He would consider migrating an existing app to get combobox or autocomplete. Other notes: it supports React Hook Form and TanStack Form, has animation support, input scrubbing, nested dialogs and hover-triggered menus.",
+   "t": "8:08"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Migrate asChild to the render prop",
+   "how": "Where a Radix trigger or part uses asChild to merge props into a child element, Base UI uses the render prop to name the element or component to render in that slot. The host shows this on a Select trigger, where a custom button becomes the trigger. Exact code syntax was not shown in the transcript, so check the Base UI docs for the precise prop form.",
+   "when": "When you want the rendered element to be explicit at the call site rather than hidden behind asChild, or when migrating a Radix codebase."
+  },
+  {
+   "name": "Function-as-render-prop for state-aware rendering",
+   "how": "Pass a function to the render prop. It receives component state (checked, disabled, filled, dirty and others, per the host) and can return different elements or conditionally render parts such as icons.",
+   "when": "For stateful parts like switch thumbs or checkboxes where the markup depends on state and you do not want to duplicate logic in CSS or data attributes."
+  },
+  {
+   "name": "Function className with variant libraries",
+   "how": "Pass a function as className that receives component state, and branch on checked or disabled. Combine it with tailwind-variants by passing state into a variant function, where checked and disabled variants hold the styles.",
+   "when": "When Tailwind data-attribute selectors become long and hard to scan, or when you want state styling visible in one place."
+  },
+  {
+   "name": "Data-driven collections via the root",
+   "how": "Pass the items array to the Select root (items prop) so the component knows all options before render. The host then maps over the array in the children. He suggests that the items-plus-function-children pattern from React Aria would avoid using the array twice.",
+   "when": "For selects and similar lists with data known up front, especially with server-side rendering, where he expects better performance."
+  },
+  {
+   "name": "Enable multi-select on Select",
+   "how": "Set the multiple prop on the Select root, which may be true or false. He presents this as the only change needed to switch to a multi-select.",
+   "when": "When you need multi-select and Radix does not offer it."
+  }
+ ],
+ "tools": [
+  "Radix UI",
+  "Base UI",
+  "React Aria",
+  "shadcn/ui",
+  "Tailwind CSS",
+  "tailwind-variants",
+  "CSS Modules",
+  "React Hook Form",
+  "TanStack Form",
+  "Material UI",
+  "Floating UI",
+  "React",
+  "WorkOS (mentioned as the acquirer of Radix's company, per the host)"
+ ],
+ "numbers": [
+  {
+   "claim": "Base UI closed 58 issues and merged 154 pull requests in the last month; Radix closed no issues and merged no PRs (host's GitHub observation, not verified)",
+   "t": "0:54"
+  },
+  {
+   "claim": "Radix's asChild usage is the main migration example; no performance numbers are given for the data-driven approach",
+   "t": "4:47"
+  }
+ ],
+ "hot_takes": [
+  "Radix is in a zombie state and you should stop using it (strong opener, later softened to 'not completely broken')",
+  "Radix's co-creator said he would only use Radix as a last resort and now works on Base UI (second-hand claim)",
+  "React Aria's items-plus-function-children pattern is better than Base UI's approach to data-driven collections",
+  "The render prop and function-as-className are better than asChild and data attributes for readability, though he calls the className choice a matter of taste",
+  "Do not migrate working Radix apps straight away, but use Base UI for new projects"
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Frontend component library choice; AgentOS is a backend proxy and infrastructure project with no UI library in its profile.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI; the profile mentions phone-driven approvals but no web UI component library.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Useful if we build any React UI with accessible headless components; the render-prop and function-className patterns are reusable, but this is not core to our projects.",
+   "action": "If we start a React UI, evaluate Base UI against Radix, starting from its docs for the render prop and state-aware className."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

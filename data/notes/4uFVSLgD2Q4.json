@@ -1,0 +1,159 @@
+{
+ "one_line": "OpenGov's Gabe De Mesa on how they built and scaled OG Assist, an in-product agent: an in-house Effect-native agent loop, A2A contracts, approval gates, ephemeral sandboxes, and rolling-summary context.",
+ "summary": "Gabe De Mesa, an engineer on OpenGov's AI agents team, describes OG Assist, a chat agent behind a nav-bar button in OpenGov's ERP products (budgeting, procurement, asset management, permitting). The team moved from LangGraph to its own agent loop built on the Effect TypeScript library, which gives tracing, logging, and dependency injection for swapping models. They use the A2A protocol as a rigid contract between front end and back end. Quality comes from thumbs up/down signals plus CI evals that run against real completions and check tool calls. Mutating tool calls deterministically pause for human Accept/Reject. Code execution and file creation run in on-demand sandboxes that are torn down afterward. For long conversations they use a rolling summary with recall over it, not stuffing the latest messages. The talk ends with internal use of Claude, Cursor, and cloud agents for development. It is a practitioner walkthrough of one production system, with no benchmarks.",
+ "speakers": [
+  "Gabe De Mesa"
+ ],
+ "orgs": [
+  "OpenGov"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "enterprise-adoption",
+  "evals",
+  "sandboxing-execution"
+ ],
+ "tags": [
+  "OG Assist",
+  "Effect",
+  "Effect AI",
+  "A2A protocol",
+  "agent loop",
+  "human-in-the-loop",
+  "sandbox",
+  "rolling summary",
+  "generative UI",
+  "thumbs up/down feedback",
+  "CI evals",
+  "OpenTelemetry-style tracing",
+  "LangGraph",
+  "Claude",
+  "Cursor",
+  "TypeScript"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Own the agent loop instead of using a framework",
+   "detail": "They moved off LangGraph because the team and use cases outgrew it. A custom loop gives full control of the agent, and Effect propagates tracing, structured concurrency, and logging through the whole loop.",
+   "t": "5:11"
+  },
+  {
+   "idea": "Effect is the foundation bet",
+   "detail": "Effect is a TypeScript library with schemas, error handling, logging, and tracing built in. The team says it helped design the loop and services. Its dependency injection lets them swap the language model without changing loop code.",
+   "t": "3:47"
+  },
+  {
+   "idea": "A2A protocol as a front-end/back-end contract",
+   "detail": "Google's Agent-to-Agent protocol is used to define agent routes, models, and schemas. The agent card (name, description, etc.) is the spec both sides build to, which kept development aligned. A2A has extensions, such as A2UI.",
+   "t": "7:32"
+  },
+  {
+   "idea": "Feedback signal plus CI evals on real completions",
+   "detail": "Thumbs up/down from users is one signal. CI also runs evals against real completions, checking whether the right tools were hit and the expected actions happened. The team says these two loops together let them iterate on tools, skills, and the harness fast. The talk's line is that shipping is the start, not the finish.",
+   "t": "8:53"
+  },
+  {
+   "idea": "Deterministic human approval for mutating actions",
+   "detail": "When a tool call needs approval, the loop is interrupted in code, not by prompting the model. The user sees an Accept or Reject UI before the action runs. This is used for write operations to keep humans in control.",
+   "t": "9:58"
+  },
+  {
+   "idea": "Ephemeral per-task sandboxes for agent code and files",
+   "detail": "Code execution and file creation happen in sandboxes spun up on demand and torn down at the end. This isolates the agent from production systems. Example: the agent builds a PDF inside the sandbox that the user downloads.",
+   "t": "11:22"
+  },
+  {
+   "idea": "Rolling summary beats stuffing the latest messages",
+   "detail": "Past a point, legacy token limits and long threads overload context. They keep a running summary updated every n messages, keep only the most recent messages verbatim, and let the agent recall details from the summary. This lets users refer back to material from far earlier in the conversation.",
+   "t": "12:33"
+  },
+  {
+   "idea": "Tools, then skills, built from Effect primitives",
+   "detail": "A tool is defined, put into a toolkit (a collection of tools), and the toolkit is registered with the language model. Skills were built on the same blocks. The team says tools and skills are all you need. Generative UI works the same way: the agent registers a form primitive and renders it at runtime.",
+   "t": "16:13"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Effect-native agent loop with injected language model",
+   "how": "Use the Effect AI package: a chat and a language model are both dependencies. Stream text through the chat, and pass the model in through dependency injection so it can be swapped.",
+   "when": "When you need full control over the agent loop and want to change models without rewriting loop logic."
+  },
+  {
+   "name": "A2A agent card as the API contract",
+   "how": "Model agent routes, the model, and the schema on the A2A spec (agent card with name and description). Build the front end and back end against that spec.",
+   "when": "When front-end and back-end teams build one agent surface and need a rigid, shared contract."
+  },
+  {
+   "name": "Deterministic approval interrupt",
+   "how": "Stop the loop in code when a mutating tool call is requested, show Accept or Reject, and resume only after the human answers.",
+   "when": "For any agent action that writes data or has side effects and needs human sign-off."
+  },
+  {
+   "name": "Automated tool-call evals in CI",
+   "how": "Run prompts against real model completions in CI and assert the expected tools were called and expected behavior happened. Pair with user thumbs up/down data.",
+   "when": "To catch regressions in tools, skills, and prompts on every change."
+  },
+  {
+   "name": "Ephemeral sandbox per agent task",
+   "how": "Create an isolated sandbox on demand for code execution and file creation, let the agent work there, return the artifact, and tear the sandbox down.",
+   "when": "When an agent must run code or produce files and must not touch production systems."
+  },
+  {
+   "name": "Rolling summary with recent-window and recall",
+   "how": "After every n messages, update a running summary. Keep only the last few messages in full (for example n-5 or n-10). Let the agent recall earlier topics from the summary.",
+   "when": "For long-running chat threads that exceed context limits but still need access to earlier turns."
+  },
+  {
+   "name": "Runtime generative UI via registered primitives",
+   "how": "Register a UI primitive (for example, a form) with the agent. The agent builds and renders an instance at runtime, with options drawn from the conversation.",
+   "when": "When the answer is best given as an interactive control, such as choosing among options, rather than as text."
+  },
+  {
+   "name": "Tools to toolkits to model registration",
+   "how": "Define each tool with a schema, group tools into a toolkit, and register the toolkit with the language model.",
+   "when": "When building a set of capabilities the model should call, and skills need to be composed from tools."
+  }
+ ],
+ "tools": [
+  "Effect",
+  "Effect AI",
+  "LangGraph",
+  "A2A protocol",
+  "A2UI",
+  "Claude",
+  "Cursor",
+  "Claude Cloud Agents"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Tools and skills are really all you need.",
+  "Shipping is the start, not the finish.",
+  "Recommends trying the Effect AI package and building your own tools and skills."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Crucible needs sandboxed code execution with teardown, and this talk gives a production example. The deterministic approval interrupt also maps to the exec-gate guardrail idea. The rolling-summary pattern is relevant to MemoryMesh's tiered cross-session memory.",
+   "action": "Specify Crucible's celld lifecycle as create-on-demand, return artifact, tear down, and add a test that confirms no sandbox state survives a task."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness uses phone-driven approvals. The talk's point is that the loop enforces approval in code for mutating tool calls, and that pattern fits a checkpoint-and-approve harness.",
+   "action": "Check that ProsHarness's phone approval blocks the mutating step in the loop itself, not only in the UI, and add a test for a rejected action."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Rolling summary with a recent-window and recall over the summary is a concrete context-engineering approach for long chats. The talk gives no measurements, though.",
+   "action": "Read the talk's rolling-summary section (12:33) and compare it to the current context compaction approach before choosing one."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

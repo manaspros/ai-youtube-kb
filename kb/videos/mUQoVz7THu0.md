@@ -1,0 +1,45 @@
+# Why Building an Eval Platform Is Harder Than It Looks — Braintrust
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `mUQoVz7THu0` · [watch](https://youtu.be/mUQoVz7THu0) · **date:** 2026-10-07 · **length:** 17:47 · **format:** talk · **quality:** 2/5 · **depth:** intro
+- **speakers:** Hossein · **orgs:** Braintrust
+- **topics:** evals, observability, data-engineering · **tags:** eval-platform, eval-maturity-model, production-traces, eval-flywheel, trace-ingest, large-payloads, btql, headless-evals, failure-mode-discovery
+
+> Braintrust's solutions lead on why eval platforms are a systems problem: a maturity path from spreadsheets to production-trace flywheels, plus why agent traces are hard to store and query.
+
+## Summary
+The speaker, who leads solution engineering for Braintrust West, frames agent quality around two pillars: evals before production and observability after it. He argues LLM non-determinism makes evals necessary, and that a basic eval has three parts: a way to run the agent on inputs, a way to view outputs and scores, and a set of test inputs. He walks through the usual maturity path: spreadsheets, then bespoke UIs that bring in PMs, then side-by-side experiment tools for non-technical users. Each stage still leaves production traces disconnected from offline tests. The target loop is to observe production failures, turn them into offline test cases, iterate, ship, and keep watching for drift. He stresses that agent traces are large semi-structured JSON, sometimes hundreds of megabytes per interaction, which general warehouses handle poorly, so an eval platform becomes a systems problem needing real-time ingest, a query layer (BTQL), and both real-time and long-running query paths. He ends by describing natural-language, headless eval runs driven by coding agents, and automated surfacing of failure modes, with humans reviewing the final choice. The talk is mostly conceptual and product-framed, with no benchmark data.
+
+## Key ideas
+- **Evals and observability are one loop split across two environments** — Evals happen pre-production to build confidence. Observability happens in production to check that the offline hypothesis holds. Both aim at the same target: agent quality. ([1:37](https://youtu.be/mUQoVz7THu0?t=97))
+- **A minimal eval has three parts** — It needs a way to execute the agent on test inputs, a way to view outputs or scores (a spreadsheet counts), and a set of input examples. An input can be a prompt, a request, or context that starts an agent run. ([4:32](https://youtu.be/mUQoVz7THu0?t=272))
+- **The improvement loop starts from production failures** — Observe failure modes in production using dimensions you define, turn them into offline test cases, iterate without adding regressions, ship, then keep watching. Drift means the loop never ends. ([6:34](https://youtu.be/mUQoVz7THu0?t=394))
+- **Spreadsheets are a good start but hit a ceiling quickly** — A spreadsheet eval is a for-loop over inputs. It gives easy documentation, but analytics are manual, human scoring is hard, collaboration is weak, and domain experts are left out. ([8:01](https://youtu.be/mUQoVz7THu0?t=481))
+- **Bespoke UIs widen the audience but do not fix persistence or analytics** — A custom UI brings PMs into the eval loop. It still struggles with collaboration, long-horizon analytics, and persisting data, so it stays a reporting tool. ([9:01](https://youtu.be/mUQoVz7THu0?t=541))
+- **Offline test sets miss what production actually does** — Side-by-side experiment UIs for prompts, models, and parameters still use curated test cases. Without production traces, teams fly blind after shipping, so every step of each trace needs logging. ([10:03](https://youtu.be/mUQoVz7THu0?t=603))
+- **Agent traces are a different data shape from normal telemetry** — Traces are deeply nested semi-structured JSON, sometimes hundreds of megabytes per interaction, compared with kilobyte-sized heartbeat telemetry. Typical warehouses struggle, and reads need both aggregation over large volumes and point-in-time snapshots. ([11:34](https://youtu.be/mUQoVz7THu0?t=694))
+- **Two query workloads need to be supported** — Real-time queries find poor user experiences as they happen. Long-running queries support fine-tuning and human annotation of judge outcomes. The speaker's team built a query abstraction layer, BTQL, for this. ([12:35](https://youtu.be/mUQoVz7THu0?t=755))
+- **Coding agents can run evals through natural-language requests** — Instead of a UI, a user can ask a coding agent to find traces from the last 24 hours with poor experiences and run evals on them. The agent uses infrastructure and code access to log the results. ([14:05](https://youtu.be/mUQoVz7THu0?t=845))
+- **Automated failure discovery is the claimed next step** — The speaker says inference over logged traces can surface unknown unknowns, such as silent failures or users repeating the same request. This is the vendor's own product claim, shown without data. Humans still review the decision to ship. ([15:04](https://youtu.be/mUQoVz7THu0?t=904))
+
+## Techniques
+- **Three-part minimal eval harness** — Combine an agent executor, a viewer for outputs and scores, and a versioned set of input examples. Start with a loop and a spreadsheet before investing in tooling. *When:* Early-stage agent work, before deciding whether a dedicated eval platform is worth building.
+- **Production-failure-to-test-case flywheel** — Log every input, output, and step of each trace. Define failure and success dimensions from observed outcomes. Turn the failing traces into offline eval cases, iterate against them, then ship and monitor the same dimensions. *When:* An agent is live and failures are not covered by the current test set.
+- **Side-by-side experiment UI for prompt and model changes** — Let non-technical users change the system prompt, model, or parameters and compare outputs side by side on the same inputs. *When:* PMs or subject-matter experts need to run experiments without engineering help.
+- **Separate hot and cold paths for trace data** — Serve real-time ingest and queries for live failures from one path, and run long aggregations or annotation workloads on another. Keep large trace payloads apart from small telemetry records. *When:* Trace payloads are large (tens to hundreds of MB) and the same data serves both live debugging and offline analysis.
+- **Natural-language headless eval runs via coding agents** — Give a coding agent access to the trace store and eval runner, then ask it in plain language to select traces by criteria, run evals, and log results. A human reviews the outcome and picks the version to ship. *When:* Eval work is repeated often and the team wants to skip manual UI steps, keeping a human decision at the end.
+
+## Numbers
+- Agent traces can reach hundreds of megabytes per interaction, described as a movie's worth of data, which general cloud warehouses handle poorly. ([11:34](https://youtu.be/mUQoVz7THu0?t=694))
+- Agent trace payloads run tens to hundreds of megabytes, compared with kilobyte-sized traditional heartbeat observability records. ([12:35](https://youtu.be/mUQoVz7THu0?t=755))
+
+## Hot takes
+- Spreadsheet evals are fine as a first step, but they are not a serious eval system.
+- Building an eval platform is a systems problem, not a UI problem.
+- Eval test sets built offline will not cover production behavior, so production traces must feed the test set.
+
+## Tools mentioned
+Braintrust, BTQL
+
+## Relevance to our work
+- **agentos** (1/3): AgentOS has an L4 observability stack and RAGAS evals, and proxies all agent traffic. The talk's trace-to-test-case loop is a relevant pattern to check, but the talk gives no hard data. → *Read the trace-to-eval flywheel in this talk and check whether AgentOS's Scout proxy logs full request and response payloads in a form that could be turned into offline eval cases.*
+- **general** (1/3): The eval maturity path (spreadsheet, then bespoke UI, then side-by-side experiments, then production traces) gives a useful checklist for how agent evals grow in a team. → *Use the three-part eval definition and the maturity stages as a checklist when reviewing how our eval setup for agents is organised.*

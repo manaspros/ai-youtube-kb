@@ -1,0 +1,168 @@
+{
+ "one_line": "DoorDash's search and personalization lead on using LLMs offline to create graded relevance labels, semantic IDs, and memory, then serving those through small, fast models.",
+ "summary": "Raghav Saboo (DoorDash, staff ML engineer on search and personalization) argues that marketplace discovery is mainly a semantic-understanding problem, and that engagement-only ranking surfaces popular but wrong items. He describes four primitives: supervision, catalog semantics, consumer memory, and steerable content generation. The core pattern is to spend expensive LLM reasoning once, offline, to produce graded relevance labels, then distill those labels into small models that serve retrieval and ranking cheaply. Labels are built from a human seed set, audited by a stronger LLM where human labels disagree with strong behavioral signals, and used to fine-tune a lightweight labeler that covers the full catalog. Semantic IDs (learned hierarchical codes) and three-timescale consumer memory feed the same downstream models. Reported results include about +2.3% relevance NDCG for retrieval, +4 to 5% MRR for the ranker from semantic IDs, and about 1% order-rate lift in the pets vertical. The talk is a practitioner overview with some metrics, not a detailed method paper.",
+ "speakers": [
+  "Raghav Saboo"
+ ],
+ "orgs": [
+  "DoorDash"
+ ],
+ "format": "talk",
+ "topics": [
+  "rag-retrieval",
+  "data-engineering",
+  "memory",
+  "evals"
+ ],
+ "tags": [
+  "distillation",
+  "graded-relevance",
+  "semantic-ids",
+  "two-tower",
+  "contrastive-learning",
+  "hard-negatives",
+  "ordinal-tower",
+  "consumer-memory",
+  "personalized-collections",
+  "e-commerce-search",
+  "llm-labeling",
+  "label-audit"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Discovery is a semantic-understanding problem, not only an engagement problem",
+   "detail": "Engagement-only ranking keeps surfacing popular items that fail the user's constraint (e.g. regular spaghetti for a gluten-free pasta query). LLMs give a way to reason about item meaning and shopper intent.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Use LLMs offline to create graded supervision, then distill",
+   "detail": "Human seed labels (0/1/2 relevance) are expensive and go stale, and behavioral signals are biased by exposure, position and price. So an LLM produces the labels. Expensive reasoning runs once offline, then a lightweight labeler is fine-tuned and run across the full catalog. The resulting labels are a shared target for retrieval and ranking.",
+   "t": "3:39"
+  },
+  {
+   "idea": "Audit labels by disagreement with behavior",
+   "detail": "When a human label says irrelevant but the item converts well, the case goes to a stronger LLM with more granular prompts. Labels are also reconciled with query-to-taxonomy models. This gives a high-precision golden set.",
+   "t": "5:02"
+  },
+  {
+   "idea": "Standard embeddings blur exact matches, substitutes and complements",
+   "detail": "The fix is a two-stage contrastive retrieval model on the graded labels. Stage one shapes global geometry with two-tower multi-level supervised contrastive loss, then mines hard negatives. Stage two runs curriculum training on those relabeled hard negatives. Stage two is where the relevance separation appears.",
+   "t": "5:56"
+  },
+  {
+   "idea": "Add a relevance tower next to engagement towers instead of replacing the ranker",
+   "detail": "An ordinal relevance tower trained on LLM graded labels sits beside click, add-to-cart and conversion towers and shares the bottom layers. A value function blends engagement and relevance per surface. The LLM is distilled into the production ranker, not used in its place.",
+   "t": "8:16"
+  },
+  {
+   "idea": "Semantic IDs give a learned hierarchy with no labels",
+   "detail": "Each catalog item gets a short hierarchical code. Shared prefixes capture broad neighborhoods, later tokens capture fine splits (e.g. Mexican vs Caribbean vs Korean hot sauces). The code helps cross-category links, cold start (via n-gram/BPE tokens as sparse features), tail coverage, and auditing human labels.",
+   "t": "9:47"
+  },
+  {
+   "idea": "Consumer memory in three timescales, stored in three forms",
+   "detail": "Long-term durable preferences (orders, search, browsing, support), real-time in-session context, and stated preferences from agentic chat. Each user's memory is kept as readable text, latent vectors and a graph, so both LLMs and retrieval/ranking models can use it without re-interpreting it.",
+   "t": "14:05"
+  },
+  {
+   "idea": "Batch-generate personalized content offline and serve it with the existing stack",
+   "detail": "An offline LLM builds consumer-level collections (title, subtitle, items) from memory and semantic IDs. At serving time the existing retrieval and ranking handle item hydration and collection ranking, so there is no online LLM call.",
+   "t": "18:28"
+  },
+  {
+   "idea": "Takeaway: the online LLM call is often not the architecture you need",
+   "detail": "Capture reasoning as offline artifacts (labels, semantic IDs, memory) and let small, fast models serve them. Once the primitives exist, they support retrieval, ranking and content generation.",
+   "t": "20:59"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Offline LLM labeling with a distilled labeler",
+   "how": "Build a small human seed set of query-item pairs on a 0/1/2 graded scale. Send suspicious cases (human says irrelevant, behavior says strong) to a stronger LLM with finer prompts. Reconcile with taxonomy models. Fine-tune a lightweight LLM on the golden set and run it over the full catalog.",
+   "when": "Relevance labels are needed at catalog scale, human labels are too slow or stale, and behavioral logs are biased by exposure."
+  },
+  {
+   "name": "Label-audit by disagreement",
+   "how": "Flag cases where human labels conflict with strong conversion or add-to-cart signals. Re-evaluate those with a stronger model and adjust labels when category models agree.",
+   "when": "Building a high-precision gold set from mixed human, LLM and behavioral sources."
+  },
+  {
+   "name": "Two-stage contrastive retrieval with hard-negative curriculum",
+   "how": "Stage one: two-tower encoder with multi-level supervised contrastive loss for global geometry. Mine hard negatives, meaning items ranked too high or positives ranked too low. Stage two: curriculum training on relabeled hard negatives.",
+   "when": "Plain embeddings collapse exact matches, substitutes and complements together in a large catalog."
+  },
+  {
+   "name": "Auxiliary ordinal relevance tower with value-function blend",
+   "how": "Add a tower trained on LLM graded labels that shares bottom layers with the engagement towers. Predict relevance level probabilities in the same backward pass. Blend engagement and relevance scores with a per-surface value function.",
+   "when": "Adding relevance to an existing engagement-optimized ranker without giving up business metrics."
+  },
+  {
+   "name": "Hierarchical learned semantic IDs as sparse features",
+   "how": "Learn short hierarchical codes from data with no labels. Prefix sharing gives neighborhoods. Tokenize IDs with n-gram or BPE and use them as sparse ID features for new or tail items.",
+   "when": "Catalog is huge and changing, taxonomy is too coarse, and new items need signal before they have exposure."
+  },
+  {
+   "name": "Multi-form consumer memory blocks",
+   "how": "Store each memory block as text (human-readable), embedding (for retrieval/ranking features) and graph or hierarchy (for multi-hop relations). Keep it decoupled so downstream systems read it without reinterpreting.",
+   "when": "LLM agents and traditional ML models both need the same user context, and it must be inspectable."
+  },
+  {
+   "name": "Batch generation of personalized content with the existing ranking stack",
+   "how": "Generate content (titles, subtitles, item sets) offline with an LLM from memory and IDs. Serve by reusing retrieval and ranking for hydration and ordering.",
+   "when": "Per-user content variety is wanted without adding online LLM latency or cost."
+  }
+ ],
+ "tools": [
+  "GPT-4o mini (named as an example lightweight labeler)"
+ ],
+ "numbers": [
+  {
+   "claim": "Graded relevance seed set on a 0/1/2 scale for query-item pairs, later used as the basis for LLM-labeled golden data",
+   "t": "3:39"
+  },
+  {
+   "claim": "Retrieval relevance NDCG improved by about 2.3% after the two-stage contrastive approach, and downstream business metrics also improved",
+   "t": "6:54"
+  },
+  {
+   "claim": "Semantic IDs improved the ranker's MRR by about 4 to 5%, which translated into conversion wins",
+   "t": "12:40"
+  },
+  {
+   "claim": "Store-item catalog is a few billion items across international stores",
+   "t": "9:47"
+  },
+  {
+   "claim": "Pets vertical: close to 1% order-rate increase and 0.6% increase in active users from personalized collections",
+   "t": "19:49"
+  }
+ ],
+ "hot_takes": [
+  "The online LLM call is often not the product architecture you need; capture the reasoning offline and serve it through small models.",
+  "Discovery is a semantic understanding problem, not an engagement optimization problem."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh's tiered cross-session memory with provenance overlaps with DoorDash's three-timescale memory blocks stored as text, vector and graph, shared by LLMs and ML models.",
+   "action": "Compare MemoryMesh's tiers against the three-timescale split (durable, in-session, explicitly stated) and test whether memory blocks should be one decoupled, inspectable object that both the LLM path and retrieval read."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Skill ranking could use the same pattern of one strong-model labeling pass that is distilled into a cheap ranker, but the talk gives no evidence for agent skills specifically.",
+   "action": "Read the labeling-audit section of the talk and consider a strong-model labeled set of task-skill pairs as a benchmark for ProsHarness skill ranking."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Graded LLM labels, disagreement audits, and distilling the labels into a small model over the full set apply directly to entity-resolution match labeling and data-quality work.",
+   "action": "For the ER work, build a small seed set with graded match labels, have a strong model re-check cases where labels disagree with the rule or model output, then distill those labels into a small matcher and measure on held-out pairs."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

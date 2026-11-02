@@ -1,0 +1,47 @@
+# Version-Controlled Search: The Web as It Was — Ryan Ahern, Exa
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `vS2IA9pq0Q4` · [watch](https://youtu.be/vS2IA9pq0Q4) · **date:** 2026-10-19 · **length:** 19:13 · **format:** talk · **quality:** 2/5 · **depth:** intro
+- **speakers:** Ryan Ahern · **orgs:** Exa, OpenAI
+- **topics:** rag-retrieval, evals, token-cost-efficiency · **tags:** web-search, backtesting, point-in-time-data, look-ahead-leakage, versioned-web, dynamic-highlights, financial-ml, agentic-search, vendor-talk
+
+> Exa vendor talk on version-controlled search (Exa Snapshot): query the web as it stood at a past date, and use that to backtest agent-driven financial features without look-ahead leakage.
+
+## Summary
+Ryan Ahern, a forward-deployed engineer at Exa, pitches agentic web search as a tool that agents call far more often than humans search, and says Exa competes on quality, cost (per task, not per call) and latency. He describes two Exa features: dynamic highlights, which return query-relevant snippets instead of full pages (he claims 95% fewer tokens than full-page text), and Exa Ultra for long-running deep research. The main topic is Exa Snapshot, a store of 400B+ dated web snapshots that supports two access modes: fetch a URL as it was at or before a date, and run a search as it would have returned results at a past point. He illustrates with a reported change in OpenAI's annualized revenue figure (gross vs net of cloud pass-throughs) to show how a past search reveals what was knowable at the time. The backtesting argument is that you can test whether an agent or model would have found a signal before the market did, then check generalization on a holdout set, rather than waiting months for live results. He walks through three archetypes (enriching a classic model with web data, adding an agentic feature such as an adverse-media scan, and letting an agent manage a prediction with web access) and a workshop example on predicting acquisitions where overfitting is the risk. The talk is short and vendor-led, with its performance and token claims unverified in the talk itself.
+
+## Key ideas
+- **Agents issue many more searches per task than humans, with longer, more detailed queries, so the cost of each search is multiplied and the total per-task cost matters more than per-call price.** — Speaker argues agents retry, do not tire, and explore a space with many queries before answering, so retrieval quality and token cost per task become the key metrics. ([0:47](https://youtu.be/vS2IA9pq0Q4?t=47))
+- **Dynamic highlights return query-relevant snippets from every result rather than full pages or a single highlighted page.** — The goal is to cut input tokens sent to the agent's context window while keeping the answer-bearing text. Speaker claims this gives higher-quality results at 95% fewer tokens than full-page text. ([5:45](https://youtu.be/vS2IA9pq0Q4?t=345))
+- **Exa Snapshot stores 400B+ dated snapshots of the web, captured each time the crawler checks a URL for freshness.** — Because freshness checks already happen, each URL accumulates a versioned history that can be queried by date. ([6:31](https://youtu.be/vS2IA9pq0Q4?t=391))
+- **Two access modes: fetch a URL as it was at or before a date, or run a whole search as it would have returned results at a past date.** — Version search is the more novel one: it returns only the results that would have been served at that point in time, which is what a backtest needs. ([7:34](https://youtu.be/vS2IA9pq0Q4?t=454))
+- **Version search shows what information was public at a given moment, which can reveal how a market narrative changed.** — Speaker compares an October 1 snapshot with live results for the OpenAI run-rate figure, which was reported around $70B and later framed as about $50B net of cloud pass-through revenue. ([8:50](https://youtu.be/vS2IA9pq0Q4?t=530))
+- **Backtesting an agent or model on past web state lets you check whether it could have found a signal before the market did, and whether it generalizes.** — Build a labeled set (he suggests around 50 examples), hold some out, and test the feature and agent setup against them, instead of waiting months for live predictions. ([10:08](https://youtu.be/vS2IA9pq0Q4?t=608))
+- **Snapshot-based evals avoid look-ahead leakage when web search is a tool inside a prediction system.** — With live search, an agent may find the answer (for example, that an acquisition was announced) and trivially predict it. Snapshots let you cut the web at a chosen date, such as one day, seven days or one month before the event. ([11:13](https://youtu.be/vS2IA9pq0Q4?t=673))
+- **Overfitting is the main risk when an agent tunes feature descriptions against training data, so the holdout check is central.** — In a workshop with about 100 attendees, example features that scored well on the training set are shown as a warning. The speaker says snapshots let you detect and test for this before deploying. ([15:56](https://youtu.be/vS2IA9pq0Q4?t=956))
+
+## Techniques
+- **As-of (point-in-time) search for backtesting** — Run the agent's search queries with a cutoff date so results match what would have been served then. Compare the agent's prediction at several lead times (for example, 1 day, 7 days, 1 month) before the known event. Use fetched-URL-as-of-date when you only need one page. *When:* Evaluating any predictive model or agent that uses live web search, to prevent look-ahead leakage in the test set.
+- **Holdout validation for agentic features** — Build a labeled set of cases (speaker suggests about 50), split off a holdout set, tune the feature or agent prompt on the rest, and score on the holdout. Treat strong training-set results with suspicion. *When:* Before adding an agentic feature (such as an adverse-media scan) to a traditional model, to check it generalizes.
+- **Separate search-tool eval from model eval** — Benchmark the search tool on its own, not inside an agent run, because model choice and search quality confound each other. *When:* Choosing a search provider for an agent, so the comparison is not dominated by which model made the calls.
+- **Per-task cost measurement for retrieval** — Measure total agent cost for a completed task, not the price of one search call, since agents issue many searches. Reduce input tokens with snippet-level highlights instead of full pages. *When:* Budgeting agents that do heavy web search, where token volume from retrieved content dominates cost.
+
+## Numbers
+- Exa Snapshot holds 400B+ dated web snapshots. ([6:31](https://youtu.be/vS2IA9pq0Q4?t=391))
+- Dynamic highlights claimed to give higher-quality results at 95% fewer tokens than full-page text (vendor claim, not shown). ([5:45](https://youtu.be/vS2IA9pq0Q4?t=345))
+- OpenAI annualized revenue example: reported around $70B in early October, later framed as about $50B net of cloud pass-through revenue. ([8:50](https://youtu.be/vS2IA9pq0Q4?t=530))
+- Backtest example suggests a holdout set of about 50 sample cases. ([10:08](https://youtu.be/vS2IA9pq0Q4?t=608))
+- Acquisition-prediction example checks predictions at 1 day, 7 days and 1 month before the announcement. ([11:13](https://youtu.be/vS2IA9pq0Q4?t=673))
+- Workshop with about 100 attendees ran the same acquisition-prediction example. ([15:56](https://youtu.be/vS2IA9pq0Q4?t=956))
+
+## Hot takes
+- Vendor pitch: the talk promotes Exa products throughout, and the 95% token reduction and benchmark-leadership claims are not shown or verified in the talk.
+- The substantive idea is that as-of web snapshots make backtesting of web-searching agents possible and reduce look-ahead leakage. The rest is product positioning.
+- The OpenAI revenue example is an anecdote about a financial reporting change, not evidence of the feature's accuracy.
+- Quality is capped at 2 because this is a sponsored-style vendor talk with thin, unverified substance.
+
+## Tools mentioned
+Exa, Exa Snapshot, Exa Agent Ultra, Cursor, Gamma, ChatGPT, Claude
+
+## Relevance to our work
+- **agentos** (1/3): MemoryMesh runs hybrid retrieval and RAGAS evals. Point-in-time retrieval is a useful way to test whether memory or retrieval would have surfaced facts before a cutoff, but the talk is about web search, not local retrieval. → *Add an as-of cutoff option to the MemoryMesh eval harness so retrieval tests cannot see facts written after the evaluated event.*
+- **general** (1/3): Shows a general eval pattern: when an agent uses live tools (search), cut the environment at a past date and hold out a set to test generalization. → *Read the Exa snapshot blog post the speaker references, for details on how as-of search is exposed through the API.*

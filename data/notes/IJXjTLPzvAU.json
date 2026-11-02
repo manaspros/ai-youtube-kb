@@ -1,0 +1,173 @@
+{
+ "one_line": "Jacob Thomas argues persona/role-play agents are judged by fluency metrics that cannot catch anachronistic \"composite\" historical figures, and proposes a pre-registered, expert-scored, context-window-based eval (Lincoln case study).",
+ "summary": "The speaker, a data scientist with a behavioral epidemiology background, argues that role-playing language agents (personas of historical figures, companions, tutors) are evaluated by instruments that only measure fluency and personality consistency. His central claim is that convincingness and fidelity to the documentary record are independent properties, so a persona can score high while reasoning from knowledge its real counterpart never had. He names this the \"Miranda Hypothesis\": culturally dominant representations (here the Hamilton musical) outweigh the primary record in training data, and next-token training compresses both into a salience-weighted composite. He says post-training with human preference data amplifies this (\"algorithmic sycophancy\"), and that time-locked models only shift the anchor date rather than fixing it. His proposed fix is to treat the whole configured encounter (prompt, primary-source anchor documents, a temporal anchor, a swappable model, and a human curator) as the unit under evaluation, kept in context rather than fine-tuned into weights. He presents a pre-registered Lincoln experiment (four life moments by three conditions, scored on a weighted anachronism/documentary/plausibility rubric by a historian) and says results are not yet in. He frames expert-built gold sets as a build-time CI gate rather than a runtime cost.",
+ "speakers": [
+  "Jacob E. Thomas"
+ ],
+ "orgs": [
+  "Results Gen",
+  "Character AI",
+  "Hello History",
+  "University of Toronto",
+  "Washington College"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "context-engineering",
+  "product-ux"
+ ],
+ "tags": [
+  "persona",
+  "role-playing agents",
+  "eval design",
+  "pre-registration",
+  "anachronism",
+  "RAG vs fine-tuning",
+  "expert-in-the-loop",
+  "measurement"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Persona evals measure the mask, not the record",
+   "detail": "Fluency, register and personality-consistency metrics (including LLM-as-judge) can pass a persona that reasons from knowledge its historical figure never had. The speaker argues these are different properties and the field's measurement stack only checks the first.",
+   "t": "8:22"
+  },
+  {
+   "idea": "Convincingness and fidelity are independent",
+   "detail": "A system can score perfectly on personality consistency and still produce anachronistic reasoning. The speaker's demo: a Hamilton prompted on slavery gives a clean abolitionist answer, which smooths over a disputed historical record.",
+   "t": "9:53"
+  },
+  {
+   "idea": "Miranda Hypothesis: training-data salience drives the composite",
+   "detail": "Three claims: culturally dominant representations of a figure exceed the primary record in volume and recency in the corpus; next-token prediction cannot tell a 1789 letter from a modern viral post; so output defaults to a fluent, morally legible composite. Schuyler mansion visitor data is offered as real-world evidence of the same force.",
+   "t": "16:10"
+  },
+  {
+   "idea": "Post-training can amplify the composite",
+   "detail": "Human raters judge with frameworks shaped by the same popular narratives, so preference optimization rewards outputs matching the mythologized version. The speaker calls this algorithmic sycophancy.",
+   "t": "20:07"
+  },
+  {
+   "idea": "Time-locked models change the anchor, not the problem",
+   "detail": "A model trained only up to a cutoff avoids later contamination but still averages everything pre-cutoff about the figure, so you get a composite anchored to a different moment.",
+   "t": "20:07"
+  },
+  {
+   "idea": "Treat the configured encounter as the unit, not the model",
+   "detail": "For role-play systems the speaker swaps 'agent' for 'role-playing language system': a structured prompt, anchor documents, a temporal anchor, an off-the-shelf model (voice, not mind), and a human curator. The persona lives in the configuration, which can be versioned, diffed, audited and handed to a domain expert.",
+   "t": "24:11"
+  },
+  {
+   "idea": "Context-window grounding beats fine-tuning for personas",
+   "detail": "Fine-tuning layers a thin persona signal over the base model's cultural sediment, making the mix opaque and risking catastrophic forgetting. Keeping documents intact in the context window keeps them inspectable and reversible. He also notes it is accessible to non-ML researchers.",
+   "t": "27:43"
+  },
+  {
+   "idea": "Score voice last, reasoning first",
+   "detail": "The rubric deliberately excludes rhetorical authenticity. Anachronism detection is weighted 40%, documentary consistency 35%, contextual plausibility 25%. A plain but faithful answer counts as a partial success over a fluent anachronistic one.",
+   "t": "48:08"
+  },
+  {
+   "idea": "Domain expert builds the eval, not the runtime",
+   "detail": "Fidelity is a relation between output and archive, so only someone who has read the record can judge it. The expert writes the diagnostic questions, rubric and sealed gold set; the gold set becomes a pipeline gate that is re-run whenever the base model changes, with automated metrics doing a cheap first pass.",
+   "t": "52:11"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Pre-registered fidelity eval for personas",
+   "how": "Pick a figure with a primary record and a saturating cultural composite. Choose 3-4 documented life moments where reasoning demonstrably changed. Have a domain expert write diagnostic questions on the known fault lines. Run three conditions per moment: primary sources as anchor, a modern interpretive biography as anchor, and bare model with only a date. Score blind against a weighted rubric. Publish the corpus, questions, rubric and predictions before collecting responses.",
+   "when": "When a persona must reason from a historical or documentary record and fluency metrics are not enough to judge it."
+  },
+  {
+   "name": "Anachronism-first rubric with voice excluded",
+   "how": "Weight anachronism detection highest (40%), documentary consistency next (35%), and contextual plausibility (25%). Treat rhetorical style as a secondary indicator only, never a pass criterion.",
+   "when": "When judging outputs where sounding right can hide reasoning from the wrong era or source."
+  },
+  {
+   "name": "Encounter-as-configuration with receipts",
+   "how": "Store the persona as versioned artifacts: system prompt, anchor document set, temporal anchor date, model ID. Keep every input that shaped an output inside the context window so the encounter can be reproduced and audited by a non-ML reviewer.",
+   "when": "When a persona must be diffable, reproducible and reviewable by domain experts, not just by the engineer who built it."
+  },
+  {
+   "name": "Context window grounding over persona fine-tuning",
+   "how": "Place source documents intact in the context at inference time and have the model reason over them. Avoid fine-tuning on the figure, which the speaker argues blends persona signal into the base model's cultural prior in an unauditable way.",
+   "when": "When traceability to source documents matters more than marginal gains in persona voice."
+  },
+  {
+   "name": "Expert-authored gold set as a CI gate",
+   "how": "Have the domain expert write the rubric, diagnostic questions, and a sealed set of edge-case vignettes. Run automated metrics first as a cheap filter, route flagged cases to the expert, and re-gate the persona whenever the base model changes.",
+   "when": "When shipping a persona product in a domain where a non-expert cannot tell good output from plausible-sounding output."
+  }
+ ],
+ "tools": [
+  "Claude Opus 4.7",
+  "Companion (open-source persona prompt framework built by the speaker)",
+  "Character AI",
+  "Hello History",
+  "KOSIR",
+  "PsyMem",
+  "In-Character benchmark"
+ ],
+ "numbers": [
+  {
+   "claim": "State-of-the-art persona systems score 80.7% alignment with human-perceived personality on the In-Character benchmark (Hamilton case); the speaker says this measures fluency, not fidelity",
+   "t": "3:39"
+  },
+  {
+   "claim": "KOSIR builds motivation-driven character agents from a corpus of almost 18,000 characters across hundreds of books; its 70B model matches or beats GPT-4o on three benchmarks",
+   "t": "6:49"
+  },
+  {
+   "claim": "Federalist Papers corpus is roughly 175,000 words, while the Hamilton-related body of content in training data exceeds the primary record by orders of magnitude (speaker's estimate)",
+   "t": "17:35"
+  },
+  {
+   "claim": "After the musical premiered, the Schuyler mansion recorded a near tripling of annual visitors, skewing younger; the family had 15 children, eight surviving to adulthood",
+   "t": "18:39"
+  },
+  {
+   "claim": "Lincoln experiment: 4 moments (1847, 1858, 1860, 1862-65) x 3 conditions = 12 cells, 5 diagnostic questions each, 60 response units",
+   "t": "36:00"
+  },
+  {
+   "claim": "Rubric weights: anachronism detection 40%, documentary consistency 35%, contextual plausibility 25%",
+   "t": "40:22"
+  },
+  {
+   "claim": "A 2026 Nature Medicine study across 12 clinics found general frontier models (Google, OpenAI, Anthropic) outperformed dedicated clinical AI tools on physician-reviewed tasks",
+   "t": "28:43"
+  }
+ ],
+ "hot_takes": [
+  "A persona system without a domain expert in its evaluation loop is a thermometer that cannot read temperature.",
+  "Fine-tuning a persona is worse than grounding it in the context window, because it hides the source influence you need to audit.",
+  "Post-training against human preference amplifies cultural composites rather than correcting them.",
+  "Rewarding fluent-but-anachronistic outputs is the inversion that current eval stacks are built to perform."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "MemoryMesh does provenance-tracked retrieval over knowledge buckets, so the speaker's document-anchored, auditable grounding idea maps onto it, but the talk is about personas and not general agent evals.",
+   "action": "Read the talk's 5-part encounter framing and check whether MemoryMesh answers can be traced back to the specific retrieved passages; add a source-consistency check to the RAGAS suite alongside fluency scores."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The speaker's argument that the agent's behavior lives in a versioned configuration (prompt, corpus, anchor date) that can be diffed and reproduced matches ProsHarness's checkpoint/resume and plan-critique loop design.",
+   "action": "Treat ProsHarness run configs (prompt, input docs, model ID) as versioned, reproducible artifacts so a checkpointed run can be re-created and audited later."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Directly relevant to the recurring interest in evals for agents: it argues that the eval must be built against the source record, with an expert gate, and that fluency-based LLM-as-judge can miss the dominant failure.",
+   "action": "When designing any agent eval, ask 'what does this metric not see?' and add one fidelity check tied to a source document, scored by a human who has read it, before relying on LLM-as-judge fluency scores."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

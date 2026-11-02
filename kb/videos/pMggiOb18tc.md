@@ -1,0 +1,52 @@
+# The Golden Age of AI Engineering — Alexander Embiricos & Romain Huet & Peter Steinberger, OpenAI
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `pMggiOb18tc` · [watch](https://youtu.be/pMggiOb18tc) · **date:** 2026-07-18 · **length:** 25:13 · **format:** keynote · **quality:** 3/5 · **depth:** intro
+- **speakers:** Alexander Embiricos, Romain Huet, Peter Steinberger · **orgs:** OpenAI, Cerebras
+- **topics:** coding-agents, multi-agent, software-factory, agent-architecture · **tags:** codex, manager-worker loop, outer loop, server-side compaction, AGENTS.md, app server, value maxing, test boxes, parallel attempts, Responses API, OpenClaw, triggers
+
+> OpenAI's Codex team argues engineers move from watching agents to running manager-worker loops, with human attention as the scarce resource to spend on the outer loop.
+
+## Summary
+An OpenAI keynote (Alexander Embiricos and Romain Huet on Codex product and platform, then guest Peter Steinberger on his own agent workflow) that argues engineering is becoming a loop-design job rather than a code-writing job. The Codex team describes a layered stack (models via the Responses API, an open-source harness, AGENTS.md as a shared instruction file, an app server and plugins) and says they build their own products on the same layers they offer developers. On value, they push cost efficiency (a model at GPT-5.5 level for half the cost) and speed (750 tokens/s on Cerebras) so agents can try several approaches in parallel. Steinberger describes moving from juggling 10+ terminals to a long-running manager agent that triages issues, spawns workers, runs tests on separate machines, and returns PRs for one human review. He names three enablers (server-side compaction, cross-thread coordination, and triggers) and says the constraint has shifted from tokens to compute to human attention. The closing claim is that models are outpacing the harnesses and organizations around them, and that designing those loops is the next engineering problem.
+
+## Key ideas
+- **Work is shifting from watching one agent to running a long-lived manager that delegates to workers** — Steinberger says he went from juggling 10+ terminals (which he calls polling, not orchestrating) to talking to a long-running manager. The manager reads an issue against project goals, decides fit, creates a worker, and a reviewer agent checks the result. The human sees only a PR with the issue, diff, and maybe a video or running build. ([19:07](https://youtu.be/pMggiOb18tc?t=1147))
+- **Three enablers make a persistent manager workable** — He names server-side compaction (long tasks stop depending on session limits), coordination so one thread can create and steer projects, and automation triggers that wake the manager on events. Together these give persistent context, delegation, and triggers, which he calls the loop. ([20:08](https://youtu.be/pMggiOb18tc?t=1208))
+- **The bottleneck keeps moving: tokens, then compute, then human attention** — Tokens were the limit last year. Running many threads at once then overloaded his laptop, which was fixed by running tests on separate test machines. Attention is now the limit, and unlike tokens or compute it cannot be scaled by adding more, so the key skill is deciding where to spend it. ([21:13](https://youtu.be/pMggiOb18tc?t=1273))
+- **Split work into an inner execution loop and an outer direction loop** — The agent runs the inner loop (code, test, review). The human sets direction and makes decisions in the outer loop. Newer models understand intent well enough that watching and steering each step (hitting escape to correct direction) is now a waste of time. ([21:13](https://youtu.be/pMggiOb18tc?t=1273))
+- **Chat first, then drop into hands-on editing when needed** — The Codex team argues a collaborative UI cannot be built in a CLI and that IDEs start with code when work should start with conversation. They want one chat entry point that can escalate to pointing at and editing specific code, to keep a sense of mastery over the work. ([07:22](https://youtu.be/pMggiOb18tc?t=442))
+- **The Codex stack is built as open layers that the team itself uses** — Models are reached through the Responses API, which the Codex app also uses. Compaction was added to the API because Codex needed it. The harness is open source and model-agnostic, AGENTS.md was adopted as a cross-agent file name, and the app server is the path their own VS Code and desktop clients use. Browser use and computer use are plugins built on the same extension points. ([10:04](https://youtu.be/pMggiOb18tc?t=604))
+- **Value comes from cost efficiency and speed that enable parallel attempts, not from token volume** — The speakers call the goal value maxing, not token maxing. A cheaper model at prior-generation quality and a fast frontier model let an agent try five or six approaches in parallel and pick the best, all in the time one attempt would take at slow speed. ([14:51](https://youtu.be/pMggiOb18tc?t=891))
+- **Future agents should run anywhere and choose the environment themselves** — Steinberger wants one agent he can text or steer from Slack, which connects to any of his machines and decides what runs in the cloud and what needs his local machine. He says this is not solved, and that models are advancing faster than the harnesses and organizations around them. ([23:52](https://youtu.be/pMggiOb18tc?t=1432))
+
+## Techniques
+- **Long-lived manager agent over worker agents** — One persistent manager session holds project goals and context. It triages incoming issues against the goals, spawns a worker per accepted issue, sends the result through a reviewer agent, and only surfaces a PR with the diff, issue, and a video or runnable build for one human review. Approved work lands after checks pass. *When:* Repos with clear goals, a written vision, and reliable automated checks, where most work can be reviewed as a finished PR rather than watched as it happens.
+- **Trigger-driven manager wake-ups** — The manager is woken by events (new issue, timer, or a check result) rather than by a human typing. Steinberger's example is a chief-of-staff agent that wakes every 10 minutes to coordinate GitHub work and opens threads a human can join at any time. *When:* Ongoing background coordination, such as triage, follow-ups, or repo hygiene, where the human should only step in on exceptions.
+- **Offload test runs to a separate machine** — Run each agent's tests on a dedicated test box instead of the developer's laptop, so many parallel threads do not overload the local machine. *When:* Several agents run in parallel and the local machine becomes the compute bottleneck.
+- **Server-side compaction for long tasks** — Compact long context on the provider side so long-running work continues without the agent losing state or the operator managing session limits. *When:* Tasks that outlast a single context window and need to stay coherent across many steps.
+- **Parallel attempts with a fast, strong model** — Spawn several agents on the same task with different approaches, then pick the best result. The speaker's example is 5 or 6 attempts run in parallel on a fast model. *When:* Speed is cheap enough that the extra attempts finish before a human would have finished one, and the output can be compared automatically or by a person.
+- **Shared instruction file across agents** — Use AGENTS.md as the instruction file, rather than a vendor-specific file format, so other agents can read the same guidance. *When:* Multiple coding agents work in the same repo and you want one set of project instructions.
+- **Chat-first UI with escalation to direct editing** — Start each task in a conversation and let the user point at a specific spot in the code to change it, instead of starting in the editor or terminal. *When:* Designing an agent product where most users should talk to the agent and only sometimes need to inspect or edit details.
+
+## Numbers
+- Model release cadence has shortened from about every 15 months to about every six weeks. ([1:09](https://youtu.be/pMggiOb18tc?t=69))
+- The audience was described as over 7,000 AI engineers. ([0:13](https://youtu.be/pMggiOb18tc?t=13))
+- GPT 5.6 Terra gives GPT 5.5-level intelligence at half the cost (speaker's claim, shown on the Terminal Bench chart). ([14:51](https://youtu.be/pMggiOb18tc?t=891))
+- GPT 5.6 Luna is priced at $1 per million input tokens and $6 per million output tokens, and beats some notable models on the same eval (speaker's claim). ([14:51](https://youtu.be/pMggiOb18tc?t=891))
+- GPT 5.6 Sol on Cerebras runs at about 750 tokens per second. ([16:06](https://youtu.be/pMggiOb18tc?t=966))
+- Steinberger ran 10 or more terminal windows with agents at once before moving to a manager pattern. ([19:07](https://youtu.be/pMggiOb18tc?t=1147))
+- A personal chief-of-staff agent wakes every 10 minutes to coordinate a user's GitHub work (example given for Paul Salt). ([22:21](https://youtu.be/pMggiOb18tc?t=1341))
+
+## Hot takes
+- Engineering was never about writing code, so AI is a return to engineering's roots, not its end.
+- Chat is underrated, and a collaborative UI for agent work cannot be built in a CLI.
+- Stop watching agents generate code; the latest models understand intent well enough that steering each step wastes time.
+- Value maxing, not token maxing, is the right goal.
+- The future is not 20 terminals. It is better loops.
+
+## Tools mentioned
+Codex, Codex app, Codex Cloud, Responses API, AGENTS.md, OpenClaw, OpenCode, Cerebras, VS Code extension, Xcode, JetBrains, Slack, GitHub, Terminal Bench
+
+## Relevance to our work
+- **prosharness** (2/3): The manager-worker loop with triggers, persistent context, and a single human review gate maps onto ProsHarness's loops/schedules and checkpoint/resume. The talk also names the bottleneck shift to attention, which argues for approval gating. → *Prototype a ProsHarness manager session that wakes on a schedule, reads a backlog file against a goals file, spawns one worker run with a test step, and returns a diff for one approval. Log minutes of human attention per task before and after.*
+- **agentos** (1/3): The cost and speed tiers (Terra, Luna, Sol on Cerebras) are examples of budget-aware model choice, which the Govrix Scout budget and strategy-routing layer could use. The talk gives no measured routing data. → *When Govrix Scout strategy routing is next revised, use the talk's price-per-token tiers as one example config for cost-based routing. No code change needed now.*

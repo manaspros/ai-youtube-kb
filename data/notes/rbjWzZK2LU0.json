@@ -1,0 +1,174 @@
+{
+ "one_line": "Sachin Malhotra (Anthropic CI) on giving agents budgets instead of tokens: classify verbs by how they fail, cap every write with refilling rate limits, watch aggregates with tripwires, and take identity from infrastructure.",
+ "summary": "The talk starts from an incident where an agent cleaning up its own workloads deleted about 200 jobs, affecting roughly 20 engineers, in 90 seconds, because a pipeline filter returned nothing and the selector matched everything. The speaker argues a static token is a boolean, while an agent needs a budget covering how much it can do, how fast, what it can undo itself, and who is watching. He splits actions into verbs that fail loudly (visible on a dashboard, cheap for a human to reverse) and verbs that fail silently, and keeps the silent ones behind a human. Every write gets a refilling rate limit, and an admission webhook caps deletes per hour per resource kind per namespace, with a bypass that tells the agent to ask a human. Tripwires on aggregate behaviour (for example, investigation threads launched per hour) catch what allow lists miss, and the fix is often one line of context. The undo test (can the agent reverse it, and how bad is a mistake) decides whether a second key is needed. Policy lives in two layers: markdown context for intent and a proxy that returns 403 for enforcement, and the proxy stamps identity so the agent cannot change its own budget by editing a header.",
+ "speakers": [
+  "Sachin Malhotra"
+ ],
+ "orgs": [
+  "Anthropic"
+ ],
+ "format": "talk",
+ "topics": [
+  "governance-compliance",
+  "security-guardrails",
+  "coding-agents"
+ ],
+ "tags": [
+  "agent-budgets",
+  "rate-limiting",
+  "tripwires",
+  "identity-stamping",
+  "break-glass",
+  "undo-test",
+  "kubernetes-admission",
+  "agent-permissions",
+  "ci-platform"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A static token is a yes/no boolean and does not fit agents doing real production work.",
+   "detail": "A budget has four dimensions: how much the agent can do, how fast, what it can undo on its own, and who is watching while it acts. Narrowing the token scope either makes the agent useless or leaves the same risk in place.",
+   "t": "4:55"
+  },
+  {
+   "idea": "Sort verbs by how their failures show up, not by resource.",
+   "detail": "Loud-failing verbs (e.g., unskipping a test, paging a human) turn CI red or annoy on-call, and a person can fix them cheaply. Silent-failing verbs (e.g., skipping a test) let real bugs reach production behind green checks. Give the agent the loud ones and keep a human on the silent ones.",
+   "t": "6:18"
+  },
+  {
+   "idea": "Break-glass verbs are audited by a proxy, not by the agent.",
+   "detail": "The skip/unskip verbs need a human and always leave an audit row. A proxy in the path stamps the caller's identity on each call, so the agent never writes its own provenance.",
+   "t": "7:39"
+  },
+  {
+   "idea": "Every write gets a refilling rate limit, and the size of the limit depends on the namespace.",
+   "detail": "A request over the limit is rejected with the current count. The limit refills over time, so nobody files tickets. After the incident, an admission webhook capped deletes per hour, per resource kind, per namespace. Its bypass flag refuses inside agent sessions and tells the agent to ask a human to run the command.",
+   "t": "9:03"
+  },
+  {
+   "idea": "Tripwires, not allow lists, are how you learn what the agent actually does.",
+   "detail": "An allow list is a static guess made before there is any data, and it goes stale. A tripwire watches an aggregate metric (here, investigation threads launched per hour per test failure) and pages on-call after the fact. It works as a smoke detector, not a lock, and the fix is often one or two lines in the agent's context.",
+   "t": "10:06"
+  },
+  {
+   "idea": "Aggregate tripwire example: correlated failures looked like many separate investigations.",
+   "detail": "Each investigation thread looked reasonable alone, but together they showed one infrastructure failure producing the same test signature across many jobs. The fix was a context instruction to correlate failures before launching separate threads, and the agent followed it the next time.",
+   "t": "11:32"
+  },
+  {
+   "idea": "The undo test decides whether a second key is needed.",
+   "detail": "Ask whether the agent can roll back its own change and how bad a wrong call would be. If either answer is no, a different party (human or scoped key) must approve, and the approval leaves an audit record. Example: a feature-flag key lets the agent ramp canary to 100% but not promote to production.",
+   "t": "12:51"
+  },
+  {
+   "idea": "Policy needs two layers: text for intent and infrastructure for enforcement.",
+   "detail": "A markdown context file explains the why and works about 80% of the time, but it is only advice and must be maintained. The proxy is deterministic and cannot be argued with: it counts, compares, and returns 403. Text shapes what the agent tries to do, and infra bounds how wrong it can go.",
+   "t": "15:40"
+  },
+  {
+   "idea": "Identity must come from the infrastructure, not from the request.",
+   "detail": "If the agent can set its own identity in a header, it can switch to a fresh budget. The proxy holds the real credentials and stamps each call. The cluster writes the identity as a label on jobs, and child jobs inherit it. Quotas, approvals, and tripwires all read that label, and per-session IDs let you spot an overreacting session.",
+   "t": "16:50"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Verb triage by failure visibility",
+   "how": "For each action the agent can take, ask whether a wrong call fails loudly (dashboard, pager, cheap to reverse) or silently (no alarm). Grant loud verbs directly; route silent verbs to a human.",
+   "when": "Designing which write operations an agent may call with its own credentials."
+  },
+  {
+   "name": "Break-glass verbs with proxy-stamped audit",
+   "how": "Put a proxy between the agent and the service. It attaches the real caller identity to every call and writes the audit row, so the agent cannot write its own provenance. The break-glass verb requires a human and always leaves a trail.",
+   "when": "Operations that can cause silent, high-impact failures, such as skipping tests or overriding quarantine."
+  },
+  {
+   "name": "Refilling per-write rate limits with scope-sized budgets",
+   "how": "Cap each destructive or disruptive write per time window, keyed on resource kind and namespace. The limit refills on its own. Use an admission webhook or proxy to enforce it. Size the limit smaller for shared namespaces and larger for the agent's own.",
+   "when": "Agents that run bulk deletes, restarts, or mass updates in a cluster."
+  },
+  {
+   "name": "Bypass that asks the human inside agent sessions",
+   "how": "The override flag does nothing when it runs inside an agent session and instead tells the agent to ask a person to run the command.",
+   "when": "Any emergency override that agents might reach for under pressure."
+  },
+  {
+   "name": "Aggregate tripwires paired with context fixes",
+   "how": "Track one behavioural count per agent (e.g., investigations launched per hour per failure signature). Page on-call when it goes above baseline. Fix the behaviour by adding a line to the agent's context file, then confirm it on the next occurrence.",
+   "when": "Monitoring agent behaviour in production when you cannot predict every failure mode up front."
+  },
+  {
+   "name": "Undo test for sizing controls",
+   "how": "For each write: (1) can the agent reverse it alone? (2) what is the blast radius if it is wrong? If either answer is bad, require a second key from another party plus an audit record. Otherwise log and allow.",
+   "when": "Deciding which of the rate-limit, tripwire, or approval controls a new action needs."
+  },
+  {
+   "name": "Identity stamping at the proxy with inherited labels",
+   "how": "The proxy adds the verified caller identity and a per-session ID to every outbound call. The target system copies the identity onto created resources (e.g., a Kubernetes label), so downstream jobs inherit it. All quota, approval, and tripwire logic keys on that single label.",
+   "when": "Multi-session or multi-agent systems where per-agent budgets must not be reset by the agent."
+  },
+  {
+   "name": "Two-layer policy: text plus deterministic proxy",
+   "how": "Put intent and the why in prompts and context files, and put the hard rules in a proxy that only counts and compares, with no LLM in the loop. Text is cheap to change but is advice. The proxy is strict and cannot be talked around.",
+   "when": "Any agent that can take actions with real side effects."
+  }
+ ],
+ "tools": [
+  "Kubernetes",
+  "admission webhook",
+  "Slack",
+  "Claude Code"
+ ],
+ "numbers": [
+  {
+   "claim": "Incident: about 200 workloads deleted, impacting about 20 engineers, all gone in 90 seconds, because an empty pipeline stage made the selector match everything.",
+   "t": "1:28"
+  },
+  {
+   "claim": "The speaker says text-based rules in a context file work about 80% of the time (his rough estimate, not a measured benchmark).",
+   "t": "15:40"
+  },
+  {
+   "claim": "The company has a few thousand engineers shipping code through the CI platform the speaker's team runs.",
+   "t": "0:08"
+  },
+  {
+   "claim": "Tripwire metric tracked: investigation threads launched per hour per test job failure. No threshold value is given.",
+   "t": "10:06"
+  },
+  {
+   "claim": "Delete rate limit enforced per hour, per resource kind, per namespace. The specific cap number is not stated.",
+   "t": "9:03"
+  }
+ ],
+ "hot_takes": [
+  "A token is a boolean, and a budget is the right shape for an agent.",
+  "Allow lists go stale, but tripwires get better over time.",
+  "Text shapes the agent's intent, but only infrastructure bounds how wrong it can go.",
+  "Identity has to come from the infrastructure, not from the request. If you get that one rule right, everything else is tuning."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Govrix Scout already does budgets and a Merkle audit log, but the talk's identity-stamping and verb-triage rules are not explicit in the design. Proxy-stamped identity and per-session IDs fit the L1 proxy.",
+   "action": "In Govrix Scout, make the caller identity come only from the proxy's credential mapping, never from a client header, and add a per-session ID to every audit row. Then test that a client header cannot reset a budget."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and already routes approvals to the phone. The talk's loud-vs-silent verb split and the bypass-that-asks-the-human pattern map directly onto those approval gates.",
+   "action": "List the destructive commands ProsHarness lets Claude Code run. Keep loud-failing ones automatic. Route silent-failing ones (e.g., skip-test, force-push, bulk delete) to phone approval, and add a per-hour cap on deletes."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The undo test and two-layer policy are a reusable checklist for any agent with write access.",
+   "action": "Add the undo test (can the agent reverse it, how bad if wrong) as a required check for any new agent write tool before it ships."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

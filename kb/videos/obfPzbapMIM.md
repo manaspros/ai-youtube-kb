@@ -1,0 +1,55 @@
+# Evals for High-Stakes AI Agents — Doneyli De Jesus & Annabell Schäfer, Langfuse
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `obfPzbapMIM` · [watch](https://youtu.be/obfPzbapMIM) · **date:** 2026-10-18 · **length:** 53:32 · **format:** workshop · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Annabell Schäfer, Doneyli De Jesus · **orgs:** Langfuse, GitHub, Anthropic, Y Combinator
+- **topics:** evals, observability, testing-verification, governance-compliance · **tags:** langfuse, llm-as-judge, error-analysis, annotation-queue, pii-masking, ci-eval-gate, regulated-industry, datasets-from-traces
+
+> Langfuse workshop on evaluating high-stakes agents: trace everything, build datasets from production via expert error analysis, mix LLM-judge with deterministic evaluators, and gate prompt changes in CI.
+
+## Summary
+Annabelle Schäfer and Doneyli De Jesus from Langfuse walk through an evaluation workflow for customer-facing agents, using a fictional bank assistant as the running example. The core problem they open with is that agents can report success while the tool was never called, and system metrics stay green. They present a loop of tracing, monitoring, datasets, experiments, and evals, and suggest regulated teams start with tracing plus expert-curated ground truth rather than going straight to production. The demo covers persona impersonation, PII masking before data is persisted, a trace view with guardrail scores, and multimodal call transcripts. For dataset building, they describe turning production traces into test cases, then having domain experts annotate a sample with simple scores and comments, and using an LLM to cluster those comments into failure modes. Evaluators are a mix of LLM-as-judge and deterministic code checks, and prompt-version promotion triggers a CI experiment with per-evaluator minimum thresholds. They close with a warning against fully automated "fix my agent" loops and a Q&A on ClickHouse dependency and judge calibration. The talk is a vendor walkthrough, but the workflow details are concrete and reusable.
+
+## Key ideas
+- **Green system metrics hide agent failures** — Example: the support agent says a refund was issued but never called the tool. Latency and error dashboards look fine, and the failure only surfaces weeks later when the customer complains. Tracing the steps plus behavioral checks is needed to catch this. ([2:27](https://youtu.be/obfPzbapMIM?t=147))
+- **AI engineering loop: tracing, monitoring, datasets, experiments, evals** — Tracing is the foundation. Monitoring finds the interesting traces. Datasets capture representative and out-of-scope inputs with expected behavior. Experiments vary one thing at a time. Evals score the results. The loop feeds production back into datasets. ([4:41](https://youtu.be/obfPzbapMIM?t=281))
+- **Entry point depends on stakes** — Low-stakes internal bots can go to production with tracing and monitors, adding tests later. Regulated, customer-facing systems should build ground truth first, using expert curation, shadow runs where the agent runs alongside the manual process, or a fully human-in-the-loop phase whose data is sliced by confidence into automate vs. review. ([10:16](https://youtu.be/obfPzbapMIM?t=616))
+- **Mask PII before traces are persisted** — A masking function redacts card numbers and similar data before the trace is written to the observability store, so sensitive data stays in the systems of record. The speaker demoed a card number being redacted in the stored trace. ([14:39](https://youtu.be/obfPzbapMIM?t=879))
+- **Expected outputs can describe behavior, not answers** — A dataset item's expected output may be the intent or required action (e.g., escalate, refuse investment advice) rather than a reference answer. Separate datasets are used for different quality dimensions such as red-teaming for prompt injection versus unresolved disputes. ([20:52](https://youtu.be/obfPzbapMIM?t=1252))
+- **Error analysis: humans annotate simply, LLM clusters the failure modes** — Build an annotation queue from a filtered sample of production traces. Domain experts give a few yes/no or 1-10 scores plus free-text comments, even dictated. Then an LLM groups the raw comments into failure-mode categories, so the experts do not have to invent the taxonomy. ([24:51](https://youtu.be/obfPzbapMIM?t=1491))
+- **Blend LLM-as-judge with deterministic code evaluators** — LLM judges can be inconsistent, so deterministic checks (e.g., exact match, regex, required citation) add a stable signal. Code evaluators return the same result for the same input every time. The recommendation is to mix both. ([31:05](https://youtu.be/obfPzbapMIM?t=1865))
+- **Prompt-version promotion triggers a CI eval gate** — Promoting a prompt version to a production label fires a webhook that starts a GitHub CI job. The job runs the experiment on a dataset and returns pass/fail per evaluator against configured minimum thresholds. The demo was shown manually, but the same actions are available through the API and CLI. ([35:02](https://youtu.be/obfPzbapMIM?t=2102))
+- **Judge calibration is a human-labeled sample problem** — Have a human label a representative sample, then tune the LLM judge until its verdicts match the human labels. Recheck over time. Start with a judge that over-flags (more false positives) and tighten it, so nothing important is missed. ([52:26](https://youtu.be/obfPzbapMIM?t=3146))
+- **Avoid fully automated fix-it loops** — The speakers describe a quadrant: fully automating 'fix my agent' yields low quality, while full manual work is slow. The target is to automate instrumentation, failure finding, and experiment runs, while humans supply taste, domain judgment, and dataset curation. ([46:25](https://youtu.be/obfPzbapMIM?t=2785))
+
+## Techniques
+- **Annotation queue for expert error analysis** — Filter production traces (e.g., disputes, card info), sample 10-20%, and load them into a queue. Experts answer 1-2 simple scores plus a free-text comment. Keep each review to seconds. Then run an LLM over the comments to cluster them into failure-mode categories. *When:* When domain experts must review agent output but have limited time, and the failure taxonomy is not yet known.
+- **Free-text comments to failure-mode taxonomy via LLM** — Give the LLM the raw unfiltered expert comments and ask it to extract recurring categories. Do not ask experts to name categories up front. Use the resulting categories as evaluator dimensions and as dashboard breakdowns over time. *When:* After an annotation pass, to convert qualitative review into measurable evaluation dimensions.
+- **Mixed evaluator suite (LLM judge + code checks)** — For each failure category, pick an evaluator type. Use code (exact match, regex, required-field checks) where the rule is deterministic. Use an LLM judge where judgment is needed. Report blended scores per run. *When:* For agents with compliance rules or formatting requirements where some checks can be made deterministic.
+- **Prompt-promotion-triggered CI eval gate** — Set a webhook on prompt label changes (e.g., production tag) that starts a CI job. The job runs an experiment over a fixed dataset and returns pass/fail with per-evaluator minimum thresholds. Use the result as the merge or deploy gate. *When:* When prompts are versioned in an observability tool and changes need an auditable evidence trail before release.
+- **Mask PII before persisting traces** — Apply a masking function in the instrumentation path so matched patterns (card numbers, SSNs) are redacted before data reaches the trace store. Verify by checking the stored trace. *When:* Whenever observability data would otherwise contain customer-identifying or financial data that must stay in systems of record.
+- **Shadow runs for ground-truth building** — Keep the manual process running and run the agent in parallel. Compare the agent's handling with the human's to measure accuracy and build ground-truth examples. *When:* In regulated domains before automating a process, to collect labeled data without taking agent actions live.
+- **Judge calibration against a human-labeled sample** — Human-label a representative sample. Iterate the LLM judge prompt until agreement is acceptable. Bias the judge toward false positives first, then tighten. Re-verify periodically as traffic changes. *When:* Before trusting an LLM judge on production traffic, or whenever the judge is used for alerting or gating.
+
+## Numbers
+- Langfuse is used by more than 150,000 developers globally ([3:32](https://youtu.be/obfPzbapMIM?t=212))
+- 21 of the Fortune 50 use Langfuse in their core AI stack ([4:05](https://youtu.be/obfPzbapMIM?t=245))
+- More than 90 billion observations ingested per month across Langfuse instances ([4:05](https://youtu.be/obfPzbapMIM?t=245))
+- Demo bank assistant handled 1,400 interactions in 7 days that did not need a human agent, at a cost under $7 ([40:04](https://youtu.be/obfPzbapMIM?t=2404))
+- 89 investment-advice flags in the last 7 days ([44:08](https://youtu.be/obfPzbapMIM?t=2648))
+- About 18% thumbs-down rate shown on the dashboard ([43:33](https://youtu.be/obfPzbapMIM?t=2613))
+- Speaker's comparison point: contact-center staff at roughly $15-20/hour, who would not handle 1,400 calls in one hour ([40:39](https://youtu.be/obfPzbapMIM?t=2439))
+
+## Hot takes
+- Green dashboards are not evidence an agent worked; tool-call verification is required.
+- Fully automated 'fix my agent' loops produce low-quality slop; humans must keep taste and domain judgment in the loop.
+- Relying 100% on LLM-as-judge is risky; deterministic checks should be part of every blended score.
+- Have the LLM cluster failure categories instead of asking domain experts to invent them.
+- Prompts should be versioned and promoted through a CI eval gate, not vibe-checked into production.
+
+## Tools mentioned
+Langfuse, GitHub Actions, ClickHouse, PostgreSQL, Amazon S3, OpenAI chat API, Anthropic models, Whisper Flow, Claude, Langfuse skill (agent skill)
+
+## Relevance to our work
+- **agentos** (2/3): Govrix Scout already does PII scanning; the masking-before-persist pattern and the annotation/error-analysis loop map directly to L1 telemetry and L2A RAGAS evals. → *Apply PII masking before writing agent traces/telemetry to TimescaleDB or ClickHouse, and add a deterministic-plus-LLM-judge blend with judge calibration to the MemoryMesh RAGAS eval set.*
+- **general** (2/3): The error-analysis workflow (sample traces, simple expert scores, LLM-clustered failure modes, judge calibrated to human labels) is a reusable eval practice for any agent we build. → *Run one round of this loop on a real agent: sample 20 traces, label them quickly, cluster comments with an LLM, and calibrate one LLM judge against the labels.*
+- **prosharness** (1/3): The prompt-promotion-to-CI-gate pattern could apply to ProsHarness skill or plan configs, though the talk is focused on single-prompt agents. → *Consider gating ProsHarness skill or plan config changes on a fixed eval run with per-check minimum thresholds.*

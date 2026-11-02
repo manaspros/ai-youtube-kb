@@ -1,0 +1,150 @@
+{
+ "one_line": "A short tutorial on Agent UI, an open-source Next.js chat front-end for agents. It shows swapping Agno's playground for a FastAPI backend and routing between specialist agents over A2A.",
+ "summary": "The presenter introduces Agent UI, an open-source Next.js chat interface for AI agents, as a replacement for terminal-based agent use. He tours the default Agno Playground setup, which acts as a middle layer between agents and the UI and provides session memory. He recommends the automatic npx install from the docs and notes that the Agno Playground must be running first. For a non-Agno backend, he says you edit the Playground TypeScript file in Agent UI's API directory to point at your own endpoints. His demo replaces the Agno Playground with a FastAPI service hosting a main router agent and two specialist agents (plants and animals) on separate endpoints, communicating over A2A, with agents built on the OpenAI SDK. The video is mostly a UI tour and a verbal walkthrough; it omits the exact install command, config keys and code, and reports no measurements.",
+ "speakers": [
+  "AI LABS presenter (unnamed)"
+ ],
+ "orgs": [
+  "Agno",
+  "OpenAI",
+  "AI LABS"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "multi-agent",
+  "mcp-and-tools",
+  "agent-architecture"
+ ],
+ "tags": [
+  "agent-ui",
+  "agno",
+  "agno-playground",
+  "a2a",
+  "fastapi",
+  "nextjs",
+  "chat-ui",
+  "agent-routing",
+  "openai-sdk",
+  "langchain",
+  "mcp"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent UI is an open-source chat front-end for agents, meant to be reused and rebranded, so you do not have to build chat UI from scratch.",
+   "detail": "Pitched as an alternative to running agents in the terminal. The presenter says it is production-oriented and can be restyled for a product.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The Agno Playground sits between the agents and the UI and must be running in the background.",
+   "detail": "It hosts multiple agents, shows which model each uses, and includes a memory layer that stores session data across interactions. The default demo has two agents: a web agent and another.",
+   "t": "1:00"
+  },
+  {
+   "idea": "Install Agent UI with the automatic npx method from the docs, not the manual one.",
+   "detail": "The template is built on Next.js. The Agno Playground must be running before Agent UI is used. The exact command is not spoken in the video.",
+   "t": "2:27"
+  },
+  {
+   "idea": "To use a non-Agno backend, change the Playground TypeScript file in Agent UI's API directory to call your own agent endpoints.",
+   "detail": "The presenter's version uses a FastAPI backend that exposes agent endpoints. He says the integration touched only about three or four files and a few core functions.",
+   "t": "3:52"
+  },
+  {
+   "idea": "A main agent can route each query to a specialist agent on its own endpoint, with a fallback for general messages.",
+   "detail": "The main agent forwards plant questions and animal questions to separate agents. Messages it does not classify are labelled other and answered by the main agent directly.",
+   "t": "5:56"
+  },
+  {
+   "idea": "The agents talk to each other over A2A (agent-to-agent protocol), so agents built on different frameworks can interoperate.",
+   "detail": "The presenter's agents are built with the OpenAI SDK. He refers viewers to a separate video for A2A detail.",
+   "t": "5:10"
+  },
+  {
+   "idea": "The routing is verified with a few sample queries, one per route, to see the correct specialist answer.",
+   "detail": "Tests: a general greeting, a plant question, and 'where do lions live?'. The presenter reports each was classified and handled by the expected agent, but gives no accuracy numbers.",
+   "t": "7:09"
+  },
+  {
+   "idea": "Keep specialist replies short by putting the length rule in the system prompt of a small model.",
+   "detail": "The presenter runs the agents on gpt-4o-mini and says he set short, focused replies through the system prompt.",
+   "t": "7:09"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Install Agent UI via the docs' npx template",
+   "how": "Copy the npx command from the Agent UI docs and run it in the directory where you want the project. The result is a Next.js project. Start the Agno Playground in the background first (the docs have a background example). The video does not show the exact command.",
+   "when": "Starting a browser front-end for your agents without building chat UI from scratch."
+  },
+  {
+   "name": "Swap the Agno Playground for your own backend",
+   "how": "Keep Agent UI as the front-end. Build a FastAPI service that exposes one endpoint per agent. Edit the Playground TypeScript file in Agent UI's API directory so it calls your endpoints instead of the Agno playground. The presenter says this took about three or four files plus a few core functions.",
+   "when": "Your agents use LangChain, the OpenAI SDK or another framework, not Agno."
+  },
+  {
+   "name": "Main-agent router over specialist endpoints",
+   "how": "Put a router agent in front. It reads each incoming message, picks the specialist (plant, animal), and forwards the message to that agent's own endpoint. Messages that match neither are handled by the main agent with a fallback label (other). Specialists talk over A2A.",
+   "when": "Several domain-specific agents sit behind one chat entry point, and each should run on its own endpoint."
+  },
+  {
+   "name": "Cap reply length with the system prompt",
+   "how": "Put a brevity instruction in the system prompt of the model (the presenter used gpt-4o-mini).",
+   "when": "Chat-style agents where long answers hurt the UI experience and cost."
+  }
+ ],
+ "tools": [
+  "Agent UI",
+  "Agno",
+  "Agno Playground",
+  "Next.js",
+  "npx",
+  "FastAPI",
+  "OpenAI SDK",
+  "A2A (agent-to-agent protocol)",
+  "Cursor",
+  "LangChain",
+  "gpt-4o-mini",
+  "Gemini 2.5 Pro (mentioned in the demo answer, not used by the presenter's own setup)"
+ ],
+ "numbers": [
+  {
+   "claim": "The video is 8:24 long and shows a 3-agent setup: one main router agent and two specialist agents (plants and animals).",
+   "t": "5:56"
+  },
+  {
+   "claim": "Replacing the Agno Playground with FastAPI took about three or four files plus a few core functions.",
+   "t": "5:56"
+  },
+  {
+   "claim": "The default Agno Playground demo has two agents running.",
+   "t": "1:00"
+  },
+  {
+   "claim": "Specialist agents run on gpt-4o-mini, configured with a short-reply system prompt.",
+   "t": "7:09"
+  }
+ ],
+ "hot_takes": [
+  "Thin on substance for a tutorial: the exact npx command, config keys, code and A2A wiring are not shown, so the reader must check the docs or the repo.",
+  "Roughly two of eight minutes are a UI tour with no technical content, and the praise for the UI is not backed by any evaluation.",
+  "The routing demo is three hand-picked queries. Nothing shows how the router decides, its failure modes, or latency."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS is an OpenAI-compatible proxy for any agent. This video shows a router agent that forwards queries to specialist agents over A2A, which is a small multi-agent routing pattern.",
+   "action": "Skim the A2A protocol docs before deciding whether AgentOS should route between separately deployed agents."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "This is a chat front-end for agents. ProsHarness wraps the Claude Code CLI and does not need a web chat UI.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

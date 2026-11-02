@@ -1,0 +1,144 @@
+{
+ "one_line": "Better Stack walkthrough for running Claude Code on a cheap always-on Hetzner server and driving it from a phone via SSH or Mosh in Terminus or Termux.",
+ "summary": "The video shows how to run Claude Code on a remote Linux server so a coding session survives when the phone sleeps, loses battery or is lost. The presenter recommends a Hetzner server (about $4 a month) over EC2 or DigitalOcean, then installs Node via NVM and Claude Code, signs in to Anthropic, and copies over custom hooks and sub-agents. He sets up phone SSH clients: Terminus on iOS and Android, and Termux (Android only) with OpenSSH and optionally fish. He then argues plain SSH breaks when switching networks and switches to Mosh, which runs over UDP and reconnects automatically. He also suggests isolating Claude Code in a Docker container and notes home servers such as a Synology can be used with SSH firewall rules. The exact shell commands are mostly not spoken aloud, so the steps are high-level. The content is a basic setup tutorial with no sponsor and no benchmarks.",
+ "speakers": [
+  "Better Stack presenter (unnamed)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Hetzner",
+  "Anthropic",
+  "Levels.io"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "coding-agents",
+  "claude-code",
+  "dev-tools"
+ ],
+ "tags": [
+  "remote-server",
+  "ssh",
+  "mosh",
+  "termux",
+  "terminus",
+  "hetzner",
+  "phone-access",
+  "vibe-coding",
+  "docker-isolation",
+  "nvm"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Run Claude Code on a remote server instead of the phone",
+   "detail": "Phones are less powerful and sleep often, so the coding session should live on an always-on server. If the phone dies or is lost, the project stays on the server.",
+   "t": "0:00"
+  },
+  {
+   "idea": "A cheap VPS is enough",
+   "detail": "The presenter prefers Hetzner, at about $4 a month for an always-on server. EC2 and DigitalOcean droplets are named as alternatives.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Bring hooks and sub-agents over during server setup",
+   "detail": "Custom hooks and sub-agents should be copied to the server at install time, because configuring them from a phone is fiddly.",
+   "t": "1:18"
+  },
+  {
+   "idea": "Plain SSH breaks on network changes",
+   "detail": "SSH uses TCP and does not roam, so switching from Wi-Fi to cellular drops the session. Mosh uses UDP, keeps the session alive and reconnects automatically.",
+   "t": "2:45"
+  },
+  {
+   "idea": "Isolate Claude Code in Docker",
+   "detail": "The presenter would run Claude Code in a separate Docker container so it is isolated from the rest of the host. He defers the details to a future video.",
+   "t": "4:09"
+  },
+  {
+   "idea": "Terminal app choice: Terminus or Termux",
+   "detail": "Terminus is an SSH client for iOS and Android with Mosh built in as a per-connection toggle. Termux is a full terminal on Android only, which needs Mosh installed separately.",
+   "t": "1:18"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Always-on remote Claude Code host",
+   "how": "Create an SSH key locally and add its public key to the server. Create the server, connect, and update packages. Install Node via NVM, then install Claude Code and sign in to the Anthropic account. Copy custom hooks and sub-agents, clone the GitHub project, and check that Claude Code runs.",
+   "when": "You want to start or continue agent sessions from a phone without keeping the phone awake or connected."
+  },
+  {
+   "name": "Terminus SSH host setup (iOS/Android)",
+   "how": "Generate a new SSH key in Terminus, or import the private key of an existing one (it derives the public key). Create a host with an alias, the server IP and a username. Add the key. If the key is new, add its public key to authorized_keys on the server by hand, because access fails otherwise. Turn on the Mosh toggle in the connection settings for roaming.",
+   "when": "You want a simple phone SSH client, or Mosh without a manual install on the phone."
+  },
+  {
+   "name": "Termux setup (Android)",
+   "how": "Update packages and install OpenSSH. Optionally install fish for colours and autocomplete. Generate an SSH key, add it to the server, and connect with an ssh command. The exact command is shown on screen, not spoken.",
+   "when": "You want a full local terminal on an Android phone rather than a pure SSH client."
+  },
+  {
+   "name": "Mosh for roaming and reconnects",
+   "how": "Install mosh on the server and in Termux. Replace the ssh command with mosh in the connection command. On a home server with a firewall, enable the SSH firewall rules so Mosh can connect. Mosh uses UDP and needs its own server component. The exact command is shown on screen, not spoken.",
+   "when": "The phone moves between Wi-Fi and cellular, or the connection drops often."
+  },
+  {
+   "name": "Docker isolation for the agent",
+   "how": "Install Claude Code inside a separate Docker container on the server so it cannot touch the rest of the host. No steps are given in this video.",
+   "when": "You want the coding agent sandboxed from the rest of the server."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Hetzner",
+  "Node.js",
+  "NVM",
+  "Terminus",
+  "Termux",
+  "Termux Style",
+  "OpenSSH",
+  "fish shell",
+  "Mosh",
+  "Docker",
+  "GitHub",
+  "Vibetunnel",
+  "Kisuke",
+  "Synology",
+  "EC2",
+  "DigitalOcean"
+ ],
+ "numbers": [
+  {
+   "claim": "Hetzner server for about $4 a month, always on",
+   "t": "0:00"
+  },
+  {
+   "claim": "Termux Style is a paid app for changing fonts and themes",
+   "t": "4:09"
+  }
+ ],
+ "hot_takes": [
+  "Hetzner is better value than EC2 or DigitalOcean for an always-on agent server, because it costs about $4 a month.",
+  "Mosh is better than plain SSH for phones because it handles Wi-Fi to cellular roaming.",
+  "Claude Code should run in a separate Docker container on the server for isolation.",
+  "A real terminal on the phone is preferred to a browser-based terminal such as Vibetunnel.",
+  "Commands are not spoken in the video, so the walkthrough is thin for anyone who does not watch the screen."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Generic remote-access setup for a single developer. It does not touch the proxy, memory, inference, sandboxing or observability layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness drives Claude Code with phone-based approvals and long runs. This shows the basic phone-to-server-to-Claude-Code pattern and the reconnect problem that Mosh addresses.",
+   "action": "Check whether phone-driven approvals in ProsHarness need a roaming-tolerant transport such as Mosh, or whether checkpoint/resume already covers dropped sessions."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

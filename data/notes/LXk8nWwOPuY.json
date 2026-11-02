@@ -1,0 +1,146 @@
+{
+ "one_line": "A tutorial on pairing Cursor's agent with the CodeRabbit extension: commit each implementation chunk, run a review, feed suggestions back, and drive a phased implementation plan.",
+ "summary": "The presenter argues that agent-written code needs a review step after each chunk, since Cursor's agent introduces errors and security gaps. They install the CodeRabbit extension in Cursor, which reviews changes when they are committed to git, not when they are saved. Reviews are then fed back to the agent, either one suggestion at a time through a \"Fix with AI\" button or as pasted feedback. A known bug stops reviews from triggering unless the working branch is visible in the branch list, and the presenter worked around it by creating a test branch from main. The main workflow is a 10-phase implementation plan generated from a structure.md file, where the agent marks each phase in progress, commits locally, gets reviewed, and then marks the phase complete. The video is a single-builder demo of a Next.js storefront, so the evidence is anecdotal, and the presenter names one concrete security fix (password storage) and one model preference (Gemini 2.5 Pro).",
+ "speakers": [
+  "Unnamed AI LABS presenter"
+ ],
+ "orgs": [
+  "CodeRabbit",
+  "Cursor",
+  "Windsurf",
+  "GitHub",
+  "Google"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "pr-code-review",
+  "coding-agents",
+  "context-engineering"
+ ],
+ "tags": [
+  "cursor",
+  "coderabbit",
+  "code-review",
+  "git-commit-gate",
+  "implementation-plan",
+  "phased-development",
+  "gemini-2.5-pro",
+  "nextjs",
+  "shadcn",
+  "vs-code-extension",
+  "ai-coding-workflow"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Review agent output at every chunk, not at the end",
+   "detail": "The presenter argues Cursor's agent throws random errors and leaves security holes, so a review after each generated segment catches them early. CodeRabbit's extension is positioned as the reviewer that runs between agent steps.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The review trigger is git commit, not file save",
+   "detail": "CodeRabbit reads changes through git. The repo must be initialized, and each commit triggers a review prompt, so the 'save' that matters is a commit. The presenter notes that committing is what triggers the review, which makes the commit the review gate.",
+   "t": "2:38"
+  },
+  {
+   "idea": "Known bug: reviews don't trigger unless the branch is visible",
+   "detail": "The presenter reports a bug where commits did not trigger reviews. The fix from the vendor's Discord was to make the branch visible in the branch list. Once it was created from main and selected, commits on that branch were reviewed. The presenter says this is a known bug, relayed secondhand.",
+   "t": "3:45"
+  },
+  {
+   "idea": "Suggestions are fed back to the agent one at a time",
+   "detail": "Each review comment has a 'Fix with AI' action that copies code-gen instructions to the clipboard. The presenter pastes them into the Cursor agent one by one, since models handle multiple tasks poorly. He calls this the tedious part and wants the comments extracted automatically.",
+   "t": "5:54"
+  },
+  {
+   "idea": "Gemini 2.5 Pro handled multiple review comments at once",
+   "detail": "The presenter reports that Gemini 2.5 Pro was the only model that reliably took several instructions together. He gave it three comments from the address form in one go. This is one person's experience on one project.",
+   "t": "5:54"
+  },
+  {
+   "idea": "Phased implementation plan drives the agent with review gates",
+   "detail": "The workflow is: describe the project and stack, have the agent list pages and modules in structure.md, generate a 10-phase plan, then run each phase. The agent marks a phase in progress, implements it, commits locally, gets reviewed, takes the pasted suggestions as input, marks the phase complete, and moves on.",
+   "t": "8:34"
+  },
+  {
+   "idea": "Review caught a concrete security issue, and the agent-built UI was a regret",
+   "detail": "The presenter says the review tightened security, especially password storage that had been handled incorrectly. He regrets having the agent hand-build components instead of using shadcn components, which he calls the wrong decision in hindsight.",
+   "t": "7:22"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Commit-gated review loop",
+   "how": "Run `git init` in the project, then `git add .` and `git commit -m \"initial commit\"`. After each implementation chunk, commit with `git add` and `git commit`. Each commit triggers the CodeRabbit extension to review the changes. Take the suggestions and feed them back to the Cursor agent before continuing.",
+   "when": "Use it when an agent builds a project in chunks and you want security and quality issues caught after each chunk, not at the end."
+  },
+  {
+   "name": "Branch-visibility workaround for missing reviews",
+   "how": "If commits do not trigger a review, open the branch panel, make sure the working branch is visible in the branch list, and create a new branch from main (the presenter named it 'test'). Select that branch, make a change, commit it, and the review runs against the selected branch.",
+   "when": "Use it when CodeRabbit does not start reviewing commits. The presenter attributes the problem to a known bug, so check the vendor's community channels first."
+  },
+  {
+   "name": "One-comment-per-paste fix loop",
+   "how": "Open a review comment, click 'Fix with AI' to copy its code-gen instructions, and paste them into the Cursor agent. Repeat for each comment. The presenter says Gemini 2.5 Pro was the one model that handled several pasted comments at once.",
+   "when": "Use it when the review returns several suggestions and you want the agent to apply them. Batching comments into one prompt may fail on other models."
+  },
+  {
+   "name": "Phase-by-phase plan with a structure file",
+   "how": "1) Describe the project and tech stack to the agent. 2) Have it list every page and module in a structure.md file. 3) Ask for a 10-phase implementation plan based on that file. 4) Add a Cursor settings rule so the agent stays attached and asks clarifying questions before proceeding. 5) For each phase, the agent marks it in progress, implements it, commits locally, runs the review, takes the pasted suggestions as input, then marks the phase complete and moves to the next one.",
+   "when": "Use it for a greenfield app built by an agent when you want autonomous progress with a review checkpoint at each phase boundary."
+  }
+ ],
+ "tools": [
+  "Cursor",
+  "CodeRabbit (VS Code / Cursor / Windsurf extension)",
+  "Windsurf",
+  "Git",
+  "GitHub (CodeRabbit sign-in)",
+  "Gemini 2.5 Pro",
+  "Next.js",
+  "FastAPI",
+  "shadcn/ui (spoken as 'shad cn')"
+ ],
+ "numbers": [
+  {
+   "claim": "The review is triggered by a git commit; the presenter's example repo was an e-commerce store with an admin panel, built in a 10-phase plan (the video is at phase 4).",
+   "t": "2:38 / 7:22 / 8:34"
+  },
+  {
+   "claim": "The presenter gave Gemini 2.5 Pro three review comments from the address form in a single paste.",
+   "t": "5:54"
+  },
+  {
+   "claim": "The video is 10:16 long, with a 10-phase implementation plan.",
+   "t": "0:00 / 8:34"
+  }
+ ],
+ "hot_takes": [
+  "Single-builder anecdote on one project. The only security finding cited is password storage, and there are no before/after numbers for bugs or security issues.",
+  "The Gemini 2.5 Pro recommendation is one person's experience, and the video is dated 2025-11-02 (older models may have changed since).",
+  "The title promises the 'smartest way', but the video is a tool walkthrough of CodeRabbit. No sponsorship is disclosed, but the workflow is tied to one vendor's extension. The presenter wants comment extraction that the tool does not provide yet."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Commit-gated review of agent-written chunks is a practice for AgentOS dev work, not a runtime feature. The approach is a workflow, not a pillar.",
+   "action": "Consider a pre-merge review step on agent-written commits in AgentOS, similar to the commit-gated loop here, to catch security issues early."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness does checkpoint/resume and plan->critique loops around the Claude Code CLI. This talk's phase loop (structure file, in-progress/complete markers, commit per phase, review gate at each boundary, pasted feedback) is close to that model, and the presenter's wish for automatic extraction of review comments is an open gap.",
+   "action": "Compare ProsHarness phase checkpointing with this phase loop. Consider a structured review-output step so critique comments can be fed back into the next phase without manual pasting."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The talk gives a concrete practitioner workflow for managing agent-written code: commit gates, branch visibility, one-comment-per-fix, and phase checkpoints.",
+   "action": "Read the context-engineering notes on phased plans and review gates in kb/guides for a broader comparison before adopting this loop."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

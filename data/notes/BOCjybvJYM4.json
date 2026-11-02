@@ -1,0 +1,148 @@
+{
+ "one_line": "Hands-on Langfuse workshop on monitoring agents in production: instrument traces, write failure-mode evaluators (LLM-judge and code) on live traces, then use a coding agent over trace data to find silent failures.",
+ "summary": "The speakers (Langfuse/ClickHouse) argue that agents are non-deterministic, so a healthy-looking system can still give wrong or low-quality answers, and they frame the work as an AI engineering loop with an online part (tracing, monitoring) and an offline part (datasets, experiments, evals). They say teams outside high-risk industries can get far by working only on the online loop. The workshop walks through a sample IT-support agent built on the OpenAI Agents SDK: they look at traces, then add evaluators for specific failure modes such as user disagreement, all-caps frustration and out-of-scope requests. LLM-judge evaluators pull their inputs from trace fields via JSON paths, and code-based evaluators return booleans on live observations. They seed about 70 to 120 production-like traces (the number is inconsistent in the talk) and then use the Langfuse CLI and skill with a coding agent to generate a report on silent failures such as retrieval misses, retry latency, prompt-version drift and an evaluation-coverage gap. The closing message is that evaluators should come from your own failure modes, and that datasets built from production examples should feed CI/CD regression checks.",
+ "speakers": [
+  "Annabell Schäfer",
+  "Lotte Verheyden",
+  "Annemel"
+ ],
+ "orgs": [
+  "Langfuse",
+  "ClickHouse",
+  "OpenAI"
+ ],
+ "format": "workshop",
+ "topics": [
+  "observability",
+  "evals",
+  "coding-agents"
+ ],
+ "tags": [
+  "langfuse",
+  "tracing",
+  "monitoring",
+  "llm-as-judge",
+  "code-evaluators",
+  "failure-modes",
+  "production-traces",
+  "coding-agent-analysis",
+  "openai-agents-sdk",
+  "eval-coverage"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The AI engineering loop has an online part (tracing and monitoring on production) and an offline part (datasets, experiments, evals); teams outside high-risk areas can start with the online part alone.",
+   "detail": "Agents are non-deterministic, so system health metrics can look fine while answers are wrong or weak. Online monitoring lets teams make small fixes and see new traces quickly. The offline part is added once the product matures or when mistakes are costly.",
+   "t": "3:05"
+  },
+  {
+   "idea": "A trace is a tree of observations (LLM calls, tool calls, nested steps), and each observation needs the right metadata to be useful.",
+   "detail": "For LLM calls the speaker logs duration, token usage, cost, model and prompt version. For tool calls, logging the actual input such as the search query makes later monitoring possible. Bad tracing means bad monitoring and weak datasets later.",
+   "t": "5:26"
+  },
+  {
+   "idea": "Monitoring has three jobs: aggregate health metrics over time, surfacing important traces through user feedback, and quality checks through automatic evaluators plus human annotation.",
+   "detail": "Automatic evaluators scale to every trace but miss new or subtle failures. User feedback and human review catch the cases nobody anticipated, even though they scale less well.",
+   "t": "6:37"
+  },
+  {
+   "idea": "Write evaluators for the failure modes of your own app instead of copying generic templates.",
+   "detail": "The speaker's examples are user disagreement with the answer, requests outside the agent's scope, and all-caps frustration. Other examples given are brand-name casing and banned words. Each one is a question about what can go wrong in this specific product.",
+   "t": "14:19"
+  },
+  {
+   "idea": "Evaluators get their inputs by mapping trace fields through JSON paths, and the test run is checked before the evaluator is turned on for live traffic.",
+   "detail": "An LLM-judge evaluator is given the full message array for conversation history and the last user message. An out-of-scope check uses the system prompt, taken from the first message of a generation, together with the last user message. Code-based evaluators are Python or TypeScript functions that return a boolean for the chosen observation type, and they run on live observations.",
+   "t": "19:14"
+  },
+  {
+   "idea": "Scores attached to observations let you filter the trace view down to the traces worth reading.",
+   "detail": "Flags such as user_disagreement or all-caps frustration appear on the root agent observation, so the team can filter for true values and read those traces first.",
+   "t": "27:09"
+  },
+  {
+   "idea": "A coding agent with a CLI and skill over the trace API can produce a failure report, but a human has to verify it and decide what to fix.",
+   "detail": "The agent went through the seeded traces across latency, tool calls, prompt versions and evaluation coverage. Its findings included a silent retrieval-quality failure, retry-driven latency and cost, prompt-version problems, and an evaluation coverage gap. The speaker then had it fix code in the repo, which shows the agent can edit the application as well as report on it.",
+   "t": "33:31"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Failure-mode-first evaluator set",
+   "how": "List the ways your app is likely to fail, then write one evaluator per item: an LLM judge for implicit signals (disagreement, out-of-scope) and a code check for explicit ones (all-caps, banned words, brand casing). Test each on sample traces before enabling it on live traffic.",
+   "when": "As soon as tracing is in place and before you have a labelled dataset."
+  },
+  {
+   "name": "JSON-path variable mapping for LLM judges",
+   "how": "In the evaluator template, bind variables to trace fields with JSON paths: the whole message array for history, the last user message, and the system prompt from the first message of a generation. Choose the observation type (agent root, tool call or generation) that holds the data each check needs.",
+   "when": "When a judge needs conversation context or the system prompt, for example to check scope against the system prompt."
+  },
+  {
+   "name": "Boolean code evaluators on live observations",
+   "how": "Write a small Python function that extracts a field from the observation input and returns true or false. Attach it as an evaluator with a boolean score type, and run it on live observations of the agent type.",
+   "when": "For deterministic checks such as shouting, forbidden words or casing, where an LLM judge would be overkill."
+  },
+  {
+   "name": "Coding agent as trace analyst",
+   "how": "Install the observability CLI and its skill, then ask a coding agent to scan recent production traces for failures, including silent ones: retrieval misses, retry-driven latency, tool errors, prompt-version drift and gaps in evaluation coverage. Check the claims by hand, then have the agent make the fix in the repo.",
+   "when": "After a batch of production traces has built up and you want a quick first pass on what is going wrong."
+  },
+  {
+   "name": "Coverage monitoring",
+   "how": "Track what share of traces actually receive scores, so you know whether your signal comes from all traffic or only a subset.",
+   "when": "Whenever evaluators run on sampled or recent traffic, to avoid trusting a partial signal."
+  }
+ ],
+ "tools": [
+  "Langfuse",
+  "OpenAI Agents SDK",
+  "OpenAI API",
+  "Codex",
+  "Claude Code",
+  "TypeScript",
+  "Python"
+ ],
+ "numbers": [
+  {
+   "claim": "Production report covered about 70 traces in one place and about 120 in another (the speaker's figures are inconsistent); the traces came from a seeded set.",
+   "t": "34:01"
+  },
+  {
+   "claim": "The full workshop is an eight-module course; this session covered only the tracing and monitoring modules.",
+   "t": "42:33"
+  },
+  {
+   "claim": "Talk length is 44:23 and the workshop is hands-on.",
+   "t": "0:13"
+  }
+ ],
+ "hot_takes": [
+  "If your trace is bad, your datasets and monitoring will be bad too.",
+  "A healthy system status can hide wrong answers, so you have to look at the outputs.",
+  "Do not copy evaluator templates; think about the failure modes your own application will actually hit."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L4 covers observability, and the talk gives a concrete evaluator and trace-data model that could feed SkillForge's skill-worthiness signal.",
+   "action": "Add per-observation fields for token cost, prompt version and tool-call inputs to the L4 trace schema, then write a code-based evaluator for one AgentOS failure mode (for example a retry or budget-exhaustion flag) and attach it to live traces."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Checkpointed Claude Code runs could be checked for retry or frustration-style flags, but the talk is a general monitoring workshop rather than a harness design.",
+   "action": "Read the trace-to-evaluator section (19:14 to 22:29) and decide whether a ProsHarness run should emit observation-level metadata for checkpoints."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The failure-mode checklist and the coding-agent-over-traces workflow are reusable for any agent project.",
+   "action": "Keep the workflow in mind: export a week of traces, have a coding agent produce a failure report, then verify the top findings by hand."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

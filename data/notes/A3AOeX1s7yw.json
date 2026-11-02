@@ -1,0 +1,143 @@
+{
+ "one_line": "A walkthrough of Gemini CLI's recent updates: free-tier quotas, MCP setup via settings.json, slash commands, VS Code inline diffs, and \"extensions\" as shareable bundles of context, MCP servers and commands.",
+ "summary": "The speaker builds a to-do list front end with Gemini CLI (Gemini 2.5 Pro) and the ShadCN MCP server, using two custom slash commands, `add` and `page`. He describes the free tier as 60 requests per minute and 1000 per day, and reports that one session of about 9 prompts consumed about 95 requests because tool calls count too. He covers how MCP servers are added by editing settings.json, the Ctrl+Y YOLO toggle, the IDE companion that shows edits as inline diffs in VS Code, and small features such as /compress, /copy and themes. The main claimed differentiator is Extensions, which bundle a context file, MCP servers, custom commands, templates and access restrictions into a shareable package. The video opens with a Skywork sponsor segment and is mostly a hands-on demo with few measured results beyond the request counts.",
+ "speakers": [],
+ "orgs": [
+  "Google",
+  "Skywork"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "mcp-and-tools",
+  "context-engineering"
+ ],
+ "tags": [
+  "gemini-cli",
+  "ide-integration",
+  "slash-commands",
+  "mcp",
+  "extensions",
+  "yolo-mode",
+  "request-quotas",
+  "shadcn",
+  "vs-code",
+  "sponsored"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Gemini CLI's free tier is described as 60 requests per minute and 1000 per day, with Gemini 2.5 Pro included.",
+   "detail": "The speaker presents the quota as the main reason to try the tool and says he will explain how far it goes. The quota is the figure to check against current docs, since it comes from the video only.",
+   "t": "0:00"
+  },
+  {
+   "idea": "MCP servers are added by pasting their config into settings.json, not through per-transport add commands.",
+   "detail": "The speaker contrasts this with Claude Code, which needs different add commands for HTTP and local servers, and says the flow is closer to Cursor.",
+   "t": "1:57"
+  },
+  {
+   "idea": "Split the build into whole-page generation and component-level additions, each driven by its own slash command.",
+   "detail": "The `page` command generates a full page and `add` adds a single component such as a modal. Both take extra context and require the ShadCN MCP server. Separate prompts give more control over each step.",
+   "t": "3:21"
+  },
+  {
+   "idea": "The IDE companion turns edits into reviewable inline diffs in VS Code.",
+   "detail": "The speaker runs the IDE command in the terminal, which installs the Gemini CLI companion extension. Approval is requested in both the terminal and the editor, and each inline change is accepted or rejected separately.",
+   "t": "4:43"
+  },
+  {
+   "idea": "Request accounting counts tool calls, not just prompts, so the quota drains faster than the prompt count suggests.",
+   "detail": "One session with about 9 prompts (roughly 10 requests per prompt) used about 95 requests, according to the session summary. The speaker estimates that works out to about 10 sessions of this size on the daily quota. This is a single-session observation, not a measured rate.",
+   "t": "5:52"
+  },
+  {
+   "idea": "Extensions bundle context, MCP servers, custom commands, templates and restrictions into a shareable package.",
+   "detail": "The speaker's example is a front-end extension wrapping the ShadCN MCP, with a context file (gemini.md), custom commands, templates, and a config that links the context file and forbids edits to .env or deletion of key files. He frames extensions as specialized sub-agents that teams can distribute, such as a CodeStandards extension holding a standards.md file.",
+   "t": "7:07"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Custom slash commands as TOML files for page and component generation",
+   "how": "Keep TOML command files under the project's commands folder. The speaker uses `page` to generate a whole page and `add` to add one component, both passing extra instructions as arguments. Both commands need the ShadCN MCP server active. The exact TOML keys were not shown on screen.",
+   "when": "Repeated UI-generation prompts where you want a fixed structure and control over each step, such as page then component then modal."
+  },
+  {
+   "name": "Adding MCP servers by editing settings.json",
+   "how": "Copy the server's JSON config and paste it into the Gemini CLI settings.json. The speaker says it works immediately, with no add command per transport type.",
+   "when": "Wiring up HTTP or local MCP servers quickly, especially if you already configure Cursor this way."
+  },
+  {
+   "name": "YOLO mode toggle for uninterrupted runs",
+   "how": "Press Ctrl+Y to toggle YOLO mode, which keeps the agent running without confirmation prompts, similar to Claude Code's dangerously-skip-permissions flag.",
+   "when": "Trusted, low-risk runs where confirmation prompts would stall the session. Unsafe on untrusted repos."
+  },
+  {
+   "name": "Reviewing agent edits in VS Code via the IDE companion",
+   "how": "Run the IDE command (transcribed as 'ID command') in the Gemini CLI terminal. It auto-installs the Gemini CLI companion extension. Approve changes in the terminal and the editor, then accept or reject each inline diff.",
+   "when": "Large codebases where you cannot review all changes in one pass and want per-hunk control in the editor."
+  },
+  {
+   "name": "Built-in session helpers",
+   "how": "/compress compresses the current chat context. /copy copies the latest result to paste elsewhere or hand to another AI coder. Themes are available in the settings.",
+   "when": "Long sessions where context is filling up, or when moving output between tools."
+  },
+  {
+   "name": "Packaging a team extension",
+   "how": "Create an extensions folder inside the Gemini config folder (the speaker says 'Gemini folder'; the exact path was not spelled out) with a folder per extension. Put a config file in it that defines the MCP server, links a context file, and sets restrictions such as blocking .env edits or deletes. Add a gemini.md context file, custom slash commands and reusable templates alongside. Share the folder so everyone gets the same setup.",
+   "when": "Standardizing a team's MCP servers, coding standards or scaffolding so each developer does not configure them separately."
+  }
+ ],
+ "tools": [
+  "Gemini CLI",
+  "Gemini 2.5 Pro",
+  "ShadCN MCP (shadcn)",
+  "Gemini CLI companion extension (VS Code)",
+  "VS Code",
+  "Claude Code (compared, not demoed)",
+  "Cursor (compared, not demoed)",
+  "ChatGPT (used to draft the to-do app)",
+  "TweakCN (theme source)",
+  "Qwen (named as a competing free agent, no version)",
+  "Skywork Super Agents (sponsor, not demoed)"
+ ],
+ "numbers": [
+  {
+   "claim": "Free-tier limits: 60 requests per minute and 1000 requests per day.",
+   "t": "0:00"
+  },
+  {
+   "claim": "A session with about 9 prompts consumed about 95 requests (roughly 10 per prompt), because tool calls are counted as requests. The speaker estimates about 10 sessions of this size fit the daily quota.",
+   "t": "5:52"
+  },
+  {
+   "claim": "Model used throughout the demo: Gemini 2.5 Pro.",
+   "t": "5:52"
+  }
+ ],
+ "hot_takes": [
+  "The video opens with a sponsored Skywork segment at 1:00, so quality is capped at 2 under the sponsorship rule.",
+  "The claim that Gemini CLI is 'catching up' to Claude Code and that Claude Code has no equivalent to Extensions is asserted, not tested in the video.",
+  "The per-prompt request estimate and the '10 sessions' claim come from one session summary and are not verified.",
+  "Speaker could not find a plan mode at the time of recording; he mentions accept-edits and YOLO modes instead.",
+  "Transcript auto-captions garble several names ('Cloud Code' for Claude Code, 'Quen' for Qwen, 'ID command' for the IDE command); these were read as Claude Code, Qwen and the IDE command."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Gemini CLI consumer tooling and free-tier quotas do not touch the AgentOS proxy, memory, inference or storage layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI, and this video shows another CLI's packaging of context, MCP servers, commands and path restrictions into a shareable bundle, plus an auto-approve mode to compare with ProsHarness's approval flow.",
+   "action": "Compare the Gemini extension layout (context file, MCP config, restrictions such as blocking .env edits) with how ProsHarness packages skills and permission rules, and consider whether restrictions belong in the bundle."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

@@ -1,0 +1,45 @@
+# The #1 Open Source AI Agent to Stop Overloading Cursor AI (Cursor MCP + ACI.dev Unified Server)
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `eWvaItBefYw` · [watch](https://youtu.be/eWvaItBefYw) · **date:** 2025-11-02 · **length:** 10:03 · **format:** tutorial · **quality:** 3/5 · **depth:** intro
+- **speakers:** ? · **orgs:** ACI.dev, Cursor, Windsurf, Brave, Figma, GitHub, Firecrawl, Google
+- **topics:** mcp-and-tools, coding-agents · **tags:** mcp, unified-mcp-server, aci.dev, cursor, windsurf, claude-desktop, tool-search, tool-overload, agent-tools, brave-search, setup-tutorial
+
+> Setup walkthrough for ACI.dev's unified MCP server, which exposes search and execute meta-tools so Cursor or Windsurf can reach many MCP apps without loading each one; the speaker's performance and context claims are anecdotal.
+
+## Summary
+The speaker argues that adding many MCP servers to Cursor clutters the agent and slows the editor, and says removing six local MCP servers fixed their own lag (anecdotal, no measurements). The fix shown is ACI.dev's unified MCP server, which exposes two functions, search and execute, so one MCP entry can route a natural-language task to the right backing app. The walkthrough covers creating app connections in the ACI App Store (Brave Search needs an API key, the Archive papers app needs none), linking them to an account owner ID, and enabling apps and functions in the agent playground. It then shows copying the unified MCP JSON from the ACI docs into Cursor's MCP settings, with the owner ID and the default agent's API key swapped in, and optionally pasting ACI's usage prompt as a Cursor project rule. The demo is two calls: list available apps, then a Brave search that returns Burj Khalifa as the tallest building. The video ends with a fix for "user isn't authenticated" errors, which is to create a new linked owner ID and update the MCP config. The transcript is mostly UI narration with little architecture detail and no exact JSON shown.
+
+## Key ideas
+- **Many MCP servers clutter the agent and can slow the editor. The speaker says six local MCP servers made Cursor laggy during generation, and removing them restored speed. This is one anecdote with no measurements.** — Each MCP server runs as a local process that is re-executed on refresh, and the agent has to pick among all of them. The speaker's claim is that moving tools out of the editor's own agent reduces load. ([0:00](https://youtu.be/eWvaItBefYw?t=0))
+- **A unified MCP server with two meta-tools, search and execute, can stand in for many MCP servers. The agent calls search to find a relevant tool and execute to run it, so the client does not need every server loaded.** — The speaker describes the unified server as a separate agent that holds the other MCP servers in the background and picks the right one for each task. ([0:00](https://youtu.be/eWvaItBefYw?t=0))
+- **The ACI platform is open source with a catalog of integrations (the speaker cites over 600, and about 9 or 10 when first found) that can run locally.** — Each app has its own functions (for example, the Archive papers app has search papers and get paper metadata). The speaker says no data needs to leave the machine, but gives no details on how that is enforced. ([2:36](https://youtu.be/eWvaItBefYw?t=156))
+- **Apps are tied to a linked account owner ID, and that same ID goes into the MCP config. Configuration differs by app: Brave Search takes an API key, the open-source Archive app needs no credentials, and Google Calendar needs manual credentials.** — The speaker recommends keeping one owner ID across all apps. Each app is enabled for an agent in the agent playground, with individual functions picked. ([3:38](https://youtu.be/eWvaItBefYw?t=218))
+- **The ACI docs describe two MCP server types. The app MCP server exposes every app's tools at once, so the agent still chooses among them. The unified MCP server provides the search and execute functions, which lets the agent pick the right app for the task.** — The speaker's setup uses the unified server. Its Cursor and Windsurf JSON needs two values replaced: the linked account owner ID and the ACI API key of the default agent. ([5:54](https://youtu.be/eWvaItBefYw?t=354))
+- **ACI's usage prompt is optional and is meant to reduce hallucinated tool use. The speaker suggests pasting it into Cursor's project rules so it is included in every context.** — In the demo, the agent acknowledged the prompt, then listed the apps and ran a Brave search with the other MCP servers disabled. ([7:14](https://youtu.be/eWvaItBefYw?t=434))
+- **Authentication errors are fixed by creating a new linked account owner ID, deleting the old one, and updating the owner ID in the MCP config. The speaker says this happened once in testing.** — The fix is applied per app in the app configuration, and the MCP JSON must reference the new ID. ([9:16](https://youtu.be/eWvaItBefYw?t=556))
+
+## Techniques
+- **Unified MCP server with search and execute meta-tools** — Create an ACI account and configure each app in the App Store (add the API key for Brave Search, or accept the no-auth default for Archive). Under Linked Accounts, set one owner ID (the speaker uses 'ai labs') for all apps. In the agent playground, pick the default agent, select the owner ID, enable the apps you want, and choose functions. Then open the ACI docs, go to the MCP server section, Unified MCP server, Integration with MCP Clients, and the Cursor/Windsurf block. Replace the owner ID and the ACI API key (from the Agents section, default agent) in that JSON, and add it under Cursor Settings > MCP as a new server. *When:* When you have many MCP servers and the editor slows down or the agent picks the wrong tool, and you want one MCP entry in the client that reaches all of them.
+- **Pasting the ACI usage prompt as a Cursor project rule** — Copy the prompt from the ACI docs (it describes the server's functions and how to call them). In Cursor, open Rules, add a project rule, and paste it so it loads into context on every chat. *When:* When the agent needs to be told what the unified server does, to reduce misuse; the speaker calls this optional.
+- **Recovering from 'user isn't authenticated' errors** — Open the app's configuration in ACI, add a new account with a new owner ID, save, delete the old owner ID, and replace the owner ID in the MCP JSON. *When:* When tool calls to a linked app fail with an authentication error after setup.
+- **Smoke-testing the connection** — Disable the other MCP servers, paste the usage prompt, ask the agent to list the apps it can access (it calls the ACI search tool), then ask a question that needs an app, such as a Brave web search for the tallest building. *When:* After configuring the MCP entry, to confirm the search and execute path works before relying on it.
+
+## Numbers
+- Speaker had six local MCP servers in Cursor. Removing them returned Cursor to normal speed during code generation (anecdotal, unmeasured). ([0:00](https://youtu.be/eWvaItBefYw?t=0))
+- ACI integrations: over 600 claimed. About 9 or 10 when the speaker first found the platform. ([2:36](https://youtu.be/eWvaItBefYw?t=156))
+- The Brave Search app needs only an API key. Archive needs no credentials. ([2:36](https://youtu.be/eWvaItBefYw?t=156))
+- The unified MCP server has two functions: search and execute. ([0:00](https://youtu.be/eWvaItBefYw?t=0))
+
+## Hot takes
+- The title's '#1 Open Source AI Agent' is unsupported. The video is a setup walkthrough for one MCP broker.
+- The claim that the unified server stops Cursor from slowing down or losing context is anecdotal. No benchmark or token count is shown.
+- The 'won't lose context' claim is not tested in the video.
+- The video says the platform runs fully locally with no data sharing, but gives no evidence for that.
+- The speaker mentions a membership tier and super thanks. This is not a sponsored segment, so quality is not capped on that basis.
+
+## Tools mentioned
+ACI.dev unified MCP server, ACI App Store / agent playground, Cursor, Windsurf, Claude Desktop, Brave Search API, Archive (research papers app), Google Calendar integration, Figma MCP, GitHub MCP, Firecrawl MCP
+
+## Relevance to our work
+- **agentos** (1/3): The search and execute meta-tool pattern is a tool-discovery layer that could sit in front of a multi-tool gateway, but AgentOS is a proxy and the video is client-side setup. → *Read ACI's unified MCP server docs to compare its search and execute contract with how AgentOS would expose tools through the L1 proxy.*
+- **prosharness** (1/3): ProsHarness wraps Claude Code, which also loads MCP tools, so tool clutter applies, but the video is aimed at Cursor users. → *Check whether ProsHarness runs load many MCP servers at once; if it does, test a search-and-route layer before adding more servers.*

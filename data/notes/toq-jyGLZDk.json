@@ -1,0 +1,160 @@
+{
+ "one_line": "Vlad Luzin (BAND) argues that agent-to-agent communication is a distributed-systems problem that MCP, A2A and chat platforms don't solve, then pitches BAND's hosted interaction layer.",
+ "summary": "The speaker, co-founder and CTO of BAND, starts with a thesis that agents will need to talk to each other inside companies, between companies and with consumers. He describes \"loop engineering\" as a human (or a script) routing messages between two stateful coding agents, and says this exists because of single-agent limits such as confirmation bias, attention dilution and recall degradation. He argues that existing options fall short: chat platforms need many manual setup steps and block bot-to-bot traffic, while MCP and A2A are stateless or one-directional and too low-level. He lists the hard parts of connecting agents: ordered real-time transport, retries, persistence and rehydration, mapping thread/session/run IDs, identity and observability across hops. The second half is a product launch of BAND, with a shared registry, channels, server-side filtering, and bilateral consent before agents are introduced. Two live-style demos connect a Claude agent and a Codex agent, and a Claude Code terminal session, and show the human seeing and joining the conversation. Much of the talk is pitch, but the list of distributed-systems requirements is concrete.",
+ "speakers": [
+  "Vlad Luzin"
+ ],
+ "orgs": [
+  "BAND"
+ ],
+ "format": "talk",
+ "topics": [
+  "multi-agent",
+  "mcp-and-tools",
+  "security-guardrails"
+ ],
+ "tags": [
+  "agent-to-agent",
+  "A2A",
+  "MCP",
+  "loop engineering",
+  "agent registry",
+  "distributed systems",
+  "consent",
+  "agent identity",
+  "messaging platforms",
+  "product launch"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Running several stateful agents on one task (planner and reviewer, writer and reviewer) is already multi-agent work, and the human is currently the router between them.",
+   "detail": "The speaker calls the human a router or switch passing packets between sessions. Loop engineering means handing that routing to a script in Python or TypeScript that prompts the agents back and forth.",
+   "t": "2:14"
+  },
+  {
+   "idea": "The speaker's stated reason for multiple agents is the single-agent bottleneck: one long session degrades on confirmation bias, attention dilution, context fragmentation and recall.",
+   "detail": "He claims that one million or two million tokens of context will not fix these, so splitting work across agents is needed.",
+   "t": "3:39"
+  },
+  {
+   "idea": "Messaging platforms are a poor way to connect agents: they are built for humans, they take many manual steps, and they give you one agent talking to one person.",
+   "detail": "The speaker counts 5 steps for Telegram, 7 for Discord, 8 for Slack and 11 for WhatsApp, and says the platforms block bot-to-bot connections.",
+   "t": "5:11"
+  },
+  {
+   "idea": "MCP and A2A do not cover the multi-agent case as they stand: calls are stateless, A2A is one-directional without a server on each side, and REST chains hit timeouts. Discovery and queues are still missing.",
+   "detail": "The speaker says that building these pieces yourself is building a planner rather than a multi-agent system.",
+   "t": "6:12"
+  },
+  {
+   "idea": "Connecting agents is a distributed systems problem, and the transport needs to be real-time, ordered, retried and persistent, because agents are non-deterministic microservices that can crash.",
+   "detail": "He adds runtime binding as a new requirement: a LangGraph thread, a Codex session, a CrewAI execution and a run ID must map to one shared task. Observability has to cover the tool calls made after a message arrives, not only the message itself.",
+   "t": "7:14"
+  },
+  {
+   "idea": "The product model is a shared conversational space with participants, channels and routing, with agents as first-class citizens, and no IPs, ports or pub/sub topics for users to manage.",
+   "detail": "Persistence, channel filtering, a registry where agents find each other, security and observability are all handled by the platform, not by client code. The speaker says it is multi-peer, not peer-to-peer.",
+   "t": "10:05"
+  },
+  {
+   "idea": "Cross-owner introductions need bilateral consent, and the owner sees the whole conversation and can step in as human-in-the-loop.",
+   "detail": "In the demo, an agent sends a contact request, the other side accepts, and then the agents can invite each other into a space. The human owner has full visibility into the traffic.",
+   "t": "12:36"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Loop engineering with two stateful agents",
+   "how": "Run two long-lived agent sessions on the same task, such as a planner and a reviewer or a writer and a reviewer, and have a small script pass messages between them in turns. The human triggers the loop and does not relay messages by hand.",
+   "when": "When one session is too likely to be biased or to lose detail, and the work can be split into a propose-and-review cycle."
+  },
+  {
+   "name": "Contact request with bilateral consent before agent discovery",
+   "how": "An agent sends a contact request to another agent or human. Both sides must accept before each one appears in the other's registry, and the owner can see the traffic from then on.",
+   "when": "When agents from different owners or organisations need to interact, and each owner has to approve who can reach their agent."
+  },
+  {
+   "name": "Shared conversational space with human visibility",
+   "how": "Model agent communication as participants in a room or channel, with server-side message filtering and a human who can read and join the room at any point.",
+   "when": "When several agents from different platforms have to collaborate on one task and humans need to audit or intervene."
+  },
+  {
+   "name": "Runtime ID binding across agent frameworks",
+   "how": "Keep a mapping between the thread ID, session ID, execution ID and run ID of each agent, so that all of them point to the same task.",
+   "when": "When agents built on different frameworks (LangGraph, CrewAI, Codex, Claude Code) must work on one shared goal and their logs need to be joined."
+  }
+ ],
+ "tools": [
+  "Claude",
+  "Claude Code",
+  "Codex",
+  "LangGraph",
+  "CrewAI",
+  "MCP",
+  "A2A",
+  "ACP",
+  "Slack",
+  "Microsoft Teams",
+  "Discord",
+  "WhatsApp",
+  "Telegram",
+  "Hermes",
+  "OpenClaw"
+ ],
+ "numbers": [
+  {
+   "claim": "Manual setup steps to connect an agent to Telegram: 5",
+   "t": "5:11"
+  },
+  {
+   "claim": "Manual setup steps to connect an agent to Discord: 7",
+   "t": "5:11"
+  },
+  {
+   "claim": "Manual setup steps to connect an agent to Slack: 8",
+   "t": "5:11"
+  },
+  {
+   "claim": "Manual setup steps to connect an agent to WhatsApp: 11",
+   "t": "5:11"
+  },
+  {
+   "claim": "Agent card appears in a user's account seconds after the agent is spun up (demo; no measured latency given)",
+   "t": "11:09"
+  },
+  {
+   "claim": "Speaker says loop-engineering code bases can run to about 500,000 lines of Python or TypeScript (rhetorical, not measured)",
+   "t": "15:04"
+  }
+ ],
+ "hot_takes": [
+  "Messaging platforms such as Slack, Teams, Discord and WhatsApp are built for humans and actively block bot-to-bot connections.",
+  "MCP and A2A are too low-level to build a multi-agent system on at scale.",
+  "A million or two million tokens of context will not fix the single-agent bottleneck.",
+  "Loop engineering as currently practised is a lot of hand-written orchestration code that should be a platform concern."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS is a proxy in front of agent traffic with audit and budgets. The talk's point that cross-hop observability (which tool calls happened after a message arrived) is hard applies loosely to an agent-to-agent audit trail, but the talk gives no design detail.",
+   "action": "Note the requirement to trace tool calls triggered by an inbound agent message, and check whether the Merkle audit log can record agent-to-agent hops with a correlation ID."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs a plan, critique (Codex) and debate loop between agents. The talk describes the same pattern as loop engineering and lists the hard transport problems (ordering, retries, persistence) that a checkpointed harness would also face.",
+   "action": "Check whether ProsHarness's Codex critique loop has durable message ordering and retry on each turn, and whether a crashed step can resume without losing the other agent's last message."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The talk is mostly a product pitch. Its one useful contribution is the checklist of distributed-systems requirements for agent-to-agent messaging. The product claims are unverified.",
+   "action": "Read the distributed-systems list at 7:14 as a checklist when designing any agent-to-agent path, and treat the BAND product claims as unverified."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

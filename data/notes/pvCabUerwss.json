@@ -1,0 +1,146 @@
+{
+ "one_line": "Better Stack walkthrough of building a RAG system over Star Wars scripts with LangChain, OpenAI embeddings and local Qdrant, focused on scene-aware chunking and prompt grounding.",
+ "summary": "The presenter builds a question-answering RAG over the original Star Wars screenplays, scraped from a script site with requests and BeautifulSoup and loaded as LangChain documents. The main argument is that chunking matters: ingesting a whole script as one document dilutes retrieval, so the splitter is set to break on scene headings (INT./EXT.) first, with 2,500-character chunks and 250-character overlap. Embeddings use OpenAI text-embedding-3-small, stored in a locally persisted Qdrant collection that is only rebuilt when missing. Retrieval pulls the top 15 chunks into a GPT-4o chain at temperature 0. The main practical lesson is that a strict \"use only the excerpts\" prompt made the bot refuse answerable questions (Luke Skywalker), and the fix was a single line allowing partial answers, which the presenter then re-tested against out-of-scope and prompt-injection questions. The tutorial is short, code-light, and entertaining, with no sponsor segment; it is a solid beginner-to-intermediate primer rather than a benchmarked study.",
+ "speakers": [
+  "Andrus (Better Stack)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "LangChain",
+  "OpenAI",
+  "Qdrant"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "rag-retrieval",
+  "context-engineering"
+ ],
+ "tags": [
+  "rag",
+  "chunking",
+  "recursive-text-splitter",
+  "embeddings",
+  "vector-database",
+  "qdrant",
+  "langchain",
+  "prompt-grounding",
+  "prompt-injection",
+  "text-embedding-3-small",
+  "gpt-4o",
+  "uv",
+  "beautifulsoup"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Do not ingest a whole document as one chunk; the retriever then hands the model too much text and the answer can be missed (lost in the middle).",
+   "detail": "Whole-script ingestion dilutes the signal and raises token cost and latency. Chunking is the first real design decision.",
+   "t": "3:28"
+  },
+  {
+   "idea": "Split on the document's natural units (scene headings) rather than generic paragraphs.",
+   "detail": "RecursiveCharacterTextSplitter with INT./EXT. scene markers first in the separator list, then double newline, single newline and spaces as fallbacks. Target 2,500 characters with 250 overlap so transitions between scenes are not lost.",
+   "t": "4:17"
+  },
+  {
+   "idea": "Persist the vector index locally and only rebuild it when the collection is missing.",
+   "detail": "Qdrant runs locally, so the indexed scripts survive reruns. The code tries to load the existing collection first and falls back to from_documents only when it is not found.",
+   "t": "6:31"
+  },
+  {
+   "idea": "A strict grounding prompt can cause false refusals when the answer is spread across chunks instead of stated in one place.",
+   "detail": "'Who is Luke Skywalker' got a refusal even though the character is everywhere in the scripts; no single chunk defines him. Adding a line to give the best partial answer from the context fixed it.",
+   "t": "9:52"
+  },
+  {
+   "idea": "Grounding prompts are tuned by testing, not by reasoning about them in advance; the presenter calls it vibe-based.",
+   "detail": "After loosening the prompt, the presenter re-checked an out-of-scope question (Darth Maul should be refused) and a prompt-injection string to confirm the scope still held.",
+   "t": "11:03"
+  },
+  {
+   "idea": "Scope limits and prompt-injection resistance in this demo come from the prompt and the retrieval setup, checked by a handful of manual questions.",
+   "detail": "The video runs one in-scope, one out-of-scope and one injection probe. It is not a systematic eval set, and it does not measure retrieval recall.",
+   "t": "10:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Scene-aware recursive chunking",
+   "how": "RecursiveCharacterTextSplitter(chunk_size=2500, chunk_overlap=250) with separators ordered as the scene markers INT. and EXT. first, then double newline, single newline, and space. Loop over each script document, split, and append the chunks to one list.",
+   "when": "Screenplays, transcripts, or any structured source where section headings mark self-contained units. Use overlap so boundary content is not lost."
+  },
+  {
+   "name": "Persist-or-build vector store",
+   "how": "Create a local Qdrant client with a fixed path and collection name. Try to open the existing collection first. If it is not found, close any open client and call from_documents with the chunks and the embedding model.",
+   "when": "Local prototypes, or any ingestion step that is costly to redo. Avoids re-embedding on every run."
+  },
+  {
+   "name": "Fixed-k retrieval with a deterministic chat model",
+   "how": "Use the vector store as retriever with k=15. Build a template that gives the model the excerpts and the question, then compose the retriever, prompt, model and parser into an LCEL chain. Use GPT-4o with temperature 0.",
+   "when": "Grounded Q&A where you want repeatable answers and do not need the model to be creative."
+  },
+  {
+   "name": "Prompt grounding tuned with a scope test set",
+   "how": "Start with a strict instruction: use only the excerpts, and say when the answer is not present. Then add a line allowing the best partial answer from the context. After each change, re-run an in-scope question, an out-of-scope question and an injection string (for example, ignore all previous instructions) to confirm both behaviours.",
+   "when": "Any domain-restricted RAG where too-strict refusals and scope leaks are both failure modes. Turn the three probes into a small regression set."
+  }
+ ],
+ "tools": [
+  "LangChain",
+  "langchain-openai",
+  "langchain-qdrant",
+  "qdrant-client",
+  "langchain-text-splitters",
+  "BeautifulSoup4",
+  "requests",
+  "uv",
+  "Qdrant (local vector database, written in Rust)",
+  "OpenAI text-embedding-3-small",
+  "GPT-4o"
+ ],
+ "numbers": [
+  {
+   "claim": "Chunk size 2,500 characters with 250-character overlap between chunks.",
+   "t": "4:17"
+  },
+  {
+   "claim": "Retriever returns the top 15 most similar chunks per question.",
+   "t": "7:36"
+  },
+  {
+   "claim": "Generation temperature set to 0, model GPT-4o.",
+   "t": "7:36"
+  },
+  {
+   "claim": "Embeddings from OpenAI text-embedding-3-small.",
+   "t": "6:31"
+  },
+  {
+   "claim": "Video is 12:48 long; three manual probes are run (in-scope, out-of-scope, injection), with no benchmark or quantitative measurement.",
+   "t": "8:25"
+  }
+ ],
+ "hot_takes": [
+  "Strict 'use only the excerpts' prompts over-refuse; a one-line allowance for partial answers is needed in practice.",
+  "RAG prompt tuning is 'vibe-based' and needs repeated manual checks, not a principled method.",
+  "Scene-level chunking beats generic paragraph splitting for structured, narrative sources.",
+  "Whole-document ingestion is a 'strategic error' because of lost-in-the-middle and token cost (asserted, not measured in the video)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh knowledge buckets use hybrid retrieval; the scene-aware separator list and overlap idea applies to structured source chunking, and the strict-vs-partial prompt test pattern applies to bucket Q&A.",
+   "action": "Add a small golden set (in-scope, out-of-scope, injection probe) for a MemoryMesh knowledge bucket, and test whether chunk separators that follow the document's own structure beat a fixed-size splitter on it."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No retrieval or document Q&A in ProsHarness's described scope.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

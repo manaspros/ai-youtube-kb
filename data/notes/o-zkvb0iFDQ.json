@@ -1,0 +1,168 @@
+{
+ "one_line": "MCP Apps lets an MCP tool return an interactive UI that the host renders in a sandbox, with UI events routed back through the host so vendors keep their branding and the host keeps conversation context.",
+ "summary": "Ido Salomon (creator of MCP-UI and co-creator of the MCP Apps spec) and Liad Yosef argue that text is a poor output format for tool calls in chat. Their answer is for a tool to return a resource containing HTML, which the host renders as an interactive app. MCP Apps is now the first official MCP extension, and the speakers list VS Code, Cursor, Claude, ChatGPT and Copilot as hosts that support it. The main design point is that a click in the UI goes to the host as a notification, tool call or prompt, not straight to the vendor backend, so the assistant keeps the context. The talk covers three ways to generate UI (predefined, declarative, fully generative) and says the spec is agnostic to which one is used. Work in progress includes reusable views for heavy apps and letting the model drive the view. The talk is promotional in places, but the architecture description is concrete.",
+ "speakers": [
+  "Ido Salomon",
+  "Liad Yosef"
+ ],
+ "orgs": [
+  "Anthropic",
+  "OpenAI",
+  "Arrow Labs",
+  "Google"
+ ],
+ "format": "talk",
+ "topics": [
+  "mcp-and-tools",
+  "product-ux"
+ ],
+ "tags": [
+  "MCP Apps",
+  "MCP-UI",
+  "interactive tool results",
+  "sandboxed UI",
+  "host-app messaging",
+  "generative UI",
+  "agent UX"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Text is a poor way for tools to answer in chat, and it hides which vendor the data came from.",
+   "detail": "The speakers say text blocked some companies from sending data to chat assistants. Letting each vendor send its own UI chunk keeps identity and branding.",
+   "t": "1:13"
+  },
+  {
+   "idea": "A tool can return a resource that is HTML, and the host turns it into an interactive app.",
+   "detail": "The tool result points to a registered UI resource instead of text. The host renders it and the UI can take clicks and forms, not just display.",
+   "t": "5:14"
+  },
+  {
+   "idea": "UI events go to the host, not to the vendor backend, so the assistant keeps the context.",
+   "detail": "The example is favoriting a song. If the UI called the backend directly, the assistant would not know later. Routing the event through the host makes it a tool call the model can see. The host decides what happens.",
+   "t": "6:39"
+  },
+  {
+   "idea": "The host side is small: a component that takes the resource and a message callback, renders it in a sandbox, and forwards events back to the model.",
+   "detail": "Events can trigger follow-up tool calls, more resource fetches, or follow-up messages, which the speakers call a bidirectional flow.",
+   "t": "8:59"
+  },
+  {
+   "idea": "UI-to-host messages sit on a control spectrum: notification, tool call, prompt.",
+   "detail": "A notification gives the host the least control and the UI the most. A prompt hands control to the host fully. The speakers say this is a new way to think about app flows.",
+   "t": "13:00"
+  },
+  {
+   "idea": "Three ways to generate UI sit on one spectrum, and MCP Apps works with all of them.",
+   "detail": "Predefined: the vendor's black-box UI, which the speakers say suits about 8% of cases. Declarative: the app describes structure and the host renders the components. Fully generative: the model creates the UI, as Claude's on-the-fly UI does. The spec does not assume who builds the UI.",
+   "t": "15:34"
+  },
+  {
+   "idea": "Two open problems: re-rendering heavy views is slow, and the model cannot yet act inside a view.",
+   "detail": "Reusable views would push new data into an existing view instead of re-rendering it. The other proposal lets the app expose tools so the model can click or fill forms. The speakers say this is an open PR and related to WebMCP.",
+   "t": "14:09"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Tool returns a UI resource",
+   "how": "Register an HTML UI resource on the MCP server and have the tool result point to it, instead of returning plain text. The host renders the resource.",
+   "when": "A tool's output is better as an interactive view (a funnel chart, a booking map, a product card) than as text the model has to read."
+  },
+  {
+   "name": "Route UI events through the host",
+   "how": "Have the UI send its actions as messages to the host (notification, tool call or prompt), and let the host decide what to call. Do not let the UI call the backend directly.",
+   "when": "The user action must remain visible to the assistant later, for example saving, favoriting or adding to a cart."
+  },
+  {
+   "name": "Choose the message type by how much control you need",
+   "how": "Use a notification when the host only needs to know something happened, a tool call when the UI should trigger a server action, and a prompt when the UI hands the whole next step to the host.",
+   "when": "Designing the event contract between a widget and the assistant."
+  },
+  {
+   "name": "Sandboxed host renderer",
+   "how": "The host takes the resource plus a callback in one component and renders the app in a sandbox, then sends events through the callback.",
+   "when": "Building a host that must run third-party UI safely."
+  },
+  {
+   "name": "Pick a UI generation mode per host",
+   "how": "Use predefined UI for vendor branding, declarative UI when the host controls the look and feel, and generative UI for first-party or on-the-fly output. The spec works for all three.",
+   "when": "Deciding how much of the look a host should own versus the vendor."
+  },
+  {
+   "name": "Build with the official SDK and skills",
+   "how": "Use the official MCP Apps SDK, which the speakers say tracks the spec, plus the built-in skills, so a coding agent can generate the app.",
+   "when": "Starting a new MCP app or a new host, rather than writing the protocol by hand."
+  }
+ ],
+ "tools": [
+  "MCP Apps",
+  "MCP-UI",
+  "Claude",
+  "ChatGPT",
+  "VS Code",
+  "Cursor",
+  "GitHub Copilot",
+  "PostHog",
+  "Shopify",
+  "Hugging Face",
+  "Booking",
+  "Airbnb",
+  "Autodesk",
+  "LibreChat",
+  "Goose",
+  "Postman",
+  "A2UI",
+  "WebMCP"
+ ],
+ "numbers": [
+  {
+   "claim": "Speaker recalls Sam Altman saying ChatGPT had about 800 million weekly users in October. He says it is now about a billion, roughly 10% of the world population. Speaker's own recollection, not sourced.",
+   "t": "18:25"
+  },
+  {
+   "claim": "Speaker says the potential audience is at least 160 times the number of users iPhone had when the App Store launched. Unsourced.",
+   "t": "18:25"
+  },
+  {
+   "claim": "Speaker says predefined vendor UI is good for about 8% of cases. Unsourced.",
+   "t": "15:34"
+  },
+  {
+   "claim": "Speaker says Shopify was already sending MCP-UI chunks for millions of online stores about a year before the talk, and Hugging Face Spaces were MCP-UI widgets.",
+   "t": "2:37"
+  },
+  {
+   "claim": "The MCP Apps public work group meets every three weeks.",
+   "t": "3:53"
+  }
+ ],
+ "hot_takes": [
+  "Within about two years there may be no browsers or websites as we know them, only a personal assistant that accepts small UI chunks.",
+  "2026 will be the year MCP Apps becomes the global standard for UI in chat apps.",
+  "Building an MCP app once means it runs on every host, and the speakers frame MCP Apps as a new distribution channel for apps."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Talk is about UI delivery through chat hosts. Nothing here touches the AgentOS proxy, budgets, memory or inference stack.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness uses phone-driven approvals. MCP Apps is one way an approval UI could sit inside a chat host, but there is no current need in the profile.",
+   "action": "If approvals ever move into a chat host, read the MCP Apps spec and check whether a tool-result form could replace the phone approval flow. No change needed now."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Gives a concrete model for tool results that carry UI and events that return to the model. This matters for any MCP server that needs a richer result than text.",
+   "action": "Read the official MCP Apps spec and SDK repo, and build a small test server that returns a UI resource with one event routed back as a tool call, to see the flow end to end."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

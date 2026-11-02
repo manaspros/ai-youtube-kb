@@ -1,0 +1,251 @@
+{
+ "one_line": "Ten-hour Better Stack build-along of a Hacker News clone on Hono, Bun, Drizzle, Postgres, TanStack Router/Query/Form and Lucia, covering typed APIs, session auth, transactional voting, pagination and optimistic updates, then Fly.io deployment.",
+ "summary": "A long hands-on tutorial (chapters with a commit per step) that builds a Hacker News-style app in one repo: a Bun + Hono API serving the built TanStack front end, Postgres via Drizzle, and Zod validation shared between client and server. The backend walkthrough covers a typed success/error response envelope, a global Hono error handler that hides stack traces in production, username/password sessions with Lucia used as a thin helper, and drizzle-zod schemas refined for post creation. Voting is implemented as a database transaction that toggles an upvote and updates a denormalized points counter, and comment trees use Drizzle self-relations. Pagination is offset-based, with the speaker explaining cursor pagination as the better option for real-time data but more complex. The front end uses TanStack Query with optimistic upvotes (snapshot, cache write, rollback, invalidate) and URL search params as state, and the video ends with Docker and Fly.io deployment. Most of the value is the reproducible setup order and the stated trade-offs; the speaker also says the Lucia library is being deprecated in favor of learning-resource docs.",
+ "speakers": [
+  "Better Stack host (unnamed in transcript)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Fly.io",
+  "TanStack",
+  "Lucia",
+  "Hono",
+  "Drizzle",
+  "Shadcn UI"
+ ],
+ "format": "tutorial",
+ "depth": "practitioner",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "hono",
+  "bun",
+  "drizzle-orm",
+  "postgres",
+  "tanstack-router",
+  "tanstack-query",
+  "tanstack-form",
+  "lucia-auth",
+  "zod",
+  "drizzle-zod",
+  "optimistic-updates",
+  "offset-pagination",
+  "docker",
+  "docker-compose",
+  "fly-io",
+  "prettier",
+  "eslint",
+  "typescript",
+  "full-stack-tutorial"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Stack rationale: Hono for the API (small, web-standards, multi-runtime), Bun as runtime with native TypeScript, Drizzle for typed SQL-like plus relational queries, Postgres for storage, TanStack Router/Query/Form on the client.",
+   "detail": "The speaker walks through each library's docs and claims (Hono under 14 KB, Drizzle with zero dependencies and one SQL query per call) to justify the choices before any code is written.",
+   "t": "0:00"
+  },
+  {
+   "idea": "One repo, two folders: the Hono server also serves the static build of the Vite-built front end, so the whole app ships as one Docker container.",
+   "detail": "In development Vite runs its own dev server; in production the server hosts the built static files. Server and front end each get their own package.json and ESLint config.",
+   "t": "2:07"
+  },
+  {
+   "idea": "Shared Zod schemas and drizzle-zod generated insert schemas keep client and server validation in sync.",
+   "detail": "Schemas live in a shared folder imported through path aliases. The post insert schema is derived from the table definition, then picked down to title, URL and content, with a refinement requiring either URL or content.",
+   "t": "1:53:20"
+  },
+  {
+   "idea": "API responses use a typed envelope (success flag, message, optional data, optional form-error flag), and a single Hono onError handler maps thrown HTTP exceptions and unknown errors to it.",
+   "detail": "Unknown errors return a generic 500 in production and the stack trace in development. The form-error flag tells the client that a validation problem came from form data.",
+   "t": "40:17"
+  },
+  {
+   "idea": "Session auth explained step by step: the server creates a session row, sends its ID in a cookie, and checks the session table on each request; logout invalidates the row and clears the cookie.",
+   "detail": "Lucia is a thin helper over this flow. Middleware sets user and session to null on the Hono context when there is no valid cookie, and a logged-in guard middleware returns 401.",
+   "t": "48:13"
+  },
+  {
+   "idea": "Denormalized counters (points, comment_count) are stored on posts and comments so sorting and listing do not need to count upvote rows.",
+   "detail": "The speaker acknowledges a reconciliation script could be used if the counters ever drift, but argues the transactional writes keep them in sync.",
+   "t": "1:28:30"
+  },
+  {
+   "idea": "Upvotes are a transaction: read the existing vote, insert or delete it, update the post's points, and return the new count. Throwing an HTTP 404 inside the transaction rolls back every write.",
+   "detail": "This is the speaker's example of why transactions suit multi-table changes: either all writes apply or none do.",
+   "t": "2:30:17"
+  },
+  {
+   "idea": "Offset pagination is simple but slows at deep pages; cursor pagination gives stable performance and no skips or duplicates on real-time data but needs a stable sort and cannot jump to arbitrary pages.",
+   "detail": "The tutorial uses offset pagination (page times limit) with 10 items per page and a separate count query for total pages, and mentions cursor pagination only as a future upgrade.",
+   "t": "1:46:34"
+  },
+  {
+   "idea": "Optimistic updates with TanStack Query: on mutate, cancel queries and snapshot the cache, write the new state, roll back on error, and invalidate on settle. For infinite lists the cache update has to go inside each page.",
+   "detail": "The speaker demos the failure path by throwing an artificial server error, which shows the upvote flip and then reverts with a failure message. He says optimistic updates on infinite queries are the hardest part.",
+   "t": "5:53:57"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Typed API envelope with a global error handler",
+   "how": "Define SuccessResponse<T> and ErrorResponse types in a shared folder, with data present only when T is not void. Throw Hono HTTPException with a cause object for expected errors (e.g. 404 post not found, 401 unauthorized, 409 username taken). In app.onError, return the error envelope for HTTPException, and for other errors return a generic 500 in production or the stack in development. Import the types with `import type` to avoid runtime imports.",
+   "when": "Any JSON API consumed by a typed TypeScript front end where you want one response shape and no stack-trace leaks in production."
+  },
+  {
+   "name": "Zod validator middleware with shared schemas",
+   "how": "Put the schema in the shared folder and use @hono/zod-validator (zValidator) on form, json or query input. Read validated data with c.req.valid(...). Use .coerce.number() for route params and pagination values, and a z.literal('') branch for optional URL fields that arrive as empty strings from forms.",
+   "when": "Any Hono route whose inputs also need to be validated on the client with the same rules."
+  },
+  {
+   "name": "Derive API schemas from Drizzle tables with drizzle-zod",
+   "how": "Call createInsertSchema(table) to get a Zod schema from the table. Refine individual fields (min length 3, URL check after trim) and use .pick() to expose only the fields the API accepts. Add a .refine() that requires at least one of url or content, with a path on each field for the error.",
+   "when": "Schemas that must match DB column constraints but add API-specific rules."
+  },
+  {
+   "name": "Sessions with Lucia as a thin helper",
+   "how": "Use the Lucia adapter for Drizzle with your own users and sessions tables (username and password hash columns added by hand). Register getUserAttributes so the username is on the session. Middleware reads the session cookie, validates it, and sets user and session on the Hono context. Sign up or log in with Bun.password.hash and Bun.password.verify, then append the session cookie with createSessionCookie(...).serialize(). Logout invalidates the session and appends a blank cookie. Use a unique index and catch Postgres error 23505 to return 409 on a taken username.",
+   "when": "Username and password auth in a small app where the team wants to own the tables and password handling but avoid writing session code."
+  },
+  {
+   "name": "Transactional toggle with denormalized counters",
+   "how": "Inside db.transaction, select the existing vote for (post_id, user_id). Compute delta as +1 or -1. Update posts set points = points + delta where id = ? returning points. If the update returns nothing, throw a 404 so the transaction rolls back. Then delete the vote if it existed, otherwise insert it. Return the new points value.",
+   "when": "Vote, like or follow toggles where the list view needs a cheap counter and the count must not drift."
+  },
+  {
+   "name": "Drizzle relations for self-referencing comment trees without foreign keys",
+   "how": "Define relations() on each table with fields and references. For parent and child comments, use the same table on both sides with a shared relationName (e.g. child_comments). The speaker says Drizzle relations work on providers without foreign keys, such as PlanetScale. Relation names must match on both sides or Drizzle reports it cannot infer the relationship.",
+   "when": "Nested comments or threads on a database that cannot use foreign keys, or where you want Drizzle's query API to fetch children easily."
+  },
+  {
+   "name": "Offset pagination with a separate count query",
+   "how": "Accept page (default 1), limit, sortBy, order (default desc), author and site as Zod-validated query params. Use offset = (page - 1) * limit. Build a where clause only for filters that were provided. Run a count(id) with the same where clause, and return data plus a pagination object with totalPages = ceil(count / limit).",
+   "when": "Simple lists where page jumps and total page counts matter more than consistency under concurrent writes."
+  },
+  {
+   "name": "Helper to return dates as ISO UTC strings from SQL",
+   "how": "Write a helper that takes a timestamp column and returns a SQL expression that formats it as an ISO UTC string (to_char style, per the speaker's Postgres approach), so the API always returns the same date format. Use it in the select list in place of the raw timestamp.",
+   "when": "APIs that must return consistent UTC timestamp strings to the front end."
+  },
+  {
+   "name": "Optimistic mutation with TanStack Query and rollback",
+   "how": "useMutation with onMutate: cancelQueries on the key, snapshot previous data, write the new value into the cache, and return the snapshot as context. onError: restore the snapshot and show an error toast. onSettled: invalidateQueries on the key. For infinite queries, map over pages and update the matching item in each page.",
+   "when": "User actions such as upvotes or adding comments where the UI should respond before the server confirms."
+  },
+  {
+   "name": "URL search params as state, with validated search schemas",
+   "how": "Define the sort, order and filter params with a Zod schema on the TanStack Router route, so links carry the view state and back-button and refresh restore it. Keep the same schema for the server query validator, so both sides agree on defaults.",
+   "when": "List views (sort, filter, page) where users share links or expect the back button to restore the view."
+  },
+  {
+   "name": "Prettier and ESLint setup per folder",
+   "how": "Install prettier and prettier-plugin-sort-imports, and use a prettier.config.js that groups framework imports first, then third-party, then the path-alias imports. Add package.json scripts 'format' (prettier . --write) and 'format:check' (prettier . --check). Keep a per-folder eslint.config.mjs created with bun create @eslint/config, add @eslint/compat with fixupPluginRules for the Drizzle ESLint plugin, and extend eslint-config-prettier. Ignore generated files such as routeTree.gen.ts.",
+   "when": "A monorepo-style single repo where the server and client need different lint rules but one format setup."
+  },
+  {
+   "name": "Docker Compose for local Postgres, Fly.io for hosting",
+   "how": "compose.yml: a postgres:17 service (pin the version, not latest), POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB env vars, a named volume at /var/lib/postgresql/data, port mapping 5432:5432, and a bridge network. Run docker compose up -d. Set DATABASE_URL to postgresql://user:password@localhost:5432/<db>. For hosting: install the fly CLI, run fly auth login, fly postgres create, then fly launch and fly deploy. Keep the DB URL in Fly secrets, not committed config. Pin the Bun version in the Dockerfile ARG.",
+   "when": "Local dev parity with production Postgres and a single-container deploy."
+  },
+  {
+   "name": "Drizzle Kit push for schema sync",
+   "how": "Create drizzle.config.ts with defineConfig: dialect postgresql, schema pointing at the schemas folder glob, out folder, and dbCredentials.url from process.env.DATABASE_URL with a non-null assertion. Run bunx drizzle-kit push after each schema change. Run drizzle-kit studio to inspect tables and relations.",
+   "when": "Prototyping schema changes without migration files."
+  }
+ ],
+ "tools": [
+  "Hono",
+  "Bun",
+  "Drizzle ORM",
+  "drizzle-kit",
+  "drizzle-zod",
+  "postgres.js (postgres)",
+  "PostgreSQL 17",
+  "TanStack Router",
+  "TanStack Query (React Query)",
+  "TanStack Form",
+  "TanStack Table",
+  "TanStack Virtual",
+  "Lucia (lucia, @lucia-auth/adapter-drizzle)",
+  "@hono/zod-validator",
+  "Zod",
+  "Vite",
+  "Shadcn UI",
+  "React",
+  "Docker",
+  "Docker Compose",
+  "Fly.io (fly CLI, fly postgres)",
+  "Prettier",
+  "prettier-plugin-sort-imports",
+  "ESLint",
+  "@eslint/compat",
+  "eslint-config-prettier",
+  "eslint-plugin-drizzle",
+  "Insomnia",
+  "Postman",
+  "VS Code",
+  "GitHub Node .gitignore template"
+ ],
+ "numbers": [
+  {
+   "claim": "Hono is described as under 14 KB.",
+   "t": "4:35"
+  },
+  {
+   "claim": "Drizzle is described as having zero dependencies and about 31 KB minified, and each query builder call produces exactly one SQL statement.",
+   "t": "8:21"
+  },
+  {
+   "claim": "Postgres image pinned to 17 rather than latest.",
+   "t": "25:30"
+  },
+  {
+   "claim": "Username 3 to 31 characters with letters, digits and underscore only. Password minimum 3, maximum 255 characters.",
+   "t": "1:03:57"
+  },
+  {
+   "claim": "A demo server delay of 5 seconds is added to show optimistic comment updates.",
+   "t": "1:06"
+  },
+  {
+   "claim": "Postgres unique-violation error code 23505 is mapped to a 409 response for a taken username.",
+   "t": "1:09:26"
+  },
+  {
+   "claim": "Default page size of 10 items.",
+   "t": "2:27:52"
+  },
+  {
+   "claim": "Bun version pinned to 1.1.30 in the Dockerfile.",
+   "t": "9:39:48"
+  },
+  {
+   "claim": "Speaker reports the Lucia library is planned for deprecation; the adapters are expected to keep working for the near term.",
+   "t": "50:58"
+  }
+ ],
+ "hot_takes": [
+  "Speaker says Lucia is being deprecated and turned into a learning resource, and presents the tutorial's use of it as a thin wrapper that the reader could replace with their own session code.",
+  "Speaker argues username-timing leaks don't matter for a public social site, and says two-factor auth and login throttling are needed elsewhere.",
+  "Offset pagination is presented as fine for this app, with cursor pagination recommended for real-time data but described as complex.",
+  "Tutorial is roughly ten hours of live coding that keeps live mistakes in the video and fixes them later, which makes it long but thorough.",
+  "Speaker says the URL should match on hostname rather than the full URL for site search, and lists this as a later improvement."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "General full-stack web tutorial with no agent, LLM or inference content.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content about Claude Code, checkpointing, planning or approvals.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

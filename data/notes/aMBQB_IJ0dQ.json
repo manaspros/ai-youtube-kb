@@ -1,0 +1,175 @@
+{
+ "one_line": "Conceptual walkthrough of the agentic development lifecycle (ADLC), a phase-by-phase SDLC analogue for non-deterministic agents with a validation gate and staged rollout. Thin on code and data, with a sponsor segment.",
+ "summary": "The speaker argues that SDLC treats software as static and deterministic, while AI agents are probabilistic and keep changing in production, so a new lifecycle (ADLC) is needed. He lays out seven phases, each mapped to an SDLC phase: preparation and hypothesis, scoping with a human-agent responsibility model, design, simulation and proof of value, implementation, testing, and deployment with ongoing monitoring and feedback. The advice is mostly process-level: use Claude Code's planning mode to map agent behavior before architecture, write down who is accountable for what, build a ground-truth dataset early, treat the prototype stage as a kill gate, and roll out to a small group first. Concrete tooling is light: planning mode, the \"agent's view\" for orchestrating several agents, MCP integrations for calendar, email and Notion, and a mention of RAGAS and DeepEval for evaluation. No benchmarks, cost figures, or working code are shown. About 1.5 minutes is a sponsored segment for an app builder (Softr, transcribed as \"Softer\"). The framework is presented as a community-wide \"new framework\" without naming an author or source.",
+ "speakers": [],
+ "orgs": [
+  "Softr (sponsor, transcribed as 'Softer')",
+  "Google (Gemini, cited for its 1M-token context)",
+  "OpenAI (ChatGPT, cited as a feedback-UI example)"
+ ],
+ "format": "other",
+ "topics": [
+  "agent-architecture",
+  "evals",
+  "claude-code",
+  "context-engineering"
+ ],
+ "tags": [
+  "adlc",
+  "sdlc",
+  "development-lifecycle",
+  "planning-mode",
+  "human-agent-responsibility",
+  "ground-truth-dataset",
+  "validation-gate",
+  "regression-testing",
+  "staged-rollout",
+  "context-rot",
+  "agent-view",
+  "ragas",
+  "deepeval",
+  "mcp",
+  "non-determinism",
+  "sponsored"
+ ],
+ "key_ideas": [
+  {
+   "idea": "SDLC treats software as a static artifact whose behavior is known at planning time. ADLC treats the system as a living one, because agent behavior depends on the prompt, context, model and connected tools.",
+   "detail": "The speaker's core premise: the same input does not reliably give the same output, so agents cannot be graded with the deterministic pass/fail metrics used for ordinary software. He argues the old lifecycle has stopped fitting once coding tools like Claude Code and Cursor took over the coding step.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Non-determinism is the reason for the change. The same inputs never guarantee the same output, so success must be stated as distributions and behaviors.",
+   "detail": "He says the decisions an agent makes depend on prompt, context, model, and external tools, and that a prompt cannot be guaranteed to return a fixed result. This is why he frames success differently from SDLC.",
+   "t": "1:01"
+  },
+  {
+   "idea": "The speaker maps seven ADLC phases onto SDLC phases: preparation and hypothesis, scoping, design, simulation and proof of value, implementation, testing, and deployment with continuous monitoring.",
+   "detail": "Each phase is described as a gate or an output the next phase depends on. Phase 1 builds an understanding of the problem and forms testable hypotheses about where agents help. Note the video says seven phases, but the sections it walks through include a separate maintenance and feedback stage at the end.",
+   "t": "2:28"
+  },
+  {
+   "idea": "Plan the agent's behavior before its architecture. Put the planning tool in plan mode and tell it not to think about code.",
+   "detail": "The first step is to have the agent map the workflow, user interactions, failure modes, overhead, and assumptions. The stated goal is that these assumptions guide later architecture decisions instead of jumping straight to implementation.",
+   "t": "3:35"
+  },
+  {
+   "idea": "Scoping must include a documented human-agent responsibility model that defines the agent's autonomy boundaries and who is accountable when something fails.",
+   "detail": "He says a human still has to review decisions, that agents should not be trusted with every decision, and that you cannot blame the model in a failure. The phase ends with workflow steps, KPIs (time, cost, latency, feasibility), and the responsibility model written down.",
+   "t": "4:39"
+  },
+  {
+   "idea": "The simulation phase is a validation gate. Test the high-risk assumptions on real data, record baselines, and kill the project if the results do not hold.",
+   "detail": "Deliverables are measured performance and cost baselines, plus a ground-truth document reused for regression tests and fine-tuning. Failing this gate early is presented as far cheaper than failing in production.",
+   "t": "6:51"
+  },
+  {
+   "idea": "In agentic systems the logic is spread across code, prompts, models, tools and external services, so any layer can change behavior. Testing has to run during implementation, not only afterward.",
+   "detail": "He recommends one orchestration layer (Claude Code's agent view) to coordinate multiple agents instead of many separate sessions. He also warns that large context windows still suffer from context rot, so irrelevant information should be kept out of the context.",
+   "t": "9:26"
+  },
+  {
+   "idea": "Success metrics change: instead of functional tests that pass or fail, track accuracy distribution, hallucination rate, and cost per outcome, with continuous evaluation of reasoning, safety, and tool use.",
+   "detail": "He names RAGAS and DeepEval as evaluation frameworks and says the key correctness check is how the data performs against the metrics defined earlier. Testing types named: functional, non-functional, structural, and load testing.",
+   "t": "10:54"
+  },
+  {
+   "idea": "Deployment is a controlled activation with continuous observation. Release to a limited group first, watch behavioral metrics, set alerts for quality and safety, then expand gradually.",
+   "detail": "The alerting focus is on behavior (quality, safety, drift from model updates and environment changes), not only on system health. The stage also includes continuous monitoring of cost, quality, and backlog.",
+   "t": "13:03"
+  },
+  {
+   "idea": "Feedback loops are continuous. Thumbs up/down and ranking signals feed back into the system, data sources and embeddings are refreshed periodically, and alignment is monitored against prompt injection.",
+   "detail": "He cites ChatGPT and Claude feedback UIs as examples of signal collection. The closing point: keep cost management, quality tracking, backlog, and model upgrades running to keep the system stable over time.",
+   "t": "14:21"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Behavior-first planning mode",
+   "how": "Enable planning mode in the coding agent and prompt it to map the agent's behavior, not its implementation: user interactions, where the workflow breaks, what could go wrong, overhead, and assumptions. The video gives no exact prompt text; this is a paraphrase.",
+   "when": "At the start of a new agent project, before any architecture or code, so the assumptions drive the architecture."
+  },
+  {
+   "name": "Human-agent responsibility model",
+   "how": "During scoping, write down the workflow steps, the KPIs (time, cost, latency, feasibility), the trade-offs that are acceptable, and which decisions require human review, so accountability is explicit for failures. The speaker gives no template.",
+   "when": "Before design, for any agent that takes actions or decisions in production (compliance and accountability)."
+  },
+  {
+   "name": "Ground-truth dataset plus baselines as a validation gate",
+   "how": "Build a dataset of real-world cases with expected outcomes, prototype the high-risk assumptions, record performance and cost baselines, then keep the dataset as a regression suite and a source for fine-tuning. Continue only if results clear the bar.",
+   "when": "After design and before implementation, when deciding whether to build the agent at all."
+  },
+  {
+   "name": "Single orchestration layer for multiple agents",
+   "how": "Use Claude Code's agent view as one orchestration layer that coordinates several agents from a manager prompt, instead of managing many separate sessions by hand. Feature details (invocation and setup) are not shown.",
+   "when": "When a system has multiple agents that need to coordinate."
+  },
+  {
+   "name": "Context hygiene against context rot",
+   "how": "Keep only relevant information in the agent's context and check memory contents. Large windows (the speaker cites 1M-token windows in Gemini and Opus) do not remove the need to curate them.",
+   "when": "In implementation, as tools and MCP servers are added and the context grows."
+  },
+  {
+   "name": "Staged rollout with behavioral alerting",
+   "how": "Release to a small group of real users first, watch behavioral metrics (quality, safety, drift), set alert rules that fire on those metrics, and expand only after the observation period.",
+   "when": "At deployment, for any agent with live users."
+  },
+  {
+   "name": "Feedback signals and periodic data refresh",
+   "how": "Collect thumbs up/down or response-ranking signals, feed them back into the system, refresh data sources and embeddings on a schedule, and monitor alignment and guardrails against prompt injection.",
+   "when": "After launch, as an ongoing maintenance loop."
+  }
+ ],
+ "tools": [
+  "Claude Code (planning mode, agent view)",
+  "Cursor",
+  "Google Calendar MCP",
+  "Gmail MCP",
+  "Notion MCP",
+  "RAGAS",
+  "DeepEval",
+  "Gemini (1M-token context, mentioned)",
+  "Claude Opus (1M-token context, mentioned)",
+  "ChatGPT (feedback UI example, mentioned)",
+  "Softr (sponsor, transcribed as 'Softer')"
+ ],
+ "numbers": [
+  {
+   "claim": "Seven ADLC phases are described, each mapped to an SDLC phase.",
+   "t": "2:28"
+  },
+  {
+   "claim": "Context windows cited as 1 million tokens (Gemini and Opus). The speaker warns that large windows still need careful handling because of context rot.",
+   "t": "9:26"
+  },
+  {
+   "claim": "No benchmarks, latencies, token counts, or cost figures are given. The metrics named (accuracy distribution, hallucination rate, cost per outcome) are not quantified.",
+   "t": "10:54"
+  }
+ ],
+ "hot_takes": [
+  "Quality is capped at 2: a sponsored app-builder segment at about 8:19 (Softr, transcribed as 'Softer') and a conceptual narrative with no code, demo, dataset, or measured result.",
+  "The title says 'Claude Code's New Lifecycle', but Claude Code appears only as a planning-mode and agent-view tool. The ADLC framework is described as coming from the 'developer community' with no named author, source, or standard, so treat it as one practitioner's taxonomy rather than an Anthropic methodology.",
+  "The most actionable and least covered idea is the human-agent responsibility model (4:39). Most of the rest is generic SDLC-with-evals advice.",
+  "The 'seven phases' claim is loose: the sections walked through are close to seven, but the maintenance and feedback stage is presented as an eighth step."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The ground-truth dataset as a regression and fine-tuning asset and the validation gate before build overlap the RAGAS evals planned for MemoryMesh and the proof-of-value needed for InferCraft, but the video gives no method beyond the idea.",
+   "action": "Treat the ground-truth set as a versioned regression artifact for the MemoryMesh RAGAS evals, and record cost and quality baselines before adding each pillar."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Behavior-first planning before architecture, plus a single orchestration layer over several agent sessions, overlaps ProsHarness's plan -> critique (Codex) -> debate flow. The video adds no new mechanism.",
+   "action": "Consider a 'behavior map, no code' planning prompt as an extra stage before ProsHarness's plan step, and compare it with the existing critique and debate stages."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

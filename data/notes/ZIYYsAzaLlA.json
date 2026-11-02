@@ -1,0 +1,165 @@
+{
+ "one_line": "Figma's engineer on building its first MCP server in about three months: which context format worked, how evals were automated, and how a remote server followed a local one.",
+ "summary": "Jesse Lumarie, a Figma engineer, describes how the team built Figma's MCP server, which lets agents pull design and code context in both directions. It began as a one-day-a-week side project in late 2024, when few AI clients supported MCP, and shipped first as a local server with an Electron-to-Node bridge. The team chose a React+Tailwind representation of the scene graph over XML or raw images, because models were trained on that kind of code, and used images only as supporting context. Hand grading evals took about two hours per run, so they built a web app and automated LLM-judge evals that run hundreds of times a week. Code Connect lets the server return a pointer to an existing component instead of full markup. Because clients lacked elicitation and sampling, the team emulated both with tool-call prompts. The remote server followed in September 2025 and reached GA in October 2025. The speaker's main takeaway is that the MCP ecosystem is still early.",
+ "speakers": [
+  "Jesse Lumarie"
+ ],
+ "orgs": [
+  "Figma",
+  "Anthropic",
+  "OpenAI",
+  "Cursor",
+  "Microsoft (VS Code)"
+ ],
+ "format": "talk",
+ "topics": [
+  "mcp-and-tools",
+  "evals",
+  "context-engineering"
+ ],
+ "tags": [
+  "MCP",
+  "Figma",
+  "Code Connect",
+  "elicitation",
+  "sampling",
+  "LLM-as-judge",
+  "local vs remote MCP",
+  "OAuth",
+  "server instructions",
+  "design-to-code"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Build the MCP server as a side project first, then staff it",
+   "detail": "The talk began as a one-day-a-week project. Figma then staffed a team, and the first version took about three months. The speaker says the company gave engineers room to explore, and the team later grew into a second product, Make.",
+   "t": "0:13"
+  },
+  {
+   "idea": "Serialize the scene graph into a format the model already knows",
+   "detail": "Three options were considered: an internal XML/JSX-like form, a React+Tailwind form, and a plain image. React+Tailwind won, on the hunch that models are trained heavily on that code. Images were kept only as extra context. Inlining base64 image data blew up the context window.",
+   "t": "3:06"
+  },
+  {
+   "idea": "Image plus code beats either alone",
+   "detail": "A screenshot of the current node added to the code context gave better agent output than code alone. The image by itself converted poorly to code.",
+   "t": "5:26"
+  },
+  {
+   "idea": "Automate evals and keep a human out of the loop",
+   "detail": "Early evals mixed quantitative checks (were variables used, was the expected theme applied, was it placed correctly) with qualitative ones. Hand grading in a spreadsheet took about two hours per run, so it was replaced with a web app and LLM judges. An eval now runs hundreds of times a week, and engineers can grade prompt changes on their own.",
+   "t": "5:26"
+  },
+  {
+   "idea": "Send a pointer to an existing component, not the full markup",
+   "detail": "Code Connect links design components to the user's codebase. The server then sends a short reference such as 'use the button component' in place of pixel-perfect generic markup. The result uses the team's accessible, internationalized components and saves context.",
+   "t": "7:56"
+  },
+  {
+   "idea": "Clients lagged the spec, so the team emulated missing features in tool calls",
+   "detail": "Server instructions were in the spec but unimplemented. Elicitation and sampling were mostly unsupported, so the server returned prompts that asked the user a question and then told the agent to scan the codebase, mimicking both. The MCP Inspector helped in testing.",
+   "t": "9:28"
+  },
+  {
+   "idea": "Local first to learn product-market fit, then remote once auth existed",
+   "detail": "The OAuth spec arrived in March 2025, but the team first shipped a local server. The Electron desktop app relays auth from its web front end over an IPC bridge to a Node process, which exposes a local server. Local also appealed to enterprises that did not want data sent anywhere. The remote server followed in September 2025.",
+   "t": "13:24"
+  },
+  {
+   "idea": "Treat self-reported client metadata as a weak signal only",
+   "detail": "Optional query arguments, such as the user's language or framework, let the team see which users had poor results. The speaker admits that agents sometimes report these fields inaccurately, so the data is only a hint.",
+   "t": "12:04"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Pick the representation the model knows best",
+   "how": "Translate your domain's structure (here, a scene graph) into the most common code format in the model's training data, such as React+Tailwind, instead of an invented XML schema. Run it through a pixel-check to confirm fidelity.",
+   "when": "When you convert structured data for a code-generating agent and need high fidelity from a model."
+  },
+  {
+   "name": "Code plus screenshot as paired context",
+   "how": "Send the structured or code representation together with an image of the same node. Do not expect the image alone to produce good code. Keep bulky binary assets out of the prompt, as base64 blew up the context window.",
+   "when": "When visual layout matters and the model must reproduce it in code."
+  },
+  {
+   "name": "Reference-by-pointer via a component mapping",
+   "how": "Keep a mapping from design components to the repo's real components (Code Connect). The server returns a short pointer to the existing component instead of a full re-implementation.",
+   "when": "When the target codebase already has accessible, tested components the agent should reuse, and context is limited."
+  },
+  {
+   "name": "Two-step ask-then-act to emulate elicitation and sampling",
+   "how": "When the client cannot ask the user or query its own LLM in-context, return a tool response that asks the user a yes/no question. On yes, return a second instruction telling the agent to scan the codebase and return matches in a set format. Batch the results back to the server.",
+   "when": "When the protocol features you need (elicitation, sampling) are not implemented by the clients your users run."
+  },
+  {
+   "name": "Automated eval mixing deterministic checks and LLM judges",
+   "how": "Combine quantitative checks (variables used, theme applied, right location) with LLM-judge grading for qualitative aspects. Use toy repos plus real design files, and run the suite on demand from prompt changes.",
+   "when": "When human grading is too slow to repeat after every prompt or tool change."
+  },
+  {
+   "name": "Local-first MCP server with an IPC bridge",
+   "how": "Keep the server on the user's machine, relay auth from a web front end through the desktop app's IPC to a local process, and expose a local server to clients. Move to a remote streamable-HTTP server once the auth spec is settled.",
+   "when": "When you need a fast launch before remote auth and the spec are stable, and users value data staying local."
+  },
+  {
+   "name": "Per-tool-call instructions when clients ignore server instructions",
+   "how": "Repeat the usage guidance inside each tool response or error, since clients may not read the server-level instructions field. Include what went wrong and what to do next, so the agent does not have to infer it.",
+   "when": "When your MCP clients do not implement server-level instructions and the agent wastes steps guessing."
+  }
+ ],
+ "tools": [
+  "Figma MCP server",
+  "Figma Code Connect",
+  "MCP Inspector",
+  "React",
+  "Tailwind CSS",
+  "Electron",
+  "Node.js",
+  "Cursor",
+  "VS Code",
+  "Claude Desktop"
+ ],
+ "numbers": [
+  {
+   "claim": "First MCP server built in about three months, starting as a one-day-a-week side project",
+   "t": "0:13"
+  },
+  {
+   "claim": "Manual eval grading in a spreadsheet took about two hours per run; replaced by automated evals run hundreds of times a week",
+   "t": "5:26"
+  },
+  {
+   "claim": "Local MCP server launched about a year before the talk; remote server launched September 2025; both servers GA in October 2025",
+   "t": "14:36"
+  },
+  {
+   "claim": "The MCP spec was about two years old at the time of the talk",
+   "t": "15:53"
+  }
+ ],
+ "hot_takes": [
+  "Do not run evals by hand if you can avoid it; grading in a spreadsheet was awful and should be automated with LLM judges.",
+  "Do not inline base64 image data into the agent context; it blows up the window.",
+  "Agents can misreport their own metadata, so self-reported client fields are only a rough signal.",
+  "The MCP ecosystem is very early; teams should expect the spec and clients to keep changing."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS is a proxy for any agent and exposes pillars such as evals and memory. The talk shows that the same tool surface behaves differently across clients, and that eval automation is worth doing early.",
+   "action": "Before exposing AgentOS pillars as MCP tools, test them in two or three real clients, since client support for server instructions and elicitation varied widely."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness uses phone-driven approvals. Elicitation, which asks the user a question mid-tool-call, is the protocol-level version of that pattern, though clients rarely supported it.",
+   "action": "Look at whether Claude Code supports MCP elicitation, and if it does not, keep the ask-then-act tool pattern from this talk as the fallback for approval prompts."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

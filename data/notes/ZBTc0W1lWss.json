@@ -1,0 +1,155 @@
+{
+ "one_line": "Better Stack's 7-minute walkthrough of Zod 4: Zod Mini for tree-shaking, z.interface, top-level z.email, z.toJSONSchema, a unified error param, and the breaking changes to plan for.",
+ "summary": "The video is a changelog-style walkthrough of Zod 4, the TypeScript schema validation library. The main structural change is a new internal architecture, which the presenter credits for a smaller and faster core. Zod Mini is a sister package with a functional, tree-shakable API (wrapper functions instead of chained methods) aimed at projects with strict bundle-size limits, while Zod itself remains the recommended choice. New types and formats include template literal types, int/uint/float and bigint support, a stringbool type, and file validation. z.interface is added to handle key-optional and value-optional properties and to support recursive types. Discriminated unions, refinements, and transforms get several upgrades, and string formats move to the top level (z.email, z.ipv4, z.ipv6). Metadata and first-party JSON Schema conversion arrive through a global registry and .meta(). Error customization is consolidated into one error parameter, with a z.prettifyError helper and a locales API that currently supports only English. The migration section lists the breaking changes, and the presenter says the migration guide is long and that Zod 4 is in beta for about six weeks.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "Zod"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools",
+  "data-engineering"
+ ],
+ "tags": [
+  "zod",
+  "typescript",
+  "schema-validation",
+  "json-schema",
+  "tree-shaking",
+  "bundle-size",
+  "migration",
+  "breaking-changes",
+  "error-handling"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Zod Mini exists to fix tree-shaking and bundle size. It has a functional API that mirrors Zod one-to-one, using wrapper functions instead of methods, and parse methods stay the same.",
+   "detail": "The presenter says switching the simple example to Zod Mini is more than a 6x bundle-size reduction. Zod is still the recommended library, and Mini targets projects with extreme bundle constraints.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Zod 4 adds a larger set of built-in number and string types, including template literal types and int, float, uint and bigint support.",
+   "detail": "z.int accepts only safe integers, and Infinity and -Infinity are no longer valid for z.number. The presenter also says file validation (size and type) is now supported.",
+   "t": "0:12"
+  },
+  {
+   "idea": "z.interface is a new object-like API that separates key optionality from value optionality, and it can express recursive types.",
+   "detail": "Zod 3 could not express value-optional properties. In z.interface, a '?' on the key makes the key optional, and an undefined-able value means the key is required. Recursive types can be written with interface plus getters, which the presenter says suits ORM and GraphQL-style cyclic data. z.object is not deprecated, but interface is recommended.",
+   "t": "1:12"
+  },
+  {
+   "idea": "Refinements now live inside the schema, so schema methods such as min and max can be chained after them. A new z.overwrite covers transforms that keep the inferred type.",
+   "detail": "Unlike .transform, z.overwrite returns an instance of the original type, so a z.number stays a z.number. Discriminated unions detect their discriminator automatically and can nest inside each other.",
+   "t": "2:24"
+  },
+  {
+   "idea": "String formats moved to the top level, and email validation has several standard options.",
+   "detail": "z.email replaces z.string().email(), which is deprecated but still works. .ip and .cidr were removed in favor of .ipv4 and .ipv6. z.email defaults to Gmail's rules and can also use HTML5, RFC5322, or a Unicode regex.",
+   "t": "3:46"
+  },
+  {
+   "idea": "JSON Schema export is built in. Metadata is stored in a typed registry and attached with .meta(), and z.toJSONSchema includes it in the output.",
+   "detail": "The global registry accepts JSON-Schema-compatible metadata, and custom registries can also be created. The presenter says .meta() is now preferred over the older described-style approach.",
+   "t": "3:46"
+  },
+  {
+   "idea": "Error customization is unified into a single error parameter, and several migration items are breaking changes.",
+   "detail": "message, invalid_type_error, required_error and errorMap are replaced by the one parameter. z.prettifyError formats errors for display. ZodError no longer extends Error, format and flatten are deprecated in favor of z.treeifyError, formError is dropped, and addIssue is replaced by pushing to the issues array.",
+   "t": "4:58"
+  },
+  {
+   "idea": "Some older APIs are removed or deprecated, and the presenter treats the migration guide as essential reading before upgrading.",
+   "detail": "nonstrict and deepPartial are removed. The presenter calls deepPartial an anti-pattern with footguns. strict and passthrough are deprecated in favor of strictObject and looseObject, and z.promise is deprecated in favor of awaiting values directly. The presenter also says Zod 4 is faster on several benchmarks and has about six weeks of beta.",
+   "t": "6:22"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Switch bundle-sensitive code to Zod Mini",
+   "how": "Use the functional API, where top-level wrapper functions replace chained methods. Parse methods are unchanged. The speaker reports more than a 6x reduction for a simple example. Mini is a sister library, so the rest of the code stays on Zod.",
+   "when": "Frontend or edge bundles where tree-shaking matters more than API ergonomics. Otherwise, stay on full Zod."
+  },
+  {
+   "name": "Use z.interface for value-optional properties and recursive types",
+   "how": "Declare key optionality with '?' on the key. Use a value that can be undefined when the key must exist. For cyclical types, define the property with a getter instead of z.lazy and a redundant interface.",
+   "when": "Modeling ORM or GraphQL-style recursive structures, or any shape where Zod 3 needed z.lazy casts."
+  },
+  {
+   "name": "Migrate string formats to top-level functions",
+   "how": "Replace z.string().email() with z.email(). Replace .ip and .cidr with .ipv4 or .ipv6. Pick a non-default email regex if needed (HTML5, RFC5322, or Unicode), since the default follows Gmail's rules.",
+   "when": "Any Zod 3 codebase. The old methods still work but are deprecated."
+  },
+  {
+   "name": "Attach metadata with .meta() and export JSON Schema with z.toJSONSchema",
+   "how": "Call .meta({...}) with JSON-Schema-compatible keys on a schema. Metadata is stored in a registry, not on the schema object. Use z.toJSONSchema(schema) to output a JSON Schema that includes the global registry metadata. Create custom registries if the global one is not enough.",
+   "when": "Generating JSON Schema for tool or API definitions from the same Zod source of truth, rather than maintaining a separate JSON Schema file."
+  },
+  {
+   "name": "Replace old error customization with the unified error parameter",
+   "how": "Pass a single error option (replacing message, invalid_type_error, required_error and errorMap). Format results with z.prettifyError for display, and use z.treeifyError in place of format and flatten.",
+   "when": "Any code that customizes validation messages or formats errors for users or logs."
+  },
+  {
+   "name": "Update error-handling code for the new ZodError",
+   "how": "Stop relying on ZodError being an instance of Error (it no longer extends it). Replace addIssue calls with pushing to the issues array. Drop formError, which was equivalent to flatten.",
+   "when": "Catch blocks, error-instanceof checks, and custom refinement helpers in a Zod 3 to 4 migration."
+  },
+  {
+   "name": "Use z.overwrite for type-preserving transforms",
+   "how": "Call z.overwrite(fn) where the transform keeps the inferred type, so the result is still the original schema class and its methods remain available. Use .transform only when the output type changes.",
+   "when": "Normalizing input values such as trim or lowercase while keeping the schema chainable."
+  }
+ ],
+ "tools": [
+  "Zod 4",
+  "Zod Mini",
+  "Zod 3",
+  "TypeScript",
+  "RFC5322 email rule",
+  "HTML5 email rule",
+  "Gmail email rule"
+ ],
+ "numbers": [
+  {
+   "claim": "Switching a simple example to Zod Mini gives more than a 6x bundle-size reduction (the presenter's example, not a general benchmark).",
+   "t": "0:00"
+  },
+  {
+   "claim": "The core Zod library is 57% smaller in Zod 4.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Zod 4 is in beta for about six weeks, so adopters and libraries can migrate.",
+   "t": "6:22"
+  },
+  {
+   "claim": "Zod 4 is faster on several benchmarks, with no figures given.",
+   "t": "6:22"
+  }
+ ],
+ "hot_takes": [
+  "The 'AMAZING' title is hype, but the content is a fair changelog walkthrough with real substance and no sponsorship. Quality is 3, not higher, because it is a summary of release notes with no hands-on code, no benchmark method, and no test of the claims.",
+  "Zod Mini's 6x bundle claim comes from one example and is not a general figure.",
+  "Zod's own migration guide is described as large, and the presenter suggests reading it instead of relying on this summary.",
+  "The presenter calls deepPartial an anti-pattern with footguns, and says promise should be replaced with awaiting values directly."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Zod 4's z.toJSONSchema with registry metadata could generate JSON Schema for tool or API definitions, but AgentOS's language is not stated in the notes and this video does not cover agent tooling.",
+   "action": "If any AgentOS TypeScript surface appears (SDK, dashboard, tool-definition layer), evaluate z.toJSONSchema plus .meta() as the single source for tool schemas instead of hand-written JSON Schema."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Nothing in the video touches the harness, checkpoints, loops, or the Claude Code CLI.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

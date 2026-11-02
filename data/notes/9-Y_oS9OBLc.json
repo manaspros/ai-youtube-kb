@@ -1,0 +1,167 @@
+{
+ "one_line": "imec's AI lead benchmarks coding agents on open-weight models vs. APIs and finds that concurrency, GPU utilization and harness choice, not just accuracy, decide when self-hosting pays off.",
+ "summary": "Steven Latré of imec, a Belgian semiconductor research nonprofit, describes moving from closed APIs toward self-hosting open-weight models and renting or owning GPUs. He frames model routing as the first cheap optimization and self-hosting as the next phase, where the design space expands to models, harnesses, hardware and KV cache. His team ran thousands of long-horizon coding runs on SWE-Bench Pro, varying three coding harnesses (Codex, Pi, Claude Code), model size and hardware. The talk reports resolve rates by model tier, GPU rental cost differences, and how many concurrent users a single machine can serve comfortably. Concurrency is presented as more binding than accuracy, and the break-even point for self-hosting depends heavily on GPU utilization. The speaker also finds that the harness can roughly halve token output and GPU wall time at equal accuracy. The data is not yet published; the team promises a public benchmark dataset and a software-hardware alliance.",
+ "speakers": [
+  "Steven Latré"
+ ],
+ "orgs": [
+  "imec"
+ ],
+ "format": "talk",
+ "topics": [
+  "infra-cost-scaling",
+  "inference-serving",
+  "token-cost-efficiency",
+  "local-ai"
+ ],
+ "tags": [
+  "open-weight models",
+  "self-hosting",
+  "TCO",
+  "GPU utilization",
+  "concurrency",
+  "KV cache",
+  "harness comparison",
+  "SWE-Bench Pro",
+  "model routing",
+  "benchmarking"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Cost optimization moves through phases: model routing first, then self-hosting open-weight models, then leasing or owning infrastructure.",
+   "detail": "Model routing is called low-hanging fruit. Once token consumption grows, owning the stack (open-weight hosting, GPU leasing, eventually on-prem) becomes the next lever. Owning infrastructure adds decisions about model trust, harness, hardware architecture, CPU:GPU balance and KV cache.",
+   "t": "2:08"
+  },
+  {
+   "idea": "The comparison should be at the task level and expressed as total cost of ownership, not per-token price.",
+   "detail": "They measured agentic coding tasks rather than chat. Long-horizon tasks are the argument for owning infrastructure, since interactive use with idle time makes the economics different. The benchmark covered accuracy, latency and cost across API and self-hosted setups.",
+   "t": "4:22"
+  },
+  {
+   "idea": "Model quality and hardware cost are a stepwise function, not a linear one.",
+   "detail": "Qwen and DeepSeek reached similar task performance, but the hardware needed for Qwen cost about 4x more to rent. Moving from GLM to Kimi K3 gave roughly 20% more accuracy for about 15% more GPU rental cost. Picking a slightly different model can change the hardware tier entirely.",
+   "t": "8:57"
+  },
+  {
+   "idea": "Concurrency, bounded by memory for weights plus per-user KV cache, can matter more than accuracy.",
+   "detail": "Each concurrent user adds KV cache, so comfortable concurrency fell sharply even on larger hardware. Kimi K3 could reliably serve about four concurrent users and was about 3x slower than the Claude Code baseline. The speaker says concurrency is more important than accuracy for big models on long tasks.",
+   "t": "10:02"
+  },
+  {
+   "idea": "Self-hosting beats the API only above a GPU utilization threshold that depends on hardware tier.",
+   "detail": "For low-tier models on smaller hardware, the GPU needs about 89% utilization to beat the API, which is infeasible for most teams. On large systems (a B200-class system is mentioned), about 15% utilization is enough. GLM-class models were the threshold sweet spot, with about 25% total cost saving for the coding-assistant workload.",
+   "t": "12:37"
+  },
+  {
+   "idea": "Harness choice does not change accuracy much but can change GPU cost by about half.",
+   "detail": "All three harnesses reached similar accuracy across models. With GLM, Codex generated about half the tokens of the other harnesses, which halved wall time on the GPU. On self-hosted infrastructure, the harness is a cost lever even when API-based benchmarks show no difference.",
+   "t": "14:57"
+  },
+  {
+   "idea": "The next steps are a public benchmark dataset and a cross-industry alliance.",
+   "detail": "The team is building a benchmark pipeline into a public dataset to track a fast-moving target of new models and hardware. They are forming an alliance of software and hardware people with customers and chip and infrastructure providers, arguing the two worlds should work more closely together.",
+   "t": "17:18"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "GPU-utilization break-even check for API vs self-host",
+   "how": "Estimate the token spend on the API for your workload. Compare it with the hourly cost of the GPU tier you would need, multiplied by the utilization you can realistically reach. Self-hosting only wins above that utilization. The speaker's numbers were about 89% for low-tier models and about 15% for large systems. Use measured tokens per task, not list prices.",
+   "when": "Before committing to self-hosting open-weight models for agentic work, or when comparing a rented GPU against API spend."
+  },
+  {
+   "name": "Concurrency ramp test on a single inference box",
+   "how": "Run an increasing number of simultaneous long-horizon agent sessions against one model server. Record latency and task success per level. Stop at the point where latency degrades or the tasks fail, and treat that point as the comfortable concurrency. Compare it with the API baseline, not just the model's accuracy.",
+   "when": "When sizing a self-hosted model for multiple users, or before claiming a number of supported concurrent users."
+  },
+  {
+   "name": "Task-level benchmark grid across harness, model and hardware",
+   "how": "Run a fixed set of long-horizon coding tasks (SWE-Bench Pro in this study) across a grid: coding harness (Codex, Pi, Claude Code), model (API plus several open-weight sizes), and hardware tier. For each cell, record resolve rate, latency, tokens generated, and GPU wall time, then compute cost.",
+   "when": "When choosing a stack for agentic coding, or when comparing harnesses on your own infrastructure instead of relying on leaderboards."
+  },
+  {
+   "name": "Measure harness token output and wall time on a paid GPU",
+   "how": "For the same task and model, log output tokens and wall-clock time per harness. Treat token count as a proxy for GPU bill when the GPU is paid for by the hour. Pick the harness with lower token output if accuracy is comparable.",
+   "when": "When the GPU is rented or owned, and accuracy is similar across harnesses."
+  },
+  {
+   "name": "Map model choice to hardware tiers",
+   "how": "Check how the hardware requirement changes between candidate models before choosing between them. Small differences in model size can move you to a much more expensive GPU configuration, so pick the model at the top of the tier you can afford.",
+   "when": "When choosing among open-weight models of similar quality for self-hosting."
+  }
+ ],
+ "tools": [
+  "Codex",
+  "Pi (transcribed as 'Py')",
+  "Claude Code",
+  "SWE-Bench Pro",
+  "Qwen",
+  "DeepSeek",
+  "GLM",
+  "Kimi K3",
+  "Claude Opus (mentioned as a reference point)",
+  "NVIDIA B200-class GPU (transcribed as 'A times B 200')"
+ ],
+ "numbers": [
+  {
+   "claim": "Small open-weight models (up to a few hundred billion parameters, e.g. Qwen and DeepSeek) resolved about 35-40% of SWE-Bench Pro tasks",
+   "t": "7:54"
+  },
+  {
+   "claim": "Kimi K3 reached an 86% resolve rate; the speaker notes possible training-set overlap",
+   "t": "7:54"
+  },
+  {
+   "claim": "Qwen vs DeepSeek: similar application performance, but about 4x higher GPU rental cost for Qwen",
+   "t": "8:57"
+  },
+  {
+   "claim": "GLM to Kimi K3: about +20% accuracy for about +15% GPU rental cost",
+   "t": "8:57"
+  },
+  {
+   "claim": "Kimi K3 supports about 4 reliable concurrent users on the tested hardware, with latency about 3x slower than the Claude Code baseline",
+   "t": "11:10"
+  },
+  {
+   "claim": "Break-even GPU utilization for low-tier models is about 89%; for large systems about 15%",
+   "t": "12:37"
+  },
+  {
+   "claim": "At the GLM-class threshold, total cost of ownership for the coding-assistant workload came out about 25% cheaper than the API",
+   "t": "13:42"
+  },
+  {
+   "claim": "With GLM, Codex produced about half the tokens of the other harnesses, halving GPU wall time at similar accuracy",
+   "t": "14:57"
+  },
+  {
+   "claim": "The study ran thousands of agentic coding runs",
+   "t": "4:22"
+  }
+ ],
+ "hot_takes": [
+  "Concurrency matters more than accuracy when self-hosting big models on long tasks (speaker's conclusion from one hardware set and one benchmark).",
+  "The harness can halve the GPU bill even when accuracy is identical, so harness choice is an infrastructure decision.",
+  "The 86% Kimi K3 result may reflect training-set overlap with SWE-Bench, which the speaker says himself.",
+  "Results come from one benchmark (SWE-Bench Pro coding) and one organization; the full dataset is not yet public, so the numbers are not yet independently checkable."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft runs vLLM on one RTX 5090 with KV-cache strategies and a priority scheduler. The talk's concurrency ramp, GPU-utilization break-even and KV-cache-per-user analysis are the measurements that would back up a capacity claim.",
+   "action": "Add a concurrency ramp test to InferCraft benchmarks: measure latency and task success vs. simultaneous long agent sessions for the chosen open-weight model, and record tokens per task for a break-even estimate against API pricing."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code and uses Codex as a critic. The talk's evidence that the same task can produce very different token counts across harnesses is relevant to token and checkpoint budgeting.",
+   "action": "Record output-token and wall-time totals per run in ProsHarness checkpoints, so runs that use the same model with different harnesses can be compared on cost."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

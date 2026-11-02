@@ -1,0 +1,139 @@
+{
+ "one_line": "Philipp Schmid (Google DeepMind) lists five habits from deterministic software that break when building agents: text as state, handing control to the LLM, errors as inputs, pass-rate evals, and agent-ready tools.",
+ "summary": "Schmid says building agents is an iterative loop of defining instructions, running, observing, and adjusting prompts and tools, unlike the spec-code-test-deploy path of traditional software. He frames the change as moving from a traffic controller who sets every step to a dispatcher who sets the goal and lets the agent pick the route. He argues that state is now text and context, so approvals can carry free-form edits and preferences cannot be reduced to profile flags. He says control must be handed to the model, since fixed intent-based workflows are hard to maintain. Failures should be fed back to the model as inputs and not trigger full restarts of long runs. Unit tests are replaced by evals that measure how often an agent succeeds, graded by LLM judges or human experts with tracing for debugging. Finally, tools must be self-documenting for agents, which see only schemas and docstrings, and the whole approach needs recovery design, balanced reliability thresholds, and a willingness to rebuild as models improve.",
+ "speakers": [
+  "Philipp Schmid"
+ ],
+ "orgs": [
+  "Google DeepMind",
+  "Google"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "evals",
+  "mcp-and-tools",
+  "context-engineering"
+ ],
+ "tags": [
+  "agent-design",
+  "non-determinism",
+  "error-recovery",
+  "pass-rate-evals",
+  "tool-design",
+  "semantic-interfaces",
+  "human-in-the-loop",
+  "agent-reliability"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent development is an iterative loop, not spec-code-test-deploy",
+   "detail": "You define instructions, run the agent, observe what it does, adjust prompts or tools, and run again until it is reliable.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Shift from traffic controller to dispatcher",
+   "detail": "Traditional software controls each step. With agents you define the goal (e.g. get to London) and let the agent choose the steps, even if its route looks odd, as long as the outcome is right.",
+   "t": "1:28"
+  },
+  {
+   "idea": "Text and context are the new state",
+   "detail": "Flags and booleans cannot capture semantic feedback. A user can approve a research plan and also add scope changes such as focusing on the US market and ignoring California. Preferences like Fahrenheit for cooking cannot be modeled as profile fields.",
+   "t": "1:28"
+  },
+  {
+   "idea": "Hand control to the LLM instead of fixed intent workflows",
+   "detail": "A classify-then-branch churn flow is brittle. An agent that understands intent can respond dynamically, for example offering an alternative when a user asks to cancel, and the conversation can change intent midway.",
+   "t": "3:58"
+  },
+  {
+   "idea": "Treat errors as inputs",
+   "detail": "Failures should go back to the model as observations, like user input, so the agent can work around them. Restarting a 5 to 15 minute agent run wastes compute and loses context.",
+   "t": "3:58"
+  },
+  {
+   "idea": "Replace unit tests with evals on success rate",
+   "detail": "Agents are non-deterministic, so the same input may take different steps. A prompt that works one time in ten is not production-ready. Measure pass rate over repeated runs, grade outcomes with an LLM judge or human expert, and trace the steps for debugging.",
+   "t": "5:23"
+  },
+  {
+   "idea": "Design tools for agents, not for developers who already know the API",
+   "detail": "An agent sees only function schemas, docstrings, and tool definitions, not the code or the team's context. Tools need semantic, self-documenting descriptions, including what failures mean.",
+   "t": "8:05"
+  },
+  {
+   "idea": "Design for recovery, build to delete",
+   "detail": "Models and agents are imperfect, especially in longer runs, so recovery must be designed in and reliability thresholds balanced. Software is disposable, so expect to rebuild the same systems as models improve.",
+   "t": "9:35"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Goal-first dispatcher prompting",
+   "how": "Specify the outcome and constraints, not the exact step sequence, and check results against the outcome rather than the path.",
+   "when": "Multi-step tasks where the best route varies per run or per user."
+  },
+  {
+   "name": "Free-text approval with edits",
+   "how": "Instead of accept or deny buttons, let the user reply in natural language to approve a plan with added scope or constraints, and feed that text back into the agent.",
+   "when": "Plan checkpoints such as deep research or long multi-step jobs."
+  },
+  {
+   "name": "Preferences as natural language in context",
+   "how": "Keep user preferences and memory as text the agent reads, rather than as fixed profile fields or flags.",
+   "when": "Personalization that varies by context, such as unit choices per task."
+  },
+  {
+   "name": "Errors as observations",
+   "how": "Pass tool or step failures back to the model as normal input so it can retry, work around them, or add checks, and keep the flow going.",
+   "when": "Long-running agent runs where restarting from scratch is expensive."
+  },
+  {
+   "name": "Repeated-run pass-rate evals with judges",
+   "how": "Run the same task many times, count how often it passes, and score subjective outputs with an LLM-as-judge or human graders. Keep traces for debugging but score the final outcome.",
+   "when": "Before shipping any non-deterministic agent, in place of unit and integration tests."
+  },
+  {
+   "name": "Agent-ready tool definitions",
+   "how": "Write tool names, docstrings, and schemas that explain purpose, parameters, and failure behavior, since the model sees nothing else.",
+   "when": "Exposing existing product APIs or microservices as agent tools."
+  }
+ ],
+ "tools": [
+  "Gemini API",
+  "Gemini"
+ ],
+ "numbers": [
+  {
+   "claim": "Long agent runs take roughly 5 to 15 minutes, so restarting after a failure repeats a lot of compute and can lose context",
+   "t": "5:23"
+  },
+  {
+   "claim": "An agent that succeeds only one time in ten on the same prompt is too flaky to put in production",
+   "t": "6:44"
+  }
+ ],
+ "hot_takes": [
+  "Senior engineers struggle with agents because they apply deterministic habits such as specs, unit tests, and fixed workflows.",
+  "Tools should be written for the model, which sees only schemas and docstrings, not the code or the years of API context.",
+  "Software is disposable; expect to rebuild agent systems many times as models improve."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The eval and error-as-input points apply to AgentOS agent flows, but the talk gives no infrastructure or benchmarks for them.",
+   "action": "For any AgentOS agent flow, add a repeated-run pass-rate check (run N times, report the share that pass) alongside single-run tests."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already does checkpoint and resume of long runs. The talk's point that step errors should go back to the model as observations, rather than restarting, fits that design directly.",
+   "action": "When a step fails inside a ProsHarness long run, return the error to the Claude Code session as input and resume from the last checkpoint instead of restarting the run; measure the pass rate across repeated harness runs."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

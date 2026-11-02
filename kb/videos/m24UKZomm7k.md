@@ -1,0 +1,39 @@
+# Don't Let the LLM Drive - Ornella Bahidika & Joel Allou, Microsoft
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `m24UKZomm7k` · [watch](https://youtu.be/m24UKZomm7k) · **date:** 2026-08-18 · **length:** 6:08 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Ornella Bahidika, Joel Allou · **orgs:** Microsoft
+- **topics:** agent-architecture, voice-multimodal, context-engineering · **tags:** state-machine, harness, voice-tutor, reliability, small-models, control-flow, narrow-prompts
+
+> Microsoft's ACE live voice tutor: run a lesson as a state machine where the model only proposes narrow outputs and a harness validates them and decides the next step.
+
+## Summary
+The speakers from Microsoft present ACE, a live AI voice tutor that runs a full lesson start to finish. They argue that agent reliability is a control problem, not a prompting problem: multi-step agents skip steps, stop early, or loop because the model is asked to track where it is. Their fix is to model a lesson as a small state machine (intro, teach, check, grade, advance, wrap) where each step sends the model one narrow contract. The harness validates the model's output, advances the state, and decides what comes next. They say the same pattern applies to coding agents, runbooks, and onboarding flows. Using this harness, they run the tutor on a small model (Haiku 4.5) instead of a heavier frontier model, which they say saves cost, time, and latency, though no figures are given. Their rule of thumb: if an agent's reliability looks like a coin flip, take the control flow out of the model. The talk is short (about 6 minutes) and has no benchmarks.
+
+## Key ideas
+- **Reliability is a control problem, not a prompting problem** — Adding more rules to the prompt does not fix agents that skip, loop, or end early. The speakers' analogy: the model is the talent and the harness is the director. The model is good at delivering a line but poor at tracking whether it is on step three of six. ([0:00](https://youtu.be/m24UKZomm7k?t=0))
+- **Model the task as an explicit state machine** — The lesson is a small state machine with intro, teach, check, grade, advance, and wrap. The harness, not the model, owns the current state and the allowed transitions. ([0:00](https://youtu.be/m24UKZomm7k?t=0))
+- **Give each model call a narrow contract** — Each step asks the model to do one thing and return it. The model proposes an output; the harness validates it, advances state, and picks the next action. ([0:00](https://youtu.be/m24UKZomm7k?t=0))
+- **Use a smaller model because the harness carries the load** — They contrast a heavy frontier model (Opus 4.7) doing everything with Haiku 4.5 running inside the harness. Scoped inputs per step let the small model perform at the level they need, with savings in money, time and latency. ([1:29](https://youtu.be/m24UKZomm7k?t=89))
+- **Harness everything the model should not decide** — Whiteboard drawing, clearing the queue, the lesson end, and what to say in each section are all harness steps. The model only supplies content for the step it is in. ([2:51](https://youtu.be/m24UKZomm7k?t=171))
+- **Three questions live outside the model** — When the lesson is done, whether the student actually learned, and what comes next are all decided by engineered logic. The model never decides where the lesson stands. ([3:57](https://youtu.be/m24UKZomm7k?t=237))
+- **Decision rule for when to use the pattern** — If an agent's reliability is close to a coin flip, move control flow out of the model and feed it easy, bounded inputs. The same rule is said to apply to coding agents, runbooks and onboarding flows. ([5:08](https://youtu.be/m24UKZomm7k?t=308))
+
+## Techniques
+- **Lesson-as-state-machine harness** — Define the workflow's states (intro, teach, check, grade, advance, wrap) and transitions in code. Each state issues one narrow model call. The harness validates the output, then advances state. *When:* Multi-step agents where skipping, looping or early exit is a real failure, especially with live or latency-sensitive interaction.
+- **Per-step narrow prompts** — Give the model only the input needed for the current step (what to say, what to check). Do not give it the whole lesson or the whole plan. *When:* When the model should execute one scenario at a time and not reason about overall progress.
+- **Model proposes, harness decides** — Treat model output as a proposal. Validate it in code and make the next-step decision in code, not in the model's reply. *When:* Any agent where a wrong decision about completion or the next action is costly.
+- **Right-size the model to the harness** — Move the reasoning burden into the state machine and run each narrow step on a small, cheap, fast model. *When:* When latency and cost matter and each step is simple once the context is scoped.
+- **Reliability coin-flip test** — Ask whether the agent's behaviour is a coin flip. If so, take the decision out of the model and encode it in control flow. *When:* Deciding which parts of an agent to harness versus leave to the model.
+
+## Hot takes
+- The model is the talent and the harness is the director.
+- Don't let the model drive; it can talk.
+- If reliability is a coin flip, take the control flow out of the model.
+- A frontier model doing every step is the wrong default for live, reliable agents.
+
+## Tools mentioned
+Claude Opus 4.7, Claude Haiku 4.5
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness wraps the Claude Code CLI with checkpoint/resume and plan-critique-debate loops. The ACE idea of explicit states, narrow per-step calls, and harness-owned transitions is close to that design and could sharpen which steps are harnessed versus left to the model. → *Map one ProsHarness long run to explicit states with narrow per-step prompts and code-owned transitions, and check whether checkpoints line up with state transitions.*
+- **agentos** (1/3): AgentOS is a proxy and infra layer and does not appear to manage multi-step agent workflows. The state-machine-with-narrow-contracts pattern is relevant only if AgentOS hosts multi-step agents. → *Read the ACE state-machine idea as a possible design for a multi-step workflow runner, if one is added later. No change now.*

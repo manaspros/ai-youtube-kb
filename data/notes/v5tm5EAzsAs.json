@@ -1,0 +1,162 @@
+{
+ "one_line": "A five-step regression loop for agents built on production traces, evaluators and CI gates, so a prompt or policy change is judged on numbers before it merges. Vendor-led demo of Arize.",
+ "summary": "Sofia Jakovcevic (Arize AI) argues that agent regressions show up at runtime, not in the code diff, so a one-line prompt change can improve one metric and quietly hurt another. Her example: a security-driven \"confirm before acting\" line raised action safety by 17 points but cut task completion by 17 points, netting zero on average. She proposes a five-step loop: build a dataset from production traces, define evaluators (LLM-as-judge, code, or ML based), run a baseline experiment, make one change and compare, then run the experiment as a required CI check on every PR. Every production failure should be added back to the regression set. The second half argues that agents, given access to traces through skills, should investigate failures and propose fixes themselves, with humans as the bottleneck. Most of the content is a live walkthrough of the Arize UI (prompt and agent playgrounds), so treat the product claims as vendor claims. The regression framing itself is practical and reusable with any tracing backend.",
+ "speakers": [
+  "Sofia Jakovcevic"
+ ],
+ "orgs": [
+  "Arize AI"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "observability",
+  "testing-verification",
+  "multi-agent"
+ ],
+ "tags": [
+  "regression-testing",
+  "llm-as-judge",
+  "ci-gate",
+  "agent-evals",
+  "trace-driven-development",
+  "prompt-regression",
+  "agent-skills",
+  "golden-dataset",
+  "agent-playground",
+  "self-improvement"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents fail at runtime, not at the code level, so the diff shows what changed but only traces show what the agent actually does.",
+   "detail": "A one-line system prompt edit changes trajectories: more steps, different sub-agent handoffs, different tool calls. Those trajectories exist only in the observability backend, which the speaker calls the new source of truth.",
+   "t": "4:16"
+  },
+  {
+   "idea": "A single-dimension improvement can net to zero or worse for the agent as a whole.",
+   "detail": "Example: action safety +17 points, task completion -17 points, because the agent now asks for confirmation before every action and sessions are left unfinished. Average is net zero. Per-metric evals catch what a code review cannot.",
+   "t": "3:18"
+  },
+  {
+   "idea": "Build the regression dataset from real production traces in four buckets.",
+   "detail": "Include representative average workflows, known failures (errors, low metric scores), edge cases that are rare but important, and successful workflows you want to protect. Including the successful ones is what catches a fix that breaks something that already worked.",
+   "t": "6:33"
+  },
+  {
+   "idea": "Turn subjective quality dimensions into numeric scores with evaluators.",
+   "detail": "Hallucination, accuracy, tool trajectory and step efficiency are scored by LLM-as-judge, which can give binary or 0-5 labels. Code evaluators suit deterministic checks and ML-based evaluators are also possible. Use code for deterministic checks and LLM judges for non-deterministic ones.",
+   "t": "7:45"
+  },
+  {
+   "idea": "Run a baseline, change one thing at a time, and compare before deploying.",
+   "detail": "Run the agent over the whole dataset with the evaluation suite to get a baseline. Then change one thing (prompt, handoff, tool, or model) and rerun. This also gives an ROI test for switching to a more expensive model, judged on eval results rather than intuition.",
+   "t": "10:02"
+  },
+  {
+   "idea": "Make the experiment a required CI check on every pull request.",
+   "detail": "Each PR runs the experiment workflow (the speaker shows GitHub Actions) and does not merge until it meets the regression criteria listed for the team.",
+   "t": "11:16"
+  },
+  {
+   "idea": "Every production failure should become a new regression test.",
+   "detail": "Failed production traces go back into the dataset, so the regression suite grows with each incident.",
+   "t": "16:15"
+  },
+  {
+   "idea": "Humans are the bottleneck in the loop, so the speaker proposes agents investigate traces and propose fixes.",
+   "detail": "Coding agents that open PRs without access to production traces are working blind. Connecting coding agents to observability through skills lets them check real runtime behavior before proposing a change. This is the speaker's forward-looking claim, not a result she measured.",
+   "t": "17:18"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Five-step trace-driven regression loop",
+   "how": "1) Pull production traces into a dataset (representative, known failures, edge cases, protected successes). 2) Define evaluators per metric. 3) Run a baseline experiment: the agent over all dataset rows, then score with the evaluators. 4) Change one thing (prompt, model, tool, handoff, policy), rerun, and compare to baseline. 5) Put the experiment in CI so each PR must pass the criteria. Feed failed production traces back into the dataset.",
+   "when": "Before merging any change to prompts, policies, tools, models, or multi-agent wiring, especially one-line prompt edits that seem harmless."
+  },
+  {
+   "name": "Four-bucket dataset composition",
+   "how": "Sample from real traffic and deliberately include: typical workflows, failing or low-scoring runs, rare edge cases, and successful runs you want to protect from regression. The speaker's demo used a 100-row dataset built this way.",
+   "when": "When building the first regression set, or when a new incident should be captured as a test."
+  },
+  {
+   "name": "LLM-as-judge plus code evaluators",
+   "how": "Write a judge prompt that labels each span or trace (binary 0/1 or a 0-5 scale), for example task completion (complete or incomplete) and action safety. Use code evaluators for deterministic checks such as security or format rules. Keep the rubric in the judge prompt so scores are reproducible.",
+   "when": "When a quality dimension (hallucination, task completion, efficiency) is hard to check by hand but you need a number to gate on."
+  },
+  {
+   "name": "Side-by-side prompt versions in a playground",
+   "how": "Load prompt v1 from the prompt hub, duplicate it, edit one line, and run both versions against the same dataset with the same evaluators. Compare score deltas per metric, then check latency, cost, and error rate on the run.",
+   "when": "When iterating on a prompt change and you want to see its per-metric effect before any deploy."
+  },
+  {
+   "name": "Agent playground against a remote agent",
+   "how": "Expose the multi-agent system over HTTP and register it as a remote agent in the eval tool. Each dataset row then calls the full system, and the evals score the end-to-end output. The speaker says this lets you test changes to how sub-agents talk to each other directly in the codebase.",
+   "when": "When the failure is in orchestration (handoffs, sub-agent calls) and single-prompt testing would miss it."
+  },
+  {
+   "name": "Run experiments from coding agents through skills",
+   "how": "Install the vendor's public agent-skills repository so a coding agent can run datasets, experiments and trace queries through the SDK, REST, or CLI. The agent then sees production traces while writing the change.",
+   "when": "When you want coding agents to check real runtime behavior before opening a PR."
+  },
+  {
+   "name": "CI gate on experiment results",
+   "how": "Add a GitHub Actions job (or equivalent) that runs the experiment against the team's evaluators on each PR and fails when the regression criteria are not met.",
+   "when": "Once the loop works locally and you want it enforced on every change."
+  }
+ ],
+ "tools": [
+  "Arize (Arize AI observability backend and platform, incl. prompt hub, prompt playground, agent playground, experiments, datasets)",
+  "Arize agent skills repository (public, for coding agents)",
+  "GitHub Actions (CI example)",
+  "Arize SDK / REST / CLI (run experiment)",
+  "LLM-as-judge evaluators (pre-built: hallucination, user frustration, security checks; custom evaluators supported)"
+ ],
+ "numbers": [
+  {
+   "claim": "Single-line 'confirm before acting' policy change: action safety +17 points, task completion -17 points, overall average net zero.",
+   "t": "3:18"
+  },
+  {
+   "claim": "Five-step loop: dataset, evals, baseline experiment, change and compare, CI gate.",
+   "t": "6:33"
+  },
+  {
+   "claim": "Demo dataset: 100 rows of edge cases, known failures and protected successful workflows.",
+   "t": "12:22"
+  },
+  {
+   "claim": "Combined candidate after several prompt and model variants: action safety +18 points, task completion +6 points.",
+   "t": "12:22"
+  },
+  {
+   "claim": "Illustrative cost trade-off: a newer model described as about 5x more expensive, to be justified by eval scores before switching (hypothetical example, no measured cost).",
+   "t": "10:02"
+  }
+ ],
+ "hot_takes": [
+  "Traces, not diffs, are the real source of truth for agent behavior.",
+  "Every production failure should become a permanent regression test.",
+  "Coding agents that open PRs without production trace access are 'pushing PRs blind.'",
+  "The next frontier is agents investigating their own traces and proposing fixes, with humans no longer the bottleneck (a forward-looking claim, not shown with results).",
+  "Vendor-led talk: the live demo is mostly the Arize UI, and the platform's built-in evaluators and skills are presented as the way to do this. The loop itself does not need Arize."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already has RAGAS evals and Locust load tests, and the L1 proxy sees every request. A trace-derived regression set would give the eval layer a CI gate for prompt, policy and routing changes.",
+   "action": "Add a 'golden trace' regression set built from AgentOS proxy logs in four buckets (typical, failing, edge, protected successes) and run it as a CI check on any change to prompts, budgets, or routing rules."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness drives Claude Code runs and PR-producing loops. The talk's warning that coding agents push PRs blind without runtime context applies to its plan, critique and loop stages.",
+   "action": "Add a ProsHarness step that replays a fixed trace-derived eval set before an agent-authored PR is marked ready, and treat each failed run as a new test case."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

@@ -1,0 +1,47 @@
+# MCP Apps: Extending the Frontier — Ido Salomon & Liad Yosef
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `-jY2T2PiJBE` · [watch](https://youtu.be/-jY2T2PiJBE) · **date:** 2026-08-18 · **length:** 18:38 · **format:** talk · **quality:** 3/5 · **depth:** intro
+- **speakers:** Ido Salomon, Liad Yosef · **orgs:** Anthropic, OpenAI, Aura, Shopify, Hugging Face, PostHog, Block, Postman, ElevenLabs, Autodesk, Google, GitHub, LibreChat
+- **topics:** mcp-and-tools, agent-architecture, product-ux · **tags:** mcp-apps, mcpui, mcp, interactive-ui, generative-ui, host-control, a2ui, webmcp, agentic-web, sandboxed-iframe, app-tools
+
+> Ido Salomon and Liad Yosef, the creators of MCPUI and maintainers of the MCP Apps spec, explain how MCP Apps lets servers ship interactive UI into chat hosts and how control of the user journey shifts to the host.
+
+## Summary
+The speakers argue that text is a poor interface for chat-based tools, and that companies want their own branded UI inside assistants rather than being reduced to text. MCP Apps, an official MCP extension co-developed with Anthropic and OpenAI and built on the earlier MCPUI project, standardizes two things: how UI is transmitted (HTML served as an MCP resource linked to a tool call) and how that UI talks back to the host (events sent via a callback, with the host deciding whether to call a tool or run a prompt). They walk through a PostHog funnel example in Claude to show branded, interactive widgets and clicks that feed back into the model. They frame the shift as a move from browsing tabs to an assistant composing UI "atoms" from many services, with the host, not the app, controlling the flow for auditability. The roadmap includes reusable views and "AppTools" (host or chat calling into an app's view, akin to Google's WebMCP), plus interoperability with declarative and generative UI specs such as A2UI. The talk closes with adoption claims and a distribution pitch built on ChatGPT user numbers.
+
+## Key ideas
+- **Text is the worst interface for chat tools, and this is the main blocker for companies building MCP servers: they do not want to be reduced to a textual database or lose their brand identity.** — The proposed fix is for apps to send their own UI chunks into the chat so the user sees the brand (the speaker's examples are Shopify, Hugging Face and Monday). ([0:08](https://youtu.be/-jY2T2PiJBE?t=8))
+- **MCP Apps is the official MCP extension, built on MCPUI and the Apps SDK, and it standardizes both UI transport and two-way app-to-host communication.** — MCPUI was created by Ido in May of the previous year. Anthropic and OpenAI partnered on the official extension a few months before the talk. ([2:09](https://youtu.be/-jY2T2PiJBE?t=129))
+- **The host keeps control of the flow. An app does not message its backend directly; it sends an event to the host, which decides whether to call a tool on the app's MCP server.** — Example: a Spotify widget's favorite button sends a user-clicked event to the host, and the host chooses to call the favorite tool. ([5:51](https://youtu.be/-jY2T2PiJBE?t=351))
+- **Architecture: the tool call links to an MCP resource that returns HTML. The host renders that HTML in a sandbox through a React or web component, with a callback that carries events back up to the model.** — The server-side code is described as just registering a resource with a prefix and its HTML. Resources are often pre-loaded rather than fetched at call time. ([8:47](https://youtu.be/-jY2T2PiJBE?t=527))
+- **The speakers frame the future web as an assistant composing small UI atoms from many services, so the assistant, not each site's dashboard, owns the journey.** — They give a multi-service anniversary-planning example. They say that under this model the app cannot control the user journey, and that everything goes through the chat for auditability. They describe three control levels, but the captions only spell out two: the app notifies the chat, or it asks the chat to run a prompt. ([10:07](https://youtu.be/-jY2T2PiJBE?t=607))
+- **Roadmap: reusable views for heavy apps (for example, a 3D renderer that should not be re-rendered every turn) and AppTools, where the chat calls into an app's view. The speakers say AppTools is in the spec now.** — They note that Google's WebMCP is the comparable idea and that MCP Apps standardizes it as AppTools. ([14:20](https://youtu.be/-jY2T2PiJBE?t=860))
+- **MCP Apps is agnostic to how UI is generated. It sits on a spectrum from a predefined iframe (the black box) through declarative specs (JSON render, A2UI) to fully generative UI, and interoperability guides are in progress.** — The speakers say the same app can run in LibreChat and ChatGPT. They also claim Claude's generative UI feature is built on MCP Apps. ([15:41](https://youtu.be/-jY2T2PiJBE?t=941))
+
+## Techniques
+- **Serve UI as an MCP resource linked to a tool call** — Register a resource (with a prefix) that returns the HTML for the widget and link the tool call to it. The host consumes the resource, often pre-loaded, and renders it in a sandbox with a callback for events. The speaker's code-level detail is only described verbally; no exact API names are shown. *When:* Any MCP server that should return a branded or interactive visual instead of a text blob, for example dashboards, funnels or product cards.
+- **Host-mediated event flow from app to model** — A UI click sends an event through the callback to the host. The host then either calls a server tool, reads a resource, or sends a prompt back to the model. The app never talks to its backend directly from the widget. *When:* Interactive widgets where the agent or host should keep control and see every step (auditability), for example approvals, step-through explanations or multi-step flows.
+- **Three control levels for app-driven steps** — The app can notify the chat that something happened, or ask the chat to run a prompt and hand off responsibility. The captions cut off the third level. Sources cited are the spec and the working group. *When:* Deciding how much autonomy a widget gets over the conversation.
+- **Interop: wrap one generative UI payload for several hosts** — Write A2UI from the server and ship it to Gemini, or wrap the same content as an MCP App to ship it to ChatGPT, and the reverse. The speakers say the app is the same codebase across hosts such as LibreChat and ChatGPT. *When:* Shipping one UI implementation to multiple chat clients without rewriting it per platform.
+
+## Numbers
+- ChatGPT reportedly has 800 million weekly users, about 10% of world population (speaker cites Sam Altman, a few months earlier). ([16:58](https://youtu.be/-jY2T2PiJBE?t=1018))
+- Speaker says the user base grew by over 1 billion in the last few months (unsourced). ([16:58](https://youtu.be/-jY2T2PiJBE?t=1018))
+- Speaker says it took the web about 13 years to reach that user count (unsourced comparison). ([16:58](https://youtu.be/-jY2T2PiJBE?t=1018))
+- Speaker says the addressable market is about 170 times the Apple App Store's at launch (unsourced comparison). ([16:58](https://youtu.be/-jY2T2PiJBE?t=1018))
+- MCP Apps working group meets every three weeks. ([4:29](https://youtu.be/-jY2T2PiJBE?t=269))
+- MCPUI was created in May of the previous year. ([2:09](https://youtu.be/-jY2T2PiJBE?t=129))
+
+## Hot takes
+- Text is the worst way to convey information, and companies that refuse to build MCP servers do so because they will not be reduced to a text database.
+- 'No application will control the user journey anymore'; the host controls the flow and everything goes through the chat.
+- 2026 will be the year MCP Apps becomes the global standard for UI.
+- The 800M-weekly-user and 170x-App-Store figures are vendor-style growth framing from speakers who maintain the spec. None are sourced, and they are used to sell distribution through chat hosts.
+- Several capabilities (AppTools, Claude's generative UI as MCP Apps) are presented as already standardized or shipping, but the captions give no spec links or version numbers to verify this.
+
+## Tools mentioned
+MCP (Model Context Protocol), MCP Apps (official MCP extension), MCPUI, MCP Apps SDK / spec repo (spoken as 'Xtaps' in captions; the official model context protocol repository), ChatGPT Apps / Apps SDK, Claude (including its generative UI feature), VS Code, Slack, Cursor, GitHub Copilot, Goose, Block agent e-commerce, Postman, ElevenLabs, Shopify MCP app, Hugging Face, PostHog, Google Calendar, Amazon, Booking.com, LibreChat, WebMCP (Google), A2UI, JSON render, AgentCraft (speaker's own project), Aura (research lab co-founded by Liad), OpenClaw, Pi
+
+## Relevance to our work
+- **agentos** (1/3): AgentOS is an OpenAI-compatible proxy with a policy/audit layer. A UI widget that routes events through the host is a separate concern, but the host-controlled flow maps onto the governance pillars. → *Before designing an approval or audit UI in AgentOS, read the MCP Apps spec's host-control section to compare how it separates app events from host decisions.*
+- **prosharness** (1/3): ProsHarness plans phone-driven approvals for Claude Code runs. The speakers' model of a host deciding whether to act on a widget event is a relevant pattern for approval UIs, though this talk is about chat clients and not CLI harnesses. → *Consider modelling phone approval prompts as host-mediated events (the widget proposes, the harness decides and records) when designing the approval flow.*

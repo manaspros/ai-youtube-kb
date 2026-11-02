@@ -1,0 +1,49 @@
+# Redis 8 Just Made Every Other Database Obsolete
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `b8yANadT0Y4` · [watch](https://youtu.be/b8yANadT0Y4) · **date:** 2025-11-02 · **length:** 6:38 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Redis, Better Stack
+- **topics:** dev-tools, data-engineering · **tags:** redis, redis-8, time-series, redisjson, vector-sets, downsampling, docker, express, session-store, databases
+
+> Six-minute Redis 8 walkthrough of time-series downsampling and RedisJSON, using a sensor dashboard and a user-profile app. Command-level detail is useful; the title overclaims and no benchmarks are shown.
+
+## Summary
+The presenter tours Redis 8's open-source additions, covering two of the four new structures: time series and JSON. He first shows a monitoring dashboard with six fake sensors (three temperature, three humidity) that push values to Redis every five seconds, with raw series kept for seven days and a 30-day series fed by a one-minute average rule. The dashboard's 6-hour, 24-hour and 7-day views are served by range queries that bucket data at query time (5-minute, 15-minute and 1-hour buckets). He then shows a small Express user-management app where Redis stores credentials in hashes, profiles and login history as JSON documents, and sessions. He says the JSON commands were more capable than he expected. He closes by saying vector sets and probabilistic structures are left for a possible follow-up. The video is a feature tour with code, not a comparison or benchmark, despite the title's claim that Redis makes other databases obsolete.
+
+## Key ideas
+- **Redis 8 adds time series, JSON, vector sets and probabilistic structures to the open-source build, and claims 30+ performance improvements over Redis 7.** — Framing claim only. The speaker does not measure the performance improvements in the video. ([0:00](https://youtu.be/b8yANadT0Y4?t=0))
+- **Time series is set up per sensor with a retention period, plus a second downsampled series fed by a rule.** — Raw series use a seven-day retention. A second series with 30-day retention gets a rule that averages values into one-minute buckets. Writes arrive every five seconds from six sensors. ([1:19](https://youtu.be/b8yANadT0Y4?t=79))
+- **Aggregation happens at query time in Redis, and the query picks raw or downsampled data by time window.** — A TS range query runs on each button click. Shorter windows read the raw key and longer windows read downsampled keys, bucketed at 5 minutes (6 hours), 15 minutes (24 hours) and 1 hour (7 days). The dashboard needs no client-side aggregation code. ([2:33](https://youtu.be/b8yANadT0Y4?t=153))
+- **RedisJSON stores profile and login-history data as JSON documents, and updates individual fields in place.** — JSON.SET writes the profile, JSON.GET reads it, and array append and numeric increment commands update the login history and login count without rewriting the whole object. ([3:59](https://youtu.be/b8yANadT0Y4?t=239))
+- **Credentials are stored as Redis hashes with HSET, and the Express app uses Redis for sessions.** — Username and password records are hashes. A new browser session is not logged in, which shows session state living in Redis. ([5:25](https://youtu.be/b8yANadT0Y4?t=325))
+- **The presenter's verdict is that the extra features were more usable than he expected after he tried them.** — He says he first thought the feature list was too much. He still tested only two of the four new structures, and he has not evaluated vector sets or probabilistic structures in this video. ([5:25](https://youtu.be/b8yANadT0Y4?t=325))
+
+## Techniques
+- **One raw time-series key per sensor with a retention window** — Create one time series per sensor ID with a seven-day retention, and write readings with TS.ADD as they arrive every five seconds. The speaker's code shows the retention on creation. The exact flag syntax is not shown in the transcript. *When:* Per-entity metrics that need a short raw history and fast ad hoc reads, such as sensor or per-agent telemetry.
+- **Automatic downsampled series via a compaction rule** — Create a second time series with longer retention (30 days) and a rule from the raw key that averages values into one-minute buckets (created with a time-series rule command). Writes go only to the raw key and the rule fills the downsampled key. *When:* Long-range dashboards where raw resolution is too heavy, to avoid running a separate rollup job.
+- **Pick the series and bucket size by requested time window** — On each dashboard request, choose the raw key for short windows and the downsampled key for long windows. Call TS.RANGE with the start timestamp and an aggregation bucket: 5 minutes for 6 hours, 15 minutes for 24 hours, 1 hour for 7 days. *When:* Interactive charts over several time ranges where bucket size should match the zoom level.
+- **Store profile and history as JSON with per-field commands** — Store the profile with JSON.SET and read it with JSON.GET. Append login timestamps with the JSON array-append command and count logins with the JSON numeric-increment command, instead of reading and rewriting the whole document. *When:* Documents that change in small pieces, such as counters and append-only histories on a user record.
+- **Credentials as hashes and sessions in Redis** — Store username and password records with HSET. Use a Redis-backed session store in the Express app so session state lives in Redis. *When:* Small auth state for a prototype where a separate session service is not yet needed. The video does not discuss security hardening.
+- **Local Redis for the demo** — Run Redis in Docker and connect the Node/Express app to it. The video does not show the exact docker run command or connection code. *When:* Trying Redis 8 features locally without installing the server on the host.
+
+## Numbers
+- Six fake sensors (three temperature, three humidity), each sending a value every 5 seconds ([0:00](https://youtu.be/b8yANadT0Y4?t=0))
+- Over 30 performance improvements in Redis 8 (vendor claim, not measured in the video) ([0:00](https://youtu.be/b8yANadT0Y4?t=0))
+- Raw time series retention of 7 days, downsampled series retention of 30 days ([1:19](https://youtu.be/b8yANadT0Y4?t=79))
+- Downsampling rule averages values into 1-minute buckets ([1:19](https://youtu.be/b8yANadT0Y4?t=79))
+- Query bucket sizes: 5 minutes (6-hour view), 15 minutes (24-hour view), 1 hour (7-day view) ([2:33](https://youtu.be/b8yANadT0Y4?t=153))
+- The video covers 2 of Redis 8's 4 new structures in the open-source build ([0:00](https://youtu.be/b8yANadT0Y4?t=0))
+
+## Hot takes
+- Title overclaims: 'made every other database obsolete' is not supported by any comparison, benchmark or workload in the video.
+- 'Really fast' and 'that is wild' are shown visually on a six-sensor dashboard with no latency or throughput numbers.
+- The speaker says aggregation is 'not happening on the client or the server' but the TS range query runs inside Redis; the wording is loose.
+- The 'who needs MongoDB' line is a joke, not an argument. MongoDB is never compared.
+- The speaker's stated opinion (initially skeptical, then impressed) rests on a demo of two of four features. The video does not test edge cases, scale, or failure behaviour.
+- Quality is capped at 2 because of the hype title with thin substance and no benchmarks, although the code walkthrough has useful command-level detail.
+
+## Tools mentioned
+Redis 8, RedisTimeSeries (TS.CREATE, TS.ADD, TS.RANGE, time-series rules), RedisJSON (JSON.SET, JSON.GET, array append, numeric increment), Redis hashes (HSET), Docker, Express.js, DuckDB (named as comparison), ClickHouse (named as comparison), MongoDB (named as comparison), Redis 7 (named as baseline)
+
+## Relevance to our work
+- **agentos** (1/3): The L3 storage roadmap mentions Redis multi-instance budget counters. Redis time series could hold per-minute budget or latency rollups, but the video shows only average aggregation and no benchmarks, and Postgres/TimescaleDB is already in the stack. → *Benchmark one per-tenant budget-usage query (bucketed TS.RANGE on Redis versus the Timescale path) before choosing either for L3 rollups.*
+- **general** (1/3): Redis 8 bundles JSON and time-series features in the open-source build, which can reduce the number of services in a small self-hosted stack. → *Note Redis 8's built-in JSON and time-series modules when choosing a store for small self-hosted services, and verify licensing and feature gaps first.*

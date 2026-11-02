@@ -1,0 +1,147 @@
+{
+ "one_line": "Arturo Nunez (ex-Unity, MongoDB) pitches Nereu, a tag-driven, describe-it-to-build game engine where an AI assistant (Bibi) edits scenes via an Asset Tag System, so creators never touch engine vocabulary or code.",
+ "summary": "The speaker argues that game engines should move from component and parameter setup toward describing intent in game-design language. In Nereu, every asset is an entity with tags (ECS-style), and systems query those tags to drive behavior. An LLM assistant named Bibi reads the available tags and tools, then adds or removes tags based on a natural-language request. Context is assembled from the scene, the asset library and the game genre, and it is trimmed with a level-of-detail idea so nearby objects get more detail. Assets were tagged by a vision model across roughly 6,000 to 7,000 models. The talk is an early-stage product demo and vision talk, with no benchmarks or measured results. The speaker says the tool is in closed alpha and built iteratively with Claude Code. The main open problem he names is that the LLM still needs to be guided by the vocabulary of the engine, otherwise it reinvents the same code each time.",
+ "speakers": [
+  "Arturo Nunez"
+ ],
+ "orgs": [
+  "Nereu",
+  "Unity",
+  "MongoDB",
+  "Unreal"
+ ],
+ "format": "talk",
+ "topics": [
+  "vibe-coding-app-building",
+  "agent-architecture",
+  "product-ux",
+  "context-engineering"
+ ],
+ "tags": [
+  "game-engine",
+  "entity-component-system",
+  "asset-tagging",
+  "natural-language-authoring",
+  "level-of-detail-context",
+  "vision-model-tagging",
+  "closed-alpha",
+  "claude-code"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Describe intent, not implementation",
+   "detail": "The speaker wants creators to describe a game in game-design language (for example 'move with WASD', 'double jump', 'when you collect a coin, increase the score') rather than set up meshes, renderers, colliders and sliders.",
+   "t": "5:18"
+  },
+  {
+   "idea": "Every asset is an entity with tags, and systems act on tags",
+   "detail": "Nereu borrows entity-component-system and data-oriented design. Assets carry tags, and systems query all entities with a given tag set (for example vehicle plus drivable) and act on them. Any object can get a behavior just by receiving a tag.",
+   "t": "9:14"
+  },
+  {
+   "idea": "The LLM edits a scene only through a fixed set of tools",
+   "detail": "The assistant knows the available tools and tags, and it applies changes by adding or removing tags. The engine has no scripting layer by design. Behavior logic is JavaScript that runs in the browser, and power users can extend it.",
+   "t": "10:36"
+  },
+  {
+   "idea": "Context is limited with level-of-detail",
+   "detail": "Rather than sending the full scene, the context is built like level-of-detail rendering. Objects near the user or the current selection get full tag and setting detail, and distant ones are reduced to a bare mention of their position. The context refreshes as the user edits.",
+   "t": "15:05"
+  },
+  {
+   "idea": "Vision models are used to label a large asset library",
+   "detail": "With about 6,000 to 7,000 assets, typing descriptions by hand was not realistic. The speaker took screenshots of each asset, ran a vision model on them, and generated descriptions from the screenshots and file names.",
+   "t": "14:07"
+  },
+  {
+   "idea": "Genre and mood must be decomposed into engine parameters",
+   "detail": "A request such as 'a scary platformer' has to be mapped onto lighting and post-processing settings as well as the tags. The speaker calls this the hardest part of the composing.",
+   "t": "11:38"
+  },
+  {
+   "idea": "Build the engine with the coding agent and prune features",
+   "detail": "The speaker discusses features with domain experts and then builds them with Claude. He removes settings that users do not use, and each new tool is added to the assistant's tool definitions as it is built.",
+   "t": "12:43"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Entity tags as an intent layer over ECS",
+   "how": "Describe assets with tags such as character, animated, drivable, and let systems query the tag sets and run the behavior. Keep the tag vocabulary small and documented so an LLM can compose it.",
+   "when": "When many domain objects need to share behaviors, and users should author by describing them, not by configuring components."
+  },
+  {
+   "name": "LLM-as-editor with a tool-only interface",
+   "how": "The assistant gets the current scene summary, the available tools, and the asset library. It applies changes only through tool calls (add or remove tags), so every change is structured and reversible.",
+   "when": "When an agent edits a domain structure that a non-expert user has to be able to trust and understand."
+  },
+  {
+   "name": "Level-of-detail context assembly",
+   "how": "Give full information for nearby or selected items and a coarse summary for distant ones. Re-derive the context as the user moves around and edits.",
+   "when": "When a scene or project is too big to send in full and the context window is the bottleneck."
+  },
+  {
+   "name": "Vision-model asset captioning",
+   "how": "Render each 3D asset to a screenshot, run a vision model on it, and combine the description with the asset name and file to create searchable metadata.",
+   "when": "When a large library of unlabeled assets must be searched or matched by natural-language description."
+  },
+  {
+   "name": "Domain expert in the loop while building with a coding agent",
+   "how": "Talk to domain experts about a feature, bring their input into a planning session with the coding assistant, build it, and then remove features that users do not use.",
+   "when": "When building a tool that needs domain judgment and needs to stay simple as it grows."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Unity",
+  "Unreal",
+  "vision model"
+ ],
+ "numbers": [
+  {
+   "claim": "About 6,000 to 7,000 assets in the library were labeled with a vision model.",
+   "t": "14:07"
+  },
+  {
+   "claim": "A scene in the demo had about 100 assets, most of them grass that could be ignored.",
+   "t": "15:05"
+  },
+  {
+   "claim": "The speaker worked at Unity for almost 10 years.",
+   "t": "3:58"
+  },
+  {
+   "claim": "The tool is in closed alpha, with a waitlist. No users or adoption numbers are given.",
+   "t": "16:58"
+  }
+ ],
+ "hot_takes": [
+  "The next game engine should have no manual, and the context should be game design rather than the engine's vocabulary.",
+  "Most game-engine complexity (sliders, boilerplate components) is avoidable and should be hidden behind tags.",
+  "World models will be a separate medium from traditional games, and real-time 60fps at 4K is still far off."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "No infrastructure, gateway, or agent-serving content. The talk is about a game engine authoring tool.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Its tag-based intent layer and LLM-as-editor with a tool-only interface loosely resemble harness tool design, but the talk offers no harness mechanics.",
+   "action": "Optional: keep the constraint that the LLM can change state only through a small, documented set of tools, and check that ProsHarness's own tool surface follows it."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Concrete context-assembly ideas (level-of-detail context, refresh on edit) and a practitioner account of building a tool with Claude Code and pruning features.",
+   "action": "Try a level-of-detail context builder for large inputs: full detail for the active item and a summary for the rest, refreshed on each turn."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

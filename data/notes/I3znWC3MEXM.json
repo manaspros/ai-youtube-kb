@@ -1,0 +1,152 @@
+{
+ "one_line": "Kim Maida (Keycard) shows why API keys give agents overprivileged, unattributed access, and how OAuth token exchange (RFC 8693) per tool call, with policy checked before minting, fixes it.",
+ "summary": "The speaker opens with a demo of an incident-triage agent that uses one kitchen-sink API key. It renews a certificate, drops a production billing database, and scales up spend, with no record of which user or agent acted. He maps the agent execution path (user, runtime, model, MCP client, MCP server, resource) and says access control can sit at several points in it. His proposed fix is a security token service that runs OAuth token exchange (RFC 8693) on every tool call, so the agent gets a narrow, audience-bound, short-lived token only after policy approves. Rerunning the same demo, the database drop never gets a credential, restarts need a role-gated human approval, and scaling goes through because the user is allowed to do it. He argues this uses existing standards, not a new spec, and works with any OAuth identity provider, MCP server, or agent. Q&A covers where the barrier sits, why the token must be narrowed, and how to choose scope granularity.",
+ "speakers": [
+  "Kim Maida"
+ ],
+ "orgs": [
+  "Keycard"
+ ],
+ "format": "talk",
+ "topics": [
+  "security-guardrails",
+  "mcp-and-tools",
+  "governance-compliance",
+  "agent-architecture"
+ ],
+ "tags": [
+  "agent identity",
+  "OAuth token exchange",
+  "RFC 8693",
+  "security token service",
+  "least privilege",
+  "MCP authorization",
+  "human in the loop",
+  "policy engine",
+  "scopes",
+  "audit log"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents using a single API key are overprivileged and unattributed.",
+   "detail": "In the demo the agent used one key to read tickets, renew a cert, drop a billing DB, restart prod, and scale up. The audit log showed key use but not which user or agent acted. Human-in-the-loop alone does not fix this, since consent-fatigued people approve too much.",
+   "t": "1:53"
+  },
+  {
+   "idea": "Access control can sit at several points in the agent execution path.",
+   "detail": "The path runs user to runtime (CLI, SDK or app) to model to MCP client to MCP server to resource API, and back up the loop. Open standards let you add control at these points, and the speaker says the answer is more than plain OAuth.",
+   "t": "5:52"
+  },
+  {
+   "idea": "Use token exchange (RFC 8693) to mint a narrow token for each tool call.",
+   "detail": "The user signs in and delegates a subset of their permissions. The runtime, as an OAuth client with its own credentials or workload identity, then asks the security token service for access to one tool call only, sending the user's subject token along.",
+   "t": "8:15"
+  },
+  {
+   "idea": "Evaluate policy before the credential is minted.",
+   "detail": "Policy checks the agent identity, the user on whose behalf it acts, the user's permissions and the requested access. If it denies, the credential never exists, so there is nothing to leak or replay. This is the core claim of the talk.",
+   "t": "14:02"
+  },
+  {
+   "idea": "Tokens should be audience-bound, short-lived and never stored.",
+   "detail": "The downstream token names only the target MCP server as audience and usually expires within a few minutes. The MCP client uses it as a bearer token, and the MCP server discards it after the call.",
+   "t": "10:49"
+  },
+  {
+   "idea": "Human approval should itself be a policy check.",
+   "detail": "When the agent asks for a risky action such as a restart, the user approves, but policy also requires a specific role. The approver's own permissions limit what they can allow, which blocks rubber-stamping.",
+   "t": "14:02"
+  },
+  {
+   "idea": "Scope the agent's token to the tool call, not the user's full grant set.",
+   "detail": "A user's OAuth token holds every grant they accepted. The service sits between the runtime and resource so agents only get the scopes a given tool call needs. Anything beyond that is never sent down.",
+   "t": "19:12"
+  },
+  {
+   "idea": "Start scope design from the resource server's own scopes and layer tool-call scopes on top.",
+   "detail": "The downstream resource's scopes are the baseline, since the user's token already carries them. Add finer scopes for governing tool calls on custom MCP servers, or pass them through when they are not needed.",
+   "t": "21:03"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Per-tool-call token exchange (RFC 8693)",
+   "how": "The runtime sends its client credentials or workload identity plus the user's subject token to the security token service. It requests a scope for one specific tool call. The service returns a short-lived token whose audience is only the target MCP server.",
+   "when": "An agent acts on behalf of a user and calls several MCP servers or APIs with different risk levels."
+  },
+  {
+   "name": "Policy-before-mint",
+   "how": "The authorization server evaluates governance policy on the full delegation chain (agent, user, user's grants, requested access) before it issues any token. Denied requests get no credential at all.",
+   "when": "Destructive or high-privilege actions such as dropping a database, changing prod, or spending money."
+  },
+  {
+   "name": "Policy-gated human approval",
+   "how": "The agent asks for approval, and the human's approval only counts if the human holds the required role under policy. The check is separate from whether the agent asked.",
+   "when": "Actions that need a human but where tired approvers should not be able to allow things they cannot do themselves."
+  },
+  {
+   "name": "Ephemeral, audience-bound bearer tokens",
+   "how": "Short expiry (a few minutes), an audience set to one MCP server, no storage in the client or server, and discard after each call.",
+   "when": "Any multi-hop agent path where a leaked token would otherwise be reusable."
+  },
+  {
+   "name": "Layered scope design",
+   "how": "Use the resource server's existing scopes as the base. Add tool-call-level scopes for custom MCP servers, and pass through scopes that do not need extra governance.",
+   "when": "Writing scopes for an MCP server that has few or none defined yet, and wanting to avoid heavy upfront modelling."
+  }
+ ],
+ "tools": [
+  "Keycard (security token service and policy governance)",
+  "OAuth 2.0 token exchange (RFC 8693)",
+  "Google sign-in (identity provider in demo)",
+  "MCP (client, server, gateway)"
+ ],
+ "numbers": [
+  {
+   "claim": "The demo has four overnight incidents. Three need an API key, and the billing DB drop is blocked by policy before any credential is minted.",
+   "t": "1:53"
+  },
+  {
+   "claim": "Sites fail for one in three users, and the recommended fix is to scale up, which incurs spend.",
+   "t": "3:13"
+  },
+  {
+   "claim": "Downstream access tokens should be short-lived, often expiring within a few minutes, and never stored.",
+   "t": "10:49"
+  },
+  {
+   "claim": "Q&A was limited to about five minutes at the end of a roughly 23 minute talk.",
+   "t": "21:03"
+  }
+ ],
+ "hot_takes": [
+  "Human-in-the-loop alone is not enough for autonomous agents, especially at night. Approval has to be backed by real policy.",
+  "Policy should decide before a credential exists. Then there is no overprivileged token to steal or replay.",
+  "Agent access does not need a new spec. RFC 8693 token exchange already exists and combines with newer specs.",
+  "Agents want to be helpful, so they will use every permission they hold."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS Govrix Scout is a proxy that already handles budgets and PII scans. It has no per-call identity of user or agent, and the talk's policy-before-mint pattern would fit there.",
+   "action": "Prototype RFC 8693 token exchange at the Govrix Scout proxy so each upstream tool call carries user and agent identity, a single-tool audience and a few-minute expiry. Evaluate policy before minting, and record the subject, actor and decision in the Merkle audit log."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code CLI with phone approvals and zero-token credential handling. The talk's role-gated approval and ephemeral tokens map onto both.",
+   "action": "Check whether ProsHarness phone approvals can be role-checked, so an approval cannot grant more than the approver holds. Also check that credentials minted for a tool call are short-lived and never written to the agent's environment."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "General lesson on attributing agent actions to a user and an agent identity, relevant to any multi-agent or subagent setup.",
+   "action": "Read the Keycard docs or the RFC 8693 spec to compare identity chains for subagents in multi-agent orchestration."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

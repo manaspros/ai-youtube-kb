@@ -1,0 +1,218 @@
+{
+ "one_line": "Michael Arnaldi builds a TypeScript Effect HTTP to-do API from an empty repo, arguing agents need the real source repo, strict lint back pressure, and generated pattern docs.",
+ "summary": "A 1h43m live workshop, \"Vibe Engineering Effect Apps\" (Michael Arnaldi, Effectful), starts from an empty Bun repo and builds a to-do HTTP API with Effect v4 beta, using GPT-5.4 in OpenCode. The speaker's core thesis is that models are trained on code, not docs, so the agent should get the actual library source (cloned as a git subtree) rather than MCP docs or node_modules. He makes every TypeScript diagnostic an error, writes AGENTS.md with commands and a no-watch-mode rule, and adds custom ESLint rules each time he sees a bad pattern (for example banning `as`, `any`, and `unknown`). Pattern docs (http-api, sql, testing) are generated from the upstream repo so each team can self-select what it uses. Implementation runs as a bash loop where each iteration takes one small task from a markdown spec and exits, giving fresh context. He also argues for fewer tools (a single execute tool that writes TypeScript transforms), per-model prompt tuning, and evals for pattern quality. The session ends by pointing to durable workflows (Effect Cluster) for long-running LLM steps, but does not build them.",
+ "speakers": [
+  "Michael Arnaldi"
+ ],
+ "orgs": [
+  "Effectful",
+  "Effect",
+  "OpenAI",
+  "Anthropic",
+  "Bun",
+  "Vitest",
+  "OpenCode",
+  "Cursor",
+  "Temporal"
+ ],
+ "format": "workshop",
+ "topics": [
+  "context-engineering",
+  "coding-agents",
+  "testing-verification",
+  "agent-architecture"
+ ],
+ "tags": [
+  "vibe-engineering",
+  "effect-ts",
+  "agents-md",
+  "linting-back-pressure",
+  "ralph-loop",
+  "spec-driven-development",
+  "pattern-docs",
+  "typescript",
+  "durable-workflows",
+  "model-specific-prompting",
+  "clone-the-repo"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Models are trained on code, not docs, so give the agent the real source repo",
+   "detail": "The speaker says agents are post-trained on code, so MCP doc servers are a weak fit for undocumented library code. He says agents look at node_modules less often than project code and skip gitignored folders, so he clones the library repo (as a git subtree, squashed) into a visible folder. He calls this the only approach that works reliably across languages.",
+   "t": "11:01"
+  },
+  {
+   "idea": "Context is a fixed array, and more context can confuse the model",
+   "detail": "Models do not learn from one session to the next. Memory has to be engineered by writing knowledge into files. He argues a 1M-token window is not automatically useful, since extra content can confuse the model on other tasks in the same context.",
+   "t": "7:47"
+  },
+  {
+   "idea": "Strict diagnostics are back pressure for AI-written code",
+   "detail": "He sets every TypeScript diagnostic to error and turns on format-on-save, so the model cannot pass with warnings or near-misses. He treats this as the baseline for any project where AI writes most of the code.",
+   "t": "29:46"
+  },
+  {
+   "idea": "Every lint rule should map to a mistake the model actually made",
+   "detail": "He bans `as`, `any` and `unknown` with custom ESLint rules. When he banned `unknown`, the model switched to `as never as X`, since `never` is a bottom type. He then banned `as` entirely and pushed the model toward schema validation and branded constructors at the edge.",
+   "t": "31:06"
+  },
+  {
+   "idea": "Spec in a markdown file, then a bash loop with fresh context per small task",
+   "detail": "He discusses the spec with the model and saves it as markdown. Then a bash loop tells the model to pick up one small task, implement it, and exit. Each iteration starts with a clean context window. He says plan mode is weaker because it restricts tools.",
+   "t": "33:43"
+  },
+  {
+   "idea": "Fewer tools can give better results",
+   "detail": "He describes experiments with a single `execute` tool that runs TypeScript. The model cannot patch files directly and must write AST-style TypeScript transforms. He says this reduced the agent's room for mistakes, though he gives no measured numbers.",
+   "t": "45:11"
+  },
+  {
+   "idea": "Generate pattern docs per library, then choose which to use",
+   "detail": "He asks the agent to explore the upstream repo and write pattern files (http-api.md, sql.md, testing.md) listed in AGENTS.md. Teams can take only the patterns they want, which matters in brownfield code. He notes generated docs may not match what a skilled author would write.",
+   "t": "42:24"
+  },
+  {
+   "idea": "Prompt style differs by model family",
+   "detail": "He writes in lowercase because he says GPT models get passive when shouted at. Claude pays closer attention to emphasized sentences. He suggests generating pattern docs per model family, though he admits it is hard to maintain.",
+   "t": "1:01:22"
+  },
+  {
+   "idea": "Evals and reference checks keep pattern docs honest",
+   "detail": "The Effect team plans daily evals that compare human-written code, generated code, and an LLM judge. He estimates a 80/20 human split on style judgments, so evals will not give a single truth. A linter plugin that checks file references in pattern docs runs in CI.",
+   "t": "1:31:05"
+  },
+  {
+   "idea": "Long-running LLM steps need durable workflows",
+   "detail": "He argues LLM calls take minutes, so server crashes mid-process become likely. A registration flow that writes to a database and then sends email can fail between steps. He points to Effect Cluster/Workflows, which resume a started procedure after a crash, though this part is still unstable in Effect and was not built in the session.",
+   "t": "1:38:29"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Clone the library source into the repo",
+   "how": "Add the upstream repo as a squashed git subtree in a visible folder (for example repos/effect), then tell AGENTS.md where it lives. Avoid node_modules or gitignored folders, which agents read less.",
+   "when": "Working with a library that has poor docs or no docs the model was trained on, or in brownfield codebases."
+  },
+  {
+   "name": "Strict diagnostics plus lint as back pressure",
+   "how": "Set all TS diagnostics to error. Write custom ESLint rules that ban shortcut patterns (type assertions, any, unknown). Ban the escape hatch too (for example `as` in general), and push validation into schemas and branded-type constructors.",
+   "when": "Any repo where an agent writes most of the code and you want it to fail fast instead of passing with near-misses."
+  },
+  {
+   "name": "AGENTS.md as a living rulebook",
+   "how": "Start with a short file listing run, typecheck and test commands, plus a list of pattern files. Explicitly forbid watch mode and dev servers. Add a rule each time a bad pattern appears, and ask the model why it did something before accepting the change.",
+   "when": "Any project where the agent repeats the same mistakes across sessions."
+  },
+  {
+   "name": "Spec file plus Ralph-style loop",
+   "how": "Agree on a spec in markdown. Run a bash loop where each iteration gives the model one small task, lets it implement the task, then exits so the next run starts with a new context.",
+   "when": "Long implementation runs where context pollution degrades later tasks."
+  },
+  {
+   "name": "Self-selected pattern docs",
+   "how": "Ask the agent to explore an upstream repo and write one markdown file per feature area, such as http-api, sql, or testing. Reference them from AGENTS.md. Use only the ones you want.",
+   "when": "Adopting a framework partially, or when a team has conventions different from upstream defaults."
+  },
+  {
+   "name": "Single execute tool instead of many tools",
+   "how": "Expose one tool that runs TypeScript code (which can call bash). The model writes a transform script rather than editing files directly.",
+   "when": "Bulk codebase transforms, where you want deterministic, reviewable changes instead of free-form edits. Claimed benefit, not measured in the talk."
+  },
+  {
+   "name": "Per-test rollback transactions for DB tests",
+   "how": "Run each test inside a transaction and roll it back when it finishes, so tests do not leak state and do not need a fresh database each time.",
+   "when": "Test suites against a real database that would be too slow with a new instance per test."
+  },
+  {
+   "name": "Test layers with it.layer",
+   "how": "Provide shared service layers in Vitest with the Effect test helpers instead of custom wrappers that call layer.build or effect.scoped.",
+   "when": "Effect-based test suites where agents keep writing custom layer setup."
+  },
+  {
+   "name": "Lint reference checks in CI for pattern docs",
+   "how": "Use a linter plugin to check that file paths mentioned in pattern docs still exist, and run it in CI.",
+   "when": "Pattern or docs folders that refer to repo files and drift as code changes."
+  }
+ ],
+ "tools": [
+  "Effect v4 (beta)",
+  "Effect SQL with SQLite",
+  "Bun",
+  "Vitest",
+  "TypeScript native preview (tsgo)",
+  "ESLint",
+  "OpenCode",
+  "GPT-5.4",
+  "Claude Opus",
+  "Codex",
+  "Cursor",
+  "Temporal",
+  "Drizzle"
+ ],
+ "numbers": [
+  {
+   "claim": "Speaker has not written code by hand since late summer 2025 (about 3:47 says 'since about late this summer'); at 9:56 he says six to eight months",
+   "t": "3:47 / 9:56"
+  },
+  {
+   "claim": "Speaker says open-weight models lag frontier models by about 3 to 6 months",
+   "t": "14:43"
+  },
+  {
+   "claim": "Speaker mentions 1-million-token context windows exist but are not necessarily helpful",
+   "t": "7:47"
+  },
+  {
+   "claim": "Effect Small described as very small in bundle size, roughly 14K, with about 1% context used (auto-caption '1%, 14K', exact figure unclear)",
+   "t": "18:26"
+  },
+  {
+   "claim": "A GPT-written AGENTS.md was about 40 lines against a claimed ~200 lines for Opus (speaker's estimate)",
+   "t": "41:18"
+  },
+  {
+   "claim": "Speaker's accountability repo has a rules file of thousands of lines to stop shortcuts",
+   "t": "1:04:25"
+  },
+  {
+   "claim": "Speaker estimates an 80/20 human split on whether a code style is preferred",
+   "t": "1:35:27"
+  },
+  {
+   "claim": "Per-test Postgres setup could make a large test suite take 'two days, maybe' (hyperbole used to illustrate, not measured)",
+   "t": "1:26:23"
+  }
+ ],
+ "hot_takes": [
+  "The best way to give an agent library knowledge is to clone the repository, not to use MCP docs or node_modules.",
+  "Less is more: fewer tools, simpler loops, and smaller contexts beat complex context-management architectures.",
+  "The zero-to-one problem only matters for the first hours of a project; the important work is setting up the repo so the model can act at scale.",
+  "Ban type assertions outright, because models will find a loophole in any narrower ban (like `never`).",
+  "Skills are useful for narrow, team-specific patterns, but loading a skill for every framework internal pollutes the context.",
+  "Models respond differently to prompt style: shouting helps Claude and makes GPT passive."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The spec-file plus fresh-context loop and the back-pressure-by-lint rules map to ProsHarness's checkpoint/resume and loop design, though the talk describes these as manual bash patterns, not a harness feature.",
+   "action": "Test a one-task-per-session loop in ProsHarness: each iteration reads the next step from a spec markdown file, runs it, exits, and the harness relaunches with a clean context. Compare retry rate against the current checkpoint/resume flow."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Lint rules as back pressure against agent-written code and pattern docs are relevant to AgentOS only if its codebase uses TypeScript or a linter, which the profile does not say.",
+   "action": "List the two most common bad patterns agents produced in AgentOS and encode each one as a lint or CI rule rather than a prompt note."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The AGENTS.md rulebook practice, with a rule added for each observed mistake and a ban on watch-mode commands, is directly usable in current Claude Code repos.",
+   "action": "Audit the AGENTS.md or CLAUDE.md in an active repo: add a line forbidding watch or dev-server commands, and add one rule for the most recent bad pattern the agent produced."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

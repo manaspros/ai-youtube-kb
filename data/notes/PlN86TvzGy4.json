@@ -1,0 +1,138 @@
+{
+ "one_line": "A walkthrough of herdr, a single Rust terminal multiplexer that adds agent awareness (working, blocked, done) to tmux-style panes, lets agents drive it through a CLI or socket, and works over SSH.",
+ "summary": "The video demos herdr, a terminal multiplexer written as one Rust binary on Ratatui with no Electron. It keeps tmux-style persistence and splits but detects coding agents such as Claude Code and Codex CLI and shows their status (working, blocked, idle or done) with system notifications. The demo installs it via Homebrew, curl or a Nix flake, then creates workspaces, tabs and splits by keyboard and mouse. Agents can also use the herdr CLI to spawn panes, give them titles, run prompts, summarise their output and close them. Remote mode runs the server on an SSH host and a thin client locally over a Unix socket, so local keybindings and themes still apply. The reviewer's main argument for it over cmux or Warp is that it runs inside an existing terminal. Windows support is weak because it depends on Unix sockets and PTYs, so WSL or Linux is recommended there. The video is a short product walkthrough with no benchmarks.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "multi-agent",
+  "dev-tools"
+ ],
+ "tags": [
+  "herdr",
+  "terminal-multiplexer",
+  "tmux",
+  "agent-status",
+  "claude-code",
+  "codex-cli",
+  "ssh",
+  "unix-socket",
+  "rust-tui",
+  "ratatui",
+  "cmux",
+  "warp"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Tmux keeps sessions alive but has no idea an agent is running in a pane. herdr combines tmux-style persistence with agent awareness in one terminal-native tool.",
+   "detail": "tmux predates AI agents, so a harness in a pane has no status. Warp and cmux solve this by replacing the terminal, which means learning another workflow. herdr stays inside the existing terminal.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Agent status detection works without configuration in the demo.",
+   "detail": "After launching Claude Code in the top pane and Codex CLI in the bottom pane, herdr labelled Claude as blocked and Codex as idle, then showed Claude as working once it got a prompt. It also updates on prompts for Codex CLI.",
+   "t": "2:02"
+  },
+  {
+   "idea": "Agents can control herdr itself through its CLI or socket API.",
+   "detail": "Claude Code was prompted to use the herdr CLI to open two panes running separate prompts, one summarising the largest file and one searching for hard-coded secrets. It titled the panes, read their output, summarised them, then closed both.",
+   "t": "3:14"
+  },
+  {
+   "idea": "Remote mode runs the server on the SSH host and the thin client locally, so local config applies remotely.",
+   "detail": "The client sends keystrokes over a Unix socket to the server, which manages tabs, panes and persistence. The client uses local keybindings and themes, while the files and processes live on the remote machine. Sessions restore after reconnecting.",
+   "t": "4:29"
+  },
+  {
+   "idea": "Herder is one Rust binary rendering text, so it runs anywhere a terminal runs, including over SSH.",
+   "detail": "The reviewer treats the terminal-native design as the main selling point. Setup needs only a single install, and a Nix flake option is included.",
+   "t": "1:00"
+  },
+  {
+   "idea": "Windows support is weak at the time of recording.",
+   "detail": "The design depends on Unix sockets and a PTY. The reviewer recommends WSL or dual booting Linux rather than native Windows.",
+   "t": "6:40"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Install and launch herdr",
+   "how": "Install with Homebrew, curl or a Nix flake, then run `herdr` in an existing terminal. Default prefix is Ctrl-B. Prefix then `?` shows keybindings, Prefix then `q` quits and leaves sessions running, and `Shift+N` creates a workspace. Prefix-driven navigation is available, but mouse use also works for tabs, splits and pane renaming.",
+   "when": "Run several coding agents side by side in one terminal and need them visible and persistent."
+  },
+  {
+   "name": "Remap the prefix key",
+   "how": "The reviewer changed the prefix from Ctrl-B to Ctrl-Space and set the theme to terminal in the config. The config file path was not shown, and the theme list includes Nord, Gruvbox and Catppuccin.",
+   "when": "Avoid clashing with a shell or editor binding, or match an existing terminal habit."
+  },
+  {
+   "name": "Agent-spawned panes with herdr CLI",
+   "how": "Inside a Claude Code session, ask it to use the herdr CLI to spawn panes, each running a named prompt. Panes get titles, the parent reads their output, summarises it, then closes them. The demo does not show the exact CLI commands.",
+   "when": "Fan a task out to parallel sub-agents, each in a visible pane, then collect and close them."
+  },
+  {
+   "name": "Remote session over SSH with local config",
+   "how": "Install herdr on the remote host, then connect with its remote flag (exact syntax not shown in the video) from the local terminal. The server runs remotely and the client stays local, so local keybindings and themes apply while files and agents stay on the server.",
+   "when": "Work on a remote Linux box with your usual keybindings, or reconnect to agents running there."
+  }
+ ],
+ "tools": [
+  "herdr",
+  "tmux",
+  "Warp",
+  "cmux",
+  "Claude Code",
+  "Codex CLI",
+  "OpenCode",
+  "Vim",
+  "Bash",
+  "Fish",
+  "Ratatui",
+  "Rust",
+  "Homebrew",
+  "Nix flake",
+  "Unix socket",
+  "WezTerm (transcribed as 'Westerm'/'West Term')"
+ ],
+ "numbers": [
+  {
+   "claim": "herdr ships as a single Rust binary with no Electron or separate app.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Default prefix key is Ctrl-B; the reviewer remapped it to Ctrl-Space.",
+   "t": "2:02"
+  },
+  {
+   "claim": "Agent state shown as blocked, idle, working and done.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Herdr's main advantage is that it runs inside your existing terminal rather than replacing it, so you keep your own config and workflow.",
+  "tmux is not agent-aware and cannot be fixed without something like herdr, while Warp and cmux require adopting another interface.",
+  "Windows support is not really there yet because of the Unix socket and PTY design; recommends WSL or Linux.",
+  "The 'ultimate' in the title is a stretch for a 7-minute walkthrough with no benchmarks or comparison beyond cmux."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and needs to show run state (working, blocked, done) and handle phone approvals. herdr detects those states from outside the agent, and its CLI and socket let an agent spawn and close sub-sessions, which overlaps with ProsHarness's subagent and loop control.",
+   "action": "Check whether ProsHarness exposes a machine-readable run state (working, blocked on approval, done) that an external multiplexer or CLI could read, and consider a socket or CLI interface for spawning and closing Claude Code sub-sessions. Read herdr's source for how it detects agent state from terminal output."
+  },
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "This is a developer terminal tool for local coding agents. It does not touch the proxy, memory, inference or storage layers.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

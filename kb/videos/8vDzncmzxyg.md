@@ -1,0 +1,49 @@
+# Your AI Agent Starts Every Session Like a New Hire - Killian Carlsen-Phelan, Sonar
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `8vDzncmzxyg` · [watch](https://youtu.be/8vDzncmzxyg) · **date:** 2026-10-31 · **length:** 17:45 · **format:** talk · **quality:** 2/5 · **depth:** practitioner
+- **speakers:** Killian Carlsen-Phelan · **orgs:** Sonar
+- **topics:** coding-agents, testing-verification, context-engineering, security-guardrails · **tags:** sonar, sonarqube, sonar-vortex, verification, static-analysis, agent-context, deterministic-checks, secrets-detection, claude-code, codex, java, security, pr-review, vendor-talk
+
+> Sonar pitches Vortex, a plugin that gives coding agents project context before they write and runs deterministic checks on every edit, so issues are caught before PR review.
+
+## Summary
+Killian Carlsen-Phelan from Sonar argues that coding agents start each session like new hires, spending tokens to rediscover project conventions, architecture rules and existing patterns. He presents Sonar Vortex, a plugin that works through Sonar's CLI, MCP tools and hooks across agents such as Claude Code and Codex, to supply guidelines and a code map before the agent writes anything. During a recorded session, the agent built a small Java feature with a temp-file permissions bug, which Vortex's per-edit analysis flagged and forced the agent to fix. He stresses that the verifier is deterministic and not another AI reviewer, that only findings on new code are enforced, and that pre-existing issues are shown as information. The talk is a vendor pitch built on Sonar's own survey and benchmark figures, several of which are unsourced or unexplained.
+
+## Key ideas
+- **Agent sessions start cold, like a new hire. Each new session must rediscover project conventions, coding guidelines and architecture rules by searching the repo, which costs time and tokens and is unreliable.** — The agent has to grep or walk many files to learn how existing API endpoints or classes work. Speaker calls this a roll of the dice in both speed and token cost. ([0:08](https://youtu.be/8vDzncmzxyg?t=8))
+- **Patterns in the codebase, including bad ones, get copied by agents. Unless verification runs during the loop, new issues compound.** — Speaker's claim: every codebase has issues, and agents replicate existing patterns, so quality becomes hard to maintain if issues are not caught early. ([1:10](https://youtu.be/8vDzncmzxyg?t=70))
+- **Give the agent a map and the guidelines before it writes (a guide phase), rather than having it search file by file.** — Before writing, the agent queries Sonar context tools for where a class lives, the project's Java guidelines, and custom team requirements. The speaker calls context and steering from the start the biggest performance lever apart from model choice. ([5:23](https://youtu.be/8vDzncmzxyg?t=323))
+- **Verification runs inside the agent loop: after every edit the agent makes with its own tools, and again with a deeper cross-file data-flow check before the agent ends its turn.** — Findings go straight back to the agent, which fixes its own code, and the check reruns. The speaker says this works with Claude Code, Codex and other agents. ([5:23](https://youtu.be/8vDzncmzxyg?t=323))
+- **The verifier is deterministic and is not another AI checking AI. The speaker says AI self-review is one of the least reliable ways to catch issues. Vortex sits between AI review steps.** — Same code gives the same result every run, which the speaker says supports governable, compliant guidance. Sonar also sells an AI reviewer (named Guitar in captions), which he says he did not cover in this talk. ([12:03](https://youtu.be/8vDzncmzxyg?t=723))
+- **Enforcement targets only new or changed code. Pre-existing findings are reported for awareness and are not required fixes.** — In the demo, six findings came back: two on lines the agent had just written and four on existing code. The speaker says the tool is not designed to be noisy. ([13:25](https://youtu.be/8vDzncmzxyg?t=805))
+- **Security rules should be explicit. A language default is not enough, even when it is safe on most platforms.** — The agent wrote a log file to the default temp directory without setting permissions. Its first fix relied on the Java default, which is owner-only on Mac and Linux, but the team's rule requires explicit permissions, so the finding persisted until the fix was explicit. ([14:51](https://youtu.be/8vDzncmzxyg?t=891))
+- **Secrets detection runs as a hook and stops secrets from reaching GitHub and agent context memory. Nothing had to be pasted into the prompt.** — Sonar instructions were loaded automatically when the session started. The CLI, the hook system and secrets detection were each shown as detected at session start. ([9:35](https://youtu.be/8vDzncmzxyg?t=575))
+
+## Techniques
+- **Pre-write context retrieval from a verifier** — Plugin connects through the vendor's CLI and MCP tools. Before writing, the agent queries for the class's location, the project's language guidelines and any custom team rules, then reads the existing tests before implementing. *When:* Any non-trivial feature in a large or convention-heavy codebase where the agent otherwise spends many tokens grepping for patterns.
+- **Per-edit plus end-of-turn verification hooks** — Every edit or file creation made with the agent's own tools triggers a fast analysis. Before the turn ends, the agent runs a deeper analysis covering cross-file data flow. Findings go back to the agent for repair, followed by a re-check. *When:* Autonomous or background coding loops where no human reviews each change, so verification has to happen in the loop rather than at PR time.
+- **Enforce on changed lines only, surface the rest** — Compare findings against the lines the agent just wrote. Block or require fixes for new issues, and list pre-existing issues as informational. *When:* Adopting a strict analyzer on an existing codebase without drowning sessions in legacy findings.
+- **Explicit-permission rule for sensitive resources** — Require explicit permissions when creating temp files, rather than relying on language or OS defaults. Have the agent write a test that proves a temp file is reused. *When:* Agent-written file I/O, especially in shared directories on shared servers.
+- **Deterministic layer between AI reviews** — Keep a non-AI analyzer in the pipeline before and after AI review so the same input always produces the same findings. *When:* Compliance-sensitive or governed environments that need reproducible verification.
+
+## Numbers
+- Sonar surveyed over 1,100 developers; 96% do not fully trust AI-generated code. ([3:58](https://youtu.be/8vDzncmzxyg?t=238))
+- Of those developers, 48% (under half) said they fully verify AI-generated code before pushing. ([3:58](https://youtu.be/8vDzncmzxyg?t=238))
+- The demo agent built the feature in under two minutes. ([2:31](https://youtu.be/8vDzncmzxyg?t=151))
+- Vortex users spend 36% fewer tokens on average, most of all on refactoring tasks. Methodology and sample not stated. ([6:46](https://youtu.be/8vDzncmzxyg?t=406))
+- Vortex users see a 44% reduction in production outages. Methodology and sample not stated. ([6:46](https://youtu.be/8vDzncmzxyg?t=406))
+- Demo verification found 6 findings: 2 on new lines and 4 on pre-existing code. ([13:25](https://youtu.be/8vDzncmzxyg?t=805))
+- A low false-positive rate is claimed, with no figure given. ([6:46](https://youtu.be/8vDzncmzxyg?t=406))
+
+## Hot takes
+- Vendor pitch from a booth-promoting speaker: the product is presented as the fix, and the survey and benchmark numbers (36% fewer tokens, 44% fewer outages, 96% distrust, 48% verify) have no methodology, sample or baseline shown.
+- The claim that AI reviewing AI is one of the least reliable verification methods is asserted, not demonstrated, and conflicts with the speaker's own AI review product.
+- The demo was a short prerecorded terminal session with the speaker's own feature and a single security example. The 'under two minutes' figure and the 'context is the biggest lever apart from model choice' claim are unsupported.
+- Useful idea regardless of vendor: verification inside the edit loop and explicit security rules for agent-written file I/O, which can be built with local linters or hooks.
+
+## Tools mentioned
+Sonar Vortex (Sonar's agent plugin, named in the talk), SonarQube (static analysis, CI scan, data-flow and security analysis), Sonar CLI and MCP clients, Claude Code, Codex, Antigravity, Guitar (Sonar's AI reviewer, named in the captions; the speaker did not cover it), Java (language guidelines used in the demo)
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness wraps Claude Code runs with checkpoint and resume, plan, critique and debate. The talk's per-edit and end-of-turn deterministic checks would fit as a verification gate in that loop, and its 'only new issues block' rule would cut noise from long runs. → *Add a deterministic check (linter or static analysis) that runs after each edit and before a turn ends in ProsHarness, scoped to changed lines, and feed findings back to the agent for repair.*
+- **agentos** (1/3): Secrets-leak prevention via hooks, before data reaches agent context memory, overlaps with AgentOS's PII and prompt-injection scanning in the Govrix proxy. The talk offers no new mechanism beyond that. → *Compare AgentOS's PII scan coverage with a hook-based secrets check on agent context writes, and decide whether the check should run in the proxy or in the client.*

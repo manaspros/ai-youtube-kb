@@ -1,0 +1,161 @@
+{
+ "one_line": "LiveKit's Jesse Hall argues voice agents must be evaluated as whole conversations: measure time-to-first-audio and time-to-first-sentence, use non-blocking tool calls, use audio-aware turn detection, and benchmark full stacks with simulated callers.",
+ "summary": "Jesse Hall of LiveKit argues that voice agents fail in conversation, not on leaderboards, so teams should choose a stack by testing the whole pipeline on their own use case. He says the metric that matters is what the caller hears: time-to-first-audio and time-to-first-sentence, since TTS needs a full sentence and a provider's time-to-first-byte can hide up to about 0.75s of silence. He recommends making tool calls non-blocking so the agent keeps talking while slow back-end lookups run, and shows a hotel-booking demo that handles interruptions and saves each field to a back end. He describes an audio-aware turn detector that also listens to pitch, rhythm and intonation, which LiveKit reports cuts off users 4.5% of the time versus 9.9% for the leading alternative. The evaluation method is simulated callers with goals, interruptions and background noise, scored on final outcomes and on the steps taken, with identical inputs replayed across model swaps. He closes with a checklist and advice to turn each production failure into a regression scenario. Most of the numbers come from LiveKit's own stack and one hotel demo agent, so they should be treated as a vendor data point rather than a general benchmark.",
+ "speakers": [
+  "Jesse Hall"
+ ],
+ "orgs": [
+  "LiveKit",
+  "OpenAI"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "evals",
+  "inference-serving"
+ ],
+ "tags": [
+  "voice-agents",
+  "latency-budget",
+  "time-to-first-audio",
+  "turn-detection",
+  "barge-in",
+  "async-tool-calls",
+  "simulation-testing",
+  "model-selection",
+  "livekit",
+  "regression-scenarios"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Leaderboards score models in isolation on clean audio, but a voice agent ships a conversation, so pick the stack by testing it end to end on your own use case.",
+   "detail": "Example: a speech-to-text error (hearing 30th instead of 3rd) flows downstream into the LLM and the outcome; a leaderboard cannot see that. Callers are on speakerphone in traffic, so scoring must use realistic audio.",
+   "t": "5:19"
+  },
+  {
+   "idea": "Measure time-to-first-audio and time-to-first-sentence, not time-to-first-byte or time-to-first-token.",
+   "detail": "A TTS dashboard showed 210 ms time-to-first-byte, but popular providers add up to about 0.75s of silence after that byte. TTS needs a full sentence before speaking, so a fast-token LLM is not necessarily the one that produces the first sentence fastest.",
+   "t": "6:39"
+  },
+  {
+   "idea": "Back-end tool calls should not block the conversation; the await on a tool call is the key change that hands the mic back to the agent.",
+   "detail": "The agent keeps saving fields and talking while a lookup or payment runs, and it can self-correct or hand off to a human if a tool errors. Humans do the same thing: say 'give me a second' or keep asking questions.",
+   "t": "9:26"
+  },
+  {
+   "idea": "Turn detection should use audio (pitch, rhythm, intonation), not only the transcript.",
+   "detail": "A transcript-only detector stops at $500 in '$555.23' after a pause. LiveKit reports its detector interrupts users 4.5% of the time in its use case versus 9.9% for the leading alternative. The eval is open source and can be run on your own data.",
+   "t": "12:07"
+  },
+  {
+   "idea": "Keep the caller-to-agent response gap in a latency budget: about 1.5s starts to feel off, and 500-600 ms feels human.",
+   "detail": "The budget covers the turn detector, the LLM's provisional-transcript response, each model, each function call and each handoff. The question to ask is how human-like an agent can be within the budget, not how fast it can go.",
+   "t": "13:25"
+  },
+  {
+   "idea": "Test with simulated callers against a complete working agent, and score outcomes and steps, not just task completion.",
+   "detail": "Simulated callers have goals and can change their mind, interrupt, mumble and talk over background noise. Text simulations test business logic; audio simulations also test ASR and turn-taking. Scoring checks the final database state, excess steps and hallucinated function calls.",
+   "t": "16:04"
+  },
+  {
+   "idea": "Replay identical input across model swaps to build a personal benchmark; the best model may not be the top of a leaderboard.",
+   "detail": "The hotel agent's top LLM was Gemma 4 31B (auto-caption reads 'Gemma 431B') on LiveKit inference, which the speaker says is tuned for voice. The same model on another provider was slower.",
+   "t": "17:30"
+  },
+  {
+   "idea": "Turn every production failure into a regression scenario and keep re-running it.",
+   "detail": "Checklist: set the latency budget, measure time-to-first-audio and time-to-first-sentence, confirm critical dates and amounts, verify identity before account access, keep listening while slow tools run, run full conversations repeatedly in simulation, and test final state, privacy, unnecessary tool calls and turn-taking.",
+   "t": "19:55"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Time-to-first-audio and time-to-first-sentence instrumentation",
+   "how": "Measure from the caller's last syllable to the first audible TTS sample, and also to the first full sentence the TTS can speak. Report these alongside TTFT and TTFB, which can look fast while silence remains.",
+   "when": "Any voice agent latency work or vendor comparison. Use it to decide the real latency budget, not dashboard numbers."
+  },
+  {
+   "name": "Non-blocking (async) tool calls in a voice agent",
+   "how": "Run back-end tools (look up transaction, check payment status, submit dispute, save each field) with an await that releases the conversation, so the agent keeps talking and collecting input. Agent narrates progress, then self-corrects on a tool error or escalates to a human.",
+   "when": "Any tool call that can take more than about a second, such as payments, lookups or bookings."
+  },
+  {
+   "name": "Audio-aware turn detection",
+   "how": "Use a turn detector that uses audio features (pitch, rhythm, intonation) plus the transcript, so a mid-amount like '$555.23' is not cut at '$500' after a pause. Evaluate it on your own recordings before trusting it.",
+   "when": "Callers pause mid-utterance, such as while reading numbers, dates, card digits or amounts."
+  },
+  {
+   "name": "Full-stack scenario simulation with identical replay",
+   "how": "Write each scenario as caller goal, expected agent actions and expected outcome. Run simulated callers (goal changes, interruptions, mumbling, background noise) against a complete agent with a real back end, in both text mode (business logic) and audio mode (ASR and turn-taking). Score final state (e.g., reservation in DB, correct amount charged) and number of steps taken. Swap models or providers while keeping input identical, byte for byte, and repeat.",
+   "when": "Choosing between LLM, STT and TTS providers for a production agent, or any regression testing of a conversational agent."
+  },
+  {
+   "name": "Regression scenarios from production failures",
+   "how": "Convert each observed failure (missed date change, wrong amount, interrupted caller) into a scenario in the simulation suite and re-run the suite on each change.",
+   "when": "Continuous improvement of an agent after launch."
+  },
+  {
+   "name": "Financial voice-agent guardrail checklist",
+   "how": "Confirm critical dates and money amounts back to the caller. Verify identity before any account access. Keep listening while slow tools run. Check privacy safeguards and unnecessary tool calls.",
+   "when": "Voice agents handling payments, account changes or other high-risk financial actions."
+  }
+ ],
+ "tools": [
+  "LiveKit (open-source real-time agent framework and infrastructure)",
+  "LiveKit turn detector (audio + transcript end-of-turn model)",
+  "LiveKit inference (model serving tuned for voice; speaker says it is model agnostic)",
+  "Gemma 4 31B (auto-caption reads 'Gemma 431B'; top LLM on the hotel agent benchmark)",
+  "ChatGPT advanced voice mode (cited as using LiveKit)"
+ ],
+ "numbers": [
+  {
+   "claim": "Time-to-first-byte reported by one TTS dashboard was 210 ms, but tested popular providers added up to about 0.75 s (3/4 of a second) of silence after that first byte.",
+   "t": "6:39"
+  },
+  {
+   "claim": "Example of a call with a 2 s silence before confirmation, described as not reassuring.",
+   "t": "6:39"
+  },
+  {
+   "claim": "Turn-detector interruption rate: leading alternative cut users off 9.9% of the time; LiveKit's detector 4.5% in its use case (speaker's hotel agent and others).",
+   "t": "12:07"
+  },
+  {
+   "claim": "Latency budget: about 1.5 s between caller's last syllable and agent's first audible response starts to feel off; 500-600 ms feels human-like.",
+   "t": "13:25"
+  },
+  {
+   "claim": "Speaker lists tool-call latencies of '2, 10, 40 milliseconds' (transcript has 'or more' as '40 seconds'; the unit is ambiguous in the auto-caption).",
+   "t": "7:59"
+  }
+ ],
+ "hot_takes": [
+  "The 'leaderboards cannot answer which model to pick; only end-to-end tests can' point is well argued and applies to any multi-model agent, not just voice.",
+  "Vendor talk: the turn-detector and inference numbers come from LiveKit's own stack and one hotel demo agent, and no independent replication is shown. The claim that the benchmark is open source is presented but not demonstrated on screen.",
+  "Strong claim that 'a byte does not equal audio'. Presented with a concrete measurement, so it is useful as a metric definition even if the 0.75 s figure is one provider sample."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Its simulated-caller scenario suite (goals, expected outcome, step count, identical replay across model swaps) is a direct model for a personalized eval harness in MemoryMesh/InferCraft, and it argues against picking models from leaderboards.",
+   "action": "Add end-to-end scenario replay to the eval harness: fixed scenario set with expected final state and step budget, replayed byte-identical while swapping InferCraft models, reporting outcome and steps, not just pass/fail."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Non-blocking tool calls that let the agent keep working while a slow tool runs fit the checkpoint/resume loop, though the talk is about live voice.",
+   "action": "Check whether ProsHarness blocks the Claude Code loop on long-running tool calls, and consider letting the harness keep the session responsive with a status update while a slow tool runs."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Two general patterns carry over to any agent: scoring the full conversation (final state and step count, not completion alone) and turning production failures into regression scenarios.",
+   "action": "Read the open-source LiveKit voice-agent eval repo (linked from the talk) for the scenario schema and scoring method, and reuse it as a template for agent regression suites."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

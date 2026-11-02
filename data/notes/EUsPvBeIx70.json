@@ -1,0 +1,174 @@
+{
+ "speakers": [
+  "Raahul Singh",
+  "Vanč Levstik"
+ ],
+ "one_line": "Phaidra engineers explain \"semantic blindness\": why RAG and LLM-only lookups fail on 400K+ equipment names, and how a hierarchy-based planner plus deterministic set-resolver stays accurate with flat cost at data-center scale.",
+ "summary": "Phaidra builds AI agents that answer questions about AI data-center equipment. Naive approaches (LLM over all names, vector search over names, sharded parallel LLM calls) break down at scale, with hallucinated and dropped equipment and output failures from frequency penalties. Their fix scales with hierarchy depth rather than instance count: a compact summary of the equipment tree goes to the LLM, which emits a structured search plan (scope plus filter or name pattern), and a deterministic resolver builds pre-indexed subsets and applies set intersections. They report correctness falling from about 80% to about 30% for the old approach as scale grew from 64 to 460,000 GPUs, versus 100% for the new approach, with zero failures on 66 real cases across six production systems. Cost per query is roughly flat at about 9,000 tokens. The closing argument is to keep the LLM for ambiguous parsing and synthesis and move structured logic into code, which inverts Karpathy's Software 3.0 trend for mature systems.",
+ "orgs": [
+  "Phaidra"
+ ],
+ "format": "talk",
+ "topics": [
+  "rag-retrieval",
+  "data-engineering",
+  "agent-architecture",
+  "context-engineering"
+ ],
+ "tags": [
+  "entity-resolution",
+  "structured-retrieval",
+  "planner-resolver",
+  "hierarchy-indexing",
+  "semantic-blindness",
+  "LLM-vs-code",
+  "industrial-iot",
+  "data-centers",
+  "set-operations",
+  "software-3.0"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Semantic blindness: LLMs and vector search fail on huge sets of near-identical names",
+   "detail": "Names differ by one character (chiller6 vs chiller7). Embedding search loses recall. LLMs hit a frequency penalty when they list many similar tokens and their guardrails shut output down. Naive RAG and naive LLM lookup both fail as scale grows.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Divide-and-conquer sharding with parallel LLM calls still fails",
+   "detail": "Sharding the equipment list across parallel LLM calls produced poor recall, phantom equipment and silently dropped items. For mission-critical systems this erodes user trust.",
+   "t": "3:46"
+  },
+  {
+   "idea": "Scale with hierarchy depth, not instance count",
+   "detail": "Physical infrastructure is a tree. Depth grows slowly while width grows fast. A 1 GW site with over a million nodes can be described by a short, fixed list of layers (about four to reach a GPU, chiller or switch), so the LLM's context stays roughly the same size.",
+   "t": "5:06"
+  },
+  {
+   "idea": "LLMs should plan the search, not perform it",
+   "detail": "The LLM turns a vague query into a structured plan: a scope (for example, a subtree such as data hall 11) plus a filter (for example, running hot) or a name pattern. A deterministic resolver then executes it. The LLM never reads the full name list.",
+   "t": "6:26"
+  },
+  {
+   "idea": "Pre-indexed subtrees and set intersection give exact recall",
+   "detail": "Build pre-indexed subsets by location and by how equipment interacts. Answer each part of the query as a set, then intersect. Set logic gives perfect recall regardless of how fuzzy the user's phrasing is.",
+   "t": "7:47"
+  },
+  {
+   "idea": "Pattern-based fallback for very vague queries",
+   "detail": "When a query is vague, the LLM proposes naming or data patterns to match, and the backend runs them. The LLM sees a small, roughly constant number of tokens, not a list that grows with the system.",
+   "t": "8:57"
+  },
+  {
+   "idea": "Two or three step pipeline instead of an agent loop",
+   "detail": "Query goes to planner LLM, then the deterministic resolver, then the result set. Avoiding a multi-step agentic loop keeps cost flat.",
+   "t": "10:20"
+  },
+  {
+   "idea": "Head-to-head production evals show correctness holds with scale",
+   "detail": "Same LLM model and data, three runs per case. The old approach went from about 80% correct at 64 GPUs to about 30% at 460,000 GPUs. The new approach held 100% across tests, including 66 cases on six real production systems with zero failures.",
+   "t": "11:21"
+  },
+  {
+   "idea": "Karpathy's 1.0 to 3.0 framing run in reverse for AI-native systems",
+   "detail": "Legacy software drifts from deterministic code toward prompts. The speaker's advice is to start with an LLM for the whole flow, then move any structured, rule-bound part (hierarchy, set logic, counting, dedup, anything that must be reproducible) into code. Keep the hard judgment in the LLM and give it those tools.",
+   "t": "12:52"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Hierarchy summary as LLM context",
+   "how": "Describe the system tree by its layer structure (a short finite list of levels) instead of listing every node. The size of the summary stays nearly the same as the number of instances grows.",
+   "when": "Large, well-structured domains with a tree or graph, such as data centers, org charts, or inventories with millions of entities."
+  },
+  {
+   "name": "LLM emits a structured search plan; deterministic resolver executes it",
+   "how": "The LLM returns structured output: a scope (which subtree or set to collect), filters to apply, or patterns over names or data. Code builds the sets, applies filters, and intersects results.",
+   "when": "Fuzzy natural-language queries over large entity sets where recall and reproducibility matter more than free-form reasoning."
+  },
+  {
+   "name": "Pre-indexed subtrees for set operations",
+   "how": "Precompute subsets by location and by relationship (for example, all GPUs in a data hall as one subtree). Answer each query clause as a set lookup, then take the intersection.",
+   "when": "Filtering on combinations of attributes across very large sets, where exact reproducible results are needed."
+  },
+  {
+   "name": "Two- or three-step planner/resolver pipeline in place of an agent loop",
+   "how": "One planning LLM call, then deterministic resolution, then optional synthesis. No repeated tool-calling loop.",
+   "when": "Production systems where per-query cost must stay flat and bounded as data grows."
+  },
+  {
+   "name": "Pattern-based search for vague queries",
+   "how": "Ask the LLM to output naming or data patterns to match, and run them against the index in code instead of passing names into context.",
+   "when": "Vague user phrasing over large name lists, where the naming convention is consistent enough to match."
+  },
+  {
+   "name": "Head-to-head eval against the old system at increasing scale",
+   "how": "Same model and data, multiple runs per case, measure correctness and token cost at several sizes (64 up to 460,000 units), plus real production cases.",
+   "when": "Proving a redesign is production-ready before it reaches customers."
+  },
+  {
+   "name": "Move deterministic work out of the prompt",
+   "how": "Audit each step: if it can be written as a structure or rules (set logic, counting, dedup, reproducible filters), implement it in code. Keep the LLM for ambiguous parsing, judgment and the final answer.",
+   "when": "Any AI-native system with structured data, once a prompt-only prototype works but fails at scale."
+  }
+ ],
+ "tools": [],
+ "numbers": [
+  {
+   "claim": "Old LLM approach correctness: about 80% at 64 GPUs, falling to about 30% at 460,000 GPUs",
+   "t": "11:21"
+  },
+  {
+   "claim": "New approach: 100% correctness across all tests at every scale, including 66 real-production cases on six systems with zero failures",
+   "t": "11:21"
+  },
+  {
+   "claim": "Old approach tokens for one evaluation pass at 1 GW scale: about 116 million, with errors still present",
+   "t": "11:21"
+  },
+  {
+   "claim": "New approach tokens for the same pass: about 390,000 (roughly 300x fewer)",
+   "t": "11:21"
+  },
+  {
+   "claim": "New approach cost per query: about 9,000 tokens, flat whether the site has 64 GPUs or 460,000",
+   "t": "11:21"
+  },
+  {
+   "claim": "1 GW AI factory: 400,000+ GPUs, and over a million nodes in the equipment graph",
+   "t": "1:18"
+  },
+  {
+   "claim": "Hierarchy depth: about four layers to reach a GPU, chiller or switch",
+   "t": "5:06"
+  }
+ ],
+ "hot_takes": [
+  "Keeping structured data logic in an LLM is the wrong tool for large, well-structured systems, and the trend should run from 3.0 back to 1.0 as a system matures.",
+  "Naive RAG and vector search over entity names fail at production scale.",
+  "Sharded parallel LLM calls for recall produce hallucinated and dropped items and should not be relied on."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The hierarchy-plus-deterministic-resolver pattern could inform entity or knowledge-bucket lookup in MemoryMesh, but the talk is about one domain (data-center equipment) and the numbers are vendor-internal.",
+   "action": "When designing MemoryMesh hybrid retrieval, add a check that structured filters are answered by set operations in code, not by the LLM reading names."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No direct overlap with checkpointing, plan/critique/debate, or the Claude Code wrapper.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Strong, reusable lesson: keep the LLM for ambiguity and synthesis, and move structured logic into code. The head-to-head scale eval method is also reusable.",
+   "action": "Apply the 'LLM plans, code resolves' split to entity-resolution and data-quality work where names are near-identical, and benchmark it against a naive LLM-over-all-names baseline at several sizes."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

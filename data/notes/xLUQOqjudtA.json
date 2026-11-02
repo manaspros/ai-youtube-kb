@@ -1,0 +1,221 @@
+{
+ "one_line": "Tolan's engineers explain how a voice-first AI companion needs sub-two-second turns, stakes-based model routing, retrieval-style memory, and per-turn context rebuilding, plus how they use Claude agent fleets to ship iOS code.",
+ "summary": "Paula Dozsa, an iOS engineer at Tolan, describes building a voice-first AI companion that has logged over 4 million hours of voice conversation. Voice changes the engineering problem: round trips must stay near two seconds, users interrupt and change topics constantly, and so the team designs for volatility, measures latency per pipeline stage, and tunes turn-taking to cut bad early interruptions. They run a tiered model fleet, routing each turn by emotional stakes rather than cost, with a cheap per-turn tone classifier, since a frontier turn costs about five small-model turns. Memory is treated as retrieval: facts and emotional signals are embedded in a vector store, consolidated nightly, and split into stable (cached) and volatile parts, while context is rebuilt every turn rather than reused. On the build side, Claude agents co-author more iOS code than any single engineer, with crash-free rate rising from 99.6% to 99.9%, and a fleet of implementer, reviewer, PR-shepherd and triage agents wired through MCP to Linear, Sentry and Datadog. The last part is a character-building eval workflow with five judges and find-fix-verify rounds against production logs. The talk ends with a hiring pitch, so the engineering content is the useful part.",
+ "speakers": [
+  "Paula Dozsa"
+ ],
+ "orgs": [
+  "Tolan",
+  "Castle Ventures",
+  "Pixar",
+  "Oculus",
+  "Spotify",
+  "xAI",
+  "Vanderbilt",
+  "Even",
+  "Imagi"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "memory",
+  "context-engineering",
+  "software-factory"
+ ],
+ "tags": [
+  "voice-agent",
+  "companion",
+  "latency",
+  "turn-taking",
+  "model-routing",
+  "tiered-models",
+  "memory-consolidation",
+  "prompt-caching",
+  "context-rebuild",
+  "codebase-as-docs",
+  "agent-fleet",
+  "pr-shepherd",
+  "triage-bot",
+  "character-eval",
+  "hiring"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Voice breaks the usual LLM app assumptions",
+   "detail": "Voice turns must complete in about two seconds, and context changes fast. Latency drifting from about 2s to 2.5s hurt almost every product metric.",
+   "t": "2:47"
+  },
+  {
+   "idea": "Design for conversational volatility",
+   "detail": "Users interrupt, say short acknowledgements, and jump topics mid-story. The team fixed small things like short replies not registering as turns. They optimized for fewer bad early interruptions, not fewer interruptions overall.",
+   "t": "4:10"
+  },
+  {
+   "idea": "Measure latency per pipeline stage",
+   "detail": "The pipeline is end-of-utterance detection, transcription, time to first token (about 1s, often the biggest chunk), generation, then text-to-speech first byte. Knowing which stage is slow matters more than the total. Moving to GPT-5.1 on the Responses API gave the largest quality gain and cut time-to-speech by over 0.7s.",
+   "t": "4:10"
+  },
+  {
+   "idea": "Route turns by stakes, not cost",
+   "detail": "A cheap tone-router classifier runs every turn. High-stakes turns (onboarding, first days, crisis or therapist-style emotion) always get the frontier model. Casual turns and background jobs like summaries and persona generation use smaller models. A frontier turn costs about five small-model turns, and sending a third of turns to the small model had almost no measurable effect on retention.",
+   "t": "5:33"
+  },
+  {
+   "idea": "Memory is a retrieval system, not a transcript",
+   "detail": "Facts, preferences and emotional signals are extracted, embedded, and stored in a vector DB with sub-50ms lookups. Retrieval also runs on questions the system generates about the user and relationship, not only on the last message. Feeding full history causes degradation and lost-in-the-middle hallucination.",
+   "t": "6:57"
+  },
+  {
+   "idea": "Nightly memory consolidation",
+   "detail": "Every night the store merges duplicates, clusters related memories, resolves contradictions, and drops noise.",
+   "t": "6:57"
+  },
+  {
+   "idea": "Split memory into stable and volatile parts and rebuild context every turn",
+   "detail": "Volatile content sits in the live tail of the prompt. Memories that get recalled often are pinned into a stable, cacheable block. Context is reassembled each turn from recent-message summary, persona card, retrieved memories, tone guidance and live app state, because reusing context for cache warmth is wrong after a topic pivot.",
+   "t": "7:55"
+  },
+  {
+   "idea": "Make the codebase the documentation, and run agent fleets with review and triage roles",
+   "detail": "They found agent context comes mostly from the codebase itself rather than CLAUDE.md, so agents standardized the code as docs. Implementation agents build against snapshots, separate review agents enforce standards, and a PR shepherd keeps iterating on CI failures and review comments. A triage bot fires on each inbound bug and, through MCP to Linear, Sentry and Datadog, can reconstruct crashes and sometimes open the fix PR.",
+   "t": "10:33"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Smart turn-taking from speech patterns",
+   "how": "Model the user's speech rhythm to decide whether an interruption is real, instead of cutting the agent off on any sound. They accepted about 60ms of extra latency to halve early aborts.",
+   "when": "Any realtime voice agent where premature interruptions hurt more than a short extra delay."
+  },
+  {
+   "name": "Per-stage latency instrumentation",
+   "how": "Time each stage separately (end-of-utterance, transcription, time to first token, generation, TTS first byte, playback) so the slow stage is identifiable.",
+   "when": "Any multi-stage pipeline with a latency budget; diagnose before optimizing."
+  },
+  {
+   "name": "Stakes-based model tiering with a cheap per-turn router",
+   "how": "A small model classifies emotional state or stakes every turn and selects a frontier or small model. Background tasks (summaries, persona generation, the router itself) run on small models.",
+   "when": "When some turns need top quality and most do not, and cost per turn matters."
+  },
+  {
+   "name": "Retrieval-based memory with nightly consolidation",
+   "how": "Extract facts and signals, embed them, store them in a vector DB, retrieve on both user messages and self-generated questions, and run a nightly job to merge, cluster, resolve conflicts and prune.",
+   "when": "Long-lived assistant memory where full history degrades quality or latency."
+  },
+  {
+   "name": "Stable-versus-volatile memory blocks",
+   "how": "Pin frequently recalled memories into a cacheable block and keep changing material in the live tail of the prompt. Rebuild the rest of the context every turn from parts.",
+   "when": "Conversations with frequent topic shifts where cache reuse across turns would serve stale context."
+  },
+  {
+   "name": "Character identity held separately from tone",
+   "how": "A parallel tone monitor changes delivery based on emotional cues while the persona definition stays fixed.",
+   "when": "Agents with a persistent personality that must stay consistent across hundreds of turns."
+  },
+  {
+   "name": "Multi-judge eval loop for persona changes",
+   "how": "Agents map every personality-bearing surface in the code, write a spec (a voice bible), then five judges with different lenses (archetype fidelity, model mechanics, code standards, target-user perspective, safety) attack it. Changes are verified against production logs in three find-fix-verify rounds.",
+   "when": "Changing agent behavior or persona where quality is subjective and production logs are available."
+  },
+  {
+   "name": "Agent fleet with reviewer and PR-shepherd roles",
+   "how": "Implementation agents write code, separate review agents enforce standards before a human looks, and a PR shepherd watches open PRs and loops on CI and review feedback until clean. Triage bots connected via MCP to issue tracker and observability tools reconstruct bugs and propose fixes.",
+   "when": "Shipping many small changes where review and CI iteration can be automated, with humans reviewing at the end."
+  }
+ ],
+ "tools": [
+  "Claude",
+  "GPT-5.1",
+  "OpenAI Responses API",
+  "MCP",
+  "Linear",
+  "Sentry",
+  "Datadog",
+  "App Store"
+ ],
+ "numbers": [
+  {
+   "claim": "Over 4 million hours of voice conversation so far (text and voice both supported)",
+   "t": "1:35"
+  },
+  {
+   "claim": "Target round trip under about 2 seconds; latency drifted from 2s to about 2.5s and hurt most metrics",
+   "t": "2:47"
+  },
+  {
+   "claim": "Smart turn-taking cut the worst early aborts by more than half, for about 60ms of added latency",
+   "t": "4:10"
+  },
+  {
+   "claim": "Time to first token is often the biggest latency chunk, around 1 second",
+   "t": "4:10"
+  },
+  {
+   "claim": "Moving to GPT-5.1 on the Responses API cut time-to-speech by more than 0.7s",
+   "t": "4:10"
+  },
+  {
+   "claim": "Frontier model costs roughly 5x a smaller model per turn",
+   "t": "5:33"
+  },
+  {
+   "claim": "Routing about a third of turns to the small model had almost no measurable effect on retention",
+   "t": "6:57"
+  },
+  {
+   "claim": "Memory vector store lookups under 50ms",
+   "t": "6:57"
+  },
+  {
+   "claim": "Since late last year Claude has co-authored more iOS code than any single engineer on the team",
+   "t": "9:17"
+  },
+  {
+   "claim": "Crash-free rate went from 99.6% to 99.9%; runtime errors dropped by over 50%; share of highly engaged users doubled",
+   "t": "9:17"
+  },
+  {
+   "claim": "New character built in a day with 7M tokens and 4.5 hours of compute; described as about two weeks of work in an afternoon",
+   "t": "11:39"
+  },
+  {
+   "claim": "App Store rating 4.8 stars across 162,000 reviews",
+   "t": "11:39"
+  },
+  {
+   "claim": "$30M raised from Castle Ventures and others",
+   "t": "13:09"
+  }
+ ],
+ "hot_takes": [
+  "Voice users jump around, so reusing cached context across turns is a trap; rebuild context every turn.",
+  "Route model choice by stakes, not cost: the high-stakes turns always get the best model.",
+  "For agents, the codebase itself is a better context source than CLAUDE.md.",
+  "Managing a fleet of concurrent agents rewards people-management skills (decompose, delegate at checkpoints, review seriously, know when to step in).",
+  "Optimize for fewer bad interruptions, not fewer interruptions."
+ ],
+ "quality": 4,
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh has tiered cross-session memory and consolidation. Tolan's nightly merge, cluster, contradiction-resolution pass and stable/volatile prompt split are directly comparable. Stakes-based routing also maps loosely to Govrix strategy routing.",
+   "action": "Compare MemoryMesh's consolidation and conflict-resolution path with Tolan's nightly merge/cluster/contradiction pass, and test a stable-versus-volatile prompt split for recalled memories."
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The PR-shepherd loop (watch CI and review comments until clean) and the separate review agents map to ProsHarness's loops and schedules. The codebase-as-docs point bears on context design for runs.",
+   "action": "Consider a ProsHarness PR-shepherd loop that iterates on CI failures and review comments, with a separate review-agent pass before a human sees the PR."
+  }
+ ],
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

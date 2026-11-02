@@ -1,0 +1,49 @@
+# 3,000+ Tokens Per Second? Let's Stress Test Xiaomi's New Model: MiMo V2.5 Pro UltraSpeed
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `HfRVXadseCo` · [watch](https://youtu.be/HfRVXadseCo) · **date:** 2026-07-02 · **length:** 8:54 · **format:** review · **quality:** 3/5 · **depth:** intro
+- **speakers:** Andrus · **orgs:** Xiaomi, TileRT, Better Stack
+- **topics:** inference-serving, models-research, vibe-coding-app-building · **tags:** fast-inference, mixture-of-experts, speculative-decoding, block-parallel-drafting, quantization, mxfp4, qat, persistent-kernel, warp-specialization, threejs, tokens-per-second
+
+> Better Stack stress-tests Xiaomi's MiMo V2.5 Pro UltraSpeed, claimed at 1000+ tok/s on a 1T MoE from one 8-GPU server; peaks near 3451 tok/s, with broken or frozen app outputs.
+
+## Summary
+Better Stack's host (Andrus) reviews Xiaomi's MiMo V2.5 Pro UltraSpeed, a one-trillion-parameter mixture-of-experts model that Xiaomi and its systems partner TileRT claim runs above 1000 tokens per second on a single server with eight commodity GPUs. The video explains the three claimed levers: low-bit MXFP4 weights trained with QAT (keeping routing layers at higher precision), DFlash block-parallel drafting for speculative decoding (about 6.3 of 8 drafted tokens accepted on coding, per the vendor), and a persistent GPU kernel using warp specialization to avoid launch gaps. Tests were one-shot prompts: a LeetCode hard problem peaked at 3451 tok/s, a single-file finance dashboard ran at roughly 700 tok/s reasoning and 1000 tok/s output in 65 s, and a Three.js Subway Surfers clone was built in 50 s and fixed with two follow-ups. The speaker found the Khan-style multi-widget page froze twice, and the five-concept version finished in 75 s with only the first three widgets working. He calls the model very fast but well short of Claude Opus or GPT 5.5 on output quality, and he flags possible training-data contamination on the LeetCode case.
+
+## Key ideas
+- **Headline claim: over 1000 tok/s from a 1T-parameter MoE, versus roughly 50-60 tok/s the speaker assumes for frontier models. The speaker repeats 'allegedly' about the speed claim, so it is a vendor number he has not verified.** — Speed is attributed to 'extreme model system co-design' by Xiaomi and TileRT, not to exotic hardware: one standard server with eight commodity GPUs. ([0:00](https://youtu.be/HfRVXadseCo?t=0))
+- **Memory bandwidth is attacked with MXFP4 weights trained using quantization-aware training (QAT), with the core routing layers kept at higher precision so accuracy stays close to the uncompressed model.** — Decode of a trillion-parameter model is memory-traffic bound; low-bit weights cut traffic, and QAT plus precision exceptions are the claimed fix for the accuracy loss. ([1:03](https://youtu.be/HfRVXadseCo?t=63))
+- **DFlash replaces token-by-token drafting with block drafting: the draft model predicts a whole block of hidden tokens in one parallel forward pass, and the main model verifies them.** — The speaker reports that on coding tasks the main model keeps about 6.3 of every 8 drafted tokens, which is the basis for the 'eight-token leaps' framing. ([2:04](https://youtu.be/HfRVXadseCo?t=124))
+- **Per-op kernel launch and idle gaps are the next bottleneck at about 1000 tok/s. TileRT uses a persistent engine kernel that stays resident on the GPU, with warp specialization giving fixed roles to data movement, math and communication so they overlap.** — The speaker links this to his earlier Diffusion Gemma video, which he says reaches fast speeds by a different route. ([3:28](https://youtu.be/HfRVXadseCo?t=208))
+- **Single-prompt LeetCode hard problem peaked at 3451 tok/s, the highest number in the video.** — The speaker notes the problem may have been in training data, so it is not a fair comparison. ([3:28](https://youtu.be/HfRVXadseCo?t=208))
+- **Single-file personal-finance dashboard (no external libraries) took 65 s at about 700 tok/s reasoning and about 1000 tok/s output. Some buttons and actions were broken, but the design was judged good.** — This is the most representative of the speed-versus-quality tradeoff in the video. ([4:29](https://youtu.be/HfRVXadseCo?t=269))
+- **Ambitious multi-concept math explainer page froze twice after two to three minutes. A five-concept version finished in 75 s, with the first three widgets working and the rest broken, empty or non-functional.** — Speaker suspects a context limit or a rate limiter, and that the model may have dropped context during reasoning; he averaged about 500 tok/s in reasoning on this test. ([5:35](https://youtu.be/HfRVXadseCo?t=335))
+- **Short one-sentence prompt produced a working Three.js Subway Surfers clone in 50 s. Two follow-up prompts added coins and obstacles, and high-score saving worked, which the speaker calls the most impressive result.** — The speaker says other models could likely build this too, so the speed of the first pass is the main point. ([5:35](https://youtu.be/HfRVXadseCo?t=335))
+
+## Techniques
+- **Precision exceptions with quantization-aware training for large MoE weights** — Train the weights in MXFP4 with QAT so the low-bit model matches the full-precision model; keep the routing/gating layers at higher precision because they are sensitive to rounding. Speaker describes this only, with no code or config. *When:* Decode-time memory bandwidth is the bottleneck for a very large MoE served on a small number of GPUs, and you can afford a QAT pass.
+- **Block-parallel drafting for speculative decoding (DFlash)** — Instead of a draft model proposing one token at a time, the draft predicts a block of tokens in one parallel forward pass; the target model verifies the block. Track the acceptance rate per task type (the speaker quotes 6.3 of 8 on coding) and tune block size against it. *When:* Latency-bound generation on code-heavy workloads where a high acceptance rate is expected. Measure acceptance on your own traffic before relying on it; compare against the EAGLE-3 approach named in our InferCraft plan.
+- **Persistent kernel with warp specialization** — Keep one long-running kernel resident on the GPU and assign warps permanent roles (data movement, math, cross-GPU communication) so stages run concurrently and the pipeline never waits on a relaunch. *When:* Small-batch, high-tokens-per-second decoding where kernel launch overhead and idle gaps dominate step time, and the team can maintain custom kernels.
+- **Fixed-prompt generation speed and output sweep** — Run a short ladder of prompts of rising difficulty (algorithm problem, single-file dashboard, multi-widget page, interactive Three.js game), then one or two follow-up fix prompts. Record peak and average tokens per second, time to finish, and whether the output works by manual inspection. *When:* Quick comparisons of generation models for app-building. Add repeated runs and automated checks, since the video uses one run per prompt and judges output by eye.
+
+## Numbers
+- Frontier models (e.g. GPT 5.5, Claude 4 Opus) assumed at roughly 50-60 tok/s; the speaker's estimate, not a measurement. ([0:00](https://youtu.be/HfRVXadseCo?t=0))
+- MiMo UltraSpeed claimed at over 1000 tok/s. ([0:00](https://youtu.be/HfRVXadseCo?t=0))
+- One trillion-parameter MoE served from a single server with eight commodity GPUs. ([1:03](https://youtu.be/HfRVXadseCo?t=63))
+- DFlash: about 6.3 of 8 drafted tokens accepted by the main model on coding tasks (vendor-reported). ([2:04](https://youtu.be/HfRVXadseCo?t=124))
+- LeetCode hard problem: peak 3451 tok/s in a single run. ([3:28](https://youtu.be/HfRVXadseCo?t=208))
+- Finance dashboard: about 700 tok/s reasoning, about 1000 tok/s output, 65 s total. ([4:29](https://youtu.be/HfRVXadseCo?t=269))
+- Five-concept math page: 75 s, average about 500 tok/s during reasoning; first three widgets worked. ([5:35](https://youtu.be/HfRVXadseCo?t=335))
+- Three.js Subway Surfers clone: 50 s for the first pass, then two follow-up prompts. ([5:35](https://youtu.be/HfRVXadseCo?t=335))
+
+## Hot takes
+- Hype framing ('fastest model in the world', 'mind-blowing') rests on a handful of single runs with no repeats, error bars, or automated checks.
+- The LeetCode 3451 tok/s peak may come from training-data overlap; the speaker concedes the comparison is not fair.
+- The architecture claims (MXFP4+QAT, DFlash acceptance rate, persistent kernel) are relayed from the vendor and not verified in the video.
+- Output quality is weak by the speaker's own account: the multi-widget page froze, and several outputs were broken or half-finished. He says it is no Claude Opus or GPT 5.5 level.
+- Early access was provided to the reviewer, so the test setup and any vendor-side conditions are not disclosed.
+
+## Tools mentioned
+MiMo V2.5 Pro UltraSpeed (Xiaomi model; the speaker says 'Ultra Speed'), TileRT (systems partner, persistent-kernel engine), MXFP4 (4-bit weight format), QAT (quantization-aware training), DFlash (block-parallel speculative drafting), Three.js (used for the Subway Surfers clone), LeetCode (source of the hard algorithm test), GPT 5.5 (comparison only), Claude 4 Opus (comparison only), Diffusion Gemma (earlier Better Stack video referenced, not used)
+
+## Relevance to our work
+- **agentos** (1/3): InferCraft (vLLM plus Ray Serve, EAGLE-3 speculative decoding, NVFP4) overlaps with the block-drafting and precision-exception ideas, but the video gives only vendor claims and no reproducible detail. → *Look up the DFlash block-parallel drafting paper and compare its acceptance-rate method with EAGLE-3 before choosing a draft strategy for InferCraft.*

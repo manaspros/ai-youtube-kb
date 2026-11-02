@@ -1,0 +1,194 @@
+{
+ "one_line": "Walkthrough of God's Eye View, an open-source local globe that fuses public live feeds (planes, ships, satellites, cameras, quakes), with its feed-smoothing design and honest data caveats.",
+ "summary": "Better Stack's Josh reviews God's Eye View, a popular open-source project that runs locally and plots live public data on a Cesium globe: ADS-B aircraft, AIS ships, satellite orbits, earthquakes and traffic cameras. Setup needs no API keys, but Node 24.14 or newer is required (Node 25 is unsupported). The code is vanilla JavaScript using Cesium JS, Vite and a small Node proxy server for the feeds. The most reusable idea is time handling: feeds update every 15 to 30 seconds, so the globe renders one update behind, interpolates between known positions, and dead-reckons from speed and heading when a feed drops. Version 0.2 (October 3) added an MCP server that exposes the built-in voice agent's tools to Claude, Codex and ChatGPT, and grew the camera set from about 800 to 3,400. The speaker is clear that this is not real satellite imagery: the ground is ordinary map imagery, traffic is simulated, camera positions are estimated, and the README admits the data may be delayed, modeled or wrong. He also flags licensing (MIT code, but OpenSky and undersea-cable data are non-commercial) and the privacy tension of combining cameras with license-plate reader locations, which the project says it refuses to use for tracking people.",
+ "speakers": [
+  "Josh (Better Stack)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "OpenSky Network",
+  "Cesium",
+  "Google",
+  "NASA",
+  "OpenAI"
+ ],
+ "format": "review",
+ "topics": [
+  "mcp-and-tools",
+  "dev-tools",
+  "voice-multimodal",
+  "data-engineering"
+ ],
+ "tags": [
+  "open-source",
+  "geospatial",
+  "live-data",
+  "dead-reckoning",
+  "cesium",
+  "rate-limiting",
+  "mcp",
+  "api-budget",
+  "licensing",
+  "privacy",
+  "tool-review"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The project is a local open-source globe that plots only public broadcast and published data, with zero API keys needed to run the basic version.",
+   "detail": "Planes broadcast over ADS-B (collected by networks like OpenSky), ships over AIS, satellite orbits are published and can be propagated, and USGS earthquakes and transport-department traffic cameras are public. The project joins these scattered sources on one globe.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Live feeds are never truly live, so the globe renders one update behind and interpolates.",
+   "detail": "Feeds update every 15 to 30 seconds. Drawing each update on arrival makes planes teleport, so the app keeps the previous and current positions and glides between them.",
+   "t": "2:20"
+  },
+  {
+   "idea": "Dead reckoning fills gaps when a feed drops out.",
+   "detail": "If a feed stops, the app estimates each position forward from last known speed and heading, the same approach sailors used before GPS. Satellites are propagated with the SGP4 orbit model from published orbit data.",
+   "t": "2:20"
+  },
+  {
+   "idea": "A budget system rations the free API quota so one session cannot exhaust the allowance.",
+   "detail": "The speaker's takeaway is that live data is never live, so you smooth and predict it, and you ration it.",
+   "t": "2:20"
+  },
+  {
+   "idea": "Version 0.2 added an MCP server that exposes the built-in voice agent's tools to external agents.",
+   "detail": "Released October 3. Claude, Codex and ChatGPT can call the same tools to fly the globe or track something. The same release grew cameras from about 800 to 3,400, added NASA satellite imagery for before/after comparison, flight directions, transit, support for a user's own ADS-B receiver, and an iPhone/iPad build.",
+   "t": "3:12"
+  },
+  {
+   "idea": "The voice feature uses the user's own OpenAI realtime key and has a hard spending stop.",
+   "detail": "A spend meter caps usage at $5. The speaker praises this as a guardrail.",
+   "t": "3:12"
+  },
+  {
+   "idea": "The visuals are a spy-satellite feel, not real satellite imagery, and the README says so.",
+   "detail": "The ground is ordinary map imagery, cars are simulated, camera positions are coerced estimates, and the data may be delayed, incomplete, modeled, inferred or wrong. The speaker treats this as a rare level of honesty for a project README.",
+   "t": "4:24"
+  },
+  {
+   "idea": "Licensing and coverage limits matter before reuse.",
+   "detail": "The code is MIT, but OpenSky flight data and the undersea-cable dataset are non-commercial, so a startup built on it needs the data-source terms. Ship tracking goes quiet mid-ocean because it depends on ground receivers, and aircraft only appear while transmitting. The README says it is not a hardened production service.",
+   "t": "4:24"
+  },
+  {
+   "idea": "Combining public datasets creates a surveillance concern even when each dataset is legal and public.",
+   "detail": "Thousands of traffic cameras plus license-plate reader locations on one 3D map is the speaker's main discomfort. The project says it draws its line at tracking people, and the speaker leaves whether that is enough to the viewer.",
+   "t": "5:26"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run God's Eye View locally",
+   "how": "Clone the repo, run `npm ci`, then `npm run doctor` to check setup, then `npm run dev` (transcribed as 'npm run deb') and open localhost. Use Node 24.14 or newer; Node 25 is unsupported. The basic version needs no API keys. The repo URL is not spoken in the video.",
+   "when": "To try the project or use it as a reference for fusing live public feeds on a map."
+  },
+  {
+   "name": "Render the last update one step behind and interpolate",
+   "how": "Store the previous and current position for each feed item, and animate between them over the next update interval instead of snapping to new positions on arrival.",
+   "when": "Any UI that displays polled or low-rate streams (15 to 30 second intervals) and should look continuous."
+  },
+  {
+   "name": "Dead reckoning for dropped feeds",
+   "how": "When a feed stops reporting, extrapolate each item's position forward from its last known speed and heading. For orbiting objects, compute position from published orbit elements with the SGP4 model rather than relying on live positions.",
+   "when": "Tracking moving entities whose feed is intermittent, such as aircraft, ships or satellites."
+  },
+  {
+   "name": "Ration a free API quota with a budget",
+   "how": "Track calls against a per-period allowance (the video cites roughly one hour of free-tier calls) and throttle or skip requests when the budget is nearly spent.",
+   "when": "Relying on a free or rate-limited upstream API that can be exhausted quickly by a single session."
+  },
+  {
+   "name": "Hard spend cap for a realtime voice API",
+   "how": "The app uses the user's own realtime API key and shows a spend meter that stops all usage at $5.",
+   "when": "Shipping a feature that bills per use on a key the user supplies, to prevent surprise charges."
+  },
+  {
+   "name": "Unlock 3D tiles through an external key",
+   "how": "Without keys, the globe shows flat imagery. A free Cesium ion token unlocks Google 3D tiles for non-commercial use, or a Google Maps key can be used instead (metered billing).",
+   "when": "Choosing a 3D map basemap, and checking the license of each provider before commercial use."
+  }
+ ],
+ "tools": [
+  "God's Eye View (open-source globe project, about 55,000 GitHub stars)",
+  "Cesium JS",
+  "Vite",
+  "Node.js (24.14 or newer required; 25 unsupported)",
+  "npm",
+  "SGP4 orbit model",
+  "ADS-B",
+  "AIS",
+  "OpenSky Network",
+  "MCP (Model Context Protocol) server",
+  "Claude",
+  "Codex",
+  "ChatGPT",
+  "OpenAI realtime API",
+  "Google 3D Tiles",
+  "Google Maps Platform key",
+  "Cesium ion token",
+  "NASA satellite imagery"
+ ],
+ "numbers": [
+  {
+   "claim": "About 55,000 GitHub stars, and back on GitHub's daily trending list that week.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Feeds update every 15 to 30 seconds.",
+   "t": "2:20"
+  },
+  {
+   "claim": "Cameras grew from about 800 to 3,400 in version 0.2.",
+   "t": "3:12"
+  },
+  {
+   "claim": "Voice spend meter hard-stops at $5.",
+   "t": "3:12"
+  },
+  {
+   "claim": "Version 0.2 shipped October 3.",
+   "t": "3:12"
+  },
+  {
+   "claim": "Requires Node 24.14 or newer; Node 25 is unsupported.",
+   "t": "1:05"
+  },
+  {
+   "claim": "Video length 6:29.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The speaker calls it one of the best reference codebases for fusing live feeds, and it is a promotional review, but it spends real time on caveats (simulated cars, estimated cameras, licensing limits), which keeps it from being pure hype.",
+  "The 'spy satellite' framing is marketing; the video itself corrects it.",
+  "Combining legal public camera and license-plate-reader locations in one view is the real concern, and the project's refusal to track people is presented as sufficient only by the project's own line.",
+  "Auto-captions garbled 'npm run dev' and 'SGP4' and the orbit data source; the notes use the corrected forms."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Its MCP exposure of one tool set to several agents and its per-upstream budget are loosely related to AgentOS's proxy and budget pillars, but nothing here is a direct change to AgentOS.",
+   "action": "Low priority: when designing the Govrix budget counters, compare how a per-period upstream quota is rationed here."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Exposing one tool set to Claude and Codex through MCP is adjacent to ProsHarness's Codex critique step, but the video does not cover multi-agent coordination.",
+   "action": "Read how this MCP server defines its tools if ProsHarness exposes its own tools to Codex."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "A small, readable reference for combining polled feeds with interpolation, dead reckoning and quota budgets on a map, with honest caveats about data licensing.",
+   "action": "Clone the repo and read its feed-smoothing and budget code as a reference for live-data UIs."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

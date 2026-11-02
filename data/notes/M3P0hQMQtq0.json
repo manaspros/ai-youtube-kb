@@ -1,0 +1,158 @@
+{
+ "one_line": "AI LABS tests the self-hosted agent OpenClaw and finds it costly (token-heavy context, heartbeats), slow as context grows, and risky (plain-text credentials, malicious community skills, prompt injection); it closes with mitigation advice.",
+ "summary": "The AI LABS team installed OpenClaw, a self-hosted AI assistant, and reports a rough setup: WhatsApp kept dropping on 408 errors, so they used Discord instead. Their main cost finding is that OpenClaw resends the full conversation, memory, skills and heartbeat traffic with every query, so a daily cron job was estimated near $128 per month and an hourly email-summary job burned API credits fast. Response time also grew with context, from about 2 to 12 seconds on a fresh session to about 119 seconds once context had built up. On security, they say credentials and sessions sit in plain JSON files, the agent can run shell commands and read files, and Cisco's open-source skill scanner found nine findings (two critical, five high) in one community skill that exfiltrated data. They note OpenClaw's security policy treats prompt injection as out of scope. Their advice is to set API budgets and alerts, lengthen heartbeat intervals, clear sessions, install only necessary and scanned skills, run the agent in Docker or a VM with a separate account, and revoke tokens for unused channels. The video is short, anecdotal from one setup, and ends with pitches for the channel's paid community and super thanks.",
+ "speakers": [],
+ "orgs": [
+  "AI LABS",
+  "Cisco",
+  "Anthropic",
+  "OpenAI",
+  "Google Cloud",
+  "OpenRouter",
+  "Ollama",
+  "Discord",
+  "WhatsApp"
+ ],
+ "format": "review",
+ "topics": [
+  "security-guardrails",
+  "token-cost-efficiency",
+  "sandboxing-execution",
+  "skills-self-improvement"
+ ],
+ "tags": [
+  "openclaw",
+  "agent-cost",
+  "context-growth",
+  "heartbeat",
+  "prompt-injection",
+  "skill-supply-chain",
+  "plain-text-credentials",
+  "docker-sandbox",
+  "budget-alerts",
+  "ollama",
+  "cisco-skill-scanner"
+ ],
+ "tools": [
+  "OpenClaw",
+  "Claude (former Claudebot name)",
+  "OpenAI API",
+  "Anthropic models",
+  "OpenRouter",
+  "Ollama",
+  "Docker",
+  "Cisco open-source skill scanner",
+  "Discord",
+  "WhatsApp"
+ ],
+ "key_ideas": [
+  {
+   "idea": "OpenClaw's real cost is tokens, not the free software: it resends conversation, memory, skills and channel context on every query, so per-query cost grows with the session.",
+   "detail": "Simple daily cron job estimated around $128 per month; an hourly email-summary automation burned through OpenAI credits quickly. Switching to smaller models did not lower cost much, which they read as a usage-pattern problem rather than a model-price problem.",
+   "t": "1:18"
+  },
+  {
+   "idea": "Heartbeats and periodic tasks keep spending tokens even when idle.",
+   "detail": "The agent sends server heartbeats and runs periodic tasks, so API usage rises even without user chat. Community suggestions: heartbeat interval over two hours and clearing sessions before sleep.",
+   "t": "2:46"
+  },
+  {
+   "idea": "Latency grows with context length.",
+   "detail": "Their logs showed response time rising from about 2-12 seconds on a fresh session to about 119 seconds after context built up; tool calls add more overhead.",
+   "t": "2:46"
+  },
+  {
+   "idea": "Credentials and sessions are stored in plain JSON files readable by anyone with system access.",
+   "detail": "Combined with the agent's ability to run shell commands, read files and execute scripts, this is presented as the core security risk, even on a local install.",
+   "t": "4:14"
+  },
+  {
+   "idea": "Community skills can be malicious; Cisco's open-source skill scanner found nine findings, two critical and five high, in one skill.",
+   "detail": "The skill was described as functionally malware: it instructed the bot to send data via curl to an external server controlled by the skill author. Skills are hosted on a public skill hub (named Claw Hub in the video).",
+   "t": "4:14"
+  },
+  {
+   "idea": "Prompt injection is out of scope in OpenClaw's security policy, so the team relies on model-provider guardrails.",
+   "detail": "Their OpenAI-backed setup refused to reveal credentials even when told the user was the server owner, but they note clever injections can override this.",
+   "t": "5:41"
+  },
+  {
+   "idea": "Isolation and least privilege are the main mitigations: a separate account without sensitive data, Docker or a VM, and revoking unused access.",
+   "detail": "Resetting a channel token (for example Discord) revokes the agent's access to that channel.",
+   "t": "5:41"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Hard budget and alerts on the model API key",
+   "how": "Set spend budgets and alerts in the provider console (they name OpenAI and Google Cloud) for whatever key the agent uses, so runaway automations get caught early.",
+   "when": "Any always-on agent or scheduled job that calls a paid model API."
+  },
+  {
+   "name": "Reduce idle token burn",
+   "how": "Raise the heartbeat interval above two hours and clear the session before the agent sleeps, so old conversation is not resent with every query.",
+   "when": "Long-running personal agents with heartbeats or cron-style tasks, where context keeps growing."
+  },
+  {
+   "name": "Vet community skills before install",
+   "how": "Run the open-source Cisco skill scanner on any third-party skill before installing it, install only skills verified by the community, and block skills that touch passwords or sensitive systems unless needed.",
+   "when": "Adding skills or plugins from a public registry to an agent that can run shell commands."
+  },
+  {
+   "name": "Sandbox the agent",
+   "how": "Run it in a Docker container (isolated, restricted from other system resources) or in a VM that contains only the agent setup; give it a separate account with no sensitive data.",
+   "when": "Any agent that can execute commands or read local files."
+  },
+  {
+   "name": "Least-privilege channel tokens",
+   "how": "Remove access to unused integrations, and reset the bot token (e.g. Discord) to revoke the agent's access when you stop using a channel.",
+   "when": "Agents connected to chat channels or other services you no longer use."
+  },
+  {
+   "name": "Prefer providers with built-in guardrails, with caution",
+   "how": "Choose hosted models from providers with their own guardrails (they cite OpenAI and Anthropic) over unguarded setups, and do not treat this as a complete defense against injection.",
+   "when": "Choosing a model backend for an agent that handles credentials or untrusted content."
+  }
+ ],
+ "numbers": [
+  {
+   "claim": "Simple daily cron job estimated at around $128 per month in OpenClaw token costs",
+   "t": "1:18"
+  },
+  {
+   "claim": "Response time grows from about 2-12 seconds on a fresh session to about 119 seconds with built-up context (from their logs)",
+   "t": "2:46"
+  },
+  {
+   "claim": "Cisco's scanner found nine security findings (two critical, five high) in a single community skill",
+   "t": "4:14"
+  },
+  {
+   "claim": "OpenClaw was rebranded from Claudebot to Maltbot to OpenClaw within about three days",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "OpenClaw is described as a security nightmare; the cost problem is in how the product uses context, not the model choice (single-setup observation).",
+  "Models from OpenAI and Anthropic are recommended partly because their built-in guardrails refuse credential leaks, but the video admits clever injections can override them.",
+  "Quality is capped by thin evidence: one anecdotal test setup, a single cited malicious skill, and repeated pitches for the channel's paid community and super thanks."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Govrix already has PII and prompt-injection scanning, and the video's scanner-gated skills and cost alerts map to AgentOS budgets and exec-gate guardrails.",
+   "action": "Add a pre-install scan gate for community skills in the SkillForge/registry path, and check whether Govrix budget alerts fire on context-growth spikes, not only on total spend."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness has zero-token credential handling, and the video shows plain-JSON credential storage and unscoped channel tokens as the main risk.",
+   "action": "Audit where ProsHarness stores API keys and channel tokens, move them out of plain files, and make revoking a single integration one step."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

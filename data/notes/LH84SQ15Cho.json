@@ -1,0 +1,129 @@
+{
+ "one_line": "A 7-minute alpha walkthrough of TanStack DB, a reactive client store built on TanStack Query with collections, SQL-style live queries, and optimistic mutations, plus an Electric SQL sync path.",
+ "summary": "The presenter introduces TanStack DB, a client-side reactive store that extends TanStack Query with typed collections, live queries and optimistic mutations, and says it was developed with Electric SQL. He stresses that it is in early alpha and that he hit bugs while building the demo. A to-do app demo shows two data paths: a Query collection that polls an existing REST endpoint, and an Electric collection that syncs from Postgres. He walks through collection setup (key, Zod validation, refetch interval), live queries with joins across collections, and the optimistic mutation flow, where server state replaces optimistic state without UI flicker. He closes by describing the unidirectional data flow and noting that the Electric path is the one the library's authors recommend for local-first sync. There are no benchmarks; the \"blazing fast\" claims rest on the demo alone.",
+ "speakers": [],
+ "orgs": [
+  "TanStack",
+  "Electric SQL",
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "tanstack-db",
+  "tanstack-query",
+  "electric-sql",
+  "local-first",
+  "optimistic-updates",
+  "live-queries",
+  "reactive-store",
+  "javascript",
+  "postgres",
+  "zod",
+  "differential-dataflow"
+ ],
+ "key_ideas": [
+  {
+   "idea": "TanStack DB is positioned as TanStack Query plus a client database: typed collections, live queries and optimistic mutations, in early alpha.",
+   "detail": "Presenter calls it an early alpha and says he filed bug reports before the demo worked. It was co-developed with Electric SQL and was renamed from the earlier @tanstack/optimistic package.",
+   "t": "0:00"
+  },
+  {
+   "idea": "There are two ingestion paths: a Query collection over an existing REST API, or an Electric collection syncing from a Postgres-backed Electric instance.",
+   "detail": "The Query path polls the REST endpoint. The Electric path gives the fully local-first, real-time-sync experience and is described as one of the most powerful ways to use the library.",
+   "t": "0:58"
+  },
+  {
+   "idea": "Collections are the single client-side source of truth, and they keep watching their data.",
+   "detail": "A collection is a typed set of objects (to-dos, users, etc.) that can be filled from a REST endpoint, Electric SQL, or in-memory data. The demo sets a 3000 ms refetch interval so the data is polled every three seconds.",
+   "t": "0:58"
+  },
+  {
+   "idea": "Live queries use a SQL-flavored syntax, run on the D2TS differential dataflow engine, and can join across collections.",
+   "detail": "Joins let normalized backend data be denormalized on the client, which the presenter says removes the need for bespoke backend endpoints that match client shapes. Data from two separate sources can also be merged on the client without backend changes.",
+   "t": "2:20"
+  },
+  {
+   "idea": "Optimistic mutations: the local collection changes first, the server write runs, then the collection is invalidated and re-synced from the server.",
+   "detail": "The collection blocks update application while the mutation function runs. The optimistic state is dropped in the same step that the server state is applied, so the presenter says there is no UI flicker.",
+   "t": "3:19"
+  },
+  {
+   "idea": "The data flow is unidirectional with two loops: an optimistic inner loop that updates collections and components immediately, and a later sync that pulls server state back in.",
+   "detail": "The presenter uses the add-to-do example to show the persistent mutation going to the server while the client collection updates instantly.",
+   "t": "4:33"
+  },
+  {
+   "idea": "Swapping from the Query path to the Electric path changes only the collection constructor and the mutation endpoint; live queries and mutation code stay the same.",
+   "detail": "The mutation function posts to Electric's generic ingest-mutations endpoint. The presenter says the Convex team is the only other group he has seen do this well.",
+   "t": "5:50"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Query-backed collection over an existing REST API",
+   "how": "Create a collection with the TanStack Query client (the presenter's call is named create query collection, so exact API names may differ). Set refetchInterval to 3000 ms. The queryFn is a plain fetch of the list endpoint, getKey returns the item id as a string, and a Zod schema validates each incoming row. Pass the existing QueryClient. Reads go through useLiveQuery, and writes go through a mutation hook.",
+   "when": "Adding a local store on top of an existing REST API without changing the backend, as the simpler of the two paths."
+  },
+  {
+   "name": "Electric-backed collection for local-first sync",
+   "how": "Replace the query collection with a create-Electric-collection call that points at the Electric SQL instance in front of Postgres. Keep useLiveQuery and the optimistic mutation the same, but have the mutation function post changes to Electric's generic ingest-mutations endpoint.",
+   "when": "Offline-friendly, collaborative or local-first apps that need real-time sync from Postgres."
+  },
+  {
+   "name": "SQL-style live query with cross-collection join",
+   "how": "Call useLiveQuery with a SQL-flavored query over a collection, then chain .join(otherCollection, ...) with the join condition. Store normalized rows in collections and denormalize them in the query.",
+   "when": "Shaping normalized backend data into client views, or merging two sources (two databases or APIs) on the front end without backend changes."
+  },
+  {
+   "name": "Optimistic mutation with invalidate-after-await",
+   "how": "Use useOptimisticMutation with a mutationFn. In the component's submit handler, call the mutate function and apply the change to the collection (collection.insert; update and delete also exist). In mutationFn, read the modified data (the original is also available for comparisons), POST it to the API, then invalidate the collection before the function returns. The collection then refreshes, and the optimistic state is discarded at the same moment.",
+   "when": "Making writes feel instant while keeping the client in sync with the database and avoiding flicker when the server state arrives."
+  }
+ ],
+ "tools": [
+  "TanStack DB",
+  "TanStack Query",
+  "Electric SQL",
+  "Postgres",
+  "D2TS (differential dataflow engine, named as the live-query engine)",
+  "Zod",
+  "Convex (mentioned as comparable, not used)"
+ ],
+ "numbers": [
+  {
+   "claim": "Query collection refetchInterval set to 3000 ms, so the demo polls the REST endpoint every three seconds.",
+   "t": "0:58"
+  },
+  {
+   "claim": "The presenter gives no benchmarks or latency figures. The speed claims (blazing fast, instant optimistic updates) are not measured.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The presenter calls TanStack DB blazing fast and says it is taking over the JavaScript ecosystem, with no benchmarks to back either claim.",
+  "He says the library is in early alpha and that he filed bug reports before the demo worked, so the API is likely to change.",
+  "He calls the Electric path the most powerful way to use the library. Electric SQL co-developed it, so that recommendation should be read with that relationship in mind.",
+  "The only comparison he makes is that the Convex team is the only other group he has seen do this well."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Client-side JavaScript state store for web apps. Nothing in the video touches agent infrastructure, retrieval, or the proxy and storage stack.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Frontend state library with no bearing on the Claude Code harness, checkpointing, or approvals.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

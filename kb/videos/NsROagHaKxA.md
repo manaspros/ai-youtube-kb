@@ -1,0 +1,46 @@
+# Building Custom AI Agents Just Got EASIER - Claude Agent SDK
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `NsROagHaKxA` · [watch](https://youtu.be/NsROagHaKxA) · **date:** 2025-11-02 · **length:** 6:52 · **format:** tutorial · **quality:** 3/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Anthropic, Better Stack
+- **topics:** claude-code, agent-architecture, mcp-and-tools, coding-agents · **tags:** claude-agent-sdk, claude-code-sdk, streaming-input, custom-tools, mcp, system-prompt, hooks, typescript, zod, subagents
+
+> Better Stack walkthrough of the Claude Code SDK (now also called the Agent SDK): a single-prompt query, a streaming-input REPL, replacing the system prompt, and adding a custom MCP tool, all in one short TypeScript file.
+
+## Summary
+The video is a short tutorial on building a custom agent with the Claude Code SDK after the team added custom tool support and hooks. It starts with a one-shot query call that returns the model name, session ID, token usage and cost. It then moves to streaming input mode, which Anthropic recommends for multi-turn use: a generator yields one message per prompt, and a stdin loop lets the user keep talking to the agent while tool calls are printed. The presenter then replaces the default system prompt with a custom one, which gives full control but also removes the default tool-usage instructions, so the demo agent stopped calling tools entirely. Finally, a custom MCP tool built with createSdkMcpServer and a zod schema computes a drink price, and the agent uses it once it is allowed in the tools list. The whole demo is about 91 lines in one file. Hooks are announced in the intro and mentioned at the end but not demonstrated, and the video does not cover evals, error handling or production concerns.
+
+## Key ideas
+- **The SDK is the same library the Claude Code CLI uses, so a custom agent gets the same tools, hooks, output styles, sub-agents and slash commands that the user already has globally.** — The presenter says that importing the SDK is the same as using the CLI, and that a custom agent also inherits global hooks, output styles and sub-agents. ([0:00](https://youtu.be/NsROagHaKxA?t=0))
+- **One-shot query() is enough for a single prompt, but multi-turn work needs streaming input mode, which Anthropic recommends.** — Streaming input mode uses a generator function that yields a message object for each prompt. The speaker's example sends two prompts in sequence. ([1:22](https://youtu.be/NsROagHaKxA?t=82))
+- **The result object carries more than the answer: session ID, token usage, cost and tool activity are all available.** — Printing the full message instead of only the result text exposes the session ID, token usage and cost, plus any tool calls the agent made on the way. ([1:22](https://youtu.be/NsROagHaKxA?t=82))
+- **A usable interactive agent takes about 91 lines in one file, with stdin for follow-up prompts and printed tool-use events.** — The loop reads user input, pushes it into the generator, prints each tool the agent uses (bash, glob) and then waits for the next prompt. ([2:50](https://youtu.be/NsROagHaKxA?t=170))
+- **Replacing the system prompt gives full control, but the default prompt holds the tool instructions, so a custom prompt can silence tool use completely.** — The demo's 'always answer I don't know' prompt made the agent refuse even the file-count question without attempting any tool call. The speaker compares this with output styles and appending to the system prompt, which keep more of the default behaviour. ([4:17](https://youtu.be/NsROagHaKxA?t=257))
+- **Custom tools are exposed through an in-process MCP server and become usable once their names are added to the allowed-tools list.** — createSdkMcpServer takes a name and version, and tool() defines each tool with a zod input schema (size, drink type, extras, currency). The model chooses the tool from its description, and the agent then answers with the computed price. ([4:17](https://youtu.be/NsROagHaKxA?t=257))
+- **Appending to the system prompt is a quick way to shape answer style while keeping the default tool instructions.** — The presenter adds a line asking for short answers. The agent calls the MCP tool first and replies with a short price. ([5:43](https://youtu.be/NsROagHaKxA?t=343))
+
+## Techniques
+- **One-shot query** — Import the SDK package, call query() with prompt and optional options (the presenter names a model such as Claude Haiku), then log the result. Logging the full message instead of result exposes session ID, token usage and cost. *When:* Single prompt, scripted calls, or quick checks of model name and cost.
+- **Streaming-input REPL** — Write an async generator that yields one message object per prompt (type and role set as const; the speaker also mentions parent tool use ID and session ID fields). Read user lines from stdin in a loop, yield each one, and print tool-use events as they stream back. *When:* Multi-turn agents where the user keeps prompting, or any session that must keep context across turns. The speaker says Anthropic recommends this mode.
+- **Full system-prompt replacement** — Pass a custom system prompt in options. Expect the default tool-usage instructions and tool list to be gone, so the agent may stop calling tools. Test the prompt with a tool-dependent question first. *When:* A narrow agent with a fixed persona or behaviour (for example a tutor that does not give answers, or an internal agent with limited abilities). Use output styles or appending instead when default tool behaviour should be kept.
+- **Appending to the system prompt** — Add instructions to the end of the default system prompt, such as a rule for short answers, and leave the built-in tool guidance in place. *When:* You want to change tone or length but still need default tool use.
+- **In-process custom MCP tool** — Create the server with createSdkMcpServer(name, version, tools), define each tool with tool() and a zod input schema (size, drink type, extras, currency), and compute the result in code (the demo uses price tables). Import the exported server into the agent options and add its tool names to the allowed-tools list. Write a clear tool description, because the model picks tools from it. *When:* The agent needs live data such as a database lookup or an internal function. The speaker suggests the same pattern for app-specific logic.
+- **Combined demo structure** — Single file: one query for the basic path, a generator plus stdin loop for chat, a system prompt that sets persona or length, and an MCP server registered in options. Print tool calls so you can see when each tool runs. *When:* Starting point for a custom CLI agent. Build up in the order the video does, checking each step.
+
+## Numbers
+- The one-shot result includes session ID, token usage and cost, in addition to the answer text. ([1:22](https://youtu.be/NsROagHaKxA?t=82))
+- The full interactive demo is 91 lines of code in a single file. ([2:50](https://youtu.be/NsROagHaKxA?t=170))
+- Example drink-price tool result: a medium oat milk latte at 4.6, shown as $4.60. ([5:43](https://youtu.be/NsROagHaKxA?t=343))
+- In the system-prompt demo, the agent made zero tool calls for the file-count question after the custom prompt replaced the default prompt. ([4:17](https://youtu.be/NsROagHaKxA?t=257))
+
+## Hot takes
+- Framing agents as replacing human hires ('companies now hiring AI agents instead of actual humans') is pitch-style framing, not evidence.
+- The claim 'we've built the beginnings of Claude Code itself' overstates a 91-line REPL that wraps one function.
+- Hooks are presented as a headline feature but are not demonstrated, so the video is thin on the feature named in its title.
+- Useful practical warning: a full system-prompt replacement can silently disable tool use. The speaker shows this but does not say how to detect it in production.
+
+## Tools mentioned
+Claude Code SDK (the video also calls it the Claude Agent SDK in its title), Claude Code CLI, Claude Haiku (model option example), TypeScript, zod, MCP (createSdkMcpServer, tool), Bash tool (built-in), Glob tool (built-in)
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness wraps the Claude Code CLI for checkpoint/resume and loops; the SDK's streaming-input generator and session ID in each result are the same primitives such a harness would need. → *Prototype a ProsHarness run loop on the SDK streaming-input generator and use the result session ID as the checkpoint key, then compare it with the current CLI-wrapper approach.*
+- **agentos** (1/3): AgentOS is a proxy for any agent; this video is about building one agent with the SDK, not about the proxy. It may still be useful for generating test agents that make tool calls. → *Optionally use a small SDK agent with an MCP tool as a traffic generator for AgentOS tool-call and budget tests.*

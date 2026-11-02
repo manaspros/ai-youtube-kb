@@ -1,0 +1,175 @@
+{
+ "one_line": "Walks through Anthropic's \"Getting Started with Loops\" post for Claude Code: four loop types (turn, goal, time, proactive) defined by who decides when to stop, plus the skill.md, turn-cap and token-control practices that keep loops safe.",
+ "summary": "The video explains Anthropic's June 30, 2026 post \"Getting Started with Loops\" for Claude Code. A loop is defined as agents repeating cycles of work until a stop condition is met, and the speaker argues the stop condition is the core design element. The post describes four loop types that differ by who decides when to stop: turn-based (default prompting), goal-based (a measurable success condition checked by an evaluator model, with a mandatory turn cap), time-based (interval polling via /loop locally or /schedule in the cloud), and proactive (event or schedule triggered routines that run until turned off). The speaker stresses that skill.md should be a quantitative verification protocol rather than a prompt, and that a fresh-context adversarial reviewer agent reduces bias. The main cost warning is that dynamic workflows can spawn hundreds of agents, so teams should pilot on a small slice and monitor spend with /usage, /goal and /workflows. The video frames the progression as a delegation ladder: hand off the check, the stop condition, the trigger, then the prompt. It is a secondary explainer of one Anthropic post, with no new benchmarks.",
+ "speakers": [
+  "Kai (host, Kai Explains)"
+ ],
+ "orgs": [
+  "Anthropic",
+  "Kai Explains"
+ ],
+ "format": "review",
+ "topics": [
+  "claude-code",
+  "agent-architecture",
+  "token-cost-efficiency",
+  "testing-verification"
+ ],
+ "tags": [
+  "claude-code",
+  "loops",
+  "slash-goal",
+  "slash-loop",
+  "slash-schedule",
+  "skill-md",
+  "stop-condition",
+  "turn-cap",
+  "adversarial-review",
+  "token-budget",
+  "model-routing",
+  "delegation",
+  "proactive-agents"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A loop is agents repeating work cycles until a stop condition is met, and the stop condition is the architecture.",
+   "detail": "Without a defined stop, a loop keeps running, burns tokens and produces unrequested output. Every loop must end by agent judgment, a predefined definition of done, a timer, or an external event.",
+   "t": "1:15"
+  },
+  {
+   "idea": "The four loop types differ by who decides when to stop.",
+   "detail": "Turn-based (Claude judges completion, for one-off work), goal-based (success condition and turn cap, for verifiable exit criteria), time-based (interval triggered, stopped by cancellation or when the underlying work resolves), and proactive (event or schedule triggered routines that run until disabled, for well-defined recurring work like bug triage and dependency upgrades).",
+   "t": "1:15"
+  },
+  {
+   "idea": "skill.md is a verification protocol, not a prompt.",
+   "detail": "It encodes the exact checks Claude must run and measure before declaring done. The more quantitative the checks, the harder it is for the agent to fake a pass. The official example in the post is for UI changes.",
+   "t": "2:35"
+  },
+  {
+   "idea": "Goal-based loops use an evaluator model that re-checks the condition on every stop attempt.",
+   "detail": "If the condition is unmet, the agent is sent back to work. Conditions should be deterministic (a score threshold, a test count) rather than fuzzy like 'make the UI look better', and the turn cap is a required safety valve.",
+   "t": "3:47"
+  },
+  {
+   "idea": "Time-based loops differ by where they run.",
+   "detail": "/loop runs on the local machine and stops when the computer is off. /schedule moves the loop to the cloud so it runs while the user is away, which the speaker calls both the appeal and the risk.",
+   "t": "3:47"
+  },
+  {
+   "idea": "Proactive loops combine a schedule trigger, a goal condition, parallel work trees and an adversarial judge agent.",
+   "detail": "The example prompt runs hourly, requires every report in the run to be handled, spawns parallel work trees to explore three solutions, and has a judge agent review output before it ships. The judge is a second agent with fresh context that does not see the first agent's reasoning.",
+   "t": "5:12"
+  },
+  {
+   "idea": "Token control is the main operating risk of proactive loops.",
+   "detail": "Dynamic workflows can spawn hundreds of agents. The post advises piloting on a smaller slice first. Monitoring is done with /usage (spend by skills, subagents and MCPs), /goal with no arguments (turn count and tokens mid-run), and /workflows (per-agent token use, with the option to kill a runaway agent).",
+   "t": "6:30"
+  },
+  {
+   "idea": "Match model cost to task: fast model for triage, capable model for judgment.",
+   "detail": "A loop running hourly on bug reports does not need the most capable model for every ticket. The docs recommend cheap models for grunt work and reserving the capable model for review.",
+   "t": "7:48"
+  },
+  {
+   "idea": "The progression is a delegation ladder.",
+   "detail": "Each step hands one more decision to the system: first the check (skill.md), then the stop condition (/goal), then the trigger (/loop or /schedule), and finally the prompt (the full recurring-work stack). The speaker's framing is that the human has been the stop condition and can stop being it.",
+   "t": "8:49"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Define the stop condition before starting a loop",
+   "how": "Before launching any loop, state what done looks like: a Claude judgment, a measurable condition, a timer, or an external event. Treat the stop condition as the first design decision, not an afterthought.",
+   "when": "Any time you move from single prompts to a loop, especially any loop that runs unattended."
+  },
+  {
+   "name": "Write skill.md as a measured verification protocol",
+   "how": "List the exact sequence of checks Claude must execute and measure before it may report success (for example, metrics, test counts, score thresholds for a UI change). Require the agent to run and record each check rather than describe it. The transcript does not show the specific checks used in the official example.",
+   "when": "When a turn-based or goal-based loop will otherwise accept Claude's self-reported 'done'."
+  },
+  {
+   "name": "Goal loop with deterministic success criteria and a hard turn cap",
+   "how": "Use the slash goal primitive with one task, one measurable success condition (for example a Lighthouse score or number of passing tests above a threshold), and an explicit maximum number of turns. An evaluator model re-checks the condition on every stop attempt and sends the agent back if it is unmet. Avoid subjective conditions. The exact syntax is not shown in the video.",
+   "when": "Tasks with verifiable exit criteria, such as making a test suite pass or reaching a performance threshold."
+  },
+  {
+   "name": "Choose local or cloud for time-based polling",
+   "how": "Use /loop for interval polling on the local machine, which stops when the machine is off. Use /schedule to run the same kind of interval work in the cloud while the user is away. Stop the loop when the underlying work resolves, such as a PR merging or a queue emptying.",
+   "when": "Recurring work where only the inputs change (daily summaries), or polling an external system such as PR review or CI."
+  },
+  {
+   "name": "Fresh-context adversarial reviewer",
+   "how": "Run the output through a separate judge agent that does not receive the producing agent's reasoning and evaluates the output independently before it ships.",
+   "when": "Proactive loops or any agent-written change that needs an unbiased check before merge."
+  },
+  {
+   "name": "Pilot, then scale, and monitor spend mid-run",
+   "how": "Run a dynamic workflow on a small slice of the work first. During the run, use /usage for spend by skill, subagent and MCP, /goal (no arguments) for turn count and tokens, and /workflows for per-agent token use, killing any runaway agent.",
+   "when": "Before scaling any workflow from tens to hundreds of tasks, and whenever a proactive loop is active."
+  },
+  {
+   "name": "Route models by task",
+   "how": "Assign a fast, cheap model to triage and routine steps, and a capable model to review or judgment calls within the same loop.",
+   "when": "Recurring loops where per-iteration cost compounds, such as hourly ticket triage."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "/loop",
+  "/schedule",
+  "/goal",
+  "/usage",
+  "/workflows",
+  "skill.md",
+  "Lighthouse (named as a score example)",
+  "Opus (named as an example of a capable model)"
+ ],
+ "numbers": [
+  {
+   "claim": "Anthropic's 'Getting Started with Loops' post was published June 30, 2026.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Four loop types: turn-based, goal-based, time-based, proactive.",
+   "t": "1:15"
+  },
+  {
+   "claim": "Dynamic workflows can spawn hundreds of agents, and the post advises piloting on a smaller slice first.",
+   "t": "6:30"
+  },
+  {
+   "claim": "The example proactive prompt uses an hourly schedule trigger and spawns parallel work trees exploring three solutions.",
+   "t": "5:12"
+  },
+  {
+   "claim": "Speaker's illustration: an agent swarm working at 10 tasks will not scale linearly to 500 tasks without the budget and error rate growing with it. This is a qualitative illustration, not a measured result.",
+   "t": "6:30"
+  }
+ ],
+ "hot_takes": [
+  "Claude's judgment that a task is done is probabilistic and can be confidently wrong, so verification should be encoded outside the model's own report.",
+  "The stop condition is the architecture, and a loop without one is worse than a failed loop because it keeps spending tokens.",
+  "Proactive loops with hundreds of agents need a hand on the spend controls at all times, not just setup.",
+  "The human has been the stop condition in the loop, and the goal is to stop being it.",
+  "The video's framing is secondary: it summarizes one Anthropic post and adds analogies, with no independent measurements."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already has loops and schedules around Claude Code, and the post gives a four-type taxonomy plus explicit stop-condition and turn-cap guidance that can be checked against its design.",
+   "action": "Audit ProsHarness's loop and schedule definitions: make each one declare its stop condition (agent judgment, measurable goal with turn cap, timer, or external event) and document which of the four loop types it implements."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "",
+   "action": "Consider a per-run turn cap and per-agent token budget with a kill switch in AgentOS agent loops, matching the /goal and /workflows controls described in the post."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

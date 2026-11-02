@@ -1,0 +1,264 @@
+{
+ "one_line": "Why a local Qwen 3.8 27B on a 16GB card often underperforms its leaderboard scores: the reasoning-effort setting, context window, and overthinking. Keep effort at xhigh, size the context to fit, and use the efficiency-tuned Swift 1.5 build.",
+ "summary": "The speaker reproduces a popular claim that Qwen 3.8 27B beats frontier models, then explains why home setups feel weaker. The main cause is the reasoning-effort setting: guides set it to medium, and the chat template gives medium no instruction, while xhigh is the default and the setting the leaderboard runs used. Artificial Analysis data shows the score rising with tokens written (xhigh 34 at about 200M tokens, medium 28 at about 110M, thinking off 20), and GPQA results show the same pattern. The second cause is context: benchmark runs used roughly 250k to 500k token windows, while a 16GB card fits about 110k tokens with 8-bit KV cache and about 128k with 4-bit. The speaker recommends the Swift 1.5 retrain, which cut average thinking tokens by about 42% on GPQA with roughly unchanged accuracy, and treating effort as a per-task dial. He also corrects two circulating numbers and notes that Opus 5.5 at 58 on the same index still leads by 24 points. The video is careful and mostly self-correcting, though its model and benchmark figures come from vendor model cards and one independent tester.",
+ "speakers": [
+  "Channel host (Kai Explains; not named in the transcript)"
+ ],
+ "orgs": [
+  "Qwen",
+  "UQ AI (transcribed as 'Yuki's AI')",
+  "Artificial Analysis",
+  "ARC Prize",
+  "Anthropic",
+  "Hugging Face"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "token-cost-efficiency",
+  "models-research"
+ ],
+ "tags": [
+  "qwen-3.8-27b",
+  "swift-1.5",
+  "reasoning-effort",
+  "test-time-compute",
+  "overthinking",
+  "quantization-iq3",
+  "kv-cache-quantization",
+  "multi-token-prediction",
+  "context-window-budget",
+  "llama-cpp",
+  "rtx-5060-ti-16gb",
+  "rx9070",
+  "gpqa-diamond",
+  "artificial-analysis-index",
+  "terminal-bench",
+  "hosted-vs-local"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Reasoning effort is not a token cap. In the chat template it just adds a line of instruction text: xhigh asks for careful validation and alternatives, low asks for brief thinking, medium gets no instruction, and an unset value defaults to xhigh.",
+   "detail": "The speaker opened the template to check this. Examples: a Pac-Man prompt used about 40k thinking tokens at xhigh versus a couple thousand at medium. The speaker says medium is the setting most guides pick and the one with no instruction at all.",
+   "t": "5:56"
+  },
+  {
+   "idea": "Artificial Analysis scores rise with tokens written. Across four effort levels, the index tracks output volume.",
+   "detail": "xhigh: 34 points, about 200M tokens across the suite. medium: 28, about 110M. low: 26, about 82M. thinking off: 20. Dropping from xhigh to medium gives up 6 points, and medium falls below Opus 4.6 Max, GPT-5.3 Codex and Gemini 3.1 Pro Preview, which xhigh beats.",
+   "t": "7:09"
+  },
+  {
+   "idea": "GPQA Diamond shows the same gap in an independent run. medium and low are effectively tied, and both trail xhigh.",
+   "detail": "xhigh 88.28%, medium 84.14%, low 84.04%. The author says the leaderboard model runs at xhigh while most home setups run at medium, with the same weights.",
+   "t": "8:17"
+  },
+  {
+   "idea": "Common guides cap thinking in ways that defeat the benchmark. A 512-token reasoning budget in llama.cpp cuts thinking to about 3% of the roughly 15k tokens the model averages per GPQA question.",
+   "detail": "The speaker says the setup is fast because the frontier behaviour was switched off. It is fine for everyday use, but it does not replicate benchmark scores.",
+   "t": "9:37"
+  },
+  {
+   "idea": "Context is the second gap. Benchmarks used 250k-token windows plus about 250k for thinking, and a 500k window for Terminal Bench. A 16GB card runs out first, on long agent sessions with tool calls.",
+   "detail": "IQ3 weights with the prediction head are about 12.12 GB. With a 1 GB margin, the card holds about 110k tokens at 8-bit KV cache, or about 128k at 4-bit (one RX 9070 owner at 15.2 GB used).",
+   "t": "10:47"
+  },
+  {
+   "idea": "Swift 1.5 is Qwen 3.8 27B retrained to remove overthinking loops (re-checking settled answers). On GPQA at xhigh, average thinking fell from 15,014 to 8,717 tokens while accuracy rose from 88.28% to 88.59%.",
+   "detail": "The speaker separates the card's best single result (58.5% fewer tokens on the GPQA median) from the average (about 42%). On Terminal Bench the cut is about a sixth. One independent test of the first Swift version at xhigh: base 77.6% of tasks vs Swift 75.7%, at about half the time.",
+   "t": "13:15"
+  },
+  {
+   "idea": "The counter-argument is real: more thinking does not always help. Across about 5,000 tasks on four RTX 3090s, low and xhigh both scored 89.3%, but xhigh used 651k thinking tokens versus 86k (7.5x).",
+   "detail": "VulcanBench found low and medium tied, with xhigh slightly worse. A 23,000-prompt-per-setting study found xhigh most accurate on harder tasks. The speaker's rule: treat effort as a dial, low for easy tasks, xhigh for ones that would otherwise fail.",
+   "t": "14:29"
+  },
+  {
+   "idea": "On a hard task, xhigh can run for a long time with no answer, unlike hosted inference which fails fast. In one multi-stack test, one unsolved command-line task took about 700k reasoning tokens in total, and the longest single attempt ran 25 minutes.",
+   "detail": "The speaker's advice: rent hosted Qwen 3.8 27B at $2.20 per million output tokens for long sessions, big windows, or parallel work. Running locally gives ownership, not extra capability.",
+   "t": "18:14"
+  },
+  {
+   "idea": "Two circulating numbers were wrong. The '86.6 on Terminal Bench 2.1' claim was Opus's score on a document benchmark, copy-pasted into the wrong place (the model card shows 73.0, and Opus 4.6 Max wins at 78.2). The '52 on Artificial Analysis' score came from an older index; the current one gives 34.",
+   "detail": "The speaker also says Claude Opus 5.5 scored 58 on the current index in September. These are the speaker's own claims and were not checked against the index here.",
+   "t": "3:26"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Set reasoning effort on purpose, not to medium by default",
+   "how": "Leave the effort setting at xhigh (the template default) for hard coding, research or multi-step agent work. Use low for easy tasks such as renaming files, and medium for quick factual questions. Do not set a reasoning budget such as 512 tokens if you want benchmark-level answers, since it truncates thinking. Adjust per request; do not fix one value for all work.",
+   "when": "Any local run where the answer quality matters more than response time; decide per task by how much failure would cost."
+  },
+  {
+   "name": "Estimate the wall-clock cost of a reasoning run before starting",
+   "how": "Divide expected thinking tokens by measured tokens per second. Example from the video: about 15,000 thinking tokens at 45.6 tok/s is about 5.5 minutes per GPQA question. Terminal Bench averages about 52,000 tokens, which at 31.3 tok/s is about 28 minutes per task. Measure the rate at your real context size, since it drops as the window fills.",
+   "when": "Planning a local batch or agent job, or deciding whether to use the hosted endpoint instead."
+  },
+  {
+   "name": "Work out the context budget before loading the model",
+   "how": "Start from the weights size (IQ3 Swift 1.5 is 12.12 GB), subtract about 1 GB for runtime overhead, and fit the KV cache into what remains. Quantize the KV cache to 8-bit (about 110k tokens on a 16GB card) or 4-bit (about 128k on a 15.2 GB-used RX 9070 setup). Set the largest context that fits, since the window is the real limit on long agent sessions.",
+   "when": "Loading a large model on a single consumer GPU for agent work that calls tools repeatedly."
+  },
+  {
+   "name": "Free GPU memory before loading the model",
+   "how": "Drive the monitor from the integrated GPU if the CPU has one, because the display stack can hold 1-2 GB on the discrete card. Skip the vision projector unless you need images, since it uses memory that could hold context.",
+   "when": "Single-GPU desktops where the discrete card is also the display, or where context is tight."
+  },
+  {
+   "name": "Turn on multi-token prediction",
+   "how": "Enable MTP in the runtime. The speaker credits it for most of the jump to about 45 tok/s from the 30s. Reported on an RX 9070 XT: 43.7 tok/s at 65k context and 37.4 tok/s at 131k.",
+   "when": "Speed is the bottleneck on a model that supports MTP."
+  },
+  {
+   "name": "Use an efficiency-tuned build to cut thinking tokens",
+   "how": "Swift 1.5 (UQ AI's retrain of Qwen 3.8 27B, IQ3 with MTP, 12.12 GB on Hugging Face) keeps xhigh and uses fewer thinking tokens. Check its license first: it is UQ AI's own license, not Apache, which matters for commercial use.",
+   "when": "You want xhigh-level accuracy with a shorter wait, and the license allows your use."
+  },
+  {
+   "name": "Check which setting a benchmark or guide actually used",
+   "how": "Before comparing a local score to a leaderboard, check the effort setting, context window, quantization, and KV cache precision. Also check whether the number came from a model card, an independent run, or a reused figure.",
+   "when": "Reading model-card claims, or repeating a benchmark number in your own docs or decisions."
+  },
+  {
+   "name": "Use hosted inference for long, parallel, or always-xhigh work",
+   "how": "The speaker's rule: rent a hosted endpoint for long agent sessions, full 500k-token windows, all-day xhigh use, or parallel tasks. Hosted Qwen 3.8 27B is $2.20 per million output tokens, which he calls cheap at xhigh. Hosted calls also fail fast on hard problems, where local xhigh can run 25 minutes.",
+   "when": "Local hardware runs out of context, or a hard task would tie up the GPU for a long time."
+  }
+ ],
+ "tools": [
+  "Qwen 3.8 27B (transcribed 'Quen 3.827B')",
+  "Swift 1.5 (UQ AI retrain of Qwen 3.8 27B, IQ3 with MTP)",
+  "llama.cpp",
+  "Hugging Face",
+  "Artificial Analysis Intelligence Index",
+  "GPQA Diamond",
+  "LiveCodeBench",
+  "SWE-Bench Pro",
+  "Terminal Bench 2.1",
+  "VulcanBench",
+  "ARC Prize",
+  "RTX 5060 Ti 16GB",
+  "RX 9070 / RX 9070 XT",
+  "RTX 3090",
+  "Claude Opus 4.6 Max",
+  "Claude Opus 5.5 (speaker's claim)",
+  "GPT-5.3 Codex",
+  "Gemini 3.1 Pro Preview"
+ ],
+ "numbers": [
+  {
+   "claim": "Qwen 3.8 27B LiveCodeBench 90.3 vs Opus 4.6 Max 88.8; SWE-Bench Pro 61.7 vs 53.4 (model card)",
+   "t": "2:16"
+  },
+  {
+   "claim": "Artificial Analysis index at top setting: Qwen 34, Opus 4.6 Max about 32, GPT-5.3 Codex about 32.5, Gemini 3.1 Pro Preview 30",
+   "t": "2:16"
+  },
+  {
+   "claim": "Quantized file is 11.77 GB in the speaker's cited build; Swift 1.5 IQ3 with MTP is 12.12 GB",
+   "t": "2:16"
+  },
+  {
+   "claim": "Hosted median output speed for this model 41.3 tok/s; local 45-46 tok/s on RTX 5060 Ti 16GB with right settings",
+   "t": "3:26"
+  },
+  {
+   "claim": "Terminal Bench: Qwen model card 73.0, Opus 4.6 Max 78.2; the 86.6 figure circulating online was a copy-paste from a document benchmark",
+   "t": "3:26"
+  },
+  {
+   "claim": "Artificial Analysis score for this model was 52 on an older index (around August); current index gives 34",
+   "t": "3:26"
+  },
+  {
+   "claim": "Claude Opus 5.5 scores 58 on current Artificial Analysis index (speaker's claim, released September)",
+   "t": "4:47"
+  },
+  {
+   "claim": "Artificial Analysis by effort: xhigh 34 points / ~200M tokens; medium 28 / ~110M; low 26 / ~82M; thinking off 20",
+   "t": "7:09"
+  },
+  {
+   "claim": "GPQA Diamond: xhigh 88.28%, medium 84.14%, low 84.04%",
+   "t": "8:17"
+  },
+  {
+   "claim": "Average GPQA Diamond question at xhigh uses ~15,000 thinking tokens, about 5.5 min at 45.6 tok/s",
+   "t": "8:17"
+  },
+  {
+   "claim": "Terminal Bench 2.1 average run writes ~52,000 tokens; 31.3 tok/s on RTX 5060 Ti at full context means ~28 min per task",
+   "t": "8:17"
+  },
+  {
+   "claim": "A 512-token reasoning budget is about 3% of the ~15,000 tokens the model averages per question",
+   "t": "9:37"
+  },
+  {
+   "claim": "Model card recommends ~250k context plus ~250k for thinking; Terminal Bench runs used a 500k window",
+   "t": "10:47"
+  },
+  {
+   "claim": "16GB card: ~110k token context at 8-bit KV cache; ~128k at 4-bit KV cache (RX 9070, 15.2 GB used); 1 GB operating margin",
+   "t": "10:47"
+  },
+  {
+   "claim": "Swift 1.5 GPQA xhigh average thinking tokens 15,014 -> 8,717 (~42% fewer), accuracy 88.28% -> 88.59%",
+   "t": "13:15"
+  },
+  {
+   "claim": "Model card best single result is 58.5% fewer tokens (GPQA median); Terminal Bench cut about one sixth; speed claims 1.95x and 9.18x (single game demo)",
+   "t": "13:15"
+  },
+  {
+   "claim": "Independent coding eval of Swift v1 at xhigh: base 77.6% of tasks, Swift 75.7%, at about half the time",
+   "t": "13:15"
+  },
+  {
+   "claim": "Multi-stack test on ~5,000 tasks, four RTX 3090s: low and xhigh both 89.3%; thinking tokens 651k (xhigh) vs 86k (low), 7.5x",
+   "t": "14:29"
+  },
+  {
+   "claim": "Benjamin Marie study: over 23,000 prompts per setting; xhigh most accurate on harder tasks",
+   "t": "14:29"
+  },
+  {
+   "claim": "RX 9070 XT: 43.7 tok/s at 65k context, 37.4 tok/s at 131k context (single owner report)",
+   "t": "16:53"
+  },
+  {
+   "claim": "Unsolved command-line task at xhigh: ~700k reasoning tokens across attempts; longest single attempt 25 minutes",
+   "t": "18:14"
+  },
+  {
+   "claim": "Hosted Qwen 3.8 27B price: $2.20 per million output tokens",
+   "t": "18:14"
+  }
+ ],
+ "hot_takes": [
+  "Reasoning effort is a prompt instruction, not a token budget, and medium is the one setting with no instruction at all, which is why guides that recommend it lose most of the benchmark gain.",
+  "Speed demos on home cards are often fast because the frontier part of the model was turned off (for example by a 512-token reasoning budget), so they should not be called frontier performance.",
+  "Frontier was never a file size; it is how long the model is allowed to think, which is why the speaker treats effort as a per-task dial.",
+  "Local xhigh is not a free upgrade: on hard tasks it can run for 25 minutes before giving up, and hosted inference is cheaper for long or parallel work.",
+  "Qwen's card-reported gains (for example 58.5% fewer GPQA tokens) overstate the typical case; the average is closer to 42%, and independent coding tests show a small accuracy drop for Swift v1."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft serves a quantized model on one RTX 5090 with KV-cache strategies and speculative decoding, and the 4-class scheduler needs per-request cost. The video's findings on effort-driven token cost, context budget at a fixed KV size, and MTP apply directly to that stack.",
+   "action": "Add a benchmark that logs thinking tokens, output tokens, tok/s and accuracy per request at each effort level for the local model, and use those numbers to size the scheduler's per-class token budgets."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness checkpoints long agent runs. The video's failure mode is a long run hitting the context ceiling mid-task, and a single hard step can run for 25 minutes with no output.",
+   "action": "Add per-step wall-clock and token ceilings to the checkpoint logic, and checkpoint before the context window is nearly full rather than after it overflows."
+  }
+ ],
+ "quality": 4,
+ "depth": "deep",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

@@ -1,0 +1,120 @@
+{
+ "one_line": "Better Stack's changelog demo of its MCP server, letting Claude Desktop manage incidents, on-call, status pages and query ClickHouse telemetry, plus the setup steps and credential scoping.",
+ "summary": "This is a 7-minute vendor changelog walkthrough of the Better Stack MCP server, shown through Claude Desktop. The presenter uses natural-language prompts to list on-call calendars, find unacknowledged incidents, read incident timelines, draft a status-page update, acknowledge and resolve an incident, and add a comment. The second half covers telemetry: the model lists log sources, calls a tool that returns ClickHouse query instructions, runs queries for recent errors and HTTP 500s, and discovers available metrics. The setup section shows how to add a remote MCP config to Claude Desktop, create a Better Stack API token and a scoped ClickHouse connection, and pass those credentials as environment variables. The presenter recommends including the ClickHouse connection details because the model sometimes hallucinates the username or password on follow-up queries. No benchmarks or quantitative results are given.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "ClickHouse",
+  "Anthropic"
+ ],
+ "format": "review",
+ "topics": [
+  "observability",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "better-stack",
+  "mcp",
+  "claude-desktop",
+  "incident-management",
+  "status-page",
+  "clickhouse",
+  "text-to-sql",
+  "on-call",
+  "uptime-monitoring",
+  "credential-scoping"
+ ],
+ "key_ideas": [
+  {
+   "idea": "An MCP server can turn an incident-management product into LLM-operable tools: list on-call, list unacknowledged incidents, fetch timeline, acknowledge, resolve, comment.",
+   "detail": "The demo chains these tool calls from plain-English prompts, with no UI clicks in the vendor app. The presenter uses this for the full incident loop.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Status-page drafting is a multi-tool chain: the model lists status pages, fetches resources, finds the downtime on the affected monitor, then writes and posts the report.",
+   "detail": "The presenter notes the report text is written by the LLM from tool-fetched data, then the incident is acknowledged. The result is checked on the public status page and in the incident view.",
+   "t": "1:00"
+  },
+  {
+   "idea": "Telemetry querying depends on a schema-guidance tool. The model first lists log sources to get IDs, then calls a get-query-instructions tool before writing ClickHouse queries.",
+   "detail": "The presenter credits this with letting the model build correct queries. The output is a summary of error breakdowns, observations and recommendations.",
+   "t": "3:06"
+  },
+  {
+   "idea": "The model can write query examples as an artifact (recent vs. historical data, count by endpoint, hourly breakdown) that the user can run back through the MCP server.",
+   "detail": "This is a text-to-query workflow where the model drafts SQL and then executes it through the same server.",
+   "t": "3:06"
+  },
+  {
+   "idea": "Credentials should be supplied in the config, not left to the server. The presenter says the model sometimes hallucinates the username or password on follow-up queries.",
+   "detail": "The MCP server can create its own ClickHouse connection if needed, but the presenter recommends passing the connection details so follow-ups are smoother. This is the speaker's experience, not a measured result.",
+   "t": "4:22"
+  },
+  {
+   "idea": "Scope the database access the LLM gets: pick one cluster and one team's data, optionally set an IP allowlist, set an expiry, and note the purpose. The password is shown only once.",
+   "detail": "The presenter uses a global API token for uptime and telemetry across teams, and a narrower ClickHouse connection limited to one team. Creating a new connection is needed if the password is lost.",
+   "t": "5:25"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Incident triage loop via MCP prompts",
+   "how": "Prompt in order: list unacknowledged incidents from today; fetch details and the incident timeline; draft a status-page update for the affected checkout flow; acknowledge; then mark resolved and add a comment such as 'bad rollout, fixed by new release'. Each step runs as one or more tool calls.",
+   "when": "Responding to a live incident where you want an LLM to draft updates and keep the incident record current, with a human approving the actions."
+  },
+  {
+   "name": "Schema-first text-to-query over logs",
+   "how": "Let the model call the sources-list tool to get the source ID, then the query-instructions tool that describes how to build the ClickHouse query, then run the query. Ask it to first list fields and metrics before writing queries. Ask for example queries (recent, historical, count by endpoint, hourly) and run the one you want.",
+   "when": "Querying an observability store like ClickHouse through an LLM, where a wrong schema guess produces bad SQL."
+  },
+  {
+   "name": "Remote MCP setup for Claude Desktop",
+   "how": "1) Copy the remote-MCP example config from the Better Stack MCP docs (the docs also list a variant for HTTP-capable clients). 2) In Claude Desktop, open Settings, then Developer, then Edit Config, and paste into the JSON. 3) Create a Better Stack API token under Settings, then API tokens, choosing a global token. 4) In Telemetry, then Dashboards, then Connect remotely, choose ClickHouse HTTP client, select the cluster and team data, set an optional IP allowlist and expiry, add a note, and create the connection. 5) Save the username, password and host. 6) Put the API key and the user, password and host into the config's environment variables. The presenter names the API key variable as the 'production auth token', so check the exact key names in the docs. 7) Restart Claude Desktop. 8) Test with a prompt such as 'fetch my current on-call status'.",
+   "when": "Connecting Claude Desktop or another MCP client to Better Stack for incidents and logs."
+  },
+  {
+   "name": "Separate the uptime token from telemetry scope",
+   "how": "Use a global API token when the assistant needs uptime and telemetry across all teams (the presenter's recommendation). Use a per-team ClickHouse connection with an expiry and an IP allowlist for the query path.",
+   "when": "Deciding what access an agent should get to observability data."
+  }
+ ],
+ "tools": [
+  "Better Stack MCP server",
+  "Better Stack uptime (monitors, heartbeats, status pages, incidents, escalation policies)",
+  "Better Stack telemetry (logs, spans, metrics)",
+  "ClickHouse (HTTP client connection)",
+  "Claude Desktop",
+  "remote MCP config (mcp-remote style client)"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Vendor changelog demo for its own product. The demo is of tool calls working, not of accuracy, latency or cost, so the claims are unmeasured.",
+  "The most useful tidbit is the speaker's report that the model hallucinated ClickHouse credentials on follow-up queries. That is one anecdote, and it is the reason to pass connection details explicitly.",
+  "Recommends a global API token for convenience. This gives broad read access to uptime and telemetry across teams, which conflicts with the narrow scoping the presenter recommends for ClickHouse.",
+  "Quality capped at 2 for vendor pitch framing with thin measurable substance; the setup steps are still concrete enough to reuse."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS L4 observability is Prometheus/Grafana/OTel, and this shows a different pattern: exposing logs and metrics to an LLM through MCP tools.",
+   "action": "Read Better Stack's MCP tool list (sources, query-instructions, fields, metrics) and decide whether an AgentOS observability MCP surface should follow the same schema-first pattern."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No overlap with checkpointing, plan/critique, approvals or credential handling for Claude Code runs.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Practical example of MCP setup for Claude Desktop and of scoping credentials for an LLM with a database connection. Relevant to any MCP-based ops tooling.",
+   "action": "Compare the remote MCP config and the env-var credential handling in this video with the MCP setup used in the current stack, and check whether passing connection details explicitly removes the credential hallucination."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

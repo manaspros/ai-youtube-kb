@@ -1,0 +1,154 @@
+{
+ "one_line": "Benjamin Verbeek (Lovable) on two continuous-learning loops: a self-updating \"Stack Overflow\" of fixes for stuck users, and an agent \"vent\" tool that reports platform friction to engineers.",
+ "summary": "Lovable, a vibe-coding platform, wants a mistake to happen once and never again. The speaker splits \"stuck\" users into three groups: stuck but solvable with better prompting, blocked by a missing or buggy feature that is easy to fix, and blocked by hard problems that need weeks of work. An LLM judge scans sessions for repeated requests, complaints and abandonment, and the team focuses on sessions that go from stuck to unstuck without the user quitting. Each such fix is clustered, generalised, checked by an agent that runs a quick eval, and stored in a knowledge bank. A lightweight model injects the matching entry at the start of a new query. A small random sample gets blank injections so the team can compare outcomes against sessions that could have received the fix, then prune stale entries when models or features change. The second loop gives the agent a vent tool that sends feedback to Slack when tooling, docs or platform behaviour blocks it; the trigger prompt is tuned for high signal. An agent now dedupes these reports, investigates them and opens PRs that engineers review and merge. Vent volume spikes also turned out to be a useful incident detector.",
+ "speakers": [
+  "Benjamin Verbeek"
+ ],
+ "orgs": [
+  "Lovable"
+ ],
+ "format": "talk",
+ "topics": [
+  "skills-self-improvement",
+  "evals",
+  "observability",
+  "vibe-coding-app-building"
+ ],
+ "tags": [
+  "continuous-learning",
+  "knowledge-base",
+  "stuck-detection",
+  "llm-judge",
+  "holdout-eval",
+  "agent-feedback",
+  "vent-tool",
+  "vibe-coding",
+  "incident-detection",
+  "auto-pr"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Define 'stuck' from behaviour, then split it into three classes",
+   "detail": "Stuck means asking for the same thing again, complaining, or giving up. Stuck users fall into: (a) solvable with better prompting, (b) not supported but easy to add or a bug, (c) hard, needing weeks of AI-assisted engineering. Classes (a) and (b) should be fixed fast.",
+   "t": "5:38"
+  },
+  {
+   "idea": "Mine the moment a user goes from stuck to unstuck",
+   "detail": "An LLM judge flags sessions. The high-signal sample is the transition from stuck to not stuck, excluding cases where the user simply gave up. That gives a real problem plus a working fix.",
+   "t": "7:43"
+  },
+  {
+   "idea": "A Stack Overflow for the agent, kept fresh by eval",
+   "detail": "Fixes are clustered so entries generalise and do not overfit to one prompt. An agent reviewer generates and runs a quick eval (a human only when uncertain). A lightweight model injects matching entries into the main agent at query start.",
+   "t": "8:46"
+  },
+  {
+   "idea": "Measure injection with blank holdouts and prune hard",
+   "detail": "On a small sample the system injects nothing even when it could. Injected and could-have-been-injected projects are compared on overall success, and entries are shown more or less accordingly. Entries go stale with each new model or feature, so content is rebalanced and removed often.",
+   "t": "9:51"
+  },
+  {
+   "idea": "Give the agent an outlet, tuned for low noise",
+   "detail": "A vent tool lets the agent report when tooling, docs or platform behaviour materially slows it. The prompt is tuned to fire only on real frustration, because forcing an answer every turn produces noise and overfitting. Reports go to Slack.",
+   "t": "13:17"
+  },
+  {
+   "idea": "The agent sees friction that users cannot diagnose",
+   "detail": "Users rarely know why they are stuck, but the agent has been working the problem for several turns. Its reports exposed a copy tool that failed on file names with spaces. The first fix missed non-breaking spaces from WhatsApp and Mac screenshots, so reports kept coming until the fix was done properly.",
+   "t": "14:45"
+  },
+  {
+   "idea": "Vent volume doubles as an incident signal, and a bot triages it",
+   "detail": "Spikes in vent events lined up with platform incidents, such as broken sandboxes. An agent now dedupes reports, investigates them and opens PRs. Engineers review and merge, and review requests come to the phone.",
+   "t": "17:16"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Stuck-session detection with an LLM judge",
+   "how": "Run a judge over conversation logs to flag repeated requests, complaints and abandonment. Track the isStuck flag over time and keep sessions that transition stuck to not-stuck without abandonment.",
+   "when": "You have many agent sessions and want to find fix candidates without reading them by hand."
+  },
+  {
+   "name": "Clustered, generalised fix knowledge bank",
+   "how": "Cluster similar failures, write a generalised fix instead of a per-prompt rule, verify it with an agent-run quick eval, store it, and inject the match into the main agent at query start with a cheap model.",
+   "when": "The same class of agent failure recurs across users and the fix can be stated generally."
+  },
+  {
+   "name": "Blank-injection holdout",
+   "how": "Randomly skip injection for a small sample of cases where it would apply. Compare outcomes (for example, project completion) between injected and held-out groups, then show each entry more or less based on the result.",
+   "when": "You need causal-ish evidence that injected context helps, and want to catch stale context."
+  },
+  {
+   "name": "Tuned agent vent tool",
+   "how": "Give the agent a tool with a trigger prompt listing concrete friction classes (missing tools, unclear schemas, conflicting docs, environment failures, repeated failed attempts). Tune it until the signal is high, and route the output to a team channel.",
+   "when": "The agent runs in a product you own and has more context than the user about why a task failed."
+  },
+  {
+   "name": "Agent triage of agent feedback",
+   "how": "A monitoring agent dedupes reports, investigates them and opens a PR. A human reviews and merges.",
+   "when": "The volume of reports is too high for manual triage but fixes still need human review."
+  },
+  {
+   "name": "Feedback volume as an incident detector",
+   "how": "Chart the count of agent-originated complaints over time and treat spikes as a signal of a platform problem.",
+   "when": "You want an early warning that complements your normal monitoring."
+  }
+ ],
+ "tools": [
+  "Slack",
+  "Framer Motion"
+ ],
+ "numbers": [
+  {
+   "claim": "Over 200,000 projects created per day on Lovable, a significant share of all new websites built there",
+   "t": "3:03"
+  },
+  {
+   "claim": "User base grew from a few thousand users when the speaker joined about a year earlier",
+   "t": "3:03"
+  },
+  {
+   "claim": "After the copy-tool vent went live, the team got about 20 complaints about the same file-name bug in the first hour",
+   "t": "14:45"
+  },
+  {
+   "claim": "Internal model rankings: top-ranked models all use the Stack Overflow knowledge bank, which gives a significant boost in internal ratings (no figures given)",
+   "t": "10:48"
+  },
+  {
+   "claim": "Early data: messages with fixed intent or users being stuck are dropping significantly, and more projects reach deploy, a key completion metric (no figures given)",
+   "t": "10:48"
+  }
+ ],
+ "hot_takes": [
+  "A non-technical user who hits one technical block usually leaves, so removing stuck points matters more than raw model capability.",
+  "Let the agent complain to its creators. Its view of the failure is often better than the user's, and it is cheaper than an external reviewer on every turn.",
+  "Stale fix knowledge becomes context rot. Prune it aggressively whenever the model or the product changes.",
+  "Overfitting to noise is the main risk with any LLM-judge or feedback loop; tune the trigger for signal, not coverage."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "SkillForge needs a success signal and skill-worthiness scoring; the injected-vs-blank-holdout comparison on project completion is a concrete way to score a skill's effect.",
+   "action": "Prototype a holdout for SkillForge: skip injecting a mined skill on a small sample of matching sessions and compare task completion, to use as the success signal for skill-worthiness."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "A tuned agent-initiated feedback tool fits ProsHarness's phone approvals and loop structure, though it is not core to the current milestone.",
+   "action": "Consider a strict-trigger 'report friction' tool for the Claude Code harness, routed to the existing phone notification channel."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The stuck-to-unstuck transition plus a blank-holdout check is a reusable method for mining fixes from agent sessions into CLAUDE.md or skills, and for testing whether they help.",
+   "action": "Label stuck-to-unstuck transitions in local Claude Code session logs with a cheap LLM judge, then A/B a candidate CLAUDE.md rule on a held-out subset of similar tasks."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

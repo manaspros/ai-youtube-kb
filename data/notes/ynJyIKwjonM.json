@@ -1,0 +1,198 @@
+{
+ "one_line": "Leonie Monigatti (Elastic) argues context engineering is mostly agentic search, then walks through live demos of semantic search, ES|QL query tools, skill loading, and grep-style shell search, and when to use each.",
+ "summary": "The speaker argues that context engineering depends mainly on the search tools that decide what enters the context window, and calls that about 80% agentic search. She traces the move from fixed RAG pipelines to agentic RAG, then to many context sources (local files, skills, databases, web, memory) that each need their own search tool. She lists three common failures: the agent skips the tool, picks the wrong tool, or writes bad parameters. Her live demos use LangChain with a semantic search tool (top-k 3), which fails on a loosely related query. A general ES|QL query tool does better, but the agent writes a wildcard the wrong way and gets zero results. Adding a skill that the agent must load first fixes it. She then shows shell and grep search over a folder of session files, notes that agents cheat at semantic search by chaining synonyms, and suggests a semantic grep CLI for fuzzy queries. Her closing advice is to mix specialized tools (low floor) with general tools (high ceiling), start general, and log tool calls, since four or five calls per question signals a tool that is too hard to use.",
+ "speakers": [
+  "Leonie Monigatti"
+ ],
+ "orgs": [
+  "Elastic"
+ ],
+ "format": "workshop",
+ "topics": [
+  "rag-retrieval",
+  "context-engineering",
+  "mcp-and-tools",
+  "skills-self-improvement"
+ ],
+ "tags": [
+  "agentic-search",
+  "agentic-rag",
+  "tool-design",
+  "tool-descriptions",
+  "es-ql",
+  "elasticsearch",
+  "agent-skills",
+  "progressive-disclosure",
+  "shell-tool",
+  "grep",
+  "semantic-grep",
+  "langchain",
+  "low-floor-high-ceiling",
+  "context-window",
+  "live-demo"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Context engineering is mostly the search tool choice",
+   "detail": "The speaker says the real work is the search tool that decides what moves from context sources into the window, so she calls context engineering about 80% agentic search.",
+   "t": "1:14"
+  },
+  {
+   "idea": "Fixed RAG pipelines are replaced by agentic RAG",
+   "detail": "A fixed pipeline retrieves whether or not context is needed and can confuse the model. Giving the agent a search tool lets it decide if, when, and how often to search, which handles multi-hop questions.",
+   "t": "2:31"
+  },
+  {
+   "idea": "Context spans many sources, each needing its own search tool",
+   "detail": "Local files, skills, databases, web and memory each have different native tools. A shell tool (bash or exec) can also search across them, since the agent can run ls, grep, or curl.",
+   "t": "4:57"
+  },
+  {
+   "idea": "Three failure modes: no tool call, wrong tool, bad parameters",
+   "detail": "The agent may answer from memory without searching, call the web tool instead of the database tool, or generate parameters the tool cannot use. The speaker says these show up in most production agent builds at Elastic.",
+   "t": "9:09"
+  },
+  {
+   "idea": "Tool descriptions need trigger conditions and ordering, not one sentence",
+   "detail": "Start with the core purpose. If the agent still picks the wrong tool, add when to use it, when not to use it, and which tool or skill must come first. Reinforce the same rules in the system prompt.",
+   "t": "10:09"
+  },
+  {
+   "idea": "Zero results can be a failure, not an answer",
+   "detail": "The agent wrote an ES|QL query using the SQL percent wildcard, which matched nothing. The speaker says teams should check whether an empty result is valid or means the query was wrong.",
+   "t": "27:17"
+  },
+  {
+   "idea": "Skills with progressive disclosure fix hard query languages",
+   "detail": "Only the skill name and description go into the system prompt. The agent loads the full body when needed. The tool description and system prompt then both say to load the skill before calling the query tool, which fixed the wildcard error.",
+   "t": "28:46"
+  },
+  {
+   "idea": "Let the query engine do counting and aggregation",
+   "detail": "Counting sessions for a date through an ES|QL aggregation avoids pulling a long list into the context window, and the speaker says LLMs are poor at counting.",
+   "t": "32:27"
+  },
+  {
+   "idea": "Shell grep fails at semantics, and a semantic grep CLI helps",
+   "detail": "Agents chain synonyms like compliance, GDPR and governance to find regulation talks. The speaker suggests a semantic grep CLI for fuzzy queries, with a rule to use plain grep for exact matches.",
+   "t": "39:31"
+  },
+  {
+   "idea": "Mix low-floor specialized tools with high-ceiling general tools, then log",
+   "detail": "Specialized tools are reliable for common operations. General tools (query or shell) handle unexpected questions. Start general, log behaviour, and build specialized tools when a question takes four or five calls.",
+   "t": "45:19"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Layered tool descriptions",
+   "how": "Write the purpose first. Add trigger conditions, a when-not-to-use line, and ordering rules such as 'load this skill before calling this tool'. Repeat the key rules in the system prompt if the agent still ignores them.",
+   "when": "Several search tools are available, or the agent keeps calling the wrong one or skipping tools."
+  },
+  {
+   "name": "Errors returned to the agent",
+   "how": "Wrap the query tool in try/except and return the error text as the tool result, so the agent can rewrite the query instead of crashing the run.",
+   "when": "The tool takes a complex query language such as SQL or ES|QL, where generated queries often fail."
+  },
+  {
+   "name": "Progressive disclosure for skills",
+   "how": "Put only name and description from each skill's front matter in the system prompt. Load the full body into context when needed. The speaker says the framework also offloads skill bodies after use as context fills.",
+   "when": "Query syntax needs more documentation than a one-line tool description can hold, and the context window must stay small."
+  },
+  {
+   "name": "Outsource aggregation to the search engine",
+   "how": "Give the agent an aggregation-capable query tool so filtering and counting run inside the database, and only the result comes back to the model.",
+   "when": "The question asks for counts, sums, or filtered lists that would fill the context window."
+  },
+  {
+   "name": "Shell tool with semantic grep",
+   "how": "Give the agent a shell tool and install a semantic grep CLI. Describe in the system prompt when to use exact grep and when to use semantic grep, with an example command.",
+   "when": "Local files or a folder of documents hold the context, and fuzzy or synonym-heavy queries are common."
+  },
+  {
+   "name": "Hybrid shell plus database verification",
+   "how": "Describe a pattern from a Vercel blog post the speaker cites: the agent queries the database first, then checks the results with the shell tool. The speaker says this hybrid gave the highest accuracy in that test.",
+   "when": "Analytical queries where database answers need a second check against raw files."
+  },
+  {
+   "name": "Log tool calls to find where specialization is needed",
+   "how": "Record the tool calls per question. Four or five calls for a routine question means the tool is too hard to use, so look at the queries the agent is trying to solve and add a specialized tool for them.",
+   "when": "A general-purpose tool is deployed and the team does not yet know the real query patterns."
+  },
+  {
+   "name": "Use the file store as memory and offload old results",
+   "how": "Keep tool outputs in a file store and let the agent grep earlier results instead of holding them in the window. Offload skill bodies and compact context as the session grows.",
+   "when": "Long agent sessions where accumulated tool results and skills push the context window toward its limit."
+  }
+ ],
+ "tools": [
+  "LangChain",
+  "Elasticsearch",
+  "ES|QL",
+  "Jina embeddings v5",
+  "Jina grep (captioned as Gina grep)",
+  "OpenAI GPT-5.4 nano and mini",
+  "shell / bash tool",
+  "Claude Code",
+  "OpenClaw (captioned as OpenCloud, exec tool)"
+ ],
+ "numbers": [
+  {
+   "claim": "The first semantic search tool returns top-k = 3 results. The speaker says this limit is deliberate foreshadowing of its narrow scope.",
+   "t": "18:12"
+  },
+  {
+   "claim": "Demo models: GPT-5.4 nano for the semantic search and shell demos. GPT-5.4 mini was chosen for the ES|QL query tool because writing queries was expected to be harder.",
+   "t": "23:30"
+  },
+  {
+   "claim": "A semantic grep run returned top-k = 10 results, and the correct session came back first.",
+   "t": "42:32"
+  },
+  {
+   "claim": "An ES|QL aggregation counted 27 sessions on April 8, so the agent did not need to list them all in context.",
+   "t": "32:27"
+  },
+  {
+   "claim": "Four or five tool calls per question is named as a sign the tool is too hard for the agent. This is the speaker's rule of thumb and is not measured.",
+   "t": "46:45"
+  },
+  {
+   "claim": "In internal testing at Elastic, a more capable model cut parameter error rates by a 'very big amount'. No figures were given.",
+   "t": "44:01"
+  }
+ ],
+ "hot_takes": [
+  "Context engineering is about 80% agentic search.",
+  "The tool description is the most important part of a search tool, yet teams usually write it as one sentence.",
+  "Doing good search is incredibly difficult, so you need a curated set of search tools, not one silver bullet.",
+  "A zero-result search may be a failure mode, not a valid answer.",
+  "Agents are notoriously bad at counting, so let the query engine count.",
+  "Agents cheat at semantic search with grep by chaining synonyms, which is not the most efficient approach.",
+  "Patching a prompt for each new query error is a band-aid; full documentation belongs in a skill."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already does hybrid retrieval (BM25 and pgvector) and GraphRAG, so the talk's lessons on tool design, zero-result handling, and tool-call logging apply directly to its retrieval tools.",
+   "action": "Add a per-question tool-call counter and a zero-result flag to the MemoryMesh retrieval path, then review any question that takes four or more calls to decide whether a specialized retrieval tool is needed."
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The harness loads skills and runs long agent sessions, so the progressive-disclosure and skill-offloading pattern from the talk may help keep the context window small.",
+   "action": "Check whether ProsHarness puts only skill names and descriptions in the system prompt and unloads skill bodies after use, then test it on a long checkpointed run."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

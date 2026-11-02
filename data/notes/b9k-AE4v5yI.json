@@ -1,0 +1,166 @@
+{
+ "one_line": "AI LABS walks through two Claude Code/Codex skills: one checks existing products and open-source projects before building, and one searches academic papers when nothing is shipped yet. Also covers a publish-once skill distribution setup. Partly a promo.",
+ "summary": "The video argues that coding agents start from scratch and rarely check whether a feature already exists as a paid tool, open-source project or published research. It presents an \"Advise Project Approach\" skill that first decides whether the work is a new idea or an addition to an existing project, asks clarifying questions only when needed, logs its assumptions, and then searches for existing tools while noting what applies to the user versus what only exists because a big project has a large team. A cost check runs at three stages: during build, at first real users, and at growth. The creators also describe a skill-distribution problem (skill copies never update) and a self-built publish-once channel where subscribers' agents pull updates. For a case with no shipped product, a second skill, NeuroArchive, searches academic preprints, gives each paper its own sub-agent with a fresh context, and implements one chosen technique; a combined \"Head Start\" skill runs the cheap search every time and escalates only when something new appears. A sponsored Lovable segment and a community plug are included.",
+ "speakers": [],
+ "orgs": [
+  "AI LABS",
+  "GitHub",
+  "Lovable",
+  "Stream",
+  "Sendbird"
+ ],
+ "format": "review",
+ "topics": [
+  "claude-code",
+  "skills-self-improvement",
+  "multi-agent"
+ ],
+ "tags": [
+  "agent-skills",
+  "build-vs-buy",
+  "prior-art-search",
+  "arxiv-research-agent",
+  "sub-agents",
+  "skill-distribution",
+  "cost-check",
+  "codex",
+  "pricing-check"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Coding agents rarely check whether what you want to build already exists, so you spend time and tokens re-solving solved problems.",
+   "detail": "The speaker's core complaint: plan mode explores solutions but never checks paid tools, open-source projects or online write-ups for an existing answer. The Advise Project Approach skill is built to close that gap.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The first skill separates new ideas from features added to existing projects and clarifies before researching.",
+   "detail": "For a new idea it plans the whole build; for an existing project it says what to keep and change. If the idea is vague it asks about audience, the job to be done, and budget (paid vs free). Anything unanswered is written down as an explicit assumption the user can correct.",
+   "t": "1:16"
+  },
+  {
+   "idea": "Popularity is a weak signal, and big projects carry setup that only makes sense at their scale.",
+   "detail": "GitHub stars only accumulate, so they show past interest, not fit. The skill records for each project two things: what applies to the user, and what exists only because of that project's size and team. Copying the large project's full setup brings in complexity without the reasons for it.",
+   "t": "2:41"
+  },
+  {
+   "idea": "Build-vs-buy needs a cost check at three points, not just a feature check.",
+   "detail": "The example is adding DMs: hosted chat services like Stream and Sendbird avoid building chat but charge per active user, with the free tier at about 100 users for Sendbird. The check runs during build with no users, when first real users arrive, and once growth starts, so cost surprises show up early.",
+   "t": "3:55"
+  },
+  {
+   "idea": "Skill copies only update one way, so the creators built a publish-once channel for their community.",
+   "detail": "Installed skills never refresh on their own. The fix: the publisher pushes a new version on purpose, and subscribers' agents pull it in the background when they reopen the agent. For now the skills live in GitHub, with the storage question deferred until the community launch.",
+   "t": "5:06"
+  },
+  {
+   "idea": "When nothing ships yet, the NeuroArchive skill searches academic preprints for the underlying concept and fans out one sub-agent per paper.",
+   "detail": "It picks research areas matching the problem, pulls papers (12 in the example), and gives each paper a sub-agent with a fresh context window that cannot see the others. The main agent then picks the paper that applies. In the example it implemented one paper's technique about package systems, then tested it.",
+   "t": "7:53"
+  },
+  {
+   "idea": "Head Start combines the two skills so the expensive paper search runs only on novel parts.",
+   "detail": "Running the research skill separately is costly and often skipped, so the combined skill always runs the cheap product/project search and escalates to paper reading only when it hits something new. The creators say this worked well in their testing.",
+   "t": "10:45"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Clarify-then-search gate with logged assumptions",
+   "how": "Before any web or GitHub search, have the agent check whether it knows enough about the audience, the job to be done, and budget. If something is missing, ask. Anything the user does not answer gets written down as an assumption they can see and correct. If the user already answered everything, skip the questions.",
+   "when": "At the start of planning any new feature or project, when the requirements are still vague and the agent would otherwise guess silently."
+  },
+  {
+   "name": "New-idea vs existing-project branch",
+   "how": "Have the agent first classify the request. A new idea gets a full build plan. A feature for an existing project gets a keep/change assessment of the current code before any research.",
+   "when": "When the same planning skill has to handle both greenfield ideas and additions to a codebase that already exists."
+  },
+  {
+   "name": "Applicability-vs-scale notes for each prior-art project",
+   "how": "For every paid tool or open-source project found, write two lists: what applies to your situation, and what only exists because the project is large (team size, user count, legacy). Do not treat star counts as proof of fit.",
+   "when": "When comparing build-vs-buy options or copying architecture from a well-known project."
+  },
+  {
+   "name": "Three-stage cost check",
+   "how": "For each buy or integrate option, estimate the cost during development (no users), at first real users, and at growth. Include per-active-user pricing and free-tier limits at each stage.",
+   "when": "When choosing a managed service whose pricing depends on users or usage."
+  },
+  {
+   "name": "Install a skill from a GitHub link",
+   "how": "Paste the repository link into the agent (the speaker used Claude Code) and ask it to install the skill. In Claude Code the skill then shows up in the .claude/skills folder. Reference the skill by name in the next prompt. The speaker says a skills CLI also exists for installing skills into agents, but the command is not shown.",
+   "when": "To add a community skill to a local agent setup."
+  },
+  {
+   "name": "Paper-per-sub-agent research fan-out",
+   "how": "Have the main agent pick research areas that match the problem and pull the papers. Launch one sub-agent per paper with its own fresh context and a prompt to read only that paper, so the readers cannot see one another. Collect their verdicts, have the main agent choose the paper that applies, implement its technique, and test it.",
+   "when": "When no shipped product covers the problem and it touches a research area, and you need independent readings to avoid one paper's framing dominating."
+  },
+  {
+   "name": "Publish-once, auto-pull skill distribution",
+   "how": "The publisher runs a command (the speaker describes two commands but does not name them) to publish a skill they already have. Subscribers install a single client-side skill once, and their agent pulls updates in the background whenever they reopen it. Updates are pushed manually and received automatically. The speaker says Claude Code plugins offer similar auto-update for Claude Code alone.",
+   "when": "When a team or community needs to share evolving agent skills and wants everyone to get updates without reinstalling by hand."
+  },
+  {
+   "name": "Cheap-first, escalate-on-novelty cascade",
+   "how": "Run the low-cost product and project search on every request. Trigger the expensive paper-reading pass only when that search finds something with no existing answer.",
+   "when": "When a costly research step is worth running only occasionally, and skipping it entirely is the common failure."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "GitHub",
+  "Advise Project Approach (skill)",
+  "NeuroArchive (skill)",
+  "Head Start (skill)",
+  "skills CLI",
+  "Claude Code plugins",
+  "Archive (preprint platform)",
+  "Stream (chat API)",
+  "Sendbird (chat API)",
+  "Lovable (sponsor)",
+  "Cursor (mentioned in sponsor segment)",
+  "Reddit and YouTube (optional research sources)"
+ ],
+ "numbers": [
+  {
+   "claim": "Sendbird's free plan covers about 100 users.",
+   "t": "3:55"
+  },
+  {
+   "claim": "Stream's entry tier is around $500 a month for a stated 10,000 (the unit is unclear in the captions).",
+   "t": "3:55"
+  },
+  {
+   "claim": "The NeuroArchive run pulled 12 papers, and the agent implemented one of them.",
+   "t": "9:21"
+  },
+  {
+   "claim": "Cost is checked at three stages: during build with no users, at first real users, and at growth.",
+   "t": "3:55"
+  }
+ ],
+ "hot_takes": [
+  "The video is partly an ad: a Lovable sponsor segment sits mid-video, and the close pushes a paid community tier (AI Labs Pro). Quality is capped at 2 under the sponsored-segment rule.",
+  "Most of the substance is narrated rather than shown. The skills' repos, the publish command names and the skills CLI commands are left to the video description, so the transcript gives no reproducible commands.",
+  "The paper-search example is one anecdote from the creators' own project, with no measured success rate or cost data.",
+  "The strongest transferable point is the star-count caveat and the requirement to note what only applies because of a project's scale. Those apply to any build-vs-buy research pass, whatever the skill."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The skill-distribution problem (installed skills never update) and the paper-per-sub-agent research fan-out both touch SkillForge's governed, reusable skills and mining work, but the video gives no measured approach for either.",
+   "action": "Compare the publish-once, auto-pull skill update flow against SkillForge's plan for distributing governed skills, and note the paper-per-sub-agent pattern as an option for the open skill-worthiness question."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness plans, critiques and debates, and ranks skills. This video's clarify-then-search gate with logged assumptions, the applies-to-us vs only-because-of-scale check, and the cheap-first escalation cascade map onto the plan and skill-ranking stages.",
+   "action": "Add a pre-research clarifying step to the ProsHarness plan stage that logs assumptions, and have the Codex critique pass flag project-scale artifacts in proposed designs."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

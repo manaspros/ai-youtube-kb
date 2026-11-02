@@ -1,0 +1,44 @@
+# Headscale - The Tool That Made Me DELETE My Tailscale Subscription!
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `8t8FZaBamqA` · [watch](https://youtu.be/8t8FZaBamqA) · **date:** 2026-03-02 · **length:** 10:52 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** ? · **orgs:** Tailscale, Better Stack, Cloudflare
+- **topics:** dev-tools, infra-cost-scaling · **tags:** headscale, tailscale, self-hosted, mesh-vpn, acl, docker-compose, caddy, ssh, sqlite, pre-auth-keys
+
+> Walkthrough of Headscale, a self-hosted open-source control plane for Tailscale clients: Docker setup, pre-auth keys, a permissive ACL, and an honest verdict that setup is involved and the web UI is buggy.
+
+## Summary
+The presenter demos Headscale, an open-source, self-hosted control server compatible with Tailscale clients, which he notes was built by a Tailscale employee. He shows two Ubuntu nodes reaching each other over the private network while a machine outside it hangs. The control plane runs as Docker containers (Headscale, a web UI, and Caddy as reverse proxy), with SQLite holding users, nodes and DNS state, and Postgres as an option. He walks through creating a user, generating a pre-auth key bound to that user ID, and joining a new node with the login server pointed at his Headscale URL. He then shows a deliberately permissive HuJSON ACL that allows all traffic and root SSH between nodes, and notes it should be tightened. His verdict: setup is involved, the tested web UI froze and had console errors, and Headscale lacks Funnel/serve, multiple tailnets, ephemeral nodes and native flow logs. He says he has not decided to drop Tailscale and would consider it for an offline local-LLM setup.
+
+## Key ideas
+- **Headscale is a free, open-source, self-hostable replacement for the Tailscale control plane, so you keep an encrypted mesh network without a vendor subscription.** — Presenter frames it as protection if prices rise or the internet goes down. He also says it was built by a Tailscale employee and wonders why the company allows it. ([0:00](https://youtu.be/8t8FZaBamqA?t=0))
+- **The demo proves the mesh works: nodes reach each other by tailnet IP over SSH, and a machine outside the tailnet hangs.** — Shows two Ubuntu test nodes SSHing into each other via their Headscale-assigned IPs, then a Mac outside the network failing to connect. ([0:59](https://youtu.be/8t8FZaBamqA?t=59))
+- **The control plane is a small Docker stack: Headscale, a community web UI and Caddy as reverse proxy. SQLite is the default store for users, nodes and DNS, with Postgres as an alternative.** — Config and lib directories hold the Headscale config and the SQLite database. The Caddyfile routes one path to the UI and another to the Headscale proxy. ([2:21](https://youtu.be/8t8FZaBamqA?t=141))
+- **Server config is a single config file pointing at a public server URL (a Cloudflare DNS A record to the control plane) and at the ACL policy file path.** — Starts from the Headscale example config and only changes the server URL and the policy path. Clients must be able to reach that URL to learn about peers. ([3:45](https://youtu.be/8t8FZaBamqA?t=225))
+- **Node onboarding is tied to users: create a user, generate a pre-auth key for that user ID inside the Headscale container, then join the client with that key and the Headscale login server.** — Node assignment is by user, so the presenter creates a user, runs nodes list to confirm, and deletes and re-adds a node with a new key to move it into the right user. ([5:08](https://youtu.be/8t8FZaBamqA?t=308))
+- **Nothing talks across nodes until an ACL is in place. He shows a simple allow-all policy with root SSH between any tailnet nodes and tells viewers to tighten it.** — Policy is a HuJSON file in the config directory. Accepts any source to any destination and port, and SSH to root without approval. Presenter suggests restricting ports and node pairs for real use. ([8:02](https://youtu.be/8t8FZaBamqA?t=482))
+- **The honest verdict is mixed. Setup is involved enough that a non-technical user would struggle, the tested web UI froze and threw console type errors, and several Tailscale features are missing.** — Missing features named: Funnel and serve for public or network exposure, multiple tailnets, ephemeral nodes, and native network flow logs. Once running, he says it works very well. ([9:22](https://youtu.be/8t8FZaBamqA?t=562))
+
+## Techniques
+- **Dockerized Headscale control plane with a reverse proxy** — Run the Headscale container with a config directory (config.yaml plus the ACL policy file) and a lib directory holding the SQLite DB. Add a web UI container and Caddy in front, with one path for the UI (/web) and one for the Headscale proxy. Point a Cloudflare DNS A record at the host and set server_url to it. The presenter notes the Docker Compose file closely follows the Headscale docs and links to his version in the description. *When:* Self-hosting a private mesh on a VPS or home server, when you want to avoid a hosted coordination service.
+- **User-scoped pre-auth keys for joining nodes** — Create a user (the presenter names it Tom, user ID 6) and list users to get its ID. Inside the headscale container, generate a pre-auth key for that user ID using the command from the getting-started docs. On the client, install the Tailscale binary, then bring it up with that key and --login-server set to your Headscale URL. Confirm with nodes list. To move a node, force-delete the old node entry, then re-add it with a new key and the SSH flag. *When:* Onboarding each device to Headscale with a clear owner per node.
+- **Permissive starter ACL plus SSH rule** — In the HuJSON policy file in the config directory, set an acl rule accepting any source to any destination and port. Add an ssh rule accepting any tailnet node as source and destination, with users limited to root and action accept (no approval). Enable SSH on each node with the SSH flag. Reload the server after changes. *When:* Bootstrapping a test tailnet. Tighten it to specific ports and node pairs before anything sensitive runs on it.
+- **Checking reachability from inside and outside the tailnet** — SSH between nodes using their tailnet IPs from the Headscale nodes list, then try the same from a machine outside the network. Inside the tailnet it connects. Outside, the connection hangs. *When:* Smoke-testing a mesh after onboarding, to confirm the ACL and routing work and the network is actually closed to outsiders.
+
+## Numbers
+- Demo control plane runs 3 Docker containers: Headscale, the Headscale web UI and Caddy. ([2:21](https://youtu.be/8t8FZaBamqA?t=141))
+- Demo uses 3 servers (1 control plane, 2 nodes) and then a 3-node setup with two nodes on one user. ([0:00](https://youtu.be/8t8FZaBamqA?t=0))
+- User Tom was created with ID 6, and node ID 1 was force-deleted before re-adding. ([5:08](https://youtu.be/8t8FZaBamqA?t=308))
+- The ACL demo allows any source to any destination and port, and SSH as root to any tailnet node without approval. ([8:02](https://youtu.be/8t8FZaBamqA?t=482))
+- Video length is 10:52 with no benchmarks, latency figures or pricing numbers. ([0:00](https://youtu.be/8t8FZaBamqA?t=0))
+
+## Hot takes
+- The title says the tool made him delete his Tailscale subscription, but the video ends with him not deciding and calling Headscale involved and buggy. The title overstates the outcome.
+- Headscale's value is in being self-hosted and open source, and the presenter thinks a Tailscale employee building it is an odd move for the company. He suspects it survives because it is hard to set up.
+- A community Headscale web UI is not worth using yet in his view: the device view is nearly empty and the app freezes.
+
+## Tools mentioned
+Headscale, Tailscale (client and reference control plane), Docker / Docker Compose, Caddy, SQLite, PostgreSQL (optional backend), Headscale web UI (community, unnamed), Cloudflare (DNS), Ubuntu (test servers), Claude Opus (mentioned as a tool for building a UI), OpenClaw (mentioned as a possible offline local-LLM target)
+
+## Relevance to our work
+- **agentos** (1/3): AgentOS runs self-hosted agent infra on a home GPU box (RTX 5090). A private mesh could reach it from laptops or phones without public ports, but this is a networking tool, not an agent-infra technique. → *If the GPU host needs remote access, trial Headscale or Tailscale for private access and write down the ACL rules first, rather than exposing ports publicly.*
+- **prosharness** (1/3): ProsHarness has phone-driven approvals and runs Claude Code on a home or server machine. A private mesh could let the phone reach the harness without exposing it, though the video does not address that use. → *Compare a private mesh (Headscale) against the current phone-approval channel for reaching the harness. Keep the ACL restricted to the approval port.*

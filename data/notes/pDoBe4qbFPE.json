@@ -1,0 +1,203 @@
+{
+ "one_line": "Tour of under-documented Claude Code settings: session retention, output and read caps, sub-agent flags, auto-compact at 75%, commit attribution, telemetry, and exit-code-2 hooks. Includes a sponsored segment.",
+ "summary": "The video lists about a dozen Claude Code settings and flags that the speaker says are buried in config files and environment variables. The core claim is that defaults set when the context window was 200k are now too conservative for a 1M-token window, so caps on output, file reads, and auto-compaction should be raised. It covers session retention (default one month, configurable through a cleanup-days field in settings.json), path-scoped rules that load when matching files are read, and a 30,000-character cap on bash output. It then shows how to run a session as a named sub-agent with flags for skills, effort, background, worktree isolation, and permitted child agents. The read limit section explains the 2000-line hard limit and two workarounds: a CLAUDE.md instruction or a read hook that forces chunked reads. The middle of the video is a sponsored segment and a sponsor pitch for AI Labs Pro and Claude CTX, an open-source profile switcher. The last section covers disabling commit co-authoring, opting out of telemetry without disabling auto-updates, prompt stashing with Ctrl+S, and exit-code-2 hooks that feed errors back to the model. The examples are concrete, but the speaker gives few key names and no version numbers.",
+ "speakers": [],
+ "orgs": [
+  "Anthropic",
+  "Statsig",
+  "Sentry",
+  "Make.com"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "context-engineering",
+  "multi-agent"
+ ],
+ "tags": [
+  "claude-code",
+  "settings-json",
+  "hooks",
+  "exit-codes",
+  "subagents",
+  "worktree-isolation",
+  "context-window",
+  "auto-compact",
+  "read-limit",
+  "bash-output-limit",
+  "session-retention",
+  "telemetry",
+  "git-attribution",
+  "prompt-stash",
+  "agent-teams",
+  "claude-ctx",
+  "ralph-loops",
+  "sponsored"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Session retention defaults to about one month, so old sessions disappear from insights and resume. A cleanup-days field in settings.json extends retention; 365 keeps a year, and 0 stores no conversations.",
+   "detail": "The video says the setting lives in the ~/.claude settings.json and is spoken as 'cleanup period days'. The speaker says it matters now because a 1M-token window makes long-range insight analysis worthwhile.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Bash output is silently truncated at 30,000 characters, so Claude never sees the tail of long test or build logs. The speaker recommends raising the cap to around 150,000 characters in settings.json.",
+   "detail": "The config key is not named in the transcript. The speaker frames the 30k cap as a leftover from the 200k-window era. Raising it will increase token spend, which the video does not discuss.",
+   "t": "2:21"
+  },
+  {
+   "idea": "Path-scoped rules in the project's .claude folder load into context only when a matching file is read. The speaker's point is that one large CLAUDE.md gets ignored, and per-area rules keep the agent focused.",
+   "detail": "Example given: front-end React component rules load only when front-end files are touched. Rule file format and location details are described only loosely in the transcript.",
+   "t": "1:27"
+  },
+  {
+   "idea": "A session can be started as a named sub-agent with the agent flag, skipping the delegation step. Sub-agent options include a skill flag (sub-agents do not inherit skills by default), effort, hooks, background true/false, and isolation (temporary worktree that is discarded if unchanged, or returned as path and branch if changed).",
+   "detail": "The tools section of an agent config can list the agent names it may spawn, which limits runaway spawning. The transcript names the flags only in spoken form, so exact syntax should be checked in the docs.",
+   "t": "3:49"
+  },
+  {
+   "idea": "The file read cap defaults to 25k tokens and should be raised to 100k or more. Separately, reads stop at 2000 lines without warning, so the speaker suggests a CLAUDE.md rule to check line count and read in offset/limit chunks, or a read hook that forces head-based chunked reads.",
+   "detail": "The speaker says the 2000-line limit cannot be changed. The hook route is described as triggered on every read, checking the line count, and redirecting the agent to chunked reads.",
+   "t": "5:17"
+  },
+  {
+   "idea": "Auto-compact fires at 95% by default, but the speaker says output quality starts to degrade around 70% of the window. The suggestion is to set the auto-compact percentage override to 75% in settings.json.",
+   "detail": "The key name is not shown in the transcript. The 70% degradation figure is the speaker's observation, not a measurement shown in the video.",
+   "t": "6:22"
+  },
+  {
+   "idea": "Agent teams (experimental) differ from sub-agents in that team members are full Claude sessions that can message each other, coordinated by a team leader. Sub-agents cannot communicate with each other.",
+   "detail": "The video says a separate full video covers agent teams in depth. The enabling flag is not shown here.",
+   "t": "7:50"
+  },
+  {
+   "idea": "Exit codes in hooks matter: 0 means success with output kept out of context, 2 blocks and feeds the error back to Claude, and other non-zero codes are non-blocking and shown only in verbose mode. A pre-Bash hook that exits 2 with a message can steer Claude away from a disallowed command such as pip.",
+   "detail": "The speaker says the same exit-2 mechanism underlies Ralph loops, where Claude is forced to keep iterating until a completion criterion is met. The transcript says the replacement tool is 'uvicorn', which is most likely a caption error for 'uv'.",
+   "t": "11:28"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Extend session retention",
+   "how": "In settings.json, add the cleanup-days field (spoken as 'cleanup period days', key not shown on screen) with the number of days to keep. Use 365 for a year. Use 0 to store no conversations.",
+   "when": "When you want insights or resume to reach sessions older than the default one-month window, or when you need to avoid storing transcripts at all."
+  },
+  {
+   "name": "Path-scoped rules",
+   "how": "Put per-area instruction files in the project's .claude folder, each with a path pattern. They load when Claude reads a matching file, so the main CLAUDE.md stays short.",
+   "when": "When CLAUDE.md is long and mixes front-end, back-end, and test instructions, and the agent starts ignoring some of them."
+  },
+  {
+   "name": "Raise the bash output cap",
+   "how": "In settings.json, change the bash output character limit from the 30,000 default to around 150,000 (key name not shown in transcript).",
+   "when": "When test suites, build logs, or migrations print more than 30k characters and the agent is reasoning from truncated output."
+  },
+  {
+   "name": "Run a session as a sub-agent",
+   "how": "Start Claude with the agent flag and the sub-agent's name. Set skill, effort, background (true/false), and isolation (worktree) in the agent config, add hooks in the agent config, and list permitted child agent names in its tools section.",
+   "when": "When you want to hand a task directly to a specialized agent without the orchestrator step, to run it in the background, or to make risky changes in an isolated worktree that is discarded if nothing changed."
+  },
+  {
+   "name": "Raise the file read cap and enforce full reads",
+   "how": "Raise the per-read token cap in settings.json from 25k to 100k or more. For the 2000-line limit, add a CLAUDE.md rule to check line count on large files and read them with offset and limit. Or add a read-triggered hook that counts lines and, above 2000, forces the agent to read with head-based chunks.",
+   "when": "When the agent reads large files and reasons from only the first 2000 lines without noticing the rest was skipped."
+  },
+  {
+   "name": "Lower the auto-compact threshold",
+   "how": "In settings.json, set the auto-compact percentage override to 75 (default is 95). Key name not shown in transcript.",
+   "when": "When you do not need the full 1M window and want compaction before output quality degrades, which the speaker puts at around 70%."
+  },
+  {
+   "name": "Remove commit co-author lines",
+   "how": "In settings.json, add the attribution key and leave the commit and PR fields empty. Set them to a custom string to change the author shown.",
+   "when": "When Claude's co-author trailer on commits and PRs is unwanted, for example on repos where it inflates the contributor graph."
+  },
+  {
+   "name": "Opt out of telemetry without losing updates",
+   "how": "Add three variables to the main settings.json that disable telemetry, error reporting, and feedback display (names not given in the video). Do not use the CLI flag that disables non-essential traffic, because it also blocks auto-updates.",
+   "when": "When you want to stop analytics to Statsig and error reports to Sentry but keep auto-updates."
+  },
+  {
+   "name": "Prompt stash with Ctrl+S",
+   "how": "While typing a prompt, press Ctrl+S to stash it. Send a different prompt, and the stashed text returns to the input box.",
+   "when": "When you need to interrupt a half-written prompt with a more urgent task."
+  },
+  {
+   "name": "Exit-code-2 hook to block and steer",
+   "how": "Configure a pre-tool hook (the video uses one that runs before every Bash command) that checks the command against a disallowed pattern. On a match, print the redirect message and exit with code 2 so the message is fed back to Claude. Example: block pip installs and direct Claude to uv (transcribed as 'uvicorn').",
+   "when": "When Claude keeps picking a library or command you have ruled out because of its training defaults, and an instruction in CLAUDE.md is not reliably followed."
+  },
+  {
+   "name": "Loop-until-done with exit-code hooks (Ralph-style)",
+   "how": "Use the same exit-code-2 mechanism to force Claude to keep iterating until a completion check passes. The video describes this only in outline and points to a separate video for detail.",
+   "when": "When tasks are often marked complete before they actually are, and you need a machine-checkable completion criterion."
+  },
+  {
+   "name": "Claude CTX profiles",
+   "how": "Install the open-source Claude CTX tool (brew install on Mac, clone the repo elsewhere). It keeps per-profile settings.json and CLAUDE.md files in a profiles folder under .claude. Check the active profile with its C flag and switch with claudectx followed by the profile name. Each switch backs up the previous working state.",
+   "when": "When one machine serves several clients or work types that need different permissions and CLAUDE.md contents, and you need them kept apart."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude CTX (open-source profile switcher)",
+  "Opus 4.6 (cited as the 1M-token-context model)",
+  "uv (transcribed as 'uvicorn'; likely the pip replacement in the hook example)",
+  "Statsig (analytics sink, named by speaker)",
+  "Sentry (error reporting sink, named by speaker)",
+  "Make.com (sponsor)",
+  "Ralph loops (named concept, not a tool)"
+ ],
+ "numbers": [
+  {
+   "claim": "Default session retention is one month (speaker's statement). Example extended value is 365 days; 0 stores no conversations.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Opus 4.6 is cited as supporting a 1 million token context window.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Bash output is capped at 30,000 characters; the video suggests raising it to about 150,000.",
+   "t": "2:21"
+  },
+  {
+   "claim": "Default file read cap is 25k tokens; the video suggests 100k or more. Hard limit of 2000 lines per read, which the speaker says cannot be changed.",
+   "t": "5:17"
+  },
+  {
+   "claim": "Default auto-compact triggers at 95% of the context window. Speaker says quality degrades starting around 70%; the video sets 75%.",
+   "t": "6:22"
+  },
+  {
+   "claim": "Claude CTX is installed with brew on Mac; the video does not give a version.",
+   "t": "8:40"
+  }
+ ],
+ "hot_takes": [
+  "The Make.com sponsor segment (about 6:22 to 7:50) is a sponsored read, and the AI Labs Pro and Claude CTX pitches are self-promotion, so quality is capped at 2 under the rule.",
+  "The speaker says the 30k bash cap, 25k read cap, and 95% auto-compact are obsolete with a 1M window, but raising caps increases token spend and the video never discusses that cost.",
+  "The claim that output degrades around 70% context is presented without evidence; treat the 75% setting as a starting point to test, not a validated threshold.",
+  "Key names are often not given (cleanup-days field, output cap, read cap, auto-compact override, telemetry variables, sub-agent flags), so verify against Claude Code's current settings documentation before editing configs.",
+  "The video says the 2000-line read limit cannot be changed by the user; that is the speaker's claim and the tools section should be checked against current docs.",
+  "Caption errors to note: 'Cloud Code' means Claude Code, 'cloud.md' means CLAUDE.md, and 'uvicorn' is most likely 'uv'."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Mostly Claude Code user settings; the exit-code-2 'block and feed the reason back to the model' pattern is adjacent to AgentOS exec-gate guardrails.",
+   "action": "Compare the exit-code-2 hook pattern with Crucible's exec-gate guardrails to see whether shell-command gating can reuse the same block-and-explain mechanism."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI, so these settings and exit-code hooks affect checkpoint/resume and loop behavior. The retention default could delete sessions the harness relies on.",
+   "action": "Check that ProsHarness's checkpoint/resume does not depend on sessions older than the default retention window, and evaluate an exit-2 completion-check hook for its loop mode."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,151 @@
+{
+ "one_line": "AI LABS walks through Google's Open Knowledge Format (OKF), a folder, index.md and YAML-frontmatter convention for markdown knowledge bases, and reports a small team test with lower token use and faster lookups.",
+ "summary": "The narrator says personal \"second brains\" built on Claude Code are hard to share and navigate because each person structures them differently. Google's Open Knowledge Format (OKF) is presented as a standard layout for these markdown knowledge bases, built on Karpathy's LLM-wiki pattern as an alternative to RAG. In OKF each topic is a folder with an index.md that agents read first, and each concept document carries YAML frontmatter with a name and description. OKF ships with a BigQuery-only enrichment agent and an HTML graph visualizer, so the team wrote its own \"Markdown to OKF\" skill, script-first with evals, and tested it on a branch of their team's Git-tracked second brain. Claude ignored the new structure until a CLAUDE.md section explained it, after which it navigated via index.md and loaded YAML metadata before opening files. The speaker's conclusion is that OKF is an optimization for now, not a necessity, until agents support it natively. The video also contains a sponsored Mobbin segment and no measured token or latency figures.",
+ "speakers": [],
+ "orgs": [
+  "Google",
+  "AI LABS",
+  "Mobbin"
+ ],
+ "format": "review",
+ "topics": [
+  "context-engineering",
+  "memory",
+  "rag-retrieval",
+  "claude-code"
+ ],
+ "tags": [
+  "open-knowledge-format",
+  "llm-wiki",
+  "karpathy",
+  "second-brain",
+  "markdown",
+  "index-md",
+  "yaml-frontmatter",
+  "claude-md",
+  "obsidian",
+  "token-cost",
+  "knowledge-base"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Second brains built on Claude Code are personal and unstandardized, so they are hard for others to navigate or share.",
+   "detail": "The speaker's team keeps a Git-versioned second brain guided by a CLAUDE.md file, with per-folder CLAUDE.md files. Claude still misfiles content and creates duplicate folders because it only finds files by searching and does not know what already exists.",
+   "t": "0:00"
+  },
+  {
+   "idea": "OKF is pitched as a standard for knowledge, in the way MCP and skills became standards for tools and instructions.",
+   "detail": "It is based on Karpathy's LLM-wiki pattern: markdown files the agent can navigate, instead of RAG that rebuilds answers from scratch on every query and accumulates no knowledge. The speaker notes that the format itself adds nothing new technically.",
+   "t": "2:45"
+  },
+  {
+   "idea": "An OKF bundle is a folder tree of markdown concept documents, each with YAML frontmatter describing it.",
+   "detail": "The frontmatter tells the agent what a file holds before it opens the file. The format is meant to be readable by humans as well as agents, and it is independent of any specific platform.",
+   "t": "4:12"
+  },
+  {
+   "idea": "The core OKF rules are one topic per folder, an index.md in every folder read first, and one concept per document.",
+   "detail": "Each concept has a short YAML block with name and description, and a type field that says what the concept is. The speaker stresses minimalism: mixing topics in one concept stops the agent from loading just the part it needs.",
+   "t": "5:12"
+  },
+  {
+   "idea": "OKF ships with a BigQuery enrichment agent, an HTML visualizer and examples, but the team had to build its own converter for markdown.",
+   "detail": "The team's skill was script-first: code does most of the conversion and the agent only handles judgment calls, which the speaker says saves tokens. Evals are prompts that the agent runs against the output to check the conversion.",
+   "t": "8:04"
+  },
+  {
+   "idea": "Claude did not use OKF until CLAUDE.md documented the structure; after that it searched index files first and used fewer tokens.",
+   "detail": "Without the CLAUDE.md section it fell back to keyword and filename matching. With it, it read index.md files and YAML metadata before deciding which files to open. The speaker reports faster retrieval and fewer tokens, with no numbers shown.",
+   "t": "9:32"
+  },
+  {
+   "idea": "The speaker's own verdict is that OKF is an optimization for now, and it becomes essential only once agents support it out of the box.",
+   "detail": "The speaker also speculates that websites could publish OKF bundles alongside llms.txt. That is speculation, not something Google has announced.",
+   "t": "10:59"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Index.md per folder as the agent's entry point",
+   "how": "Put an index.md at the root and in every subfolder. Each one lists the folder's contents with links to subfolders, so the agent reads the index before opening documents. The speaker says this is the same linking idea Obsidian uses for its graph view.",
+   "when": "A large, nested markdown knowledge base where agents waste tool calls and tokens on filename guessing."
+  },
+  {
+   "name": "YAML frontmatter with name, description and type on every concept document",
+   "how": "Each concept file starts with a small YAML block holding name and description, plus a type field. Keep one concept per file, so the agent can decide from the frontmatter whether to load the file.",
+   "when": "You want cheap relevance checks before loading content, and want the knowledge base readable without the agent."
+  },
+  {
+   "name": "Script-first markdown-to-OKF conversion with evals",
+   "how": "Write a conversion script that turns a folder of markdown into the OKF layout (index.md files plus frontmatter). Use the agent only for judgment calls. Test the output with evals: prompts the agent runs against the converted bundle to check it. The speaker did not show the script or its name.",
+   "when": "Converting an existing markdown knowledge base, where code is cheaper and more reliable than agent edits."
+  },
+  {
+   "name": "CLAUDE.md navigation section that documents the bundle",
+   "how": "Add a section to CLAUDE.md that explains the layout, what each file role is, and that the agent should read index.md files first before searching. The speaker says Claude ignored OKF until this was added. The exact wording was not shown.",
+   "when": "Any non-standard knowledge layout that the agent does not know about by default."
+  },
+  {
+   "name": "Trial on a Git branch and visualize the bundle",
+   "how": "Make the conversion on a separate branch so main is untouched. Run the OKF visualize command in the terminal to produce an HTML graph of the bundle and open it in a browser to check links. The command and flags were only described, not shown.",
+   "when": "Evaluating a restructuring of a shared knowledge base before committing to it."
+  }
+ ],
+ "tools": [
+  "Open Knowledge Format (OKF, Google)",
+  "BigQuery",
+  "Claude Code",
+  "CLAUDE.md",
+  "Obsidian (comparison only)",
+  "Git / GitHub",
+  "Karpathy LLM-wiki pattern (concept, not a product)",
+  "Google design.md standard (named in passing)",
+  "Mobbin MCP (sponsor)",
+  "Cursor, Lovable, v0 (named in sponsor segment)",
+  "Markdown to OKF skill (the team's own, unnamed script)"
+ ],
+ "numbers": [
+  {
+   "claim": "Team second brain was converted to OKF on a branch; no file counts, token counts or timings were given. Token savings and retrieval speed are described only qualitatively.",
+   "t": "9:32"
+  },
+  {
+   "claim": "Sponsor claims: Mobbin MCP covers over 621,000 app screens and 142,000 flows (vendor figure, not verified).",
+   "t": "6:39"
+  },
+  {
+   "claim": "OKF is described as already containing a BigQuery enrichment agent, an HTML visualizer and example bundles; no adoption figures were given.",
+   "t": "6:39"
+  }
+ ],
+ "hot_takes": [
+  "The sponsored Mobbin segment at 6:39 caps quality at 2 under the rules, though the OKF content itself is practitioner-level.",
+  "The title 'Google Replaced The Karpathy's LLM Wiki' overstates the content. The video says OKF is based on Karpathy's pattern, and the speaker admits it is not widely adopted and only an optimization for now.",
+  "Speculation that OKF is part of Google's shift to generative search and that websites will adopt OKF bundles is the speaker's guess, not evidence.",
+  "The token-saving and speed claims rest on one team's informal test with no numbers, so they are anecdotal."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already plans knowledge buckets with hybrid retrieval and provenance. An index.md-per-bucket layout with frontmatter is a cheap, inspectable export or navigation format that could be compared against BM25+pgvector retrieval on token cost.",
+   "action": "Prototype an OKF-style layout (index.md per bucket plus frontmatter) as an export format for one MemoryMesh knowledge bucket, and measure agent tokens and tool calls to answer a fixed set of lookups against hybrid retrieval on the same corpus."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code, and the video shows that a short CLAUDE.md section pointing to index files changed how Claude searched. This may help long runs find context with fewer tokens.",
+   "action": "Test whether a CLAUDE.md section that maps the repo and tells the agent to read index files first reduces search tool calls in a long ProsHarness run."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Context-engineering pattern: frontmatter-first loading and index files are a general way to cut context cost in agent knowledge bases.",
+   "action": "Read Karpathy's LLM-wiki post for the original pattern before adopting OKF, since the video only summarizes it."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

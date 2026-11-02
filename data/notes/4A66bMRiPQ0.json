@@ -1,0 +1,168 @@
+{
+ "one_line": "A walkthrough of Shotgun Code, which packs a whole Next.js repo into one prompt, gets a full diff from Gemini 2.5 Pro, and applies it in Cursor to overhaul a personal app.",
+ "summary": "The presenter introduces Shotgun Code, a tool that bundles a project's files into one large prompt. That prompt is pasted into Google AI Studio's Gemini 2.5 Pro at temperature 0.1, which returns a complete diff. The diff is then applied in Cursor, where the presenter switched from Gemini to Claude 3.5 Sonnet because Gemini was slow there and kept stopping to ask questions. Setup needs Go, Node.js and the Wails CLI, plus one install command and one launch command from the repo root; the exact commands were on screen but not spoken. Opening the full project first hit a size limit, which was fixed by unchecking generated folders, docs and the cursor rules file. The demo is a three-change overhaul of a personal timetracking Next.js app: performance, a UI component swap (shadcn first, then Aceternity UI after the first result looked poor), and a reworked activity-entry flow. The presenter argues that one task plus whole-repo context beats agent edits file by file, but the evidence is one app judged visually, with no measurements.",
+ "speakers": [
+  "AI LABS presenter (name not stated)"
+ ],
+ "orgs": [
+  "AI LABS",
+  "Google",
+  "Anthropic",
+  "Cursor"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "context-engineering",
+  "coding-agents",
+  "vibe-coding-app-building"
+ ],
+ "tags": [
+  "shotgun-code",
+  "repo-context-packing",
+  "gemini-2.5-pro",
+  "google-ai-studio",
+  "cursor",
+  "nextjs",
+  "diff-based-editing",
+  "shadcn-ui",
+  "aceternity-ui",
+  "wails"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Shotgun Code packs an entire codebase into one large prompt. A long-context model such as Gemini 2.5 Pro returns a full diff, and the diff is applied in an editor like Cursor or Windsurf.",
+   "detail": "The tool generates the prompt from the whole project, so the model sees every file at once instead of exploring with an agent.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Opening the full project overflowed the tool's context limit. The fix was to deselect generated and dependency folders and documentation files before generating the context.",
+   "detail": "Unchecked: the .next build folder, the cursor rules file and the presenter's own .md docs. Kept: package.json, so the model still knows the dependencies.",
+   "t": "2:25"
+  },
+  {
+   "idea": "The generated prompt has a user-task section and a custom-rules section, structured so an LLM can read it easily. The user only types the task and any project rules.",
+   "detail": "Rules that matter, such as avoiding a particular library, go into the custom-rules area. The finished prompt is copied in one step.",
+   "t": "3:25"
+  },
+  {
+   "idea": "Running the packed prompt at temperature 0.1 in Gemini 2.5 Pro (not Flash) makes it follow the instructions literally. The presenter says no extra instructions are needed beyond the prompt itself.",
+   "detail": "The presenter describes temperature 0.1 as close to no creativity, so the output follows the prompt exactly.",
+   "t": "4:39"
+  },
+  {
+   "idea": "The Gemini diff is applied in Cursor with Claude 3.5 Sonnet as the executor. Gemini inside Cursor was slow and often stopped to ask questions the rules did not require, so the presenter switched models.",
+   "detail": "The diff prompt lists the files and locations to change. Applying it took several Cursor chats: three implementation changes spread over five chats, two of them extra after a network error and a model switch.",
+   "t": "5:42"
+  },
+  {
+   "idea": "The overhaul was split into separate change areas: performance first, then a UI component swap, then a user-flow rework. Each one went through its own pack-diff-apply cycle.",
+   "detail": "The first UI attempt with shadcn components looked poor, so the presenter re-prompted for Aceternity UI, which the presenter found minimal and clean.",
+   "t": "6:48"
+  },
+  {
+   "idea": "The presenter's pitch is that one task given to the LLM with full codebase context can trace connections across files, which the presenter offers as an alternative to written documentation and implementation plans.",
+   "detail": "This is a claim from one personal project, backed by the presenter's visual judgment rather than by measurements or comparisons with other tools.",
+   "t": "8:53"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Setup and launch from repo root",
+   "how": "Install Go, Node.js and the Wails CLI. Run the repo's one install command, then the launch command from the project root; the presenter says the launch command also installs the frontend dependencies. The exact command text was on screen but not spoken, so check the repo README or the video description.",
+   "when": "Before first use of Shotgun Code on a machine."
+  },
+  {
+   "name": "Curate the context before generating the prompt",
+   "how": "Select the project folder and generate context. Uncheck .next (build output), dependency folders, the cursor rules file and personal .md docs. Keep package.json for dependency info. Generate the prompt only after the size error is gone.",
+   "when": "When a Next.js project is too large to pack, or when the packed context includes build output and docs that add noise."
+  },
+  {
+   "name": "Write one task plus custom rules into the packed prompt",
+   "how": "Type a single concrete task in the task box (e.g. 'convert the custom React components to shadcn components'). Put project constraints such as banned libraries or style rules in the custom-rules section. Copy the finished prompt with copy-all.",
+   "when": "Any single cross-cutting change that must touch many files consistently."
+  },
+  {
+   "name": "Generate the diff in Google AI Studio",
+   "how": "Open Google AI Studio, choose Gemini 2.5 Pro (not Flash), set temperature to 0.1, paste the packed prompt with no additions and run. Keep the returned diff, which names the files and changes to make.",
+   "when": "When you want literal instruction following from a long-context model and can use the free daily prompt quota (25/day, per the presenter)."
+  },
+  {
+   "name": "Apply the diff with a coding agent in chunks",
+   "how": "In a Cursor chat, type 'apply diff' and paste the diff prompt. Use Claude 3.5 Sonnet for execution if the Gemini chat in Cursor is slow or keeps asking questions. Start a fresh chat for each change area (performance, UI, flow) to keep the context clean.",
+   "when": "Applying a large multi-file diff produced outside the editor."
+  },
+  {
+   "name": "Control visual style through the task text",
+   "how": "Name the component library and the look in the task (e.g. 'use Aceternity UI components only, minimal'). Check the result visually. If it looks wrong, re-run the pack-diff-apply cycle with a revised task rather than hand-editing.",
+   "when": "When the first generated UI does not match the desired look."
+  }
+ ],
+ "tools": [
+  "Shotgun Code (the GitHub repo demoed, a Go app with a frontend)",
+  "Go",
+  "Node.js",
+  "Wails CLI (captioned as 'Wales')",
+  "Next.js",
+  "Google AI Studio",
+  "Gemini 2.5 Pro",
+  "Gemini Flash (mentioned as the option not to use)",
+  "Cursor",
+  "Windsurf (mentioned as an alternative executor)",
+  "Claude 3.5 Sonnet",
+  "shadcn/ui (captioned as 'shad cn')",
+  "Aceternity UI (captioned as 'Aseternity UI')",
+  "ChatGPT (suggested for installing Go, not used in the workflow)"
+ ],
+ "numbers": [
+  {
+   "claim": "Google AI Studio gives 25 free prompts per day, which the presenter says is enough for this workflow.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Gemini 2.5 Pro was run at temperature 0.1 to get literal instruction following.",
+   "t": "4:39"
+  },
+  {
+   "claim": "Three implementation changes were applied across five Cursor chats. Two extra chats came from a network error and a model switch away from Gemini.",
+   "t": "5:42"
+  },
+  {
+   "claim": "Opening the full project exceeded the context size limit. No token or byte figure was given.",
+   "t": "2:25"
+  },
+  {
+   "claim": "No benchmark, latency, cost or token-count measurements were given. The performance improvement is a visual impression (smoother scrolling and hover, no jitter).",
+   "t": "6:48"
+  }
+ ],
+ "hot_takes": [
+  "One task plus whole-repo context in a single prompt replaces the need for documentation and implementation plans. This is claimed from one personal app, with no comparison to agent-driven editing.",
+  "The 'FREE' title rests on Gemini's free daily prompt quota, which the presenter mentions in passing. The workflow also depends on manual copy-paste, because the apply-patch step was not yet built into the tool.",
+  "Gemini is poorly suited to Cursor's agent role because it stops to ask questions, and the presenter swapped it for Claude 3.5 Sonnet. This is a single user's experience.",
+  "The quality judgement is aesthetic and personal. The presenter disliked the first UI result, and the speed claim is a screen-recording impression, not a measurement."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "A cheap whole-repo context pack followed by a single diff is a manual version of context engineering. It is not infrastructure we would build or operate.",
+   "action": "On one of our repos, measure the token size of a packed-repo prompt against what an agent reads when exploring the same task, before adopting any packing pattern."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "A packed-repo prompt could serve as the input to a second-model critique in the plan, critique (Codex) and debate flow.",
+   "action": "Try feeding a packed-repo prompt to the Codex critique stage and compare its critique with the one the agent produces after exploring the repo itself."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Shows the cost-and-context tradeoff of a free long-context model against a paid coding agent for one bounded multi-file change.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

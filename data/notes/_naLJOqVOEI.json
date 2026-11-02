@@ -1,0 +1,148 @@
+{
+ "one_line": "A FriendliAI engineer argues open-weight models now rival frontier ones, so the inference provider's speed, reliability and cost decide the outcome. Covers prefix-cache routing, tiered KV cache and hybrid speculative decoding. Mostly a sales pitch.",
+ "summary": "The speaker, a founding engineer at FriendliAI, says open-weight models such as GLM 5.2 and MiniMax M3 now compete with leading proprietary models on coding, reasoning and agentic benchmarks. In a single-prompt test, GLM 5.2 built a tower-defense game about as well as Opus 4.8 at roughly 5.6 times lower cost. He says the same model can feel very different across providers, because latency, throughput and reliability depend on the whole inference stack. He describes two serving techniques for long agent prompts: cache-aware routing to the replica that already holds the prefix, and a hot/warm/cold KV cache hierarchy. He also covers hybrid speculative decoding, which picks between a draft model and prompt-copy drafting per workload. He argues reliability (5xx errors, rate limits, uptime) is part of speed, since one failed call can break a multi-step agent run. He closes by asking viewers to benchmark providers on their own workload and cites a customer split test that favored FriendliAI.",
+ "speakers": [
+  "Yunmo"
+ ],
+ "orgs": [
+  "FriendliAI",
+  "OpenRouter"
+ ],
+ "format": "talk",
+ "topics": [
+  "inference-serving",
+  "infra-cost-scaling",
+  "models-research"
+ ],
+ "tags": [
+  "open-weight models",
+  "inference provider choice",
+  "KV cache",
+  "prefix caching",
+  "cache-aware routing",
+  "speculative decoding",
+  "GLM 5.2",
+  "reliability",
+  "vendor pitch"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Open-weight models are now good enough for many production workloads",
+   "detail": "The speaker points to coding, reasoning and agentic benchmarks and a Code Arena leaderboard where GLM 5.2 ranks above Opus 4.8. He says the open question has shifted from quality to how fast and reliably they can run.",
+   "t": "1:13"
+  },
+  {
+   "idea": "Same weights, different provider, different experience",
+   "detail": "In a tower-defense test, GLM 5.2 was about 5.6x cheaper than Opus 4.8 with similar quality. In a second test on the same model, one provider took about 2 minutes and another over 3 minutes. He argues this comes from the full stack: architecture, cache, routing, scheduler, quantization and GPU choice.",
+   "t": "2:38"
+  },
+  {
+   "idea": "Agent prompts are long and mostly repeated, so prefill is the cost",
+   "detail": "Agent inputs often exceed 10K tokens, and 50 to 90 percent of tokens can be identical across requests. Recomputing the shared prefix wastes latency and GPU time. Reusing its KV tensors cuts TTFT.",
+   "t": "5:29"
+  },
+  {
+   "idea": "Reuse only works if the router knows where the cache lives",
+   "detail": "KV cache sits on individual replicas rather than in one central store. The router must send each request to a replica that already holds its prefix, or the reuse benefit is lost.",
+   "t": "5:29"
+  },
+  {
+   "idea": "Treat KV cache as a memory hierarchy",
+   "detail": "KV cache can exceed model weight size for long contexts. Hot blocks stay in GPU memory, warm blocks in CPU RAM, and cold blocks go to NVMe or disk. Less-used blocks are offloaded and fetched back when needed.",
+   "t": "6:55"
+  },
+  {
+   "idea": "Speculative decoding trades per-request speed against batch overhead",
+   "detail": "Draft tokens are verified in one forward pass, so accepted tokens are effectively free and output quality is unchanged. Model-based drafting accepts more tokens but costs compute. Model-free drafting from the prompt or prior output is cheap but only helps when output resembles the context. The best choice depends on the workload.",
+   "t": "8:21"
+  },
+  {
+   "idea": "Reliability is part of speed for agent chains",
+   "detail": "An agent may make many model calls for one task, so a single timeout, 5xx or 429 can invalidate the whole run. He says the provider should be judged on error rate and uptime, not only average latency. He cites a provider-stats snapshot showing over 99.9 percent uptime for GLM 5.1 Pro.",
+   "t": "9:45"
+  },
+  {
+   "idea": "Vendor benchmarks are conditional; benchmark your own workload",
+   "detail": "He says many providers are fast only under certain benchmarks and conditions. His advice is to test prompts, token lengths, traffic patterns and latency targets on your own workload, across speed, reliability, cost and quality.",
+   "t": "11:07"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Cache-aware request routing",
+   "how": "Track which replica holds which prompt prefix and route each request to the replica with the longest matching cached prefix, rather than round-robin.",
+   "when": "Multi-replica serving where agent requests share long system prompts or context prefixes."
+  },
+  {
+   "name": "Tiered KV cache offload",
+   "how": "Keep hot KV blocks in GPU memory, move less-used blocks to CPU RAM, and push cold blocks to NVMe or disk. Fetch them back on demand.",
+   "when": "Long-context workloads where KV cache is larger than the model weights and GPU VRAM is the limit."
+  },
+  {
+   "name": "Hybrid speculative decoding",
+   "how": "Choose per request between a small draft model (higher acceptance, more compute) and model-free n-gram-style drafting from prompt or prior output (low overhead). Let a speculator adapt to live traffic.",
+   "when": "Serving mixed workloads where output sometimes copies the context (edits, code) and sometimes does not."
+  },
+  {
+   "name": "Provider bake-off on your own workload",
+   "how": "Replay your real prompts, token lengths and traffic through several providers. Compare TTFT, throughput, error rate, uptime, cost per finished task and output quality.",
+   "when": "Choosing or switching inference providers for an open-weight model, especially for multi-step agents where cost compounds."
+  }
+ ],
+ "tools": [
+  "OpenRouter (provider stats snapshot)",
+  "Code Arena leaderboard"
+ ],
+ "numbers": [
+  {
+   "claim": "GLM 5.2 was more than 5.6x cheaper than Opus 4.8 on the single-prompt tower-defense game task, with similar quality",
+   "t": "2:38"
+  },
+  {
+   "claim": "Candy-crush-style game generation with the same model: FriendliAI about 2 minutes, another provider over 3 minutes",
+   "t": "4:02"
+  },
+  {
+   "claim": "Agent inputs often exceed 10K tokens; 50 to 90 percent of tokens can be identical across requests",
+   "t": "5:29"
+  },
+  {
+   "claim": "Customer split test for GLM models: FriendliAI over 7x faster than many other providers, with significantly lower error rate (customer is a coding-agent platform processing several trillion tokens per week)",
+   "t": "11:07"
+  },
+  {
+   "claim": "Provider-stats snapshot shows over 99.9 percent uptime for GLM 5.1 Pro on FriendliAI",
+   "t": "9:45"
+  }
+ ],
+ "hot_takes": [
+  "Model quality is no longer the main question; what you can afford to run at scale is.",
+  "The inference provider can matter as much as the model choice, even with identical weights.",
+  "Speed claims from providers hold only under specific benchmarks; your own workload is the only benchmark that matters.",
+  "Reliability is part of speed for agents, since one failed call can invalidate a whole multi-step run."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The talk's KV-cache reuse via cache-aware routing, tiered offload (GPU, CPU, NVMe) and hybrid speculative decoding overlap with InferCraft's KV-cache strategies and EAGLE-3 speculation on one RTX 5090.",
+   "action": "Read the cache-aware routing and tiered-offload sections, then compare TTFT on a shared-prefix agent workload between InferCraft's current KV strategy and a plain prefill baseline. Expected payoff: a number for the shared-prefix claim (50 to 90 percent identical tokens) on our own traffic."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Nothing in the talk concerns checkpointing, planning, Claude Code loops, skill ranking or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The talk gives a clear framing for choosing an inference provider: bake off on your own workload and measure cost per finished agent task, not per token.",
+   "action": "When picking a provider or model for the entity-resolution LLM steps, run a short bake-off on real prompts and log latency, errors and cost per task."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

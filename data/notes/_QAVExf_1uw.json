@@ -1,0 +1,222 @@
+{
+ "one_line": "A staff engineer at IKEA argues enterprise agents fail on undocumented institutional knowledge, and proposes a pull-based loop where agents surface knowledge gaps and curate context blocks before retrieval.",
+ "summary": "Raj, a staff software engineer at IKEA, says enterprise AI agents handle generic and documented work well but fail on institutional knowledge that lives in people's heads. He reports that his earlier approach of building many MCP servers and RAG layers was accurate only some of the time, and that he ended up doing manual data entry and filling gaps himself. He proposes \"demand-driven context\": give an agent real past work items, let it fail, have it list the information it was missing, have a domain expert fill those gaps, and have the agent save the answers as curated context. He demonstrates this in Claude Code on a root-cause-analysis incident, then runs it over 14 incidents, where his reported confidence score rose from about 1.4 to 4.4. He then describes automating it as a context gap scanner: generate probes from past incidents and tickets, run them against the knowledge base, rank gaps as critical, high or medium, and output a Kanban board. He recommends keeping the curated knowledge in a Git repo for PR review, adding a metamodel that links processes, systems, APIs and jargon, and fixing context before retrieval rather than during live operations. He argues that a team's context (about 96k tokens by his measure) often fits in a long context window and can beat graph RAG at that size.",
+ "speakers": [
+  "Raj"
+ ],
+ "orgs": [
+  "IKEA",
+  "McKinsey"
+ ],
+ "format": "workshop",
+ "topics": [
+  "context-engineering",
+  "rag-retrieval",
+  "skills-self-improvement",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "institutional-knowledge",
+  "knowledge-gaps",
+  "demand-driven-context",
+  "pull-based",
+  "context-blocks",
+  "gap-scanner",
+  "metamodel",
+  "github-as-knowledge-base",
+  "claude-code",
+  "copilot",
+  "confluence",
+  "jira",
+  "long-context-vs-rag",
+  "tdd-analogy",
+  "workshop"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Enterprise AI stalls on institutional knowledge, not model quality",
+   "detail": "Speaker cites a McKinsey figure (as he states it) that 88% of companies use AI but only 6% see value. He sorts Jira tickets into work the LLM already knows, work that needs documented team conventions (skills), and red work that depends on tribal knowledge that agents cannot get.",
+   "t": "4:46"
+  },
+  {
+   "idea": "Retrieval layers were unreliable and created manual work",
+   "detail": "After building 10 to 30 MCP servers or RAG layers, the speaker says the output was right only 10 to 30% of the time. The rest of the time he filled gaps and answered questions, so he did more work than before.",
+   "t": "8:47"
+  },
+  {
+   "idea": "Pull approach: let the agent fail on real tasks, then capture what it was missing",
+   "detail": "Instead of pushing all knowledge in up front, give the agent work items. When it fails, it lists the missing checklist items. A domain expert fills them, and the agent saves the answers in a better structure. Speaker compares this to onboarding a new hire by assigning real tasks.",
+   "t": "13:06"
+  },
+  {
+   "idea": "TDD framing: failing tasks act as tests for the knowledge base",
+   "detail": "Speaker compares the loop to red-green TDD. Work the agent will fail on is the failing test, and each knowledge fix is the code that makes it pass. Over repeated cycles the knowledge base becomes semi-autonomous.",
+   "t": "15:26"
+  },
+  {
+   "idea": "Replaying past incidents shows undocumented knowledge and raises confidence",
+   "detail": "On 14 incidents he answered each gap and the agent wrote back new notes. Reported confidence rose from about 1.4 to 4.4. Each incident also surfaced entities that were never documented. He frames this as moving the agent from a consumer of knowledge to a knowledge manager.",
+   "t": "24:50"
+  },
+  {
+   "idea": "Automate the loop with a gap scanner: probes, run, gap analysis",
+   "detail": "Scanner generates probes from archived Jira tickets and incidents, runs them against the knowledge base (Confluence, Slack, GitHub or flat files), and reports what is missing, stale, duplicated or tribal. It ranks gaps as critical, high or medium and writes a Kanban board. Speaker says each ticket produces 100 to 150 lines of Markdown detail.",
+   "t": "26:27"
+  },
+  {
+   "idea": "Store curated knowledge in Git and model the domain with a metamodel",
+   "detail": "A Git repo gives PR review, ownership and merge rules for many agents and teams. A metamodel linking business processes, systems, APIs and jargon acts as a navigation map, so the agent can see which processes and APIs a system change would affect.",
+   "t": "34:06"
+  },
+  {
+   "idea": "Fix context before retrieval, not during operations; code vs docs needs an explicit source-of-truth rule",
+   "detail": "Speaker recommends curating a team's context ahead of time, since a couple of weeks with a domain expert can reach roughly 60 to 80% quality. When code and Confluence conflict, he added a rule that code in the repo wins. He says the approach is independent of access control, which is left to the organization.",
+   "t": "45:45"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Pull-based knowledge capture from failed agent runs",
+   "how": "Give the agent a real work item. Have it list the checklist of information it could not find. A domain expert answers, and the agent writes the answers into a structured knowledge file. Repeat per task.",
+   "when": "When institutional knowledge is undocumented and you want knowledge capture to happen as a side effect of real work, not as a separate documentation project."
+  },
+  {
+   "name": "Failing-tasks-as-tests for knowledge bases",
+   "how": "Treat tickets or incidents the agent will fail on as failing tests. Each fix adds knowledge until the agent passes. Track progress across cycles.",
+   "when": "When you need a measurable definition of done for knowledge-base quality."
+  },
+  {
+   "name": "Historical-incident replay as a probe source",
+   "how": "Use archived Jira tickets, incidents and support tickets as the probe set. Run each one against the knowledge base to score coverage, freshness and duplication without waiting for live incidents.",
+   "when": "When you have a backlog of past work items and want to measure knowledge coverage across a whole team or domain."
+  },
+  {
+   "name": "Three-step gap scanner: probe generation, probe run, gap analysis",
+   "how": "Step 1: generate probes that ask what each incident needs. Step 2: run the probes against the connected sources. Step 3: classify each finding as clean, stale, incomplete, missing or tribal, flag duplicates across versions, rank by severity, and output a Kanban board.",
+   "when": "When you need a prioritised backlog of documentation fixes instead of a manual audit."
+  },
+  {
+   "name": "Freshness labels, flagged for human decision",
+   "how": "Use the last-updated date (for example from a Confluence export) to tag each document as active, stale or clean, using a threshold you set. The tool flags stale documents but does not delete or decide. A human decides whether an old document still matters.",
+   "when": "When documents can be old but still important, so age alone should not drive decisions."
+  },
+  {
+   "name": "Git-backed curated context blocks with a metamodel",
+   "how": "Store curated context as Markdown in a Git repo with directory layout that mirrors the metamodel (processes, systems, APIs, jargon). Use PRs and review for changes. Publish to Confluence or Slack later if needed.",
+   "when": "When many agents and teams contribute to one knowledge base and you need review and conflict handling."
+  },
+  {
+   "name": "80/20 context cache with links to the monolith",
+   "how": "Keep the 20% of documentation that answers most questions as compact context blocks. Leave links to the rest of the knowledge base so the agent fetches it only when the blocks are not enough.",
+   "when": "When a full knowledge base is too large or noisy to load into every session."
+  },
+  {
+   "name": "Full-context before graph RAG, for small domains",
+   "how": "Measure the total token count of a domain's documentation. If it fits in the context window (speaker's test: about 96k tokens per domain, none over 100k), load it whole before building a GraphRAG or retrieval pipeline.",
+   "when": "When the knowledge base is small enough for the context window and retrieval adds complexity without clear gains."
+  },
+  {
+   "name": "Claude Code skills, rules, agents and hooks as the implementation",
+   "how": "Package the loop as a combination of skills, rules, subagents and hooks, with a knowledge store on disk. The same approach can run on Copilot or other agents.",
+   "when": "When you want a repeatable agent workflow that captures knowledge in the normal course of work."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "GitHub Copilot",
+  "Confluence",
+  "Jira",
+  "Slack",
+  "GitHub",
+  "MCP",
+  "RAG",
+  "GraphRAG",
+  "Replit",
+  "Kanban board"
+ ],
+ "numbers": [
+  {
+   "claim": "McKinsey figure cited by speaker: 88% of companies use AI but only 6% report value creation",
+   "t": "4:46"
+  },
+  {
+   "claim": "Speaker states 40% factual accuracy can be reached with RAG or knowledge racks on a documented knowledge base (figure as stated, unclear source)",
+   "t": "7:45"
+  },
+  {
+   "claim": "MCP or RAG layers were accurate about 10 to 30% of the time in speaker's experience; the rest needed manual filling",
+   "t": "8:47"
+  },
+  {
+   "claim": "Enterprise knowledge breakdown (speaker's pie chart): 20% outdated, 20% unreliable, 10% duplicated, 40% tribal",
+   "t": "10:13"
+  },
+  {
+   "claim": "Speaker mentions a retrieval market of about 9 billion (currency not stated)",
+   "t": "11:38"
+  },
+  {
+   "claim": "Across 14 incidents, reported confidence rose from about 1.4-1.5 to 4.4",
+   "t": "23:59"
+  },
+  {
+   "claim": "In one incident replay the knowledge graph went from 56 entities; 6 undocumented entities surfaced, then 5 to 6 more were discovered after answers were given",
+   "t": "22:38"
+  },
+  {
+   "claim": "Demo scope: 20 recent past incidents run through the gap scanner",
+   "t": "26:27"
+  },
+  {
+   "claim": "Per-domain context measured at about 96k tokens; speaker says none of the domains he tested exceeded 100k",
+   "t": "49:28"
+  },
+  {
+   "claim": "Speaker says the full-context approach beats graph RAG unless the context is near 1M tokens",
+   "t": "50:55"
+  },
+  {
+   "claim": "Each scanned ticket produces about 100 to 150 lines of Markdown detail",
+   "t": "1:03:50"
+  },
+  {
+   "claim": "Speaker's rough estimate: a full scan costs under about $1 (not measured)",
+   "t": "1:01:46"
+  },
+  {
+   "claim": "Speaker estimates a domain expert with a small team can reach about 60 to 80% documentation quality in a couple of weeks",
+   "t": "49:28"
+  }
+ ],
+ "hot_takes": [
+  "Enterprises are focused on model quality, harnesses and retrieval, but nobody will fix your knowledge base for you. Your team has to do it.",
+  "Fix institutional context before retrieval, not during live operations.",
+  "For small domains, a full context window can beat RAG or GraphRAG.",
+  "Keep curated knowledge in Git, not a SaaS tool, until a product is proven. Git gives PR review and ownership for free.",
+  "Engineering teams rarely run evals on their MCP or RAG outputs, even though they should."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "MemoryMesh already covers knowledge buckets and retrieval. The pull-based gap-discovery loop and the Kanban of gaps are not in its scope, but they could feed its ingestion.",
+   "action": "Read the talk's gap-scanner section and test whether a probe run against one MemoryMesh bucket can list the questions it cannot answer."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness already runs skills and hooks around Claude Code, and the talk's loop of failed run, checklist, human fill and write-back could fit its checkpoint or resume flow.",
+   "action": "Consider saving the missing-info checklist from a failed run as a proposed skill update, and gate it through the existing plan and critique step."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The talk's main claims are that context should be curated before retrieval and that a team's docs may fit in a long context window. Both apply directly to context engineering for agents.",
+   "action": "For one team's docs, count total tokens and test full-context answers against the RAG setup before adding retrieval."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

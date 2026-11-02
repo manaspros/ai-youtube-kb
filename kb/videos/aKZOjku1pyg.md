@@ -1,0 +1,41 @@
+# This Is What React Apps Should Look Like...
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `aKZOjku1pyg` · [watch](https://youtu.be/aKZOjku1pyg) · **date:** 2026-01-02 · **length:** 5:54 · **format:** review · **quality:** 3/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Better Stack, Vercel, Cloudflare
+- **topics:** dev-tools · **tags:** vike, vite, react, next.js, meta-framework, ssr, ssg, islands, telefunc, type-safety, edge-deployment, frontend-frameworks
+
+> A short walkthrough of Vike, a modular meta-framework on Vite, as a lighter alternative to Next.js for React apps, covering per-page rendering, islands, and type-safe server functions, with an honest list of drawbacks.
+
+## Summary
+The host argues that Next.js can feel heavy in local dev and locks you in once a project gets custom, and presents Vike as a modular meta-framework built on Vite that you assemble from only the parts you need. The video is a tour of a small personal portfolio built with Vike: an index page, an about page, and a guestbook page. It shows per-page rendering choices (static prerendering for the home page, per-request SSR for the guestbook), "islands" that mix React, Vue and Solid components in one project, and Telefunc for type-safe server functions called directly from the client without REST endpoints. The claimed advantages are UI-layer flexibility, easier incremental migrations, small client bundles (about 10 to 15 KB versus 70 to 100 for Next apps, per the host), and edge deployment via a tool called Photon. The drawbacks the host lists are a bare-bones setup where you wire up data fetching and caching yourself, patchy docs, a small ecosystem with no built-in image optimization or official auth, and React Server Components not being fully supported yet. The host concludes that Next.js remains the better fit for fast MVPs and content sites, and suggests trying Vike on a side project. The evidence is one person's hands-on impression with no benchmarks.
+
+## Key ideas
+- **Vike is pitched as a modular meta-framework on Vite that you compose from only the pieces you need, as an alternative to all-in-one stacks like Next.js.** — The host says Next.js dev can feel slow (1 to 2 second delays when clicking around on localhost) and locks you in as projects get custom. Vike was first launched in 2021 and rebranded in 2023, and the host cites over 5k GitHub stars. These are the host's own figures. ([0:00](https://youtu.be/aKZOjku1pyg?t=0))
+- **UI-layer flexibility is the main selling point: you can swap UI libraries such as React for Vue without rewriting the app.** — The host attributes this to low-level hooks in Vike. He suggests it suits micro-frontends and multi-tenant apps, and that it makes migrations possible without a full rewrite, which he says is hard in Next.js. ([1:09](https://youtu.be/aKZOjku1pyg?t=69))
+- **Client bundles are claimed to be far smaller than Next.js apps.** — The host says Vike apps often ship 10 to 15 KB client bundles, while Next apps easily reach 70 to 100 before you add anything. The unit is spoken as kilobytes, and no measurement method is shown. ([1:09](https://youtu.be/aKZOjku1pyg?t=69))
+- **Rendering strategy is set per page in config rather than for the whole app.** — SSR is turned off at the global config level, and each page opts in. The home page is prerendered at build time (SSG), and the guestbook page renders on every request, controlled by a simple boolean. Static and dynamic pages can sit in one app. ([3:25](https://youtu.be/aKZOjku1pyg?t=205))
+- **Islands let React, Vue and Solid components coexist on the same page with no wrappers.** — The host says this is useful for mixing frameworks during a migration, and he shows a React page that drops in components from other frameworks. ([2:10](https://youtu.be/aKZOjku1pyg?t=130))
+- **Telefunc gives end-to-end type-safe server functions, replacing REST endpoints and API routes.** — A server-side function such as addEntry lives in a Telefunc file. The client calls it directly and TypeScript knows the types, so the guestbook page has no hand-written endpoint or fetch layer. ([3:25](https://youtu.be/aKZOjku1pyg?t=205))
+- **The bare-bones design is the main drawback: you assemble data fetching, caching, auth, images and plugins yourself.** — The host says data fetching and caching are wired by hand with hooks, instead of Next's getServerSideProps-style conventions. He also mentions patchy docs on advanced React setups, no built-in image optimization, no official auth stack, and a small plugin market. React Server Components are not fully supported, and hydration mismatch bugs appear in React-heavy apps. ([3:25](https://youtu.be/aKZOjku1pyg?t=205))
+- **The host's verdict is to try Vike on a side project if Next.js frustrates you, and keep Next.js for fast MVPs.** — He says Next.js is batteries-included and polished, especially on Vercel. Vike fits teams that prioritise control, performance and long-term flexibility, but he does not recommend switching outright. ([4:42](https://youtu.be/aKZOjku1pyg?t=282))
+
+## Techniques
+- **Per-page rendering modes in a single Vike app** — Leave SSR disabled in the global config and enable it per page with a boolean. Prerender static pages such as the home page (SSG) and render dynamic pages such as the guestbook per request. The host shows this in the config file for the index page; the exact file name is not spelled out in the transcript, so check the Vike docs before copying it. *When:* When one app mixes marketing or content pages that should be static with interactive pages that need fresh server data, and you do not want a single global rendering mode.
+- **Islands for incremental framework migration** — Build a page in one framework (the host uses React) and import components written in Vue or Solid into it, with no wrapper or bridge code, as the host demonstrates. *When:* When migrating a UI piece by piece, or when different teams own different frameworks inside one product (micro-frontend style).
+- **Telefunc server functions in place of API routes** — Put server logic in a .telefunc.ts file (the host's example is a function named addEntry). Import and call it from client code as an ordinary async function, and TypeScript types flow end to end. No REST endpoints or API routes are written. *When:* For internal CRUD-style interactions between your own client and server where you control both ends and want type safety with little boilerplate.
+- **Edge deployment through Photon** — The host says Photon makes it straightforward to deploy a Vike app to edge platforms such as Cloudflare Workers or Vercel. The exact commands and config are not shown in the video. *When:* When you want low time-to-first-byte from edge runtimes and no cold starts, and you are willing to check the Photon docs for setup.
+
+## Numbers
+- Vike first launched in 2021 and was rebranded in 2023, with over 5k GitHub stars (host's figures). ([0:00](https://youtu.be/aKZOjku1pyg?t=0))
+- Next.js dev navigation on localhost feels slow, with 1 to 2 second delays (anecdotal). ([0:00](https://youtu.be/aKZOjku1pyg?t=0))
+- Vike client bundles are often 10 to 15 KB, versus 70 to 100 for Next apps before extra features (host's rough estimate; unit spoken as kilobytes, no method shown). ([1:09](https://youtu.be/aKZOjku1pyg?t=69))
+- Vike deploys to edge runtimes with no cold starts and very low TTFB (host's claim, no measurement shown). ([2:10](https://youtu.be/aKZOjku1pyg?t=130))
+
+## Hot takes
+- The title 'This Is What React Apps Should Look Like' overstates the content; the video itself is a personal, tentative take, and the host says he will probably stay with Next.js.
+- Vike is described as 'boring in a good way' with stable direction and MIT licensing, which is a point in its favour that is not backed by data.
+- React Server Components are 'not even fully there yet' in Vike, a limitation the host calls out as a real drawback.
+- The bundle-size comparison (10 to 15 KB vs 70 to 100) and the claim of no cold starts are unmeasured one-off impressions, not benchmarks.
+
+## Tools mentioned
+Vike, Vite, React, Vue, Solid, Next.js, Zod, TanStack Query, Telefunc, Photon, Cloudflare Workers, Vercel, GitHub

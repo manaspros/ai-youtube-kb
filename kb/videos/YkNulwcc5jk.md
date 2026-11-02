@@ -1,0 +1,41 @@
+# ACP: The Universal Remote Control for AI Agents — Alex Hancock, Block
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `YkNulwcc5jk` · [watch](https://youtu.be/YkNulwcc5jk) · **date:** 2026-09-18 · **length:** 11:01 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Alex Hancock · **orgs:** Block, Zed, JetBrains, Poolside AI, Linux Foundation
+- **topics:** mcp-and-tools, agent-architecture, coding-agents · **tags:** agent-client-protocol, ACP, Goose, MCP, JSON-RPC, stdio, WebSocket, remote-agents, harness, client-protocol, interoperability
+
+> Alex Hancock (Block, Goose and MCP maintainer) argues for ACP, an open client-to-harness protocol, so one client can drive any agent over local stdio or remote HTTP/WebSocket.
+
+## Summary
+Alex Hancock, a Block engineer who maintains the Goose harness and the MCP Rust SDK, argues that agent harnesses expose bespoke interfaces, often with only one client app, which blocks an open ecosystem. MCP standardized how agents call tools, but nothing equivalent standardizes how clients give agents tasks and receive updates. He presents ACP (Agent Client Protocol), which began with Zed and JetBrains for editors and which Goose's team sees as useful beyond editors. ACP uses JSON-RPC with negotiated connection capabilities, sessions, user messages, streamed agent updates, tool-call notifications and permission requests, and it is extended with underscore-prefixed custom methods that can later be promoted to the standard. Two live demos show a Zed client and a terminal client talking to the same Goose agent over stdio, and a freshly vibe-coded client driving Goose over the network. The team added HTTP and WebSocket transports so the same messages work locally or remotely, which lets the client, harness, tools and model run on separate machines. He closes by arguing that once clients compete in a shared market, their user experience should improve.
+
+## Key ideas
+- **Harnesses have bespoke interfaces, and some can only be driven by one client app, which limits the ecosystem.** — The speaker compares this to a web where every site needs one specific browser. He says MCP standardized the agent-to-tools side but not the client-to-agent side. ([1:12](https://youtu.be/YkNulwcc5jk?t=72))
+- **A standard for clients to control agents is the missing piece next to MCP.** — The standard must cover giving the agent tasks, sending it work and getting updates back. ACP is his proposal for this, and standards are what create markets. ([2:32](https://youtu.be/YkNulwcc5jk?t=152))
+- **ACP came from editor vendors but applies to any client.** — Zed and JetBrains proposed it so one editor client could drive any harness. Goose's team saw the same benefit for terminal, desktop, mobile and orchestration clients. ([3:30](https://youtu.be/YkNulwcc5jk?t=210))
+- **ACP's protocol model is connections with capabilities, then sessions carrying messages and updates.** — Messages are JSON-RPC. Agents send text, images, audio, tool-call notifications and permission requests. Custom methods use an underscore prefix, so common ones from real usage can later be promoted to the standard. ([4:53](https://youtu.be/YkNulwcc5jk?t=293))
+- **The same agent works with different clients over stdio, with no client-specific changes on the harness side.** — Zed and a terminal client both connect to Goose and get the same behaviour, including text, tool-call info and streamed summaries. ([6:22](https://youtu.be/YkNulwcc5jk?t=382))
+- **Remote transport is what lets each piece of the agent stack run on a different machine.** — He lists four parts: client, harness (the tool-calling loop), tools (usually MCP) and model. HTTP and WebSocket transports keep the same messages, so the client can be local or remote. ([7:44](https://youtu.be/YkNulwcc5jk?t=464))
+- **Client quality should improve once there is a shared market of clients.** — Users can switch clients if one fails them, so the speaker expects competition on user experience, plus white-label and domain-specific clients built on the same protocol. ([10:03](https://youtu.be/YkNulwcc5jk?t=603))
+
+## Techniques
+- **Standard client-to-harness protocol (ACP)** — Expose one JSON-RPC interface on the harness. Clients open a connection that negotiates capabilities, then create sessions to send user messages and receive streamed text, images, tool-call notifications and permission requests. *When:* When several client apps (editor, terminal, mobile) need to drive the same agent without custom integrations for each one.
+- **Underscore-prefixed custom methods, then standardize by usage** — Add vendor or harness-specific methods with a leading underscore. Watch which ones multiple projects adopt, and promote those to the standard track. *When:* When a protocol is young and you need extensions without forking the spec.
+- **Transport swap with unchanged messages** — Keep the same message semantics and client library, and change only the transport: stdio for a local process, HTTP or a WebSocket upgrade for a remote one. *When:* When the same agent must run locally during development and in a container or cloud later.
+- **Split the agent stack into four movable parts** — Treat the client, harness, tools (MCP) and model as separate processes with standard remote transports, so each can be placed on a different machine. *When:* When deciding where to run a long-lived agent, or where a phone or browser client should connect.
+
+## Numbers
+- The speaker estimates that MCP has thousands or tens of thousands of servers around the world (his estimate, not a measured figure). ([2:32](https://youtu.be/YkNulwcc5jk?t=152))
+- The talk gives no benchmarks, latencies or adoption counts for ACP. The only results are two live demos, one local and one over the network. ([6:22](https://youtu.be/YkNulwcc5jk?t=382))
+
+## Hot takes
+- The client-to-agent side is a bigger gap than the tool side, and a standard there would matter more than another MCP feature.
+- Once several clients can drive the same harness, client user experience will become the competitive axis.
+- Protocol extensions should be shaped by usage: watch what harnesses add with custom methods and standardize only what several of them converge on.
+
+## Tools mentioned
+ACP (Agent Client Protocol), Goose, Zed, JetBrains IDEs, MCP (Model Context Protocol), JSON-RPC, stdio, HTTP, WebSocket
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness wraps Claude Code with checkpoint/resume and phone-driven approvals. ACP has permission-request messages, sessions and remote transports, which map directly onto phone approvals and remote control. → *Evaluate whether a standard client protocol (ACP-style permission requests over HTTP/WebSocket) should be the wire format between ProsHarness and the phone client, before adding a custom one.*
+- **general** (1/3): Relevant to any agent-harness or client work: it names an open protocol and a remote transport story. → *Read the Agent Client Protocol site and the Goose ACP interface before designing a custom client-to-agent API.*

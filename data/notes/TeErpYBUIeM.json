@@ -1,0 +1,139 @@
+{
+ "one_line": "Langfuse co-founder on moving agent improvement from manual trace review to an AI-driven loop, where agents propose fixes and dataset/evaluator updates while humans set goals and gate changes, with a changelog-writer case study.",
+ "summary": "Marc Klingen (transcribed as \"Mark\") argues that agent quality now comes from a loop joining online traces with offline datasets, experiments and evaluators, and that teams are moving from doing this loop by hand to letting AI drive most of it. He describes a layered view of loops, where humans stay involved in setting goals, aligning datasets and evaluators, and reviewing proposed fixes so agents do not overfit. A live example is Langfuse's own changelog writer: merged PRs trigger a drafted doc change, a human GitHub PR review produces approvals and change requests, and those review decisions become eval signal. The agent found the draft factually correct but low in clarity and leaking internal jargon, then proposed new datasets and evaluators, and a v2 candidate was backtested against the v1 baseline before merging. He closes by arguing that agent workloads become read-heavy, so teams should own their trace data long term rather than sample or short-retain it. The talk gives no benchmark numbers and is mostly a conceptual pitch with a demo, with Langfuse as the speaker's product.",
+ "speakers": [
+  "Marc Klingen"
+ ],
+ "orgs": [
+  "Langfuse"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "observability",
+  "skills-self-improvement"
+ ],
+ "tags": [
+  "self-improving-agents",
+  "online-offline-evals",
+  "human-in-the-loop",
+  "backtesting",
+  "changelog-agent",
+  "trace-annotation",
+  "prompt-management",
+  "data-ownership",
+  "vendor-talk"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent improvement needs one loop that joins online traces with offline datasets and evals",
+   "detail": "Tracing production alone misses benchmarks, and offline benchmarks on stale data drift from real usage. Teams need both, plus a deploy-and-learn step after each change.",
+   "t": "1:33"
+  },
+  {
+   "idea": "Humans should stay on the goals and the boundary, and let AI automate the tedious layers",
+   "detail": "The speaker's target is a middle ground: people set direction and approve dataset, evaluator and failure-definition changes, while agents do the trace review and fix proposals. Fully manual work is bottlenecked by human time, and fully automated loops burn tokens without useful output.",
+   "t": "6:42"
+  },
+  {
+   "idea": "Today the most common AI role is proposing fixes against a fixed evaluation boundary",
+   "detail": "Teams keep the optimization target fixed and use AI mainly to propose implementation changes such as prompts or context. Recently some teams also let agents maintain datasets and evaluators, but humans still review those changes because they define the target for later agents.",
+   "t": "5:17"
+  },
+  {
+   "idea": "The target is not known up front, so goals get refined from error classes",
+   "detail": "Starting from a vague goal such as automating customer support, the team learns what to measure from the failures they see. Each change exposes new error classes, which lets the team adjust the top-level goal.",
+   "t": "6:42"
+  },
+  {
+   "idea": "Review decisions on agent output are a training signal for the next loop",
+   "detail": "In the changelog example, GitHub approvals and change requests on the agent's PRs feed the observability and eval store, so the agent can learn from what reviewers actually changed.",
+   "t": "10:59"
+  },
+  {
+   "idea": "A candidate change is checked by backtesting it against a baseline on the updated dataset",
+   "detail": "The v2 candidate kept format compliance and accuracy, improved user-facing language, and showed a positive delta on the new dataset. The speaker says low-stakes internal repos can merge this way, since the agent only raises PRs.",
+   "t": "13:52"
+  },
+  {
+   "idea": "Errors found in production can be turned into new evaluators, such as one for internal jargon leaks",
+   "detail": "The changelog review found that the draft leaked implementation terms such as ingestion pipeline and batched eval queue. The fix was a dataset and an evaluator for user-domain language, then a context or skill change to the writer agent.",
+   "t": "12:26"
+  },
+  {
+   "idea": "Agent loops shift the data system toward heavy reads, so keep trace data long-term",
+   "detail": "Historically the stack was write-heavy for ingesting traces and evals. Agents read far more history, so the speaker argues teams should own the data layer, keep old traces, and avoid sampling or short retention.",
+   "t": "15:17"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Online plus offline eval loop",
+   "how": "Trace production runs, collect user feedback and labels, keep datasets aligned with real usage, run experiments on them, deploy, and repeat. Treat the two halves as one system.",
+   "when": "Any production agent where benchmark data drifts away from real traffic."
+  },
+  {
+   "name": "Agent-proposed fix with human gate",
+   "how": "The agent reads failing traces and evals and proposes a change to a prompt, context or skill. A human reviews the diff and the failure definition before it merges, to limit overfitting.",
+   "when": "Agents whose improvements are driven by recurring, well-understood failure classes."
+  },
+  {
+   "name": "PR review decisions as eval signal",
+   "how": "Agent drafts go out as GitHub PRs. Approvals and requested changes are logged with the trace, then used to find where edits are high and to build new evaluators.",
+   "when": "Agent output that already passes through a code review or approval step."
+  },
+  {
+   "name": "Backtest candidate against baseline",
+   "how": "Run the old version (v1) and the new candidate (v2) on the same updated dataset. Check for regressions on existing metrics and for gains on the new target before merging.",
+   "when": "Before shipping a prompt or skill change, especially on low-stakes internal agents."
+  },
+  {
+   "name": "Agent-maintained evaluators from error patterns",
+   "how": "Reproduce a recurring production error on an offline dataset, then have the agent propose a new evaluator and dataset rows that test for it. Keep a human in the review loop.",
+   "when": "When the same kind of error keeps reappearing, such as jargon leaks or wrong-language replies."
+  },
+  {
+   "name": "Scheduled batch loop over labeled production data",
+   "how": "Run the improvement agent as a cron job on each day or week's batch of labeled traces and annotations, not on each event.",
+   "when": "When feedback arrives in batches and changes to the agent are not urgent."
+  }
+ ],
+ "tools": [
+  "Langfuse",
+  "Langfuse agent skills",
+  "GitHub pull requests",
+  "coding agent",
+  "Langfuse prompt management",
+  "Langfuse annotation queues"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Teams should stay in the loop on goals and on dataset and evaluator changes, because letting agents edit all of that just creates more slop.",
+  "Trace history is valuable context for agents, so teams should own their data and not let it sit in a system that samples or expires it.",
+  "Internal agents that only open PRs can merge candidate changes after a backtest, since nothing ships to production without a human step."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The talk describes the online trace to offline eval to agent-proposed fix loop that SkillForge's open question about skill-worthiness and success signals needs, and it backs an L4 observability plus L2A evals setup.",
+   "action": "Prototype a SkillForge loop where reviewer approve/request-changes outcomes on agent outputs are logged with the trace, then backtest a candidate prompt or skill against the v1 baseline on the updated dataset before merging."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The talk's human-gated PR review of agent-proposed changes overlaps with ProsHarness's plan, critique and approval flow, but it is a general pattern, not a specific feature.",
+   "action": "Check whether ProsHarness's skill-ranking or approval step can reuse a PR-style approve or request-changes record as a reviewed signal for skill edits."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The talk's example shows a failure that looked like a model issue but was a context gap, and it proposes an evaluator for it first.",
+   "action": "When an agent misbehaves in a recurring way, write a small evaluator and dataset rows for that failure before changing the prompt or context."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

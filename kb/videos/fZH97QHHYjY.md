@@ -1,0 +1,48 @@
+# The unreasonable effectiveness of BM25 for agentic search — Jo Kristian Bergum, Hornet.dev
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `fZH97QHHYjY` · [watch](https://youtu.be/fZH97QHHYjY) · **date:** 2026-09-18 · **length:** 18:29 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Jo Kristian Bergum · **orgs:** Hornet.dev, University of Waterloo
+- **topics:** rag-retrieval, evals, context-engineering · **tags:** BM25, agentic search, lexical retrieval, BrowseComp-Plus, grep, file system workspace, progressive disclosure, retrieval infrastructure, hyperparameter tuning, end-to-end evaluation
+
+> Jo Kristian Bergum argues BM25 is back for agentic search: LLM agents write long, precise queries that suit lexical matching, and the baseline was undertuned. Retrieval results can be exposed as a filesystem workspace for grep-style use.
+
+## Summary
+The speaker, CEO of Hornet.dev, defines agentic search as search inside an agent loop and says it needs a capable tool-using model, a harness (tool calling or code mode), and a fast retrieval engine. He argues BM25 is returning because modern LLMs have general knowledge and write long, syntax-heavy queries, unlike the short human queries BM25 was tuned against. He uses the BrowseComp-Plus benchmark (about 830 riddle-style questions over roughly 100k web documents) to show that when evidence is stuffed into context accuracy is high, but accuracy drops once the model must retrieve, so retrieval quality matters. He says the BM25 baseline in that benchmark was weak because its hyperparameters were not suited to long documents, and that BM25 results are easy for a model to inspect because they are literal matches it can combine with grep. He proposes putting retrieved documents into a workspace organised as a file system, exposing titles and snippets first for progressive disclosure, so the agent can use grep, sed and similar tools to read more. He also argues classic single-query rank metrics matter less for agents, which reformulate and issue many queries, so end-to-end task accuracy is the better measure. The talk is partly a pitch for Hornet's own BM25 engine, and its efficiency chart has no figures on the slide.
+
+## Key ideas
+- **Agentic search is search inside the agent loop, and it needs three parts: a capable tool-using model that can write queries, a harness that exposes search (tool calling or code mode), and a fast retrieval engine.** — The speaker treats the harness and the engine as separate design choices. He says the setup has to work at billion-document scale. ([1:06](https://youtu.be/fZH97QHHYjY?t=66))
+- **BM25 is back because the query writer has changed. Agents know entities, names and dates, and they type long, precise queries with search operators, unlike the short queries humans type.** — He contrasts short human query logs with LLM-written queries. Lexical scoring fits the agent workload better than it fit the old human one. ([8:52](https://youtu.be/fZH97QHHYjY?t=532))
+- **On BrowseComp-Plus, the model answers well when the evidence is placed in context, so the limit is retrieval, not reasoning.** — Accuracy drops once the model has to search through a tool. The speaker says the result depends on the harness, the model's query formulation, and retriever quality together. ([6:19](https://youtu.be/fZH97QHHYjY?t=379))
+- **The BM25 baseline was undertuned. Its two hyperparameters matter a lot on long documents, so a weak baseline can distort comparisons with embedding methods.** — He says the parameters used in the original paper did not suit long documents, and that different BM25 implementations differ in results. He asks which BM25 is meant before a comparison is trusted. ([8:52](https://youtu.be/fZH97QHHYjY?t=532))
+- **Put retrieved results into a file-system workspace and let the agent use grep, sed and similar tools. This gives progressive disclosure, where titles and snippets are shown first and full text is opened on demand.** — He ties this to skills and coding agents, which already use grep and sed to manage context. The workspace can be combined with sandbox and retrieval infrastructure. ([12:37](https://youtu.be/fZH97QHHYjY?t=757))
+- **Literal, explainable matches let the model see why a query returned what it did and reformulate. Combined with grep, BM25 gives a strong agentic retrieval setup.** — He says an embedding model is poor at exact names, SKUs and zip codes, and that BM25 is cheap and easy to set up. It also needs no GPU embedding infrastructure. ([11:21](https://youtu.be/fZH97QHHYjY?t=681))
+- **Evaluation for agent search should use end-to-end task success, not single-query rank metrics, because the agent reformulates and runs many queries.** — He says much classic IR evaluation is now less relevant. The benchmark counts the final answer, which must match a reference exactly. ([13:55](https://youtu.be/fZH97QHHYjY?t=835))
+- **Even with much larger context windows, retrieval is still needed. He compares a context window to about one floppy disk, roughly 350k tokens before quality degrades in his view.** — This is his own estimate, not a measured result. The point is that something must decide what goes into the window. ([7:50](https://youtu.be/fZH97QHHYjY?t=470))
+
+## Techniques
+- **Workspace-as-filesystem retrieval** — Write retrieved documents into a directory-like workspace. Show titles and short snippets first, and let the agent open full documents on demand with grep, rg, sed or similar tools. *When:* When retrieval returns many documents and the agent needs to narrow them down step by step without putting everything into context.
+- **Tuned BM25 baseline before any embedding comparison** — Sweep the two BM25 hyperparameters on the actual document lengths in the corpus. Name the implementation, because scoring differs across engines, and report results with that implementation's settings. *When:* Before claiming an embedding or neural retriever beats lexical search, or when a benchmark's BM25 baseline looks suspiciously weak.
+- **Hybrid lexical plus grep for agent search** — Expose BM25 as a search tool and let the agent run exact-match grep over fetched text. The literal matches let the model see why a result came back and rewrite its query. *When:* When queries contain names, IDs, codes or other exact tokens that embeddings handle poorly.
+- **End-to-end task evaluation for search agents** — Score the agent on whether it returns the correct final answer, using a benchmark with reference answers such as BrowseComp-Plus. Do not rely only on one-shot rank metrics. *When:* When the search is run by an agent that reformulates and issues many queries.
+- **Evidence-stuffing ablation** — Run the same model once with the gold evidence placed in context and once with a search tool. The gap shows how much accuracy is lost to retrieval rather than reasoning. *When:* To locate the bottleneck in an agentic retrieval pipeline before tuning the model.
+
+## Numbers
+- BrowseComp-Plus has about 830 riddle-style questions with reference answers, over a corpus of about 100k to 105k web documents. ([4:54](https://youtu.be/fZH97QHHYjY?t=294))
+- The speaker estimates one floppy disk (about 1.4 MB) is about 350k tokens, the point where model quality begins to degrade in his opinion. This is an estimate, not a measurement. ([6:19](https://youtu.be/fZH97QHHYjY?t=379))
+- Hornet's efficiency chart compares engines on 100 million web documents on a single node, in latency and throughput. The slide has no figures, and the chart is a vendor comparison. ([15:23](https://youtu.be/fZH97QHHYjY?t=923))
+- Some embedding models have around 8 billion parameters, which the speaker cites as a cost reason to prefer BM25. ([11:21](https://youtu.be/fZH97QHHYjY?t=681))
+- Agent web search infrastructure may cover billions of documents, which the speaker says cannot fit in a context window. ([12:37](https://youtu.be/fZH97QHHYjY?t=757))
+
+## Hot takes
+- Classic IR evaluation, with one query and one ranked list, is 'kind of dead' for agent-driven search.
+- The BM25 baseline in the BrowseComp-Plus paper is 'terrible' because its parameters were not adequate for long documents.
+- Retrieval will stay relevant even with AGI-level models, because the context window is still roughly one floppy disk.
+- Grep-style tools plus BM25 may be a better agent retrieval paradigm than embeddings, because the model can explain and rewrite literal matches.
+
+## Tools mentioned
+BM25, grep, ripgrep, sed, BrowseComp-Plus, Hornet (vendor BM25 engine)
+
+## Relevance to our work
+- **agentos** (2/3): MemoryMesh already runs hybrid BM25 plus pgvector retrieval. The talk gives an argument and a benchmark setup for tuning the lexical leg against long documents and for exposing matches the agent can inspect. → *Sweep the BM25 hyperparameters on MemoryMesh's lexical leg using long-document queries, and compare against the current baseline on an end-to-end agent task, not on rank metrics alone.*
+- **general** (2/3): The talk's main point is that agent-written queries change which retrieval methods work. This applies to any agent that searches a corpus, and the rule to evaluate by end-to-end task success is broadly useful. → *Read the BrowseComp-Plus paper and the Waterloo paper on dynamic workspace expansion, and test the workspace-plus-grep pattern on one of our retrieval tasks.*
+- **prosharness** (1/3): Skill ranking is a retrieval step over skill descriptions. The talk's point about BM25 as a strong, explainable baseline applies, though ProsHarness is not an open-ended search agent. → *Add a tuned BM25 scorer over skill descriptions as a baseline in the skill-ranking evaluation.*

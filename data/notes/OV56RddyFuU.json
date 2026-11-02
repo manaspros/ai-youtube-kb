@@ -1,0 +1,170 @@
+{
+ "one_line": "Hugging Face's Merve Noyan demos open-model agent workflows: picking and serving open models, Hermes Agent, pushing agent traces to the Hub, HF MCP server and skills that let coding agents launch fine-tuning and batch OCR jobs.",
+ "summary": "Merve Noyan of Hugging Face argues that open weights and open harnesses give visibility, privacy and control, and that open models now compete with closed ones (she cites GLM 5.1 on the Artificial Analysis index). She walks through Hub features for choosing models: benchmark datasets, Inference Providers for comparing hosts on cost and speed, and \"Use this model\" buttons that show local serving commands. For local agents she demos Pi on llama.cpp and Hermes Agent with open models, and she says a new Hub \"traces\" dataset type can host coding-agent session logs (Claude Code, Codex, Pi) for exploration or later training. The main pitch is HF skills and the HF MCP server: the agent asks a few questions, estimates VRAM and cost, and launches a remote training or OCR job whose output lands back on the Hub. The talk is largely product tour, with some concrete workflow detail and a few unverified anecdotes.",
+ "speakers": [
+  "Merve Noyan"
+ ],
+ "orgs": [
+  "Hugging Face"
+ ],
+ "format": "demo",
+ "topics": [
+  "local-ai",
+  "training-finetuning-rl",
+  "mcp-and-tools",
+  "coding-agents"
+ ],
+ "tags": [
+  "open-weights",
+  "hugging-face",
+  "hermes-agent",
+  "local-inference",
+  "gguf",
+  "agent-driven-training",
+  "traces-dataset",
+  "ocr-batch",
+  "skills",
+  "mcp"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Open weights and open harnesses make agent behavior auditable",
+   "detail": "She argues that with open weights and an open harness you notice silent quality changes (she alludes to a recent reported Claude performance drop), can quantize or fine-tune, and can run on edge or in-browser for privacy.",
+   "t": "0:56"
+  },
+  {
+   "idea": "Open models are presented as now competitive with closed ones",
+   "detail": "Her claim is that open models are catching up; she points to GLM 5.1 on the Artificial Analysis index and says she uses it in her own coding setup.",
+   "t": "2:17"
+  },
+  {
+   "idea": "Vision-language models are arriving day zero with vision built in",
+   "detail": "Recent labs release multimodal models at launch (she names Gemma 4, Qwen 3.5, Kimi K2.5). Serving them takes only a few lines with vLLM, MLX or llama.cpp.",
+   "t": "3:31"
+  },
+  {
+   "idea": "Pick models by benchmark and by provider, not by guesswork",
+   "detail": "Hub benchmark datasets show ranked scores (SWE-bench, HLE, AIME). Inference Providers route to hosts such as Groq, Cerebras and Novita, and you can compare cheapest or fastest.",
+   "t": "4:40"
+  },
+  {
+   "idea": "Local coding agents run from a Hub ID with little setup",
+   "detail": "Pi can consume a model served by llama.cpp. llama.cpp also ships a built-in agent binary that starts a model directly from a Hugging Face Hub ID.",
+   "t": "6:41"
+  },
+  {
+   "idea": "Agent session traces can be published as a dataset",
+   "detail": "A new Hub dataset type called traces accepts uploaded session logs from coding agents. The dataset viewer parses them, and the logs can later be used for training. She says Hermes Agent support is coming.",
+   "t": "8:57"
+  },
+  {
+   "idea": "Agents can pick a model, estimate resources and launch the job",
+   "detail": "For the OCR case, the agent picks a model, writes the processing script, estimates instance size and cost, and launches the run on Hugging Face infrastructure. The skill sets up the serving instance without the user doing the sizing by hand.",
+   "t": "16:21"
+  },
+  {
+   "idea": "Benchmark leaders may not be the right fine-tuning base",
+   "detail": "The top OLMOCR-Bench entry is not automatically the best choice to fine-tune. A dedicated skill answers which OCR model to start from, including smaller options.",
+   "t": "17:31"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Hub-ID local serving for coding agents",
+   "how": "Serve the model with llama.cpp (or use its built-in agent binary by pointing it at a Hub ID), then point Pi at the local endpoint.",
+   "when": "You want a fully local coding agent on your own GPU without writing serving config."
+  },
+  {
+   "name": "GGUF hardware-fit check before download",
+   "how": "On the Hub model page, read the GGUF section and hardware compatibility table to see whether a quantized variant fits your VRAM. She gives the example of a larger Gemma 4 at 4-bit fitting a 24 GB L4.",
+   "when": "Choosing a quantization level for a fixed GPU budget."
+  },
+  {
+   "name": "Agent-driven fine-tuning via skills",
+   "how": "Install the LLM trainer skill, then tell the coding agent to train a named model on a named dataset. The agent asks for details such as validation split, works out VRAM and batch size, launches the remote job, and the result appears on the Hub.",
+   "when": "You want a fine-tune run kicked off from a chat-style request, with the agent handling sizing and launch."
+  },
+  {
+   "name": "Session traces pushed to a Hub dataset",
+   "how": "Upload Claude Code, Codex or Pi session directories to a traces dataset repo. The viewer parses the sessions so they can be explored and later used as training data.",
+   "when": "You want a shareable corpus of your agent sessions for inspection or future training."
+  },
+  {
+   "name": "Corpus OCR via prompted batch job",
+   "how": "Pick a cheap OCR model from a benchmark, have the agent write the processing script, let it compute instance cost, then run the job remotely and write results back for indexing.",
+   "when": "You need to convert a large set of PDFs or papers to Markdown in one batch with a small model."
+  },
+  {
+   "name": "HF MCP server for catalog access",
+   "how": "Connect the Hub MCP server to get search and access over models, datasets, Spaces and jobs. Spaces can be called as tools, for example an image-generation Space. Enable the experimental dynamic-spaces setting for wider Space access.",
+   "when": "An agent needs to discover or invoke Hub resources during a task."
+  }
+ ],
+ "tools": [
+  "Hugging Face Hub",
+  "Hugging Face MCP server",
+  "Hugging Face skills (hub CLI, LLM trainer, Gradio, dataset)",
+  "Inference Providers",
+  "Hermes Agent",
+  "Pi",
+  "llama.cpp",
+  "vLLM",
+  "MLX",
+  "LM Studio",
+  "Claude Code",
+  "Codex",
+  "Gradio",
+  "OLMOCR-Bench",
+  "Qwen",
+  "GLM 5.1",
+  "Gemma 4"
+ ],
+ "numbers": [
+  {
+   "claim": "Hugging Face Hub hosts close to 3 million models (speaker's estimate, she says she should have updated the figure)",
+   "t": "2:17"
+  },
+  {
+   "claim": "A larger Gemma 4 quantized to 4-bit fits on an L4 GPU with 24 GB VRAM",
+   "t": "10:15"
+  },
+  {
+   "claim": "GLM 5.1 is currently top of the open-model list on the SWE-bench benchmark dataset view on the Hub",
+   "t": "4:40"
+  },
+  {
+   "claim": "Corpus of roughly 30,000 AI papers used as the OCR batch-job example (transcript reads '30 30 000 papers', so the count is approximate)",
+   "t": "16:21"
+  }
+ ],
+ "hot_takes": [
+  "Open models are now roughly at parity with closed ones, and the gap keeps closing.",
+  "Open weights and open harnesses are the only way to be sure nothing changes without you knowing.",
+  "Vision-language capability will arrive at launch for most new models.",
+  "Top-ranked OCR benchmark entries should not be trusted as the default base for fine-tuning."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Traces-as-dataset and GGUF/llama.cpp serving touch InferCraft and SkillForge telemetry, but the talk gives no benchmarks or internals.",
+   "action": "Export one of our own agent session logs into a traces-style schema and check whether it covers the fields SkillForge needs for skill mining."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Remote jobs billed by runtime, with launch from an agent, overlap with checkpoint/resume of long runs.",
+   "action": "Read the HF jobs docs on status and resume before deciding whether a remote-run step belongs in a ProsHarness loop."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Cheap open OCR model plus agent-written script plus cost estimate matches our cheap-model batch pipeline interest.",
+   "action": "Run a small open OCR or extraction model against Haiku on a sample of our document inputs and log per-document cost and accuracy."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

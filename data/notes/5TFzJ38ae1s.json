@@ -1,0 +1,174 @@
+{
+ "one_line": "Kai Explains reads the \"Dumpster Cluster\" paper (128 used V100s serving Llama models) past its viral 35x tokens-per-dollar claim. Capex-only, 8B-only numbers flip at 70B once electricity, failures and software support are counted.",
+ "summary": "The host walks through a paper in which six researchers built a 128-GPU cluster from used V100s (about $22k to rebuild, $60 per card) and ran it for a year. The viral claim is that the V100 pod delivers about 35x the tokens per dollar of a B200 on an 8B model. The host shows that figure is capital-cost-only, compares a card price against a full 8-GPU system price, and drops to roughly 10 (about 12x) once the whole cluster is priced. On Llama 70B the V100 pod is roughly level with an A100 and well behind the H100 and B200 once electricity is added, with a 3-year TCO that is about 1.5x the H100's cost per million tokens and far higher grid carbon per token. The 12-month operations log (58 incidents, mostly networking, CPUs and power rather than GPUs) and the software support cliff (PyTorch 2.11 and recent vLLM dropping Volta, no bfloat16) are presented as the factors that set a GPU's real useful life. The host concludes that GPU depreciation has at least three separate clocks (physical, economic, software support), and that tokens per lifetime-watt matters more than sticker price.",
+ "speakers": [
+  "Kai (host, Kai Explains)"
+ ],
+ "orgs": [
+  "NVIDIA",
+  "CoreWeave"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "infra-cost-scaling",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "dumpster-cluster",
+  "v100",
+  "used-gpus",
+  "tokens-per-dollar",
+  "tco",
+  "electricity-cost",
+  "carbon-per-token",
+  "gpu-depreciation",
+  "software-support-lifecycle",
+  "bfloat16",
+  "vllm",
+  "pytorch",
+  "hardware-reliability",
+  "capex-vs-opex",
+  "b200",
+  "h100",
+  "a100"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The viral '35x more cost efficient than B200' figure is capex-only (GPU cards, no power, maintenance or failures) and compares 128 bare cards against a full 8-GPU B200 system.",
+   "detail": "Tokens per second per dollar on 8B: V100 pod 29.16, H100 1.59, A100 2.15, B200 0.84. Pricing the whole V100 cluster at ~$22k instead of $7,680 for cards drops the V100 figure to roughly 10, still about 12x the B200.",
+   "t": "1:18"
+  },
+  {
+   "idea": "The advantage is workload-dependent: it holds at 8B and largely disappears at the 70B model named in the paper's title.",
+   "detail": "Tokens/s/$ at 70B: B200 0.06, H100 0.13, V100 pod 0.20, A100 0.19. The V100 pod is roughly level with the A100 (about 5% apart).",
+   "t": "3:58"
+  },
+  {
+   "idea": "Three-year TCO with electricity reverses the 70B result. Carbon per token is also far worse for the old cluster.",
+   "detail": "At 70B, V100 is about 12 cents per million tokens vs about 8 for H100, roughly 1.5x. Under the China grid example, V100 emits 1,015 gCO2 per million tokens vs 24.62 for B200. Even on 100% wind, V100 is 46.45 vs 0.61. The B200 needs far less machine time per token.",
+   "t": "5:15"
+  },
+  {
+   "idea": "The 12-month operations log is the most useful data point: networking, interconnects, CPUs and power failed more often than GPUs, and the operational cost never shows up in the listing price.",
+   "detail": "58 incidents across 128 GPUs in a year. 8 needed physical replacement (2 NICs, 5 CPUs, 1 GPU). 50 were recoverable (32 PCIe resets, 18 software resets). Annual device failure rate of about 6.25%, hence roughly 10% spare capacity.",
+   "t": "9:00"
+  },
+  {
+   "idea": "Software support is a separate clock that can end a GPU's useful life long before the silicon fails.",
+   "detail": "PyTorch 2.11's pre-built CUDA 12.8 and 12.9 binaries dropped Volta; the minimum is now Turing. Recent vLLM releases dropped SM-70. V100 has no bfloat16, so modern models error rather than run slowly. The B200 runs used vLLM 0.17 and the H100/A100 runs vLLM 0.6.",
+   "t": "7:45"
+  },
+  {
+   "idea": "Old NVIDIA GPUs are keeping economic lives longer than the launch cycle suggests, which argues against the 'GPUs go worthless in 2-3 years' depreciation story.",
+   "detail": "CoreWeave's Q2 earnings call (Aug 11) disclosed A100 capacity contracted into 2029. A100 launched in 2020, so this implies a roughly 9-year commercial life. Old, residually valued GPUs also make lender financing easier.",
+   "t": "11:37"
+  },
+  {
+   "idea": "The strategy has a supply-side limit: the arbitrage works only while few buyers chase cheap used cards.",
+   "detail": "The $60 price is the 16GB SXM2 card, which doesn't fit a desktop. 32GB PCIe cards were $600-800 as of July 2026. The author notes that if many people copy this, the used-market price rises.",
+   "t": "10:25"
+  },
+  {
+   "idea": "Lifetime tokens per watt and reliability matter more than sticker price. The host reframes depreciation as three separate failure modes: physical, economic, and software.",
+   "detail": "Hardware can keep working, economics can break when newer chips use less power per token, and software can drop the architecture. Any one of these can end a GPU's useful life.",
+   "t": "14:14"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Lifetime cost-per-token accounting",
+   "how": "Compute tokens per dollar with a full TCO: capex for the whole system (servers, networking, switches), not just the accelerator card, plus electricity over the planned life (3 years in the paper), plus failure and staffing overhead. Report it per model size, since the ranking changed between 8B and 70B. Carbon per token can be computed the same way from grid intensity.",
+   "when": "Before choosing between used or old GPUs and new ones, or when reading any vendor or viral cost-per-token claim. Check for capex-only figures and whether the comparison uses comparable units (card vs system)."
+  },
+  {
+   "name": "Operational failure budgeting for used GPU fleets",
+   "how": "Log every incident and classify it as needs-replacement or recoverable (PCIe reset, software reset). Use the observed annual failure rate (about 6.25% in the paper) to size spare capacity (about 10%). Expect networking, interconnect, CPU and power faults to outnumber GPU faults, and budget diagnosis staff time for them.",
+   "when": "When running a self-hosted or used-hardware cluster with no vendor support, or when estimating the true cost of cheap hardware."
+  },
+  {
+   "name": "Track software support as a separate lifecycle",
+   "how": "For each accelerator, check the minimum supported compute capability in the current PyTorch CUDA wheels and vLLM release notes (for example, SM-70 dropped in recent vLLM, Volta dropped in PyTorch 2.11 CUDA 12.8/12.9 binaries). Check dtype support (bfloat16) for the models you plan to serve. Note the vLLM version used for each benchmark, because mixed stacks distort comparisons.",
+   "when": "Before buying or keeping older GPUs, and before comparing benchmarks run on different GPU generations, which may use different framework versions."
+  }
+ ],
+ "tools": [
+  "Dumpster Cluster paper (128x V100 SXM2 cluster study)",
+  "NVIDIA V100",
+  "NVIDIA A100",
+  "NVIDIA H100",
+  "NVIDIA B200",
+  "vLLM (0.17 for B200 runs, 0.6 for H100/A100 runs, per the video)",
+  "PyTorch 2.11 (dropped Volta from CUDA 12.8/12.9 pre-built binaries)",
+  "CUDA (compute capability 7.0 = Volta)",
+  "CoreWeave Vera Rubin (vendor tokens-per-MW claim)"
+ ],
+ "numbers": [
+  {
+   "claim": "Build cost: about $32,000 in 2024; rebuild estimated at about $22,000 by March 2026. GPUs paid for at about $215 each; $60 quoted for the 16GB SXM2 card. 32GB PCIe cards about $600-800 as of July 2026.",
+   "t": "1:18"
+  },
+  {
+   "claim": "V100 launch price about $10,000 in 2018, so about 99.4% price drop to $60 (depreciation fit R^2 = 1 in the paper, as the host notes).",
+   "t": "1:18"
+  },
+  {
+   "claim": "Tokens/s per $ on 8B: V100 pod 29.16, A100 2.15, H100 1.59, B200 0.84 (about 35x B200, capex-only). About 10 once the full ~$22k cluster is priced (about 12x B200).",
+   "t": "2:41"
+  },
+  {
+   "claim": "Tokens/s per $ on 70B: B200 0.06, H100 0.13, A100 0.19, V100 pod 0.20.",
+   "t": "3:58"
+  },
+  {
+   "claim": "3-year TCO at 70B: V100 about 12 cents per million tokens vs H100 about 8 (about 1.5x more expensive).",
+   "t": "5:15"
+  },
+  {
+   "claim": "Grid-average carbon per token: V100 about 4x B200 at 8B, more than 40x at 70B.",
+   "t": "5:15"
+  },
+  {
+   "claim": "China grid mix: V100 pod 1,015 gCO2 per million tokens vs B200 24.62. On 100% wind: V100 46.45 vs B200 0.61.",
+   "t": "6:38"
+  },
+  {
+   "claim": "Operations: 58 incidents over 12 months across 128 GPUs; 8 required physical replacement (2 NICs, 5 CPUs, 1 GPU); 50 recoverable (32 PCIe resets, 18 software resets). Annual device failure rate about 6.25%; about 10% spare capacity kept.",
+   "t": "10:25"
+  },
+  {
+   "claim": "CoreWeave Q2 earnings call (Aug 11): A100 capacity contract running into 2029, about a 9-year commercial life since the A100 launched in 2020. The host says Jensen Huang also said A100s can remain mission-capable through 2029.",
+   "t": "11:37"
+  },
+  {
+   "claim": "CoreWeave claims up to 10x tokens per megawatt for Vera Rubin vs the previous generation (vendor claim, which the host flags).",
+   "t": "6:38"
+  }
+ ],
+ "hot_takes": [
+  "The 35x headline is misleading: it is capex-only, compares bare cards against a full 8-GPU system, and only holds at 8B. At 70B, with three years of electricity, the V100 pod is about 1.5x more expensive per token than the H100.",
+  "The paper's reliability and software-support findings matter more than its price finding. A GPU can keep running physically while the ecosystem (PyTorch, vLLM, bfloat16) moves past it.",
+  "The paper doesn't really indict NVIDIA. Long A100 commercial lives support residual value and financing, which helps NVIDIA's model. Note that this is the host's reading, not the paper's stated conclusion.",
+  "Caption errors: the transcript garbles some numbers (for example '8B200' and '8H100' read as 8x B200 and 8x H100). The phrase 'a used A 180 gigabytes' is unclear in the captions, and is probably an A100 80GB; treat it as unverified. Check the paper for exact figures.",
+  "The arbitrage is self-limiting: once many buyers copy the approach, used prices rise and the economics shrink."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft runs vLLM on one RTX 5090. The paper's tokens-per-dollar framing, operational failure data and software-support cliff apply directly to any cost or hardware-lifetime claims we make about the local serving stack.",
+   "action": "Extend InferCraft's cost model to report tokens per lifetime-dollar including power draw (3-year TCO), not just tokens/s, and log failures/restarts as a reliability metric next to throughput."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No overlap with checkpoint/resume, plan critique, or harness work on the Claude Code CLI.",
+   "action": ""
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

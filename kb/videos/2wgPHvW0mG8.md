@@ -1,0 +1,47 @@
+# One Operator, Many Drones: Inside Skydio's Autonomy Stack — Suchet Bargoti, Skydio
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `2wgPHvW0mG8` · [watch](https://youtu.be/2wgPHvW0mG8) · **date:** 2026-09-27 · **length:** 20:48 · **format:** talk · **quality:** 3/5 · **depth:** intro
+- **speakers:** Suchet Bargoti · **orgs:** Skydio, SFPD, Waymo
+- **topics:** multi-agent, voice-multimodal, agent-architecture, infra-cost-scaling · **tags:** drones, physical-ai, fleet-orchestration, vlm, world-model, edge-cloud, learning-flywheel, reliability, tool-design
+
+> Skydio's Suchet Bargoti on running fleets of docked drones as agent-commanded infrastructure: tool-based VLM control, edge/cloud latency tiers, a shared map that the fleet updates, and a learning flywheel.
+
+## Summary
+Suchet Bargoti of Skydio opens with a live demo of commanding several docked drones at once, then argues that drones are becoming always-available infrastructure rather than pilot-operated tools. The bottleneck he names is skilled pilots, so the goal is objective-level commands to a whole fleet (e.g. "find a missing person", "track that car") instead of first-person flying. The autonomy stack is split across edge and cloud by latency: on-device control for immediate actions, cloud VLMs at 7-10 Hz with 1-2 s feedback for broad decisions, and cloud GPUs for longer-horizon planning. A shared, continuously updated map and a fleet-wide learning flywheel (log, sanitize, retrain RL, redeploy) are the main data loops. On the agent design side, he describes exposing drone capabilities as tools so a VLM can pick actions (e.g. find and follow a white jeep), and moving hand-coded search branching into agent-level decisions, while noting that end-to-end learned control is hard to observe and guarantee, so only some segments should move there. Much of the talk is company showcase and hiring pitch, with few hard numbers beyond the reliability target and latency figures.
+
+## Key ideas
+- **Drones are becoming always-on infrastructure, and the interface should shift from piloting to high-level objectives (even a Slack-style request to send a drone).** — The speaker sees three eras: hobbyist, then tool carried in trucks, then docked infrastructure run by agents. The question he raises is how much autonomy must be built in and what the high-level interface looks like. ([3:38](https://youtu.be/2wgPHvW0mG8?t=218))
+- **Skilled-pilot labor does not scale, so control has to move from first-person flying to fleet-level objectives.** — Each extra drone needs another trained operator, and alert volume grows faster than staff. The aim is to command the whole fleet with an objective and not worry about the flight itself. ([8:04](https://youtu.be/2wgPHvW0mG8?t=484))
+- **Split autonomy by latency: on-device for immediate control, cloud for slower reasoning.** — Immediate actions run on the drone. Cloud GPUs and inference handle heavier, longer-horizon planning. Cloud VLM tracking runs at lower rate and gives broad direction. Each placement is a tradeoff against bandwidth and response time. ([11:37](https://youtu.be/2wgPHvW0mG8?t=697))
+- **A shared map is updated by the whole fleet and synced back, so one drone's observations help all others.** — Prior map data (buildings, power lines, roads) is merged into a planning map. Drones report changes such as a new construction site. The sync process pushes the updated map to every drone on the next iteration. ([12:53](https://youtu.be/2wgPHvW0mG8?t=773))
+- **Learning flywheel: every flight is logged, sanitized, used to retrain RL and evaluation, then redeployed.** — Data handling needs sanitizing for private information and clear customer consent. The cycle is meant to keep improving reliability over time. ([10:36](https://youtu.be/2wgPHvW0mG8?t=636))
+- **Expose drone capabilities as tools and let the agent choose how to combine them, rather than writing rules for each case.** — Example: a user types 'look for white jeep'. A VLM runs detection and calls the drone's tracking and follow APIs. The speaker says the agent is given the tools and state, not coded rules, and that primitives are built so the agent can use them. ([16:24](https://youtu.be/2wgPHvW0mG8?t=984))
+- **Full end-to-end learned control is hard to observe and guarantee, so move only some segments to learned models.** — Search-and-rescue logic (search trees, then try another area, then switch to thermal) is hand-written branching today. The goal is to replace many if-statements with high-level tools the agent can call, while keeping reliability checks on the parts that are learned. ([18:26](https://youtu.be/2wgPHvW0mG8?t=1106))
+
+## Techniques
+- **Tool-exposed primitives for a VLM agent** — Wrap low-level capabilities (find, track, follow, hold position, fly trajectory) as tool APIs. A vision-language model reads the scene and chooses which tool to call, based on the user's instruction and the drone's state. *When:* When hand-written branching rules for each mission type are growing and hard to maintain, and the agent can act on a small set of well-defined actions.
+- **Latency-tiered edge and cloud split** — Keep control loops that need immediate response on the device. Send slower, heavier perception and reasoning to cloud VLMs (about 7-10 Hz, 1-2 s feedback) and long-horizon planning to cloud GPUs. *When:* When some decisions must be instant and others can tolerate seconds of delay, and the cloud can afford heavier models.
+- **Fleet-shared map with sync-back** — Each drone reports observed changes to the map (for example, new construction). The sync step merges them and pushes the updated map to the whole fleet on the next cycle. *When:* When the environment drifts over time and many agents observe it, so one agent's discovery should help the rest.
+- **Bandwidth-aware video encoding for cloud agents** — Compress video before upload, then decode it on the server into a clearer picture under the same network conditions. *When:* When cloud agents need video from low-bandwidth sites.
+- **Hybrid end-to-end versus hand-engineered decomposition** — Decide per segment of the pipeline whether it stays hand-engineered (for observability and guarantees) or moves to a learned world model or RL policy. Start with the parts where hand-written rules keep growing. *When:* When full end-to-end learning would make failure analysis and reliability guarantees too hard.
+- **Log, sanitize, retrain, redeploy loop** — Log operational data from each run, remove private information, use it for RL training and evaluation, and push the new model back out. *When:* When the system runs in the field and new edge cases keep appearing.
+
+## Numbers
+- Thousands of docked drones deployed across the country with power utilities, public safety and construction companies (described as infrastructure). ([0:54](https://youtu.be/2wgPHvW0mG8?t=54))
+- Reliability target of 99.9999%, checked with simulation testing. ([6:41](https://youtu.be/2wgPHvW0mG8?t=401))
+- About 16 million people live within two miles of the deployed infrastructure. ([6:41](https://youtu.be/2wgPHvW0mG8?t=401))
+- Cloud VLM tracking runs at about 7-10 Hz with 1-2 second feedback latency. ([15:18](https://youtu.be/2wgPHvW0mG8?t=918))
+- Speaker calls the company the largest drone manufacturer in the U.S. (self-claim, not verified). ([4:44](https://youtu.be/2wgPHvW0mG8?t=284))
+
+## Hot takes
+- Within a few years, drone safety will be set by the autonomous system, not by certified human pilots.
+- The interface for physical agents will be a high-level request (like a chat bot message) and the user may not even know a drone was launched.
+- End-to-end learned control for physical systems is the long-term direction, but it is hard to observe and guarantee, so hybrids are needed for now.
+
+## Tools mentioned
+Vision-language model (VLM), Reinforcement learning, Drone APIs exposed as agent tools, Cloud GPUs and inference engines, Map merging and sync service
+
+## Relevance to our work
+- **agentos** (1/3): The talk's edge/cloud split by latency tier and tool-exposed primitives are general agent-infra patterns, but the speaker gives no detail on gateways, budgets or storage. → *Read the 11:37 edge-versus-cloud tiering and 16:24 tools-as-primitives sections only as a reference for how AgentOS might route latency-sensitive versus planning calls; no change needed now.*
+- **prosharness** (1/3): The argument to expose a few high-level tools and let the agent choose among them, instead of coding branches, relates to how ProsHarness drives Claude Code; the talk gives no evidence beyond the speaker's own system. → *When next revising ProsHarness tool or loop design, compare its hard-coded branches against the talk's argument (18:26) for moving them into agent-level tool choice.*
+- **general** (1/3): Fleet-level objective commanding is a multi-agent orchestration pattern, and the speaker's point about observability and guarantees being hard in end-to-end systems bears on agent evals, though the talk does not describe eval methods. → *Note the 18:26 point (end-to-end systems are hard to observe and guarantee) as a reference when deciding which agent segments need explicit evals.*

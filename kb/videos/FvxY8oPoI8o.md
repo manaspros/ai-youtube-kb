@@ -1,0 +1,46 @@
+# Preferences Over Benchmarks: Model Routing — Archana Kamath & Tyler Gillam, DigitalOcean
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `FvxY8oPoI8o` · [watch](https://youtu.be/FvxY8oPoI8o) · **date:** 2026-09-18 · **length:** 15:54 · **format:** demo · **quality:** 2/5 · **depth:** practitioner
+- **speakers:** Archana Kamath, Tyler Gillam · **orgs:** DigitalOcean
+- **topics:** token-cost-efficiency, infra-cost-scaling, evals, coding-agents · **tags:** model-routing, llm-router, failover, cost-optimization, latency, llm-as-judge, opencode, plano, digitalocean, vendor-pitch
+
+> DigitalOcean's Archana Kamath and Tyler Gillam argue for per-request model routing chosen by task, cost, latency and rules, validated with your own evals. A live OpenCode demo shows roughly 3x lower session cost at similar quality, though the evidence is one vendor demo.
+
+## Summary
+The talk argues that teams should stop picking one model from a public benchmark and instead route each request to a model that fits the task, cost budget, latency need and user preference. Three pressures are named: spend (cost), fit (overkill of frontier models for simple tasks) and risk (no failover when one model degrades). Tyler Gillam then shows DigitalOcean's inference router, which uses a small open routing model (under 200 ms per decision, per the speaker) that reads natural-language task descriptions plus cost/latency/quality settings and optional decision-tree rules. A per-task config is shown with two selection styles: a manual ranked list with failover, and a "fastest in the last ~30 minutes" policy. In a side-by-side OpenCode demo, the router session cost $0.08 vs $0.25 after one feature task and $0.14 vs $0.44 after three tasks, with output quality judged as similar. A router-vs-Opus eval scored 90% vs 95% on correctness, which the speaker called within LLM-as-judge margin of error. The speakers frame routing as a base layer for evals, caching and personalization. Evidence is a single live run, a judge-scored eval with no methodology shown, and a vendor pitch, so the numbers are directional only.
+
+## Key ideas
+- **There is no single best model; the right model depends on the request** — Fit depends on the task, the system prompts and tools around the model, the cost you will accept, the latency the use case needs, and end-user preference. Public leaderboards cannot encode these. Examples: small open models for classification, faster larger models for inline completion, mid open-weight for code gen and bug fixing, frontier for code review and security. ([2:41](https://youtu.be/FvxY8oPoI8o?t=161))
+- **Three reasons to break the one-model habit: cost, fit and risk** — Cost: companies are capping usage (speaker names Walmart, Uber, Microsoft without data). Fit: frontier rates for simple work is overkill. Risk: a single model has no failover when it goes down or degrades. The speaker calls model orchestration the new FinOps. ([1:36](https://youtu.be/FvxY8oPoI8o?t=96))
+- **Auto-routing was a black box; make the routing rules editable and evaluable** — Earlier auto-routers chose a model with no way to fix bad choices. The described design takes a request through an open proxy (Plano) and a routing model. The user states costs, latency, quality, preferred models and hard rules in natural language; decision-tree rules can be layered on presets. ([5:15](https://youtu.be/FvxY8oPoI8o?t=315))
+- **Use the loop: route, evaluate on your own tests, adjust, feed results back** — The speakers stress that the router must be validated with your own evaluations, not a public leaderboard. The demo's eval compared router vs Opus on the same tasks, scoring correctness (90% vs 95%) and token use and speed, and the speaker said the gap was within LLM-as-judge noise. ([6:19](https://youtu.be/FvxY8oPoI8o?t=379))
+- **Per-task pools with explicit selection policies and failover** — Each task (bug fixing, code generation, test writing) gets its own model pool. One task uses manual ranking, so a preferred model is always tried first with a named fallback. Another uses a fastest-recently policy (about a 30-minute window). The same prompt can map to different models on different tasks. ([7:22](https://youtu.be/FvxY8oPoI8o?t=442))
+- **Savings show up across a whole agent session, not one prompt** — The live OpenCode comparison ran the same prompts through a single-model session (Opus) and a routed session. Cost was tracked across steps: $0.08 vs $0.25 after a feature task, and $0.14 vs $0.44 after tests and a README, with similar output quality by the presenters' own vibe check. ([11:35](https://youtu.be/FvxY8oPoI8o?t=695))
+
+## Techniques
+- **Per-task model pools with ordered failover** — Define named tasks (bug fixing, code gen, test writing). For each, list candidate models and use manual ranking so the preferred model is tried first and the next one is a fallback on failure. Optionally pick the model with the best recent latency over a short window (about 30 minutes in the demo). *When:* When you want a predictable primary model with graceful degradation, or when latency varies by provider and you want the fastest recent option.
+- **Natural-language routing preferences plus hard rules** — Describe each task in plain language and set cost, latency and quality priorities. Start from a preset, then add decision-tree rules for hard constraints. A small dedicated routing model maps each request to a candidate, so the choice is per request. *When:* When you cannot hand-write a classifier for every request type, but still need explicit constraints such as never sending security review to a small model.
+- **Side-by-side routed vs single-model agent runs with live cost tracking** — Run the same prompt sequence through two agent sessions in the same coding CLI: one pinned to a frontier model, one routed. Show per-step model choice, token use, latency and cumulative session cost, then compare outputs. *When:* When you want quick evidence that routing cuts cost on real agent workflows before running a formal eval.
+- **Eval-gated routing with feedback loop** — Score the routed system against a frontier baseline on your own task set using LLM-as-judge plus token and latency metrics. Adjust task descriptions or pools based on failures, then re-run. *When:* Before trusting a router in production, and after any change to models or task definitions. Treat differences inside judge noise as ties.
+
+## Numbers
+- Routing decision latency under 200 ms per request (speaker claim) ([5:15](https://youtu.be/FvxY8oPoI8o?t=315))
+- Routing service described as free to customers; speaker says the routing model beat GPT-5-series models at routing with a fraction of the latency (vendor claim, no data shown) ([5:15](https://youtu.be/FvxY8oPoI8o?t=315))
+- Router vs Opus eval on the demo's task set: correctness 90% vs 95%, described as within LLM-as-judge margin of error; router used noticeably fewer tokens and was faster ([9:32](https://youtu.be/FvxY8oPoI8o?t=572))
+- OpenCode demo, feature request: session cost $0.08 (router) vs $0.25 (Opus), about 3x ([11:35](https://youtu.be/FvxY8oPoI8o?t=695))
+- OpenCode demo, after tests and README: session cost $0.14 (router) vs $0.44 (Opus) ([11:35](https://youtu.be/FvxY8oPoI8o?t=695))
+- Routing decision under 200 ms, custom mixture-of-experts routing model, zero application code changes needed (speaker) ([13:24](https://youtu.be/FvxY8oPoI8o?t=804))
+- Companies capping AI spend: Walmart, Uber, Microsoft (named by speaker, no figures given) ([1:36](https://youtu.be/FvxY8oPoI8o?t=96))
+
+## Hot takes
+- Model orchestration is the new FinOps, and it will mature in months, not the 15 years cloud cost optimization took.
+- Benchmarks only tell part of the story; your own task preferences tell the rest.
+- Routing is the foundation layer, not the destination; evals, caching and personalization should sit on top of it.
+
+## Tools mentioned
+Plano (open-source proxy and routing model), OpenCode, Claude Opus, Claude Sonnet 5, GLM 5.2, GPT 5.2, Llama 4 Maverick (caption reads 'long before Maverick')
+
+## Relevance to our work
+- **agentos** (2/3): L1 Govrix Scout already has strategy routing. The talk gives a concrete design: per-task pools, ordered failover, recent-latency selection, and cost/quality comparison against a frontier baseline. → *Compare Scout's strategy routing against per-task pools with ordered failover and a recent-latency policy, and add an eval that scores routed vs frontier-pinned output on cost, tokens and judged correctness.*
+- **general** (2/3): Matches the recurring interest in cheap-model (Haiku) pipelines. The talk's claim is that small models suit classification and labeling, and its method is judge-scored eval against a frontier baseline. → *Run a small-model vs frontier judged eval on one classification or labeling step from an existing pipeline, and record cost and accuracy.*
+- **prosharness** (1/3): ProsHarness drives Claude Code. Per-step model choice could cut cost on simple steps, but the talk does not address harness checkpointing or plan/critique flows. → *Log per-step model and cost in a ProsHarness run and check whether simple steps (for example test writing) can move to a cheaper model without quality loss.*

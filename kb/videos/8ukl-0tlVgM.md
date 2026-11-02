@@ -1,0 +1,42 @@
+# Stop Using Claude Code CLI. Use THIS Instead! (Oh-My-Pi)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `8ukl-0tlVgM` · [watch](https://youtu.be/8ukl-0tlVgM) · **date:** 2026-06-02 · **length:** 5:07 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** Andres (Better Stack presenter) · **orgs:** Better Stack
+- **topics:** coding-agents, token-cost-efficiency, agent-architecture, dev-tools · **tags:** oh-my-pi, pi-framework, claude-code, lsp, dap-debugger, hashline-edits, model-routing, token-savings, browser-tool, plugins, terminal-agent
+
+> A 5-minute Better Stack walkthrough of Oh My Pi, an open-source terminal agent harness built on the Pi framework, covering LSP refactoring, debugger attach, per-task models, hashline edits, and Pi package support.
+
+## Summary
+The presenter introduces Oh My Pi, an open-source terminal AI agent harness built on the Pi framework, and positions it as a more IDE-like alternative to the Claude Code CLI. The four features called out are native LSP integration for workspace-wide structural refactors, Debugger Adapter Protocol support for attaching debuggers like DLV and DebugPy to a running process, model-agnostic operation with per-task model selection (for example a vision model or a design model), and "hashline" edits that target lines by a content-hash anchor instead of resending old and new text. A demo task built a Rust desktop app that lists StockTwits ticker symbols, during which the agent used its own Chrome-based browser tool to fetch data. The video also shows installing a Pi package (Doom) as a plugin and briefly mentions a PR review tool, sub-agents, PDF reading, and Hindsight-based agent memory without demonstrating them. There are no step-by-step setup instructions beyond one spoken description of the plugin install command, and the token-savings figure is a single claim for one model.
+
+## Key ideas
+- **Oh My Pi is positioned as a terminal agent harness that treats the project as a running application rather than flat text files.** — The presenter frames the common failure mode (agent reads a wall of source, guesses, adds print statements) and says the harness counters it with four architectural features. The claim is the speaker's framing; no benchmark is shown. ([0:00](https://youtu.be/8ukl-0tlVgM?t=0))
+- **Native LSP integration lets the agent do workspace-level structural refactors through the language server before writing to disk.** — Example given: renaming a core module or refactoring a function imported across 50 files. The speaker says it updates barrel files, handles aliased imports, and cleans up re-exports. The speaker contrasts this with Claude Code CLI, which he says lacks IDE-like behaviour. ([0:00](https://youtu.be/8ukl-0tlVgM?t=0))
+- **Debugger Adapter Protocol support lets the agent attach real debuggers (DLV for Go, DebugPy for Python) to a broken process.** — Use cases named: a deadlocking Go service, a concurrent Python runtime error, a broken C file. The agent can hit breakpoints and inspect live memory and stack frames. Demonstrated only verbally; not shown running. ([1:25](https://youtu.be/8ukl-0tlVgM?t=85))
+- **Model-agnostic with per-task model assignment, and it can import Claude Code plugins and settings on login.** — Logging in with a Claude Code account is described as porting plugins and settings automatically. Users can assign different models to task types, such as a vision model for vision tasks and a design model for design tasks. ([1:25](https://youtu.be/8ukl-0tlVgM?t=85))
+- **Hashline edits target lines by content-hash anchor instead of reproducing old and new text.** — The speaker contrasts this with Claude Code, which he says sends the literal old string and new string and makes the model reproduce every changed character. He says hashline edits avoid whitespace syntax errors and cut token use. The exact anchor format is not shown. ([2:28](https://youtu.be/8ukl-0tlVgM?t=148))
+- **Built-in browser tool launches a Chrome instance for web retrieval instead of curl or fetch calls.** — Shown during the Rust/StockTwits demo, where the agent needed web data. The speaker also praises the UI's task windows as easier to read than Claude Code CLI's. ([2:28](https://youtu.be/8ukl-0tlVgM?t=148))
+- **Pi packages from the original Pi editor can be installed as plugins.** — The Doom package from Pi was installed and launched via a slash command. The install command is described by swapping a prefix for an Oh My Pi plugin-install command, but the exact spelling is unclear in the auto-captions. ([3:43](https://youtu.be/8ukl-0tlVgM?t=223))
+
+## Techniques
+- **Hashline edits (anchor-based line editing)** — Per the speaker, each line is addressed by a content-hash anchor, so the model names the line to change and the new content rather than retyping the old block. Whitespace errors drop because the old text is not re-emitted. Exact anchor syntax was not shown; check the Oh My Pi repo before relying on it. *When:* Large files or many small edits where re-sending old and new strings is expensive or error-prone (indentation-sensitive languages).
+- **LSP-backed workspace refactor** — Let the agent delegate rename, move, and re-export changes to the language server so imports, barrel files, and aliases are rewritten structurally before files are written. *When:* Cross-file renames or module moves in a typed codebase where text-based find-and-replace misses aliased or re-exported symbols.
+- **Per-task model routing in a harness** — Configure different models for task categories (e.g. a vision model for screenshots, a design model for UI work) within one harness, instead of one model for everything. *When:* Mixed workloads where some subtasks suit a cheaper or specialised model.
+- **Debugger attach for agent debugging** — Have the agent launch or attach DLV (Go) or DebugPy (Python) to the failing process, set breakpoints, and read stack frames and variables, rather than adding print statements. *When:* Deadlocks, concurrency bugs, or runtime errors where a live state inspection is faster than source reading.
+
+## Numbers
+- Hashline edits save up to 61% of LLM token usage, stated for Grok 4 Fast. This is a single vendor-side claim with no methodology or baseline shown. ([2:28](https://youtu.be/8ukl-0tlVgM?t=148))
+- The LSP refactor example involves a function or module imported across 50 files. ([0:00](https://youtu.be/8ukl-0tlVgM?t=0))
+
+## Hot takes
+- The title ('Stop Using Claude Code CLI. Use THIS Instead!') is a hype framing; the video is a 5-minute feature tour with one demo and no benchmarks, so quality is capped at 2.
+- The 61% token-savings figure is a single model's claim and is not reproduced. Treat it as unverified until measured on our own workloads.
+- The critique of Claude Code's edit mechanism (literal old/new strings) is the presenter's characterisation and is not verified against Claude Code's source.
+- Several features (PR review tool, sub-agents, PDF reading, Hindsight memory, debugger attach) are mentioned but not demonstrated.
+
+## Tools mentioned
+Oh My Pi (open-source terminal agent harness), Pi framework (base for Oh My Pi; source of the Doom package), Claude Code CLI (compared against; plugins and settings are imported on login), Claude Opus (named as the model that reproduces full edit text in Claude Code), Grok 4 Fast (model used for the 61% token-savings claim), DLV (Go debugger), DebugPy (Python debugger), Chrome (launched by the built-in browser tool), Hindsight (agent memory management, mentioned only), Rust (language of the demo app)
+
+## Relevance to our work
+- **agentos** (1/3): Per-task model routing inside one harness is a small parallel to AgentOS's strategy routing, and the token-savings claim touches on AgentOS's cost-control goals. Nothing here changes what AgentOS builds. → *If time allows, check the Oh My Pi repo's model-routing config to compare its task-to-model mapping with AgentOS strategy routing; treat the 61% claim as a lead to measure, not a fact.*
+- **prosharness** (1/3): ProsHarness wraps the Claude Code CLI, and Oh My Pi is an alternative harness that claims to import Claude Code plugins and settings. Its anchor-based edit format is a token-saving idea ProsHarness could test. → *Benchmark ProsHarness's edit path on a long multi-edit run against an anchor-based edit approach (hashline-style) and record token counts before deciding whether to adopt it.*

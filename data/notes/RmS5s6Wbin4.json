@@ -1,0 +1,146 @@
+{
+ "one_line": "Kenton Varda (Cloudflare) argues personal AI codegen needs new infrastructure, and demos \"Gadgets\": per-user apps with platform-enforced sharing and sandboxed generated code, run on open-source workerd.",
+ "summary": "Kenton Varda argues that AI-generated personal apps break the current model of one blessed server-hosted version of an app for every user. Users should be able to have an agent add the features they need, but app stores, Apple and Google gatekeeping, and the server-hosted web model all block that. His prototype, Gadgets, is a Google Docs-style environment where each gadget is one personal app instance with its own data, shared through a sharing model the platform implements. Generated client and server code run in a null-origin sandboxed iframe and a dynamic Worker sandbox that can only talk to each other over postMessage and RPC, so XSS bugs in generated code do not leak anything. In the demo, Claude extended the Slides app itself (strikethrough, centering, SVG insertion) from a brief. The whole stack runs on Workers and Durable Objects with no containers or database, locally on the open-source workerd runtime. The release of the code was postponed on the CTO's advice, so the open-source promise did not happen at this talk. The demo's first prompt failed, and the talk is mostly a concept pitch with one prototype.",
+ "speakers": [
+  "Kenton Varda"
+ ],
+ "orgs": [
+  "Cloudflare"
+ ],
+ "format": "demo",
+ "topics": [
+  "vibe-coding-app-building",
+  "sandboxing-execution",
+  "security-guardrails",
+  "product-ux"
+ ],
+ "tags": [
+  "personal apps",
+  "vibe coding",
+  "sandboxing",
+  "iframe CSP",
+  "postMessage RPC",
+  "Durable Objects",
+  "dynamic workers",
+  "workerd",
+  "sharing model",
+  "blueprints",
+  "self-hosting",
+  "agent-extends-app"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Thesis: personal AI codegen breaks today's cloud infrastructure, which assumes one server-hosted version of an app for all users.",
+   "detail": "Users cannot customize a single blessed server-side app, so per-user features need a different hosting model, not just a vibe-coding front end.",
+   "t": "0:08"
+  },
+  {
+   "idea": "The plugin-rewrite trap is the failure mode that agents could fix.",
+   "detail": "Developers pile feature requests into if-statements, then stall while rewriting for a plugin system. Letting each user's agent write their own feature avoids the bloat and the stall.",
+   "t": "2:08"
+  },
+  {
+   "idea": "Platform-enforced sharing, not app-enforced.",
+   "detail": "Each gadget holds one thing to share, so the platform can implement the share dialog and access control, and app code cannot get access control wrong.",
+   "t": "11:26"
+  },
+  {
+   "idea": "The agent extends the app, not only the content.",
+   "detail": "Given a brief doc plus the app's source, Claude added missing features (strikethrough, centering, arbitrary SVG insertion) so the slide tool could express what the brief asked for.",
+   "t": "12:26"
+  },
+  {
+   "idea": "Generated code can be untrusted because the sandbox limits what it can reach.",
+   "detail": "The client runs in a null-origin iframe with a strict CSP and no cookies, and its only channel is postMessage to the parent, which relays RPC to the server code in a dynamic Worker sandbox. XSS in generated code therefore leaks nothing.",
+   "t": "13:53"
+  },
+  {
+   "idea": "Blueprints separate code from data.",
+   "detail": "A blueprint exports a gadget's code without its data so others can instantiate their own copy. Each instance holds one document.",
+   "t": "9:16"
+  },
+  {
+   "idea": "Same runtime locally and in the cloud.",
+   "detail": "The whole stack runs on workerd, the open-source Workers runtime, on the speaker's laptop, and he plans to self-host it for home automation. The release was postponed on the CTO's advice, so the code was not published at the talk.",
+   "t": "16:12"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Platform-enforced sharing via single-purpose instances",
+   "how": "Make one app instance hold one shareable thing. The platform owns the share dialog and access checks, so generated app code cannot break access control.",
+   "when": "Agent-generated multi-user apps where access control must not depend on code quality."
+  },
+  {
+   "name": "Sandboxed generated UI with postMessage-only RPC",
+   "how": "Serve the generated client in a null-origin iframe with strict CSP, no cookies, and no network. Connect it only through a postMessage channel that relays RPC to server code in a separate sandbox.",
+   "when": "Letting an agent write both frontend and backend for a per-user app, where the goal is that a bug in the generated code cannot leak data."
+  },
+  {
+   "name": "Give the agent the app source and a brief, let it add primitives",
+   "how": "Provide the app's code plus a requirements doc. When the app lacks a feature, the agent adds it (here: strikethrough, centering, SVG embed) rather than working around the limit.",
+   "when": "Creating content in an existing tool whose features may not cover the brief."
+  },
+  {
+   "name": "Export code-only templates (blueprints)",
+   "how": "Export an app's code without its data and let others instantiate per-instance copies.",
+   "when": "Sharing reusable personal-app templates while keeping user data separate."
+  },
+  {
+   "name": "Run the production runtime locally",
+   "how": "Use the open-source workerd runtime on a laptop so the same stack runs offline and self-hosted.",
+   "when": "Developing or self-hosting edge-style apps where you want offline behavior and no cloud dependency."
+  }
+ ],
+ "tools": [
+  "Cloudflare Workers",
+  "Durable Objects",
+  "Dynamic Workers",
+  "workerd",
+  "Claude",
+  "Cap'n Web RPC"
+ ],
+ "numbers": [
+  {
+   "claim": "Cloudflare Workers serves millions of developers and trillions of requests per day (speaker's figures about the platform he co-created in 2017).",
+   "t": "1:16"
+  },
+  {
+   "claim": "The speaker says it is 'almost easier in the US to buy a gun than to install unsigned software' on a phone, and that about five companies can build mobile apps, which are rhetorical claims, not measurements.",
+   "t": "3:24"
+  },
+  {
+   "claim": "Gadget demo: an app took about one afternoon to vibe-code, per the speaker's estimate for a colleague's slide builder.",
+   "t": "10:13"
+  }
+ ],
+ "hot_takes": [
+  "Personal AI codegen breaks the one-blessed-server-version model of cloud infrastructure, and the fix is not a vibe-coding front end on existing infra.",
+  "The plugin-architecture rewrite is a trap that agent-written per-user features make unnecessary.",
+  "XSS in agent-generated code matters less if the sandbox controls what the code can reach than if it is trusted."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Crucible (L2C) runs sandboxed code for agents. The Gadgets pattern of null-origin iframe, CSP, and a postMessage-only channel to a separate sandbox is a comparable isolation design, but no code was released.",
+   "action": "Compare Crucible's isolation boundary with the iframe-plus-dynamic-Worker design once the Gadgets code is public (the talk says it will be released later)."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Talk is about hosting per-user generated apps. Nothing here maps to the checkpoint, plan, or loop features of the Claude Code harness.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Strong, concrete sandbox design for untrusted agent-generated UI and server code. The threat model (XSS in generated code is contained by platform isolation) is a reusable frame.",
+   "action": "Read the talk's sandbox model (null-origin iframe, CSP, postMessage RPC, dynamic Worker) when designing any agent-generated UI that calls back to a server."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

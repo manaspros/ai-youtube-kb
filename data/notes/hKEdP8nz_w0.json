@@ -1,0 +1,213 @@
+{
+ "one_line": "Better Stack runs one full-stack app prompt through a free stealth model, OxAlpha, and rival models, then argues from code fingerprints that it is likely based on GLM 5.3.",
+ "summary": "The video covers OxAlpha, an unnamed model offered free for a limited window on OpenRouter, OpenCode, Kilo and another platform, with a 1M-token context and text, image and video input. The presenter first discounts launch benchmark claims: a 10-task DeepSWE subset beat GPT 5.6, but a fuller run reportedly lands near 63%, in the Grok, DeepSeek and Gemini range, and the model averaged about 47k output tokens. He then gives one identical prompt (a full-stack personal finance dashboard, no stack specified) to OxAlpha and six other models and judges usability, stack choice, time and cost. OxAlpha produced a usable Next.js app with Drizzle and better-sqlite3 in about 84k tokens and 45 minutes, which he rates well. The frontier models at medium effort were faster and cheaper but weaker, with no real database or unimplemented tabs. GLM 5.3 used the same Next.js, Drizzle and better-sqlite3 stack and was the most expensive run at about $5. He asked Claude to compare the codebases, and structural and rare-marker overlap pointed to GLM, with the Drizzle overlap flagged as a possible false positive. He adds community evidence (tokenizer, error messages, vision-encoder tokens matching GLM) and concludes it is probably GLM-based, possibly GLM 5.5 or a Flash variant, while noting free access ends on the 27th and that prompts and completions are retained by the provider even though not used for training.",
+ "speakers": [
+  "Better Stack presenter (not named in transcript)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "OpenRouter",
+  "OpenCode",
+  "Kilo (captioned as 'Klein')",
+  "Z.ai (GLM)",
+  "OpenAI",
+  "Google"
+ ],
+ "format": "review",
+ "topics": [
+  "models-research",
+  "token-cost-efficiency",
+  "vibe-coding-app-building"
+ ],
+ "tags": [
+  "stealth-model",
+  "oxalpha",
+  "free-models",
+  "openrouter",
+  "model-comparison",
+  "cost-benchmarking",
+  "glm",
+  "drizzle-orm",
+  "nextjs",
+  "model-attribution",
+  "deepswe"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A free stealth model, OxAlpha, is offered for a limited window with a 1M-token context and multimodal input.",
+   "detail": "Launch posts claim zero data retention and very large capacity figures. The presenter later says providers do retain prompts and completions, though not for training.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Launch benchmark claims are misleading when taken from a small subset.",
+   "detail": "A 10-task DeepSWE run beat GPT 5.6, but a fuller run is nearer 63%, which places it near Grok, DeepSeek and Gemini. It also averaged about 47k output tokens per task.",
+   "t": "1:01"
+  },
+  {
+   "idea": "A single identical app-building prompt with no stack specified reveals stack choices and usability.",
+   "detail": "The presenter compares the generated apps on whether the features work, which framework and ORM were chosen, whether a real database is used, and time and cost.",
+   "t": "2:12"
+  },
+  {
+   "idea": "OxAlpha's finance dashboard is usable, on Next.js with a real database.",
+   "detail": "It used Next.js, Drizzle and better-sqlite3, took 84k tokens and about 45 minutes, and the features worked. The presenter says he could use it himself.",
+   "t": "2:12"
+  },
+  {
+   "idea": "Open models were the cheapest runs, while frontier models at medium effort were fast but weaker.",
+   "detail": "DeepSeek V4 Pro took about 15 minutes for $0.19 and gave a comparable Next.js app. Fable Medium took 3m42s for $2.60 and produced a React and Express app that stores data in memory, so it is lost on refresh.",
+   "t": "3:38"
+  },
+  {
+   "idea": "GPT 5.6 Sol at medium effort gave a cheap but incomplete app.",
+   "detail": "It took about four minutes for $0.33. The app has a UI and the send and add-funds features work, but the accounts, transactions, investments and goals tabs are unimplemented and there is no real database.",
+   "t": "4:29"
+  },
+  {
+   "idea": "Code fingerprinting, not benchmarks, is the basis for the GLM attribution.",
+   "detail": "Claude's comparison found GLM 5.3 with 22.4% structural overlap versus 19% for DeepSeek. Removing Drizzle, a shared choice, to test for a false positive still left GLM as the closest match on rare markers such as a shared helper function and an identical rewritten README.",
+   "t": "5:35"
+  },
+  {
+   "idea": "The attribution to a GLM-based model is the presenter's inference, not a confirmed fact.",
+   "detail": "He cites community evidence (tokenizer, error messages, vision-encoder tokens matching GLM) and suggests GLM 5.5, a post-trained GLM 5.3, a Flash variant, or another company building on GLM. The free window is said to end on the 27th.",
+   "t": "7:52"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Same-prompt full-stack bake-off",
+   "how": "Send one identical multi-feature prompt (e.g. a personal finance dashboard) to every model, with no stack specified. For each run, record tokens, wall-clock time and cost, click through every feature, check whether the data layer is a real database, and note framework, ORM and database choices.",
+   "when": "Choosing a model for app-building agents, or comparing cheap and frontier models on open-ended builds. It is one run per model, so treat the result as anecdotal."
+  },
+  {
+   "name": "Stack fingerprinting for model attribution",
+   "how": "Ask Claude to compare the generated repositories on (a) structural patterns such as how components are assembled, (b) rare markers, meaning non-default choices like a shared helper function's shape or a README rewritten with the same section structure, and (c) a rerun after removing a common choice (Drizzle here) to test for false positives.",
+   "when": "Guessing which base model produced some code. This is weak evidence and should be checked against other signals."
+  },
+  {
+   "name": "Community fingerprint cross-checks",
+   "how": "Compare a suspect model's tokenizer behaviour, exact error-message text and vision-encoder token output with a known model's public behaviour.",
+   "when": "When code-level similarity is ambiguous and you want a second, independent signal."
+  },
+  {
+   "name": "Rerun the full benchmark before trusting a launch claim",
+   "how": "When a launch post cites a subset result, rerun the full suite and compare against the fuller number before drawing conclusions.",
+   "when": "Evaluating a new model's launch benchmarks."
+  },
+  {
+   "name": "Check retention terms before using free endpoints",
+   "how": "Read the provider's retention and training policy for prompts and completions before sending proprietary code through a free or stealth endpoint.",
+   "when": "Using a free, promotional or stealth model through a router such as OpenRouter."
+  }
+ ],
+ "tools": [
+  "OxAlpha (stealth model, as named in the video)",
+  "OpenRouter",
+  "OpenCode",
+  "Kilo (captioned as 'Klein')",
+  "Next.js",
+  "Drizzle ORM",
+  "better-sqlite3 (captioned as 'Better SQLite')",
+  "Express",
+  "Node SQLite",
+  "React",
+  "Claude (used to compare codebases)",
+  "DeepSeek V4 Pro",
+  "Kimi K3",
+  "GLM 5.3",
+  "GLM 5.5 (speculated)",
+  "GLM vision model",
+  "Fable Medium (as captioned)",
+  "Soul Medium (as captioned)",
+  "GPT 5.6 Sol (medium effort)",
+  "Gemini 3.7 Flash (high effort)",
+  "Grok",
+  "DeepSWE benchmark"
+ ],
+ "numbers": [
+  {
+   "claim": "1M-token context window for OxAlpha",
+   "t": "0:00"
+  },
+  {
+   "claim": "Launch capacity claims of 100 trillion tokens per day (OpenCode) and 1 quadrillion per day (news research), as stated in the video",
+   "t": "0:00"
+  },
+  {
+   "claim": "DeepSWE: a 10-task subset beat GPT 5.6; a fuller run is near 63%",
+   "t": "1:01"
+  },
+  {
+   "claim": "OxAlpha averaged about 47,000 output tokens per task",
+   "t": "1:01"
+  },
+  {
+   "claim": "OxAlpha finance app: about 84,000 tokens and about 45 minutes",
+   "t": "2:12"
+  },
+  {
+   "claim": "DeepSeek V4 Pro: about 15 minutes, $0.19",
+   "t": "2:12"
+  },
+  {
+   "claim": "Kimi K3: 38 minutes, $1.92",
+   "t": "2:12"
+  },
+  {
+   "claim": "Fable Medium: 3 min 42 s, $2.60 (most expensive of the closed runs, per the presenter)",
+   "t": "3:38"
+  },
+  {
+   "claim": "GPT 5.6 Sol (medium effort): about 4 minutes, $0.33",
+   "t": "4:29"
+  },
+  {
+   "claim": "Gemini 3.7 Flash (high effort): about 10 minutes, $0.50",
+   "t": "5:35"
+  },
+  {
+   "claim": "GLM 5.3: about 50 minutes, about $5 (most expensive run)",
+   "t": "5:35"
+  },
+  {
+   "claim": "Structural overlap with OxAlpha per Claude's comparison: GLM 5.3 22.4%, DeepSeek 19%",
+   "t": "5:35"
+  },
+  {
+   "claim": "Free pricing is said to end on the 27th (no date given in the video)",
+   "t": "7:52"
+  }
+ ],
+ "hot_takes": [
+  "The title ('FREE', 'nobody knows what it is') is hype, and the model-identity verdict is speculation that the presenter himself hedges.",
+  "Each model was run once on one prompt, so the usability and stack judgments rest on one sample per model.",
+  "Time and cost comparisons mix effort levels (frontier models were at medium effort) and the video does not show matching settings, so they are not like-for-like.",
+  "The fingerprinting method is more useful than the verdict: it names a likely false positive (Drizzle) and checks it by removing the shared choice.",
+  "The provider-retention point is made in passing and conflicts with the launch's zero-data-retention claim; the presenter does not resolve it."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Per-model cost and time matter for cheap-model routing, but this is one anecdotal app test, not a routing signal.",
+   "action": "Add a cost-per-task and wall-time column to any model-routing comparison we run, using token counts from the run, not only output quality."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No harness, checkpoint, approval or credential content.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "A practitioner comparison of cheap versus frontier models on one open build task, close to our cheap-model pipeline interest; the fingerprinting method is reusable.",
+   "action": "Run the same one-prompt bake-off with token, time and cost logging on a few cheap Haiku-class models against one frontier model to decide where cheap models are safe in our pipelines."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,233 @@
+{
+ "one_line": "A buying guide for getting 32GB VRAM for local AI at full context: why 27B dense at 6-bit plus 128K context needs about 28.5GB, which cards and engines actually deliver, and when renting beats owning.",
+ "summary": "The host explains why 32GB has become the local-AI target: a 27B dense model (captioned \"Quen 3.827B\") at 6-bit with 128K context needs roughly 28.5GB, so 24GB forces either 4-bit weights or a shorter context. He argues that GPU price-per-GB trackers mislead because usable memory differs by platform: macOS caps GPU-addressable memory on a 32GB Mac mini at about two-thirds of RAM, and dual 16GB cards each carry their own runtime overhead. Naming is a trap too (laptop vs desktop 5090, RTX Pro 4000 vs 4500, dual-GPU boards). Software engine choice changes speed more than the card does: the same R9700 goes from about 27 to 153 tok/s with a community fork, and a 5090 varies from about 15 to 170 tok/s between LM Studio and a fork. Two RTX 5060 Ti 16GB cards are the easiest path if you use tensor split, which he says gives about 1.7x over the default layer split. The cheap used options (MI50, V100) carry real software-support and build-cost caveats, and the B70 is cheaper but needs more tinkering. He concludes that renting a 5090 is cheaper unless the card runs nearly around the clock.",
+ "speakers": [
+  "Host of Kai Explains (name not stated in the transcript)"
+ ],
+ "orgs": [
+  "AMD",
+  "Intel",
+  "Nvidia",
+  "Apple",
+  "RunPod",
+  "OpenRouter",
+  "Vast.ai",
+  "Newegg",
+  "MaxSun",
+  "Digital Spaceport",
+  "RepoChat",
+  "LonTV"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "vram",
+  "gpu-buying",
+  "llama.cpp",
+  "vllm",
+  "tensor-split",
+  "multi-token-prediction",
+  "rent-vs-own",
+  "qwen",
+  "macos-unified-memory",
+  "r9700",
+  "b70",
+  "v100",
+  "rtx-5060-ti",
+  "rtx-5090",
+  "mi50"
+ ],
+ "key_ideas": [
+  {
+   "idea": "32GB is the target because a 27B dense model at 6-bit with 128K context needs about 28.5GB (about 20.5GB of weights plus about 8GB of context), so 24GB forces 4-bit weights or a shorter context.",
+   "detail": "Dense means all 27B parameters are read for every generated token, so there is no MoE-style saving. The host frames 32GB as the minimum for this exact model, quantization, and context combination.",
+   "t": "1:24"
+  },
+  {
+   "idea": "Price-per-GB trackers mislead because a GB on one card is not a usable GB on another.",
+   "detail": "Trackers such as Digital Spaceport's and RepoChat's sort by $/GB or $/token-per-second. The host says his own $/GB spreadsheet was misleading once he looked at what each number meant in practice.",
+   "t": "2:35"
+  },
+  {
+   "idea": "Cheap used cards come with software-support and hidden-cost risks.",
+   "detail": "The AMD MI50 (about $600, about $19/GB) no longer has current ROCm support, and the Tesla V100 32GB (about $680) has dropped CUDA 13 support. Both run on community forks. The V100 needs a shroud, blower fan, and power adapters, so one owner's full build came to about $1,000. Its price rose from $400 to $700 after Reddit attention.",
+   "t": "3:51"
+  },
+  {
+   "idea": "Usable memory is less than the box says, and the platform takes a cut.",
+   "detail": "On a 32GB Mac mini, macOS caps GPU-addressable memory at about two-thirds of RAM, so llama.cpp reports about 22.9GB available. Two 16GB cards each reserve their own runtime overhead, so one user saw 13.4GB and 14.4GB used rather than a clean 32GB.",
+   "t": "5:04"
+  },
+  {
+   "idea": "The inference engine often matters more than the card for speed.",
+   "detail": "An R9700 on llama.cpp gets about 27 tok/s on the 27B model, 46 tok/s with multi-token prediction, and about 153 tok/s on the vLLM Radiance fork (median about 120 for code tasks in one Reddit user's measurement). A 5090 ranges from about 15 tok/s in LM Studio to about 170 tok/s on a fork. Engine support for each card also changes quickly.",
+   "t": "7:37"
+  },
+  {
+   "idea": "Prefill (prompt processing) speed decides how long a large pasted codebase takes before the first word comes back.",
+   "detail": "On a 14B model, an MI50 prefills at about 128 tok/s and an R9700 at about 2,652 tok/s. A 50K-token prompt takes about 6.5 minutes on the MI50 and about 19 seconds on the R9700, even though generation speed is similar on both.",
+   "t": "10:08"
+  },
+  {
+   "idea": "Two-card setups need tensor split, not the default layer split, to get real speed from the second card.",
+   "detail": "Layer split runs the cards one after the other, so you get the memory of two cards but the compute of one. Tensor split runs both cards on every layer, is labeled experimental, requires an unquantized cache, and must be requested with a flag. On a PCIe 3.0 board with two 5060 Ti cards, it went from about 27 tok/s to 45-48 tok/s.",
+   "t": "11:36"
+  },
+  {
+   "idea": "For one card, the R9700 is the easier and better-supported choice today, even though the Intel B70 is cheaper.",
+   "detail": "The B70 is about $400 cheaper now, but idle draw is 55W versus 17W (about $57/yr more in electricity), and its software needs much more work (about 30 tok/s on standard GGUF, about 84 tok/s with a patched vLLM build). Over three years, the price gap shrinks to about $230 after electricity.",
+   "t": "13:55"
+  },
+  {
+   "idea": "Rent or use hosted models unless the GPU runs nearly all the time.",
+   "detail": "A $4,400 RTX 5090 buys about 6,377 hours of RunPod rental at $0.69/hr. A $1,560 pair of 5060 Ti cards buys about 2,261 hours. Hosted Qwen averages about $2.88 per million output tokens, so $1,560 buys about 541M output tokens. Ownership only pays off for an always-on workload such as overnight agents.",
+   "t": "15:12"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "VRAM sizing before buying",
+   "how": "Estimate memory as parameters x bits per weight, plus KV cache at the target context length. For a 27B dense model at 6-bit, the weights are about 20.5GB and 128K context adds about 8GB, for a total of about 28.5GB. Check the GB figure on the actual listing, not the model name.",
+   "when": "Before buying hardware or choosing a quantization and context length for a local model."
+  },
+  {
+   "name": "Check the engine's startup log for usable memory",
+   "how": "llama.cpp prints the memory it can actually use at startup. Compare that number with the advertised VRAM. On macOS, the GPU cap is about two-thirds of RAM by default. The host says a terminal command can raise it, but Apple does not officially support that and the command is not named in the talk.",
+   "when": "Right after installing a runtime on a new machine, or when the model barely fits on paper and fails in practice."
+  },
+  {
+   "name": "Two-card tensor split",
+   "how": "The default is layer split (cards take turns). Switch to tensor split (both cards work on each layer) with the engine's split-mode option. The talk does not name the flag, so look for the split-mode option in llama.cpp's CLI help. The mode is experimental, expects an unquantized (non-quantized) KV cache, and gave about 1.7x on two 5060 Ti cards in the host's test (27 to 45-48 tok/s).",
+   "when": "When running one large model across two same-architecture GPUs, such as two 16GB cards to reach 32GB total."
+  },
+  {
+   "name": "Multi-token prediction",
+   "how": "The model drafts a few tokens ahead and verifies them in one pass. On an R9700 with llama.cpp, the host measured 27 tok/s without it and 46 tok/s with it. He does not name the setting, so check the engine's documentation for the exact flag.",
+   "when": "When decode speed is the bottleneck and the model and engine support drafting."
+  },
+  {
+   "name": "Speculative decoding on a patched vLLM build",
+   "how": "The host reports one owner using a patched vLLM build, a 4-bit format, and 4 drafted tokens, which raised a B70 from about 30 tok/s on standard GGUF to 84 tok/s. The exact patch and flags are not given in the talk.",
+   "when": "When you are willing to run a community build to get much higher single-stream decode speed."
+  },
+  {
+   "name": "Rent-vs-own break-even",
+   "how": "Divide the card price by the hourly rental rate to get break-even hours (for example, $4,400 / $0.69 per hour = about 6,377 hours). Compare that with planned use hours per week or per day. For API models, divide the budget by the per-million-token price.",
+   "when": "When deciding whether to buy a GPU or rent one or use a hosted API for a personal or small-team workload."
+  },
+  {
+   "name": "Full-cost comparison for a GPU purchase",
+   "how": "Compare these together: usable GB after OS and driver overhead, prefill speed (time to first token on large prompts), decode speed, idle and load power draw (with electricity cost per year), software engine maturity, and the full build cost (cooling, adapters, docks), not just the card price.",
+   "when": "When choosing between used or unusual cards, or cards with different software support."
+  }
+ ],
+ "tools": [
+  "Qwen 27B-class dense model (captioned as Quen 3.827B), 6-bit quantization",
+  "llama.cpp (default engine, with layer and tensor split modes and multi-token prediction)",
+  "LM Studio (beginner frontend)",
+  "vLLM and community forks: vLLM Radiance, a Ninfer/Eninfer V100 fork, OneCat VLLM (captioned names)",
+  "ROCm (AMD) and CUDA 12 / CUDA 13 (Nvidia)",
+  "GGUF model files",
+  "macOS unified memory on Mac mini",
+  "RunPod (rented RTX 5090)",
+  "OpenRouter (hosted Qwen pricing)",
+  "Vast.ai (rental pricing listing)",
+  "Digital Spaceport GPU price tracker",
+  "RepoChat GPU comparison",
+  "AMD Instinct MI50",
+  "Nvidia Tesla V100 32GB",
+  "AMD Radeon AI PRO R9700 (32GB)",
+  "Intel Arc Pro B70 / B65 / B60",
+  "Nvidia RTX 5090 desktop (32GB) and laptop (24GB)",
+  "Nvidia RTX 5060 Ti 16GB",
+  "Nvidia RTX Pro 4500 Blackwell (32GB) and RTX Pro 4000 Blackwell (24GB)",
+  "MaxSun 48GB B60 (dual 24GB GPUs)"
+ ],
+ "numbers": [
+  {
+   "claim": "27B dense model at 6-bit: weights about 20.47GB; with 128K context about 28.5GB total, so 24GB does not fit.",
+   "t": "1:24"
+  },
+  {
+   "claim": "Cheapest 32GB option: used AMD MI50 at about $600 (about $19/GB); second cheapest: used Tesla V100 32GB at about $680.",
+   "t": "3:51"
+  },
+  {
+   "claim": "V100 price went from $400 (March) to $600 (June) to about $700 for one owner; complete build with dock about $1,000.",
+   "t": "9:00"
+  },
+  {
+   "claim": "32GB Mac mini: GPU cap about two-thirds of RAM; llama.cpp reports about 22,906 MB (about 21.3GB) available.",
+   "t": "5:04"
+  },
+  {
+   "claim": "Two 16GB cards: one user saw 13.4GB used on one card and 14.4GB on the other on a 6-bit model with 64K context.",
+   "t": "5:04"
+  },
+  {
+   "claim": "R9700 on the 27B model: about 27 tok/s on llama.cpp, 46 tok/s with multi-token prediction, 153 tok/s on the vLLM Radiance fork (640 GB/s bandwidth); one Reddit user measured a median of 120 tok/s for code tasks.",
+   "t": "7:37"
+  },
+  {
+   "claim": "RTX 5090 at full context: about 15 tok/s in LM Studio versus about 170 tok/s on a fork (Eninfer), per two users.",
+   "t": "7:37"
+  },
+  {
+   "claim": "Prefill on a 14B model: MI50 about 128 tok/s versus R9700 about 2,652 tok/s. A 50K-token prompt takes about 6.5 minutes on the MI50 and about 19 seconds on the R9700.",
+   "t": "10:08"
+  },
+  {
+   "claim": "Two RTX 5060 Ti 16GB (cheapest new pair) about $1,560; layer split about 27 tok/s versus tensor split 45-48 tok/s on PCIe 3.0 (about 1.7x).",
+   "t": "11:36"
+  },
+  {
+   "claim": "Intel Arc Pro B70: launched at $949 in March, $1,299 at Newegg now (up over 30%). AMD R9700: launched at $1,299, now $1,699 (up over 30%). Bandwidth 608 GB/s versus 640 GB/s.",
+   "t": "12:34"
+  },
+  {
+   "claim": "B70 about 30 tok/s on standard GGUF files; about 84 tok/s with a patched vLLM build, 4-bit format, and 4 drafted tokens.",
+   "t": "13:55"
+  },
+  {
+   "claim": "Idle draw: B70 about 55W versus R9700 about 17W. 38W extra is about 333 kWh/yr, about $57/yr at $0.17/kWh. Over three years the B70's $400 price advantage shrinks to about $230 after electricity.",
+   "t": "13:55"
+  },
+  {
+   "claim": "RunPod RTX 5090 at $0.69/hr: a $4,400 card equals about 6,377 hours (about 9 months at 24/7); $1,560 for two 5060 Ti equals about 2,261 hours.",
+   "t": "15:12"
+  },
+  {
+   "claim": "OpenRouter average price for Qwen 27B-class about $2.88 per million output tokens; $1,560 buys about 541M output tokens.",
+   "t": "15:12"
+  }
+ ],
+ "hot_takes": [
+  "Price-per-GB trackers are misleading. Usable memory after OS and runtime overhead, plus the engine and prefill speed, matter more than the advertised GB figure.",
+  "The inference engine can matter more than the card: the host reports about 4x on the same R9700 and about 10x between two 5090 setups.",
+  "Unless the GPU runs almost all day, renting a 5090 or using hosted APIs beats buying.",
+  "Cheap used data-center cards (MI50, V100) are not a good deal once software support and the full build are counted, and the V100 price rose quickly after publicity.",
+  "Most performance numbers are single-user anecdotes or Reddit reports, not controlled benchmarks, and the video mainly reports figures from those sources."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft runs vLLM on one RTX 5090 with KV-cache offload and speculative decoding. The talk's engine-choice data (about 15 to about 170 tok/s on a 5090, and prefill versus decode tradeoffs) bears directly on that stack, and its rent-versus-own math bears on the cost case for an always-on local node.",
+   "action": "Benchmark InferCraft's vLLM path against llama.cpp on the RTX 5090 with a 27B-class dense model at 128K context. Record decode tok/s and prefill tok/s separately, and check whether the existing speculative-decoding setup closes the gap the talk reports. Treat the video's numbers as anecdotal and reproduce them before relying on them."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The talk covers GPU purchasing and local inference engines. It has no bearing on the Claude Code harness, checkpointing, or approval flows.",
+   "action": ""
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

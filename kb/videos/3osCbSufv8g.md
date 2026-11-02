@@ -1,0 +1,48 @@
+# Voice AI Where One Wrong Question Breaks the Rules - Shiv Indap, Upstart & Brooke Hopkins, Coval
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `3osCbSufv8g` · [watch](https://youtu.be/3osCbSufv8g) · **date:** 2026-10-31 · **length:** 17:03 · **format:** talk · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Brooke Hopkins, Shiv Indap · **orgs:** Coval, Upstart, Waymo, Perplexity
+- **topics:** evals, voice-multimodal, governance-compliance, observability · **tags:** voice-agents, llm-as-judge, human-in-the-loop, compliance, regulated-industries, simulation, failure-triage, self-healing-agents, fintech, eval-driven-development
+
+> Coval and Upstart walk through a regulated voice-agent (lending verification calls) eval loop: human review, judge calibration, failure routing, and simulation before release.
+
+## Summary
+Brooke Hopkins (founder of Coval, ex-Waymo evaluation infrastructure) and Shiv Indap (head of voice AI at Upstart) describe a voice agent Upstart launched to run identity and verification calls with lending applicants, where the agent asks three questions about income continuity, use of funds, and outstanding obligations. In a regulated domain, a bad call is a compliance problem, so Upstart started with human audits in a Google Sheet, which grew from 5 to 15+ ad hoc columns and was replaced by a structured review process. The talk tracks an LLM judge for compliance adherence whose agreement with human reviewers started at 33% and reached 92%, with the gains coming from encoding tribal knowledge into the agent and cleaning up disagreement among the reviewers themselves. Coval's pitch is a continuous loop: define metrics from human-labelled criteria, score every live call, route failures to human review queues and owning teams, then re-run fixes as voice-to-voice simulations before production. The speakers stress that evals are effectively the product definition, that self-healing changes still need human and compliance sign-off, and that all agent changes sit behind feature flags. The talk is a practitioner case study with some self-reported numbers and a vendor pitch running alongside it.
+
+## Key ideas
+- **In regulated lending, a voice-agent failure is a regulatory risk, not just a CX issue, so compliance is the primary design constraint.** — Upstart's verification agent handles about 10% of applicants who are not instantly decisioned. It asks three questions, first verifies the caller's identity, and must avoid asking restricted things (e.g., the loan amount when the purpose is medical) and must sidestep status or timing questions. ([1:35](https://youtu.be/3osCbSufv8g?t=95))
+- **Ad hoc human review in a spreadsheet breaks fast. Structure the review data from the start.** — The ops team's Google Sheet grew from 5 to 10 to 15+ columns as people added fields at will, which made the data unusable for improving the agent. That pushed them to a structured review process. ([4:21](https://youtu.be/3osCbSufv8g?t=261))
+- **Calibrate the LLM judge against human experts and track the agreement rate as a metric in its own right.** — Compliance-adherence agreement between the LLM judge and human reviewers was 33% at launch. The first gap was tribal knowledge that was never encoded in the agent. Reviewers also disagreed with each other, so that knowledge had to be written down too. Agreement later rose to 92%. ([7:07](https://youtu.be/3osCbSufv8g?t=427))
+- **Expect metrics to change. Start with logical ones, then prune those that do not predict real failures.** — They began with call time, accuracy, clarity and similar metrics, then narrowed to the ones that mattered: accuracy, clarity, completeness, policy alignment, correct escalation, and CSAT. ([8:28](https://youtu.be/3osCbSufv8g?t=508))
+- **Think of evals in three layers: did the call reach its goal, did it follow the required steps, and was the conversation good.** — The speaker treats evals as the product definition and says most time should go into deciding what the agent should and should not do. Metrics can be LLM judges, heuristics, or audio-processing checks. Human labels come first, then get automated. ([9:43](https://youtu.be/3osCbSufv8g?t=583))
+- **Monitor live traffic for both known and unknown failure modes, then route each failure to the team that owns it.** — Known patterns are checked directly, unknown ones are found with clustering and anomaly detection, and review queues send only the calls that matter to humans. Failures go to the agent team, compliance, or engineering depending on type. ([10:51](https://youtu.be/3osCbSufv8g?t=651))
+- **Shift failure discovery left: reproduce fixes in voice simulation before they reach production.** — Simulations call the agent under varied background noise, accents, voice quality and interruptions. A fix is kept only after the simulated failure is shown to be resolved. ([13:08](https://youtu.be/3osCbSufv8g?t=788))
+- **Self-healing is bounded: automated fixes are gated by human sign-off and feature flags, and compliance changes need compliance approval.** — Engineers usually approve judge and agent changes. Compliance approves changes to behaviour that affect regulation. Human review stays in the loop because the regulator has to be able to see who signed off. ([15:50](https://youtu.be/3osCbSufv8g?t=950))
+
+## Techniques
+- **Judge-human calibration loop** — Have experts label the output of the LLM judge, track the agreement rate, and mine every disagreement. Each one is either a judge error or a rule that was never written down, and that finding is fed back into the agent prompt or the judge criteria. *When:* Any LLM-as-judge metric whose outputs are used to make decisions, especially in regulated domains where judge accuracy is a gating concern.
+- **Structured human review queues** — Score every call automatically after it completes, then send only calls that hit a defined metric failure or anomaly into a review queue. Replace free-form spreadsheets with fixed columns and labels. *When:* Human review volume is too large to read every transcript, and reviewer output has to feed back into judge and agent improvements.
+- **Clustering and anomaly detection for unknown failure modes** — Run clustering or anomaly detection over the live-call corpus to surface failures that no defined metric covers, then route them for review. *When:* Known metrics miss a class of failures, or to prioritise engineering work across a large volume of calls.
+- **Failure-to-owner routing** — Classify each validated failure and send it to its owning team: agent or prompt changes to the agent team, policy issues to compliance, and infrastructure issues to engineering. *When:* Failures would otherwise pile up without an owner, and compliance-relevant issues must reach a team that can act on them.
+- **Voice simulation before release** — Re-run the simulated call with the proposed fix under varied conditions: background noise, accents, voice quality and interruptions. Ship the fix only after the simulated failure no longer reproduces. *When:* Changing a prompt or model in a voice agent, where a regression would reach real users.
+- **Feature-flagged agent changes with named approvers** — Put every agent behaviour change behind a feature flag, and require a named human to approve it. Compliance signs off on compliance-relevant changes. *When:* Automated or self-improving agents operate in a regulated environment and each change needs to be auditable.
+
+## Numbers
+- About 10% of Upstart applicants are not instantly decisioned and need a verification call with the voice agent. ([1:35](https://youtu.be/3osCbSufv8g?t=95))
+- Upstart does thousands of calls per day. ([0:08](https://youtu.be/3osCbSufv8g?t=8))
+- Human-judge compliance agreement was 33% at launch, rising to 92% today. ([7:07](https://youtu.be/3osCbSufv8g?t=427))
+- Review spreadsheet grew from 5 to 10 to 15+ columns before the structured process replaced it. ([4:21](https://youtu.be/3osCbSufv8g?t=261))
+- Speaker's example of a 34% off-script rate is explicitly made up; it is not a measured result. ([12:06](https://youtu.be/3osCbSufv8g?t=726))
+
+## Hot takes
+- Evals are the product definition, and most of the team's time should go into deciding what the agent should and should not do, not into tooling.
+- Self-healing agents do not mean humans are out of the loop. In fintech, every change needs a named sign-off, and compliance changes need compliance approval.
+- Do not get attached to metrics. Discard the ones that do not track real failures.
+- Enterprises get release gates wrong when they treat launch as a one-time event. Model or prompt changes then become very hard to make.
+
+## Tools mentioned
+Coval (voice-agent evaluation and simulation platform), Google Sheets (initial manual review tracking), LLM-as-judge, RL pipelines and fine-tuned LLMs (mentioned as options for self-healing, not shown)
+
+## Relevance to our work
+- **agentos** (2/3): Evals for agents are a stated recurring interest and AgentOS already has RAGAS evals. This talk gives a concrete method for calibrating an LLM judge against human labels, which RAGAS-style scoring lacks. → *Add a judge-vs-human agreement metric to the eval harness: label a sample of outputs, report agreement, and log each disagreement as either a judge bug or a missing rule.*
+- **prosharness** (1/3): ProsHarness has phone-driven approvals. The talk's point that automated changes need named human sign-off behind a flag is a similar gating pattern. → *Check whether ProsHarness changes to agent prompts or skills can be gated behind a flag with a recorded named approver.*

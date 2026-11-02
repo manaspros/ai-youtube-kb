@@ -1,0 +1,173 @@
+{
+ "one_line": "Google DeepMind panel on generative media (Veo, Gemini Omni, Nano Banana): why language is a lossy conditioning channel, why human preference evals mislead, and why real-task data and FDE feedback matter.",
+ "summary": "Three Google DeepMind researchers recap recent launches (Nano Banana 2 Lite, Gemini Omni Flash API) and then discuss where generative media is heading. They argue that video models are a complementary foundation model for space and time, and that a single generative process for audio and video (first done with Veo 3) is the right design. They say language is a useful but lossy conditioning channel, and that the field has not settled on a better intermediate representation (captions, code, or something else). On evals, they say human side-by-side preference is the main signal for close calls but is biased toward sharp, saturated output, and that free-form video editing is the hardest case to evaluate. They also describe the risks of reward hacking, the need to amortize human labels, and the value of real-world task trajectories, which mostly live inside first-party products. The talk is mostly opinion and product color with few hard numbers.",
+ "speakers": [
+  "Dumitru Erhan",
+  "Shane Gu",
+  "Nicole Brichtova"
+ ],
+ "orgs": [
+  "Google DeepMind",
+  "Google",
+  "Google Cloud",
+  "YouTube",
+  "Cognition",
+  "xAI",
+  "Character AI",
+  "Replicate"
+ ],
+ "format": "panel",
+ "topics": [
+  "models-research",
+  "voice-multimodal",
+  "evals"
+ ],
+ "tags": [
+  "generative-media",
+  "video-generation",
+  "veo",
+  "gemini-omni",
+  "nano-banana",
+  "human-evals",
+  "reward-hacking",
+  "world-models",
+  "joint-audio-video",
+  "captioning",
+  "forward-deployed-engineers",
+  "data-quality"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Language is a useful but lossy conditioning channel for generation",
+   "detail": "Speakers argue that detailed captions gave image and video generation its start, since text conditions the model on causal information. They also say language is too coarse for sound, skin tone, taste and room acoustics, so richer representations are needed.",
+   "t": "8:17"
+  },
+  {
+   "idea": "Video models as zero-shot space-time learners",
+   "detail": "A prior paper argued video models can solve many classic vision tasks zero-shot, and the team sees video models as a complementary foundation model next to language models. They think the long-term direction is combining visual and text reasoning, though they expect that to be incremental rather than a single unified model right away.",
+   "t": "9:40"
+  },
+  {
+   "idea": "Veo 3 generated audio and video in one latent process",
+   "detail": "Joint audio-visual generation was presented as the right design because lip movement and sound come from the same underlying process. The older approach of generating pixels first and syncing lips afterward was called very bad.",
+   "t": "24:31"
+  },
+  {
+   "idea": "Human preference can reward the wrong thing",
+   "detail": "In side-by-side tests, people often preferred generated video over real videos with the same caption, because the output looked sharper and more HDR. Speakers warn that a human's preference is not a reliable guide to what should be optimized, and that trained experts notice details that average raters miss.",
+   "t": "33:28"
+  },
+  {
+   "idea": "Default aesthetic is a product decision, and reward hacking shows up in odd ways",
+   "detail": "A Nano Banana Pro infographic trend was too cluttered, and the team had to tune the default. A tester found that the model kept adding wedding rings to hands, which the speaker called a common reward-hacking pattern.",
+   "t": "38:10"
+  },
+  {
+   "idea": "Free-form video editing is the hardest thing to evaluate",
+   "detail": "Automated judges are less mature for media than for LLMs. The team relies on large human eval runs, live experiments, and early-access testers who use the models in real workflows. Text rendering is easier to check automatically, for example with OCR, because one wrong letter makes the asset unusable.",
+   "t": "42:42"
+  },
+  {
+   "idea": "Amortize human labels into automated evaluators",
+   "detail": "Speakers say human judgment work should gradually be turned into learned evaluators. They point to video understanding, such as detecting AI-generated inconsistencies in famous scenes, as an important task in its own right.",
+   "t": "45:18"
+  },
+  {
+   "idea": "Real-task trajectories are scarce and mostly live inside products",
+   "detail": "The most useful data would be how people actually move through a task, such as a campaign from one product photo to many ad formats. That data often sits in first-party product surfaces or with vendors, not in public video, so it is hard to collect. The speakers say 99 percent of the information is inside people, and that the internet holds only the outputs.",
+   "t": "50:39"
+  },
+  {
+   "idea": "Forward-deployed engineers as a feedback loop into model training",
+   "detail": "The speakers want FDEs to do more than sales. They should collect failure cases from customers, such as a rug pattern at a custom size or brand colors that must match a specific shade, and send them upstream to model teams and eval work.",
+   "t": "52:44"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Side-by-side human preference eval for close model comparisons",
+   "how": "Show raters or an internal room two outputs from candidate checkpoints, ask which they prefer, and decide based on the pattern. Use a trusted-tester group with weekly feedback calls for continuous signal.",
+   "when": "When two checkpoints are close and automated metrics do not separate them. Watch for bias toward sharp, saturated, or dense output, and check the result against expert judgment."
+  },
+  {
+   "name": "Deterministic checks for rendered text",
+   "how": "Run OCR over generated images and check the text. Any single wrong character marks the asset as failed.",
+   "when": "For image generation tasks where text must be correct, such as infographics, ads, or product instructions."
+  },
+  {
+   "name": "Early-access programs before broad release",
+   "how": "Give a set of expert users the model before launch, collect feedback on their real workflows, and fix regressions before wider release.",
+   "when": "For creative or media models, where a benchmark can improve while a real workflow breaks, and where experts notice details that metrics miss."
+  },
+  {
+   "name": "Amortizing human labels into a learned evaluator",
+   "how": "Use human judgments to train an automated judge or classifier for the same question, then reuse it at scale and keep humans for audits.",
+   "when": "When human labels are expensive and the eval must run on many outputs, such as checking video consistency."
+  },
+  {
+   "name": "Joint generation of coupled modalities in one model",
+   "how": "Generate video and audio together in a single generative process instead of generating one and then syncing the other with a separate hack.",
+   "when": "When the modalities depend on each other in time, such as lip sync or sound that matches the scene distance."
+  }
+ ],
+ "tools": [
+  "Veo 3",
+  "Gemini Omni",
+  "Nano Banana",
+  "Nano Banana Pro",
+  "Nano Banana 2 Lite",
+  "Manim",
+  "FFmpeg",
+  "Stable Diffusion",
+  "OCR"
+ ],
+ "numbers": [
+  {
+   "claim": "Nano Banana 2 Lite gives about three-second latency and is described as faster, cheaper, and better than the original Nano Banana (speaker's claim).",
+   "t": "2:28"
+  },
+  {
+   "claim": "Gemini Omni Flash API is priced the same as Veo 3 Fast (speaker's statement).",
+   "t": "2:28"
+  },
+  {
+   "claim": "In a side-by-side test, human raters largely preferred Omni-generated video over real videos made from the same captions. No sample size was given.",
+   "t": "33:28"
+  },
+  {
+   "claim": "The team runs human evals on thousands of items per release, and sometimes uses live experiments for small differences at large scale.",
+   "t": "43:59"
+  }
+ ],
+ "hot_takes": [
+  "Captioning is probably an inefficient intermediate representation, and code (such as Manim or FFmpeg) may be a better one.",
+  "Prompt engineering will not disappear, because fine sensitivity to output is what lets a person control the model.",
+  "Video models are a missing foundation model needed for AGI, not only a tool for pretty videos.",
+  "Human preference is not a reliable target to optimize for.",
+  "Multiple specialized generative models will likely coexist for at least the next six months, despite the Omni name."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Human preference and LLM judgments are noisy for generative outputs. The talk points out where a deterministic check exists, such as OCR for text, and that is useful for AgentOS evals of generated content.",
+   "action": "Where an agent output has a checkable property (text, schema, format), add a deterministic check to the eval set and keep human or judge scores as a secondary signal."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content on Claude Code harnesses, checkpointing, or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "Mostly product and research opinion with little that changes what we build.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

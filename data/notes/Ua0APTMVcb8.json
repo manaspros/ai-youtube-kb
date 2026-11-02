@@ -1,0 +1,193 @@
+{
+ "one_line": "AI LABS tours eight GitHub tools that extend Claude Code and Codex setups: browser verification, terse output, design-skill search, planning, skill evals, and linting. Mostly README-level, with one sponsor segment.",
+ "summary": "AI LABS walks through eight GitHub repos and tools that extend coding-agent setups, mostly Claude Code, with a few notes for Codex. The list covers an image-to-3D skill, Reticle for browser-based verification of finished apps, Chisel for terser output and trimmed tool output, UISkills for searching design skills, Ouroboros for an interview-plan-build-verify workflow, a SwiftUI skill pack for Liquid Glass and wider iPhone layouts, Caliper for testing whether a skill actually helps, and Antislop for rule-based cleanup of agent code. The common theme is that agents overclaim completion, write verbose output, and default to weak design or coding patterns, and each tool adds a check or constraint. Almost all segments describe tools from their READMEs, and the only measured figure is one author-run Chisel test (about 1,500 vs 600 tokens on a single search-box change). A sponsored segment for Manufact sits in the middle, with popularity claims that are not verified in the video. The most reusable idea is Caliper's framing: measure a skill with and without it, because a skill that helped on an older model can add cost without helping after a model update.",
+ "speakers": [
+  "AI LABS presenter (not named in the transcript)"
+ ],
+ "orgs": [
+  "AI LABS",
+  "Manufact",
+  "GitHub",
+  "Apple"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "skills-self-improvement",
+  "testing-verification",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "claude-code",
+  "codex",
+  "skills",
+  "skill-evals",
+  "browser-verification",
+  "design-skills",
+  "swiftui",
+  "liquid-glass",
+  "planning",
+  "token-usage",
+  "output-verbosity",
+  "hooks",
+  "mcp",
+  "linting",
+  "image-to-3d",
+  "sponsored"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents mark tasks done when they are not. Browser-level verification closes that gap.",
+   "detail": "Reticle lets the agent open the running app, use it like a user, and report a verdict per tested part: worked, did not work, or not enough information. On failure it explains what went wrong so the agent can retry. Once installed, it runs on app builds even if the prompt does not mention it.",
+   "t": "1:04"
+  },
+  {
+   "idea": "An image can be rebuilt as a code-made 3D model, and the agent corrects it against the reference.",
+   "detail": "The image-to-3D skill (spoken as 'image to 3JS', captioned 'Image23JS') builds the object in stages. After each stage it compares the model to the image and fixes differences before adding detail. The presenter says the workflow burns many tokens and takes a long time, and the first result may not match the product demos.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Verbose agent replies and tool output waste tokens. Chisel constrains both.",
+   "detail": "Chisel asks the agent for fewer words and less unneeded code. Its author reports about 1,500 tokens for a search-box change without it and about 600 with it. It also compares favorably with Caveman and Ponytail on the author's test. Inside Claude Code, it trims repeated or unneeded text from tool results before the agent reads them.",
+   "t": "2:32"
+  },
+  {
+   "idea": "Design-skill libraries are hard to choose from, so let the agent search them.",
+   "detail": "UISkills is a library of design skills from different authors. The agent searches it, narrows to the skill that fits the requested design, and pulls its instructions. The presenter chose the MCP form over the terminal CLI because MCP tools stay available in the session, while the CLI needs prompt or project-instruction triggers.",
+   "t": "3:53"
+  },
+  {
+   "idea": "Agents fill in unspecified app details themselves. Ouroboros makes them plan, review, and verify first.",
+   "detail": "Ouroboros interviews itself about the request, answers from the prompt and project files, fills only small easy-to-change gaps, and asks the user when a choice would change app behavior. It logs assumptions, reviews the plan before building, and then checks the built app against the plan, sending failures back to the agent. The build instructions do not include how the checks run. It also has a dashboard and reports why work stopped.",
+   "t": "6:42"
+  },
+  {
+   "idea": "Agents recreate Liquid Glass badly. Apple's own SwiftUI guidance fixes that.",
+   "detail": "Asked for iOS-style design, agents approximate Liquid Glass with blurs and backgrounds, which looks like a transparent button rather than the real control. The presenter's SwiftUI skill repo has a Liquid Glass skill for Apple's built-in iOS 26 controls and their common mistakes, plus a layout skill for the wider iPhone size.",
+   "t": "7:49"
+  },
+  {
+   "idea": "Skills go stale after model updates. Token counts alone do not show whether a skill helps.",
+   "detail": "Claude Code's Skill Doctor command shows each skill's context-token cost and which skills are unused. It does not show whether a skill improves the work, and a newer model may already do what an old skill instructs, so the skill only adds cost.",
+   "t": "8:53"
+  },
+  {
+   "idea": "Caliper tests whether a skill improves results, with and without it.",
+   "detail": "Caliper is a terminal tool with two bundled skills. A Grill skill interviews you about what the skill should do. An Evaluate skill writes evals (a prompt plus the expected result) next to the skill. Caliper runs many prompts with and without the skill, keeps records in a .caliper folder, and produces a report on reliability and whether the gain is worth the extra tokens. It can also compare MCP servers and other instructions.",
+   "t": "10:03"
+  },
+  {
+   "idea": "Recurring agent code anti-patterns can be caught automatically with a rule set.",
+   "detail": "Antislop checks agent-written code against rules the author wrote. Some rules catch unnecessary work that slows the app, and others encode the author's style preferences. The skill runs on each task and asks the agent to fix what it finds, with an optional final review.",
+   "t": "11:04"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Browser-verified completion check (Reticle)",
+   "how": "Install Reticle, then let it run on app builds. The agent opens the app in a browser, exercises it as a user, and reports a worked / did not work / insufficient info verdict per tested part. Failures include an explanation for the retry. Users can review past checks in the in-app corner popup.",
+   "when": "Any agent-built web app where 'done' has been claimed but not checked in a running browser."
+  },
+  {
+   "name": "Staged image-to-3D reconstruction with self-comparison",
+   "how": "Give the agent the reference image and ask it to use the image-to-3JS skill. The agent builds in stages, compares each stage with the image, and fixes differences before adding detail. Iterate by naming specific parts to improve. The presenter notes this is token- and time-heavy.",
+   "when": "Making a code-based 3D object for a landing page that should match a product image, with budget for several iterations."
+  },
+  {
+   "name": "Terse-output plugin with lifecycle hooks (Chisel)",
+   "how": "Install Chisel as a Claude Code plugin. It adds four skills and three hooks: one at session start, one on prompt submit, and one after tool use. The hooks strip repeated or unneeded text from tool output before the agent reads it. Replies follow a fixed structure: what was done, key changes, what was skipped.",
+   "when": "Long sessions where agent prose and tool-output context cost tokens. Verify the savings on your own tasks, because the only figure given is the author's test."
+  },
+  {
+   "name": "MCP-attached design skill search (UISkills)",
+   "how": "Connect UISkills as an MCP server rather than the terminal CLI, so its tools stay in the session. Ask the agent to use UI skills for the design. The agent searches the library, narrows to the matching skill, and loads its instructions for the build.",
+   "when": "Building a UI where you want a specific design style but do not want to pick and install design skills by hand."
+  },
+  {
+   "name": "Interview-plan-review-verify loop (Ouroboros)",
+   "how": "Install the Ouroboros terminal command using the setup commands for your agent, so the agent can run its workflow. Describe the app and ask the agent to use Ouroboros. It interviews itself, fills only small easy-to-change gaps, asks the user about decisions that change app behavior, and records assumptions. Review the plan before building starts. After the build, run the checks against the plan, send failures back to the agent, and rerun checks after fixes. Use the dashboard to follow progress.",
+   "when": "Greenfield apps where the spec is vague and an agent would otherwise choose the product behavior itself."
+  },
+  {
+   "name": "Apple-native skill pack for iOS UI",
+   "how": "Install the Liquid Glass skill (built-in iOS 26 buttons and menus, common mistakes to avoid) and the layout skill (content arrangement for the wider iPhone size). Ask the agent to follow them when building screens.",
+   "when": "Native SwiftUI apps that should use Apple's current patterns rather than agent-invented glass effects."
+  },
+  {
+   "name": "Skill evaluation with Caliper",
+   "how": "Install Caliper. Ask the agent to use it on a skill. The Evaluate skill writes evals (prompt plus expected result) saved beside the skill. If test-writing stalls, the Grill skill interviews you about intent. Caliper runs prompts with and without the skill over multiple runs, stores results in .caliper, and reports reliability and token cost against benefit. The same comparison works for MCP servers and instructions.",
+   "when": "Deciding whether to keep, trim, or rewrite a skill, especially after a model upgrade."
+  },
+  {
+   "name": "Rule-based anti-pattern guard (Antislop)",
+   "how": "Set up Antislop in the project using the repo instructions. The skill runs its rule checks on each agent task and asks the agent to fix findings. Ask for a final review when a piece of work is complete.",
+   "when": "A codebase where agents repeatedly produce the same slow or off-style code and reviewing it by hand is costly."
+  }
+ ],
+ "tools": [
+  "Image-to-3JS skill (spoken 'image to 3JS', captioned 'Image23JS'; GitHub trending per the presenter)",
+  "Reticle",
+  "Chisel",
+  "Caveman",
+  "Ponytail",
+  "UISkills",
+  "Manufact (sponsor; hosted MCP server deployment and publishing checks)",
+  "mcp-use open-source SDK (captioned 'MCPUs')",
+  "Ouroboros",
+  "Apple SwiftUI skills repo (Liquid Glass skill, layout skill)",
+  "Liquid Glass (Apple iOS 26 design system)",
+  "Claude Code (plugins, hooks, Skill Doctor command)",
+  "Codex",
+  "Caliper",
+  "Grill skill (bundled with Caliper)",
+  "Evaluate skill (bundled with Caliper)",
+  "Antislop",
+  "ChatGPT",
+  "Claude connectors marketplace",
+  "ChatGPT app store",
+  "GitHub"
+ ],
+ "numbers": [
+  {
+   "claim": "Chisel author's test: a search-box change used about 1,500 tokens without Chisel and about 600 with it. Single author-reported example.",
+   "t": "2:32"
+  },
+  {
+   "claim": "Chisel installs four skills and three hooks (session start, prompt submit, post-tool use).",
+   "t": "2:32"
+  },
+  {
+   "claim": "Reticle gives three verdicts per tested part: worked, did not work, or not enough information.",
+   "t": "1:04"
+  },
+  {
+   "claim": "Sponsor claim: mcp-use has over 10,500 GitHub stars and over 9 million downloads. Not verified.",
+   "t": "6:42"
+  }
+ ],
+ "hot_takes": [
+  "Quality is capped at 2: a sponsored Manufact segment (about 5:14 to 6:42) sits mid-video, and the 'Insane ... 10x' framing is hype over mostly README-level tool descriptions.",
+  "The only measured result is one author-run Chisel comparison (1,500 vs 600 tokens on one task). The video shows no independent benchmark, and the presenter does not show Reticle, Caliper, or Ouroboros run output.",
+  "The presenter says the image-to-3D workflow 'burns a lot of tokens and takes a long time' and may not match demos on the first try. This is a useful honest caveat on the video's own demos.",
+  "Sponsor popularity numbers (10,500 stars, 9 million downloads) are presented without a source.",
+  "The strongest point in the video is that a skill can become dead weight after a model update, and that token counts (Skill Doctor) do not measure whether the skill helps. Caliper's with/without-skill comparison is the right test for that question."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "SkillForge's open question is skill-worthiness scoring. Caliper's with/without-skill eval runs and token-vs-benefit report are a concrete prior-art approach to that question. Chisel's output and tool-output trimming is a small token-cost idea.",
+   "action": "Read Caliper's eval design (Evaluate skill writing prompt plus expected-result tests, multi-run with/without comparison, .caliper records) and compare it with SkillForge's planned success signal and skill-worthiness scoring."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code with plan, critique, and checkpoint flows and includes skill ranking. Ouroboros runs interview, plan review, build, and verify-against-plan with checks kept out of the build instructions. Chisel uses SessionStart, UserPromptSubmit, and PostToolUse hooks, and Caliper tests whether skills help.",
+   "action": "Compare ProsHarness's plan-to-critique stage with Ouroboros's plan review and plan-based verification loop, and test whether ProsHarness's skill-ranking output improves with Caliper-style with/without-skill runs."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,155 @@
+{
+ "one_line": "News recap of the March 31, 2026 npm compromise of the axios package: two backdoored releases used a postinstall script to drop a cross-platform RAT. Mitigations are committed lockfiles, npm ci, a minimum package age, and blocking install scripts.",
+ "summary": "A roughly four-minute Better Stack news segment on a supply-chain attack on the axios npm package. The speaker says an attacker took over the lead maintainer's npm account and published two backdoored versions on March 31, 2026: 1.14.1, tagged latest, and 0.30.4, tagged legacy. The malicious package pulled in a phantom dependency, plain-crypto-js, whose postinstall script (setup.js) fingerprinted the OS and downloaded an OS-specific second payload, a remote access trojan. The speaker describes the RAT as enumerating files, beaconing every 60 seconds with host and process details, and accepting four remote commands, and says it cleaned up after itself. The likely targets are developer workstations and CI/CD runners, where .env files, npm tokens and SSH keys sit. The maintainer had 2FA and GitHub Actions auth enabled, and the speaker thinks a long-lived npm token was used, with recovery codes as a possible route, but how the token was obtained is unknown. The segment closes with detection steps and four prevention habits: commit lockfiles, use npm ci, enforce a minimum package age, and block install scripts. The transcript has no primary source links, so the detailed indicators are deferred to a linked write-up.",
+ "speakers": [
+  "Unnamed Better Stack host"
+ ],
+ "orgs": [
+  "Better Stack",
+  "npm",
+  "Axios"
+ ],
+ "format": "news",
+ "topics": [
+  "security-guardrails",
+  "dev-tools"
+ ],
+ "tags": [
+  "npm",
+  "supply-chain",
+  "axios",
+  "postinstall",
+  "lockfile",
+  "ci-cd",
+  "rat",
+  "credential-theft",
+  "incident-response",
+  "minimum-release-age"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The axios npm account of the lead maintainer was compromised, and two backdoored versions were published on March 31, 2026: 1.14.1 (tagged latest) and 0.30.4 (tagged legacy).",
+   "detail": "The speaker frames it as one of the largest npm supply-chain breaches. The releases were live only briefly before removal.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The attack used a phantom dependency with a postinstall script, so any install or CI run executed it.",
+   "detail": "The dependency is plain-crypto-js, which the captions render as 'plain crypto.js'. It mimics the real crypto-js package. Its setup.js postinstall script checks the OS and downloads a second, OS-specific payload. The macOS payload was built for both Intel and Apple Silicon.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The second payload is a cross-platform RAT, and the speaker describes its capabilities in detail.",
+   "detail": "It scans documents, desktop and config folders (on Windows also OneDrive, AppData and every drive letter) and uploads the file list. It beacons every 60 seconds with hostname, username, OS, time zone, hardware model and the running process list. The attacker can browse directories, run shell commands, drop and execute more malware, or kill the process.",
+   "t": "1:26"
+  },
+  {
+   "idea": "The malware cleans up its traces, so inspecting package.json afterward can look clean.",
+   "detail": "The setup script deletes itself, then deletes the package.json carrying the postinstall hook and replaces it with a clean version. The speaker says it should be handled as full credential theft wherever it ran.",
+   "t": "1:26"
+  },
+  {
+   "idea": "Initial access is unexplained: the maintainer had 2FA and GitHub Actions auth on, and the packages were published with the npm CLI using a long-lived token.",
+   "detail": "The speaker thinks the token was obtained somehow, and that account recovery codes may have been taken. The method is still unknown in the transcript.",
+   "t": "2:37"
+  },
+  {
+   "idea": "Mitigations are committed lockfiles, npm ci in pipelines, a minimum package age, and disabling install scripts.",
+   "detail": "The speaker says the malicious axios release was discovered and removed about three hours after publishing, which a 48-hour minimum age would have blocked. Install scripts can be skipped with the ignore-scripts flag, or a package manager can block them by default and run only listed trusted dependencies.",
+   "t": "3:31"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Detect affected installs",
+   "how": "Search lockfiles for axios 1.14.1 or 0.30.4 and for plain-crypto-js, and search node_modules for the package. Also check the machine for RAT artifacts, using the write-up the speaker links, since the transcript gives no indicator details. Do not rely on package.json alone, because the malware swaps it for a clean copy.",
+   "when": "After any install or CI run between the malicious publish and its removal, or whenever a lockfile may contain these versions."
+  },
+  {
+   "name": "Commit the lockfile and install with npm ci in pipelines",
+   "how": "Commit package-lock.json, and make CI run npm ci instead of npm install so resolved versions match the lockfile.",
+   "when": "For every CI pipeline and any repo with JS dependencies."
+  },
+  {
+   "name": "Enforce a minimum package age",
+   "how": "Configure the package manager to refuse packages younger than a threshold. The speaker recommends 48 hours, the window in which this malicious release was caught. The exact config key is not named in the transcript.",
+   "when": "To reduce exposure to freshly published malicious versions, at the cost of delaying urgent security patches (not discussed)."
+  },
+  {
+   "name": "Block install scripts by default",
+   "how": "Run npm install with --ignore-scripts, or use a package manager that disables postinstall scripts by default and runs them only for an explicit allowlist of trusted dependencies.",
+   "when": "Wherever untrusted or transitive dependencies are installed, including developer machines and CI runners."
+  },
+  {
+   "name": "Treat an affected host as a full credential compromise",
+   "how": "The speaker says any machine that ran the payload should be treated as a full credential theft scenario. Target .env files, npm tokens and SSH keys, so the implied response includes rotating those secrets.",
+   "when": "After confirming an install of an affected version on a workstation or CI runner."
+  }
+ ],
+ "tools": [
+  "npm",
+  "npm CLI",
+  "npm ci",
+  "npm install --ignore-scripts",
+  "axios 1.14.1",
+  "axios 0.30.4",
+  "plain-crypto-js",
+  "setup.js (postinstall script)",
+  "package.json",
+  "package-lock.json (lockfile)",
+  "node_modules",
+  "GitHub Actions",
+  "Datadog",
+  "OpenClaw",
+  "WordPress"
+ ],
+ "numbers": [
+  {
+   "claim": "axios installed about 101 million times in the week of the incident (speaker's figure)",
+   "t": "0:00"
+  },
+  {
+   "claim": "Roughly 174,000 packages depend on axios. The caption reads 'defendants', so this is probably 'dependents'.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Malicious releases were published March 31, 2026: 1.14.1 (latest) and 0.30.4 (legacy).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Malicious axios release was discovered and deleted about three hours after publishing.",
+   "t": "3:31"
+  },
+  {
+   "claim": "The RAT beacons to the attacker every 60 seconds.",
+   "t": "1:26"
+  },
+  {
+   "claim": "Recommended minimum package age before install: 48 hours.",
+   "t": "3:31"
+  }
+ ],
+ "hot_takes": [
+  "The title 'Millions of JS Devs Just Got Hacked' overstates the evidence: the speaker's numbers are installs and dependents, not confirmed infected machines.",
+  "The claims 'one of the largest npm supply-chain breaches' and the North Korea link are asserted without sources in the transcript.",
+  "The 48-hour minimum-age rule is a practical mitigation, but the speaker presents it without discussing the tradeoff against urgent security patches. The incident was caught in about three hours, so this rule would have blocked it.",
+  "At about four minutes this is a news recap, not a technical deep dive. The detailed indicators and removal steps are deferred to a linked write-up that is not in the transcript."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS is a Node-or-Python agent infrastructure project with a sandboxed execution layer. A postinstall RAT is the kind of supply-chain threat that its exec-gate and sandbox layers are meant to contain, and it applies to any project's dependency installs.",
+   "action": "Add a CI check that fails when any lockfile contains axios 1.14.1, axios 0.30.4 or plain-crypto-js, and make CI installs use npm ci with install scripts disabled for untrusted dependencies."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and handles credentials, and the RAT's stated targets are .env files, npm tokens and SSH keys on dev workstations, so a postinstall payload in its dependency tree could read those secrets.",
+   "action": "Audit the ProsHarness dependency tree for the affected axios versions and plain-crypto-js, and set install-script blocking as the default for its npm installs."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,185 @@
+{
+ "one_line": "Raymond Weitekamp (OpenProse) on applying recursive language model (RLM) ideas to coding agents, with Claude Code dynamic workflows, the Pi extension, and OpenProse markdown workflows as ways to build them.",
+ "summary": "The speaker argues the bottleneck for useful agents is reliability, not intelligence, and that the missing layer is how to specify, manage, reuse and verify agent work. An RLM treats the prompt as a variable in a code REPL, explores it symbolically, and delegates pieces to sub-LMs instead of loading everything into context. He gives a rubric for what counts as an RLM: an executable environment, an externalized prompt, code that calls the model, the model choosing the decomposition, and state that stays symbolic. Hard-coded map-reduce pipelines fail the last test because the model does not choose the decomposition. He says coding agents can be RLMs but are not automatically so, and shows three routes: wrapping an RLM package as a tool, a Pi extension where Pi calls Pi to a set depth, and Claude Code dynamic workflows. He then presents OpenProse, a markdown \"language\" that a coding agent compiles, which declares subagents, has the parent verify their output, and wires in skills and tools as explicit dependencies. He ends with capturing a successful (\"golden\") session as a reusable workflow. Much of the talk is a tour of the speaker's own projects and a promotion of OpenProse, and most benchmark claims are his own reports without detail.",
+ "speakers": [
+  "Raymond Weitekamp"
+ ],
+ "orgs": [
+  "OpenProse",
+  "MIT",
+  "Anthropic",
+  "Symbolica",
+  "ARC Prize"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "coding-agents",
+  "multi-agent"
+ ],
+ "tags": [
+  "recursive-language-models",
+  "rlm",
+  "openprose",
+  "pi",
+  "claude-code",
+  "dynamic-workflows",
+  "subagents",
+  "orchestration",
+  "test-time-compute",
+  "arc-agi-3",
+  "long-cot",
+  "golden-session",
+  "declarative-workflows"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The bottleneck is reliability, not raw intelligence",
+   "detail": "The speaker says models know enough but cannot reliably deliver outcomes, so users cannot trust them. He gives an anecdote where an agent emptied his crypto wallet.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Today's agents are mismanaged geniuses",
+   "detail": "The missing layer is how to specify, manage, reuse and verify agent work. He argues the next step is behavioral and orchestration-level, not more raw intelligence.",
+   "t": "1:29"
+  },
+  {
+   "idea": "In an RLM the prompt is a variable, not the input",
+   "detail": "The full prompt (possibly many files) lives in a REPL. The model pokes at it symbolically and hands pieces to sub-LMs, rather than reading it all into its context window.",
+   "t": "2:29"
+  },
+  {
+   "idea": "A rubric decides what counts as an RLM",
+   "detail": "Required: an executable environment, an externalized prompt, code that calls the model, the model choosing how to decompose the problem, and state that stays symbolic. Plain LLMs, RAG and hard-coded map-reduce (such as LambdaRLM) come close but miss the model-driven decomposition.",
+   "t": "9:07"
+  },
+  {
+   "idea": "Coding agents can be RLMs but are not automatically RLMs",
+   "detail": "Swapping agents and subagents for LMs and sub-LMs gives the same structure. The speaker's first experiment was just wrapping the RLM package as a CLI tool a coding agent can call, for example to sift a 100M-token corpus.",
+   "t": "10:31"
+  },
+  {
+   "idea": "Pi can be made fully recursive with a pure extension",
+   "detail": "Pi, a minimal extensible coding agent, originally needed a fork. After Pi's extension system changed, the speaker built a pure extension where pi calls pi to any depth, plus a wrapper called ypi.",
+   "t": "12:01"
+  },
+  {
+   "idea": "Claude Code dynamic workflows make it recursive",
+   "detail": "The speaker wrote two workflows: a hard-coded map-reduce (explicitly not an RLM) and a deep-research pass over a file system (picking a handle, assigning it to an agent, bringing back findings), which he argues is RLM-like.",
+   "t": "16:15"
+  },
+  {
+   "idea": "OpenProse: a markdown spec compiled by the coding agent",
+   "detail": "A .pros.md file is logical English, and any agent with a filesystem and subagents can run it as an RLM. It declares subagent work, makes the parent session verify subagent output, and lists skills and tools as explicit dependencies per subagent.",
+   "t": "17:41"
+  },
+  {
+   "idea": "Capture a golden session as a reusable workflow",
+   "detail": "An agent deconstructs a successful session from Claude Code, Codex or Pi into a reusable OpenProse workflow, aiming to reproduce good performance reliably.",
+   "t": "20:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "RLM as a tool call for a coding agent",
+   "how": "Wrap an RLM package as a CLI, so the coding agent can invoke it as a tool when a task needs symbolic exploration of a large corpus.",
+   "when": "The input (e.g., a corpus of about 100M tokens) is far too large to read into the agent's context."
+  },
+  {
+   "name": "Recursive agent via a pure Pi extension",
+   "how": "Write a Pi extension that lets the agent spawn the same agent as a tool call, with a configurable recursion depth. The speaker's earlier version required a fork.",
+   "when": "You want a self-calling coding agent without forking the harness."
+  },
+  {
+   "name": "Map-reduce versus deep-research workflows in Claude Code",
+   "how": "Define a workflow that assigns each part of a directory to a subagent, then merges findings. The deep-research variant lets each subagent go further into its own part recursively.",
+   "when": "Large refactors, scale migrations, or analysis across many files where parallel work and a final merge pay off."
+  },
+  {
+   "name": "Declarative workflow with parent verification",
+   "how": "Write a markdown spec that names subagents, their skills and CLI tools as explicit dependencies, and a parent step that checks each subagent's output before accepting it.",
+   "when": "Multi-step work where each step needs specific tools or skills and the output must be checked before use."
+  },
+  {
+   "name": "Adversarial or skeptical subagent roles",
+   "how": "Run red-team or skeptical agents in parallel to try to break or challenge the work, with results checked in the parent session.",
+   "when": "Audits, bug sweeps, or hardening agent-written changes."
+  },
+  {
+   "name": "Golden session distillation",
+   "how": "Have an agent deconstruct a successful session into a reusable workflow file and rerun it to get the same good outcome again.",
+   "when": "A run went well and you want to repeat it reliably instead of relying on luck."
+  },
+  {
+   "name": "Small local model as RLM root",
+   "how": "Run a small model (the speaker used Qwen 3.5 9B) with a code REPL and recursive sub-calls, instead of a single large model reasoning in one pass.",
+   "when": "Long multi-step reasoning tasks where the chain of thought must be held over many steps and a small local model is wanted."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex SDK",
+  "Pi",
+  "OpenProse",
+  "DSPy (dspy.rlm)",
+  "RLM package (Alex Zhang)",
+  "Agentica (Symbolica)",
+  "Axe",
+  "Unix RLM (bash)",
+  "LambdaRLM",
+  "Qwen 3.5 9B"
+ ],
+ "numbers": [
+  {
+   "claim": "RLMs process information many orders of magnitude larger than their context window (OOLONG), tens of millions of tokens.",
+   "t": "4:52"
+  },
+  {
+   "claim": "Speaker's own claim: the default RLM harness works as a top-10 memory system with no modification, and better with small changes.",
+   "t": "4:52"
+  },
+  {
+   "claim": "On Long COT, Qwen 3.5 9B run as an RLM beats Opus and GPT 5.4 used as plain LLMs on long reasoning tasks. No scores given in the talk.",
+   "t": "6:18"
+  },
+  {
+   "claim": "ARC-AGI-3: frontier model top scores were around 2-3%. Symbolica's agentica RLM harness reached a score in the 30s percent within hours of release (speaker's report).",
+   "t": "6:18"
+  },
+  {
+   "claim": "Example scale: sifting a corpus of about 100M tokens through an RLM tool call.",
+   "t": "10:31"
+  }
+ ],
+ "hot_takes": [
+  "RLMs are the new reasoning models, and the next paradigm of test-time compute, because code execution is a form of reasoning.",
+  "Coding agents can be RLMs, but being an agent does not make a system an RLM; the model must choose the decomposition and state must stay symbolic.",
+  "The next gain comes from orchestration and behavior, not raw intelligence.",
+  "Benchmark leaderboards that ban tool-using harnesses should have separate open harness boards; the speaker does not care whether reasoning happens in latent space, reasoning tokens or code.",
+  "Claude Code became RLM-capable once dynamic workflows shipped, though it was not at launch."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The talk's ideas on capturing a successful session as a reusable workflow, and on RLM-style memory over a default harness, bear on the SkillForge open question about skill-worthiness and on MemoryMesh retrieval. The evidence is the speaker's own claims, not measured results.",
+   "action": "Build a small SkillForge experiment: take one successful agent session from telemetry, have an agent distill it into a replayable workflow file, then rerun it and measure whether the success signal holds."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs plan, critique and debate loops around Claude Code. OpenProse's declarative subagent specs, parent verification step and explicit skill and tool dependencies map closely onto that loop.",
+   "action": "Express one ProsHarness plan-critique-debate loop as a declarative markdown workflow that names each subagent, its skills and tools, and a parent verify step, then compare it with the current code path on reliability and checkpoint behavior."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Recurring interests in subagents, multi-agent orchestration and context engineering. The talk gives a concrete test for what separates an RLM from a coding agent with subagents.",
+   "action": "Read the recursivecodingagents.com companion repo and the RLM paper, and apply the five-part rubric to one of our own multi-agent workflows to see which parts are missing."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

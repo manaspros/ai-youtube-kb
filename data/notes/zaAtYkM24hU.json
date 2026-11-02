@@ -1,0 +1,166 @@
+{
+ "one_line": "Better Stack walkthrough of installing Incus (a community fork of LXD) on Ubuntu to run system containers and VMs, host Ollama in a container, and set up per-customer projects with quotas.",
+ "summary": "Better Stack presents Incus as a single interface for system containers and virtual machines on Linux, described as a community-driven fork of Canonical's LXD that builds on LXC and QEMU. The walkthrough installs Incus on a fresh Ubuntu VM by adding the Zabbly apt repo with its GPG key, then runs `incus admin init` with default answers and launches an Ubuntu container. It notes that VMs need bare metal or nested virtualization, which the Mac-hosted VM did not support. The presenter then creates a bridge network (incusbr0), attaches it to the default profile, and restarts the container so curl and Ollama can install and reach the network. An Ollama container runs a tiny model (orca-mini) as a test, with weak jokes as the output. The final section creates an Incus project per imaginary customer, switches into it, and applies CPU and memory limits as a basis for multi-tenant isolation. The exact command flags are only partly spoken in the captions, so the steps should be checked against Incus's own install docs.",
+ "speakers": [
+  "Andrus (Better Stack presenter, as named in the outro; captions spell it 'Andrus')"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Canonical",
+  "Zabbly",
+  "Ollama",
+  "Ubuntu"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools",
+  "sandboxing-execution",
+  "local-ai"
+ ],
+ "tags": [
+  "incus",
+  "lxd",
+  "system-containers",
+  "virtual-machines",
+  "linux",
+  "ubuntu",
+  "multi-tenant",
+  "resource-quotas",
+  "ollama",
+  "self-hosting",
+  "bridge-networking",
+  "apt-repo",
+  "home-lab"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Incus is a community fork of Canonical's LXD that manages both system containers and VMs through one CLI, and it runs only on Linux.",
+   "detail": "The presenter says it builds on LXC for containers and QEMU for VMs, so LXD users will find it familiar. Containers share the host kernel, while VMs get their own kernel.",
+   "t": "1:20"
+  },
+  {
+   "idea": "Installing Incus on Ubuntu is fiddly (signed apt repo setup), but first-run use is quick.",
+   "detail": "The install needs the Zabbly apt repo's GPG key converted to binary form and saved into the apt keyrings directory. After `incus admin init` with default answers, launching an Ubuntu container takes seconds.",
+   "t": "1:20"
+  },
+  {
+   "idea": "VMs need hardware virtualization, so the demo only launches containers on a Mac-hosted VM.",
+   "detail": "The same launch command with the VM flag creates a VM, but nested virtualization is unsupported in the presenter's setup. On bare metal, VMs can run inside VMs.",
+   "t": "3:23"
+  },
+  {
+   "idea": "Containers have no network by default, so a bridge plus a NIC on the default profile is required before installing software that downloads packages.",
+   "detail": "Curl and Ollama installs fail until a bridge network named incusbr0 is created, attached to the default profile as eth0, and the container is restarted.",
+   "t": "4:28"
+  },
+  {
+   "idea": "A model can be served from a container as a service, though the test model's output was poor.",
+   "detail": "Ollama runs in its own container with the small orca-mini model. The joke prompt gave repetitive, unfunny answers, so the demo shows wiring, not model quality.",
+   "t": "4:28"
+  },
+  {
+   "idea": "Incus projects give separate namespaces for tenants, and per-project limits cap resource use.",
+   "detail": "Resources created inside a project are invisible from other projects. The presenter sets a 4-CPU and 8 GB memory limit per project and calls this a basis for a multi-tenant private cloud.",
+   "t": "5:40"
+  },
+  {
+   "idea": "The presenter's claim of isolation rests on projects and quotas, without an analysis of the security boundary.",
+   "detail": "Projects and limits separate tenants and cap usage. The video does not discuss escape risk, shared kernel exposure for containers, or network isolation between tenants, which matter for real customer workloads.",
+   "t": "5:40"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Install Incus from the signed apt repo",
+   "how": "Run `sudo apt update`, install curl and gpg, create the apt keyrings directory, then curl the Zabbly repo's GPG key and pipe it through `gpg --dearmor` into the keyrings directory so apt trusts packages signed by it. Add the repo, then install the incus package. Check with `sudo incus list`. The exact repo URL and keyring filename are not spoken in the captions, so take them from the Incus install docs.",
+   "when": "Installing Incus on Ubuntu for the first time."
+  },
+  {
+   "name": "Initialize Incus and launch a container",
+   "how": "Run `sudo incus admin init` and accept the defaults. Launch an Ubuntu container with a name, then open a shell with `incus exec <name>`. Verify inside the container by checking system folders.",
+   "when": "Bootstrapping a local Incus host for dev environments."
+  },
+  {
+   "name": "Launch a VM with the same command",
+   "how": "Use the same image and launch command with the VM flag (`--vm`) to get a VM with its own kernel instead of a shared-kernel container.",
+   "when": "You need stronger isolation than a container, on a host with hardware virtualization."
+  },
+  {
+   "name": "Add a bridge network so containers can reach the internet",
+   "how": "Create a bridged network named incusbr0. Attach it to the default profile by adding an eth0 NIC device that points at the bridge. Restart the container so the new interface comes up, then retry the network-dependent install. The captions give the steps but not every flag.",
+   "when": "Containers fail to download packages or reach external services."
+  },
+  {
+   "name": "Run Ollama as a service in a container",
+   "how": "Launch a separate Ubuntu container for Ollama, install curl, install Ollama inside it, then pull and run a small model (the demo uses orca-mini) to confirm the service answers.",
+   "when": "Hosting a local model behind a container boundary or on a home lab box."
+  },
+  {
+   "name": "Create per-tenant projects with resource limits",
+   "how": "Run `incus project create <name>`, enable the features the project needs (profiles, networks, storage volumes; the presenter corrected a wrong key to storage.volumes), then `incus project switch` into it. Set CPU and memory caps (the demo uses 4 CPUs and 8 GB, which correspond to the limits.cpu and limits.memory config keys). Anything launched in the project is hidden from other projects.",
+   "when": "Separating several customers or workloads on one machine with basic quotas."
+  }
+ ],
+ "tools": [
+  "Incus (version not stated)",
+  "LXD (upstream fork origin)",
+  "LXC (container layer)",
+  "QEMU (VM layer)",
+  "Ubuntu (server image and host OS)",
+  "Ollama",
+  "orca-mini (small test LLM)",
+  "Zabbly apt repo (Incus package source)",
+  "apt",
+  "gpg",
+  "curl"
+ ],
+ "numbers": [
+  {
+   "claim": "Per-project limits in the demo: 4 CPUs and 8 GB memory.",
+   "t": "5:40"
+  },
+  {
+   "claim": "Claimed setup time: under 30 minutes (title). Spoken: installing Incus, launching containers, and deploying an AI model took 'just few minutes'.",
+   "t": "5:40"
+  },
+  {
+   "claim": "Launching a container takes only a few seconds once Incus is initialized.",
+   "t": "2:27"
+  },
+  {
+   "claim": "Video length 8:00. No benchmarks, latency, or cost figures are given.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The presenter calls Incus 'incredibly efficient' with containers sharing the host kernel, but gives no measurements.",
+  "Incus is described as a basis for a multi-tenant private cloud, but the demo only shows projects and CPU/memory caps. No security analysis of the tenant boundary is given.",
+  "The Ollama section is filler: the test model gave poor answers and the demo shows plumbing, not model quality.",
+  "The walkthrough omits some exact commands and flags, so it is not fully reproducible from the captions alone.",
+  "Quality is capped at 3 because this is a beginner-level tutorial with no sponsor segment, but it still contains usable steps."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Incus system containers with per-project CPU/memory quotas are an alternative self-hosted isolation layer to compare against the planned celld sandbox in Crucible.",
+   "action": "Compare Incus (system containers, quotas, startup time) with the planned self-hosted celld backend for Crucible's opt-in sandboxed code execution, before picking one."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Running long Claude Code CLI runs in isolated, resource-capped containers could support checkpoint/resume and per-run isolation, but the video does not cover agents.",
+   "action": "Prototype one ProsHarness run inside an Incus container with CPU and memory limits, then check whether the checkpoint/resume flow still works from inside the container."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Useful as a self-hosted home-lab and dev-environment option; the video is an introduction and not a production guide.",
+   "action": "Read the Incus docs on networking and project quotas before using Incus for any multi-tenant workload."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

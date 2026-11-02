@@ -1,0 +1,164 @@
+{
+ "one_line": "Review of Terax, a small open-source AI terminal and code editor built with Tauri 2 and Rust, compared against Warp and CMUX; the reviewer keeps Warp and Neovim for daily work.",
+ "summary": "Better Stack reviews Terax, an open-source terminal app built with Tauri 2 and Rust that bundles a multi-tab terminal, a CodeMirror 6 editor, a file preview sidebar, an embedded browser, and an AI agent. The reviewer says the app is about 7 MB, starts in under 300 ms, and avoids Electron's bundled Chromium. The agent can use any model through the Vercel AI SDK, including local ones, and proposes edits as diffs the user accepts or rejects. Its plan and build modes and an init subcommand that generates a TERAX.md project file mirror the CLAUDE.md or AGENTS.md pattern. The reviewer lists real gaps: Neovim crashed in his Nix and fish setup, the sidebar cannot be driven from the keyboard, zoom is missing, and non-localhost sites fail with X-Frame-Options. He positions Terax as a code-focused agentic terminal, whereas CMUX gives agents control over panes, tabs and the sidebar for multi-agent work. The video is a short, mostly balanced single-tool walkthrough, not a sponsored piece.",
+ "speakers": [
+  "Better Stack presenter (unnamed in transcript)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Warp",
+  "Vercel",
+  "Tauri",
+  "Ghostty"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools",
+  "coding-agents",
+  "context-engineering"
+ ],
+ "tags": [
+  "terax",
+  "tauri",
+  "rust",
+  "ai-terminal",
+  "warp",
+  "cmux",
+  "neovim",
+  "helix",
+  "codemirror",
+  "xterm-js",
+  "vercel-ai-sdk",
+  "plan-mode",
+  "terax-md",
+  "agent-diffs",
+  "x-frame-options",
+  "nix"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Terax is an open-source AI-native terminal that combines a multi-tab terminal, code editor, file preview sidebar, and embedded browser in one small app.",
+   "detail": "Speaker positions it against Warp: a single developer built it as a faster, lighter alternative with AI integrated for coding rather than added on.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Tauri 2 instead of Electron is the reason the app is about 7 MB and starts in under 300 ms.",
+   "detail": "Skipping the bundled Chromium saves roughly 200 MB. Rust owns PTY, filesystem and process management; React only renders the UI.",
+   "t": "0:47"
+  },
+  {
+   "idea": "The terminal and editor are built on established components rather than custom ones.",
+   "detail": "Xterm.js with the WebGPU renderer (the same renderer VS Code uses) and CodeMirror 6 for editing. The author chose not to use libghostty for the terminal.",
+   "t": "0:47"
+  },
+  {
+   "idea": "The built-in agent works like a coding CLI with reviewable changes: it reads the codebase, answers questions about an open file, and proposes diffs.",
+   "detail": "Model is selectable and API keys are stored in the native OS keyring. Context usage is shown and previous sessions can be resumed for follow-up questions.",
+   "t": "1:54"
+  },
+  {
+   "idea": "Plan and build modes plus an init subcommand make Terax's agent workflow similar to CLAUDE.md/AGENTS.md conventions.",
+   "detail": "Plan mode is read-only planning, build mode returns to edits, and init scans the project and writes a TERAX.md file shown as a diff to accept or reject.",
+   "t": "2:50"
+  },
+  {
+   "idea": "A privacy page hides a tab from the AI agent, so the agent cannot read that content.",
+   "detail": "The browser tab includes a list of common local ports, which allows running an app in one tab and editing its code in another.",
+   "t": "3:16"
+  },
+  {
+   "idea": "The reviewer lists concrete gaps: Neovim crashed in his Nix and fish setup, sidebar navigation needs the mouse, zoom is missing, and non-localhost sites hit X-Frame-Options errors.",
+   "detail": "He says the app runs Helix fine, and that Neovim works in Warp on the same machine, so the crash may be specific to his environment.",
+   "t": "4:28"
+  },
+  {
+   "idea": "Terax and CMUX solve different problems. Terax's agent is scoped to code and files, while CMUX lets agents drive the terminal itself.",
+   "detail": "CMUX agents can create panes and tabs, control and rename the sidebar, and spawn sub-agents, which suits multi-agent workflows. Terax agents only edit code.",
+   "t": "5:43"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Lean desktop shell for a terminal-plus-agent app",
+   "how": "Put OS work (PTY, filesystem, process management) in a Rust backend and render the UI in React inside Tauri 2 instead of bundling Chromium through Electron. Terax reports about 7 MB and sub-300 ms startup.",
+   "when": "Building a desktop dev tool where startup time and footprint matter more than a full browser runtime."
+  },
+  {
+   "name": "Read-only plan mode, then build mode, for agent edits",
+   "how": "Terax's plan subcommand puts the agent in a planning mode that inspects code without changing it. Triggering plan again returns to build mode, which applies edits as diffs the user accepts or rejects.",
+   "when": "Before letting an agent touch a codebase, when you want the proposed plan and diff reviewed first."
+  },
+  {
+   "name": "Generate a project context file with init, then review it as a diff",
+   "how": "Run the init subcommand. The agent scans the whole project and writes a TERAX.md file, which appears as a diff. Accept or reject it, and request edits to the file the same way.",
+   "when": "Bootstrapping agent context for a repo that has no CLAUDE.md, AGENTS.md or equivalent."
+  },
+  {
+   "name": "Hide sensitive tabs from the agent with a privacy page",
+   "how": "Open a privacy page tab in Terax. The reviewer says this tab is hidden from the AI agent, so the agent cannot see its contents.",
+   "when": "When the terminal or a browser tab holds secrets or unrelated work the agent should not read."
+  },
+  {
+   "name": "Keep API keys in the OS keyring",
+   "how": "Terax stores OpenAI and Claude API keys in the native OS keyring instead of plaintext config.",
+   "when": "Any local agent tool that needs model API keys."
+  }
+ ],
+ "tools": [
+  "Terax",
+  "Tauri 2",
+  "Rust",
+  "React",
+  "Electron (comparison)",
+  "Xterm.js (WebGPU renderer)",
+  "CodeMirror 6",
+  "Vercel AI SDK",
+  "Warp",
+  "CMUX",
+  "Helix",
+  "Neovim",
+  "Ghostty / libghostty",
+  "Nix",
+  "fish shell",
+  "OpenAI API",
+  "Claude API",
+  "VS Code (renderer reference)"
+ ],
+ "numbers": [
+  {
+   "claim": "App footprint is about 7 MB and startup takes under 300 ms.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Tauri 2 instead of Electron saves about 200 MB by avoiding a bundled Chromium.",
+   "t": "0:47"
+  },
+  {
+   "claim": "Warp is reported at over 58,000 GitHub stars (speaker's figure, not verified).",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Title says 'Better than Warp', but the reviewer concludes he will keep using Warp and Neovim and says the app is not yet a 1.0.",
+  "Reviewer says the app 'almost rivals Warp', a claim made without a feature-by-feature comparison.",
+  "Reviewer says the project is nearly all JavaScript but feels as fast as a systems-language app, crediting the Rust Tauri core."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Terax's plan mode, init-generated project context file, and diff-based accept/reject for agent edits are small versions of ProsHarness plan and checkpoint ideas, though this is a terminal app and not a harness.",
+   "action": "Compare Terax's read-only plan mode to ProsHarness's plan stage, checking whether plan output is kept as a reviewable artifact before any edits."
+  },
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

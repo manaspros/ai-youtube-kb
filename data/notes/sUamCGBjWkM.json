@@ -1,0 +1,221 @@
+{
+ "one_line": "Weekly AI news roundup (Aug 2026): Kimi K3 and Inkling open-weight releases, ACT2 and Xiaomi robot world models, on-phone 5B video diffusion, a 0.8B end-to-end OCR model, and a 26M function-calling model.",
+ "summary": "Kai Explains covers a batch of early-August 2026 open releases. Kimi K3 is described as a 2.8T-parameter open MoE model with new attention components, and the speaker notes an earlier K3 build handled most of the team's kernel optimization work. Thinking Machines Lab's Inkling (975B total, 41B active, Apache 2.0) is shown writing and running its own fine-tuning job to learn a no-\"e\" behavior inside OpenCode via the Tinker API. Robotics items are Sunday AI's ACT2 (99.1% zero-shot laundry folding in unseen homes, with a claim that scaling pre-training closes the in-domain/out-of-domain gap) and Xiaomi Robotics U0, a 38B world model for generating synthetic robot training data with a claimed ~83x inference speedup. Qualcomm's MobileWan runs a 5B video diffusion model on a phone by converting Wan 2.2 attention into chunk-wise recurrent attention with pruning and step distillation. OvisOCR2 (0.8B, built on Qwen3.5-0.8B) claims the top end-to-end score on OmniDocBench V1.6, and Cactus Compute's Needle (26M, attention-and-gating only, MIT) is a single-shot function-calling specialist. Most benchmark numbers are the vendors' own; the speaker flags this for K3 and notes Inkling's head-to-head numbers were not in the blog post.",
+ "speakers": [
+  "Kai (Kai Explains channel host, name not given in transcript)"
+ ],
+ "orgs": [
+  "Moonshot AI",
+  "Thinking Machines Lab",
+  "Sunday AI",
+  "Xiaomi Robotics Lab",
+  "Qualcomm AI Research",
+  "ADH Mass (name as transcribed)",
+  "Cactus Compute",
+  "Google (Gemini used for synthetic data)"
+ ],
+ "format": "news",
+ "topics": [
+  "models-research",
+  "local-ai",
+  "mcp-and-tools",
+  "data-engineering"
+ ],
+ "tags": [
+  "open-weights",
+  "moe",
+  "on-device",
+  "world-models",
+  "robotics",
+  "ocr",
+  "function-calling",
+  "synthetic-data",
+  "self-finetuning",
+  "weekly-roundup"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Kimi K3 is a 2.8T-parameter open MoE model, presented as the largest open model released",
+   "detail": "Built on Kimi Delta Attention and attention residuals, with sparse MoE routing (16 of 896 experts per forward pass) and a 'stable latent MoE' framework. The speaker says these changes yield roughly 2.5x better scaling efficiency than Kimi K2. Native vision and a 1M-token context window are included. Weights were promised by July 27, 2026, with a technical report.",
+   "t": "1:21"
+  },
+  {
+   "idea": "K3 was used to do most of its own kernel optimization work during late development",
+   "detail": "In a kernel-optimization eval, each model got up to 24 hours in a sandbox to profile, rewrite and benchmark four GPU kernel tasks on H200 and an alternative vendor GPU. The speaker reports K3 was competitive with Claude Fable 5 and beat Opus 4.8, GPT 5.6 Sol and GPT 5.5 on this task. The speaker notes the benchmarks are Kimi's own, except Fable 5 which was third-party evaluated.",
+   "t": "2:33"
+  },
+  {
+   "idea": "Inkling wrote and ran its own fine-tuning job to learn a constraint that prompting could not enforce",
+   "detail": "Thinking Machines Lab's Inkling (975B total, 41B active, trained on 45T tokens across text, image, audio and video, Apache 2.0) ran inside OpenCode. The target was a lipogram model that never uses the letter E. Inkling planned the run, generated synthetic data, launched fine-tuning through the Tinker API, loaded the new weights and verified the result without human steps. The company says it is not the strongest open or closed model, and head-to-head numbers against Qwen 3.5 were not in the main post.",
+   "t": "4:53"
+  },
+  {
+   "idea": "Scaling diverse pre-training makes single-example post-training transfer to unseen environments",
+   "detail": "ACT2 (Sunday AI, home robot Memo) reports 99.1% zero-shot laundry folding in homes it never trained in. The speaker summarizes the claim that past a certain pre-training scale, the in-domain vs out-of-domain generalization gap closes, and one fine-tuning example can teach a behavior that transfers to new homes. The proposed maintenance loop is: identify failure pattern, collect one example, post-train, generalize. Beta deployments into homes are planned for this year.",
+   "t": "6:15"
+  },
+  {
+   "idea": "A robot world model is positioned as a synthetic training-data generator, with its inference speed as the key enabler",
+   "detail": "Xiaomi Robotics U0 is a 38B autoregressive model covering text-to-image, image editing, multi-view scene generation, embodied transfer (re-skinning a demo into a new environment) and video generation. Its Flash R Plus inference system is reported to cut 1024x1024 image latency from 450 s to 5.44 s with the same quality. Weights and code are released under an open license.",
+   "t": "7:36"
+  },
+  {
+   "idea": "A 5B video diffusion model runs fully on a phone after converting its attention to chunk-wise recurrence",
+   "detail": "Qualcomm's MobileWan generates 5-second 480x832 video at 16 fps in about 20 seconds end-to-end on a commercial phone, with VBench 83.79 and an 80% user preference over NeoDragon in a user study. The team started from Wan 2.2 5B and converted attention to a chunk-wise autoregressive RNN with near-constant peak memory, added causal linear attention for cross-chunk coherence, pruned heads with learnable binary gates, and applied step distillation to cut denoising steps.",
+   "t": "9:02"
+  },
+  {
+   "idea": "Ovis OCR2 replaces multi-stage document pipelines with one 0.8B end-to-end model",
+   "detail": "The model takes a page image and emits markdown covering text, formulas, tables, figures and captions in reading order in one pass. It scores 96.58 on OmniDocBench V1.6, which the speaker calls the first end-to-end model to top a leaderboard previously dominated by multi-step pipelines. It is post-trained from Qwen3.5-0.8B with SFT, RL and a step called OPD (not explained), on a data engine mixing real and synthetic documents.",
+   "t": "11:32"
+  },
+  {
+   "idea": "Tool calling is a retrieval-and-assembly task, so a 26M attention-only model can serve as an on-device router",
+   "detail": "Needle (Cactus Compute) has no FFN layers, only attention and gating, on the argument that tool schemas are supplied in the input and so the model does not need to store facts in MLPs. It was pre-trained on 200B tokens and post-trained on 2B tokens of Gemini-synthesized function-calling data across 15 tool categories. It beats FunctionGemma 270M, Qwen 0.6B, Granite 350M and LFM 2.5 350M on single-shot calls, but is a specialist and not a general assistant.",
+   "t": "12:49"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Self-driven fine-tuning loop for a behavioral constraint",
+   "how": "Have the model plan the target behavior, generate synthetic training data, launch a fine-tune through a training API (Tinker in the demo), load the resulting weights, and verify the behavior with an evaluation, all inside a coding harness (OpenCode). The example target was a lipogram that never uses the letter E, which prompting alone did not reliably achieve.",
+   "when": "When a behavior is hard to enforce through prompts and you want an agent to close the data-train-eval loop without manual steps."
+  },
+  {
+   "name": "Failure-driven single-example post-training loop",
+   "how": "Identify a failure pattern in deployment, collect one example of the correct behavior, post-train the model on it, and check generalization on new environments. The speaker says this works only after pre-training on diverse data reaches a sufficient scale.",
+   "when": "When a deployed model has a narrow failure mode and you need a fast, low-data maintenance cycle that transfers beyond the training environments."
+  },
+  {
+   "name": "Chunk-wise recurrent attention for constant-memory long generation",
+   "how": "Convert a pretrained video diffusion transformer so attention runs chunk by chunk with a recurrent state. Add causal linear attention between chunks for coherence, prune heads using learnable per-head binary gates, and apply step distillation to reduce denoising steps.",
+   "when": "When you need long-sequence generation on memory-limited devices, where peak memory must stay near constant instead of growing with output length."
+  },
+  {
+   "name": "Attention-only tiny router for tool selection",
+   "how": "Use a small model with only attention and gating layers (no FFN) trained on synthetic function-calling data generated by a larger model. Route single-shot tool calls on-device and hand anything needing reasoning or knowledge to a general model.",
+   "when": "When an agent needs a cheap, fast tool-selection layer on device, and tool schemas are passed in the prompt so the model does not need to memorize facts."
+  },
+  {
+   "name": "Long-horizon kernel-optimization evaluation",
+   "how": "Give each model a sandbox with a large time budget (up to 24 hours) to profile, rewrite and benchmark a set of real GPU kernel tasks, then compare results across models on the same hardware targets.",
+   "when": "When measuring agentic coding ability on hard, measurable engineering tasks that need sustained iteration rather than a single attempt."
+  }
+ ],
+ "tools": [
+  "Kimi K3 (Moonshot AI)",
+  "Kimi Delta Attention",
+  "Kimi Code",
+  "Kimi Work",
+  "Kimi API",
+  "Claude Fable 5",
+  "GPT 5.6 Sol",
+  "Opus 4.8",
+  "GPT 5.5",
+  "Inkling",
+  "InklingSmall",
+  "OpenCode",
+  "Tinker API",
+  "ACT2 / Memo (Sunday AI)",
+  "Xiaomi Robotics U0",
+  "Flash R Plus (inference system, as transcribed)",
+  "MobileWan (Qualcomm AI Research, based on Wan 2.2 5B)",
+  "NeoDragon (baseline, as transcribed)",
+  "VBench",
+  "Ovis OCR2",
+  "Qwen3.5-0.8B",
+  "OmniDocBench V1.6",
+  "Needle (Cactus Compute)",
+  "FunctionGemma 270M",
+  "Qwen 0.6B",
+  "Granite 350M",
+  "LFM 2.5 350M",
+  "Gemini",
+  "TPU v6e",
+  "H200",
+  "Hugging Face",
+  "GitHub"
+ ],
+ "numbers": [
+  {
+   "claim": "K3: 2.8T parameters, activates 16 of 896 experts per forward pass",
+   "t": "1:21"
+  },
+  {
+   "claim": "K3 claimed ~2.5x scaling efficiency vs Kimi K2 (vendor claim)",
+   "t": "1:21"
+  },
+  {
+   "claim": "K3 context window 1M tokens",
+   "t": "2:33"
+  },
+  {
+   "claim": "Kernel eval: up to 24 hours per model in sandbox, four GPU kernel tasks, H200 and an alternative vendor GPU",
+   "t": "2:33"
+  },
+  {
+   "claim": "Inkling: 975B total params, 41B active, 45T training tokens, 1M context",
+   "t": "3:43"
+  },
+  {
+   "claim": "InklingSmall: 12B active parameters (preview)",
+   "t": "4:53"
+  },
+  {
+   "claim": "ACT2: 99.1% zero-shot laundry-folding success in unseen homes",
+   "t": "6:15"
+  },
+  {
+   "claim": "Xiaomi Robotics U0: 38B parameters; 82.9x inference speedup in the intro, and 450 s to 5.44 s per 1024x1024 image (~83x) in the main segment",
+   "t": "0:00"
+  },
+  {
+   "claim": "Xiaomi Robotics U0 latency: 450 s to 5.44 s per 1024x1024 image",
+   "t": "9:02"
+  },
+  {
+   "claim": "MobileWan: 5B params; 5 s 480x832 video at 16 fps in ~20 s end-to-end on a commercial phone",
+   "t": "9:02"
+  },
+  {
+   "claim": "MobileWan VBench 83.79; 80% user preference over NeoDragon",
+   "t": "10:28"
+  },
+  {
+   "claim": "OvisOCR2: 0.8B params; OmniDocBench V1.6 score 96.58",
+   "t": "11:32"
+  },
+  {
+   "claim": "Needle: 26M params; 6,000 tokens/s prefill, 1,200 tokens/s decode on consumer device",
+   "t": "12:49"
+  },
+  {
+   "claim": "Needle pre-training: 200B tokens on 16 TPU v6e chips in 27 hours; post-training: 2B synthetic tokens in 45 minutes, 15 tool categories",
+   "t": "14:07"
+  }
+ ],
+ "hot_takes": [
+  "The speaker repeatedly says the benchmark comparisons are the vendors' own (Kimi's K3 numbers), and advises caution until independent evaluators run the weights.",
+  "Thinking Machines' Inkling is positioned by its maker as not the strongest open model, and head-to-head numbers were not published in the main post. The speaker still calls the self-fine-tuning demo the most interesting part.",
+  "The Needle model is a specialist. The speaker says it should be used as a tool-routing layer, not as a general assistant.",
+  "Quality is a news roundup: a dense set of vendor-reported claims with little independent verification, plus a newsletter plug at the end. No sponsored segment was found."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Needle is a tiny function-calling router relevant to the AgentOS tool-calling and Crucible path, but AgentOS does not yet cover on-device routing. OvisOCR2 is a possible document-ingestion option for MemoryMesh knowledge buckets, but it is a single-model claim with vendor benchmarks only.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The Inkling self-fine-tune demo is an example of a long-running agent loop with explicit plan, generate, train, load and verify stages. That maps to the checkpoint/resume and plan-critique-debate structure, but it is a demo, not a method.",
+   "action": "Compare the plan, generate, train, verify stages of the Inkling demo against ProsHarness checkpoint and resume points, and check where a verification gate would sit."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

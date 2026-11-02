@@ -1,0 +1,48 @@
+# Building Generative Image & Video models at Scale - Sander Dieleman, Google DeepMind
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `xOP1PM8fwnk` · [watch](https://youtu.be/xOP1PM8fwnk) · **date:** 2026-05-18 · **length:** 40:46 · **format:** talk · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Sander Dieleman · **orgs:** Google DeepMind
+- **topics:** models-research, inference-serving, training-finetuning-rl, voice-multimodal · **tags:** diffusion-models, latent-diffusion, autoencoder, classifier-free-guidance, sampling, distillation, consistency-models, video-generation, image-generation, conditioning, post-training, JAX, TPU, data-curation
+
+> Google DeepMind's Sander Dieleman walks through training image and video diffusion models at scale: learned latents, how denoising works, guidance, step-count distillation, and control signals added in post-training.
+
+## Summary
+Sander Dieleman (Google DeepMind, generative media team, behind Veo and Nano Banana) gives a behind-the-scenes tour of training diffusion models for audio-visual data, in eight sections. He argues data curation is underrated and that time spent on data often beats tweaking the model or optimizer, but he withholds specifics as secret sauce. Raw pixels are too large for video, so models train a learned autoencoder and run diffusion in its latent space, which stays grid-shaped on purpose. He explains denoising intuitively: the model predicts a blurry average of possible clean images, the sampler takes small steps and re-adds a little noise to limit error build-up, and a frequency view shows diffusion as coarse-to-fine generation. Guidance (amplifying the difference between conditional and unconditional predictions) trades diversity for quality and is now always on, though scale must be tuned. Distillation here means cutting sampling steps rather than shrinking the model, with one-step consistency models working poorly and interval-restricted variants working better. Controls like reference images and camera motion are hard to express as text, so they are usually added in post-training alongside preference tuning. Q&A covers JAX sharding, why guidance works best when the guiding signal is semantically distant from the output, and why deterministic samplers are needed as distillation teachers.
+
+## Key ideas
+- **Train diffusion in a learned latent space, not raw pixels** — Pixel tensors for video are far too big to train on, so a learned encoder-decoder compresses data first. Diffusion then trains on the latents and the decoder maps samples back to pixels. The latent keeps the image grid layout on purpose because the networks rely on that structure. ([4:44](https://youtu.be/xOP1PM8fwnk?t=284))
+- **Latents are deliberately simple, not semantic** — Compared with standard codecs like H.265 or JPEG, the learned compressor is more primitive. It removes fine local texture while keeping global structure, since the architecture's inductive biases depend on the grid being intact. ([8:23](https://youtu.be/xOP1PM8fwnk?t=503))
+- **The denoiser predicts a blurry average, so sampling takes small steps** — A one-step prediction from a noisy input is blurry because many clean images could match it. Sampling therefore moves a small step toward the predicted direction, then adds a little fresh noise to stop errors from compounding. Each step shrinks the set of plausible images until one is picked. ([12:12](https://youtu.be/xOP1PM8fwnk?t=732))
+- **Diffusion acts as coarse-to-fine (spectral) autoregression** — Image spectra follow a power law while Gaussian noise is flat across frequencies. Adding noise hides high frequencies first and low frequencies later, so generation sketches global structure before fine detail. This is a useful lens on why diffusion suits images and video. ([18:37](https://youtu.be/xOP1PM8fwnk?t=1117))
+- **Video generation can mix time and diffusion** — A video can be noised and denoised as one 3D volume, which most modern models do. Another option is autoregression across frames with diffusion inside each frame, a hybrid used when generation must run in time order, such as in Genie. ([22:14](https://youtu.be/xOP1PM8fwnk?t=1334))
+- **Guidance is the main trick that lets smaller diffusion models punch above their weight** — Compute a conditional and an unconditional prediction, then push the step in the direction of their difference using a scale factor. Higher scale raises quality and cuts diversity. It costs two model evaluations per step. Saturated colours usually mean the scale is too high. ([24:56](https://youtu.be/xOP1PM8fwnk?t=1496))
+- **Guidance works best when the guiding signal is semantically distant from the output** — A text prompt captures high-level meaning and guides well. A low-level signal such as a segmentation mask sits at the same abstraction as the pixels, so guidance helps much less. This may also explain why guidance is used less for language models. ([34:00](https://youtu.be/xOP1PM8fwnk?t=2040))
+- **Controls beyond text are added in post-training** — Text is a poor way to specify reference identity, camera motion, or event timing. Most pretraining data lacks those labels, so the common recipe is to pretrain on text and add richer conditioning, plus preference tuning, in post-training. ([30:02](https://youtu.be/xOP1PM8fwnk?t=1802))
+
+## Techniques
+- **Two-stage latent diffusion with a learned autoencoder** — Train an encoder and decoder to reconstruct inputs through a bottleneck. Encode the data once, train the generative model on the latents, and decode samples back to pixels. In the stable-diffusion-style example, a 256x256 RGB image becomes a 32x32 latent grid with extra channels. *When:* When pixel tensors are too large to fit in training memory, especially for high-resolution or long video.
+- **Guidance by amplifying the conditional-minus-unconditional difference** — At each sampling step, run the model with and without the conditioning signal, then step along the difference scaled by a guidance factor. Keep it on by default. Vary the scale over the sampling schedule: an approach he cites from a paper suggests no guidance at the very start and end, with a ramp in the middle. *When:* Whenever sampling from a conditional diffusion model. Tune the scale for the quality/diversity trade-off and watch for oversaturation.
+- **Deterministic sampling as a distillation teacher** — Use a sampler that adds no fresh noise, so each initial noise maps to exactly one sample. Stochastic samplers stay more robust to error build-up but cannot serve as a clean teacher. *When:* When you plan to distil a diffusion model, or need a reversible noise-to-sample mapping in both directions.
+- **Consistency distillation restricted to sampling intervals** — Instead of predicting the endpoint from the start of the path, apply consistency training only to some intervals of the sampling trajectory. This targets a few steps (around three in his example) rather than one. *When:* When one-step consistency sampling gives poor quality and you need fewer steps than the original model.
+- **Injecting conditioning via extra tokens or broadcast** — For a transformer, add conditioning as extra tokens, or broadcast a signal such as the noise level to every token instead of adding a single token. He notes a third approach exists but does not describe it. *When:* When adding a new conditioning signal to a transformer-based denoiser.
+- **Data-parallel first, then model-parallel sharding with JAX pjit** — Split the batch across chips until the model no longer fits, then shard the model itself. JAX pjit can be asked to shard the model near-optimally, minimising inter-chip communication without manual work. *When:* When training a diffusion model that outgrows one chip, on TPUs or similar interconnected hardware.
+
+## Numbers
+- A 30-second 1080p video at 30 fps is several gigabytes of data for one training example, which is why pixel-space training is infeasible at scale. ([4:44](https://youtu.be/xOP1PM8fwnk?t=284))
+- A 256x256 RGB image is encoded into a 32x32 latent grid, with extra channels to hold detail. The latent is much smaller than the original. ([7:06](https://youtu.be/xOP1PM8fwnk?t=426))
+- For video, latent tensors can be reduced by about two orders of magnitude versus the original pixel tensors. ([7:06](https://youtu.be/xOP1PM8fwnk?t=426))
+- Guidance costs two model evaluations per sampling step. ([26:11](https://youtu.be/xOP1PM8fwnk?t=1571))
+- Consistency distillation with restricted intervals is described as targeting roughly three sampling steps instead of one. ([28:46](https://youtu.be/xOP1PM8fwnk?t=1726))
+
+## Hot takes
+- Guidance is a no-brainer now, and most people would be surprised how bad today's models are without it.
+- Post-training, not guidance, is the bigger driver of the recognisable style of generated images.
+- Data curation is still underrated, and time spent on data is often a better investment than tuning the model or optimizer.
+- Diffusion models are still smaller than LLMs mainly because guidance lets them punch above their weight.
+- Researchers are not incentivised to inspect their data, a habit the field has to unlearn.
+
+## Tools mentioned
+JAX, pjit, TPU, Stable Diffusion, GLIDE, EQVAE, Veo, Genie
+
+## Relevance to our work
+- **general** (1/3): The conditioning-signal and guidance-trade-off ideas touch on context and control design, but only by analogy to text-model work, which the talk itself says is limited. → *Optional skim of the sander.ai blog posts on guidance schedules if we ever need a media-generation or sampling-control reference.*

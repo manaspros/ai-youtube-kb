@@ -1,0 +1,159 @@
+{
+ "one_line": "Walkthrough of Suna, a free open-source self-hosted alternative to Manus, with one head-to-head build test, its architecture, a local Docker setup, and its cost and bug downsides.",
+ "summary": "The host compares Suna (captions say \"Sooner\"), an open-source self-hosted agent that builds websites and does research, against Manus on one prompt: a page listing the top 10 Vietnamese restaurants in London. Suna finished in 17 steps in just over seven minutes with a polished page, while Manus ran out of free credits partway through, took over an hour, and finished only after upgrading and resuming. The architecture uses a Next.js frontend, Supabase for auth, conversation history and file storage, a FastAPI backend that handles REST endpoints and LLM calls, Daytona for isolated Docker environments that run AI-generated code, and Redis for caching. The setup needs several accounts and keys (Supabase, Anthropic, Daytona, Firecrawl, Tavily) plus Docker, with Supabase migrations and a schema selection step before docker compose up. The host's main downsides are that the LLM and sandbox costs are not free, Daytona credits run out after a few runs, web search is slow for them, and several bugs show errors only in the Docker logs. This is a single anecdotal test by a vendor-neutral reviewer, with no benchmark.",
+ "speakers": [
+  "Unnamed Better Stack host"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Manus",
+  "Supabase",
+  "Daytona",
+  "Anthropic",
+  "OpenAI",
+  "Firecrawl",
+  "Tavily",
+  "AWS"
+ ],
+ "format": "review",
+ "topics": [
+  "sandboxing-execution",
+  "agent-architecture"
+ ],
+ "tags": [
+  "suna",
+  "manus",
+  "open-source-agents",
+  "self-hosting",
+  "daytona",
+  "docker",
+  "supabase",
+  "sandboxed-execution",
+  "head-to-head"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Suna is pitched as a free, self-hostable replacement for Manus that can build websites, run research and do game development, with no usage limits beyond the LLM and service bills.",
+   "detail": "The host frames the value as customizability and hosting anywhere, versus a subscription product with credit limits.",
+   "t": "0:00"
+  },
+  {
+   "idea": "In a single-prompt head-to-head, Suna (standard tier) finished in 17 steps in just over seven minutes and produced a polished page with hover animations and star ratings. Manus (standard tier) took over an hour, ran out of free credits before finishing, and needed an upgrade and a resume to complete.",
+   "detail": "The host notes one restaurant in Suna's page was missing an image. Manus's final page had 10 restaurants with 7 images. The host says Manus did not complete within its free credits and needed about half an hour more after upgrading.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Suna's architecture: Next.js frontend; Supabase for user management, conversation history and file storage; FastAPI backend for REST endpoints and LLM integration; Daytona creates isolated Docker environments to run AI-generated code; Redis for caching (left out of the diagram).",
+   "detail": "The host says the value is in how many third-party services are wired together, not in the diagram's simplicity.",
+   "t": "2:44"
+  },
+  {
+   "idea": "Local setup is involved and depends on several third-party accounts. Daytona does not need a local install; an API key is enough.",
+   "detail": "Prerequisites named: Docker, a Supabase project and CLI, an Anthropic API key, a Daytona account, a Firecrawl API key (crawling) and a Tavily API key (search). The host also names an optional RapidAPI key.",
+   "t": "2:44"
+  },
+  {
+   "idea": "After cloning, the config needs Supabase credentials, an Anthropic key, Tavily and Firecrawl keys, and Daytona values. The Redis entry is left as is. Other providers (Grok, OpenRouter, RapidAPI, AWS) can be skipped.",
+   "detail": "After running the Supabase migrations, select the basejump schema in the Supabase UI (used for personal accounts and subscription billing), then run docker compose up at the project root.",
+   "t": "4:01"
+  },
+  {
+   "idea": "Watching the Docker logs while Suna works is a practical view of the agent loop. The host finds it more useful than the UI, because several errors appear only in the logs.",
+   "detail": "This is anecdotal. The host also says the logs were the most exciting part of using it.",
+   "t": "4:01"
+  },
+  {
+   "idea": "Real costs and bugs: Suna itself is free, but Anthropic and OpenAI LLM calls are not, and the Daytona free credits last only one or two runs. Web search was slow at times, and there were bugs such as search reporting failure after succeeding and conversations appearing twice.",
+   "detail": "The host wants Anthropic or Google web search as alternative providers. Open-source means forks or pull requests could fix the bugs, or the user could fix them.",
+   "t": "5:19"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Self-host an agent stack with Docker Compose after DB migrations",
+   "how": "1) Clone the Suna repo. 2) Add Supabase credentials, leave Redis as-is, add the Anthropic API key. 3) Add the Tavily and Firecrawl API keys and the Daytona values; a Daytona API key is enough, no local install. 4) Run the Supabase migrations. 5) In the Supabase UI, select the basejump schema (personal accounts and subscription billing). 6) Run docker compose up at the project root. Config file name is not stated in the video.",
+   "when": "Use when you want a self-hosted general-purpose web/research agent and are willing to juggle several third-party accounts."
+  },
+  {
+   "name": "Isolate AI-generated code in per-run Docker environments via a sandbox provider",
+   "how": "The backend asks Daytona to create an isolated Docker environment for the code the model writes and runs. The app's own services (Next.js, FastAPI, Supabase, Redis) stay outside that sandbox.",
+   "when": "Use whenever an agent executes generated code, to keep it away from the host and the app's services."
+  },
+  {
+   "name": "Use container logs as the primary debug surface for agent runs",
+   "how": "Run docker compose logs while a task executes. The host says many errors (search failures, duplicate conversation writes) surface only there and not in the UI.",
+   "when": "Use when a self-hosted agent app shows little in its UI, or when a run reports a failure that appears to have succeeded."
+  },
+  {
+   "name": "Head-to-head test of agent products on one identical prompt",
+   "how": "Give the same prompt to both products at the same tier (standard). Compare step count, wall-clock time, output quality, and completion. Note the tier and any free-credit limits. The host used a website build task: top 10 Vietnamese restaurants in London.",
+   "when": "Use for a quick qualitative comparison of agent products. It is a single run, so treat results as anecdotal."
+  }
+ ],
+ "tools": [
+  "Suna (captions say Sooner; open-source agent)",
+  "Manus",
+  "Next.js",
+  "Supabase (auth, history, file storage; CLI; basejump schema)",
+  "FastAPI",
+  "Daytona (isolated Docker sandboxes)",
+  "Docker and Docker Compose",
+  "Redis",
+  "Anthropic API (Claude)",
+  "OpenAI API",
+  "Firecrawl (web crawling)",
+  "Tavily (web search)",
+  "LiteLLM (captions say Lite LLM; mentioned as a possible MCP route, untested)",
+  "AWS Amplify (site publish)",
+  "OpenManus (archived)",
+  "Grok",
+  "OpenRouter",
+  "RapidAPI (captions say RapidAI)"
+ ],
+ "numbers": [
+  {
+   "claim": "Manus high-effort tier costs $199/month; the host compared the standard tier instead.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Suna completed the restaurant-site task in 17 steps, in just over seven minutes (the host says eight minutes overall).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Manus took over an hour, ran out of free credits before finishing, and needed about half an hour more after upgrading. The host says the total was almost two hours.",
+   "t": "1:23"
+  },
+  {
+   "claim": "Manus output: 10 restaurants, 7 with images. Suna output: 1 restaurant missing an image (host's count).",
+   "t": "1:23"
+  },
+  {
+   "claim": "Daytona free credits last only one or two uses before they run out (host's experience).",
+   "t": "5:19"
+  }
+ ],
+ "hot_takes": [
+  "Suna matched or beat Manus on this one prompt, but it was a single run at the standard tier, so the result is anecdotal and not a benchmark.",
+  "The Manus failure is partly a pricing and free-credit effect, not only a capability gap.",
+  "Calling Suna free understates the cost: LLM API bills, Daytona credits, and Tavily and Firecrawl keys all add up, which the host concedes.",
+  "The host calls the architecture simple on paper and says the value is in wiring many third-party services together, which also means many failure points."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS plans Crucible as opt-in sandboxed code execution (self-hosted celld, Cloudflare backend). Suna runs AI-generated code in an isolated Docker environment per run through a sandbox provider, a close analogue.",
+   "action": "Compare Suna's Daytona-per-run Docker sandbox with the Crucible celld design: lifecycle (create, reuse, destroy), resource budgets, and how sandbox errors reach the user, since Suna's failures surface only in logs."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness does checkpoint/resume of long agent runs. The Manus run ran out of credits partway and resumed after an upgrade, which is a concrete failure case for resume.",
+   "action": "Note the credit-exhaustion-then-resume case as a test scenario for ProsHarness checkpoint/resume: confirm a run can continue exactly where it stopped after a budget cutoff."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

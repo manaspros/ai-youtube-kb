@@ -1,0 +1,45 @@
+# Hermes: The Self-Improving Agent That Gets Smarter Every Day
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `HdxtLpL9CC8` · [watch](https://youtu.be/HdxtLpL9CC8) · **date:** 2026-05-02 · **length:** 6:08 · **format:** review · **quality:** 3/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Better Stack, Nous Research, OpenRouter
+- **topics:** skills-self-improvement, memory, context-engineering, token-cost-efficiency · **tags:** hermes, self-improving agent, agent memory, memory.md, SQLite FTS5, context compression, skill creation, model switching, OpenRouter, Gemma 4, GLM, OpenClaw, NanoClaw, SuperMemory, Mem0, OpenViking, VPS
+
+> Hands-on test of Hermes, an open-source self-improving agent from Nous Research: it stores memory and writes skills from use, and the video shows how it manages context. A single-user demo, so the evidence is anecdotal.
+
+## Summary
+The host installs Hermes, an open-source agent from Nous Research that claims to learn and create skills as it is used, and tests it on a small job: writing promotional tweets from his past video scripts. He points it at a scripts folder, it produces a style breakdown, and he corrects its output over several turns (length goes from about 210 to about 400 characters, and he drops certain words). Mid-session he switches to a cheaper model with the /model command because context use was climbing, and the new model saves preferences to memory without being asked. He then has it build a tweet-writing skill, and a fresh session with a different model recalls his style. The explanation covers the memory design: a small memory.md file is preloaded (capped at about 3,500 characters, roughly 700 tokens), while full sessions go into SQLite with FTS5 search. Context is compressed above 50% usage, versus about 80% in Claude Code, by dropping old tool outputs, keeping the head and tail, and summarizing the middle. Every ~10 turns the agent is nudged to save memory and write skills. The host calls it a short demo and says he will use Hermes as a daily assistant on a cheap model next, so there are no benchmarks or head-to-head numbers.
+
+## Key ideas
+- **Hermes is pitched as self-improving: it persists what it learns and creates skills from use, so output should improve without repeated prompting.** — The host tests this with a small task, writing tweets from past video scripts, to see whether it retains his writing style and feedback across sessions. ([0:00](https://youtu.be/HdxtLpL9CC8?t=0))
+- **Memory is split into a small preloaded file and a searchable archive, which keeps per-session token cost low.** — memory.md is preloaded in compacted form, capped around 3,500 characters (about 700 tokens). Full sessions live in a SQLite database with FTS5 full-text search and are queried only when needed. ([4:28](https://youtu.be/HdxtLpL9CC8?t=268))
+- **Hermes compresses context earlier than Claude Code and compresses selectively.** — It compresses above 50% of the context window (the host says Claude Code does it at 80%). It drops old tool outputs, keeps the head and tail of the session, and summarizes the middle. The compressed form is what gets stored in SQLite. ([4:28](https://youtu.be/HdxtLpL9CC8?t=268))
+- **The agent is nudged periodically to persist state.** — About every 10 turns it is prompted to save important information to memory and to write a skill when one is warranted. ([4:28](https://youtu.be/HdxtLpL9CC8?t=268))
+- **Model switching mid-session is used to control cost.** — When context use grew and responses slowed, the host switched models with /model to a cheaper GLM model. Responses came back faster, and the agent also wrote new preferences into memory unprompted (tweet length went from about 210 to 400 characters). ([2:02](https://youtu.be/HdxtLpL9CC8?t=122))
+- **Learned style can be turned into a reusable skill, and a new session can recall it.** — After correcting tone and word choice over a few rounds, he asked for a skill so future tweets are easier. A fresh session on a different model then described his tweet style back to him, including his emoji habits. ([3:24](https://youtu.be/HdxtLpL9CC8?t=204))
+- **The evidence is one anecdotal, short demo.** — The host says the full power is hard to judge from a single short session and extrapolates from it. There are no benchmarks, error rates, or comparisons with OpenClaw beyond the framing at the start. ([5:49](https://youtu.be/HdxtLpL9CC8?t=349))
+
+## Techniques
+- **Bounded memory preload plus full-text session archive** — Keep a small memory file (memory.md, about 3,500 characters) that is loaded at the start of each session. Save every full session to SQLite with an FTS5 index, and let the agent run a search over it when asked to recall something from earlier. *When:* Use when you need cross-session recall without adding a large fixed token cost to every prompt.
+- **Early, selective context compression** — Compress once the session passes about 50% of the context window. Remove the outputs of old tool calls, keep the first and last parts of the session verbatim, and summarize only the middle. Store the compressed session as the record. *When:* Use for long agent sessions where old tool output takes up most of the context but the opening instructions and latest turns matter most.
+- **Periodic persistence nudge** — Every roughly 10 turns, prompt the agent to decide whether anything should go to memory and whether a skill should be written. *When:* Use when you want memory and skill capture to happen during the run instead of depending on the user to ask.
+- **Style-learning loop that ends in a skill** — Point the agent at a folder of past work (here, video scripts) and ask for a breakdown of your style and audience. Correct its drafts over several rounds (length, banned words, preferred phrasing). Then ask it to save the result as a skill, and check that a fresh session recalls it. *When:* Use for recurring writing tasks where the same preferences get re-explained every time.
+- **Mid-session model switch for cost** — Run the /model command in the session and pick a cheaper model when context use is high and responses are slow. Continue the same conversation on the new model. *When:* Use when a session has grown expensive but the next steps are routine.
+
+## Numbers
+- Memory preload is capped at about 3,500 characters, roughly 700 tokens depending on the model. ([4:28](https://youtu.be/HdxtLpL9CC8?t=268))
+- Context compression triggers above 50% of the context window; the host says Claude Code uses 80%. ([4:28](https://youtu.be/HdxtLpL9CC8?t=268))
+- The agent is nudged to save memory and consider writing skills about every 10 turns. ([4:28](https://youtu.be/HdxtLpL9CC8?t=268))
+- Requested tweet length changed from about 210 characters to about 400 characters. ([2:02](https://youtu.be/HdxtLpL9CC8?t=122))
+- Installed and tested on a VPS, with OpenRouter (Gemma 4) as the initial model. No latency, cost, or accuracy numbers were given. ([0:41](https://youtu.be/HdxtLpL9CC8?t=41))
+
+## Hot takes
+- Hermes is pitched as 'gets smarter every day', but the demo is one short, single-user session with no measurements of improvement. Treat the self-improvement claim as unproven here.
+- Compressing at 50% of context and dropping old tool outputs is a more aggressive policy than the 80% threshold the host attributes to Claude Code. It may trade away detail the agent needs later.
+- The cost argument rests on a small preloaded memory plus on-demand search. The video does not measure token use against a baseline.
+
+## Tools mentioned
+Hermes (open-source self-improving agent, Nous Research), OpenRouter (model provider; Gemma 4 selected), Gemma 4 (default model in the demo), GLM (cheaper model used mid-session; transcribed as 'glm5 turbo'), OpenClaw (compared agent, more channels and sandboxing), NanoClaw (compared agent, built on the Claude Agent SDK), Claude Agent SDK, Claude Code (compaction threshold comparison), SuperMemory (optional external memory processor), Mem0 (optional external memory processor; transcribed as 'Memzero'), OpenViking (optional external memory processor), SQLite with FTS5 (session store and search), memory.md (memory file), VPS (where the demo instance ran)
+
+## Relevance to our work
+- **agentos** (2/3): The bounded memory preload plus an FTS5-searchable session archive is a concrete, cheap version of the cross-session memory tier in MemoryMesh, and it applies directly to the hybrid retrieval design. → *Compare MemoryMesh's tiered cross-session memory with Hermes' setup: a capped preload file plus an FTS5 index of compressed sessions. Test whether an FTS5 layer in Postgres or SQLite is a cheap first tier before pgvector.*
+- **prosharness** (1/3): ProsHarness does checkpoint and resume for long runs. Hermes' compression policy (keep head and tail, summarize the middle, and drop old tool output at 50%) is relevant to what a checkpoint should keep. → *Read the checkpoint design and check whether it keeps the head and tail verbatim and summarizes the middle, and whether it drops old tool output before compacting.*

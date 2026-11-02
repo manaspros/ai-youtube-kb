@@ -1,0 +1,40 @@
+# The Free Open Source Jira Killer Devs Love
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `pgWHATQzkHk` · [watch](https://youtu.be/pgWHATQzkHk) · **date:** 2026-02-02 · **length:** 4:41 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Plane
+- **topics:** dev-tools, product-ux · **tags:** plane, project-management, self-hosting, docker, jira-alternative, linear-alternative, open-source, issue-tracker, django, react, postgres, redis
+
+> Short hands-on review of Plane, an open-source, self-hostable issue tracker pitched as a Jira/Linear alternative. Covers Docker self-hosting in about two minutes and the cloud-only AI features, with honest notes on paywalls.
+
+## Summary
+The presenter tries Plane, a free open-source project management tool, as an alternative to Jira, Linear, ClickUp and Monday. Self-hosting runs through Docker: clone the repo, run the setup script, edit a config file for ports, public URLs and the CORS origin, then rerun the script, which he says took under two minutes with no Kubernetes needed. Core features shown are issues with descriptions, dependencies, labels and custom properties, cycles (sprints with burndown charts), modules, analytics, and built-in docs/wikis. AI features (a natural-language summary of blockers across issues, cycles, docs and dependencies, powered by the user's own OpenAI key) work only on the cloud version, and the local AI path needs the commercial edition. He notes that SSO is paywalled on the hosted tier, that the self-host setup assumes a developer, and that Plane has fewer niche plugins than Jira. He says the video is unsponsored and that he would drop it if more features moved behind a paywall. Overall this is a light tool walkthrough with few details beyond the setup steps.
+
+## Key ideas
+- **Plane is pitched as an open-source, self-hostable Jira/Linear alternative with a simpler feel than Jira.** — The presenter frames it as a free project tool that is growing fast on GitHub. He argues the modern tool is one you can run yourself, and that it is a simpler mix of Jira and Linear. ([0:00](https://youtu.be/pgWHATQzkHk?t=0))
+- **Self-hosting is a short Docker-based setup, not a Kubernetes job.** — He clones the repo with curl, runs the setup shell script, and edits config for ports, public URLs and the CORS origin in the app folder. He says Docker must be running, that the whole process took under two minutes, and that Kubernetes is optional. ([0:55](https://youtu.be/pgWHATQzkHk?t=55))
+- **AI features are cloud-only in practice, and local AI needs the paid edition.** — Adding an OpenAI API key in the workspace AI tab enables natural-language questions such as summarizing blockers. It scans issues, cycles, docs and dependencies. He says this works on the cloud version, while local AI requires the commercial version. ([1:53](https://youtu.be/pgWHATQzkHk?t=113))
+- **Cloud free tier is limited, with only a few hundred AI credits to start.** — He describes the cloud version as free only to an extent, with basic core features and a small initial AI credit allowance. Self-hosting itself stays free under Docker or Kubernetes. ([1:53](https://youtu.be/pgWHATQzkHk?t=113))
+- **Stack is React and TypeScript on the frontend, Django on the backend, with Postgres and Redis.** — He presents the architecture as a conventional stack that is easier to set up than some paid tools he has used. ([2:59](https://youtu.be/pgWHATQzkHk?t=179))
+- **Paywall and ecosystem gaps are the main caveats.** — SSO is paid on the hosted tier, self-hosting assumes you are a developer, and there are fewer niche plugins than Jira. He calls it great but not perfect, and says the free core (projects, cycles, views, pages, basic analytics) is still usable for small teams. ([2:59](https://youtu.be/pgWHATQzkHk?t=179))
+- **Positioned against Linear, ClickUp and Monday on openness and pricing.** — He says Plane is open source and self-hostable with no per-user tax, which Linear charges. ClickUp and Monday are described as everything apps. He thinks Plane wins on modern UX and AI integration among open-source tools, and he plans to use only the open-source version. ([4:02](https://youtu.be/pgWHATQzkHk?t=242))
+
+## Techniques
+- **Self-host Plane with Docker** — Make a project folder and cd into it. Clone the Plane repo with curl. Run the setup shell script (the install step). cd into the app folder (the transcript reads 'plain app', most likely the plane-app directory). Edit the env config with nano, setting port, public URL and CORS origin values. cd back to the parent folder and run the setup script again to start the stack. Docker must be running first. Kubernetes is optional. *When:* Solo developers or small teams who want full data ownership and a local, low-setup alternative to Jira or Linear. Requires comfort with Docker and config editing.
+- **Enable AI in a self-hosted or cloud workspace** — Get an OpenAI API key, paste it into the AI tab in the Plane workspace settings, and save. Then ask natural-language questions such as 'summarize the work in blockers'. Plane scans issues, cycles, docs and dependencies and returns a summary page inside the app. In the presenter's account this path works on the cloud version. Local AI needs the commercial edition. *When:* When you want quick status summaries across an existing backlog and are fine sending project data to an external model provider.
+
+## Numbers
+- Self-hosting Plane with Docker took under two minutes end to end. ([0:55](https://youtu.be/pgWHATQzkHk?t=55))
+- Cloud free tier includes only a few hundred AI credits at the start. ([1:53](https://youtu.be/pgWHATQzkHk?t=113))
+- Local AI features require the commercial edition, not the open-source self-host. ([1:53](https://youtu.be/pgWHATQzkHk?t=113))
+
+## Hot takes
+- Plane is a credible open-source Jira or Linear alternative, mainly on UX, AI integration and no per-user pricing.
+- Calling it a 'Jira killer' overstates it given fewer plugins, paywalled SSO and a developer-only self-host path.
+- Self-hosted AI being paid-only is a real drawback for teams that want fully local data.
+- The presenter says the video is unsponsored and will drop Plane if its open-source core gets more paywalled.
+
+## Tools mentioned
+Plane, Docker, Kubernetes (optional self-host path), curl, nano, OpenAI API, React, TypeScript, Django, PostgreSQL, Redis, Jira, Linear, ClickUp, Monday
+
+## Relevance to our work
+- **prosharness** (1/3): The presenter says Plane exposes a decent range of APIs. A self-hosted tracker could hold ProsHarness plan or checkpoint items, but the video does not cover the API. → *Optional: check Plane's self-hosted REST API docs as a tracker sink for ProsHarness plan items and checkpoints. Low priority.*

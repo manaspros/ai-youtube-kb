@@ -1,0 +1,168 @@
+{
+ "one_line": "Walkthrough for running many Claude Code sessions in parallel: resume and handoff basics, file ownership, background dashboards, git worktrees, issue-driven orchestration, and Docker Sandbox isolation.",
+ "summary": "The AI LABS team describes how they run several Claude Code sessions at once without them colliding. They first cover basics: resuming or continuing sessions, a recap command to re-orient, and an export command to move a chat into a new session. For parallel work, they assign each shared file to one session via the prompt and use plan mode to split a project into independent tasks. A handoff skill turns each task into a handover document that references existing files rather than copying them, and background sessions are monitored from an agent dashboard. For coding-specific conflicts (branches, localhost ports, shared dependencies) they recommend git worktrees, then describe an open-source orchestrator (OpenAI Symphony) and a Claude Code fork that polls GitHub issues and opens PRs. Their final layer is Docker Sandbox, a micro-VM sandbox with a clone mode, orchestrated by a planning session that pulls changes back and deletes sandboxes after confirmation. The segment on Docker Sandbox is sponsored, and most commands are described without being spelled out.",
+ "speakers": [],
+ "orgs": [
+  "AI LABS",
+  "OpenAI",
+  "Docker",
+  "GitHub",
+  "Linear"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "multi-agent",
+  "claude-code",
+  "sandboxing-execution",
+  "coding-agents"
+ ],
+ "tags": [
+  "parallel-sessions",
+  "claude-code",
+  "handoff",
+  "background-sessions",
+  "git-worktrees",
+  "symphony",
+  "linear",
+  "github-issues",
+  "docker-sandbox",
+  "clone-mode",
+  "file-ownership",
+  "plan-mode"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Parallel Claude Code sessions fail in non-obvious ways: they do not share live context, so edits to a global CLAUDE.md or other shared files are invisible to running sessions until they restart or are told to re-read.",
+   "detail": "Sessions read global files only at start (or on manual request), and concurrent edits to the same file overwrite each other. Speaker's framing of the problem; not measured.",
+   "t": "1:00"
+  },
+  {
+   "idea": "Session recovery basics: continue the last session, resume a specific one by name, recap to re-orient, and export the chat to markdown to seed a new session.",
+   "detail": "Continue and resume are described as flags on the claude command; the recap and export commands are named but their exact syntax is not shown on screen.",
+   "t": "2:28"
+  },
+  {
+   "idea": "Prevent write collisions by assigning file ownership up front: one session owns each shared file, others may read it but are told in their prompts not to write it.",
+   "detail": "Enforcement is by prompt instruction only; no hook or permission mechanism is mentioned.",
+   "t": "3:34"
+  },
+  {
+   "idea": "Plan first, then split: use plan mode to give the agent all context and have it break the goal into independent tasks, which then map one-to-one onto sessions.",
+   "detail": "The team says this planning phase is what makes parallel sessions work without file fights or repeated context.",
+   "t": "3:34"
+  },
+  {
+   "idea": "The handoff skill compresses a planning session into one handover document per task. Each document points to existing files and the plan file instead of copying them, and lists the skills the new agent should install.",
+   "detail": "Positioned as a smarter export: it avoids carrying over bloated chat history and gives the new session a focused starting point.",
+   "t": "4:39"
+  },
+  {
+   "idea": "Background sessions are managed from an agent dashboard in the terminal: sessions can be launched with a background flag and a prompt, or an in-session command moves the current session to the background.",
+   "detail": "The dashboard lists finished and running sessions and lets you open any of them to see progress.",
+   "t": "4:39"
+  },
+  {
+   "idea": "Git worktrees stop sessions from clobbering each other's files and branches, since each session gets its own folder on its own branch. They do not isolate dependencies or localhost ports.",
+   "detail": "Dependency swaps, database changes and port 3000 collisions are named as problems that remain after worktrees.",
+   "t": "7:15"
+  },
+  {
+   "idea": "Issue-driven orchestration: OpenAI Symphony tracks tasks in Linear, and a Claude Code fork runs a daemon that watches GitHub issues. A labelled issue launches a background session on its own branch that opens a PR when done.",
+   "detail": "The Symphony origin is OpenAI's open-source orchestrator built for Codex. The Claude Code version is a community fork, not named in the video.",
+   "t": "8:35"
+  },
+  {
+   "idea": "Docker Sandbox provides a disposable micro-VM with a hard boundary so installs and builds stay contained. Clone mode goes further: changes land only in a cloned project, not the real files.",
+   "detail": "Segment is sponsored. The planning session orchestrates sandboxes, pulls changes back from each finished one, deletes it after confirmation, and watches progress in a sandbox dashboard.",
+   "t": "10:03"
+  },
+  {
+   "idea": "A single planning session can replace manually started sessions by spawning one sandbox per subtask and collecting results, so the human stays out of the per-task loop.",
+   "detail": "The speaker says recent models handle sub-agent management well enough for this; no success rate or failure data is given.",
+   "t": "11:11"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Session recovery with continue, resume, recap, export",
+   "how": "Run the claude command with the continue flag to reopen the last session on this device. Use the resume flag to pick from a list or pass a session name for a specific one. Run the recap command inside a session to get a short summary of what it was doing. Run the export command to dump the whole chat to a text or markdown file, then start a new session with that file as input. (Exact recap and export syntax is not shown in the video.)",
+   "when": "After a crash or reboot, when returning to a session you forgot, or when moving context into a fresh session without carrying all the chat history."
+  },
+  {
+   "name": "File ownership by prompt",
+   "how": "At kickoff, decide which session owns each shared file. Tell every other session in its prompt that it may read that file but must not write to it.",
+   "when": "Several sessions must touch the same codebase or shared config and you want to avoid overwrites, without locking or tooling."
+  },
+  {
+   "name": "Plan-mode task decomposition",
+   "how": "In Claude Code plan mode, give the agent all task context and ask it to split the goal into independent tasks that can run in parallel toward one end goal. Review the breakdown for shared-file conflicts before starting sessions.",
+   "when": "Building something new with separable parts, where parallel sessions should finish faster without fighting."
+  },
+  {
+   "name": "Handoff documents via the handoff skill",
+   "how": "Install the handoff skill with the install command the video shows (not spelled out in the transcript). In the planning session, invoke it with the keyword handoff and ask for one handover document per task. Each document references the plan file and existing project files instead of copying them, and lists skills to install. Start each task in a new session from its document.",
+   "when": "Passing a task to a fresh session without inheriting the planning session's bloated context."
+  },
+  {
+   "name": "Background sessions and the agent dashboard",
+   "how": "Open the agent dashboard with its command (named in the video, exact syntax not spelled out) to see running and finished sessions, move between them, and open any one. Launch a background session with the claude command plus a background flag and a prompt. Inside an active session, run the bg command to keep it running while freeing the terminal.",
+   "when": "Running several long tasks at once and needing one place to watch progress."
+  },
+  {
+   "name": "Git worktrees per session",
+   "how": "Ask Claude Code to create a new git worktree for each session. Each session then works on its own branch in its own folder, avoiding file and branch clashes.",
+   "when": "Parallel sessions editing the same repo on different branches; does not isolate dependencies or localhost ports."
+  },
+  {
+   "name": "Issue-driven background orchestration",
+   "how": "Run a daemon that watches a GitHub repo for issues with a specific label. When one appears, it launches a background Claude Code session, creates a branch for the task, and opens a PR when finished. OpenAI Symphony uses Linear as the tracker, with a column per task state.",
+   "when": "A backlog of well-scoped tasks that should run unattended and land as reviewable PRs."
+  },
+  {
+   "name": "Docker Sandbox for isolated execution with clone mode",
+   "how": "Run the install command, then log in with the login command. Create a sandbox with the sbx command, the name flag and a sandbox name, then Claude as the agent. To keep the real project untouched, add the clone flag so the sandbox works on a clone. Let the planning session spawn one sandbox per subtask, pull changes from each when it finishes, delete the sandbox after confirming the task, and watch progress in the sandbox dashboard.",
+   "when": "Agents need to install dependencies, build, or run containers without touching the host, or several subtasks need separate environments."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude Code plan mode",
+  "Claude Code background sessions",
+  "Claude Code agent dashboard",
+  "handoff skill",
+  "git worktrees",
+  "OpenAI Symphony",
+  "Codex",
+  "Linear",
+  "GitHub",
+  "Docker Sandbox (sbx)",
+  "Docker micro-VM sandboxes",
+  "claude-code Symphony fork (community, unnamed)"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Quality is capped at 2 because the Docker Sandbox segment (about 10:03 to 12:39) is sponsored, and the title is hype-driven ('Fleet Engineering Is Insane').",
+  "The claim that Docker Sandbox is 'the only sandbox approach' that lets a coding agent build and run containers while staying isolated is an unverified vendor-style claim.",
+  "The video claims a planning session can orchestrate sandboxes without manual sessions, but gives no success rates or failure cases.",
+  "Most commands are not spelled out on screen (handoff install, dashboard, recap, export, sandbox login), and auto-captions render Claude as 'clawed', so exact syntax must be checked in the docs.",
+  "Much of the content is basic Claude Code usage (continue, resume, plan mode, background flag); the most reusable parts are the file-ownership rule and the note that worktrees do not solve dependency or port conflicts."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness does checkpoint/resume and plan-to-task splitting around Claude Code; this video covers the same ground (resume, handoff documents, background sessions, worktrees, a daemon that launches sessions from GitHub issues).",
+   "action": "Compare the handoff-document format (references to plan file and existing files, skills list) with ProsHarness checkpoint format, and test whether a daemon watching labelled GitHub issues fits the existing loops/schedules feature."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Crucible's opt-in sandboxed exec is the same problem Docker Sandbox clone mode addresses: run agent work on a disposable copy, pull changes back, delete after confirmation.",
+   "action": "Compare Docker Sandbox's clone-mode lifecycle (create, run, pull diff, delete on confirm) with the celld backend design for Crucible and note any gaps."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

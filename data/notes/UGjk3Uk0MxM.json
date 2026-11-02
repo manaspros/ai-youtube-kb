@@ -1,0 +1,226 @@
+{
+ "one_line": "Hands-on workshop comparing GPT-5.5, Kimi K2.6, DeepSeek V4 Flash and Mistral Large 3 on counting, RAG grounding, vision, tool calling, agent loops, evals and DSPy prompt optimization.",
+ "summary": "Pamela Fox (Microsoft) runs a guided workshop in which the same small test cases are run against four models hosted on Microsoft Foundry. Simple prompts already show large differences: GPT-5.5 and Kimi counted letters correctly, while DeepSeek and Mistral did not, and Mistral only got it right after a chain-of-thought prompt. On RAG, the smaller models were more likely to answer from their weights than from the supplied sources, and prompt changes helped only partly. Vision and tool-calling tests show the same pattern, with Mistral weakest on images and DeepSeek weakest on argument fidelity. The agent section compares tool-call efficiency and parallel tool calls across models and frameworks, and the eval section covers string checks, LLM-as-judge, Microsoft Research's Assert for generating test sets from a YAML spec, and DSPy with GEPA for writing prompts against constraints. The repo and code are described as runnable on Foundry, with an Ollama option added the day before. All results are small demos rather than benchmarks, and the speaker repeats that you need to test on your own scenario.",
+ "speakers": [
+  "Pamela Fox"
+ ],
+ "orgs": [
+  "Microsoft",
+  "Microsoft Research",
+  "OpenAI",
+  "Anthropic"
+ ],
+ "format": "workshop",
+ "topics": [
+  "evals",
+  "mcp-and-tools",
+  "models-research",
+  "agent-architecture"
+ ],
+ "tags": [
+  "model-comparison",
+  "tool-calling",
+  "parallel-tool-calls",
+  "rag-grounding",
+  "citations",
+  "llm-as-judge",
+  "eval-generation",
+  "dspy",
+  "gepa",
+  "prompt-optimization",
+  "multimodal",
+  "ollama",
+  "microsoft-foundry",
+  "langchain",
+  "pydantic-ai",
+  "date-math",
+  "agent-loops"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Identical prompts produce different results across models, so model choice has to be tested per scenario rather than from benchmarks.",
+   "detail": "On a letter-counting prompt, GPT-5.5 and Kimi returned 13 (the correct count), DeepSeek V4 Flash returned 6, and Mistral Large 3 returned 8. Mistral reached the correct answer after the prompt was changed to split the sentence into words, count per word, sum, and show reasoning.",
+   "t": "6:02"
+  },
+  {
+   "idea": "Smaller models answer from their weights when the supplied RAG sources do not contain the answer, and prompting only partly fixes this.",
+   "detail": "The corpus covered only carpenter bees, but the question asked about honeybees too. GPT-5.5 and DeepSeek said the sources lacked the information. Mistral answered from its weights. Telling it to say 'no source provided' and to attach a source to each claim moved it closer but did not fully fix it. Speaker's takeaway: check whether a model admits what it does not know.",
+   "t": "8:35"
+  },
+  {
+   "idea": "For image understanding, prompt engineering helps little; the model either reads the image or it does not, so test on your own image types.",
+   "detail": "On an aurochs image, a crocodile photo and a small-print plant table, GPT-5.5 and Kimi got all three right. Mistral said the crocodiles were alligators and picked a $2.30 plant instead of the 58-cent cheapest one. DeepSeek was excluded because it accepts text only.",
+   "t": "13:03"
+  },
+  {
+   "idea": "Language changes results: asking the crocodile/caiman question in Spanish made the models fail, which matters for bilingual apps.",
+   "detail": "Spanish 'caimán' maps to alligator, not the Florida caiman, and the models got confused. The speaker says the mileage varies by language and notes that the Bay Area product context is often bilingual.",
+   "t": "15:20"
+  },
+  {
+   "idea": "Tool calling is prompt engineering: the JSON schema names, descriptions and types are what the model uses to decide how to call the function, and the model only returns a call that the application must execute.",
+   "detail": "A create_calendar_event schema is passed with a user request. GPT-5.5 added the user as an attendee, which was not asked for. DeepSeek added the user as an attendee and wrote the location as 'virtual (Microsoft Teams)'. Ambiguity in descriptions shows up as wrong arguments, and the fix is to clarify the description (for example, 'named attendees only').",
+   "t": "17:45"
+  },
+  {
+   "idea": "Agent quality should be measured by efficiency (tool calls per goal and parallel calls), not only the final answer.",
+   "detail": "On a calculator word problem with a 'do not do math in your head' system prompt, GPT-5.5 used one tool call with one long expression. DeepSeek used four. On a travel-planning agent, GPT-5.5 issued the flight and hotel searches in parallel in turn one, while Kimi did them in two turns and made extra budget calls. Mistral sometimes stopped early or forgot the last step once context grew.",
+   "t": "21:11"
+  },
+  {
+   "idea": "Automated evals should compare tool name and arguments with exact checks where possible, reserve LLM-as-judge for fuzzy outputs, and calibrate the judge against human labels.",
+   "detail": "A single tool call can be checked by string comparison of the tool name and arguments. Date math should be delegated to a tool because models are poor at it. Judges need pass/fail plus a reason, and they need the full trace (tool definitions and call history), not only the input and output. Each judged case costs two LLM calls. The speaker says RAG evals usually need about 200 to 800 cases, so they should not run on every commit.",
+   "t": "31:56"
+  },
+  {
+   "idea": "Microsoft Research's Assert generates scenarios and judging rubrics from a YAML spec, which helps bootstrap evals before production data exists.",
+   "detail": "The spec gives context, a judge model, and dimensions to stratify on (for example budget pressure). Assert produces behavior categories, a scenario set (scenario titles are LLM-generated), simulated users, and violation counts per model where lower is better. GPT-5.5 had the fewest violations on this travel-planner spec. The speaker says the tool is about a week old and used only so far in this demo.",
+   "t": "40:45"
+  },
+  {
+   "idea": "DSPy inverts prompt writing: the constraints are the code, and an optimizer (here GEPA) writes the prompt that satisfies them.",
+   "detail": "A task requires a numbered list with exact word counts per line, where the first letters spell a target word. Constraint checks are written in code, and DSPy iterates until a prompt passes them. The run took about six minutes. The resulting system prompt was used with Mistral, the model that had struggled most, so the approach may let a cheaper model reach the same results.",
+   "t": "45:55"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Single-variable model swap harness",
+   "how": "Each example file defines one model variable that defaults to GPT-5.5. Uncomment another model line to switch. Run the file through the OpenAI Python SDK pointed at the Foundry endpoint, passing the key from .env. Run with 'uv run examples/<file>' after 'uv sync'. Comment out endpoints in .env when hitting 429 rate limits.",
+   "when": "When comparing several models on one scenario, or when a provider might cut off access and you need a fallback that still works."
+  },
+  {
+   "name": "Chain-of-thought decomposition for counting",
+   "how": "Break the sentence into words, count per word, sum the counts, and show reasoning in the prompt.",
+   "when": "When a smaller model gets a counting or simple arithmetic task wrong with a direct prompt."
+  },
+  {
+   "name": "Grounded RAG prompt with explicit refusal and citation",
+   "how": "Tell the model to answer only from the provided sources and cite them. Add a fallback phrase such as 'no source provided' for missing information, and require a source for each claim in the answer.",
+   "when": "When the knowledge base may not cover the question and the model must not fill gaps from its weights. Test the model's refusal rate, not only answer quality."
+  },
+  {
+   "name": "Tool definitions as prompt engineering",
+   "how": "Write each tool as a JSON schema with a clear name, a description, and typed parameters. Read the actual arguments the model returns, compare them with expected values, and rewrite descriptions to remove ambiguity (for example, exclude the user from attendees and list only named people).",
+   "when": "When a model calls the right tool with wrong or unexpected arguments."
+  },
+  {
+   "name": "Low-level tool-call loop",
+   "how": "Send the user message and tools. When the model returns a function name and arguments, the application executes the function, appends the result, and calls the model again. Stop when the model returns plain text. Log each call to count them.",
+   "when": "Before adopting an agent framework, to see the raw loop, and to measure calls per task."
+  },
+  {
+   "name": "Force tool use over mental math",
+   "how": "Add a system prompt such as 'do not do math in your head' and give a calculator tool that evaluates expressions. Count tool calls and check whether the model batches the whole computation into one expression.",
+   "when": "To measure a model's tool-call efficiency on multi-step arithmetic."
+  },
+  {
+   "name": "Give date math to a tool",
+   "how": "Expose a date-arithmetic tool rather than asking the model to compute dates. Add test cases for leap years and ambiguous durations.",
+   "when": "Any agent that schedules, books or computes deadlines."
+  },
+  {
+   "name": "Deterministic checks first, LLM-as-judge second",
+   "how": "For a single tool call, string-compare the tool name and argument values. For fuzzy outputs, use a judge prompt that returns pass or fail plus a reason, given the query, response, context, and tool-call traces. Pre-generate the app outputs so the judge can be changed without rerunning the app. Calibrate the judge against labels from a domain expert.",
+   "when": "When the output is free text or depends on a sequence of tool calls, and you need a repeatable eval."
+  },
+  {
+   "name": "Spec-driven eval generation with Assert",
+   "how": "Write a YAML file describing the agent's context, the judge model, and the dimensions to stratify (for example budget tight, ample, or absent). Run the Assert tool to generate behavior categories, rubrics, simulated scenarios, and per-model violation counts. An agent skill is available to help write the YAML. A frontend is provided to view results.",
+   "when": "Before production, when there are no real user inputs to build an eval set from."
+  },
+  {
+   "name": "DSPy with GEPA for prompt optimization",
+   "how": "Declare the program's input and output types and the constraints as code, with a check function for each constraint. Set a student model and a reflection model, then run the GEPA optimizer. Save the optimized instruction and reuse it with the target model.",
+   "when": "When you need to move to a cheaper or different model and do not want to hand-tune the prompt for each one."
+  },
+  {
+   "name": "Anthropic document citations",
+   "how": "Send sources as structured document blocks (type document, text source) and enable citations. Parse the returned text blocks, which carry their citations, to link answers to sources in a UI.",
+   "when": "RAG with Claude where answers must link back to the source passages."
+  }
+ ],
+ "tools": [
+  "Microsoft Foundry",
+  "GPT-5.5",
+  "Kimi K2.6",
+  "DeepSeek V4 Flash",
+  "Mistral Large 3",
+  "OpenAI Python SDK",
+  "OpenAI Responses API",
+  "Anthropic Messages API",
+  "uv",
+  "GitHub Codespaces",
+  "LangChain v1",
+  "PydanticAI",
+  "Microsoft Agent Framework",
+  "Assert (Microsoft Research)",
+  "DSPy",
+  "GEPA",
+  "Azure AI Evaluation SDK",
+  "OpenAI evals",
+  "DeepEval",
+  "promptfoo",
+  "LangFuse",
+  "LangSmith",
+  "Arize",
+  "Ollama",
+  "pytest",
+  "Ralph loop (Jeff Huntley)"
+ ],
+ "numbers": [
+  {
+   "claim": "Letter 'e' count in 'The elderly gentleman eagerly entered the elevator': GPT-5.5 and Kimi 13 (correct); DeepSeek V4 Flash 6; Mistral 8 before prompt change, correct after chain-of-thought prompt.",
+   "t": "7:14"
+  },
+  {
+   "claim": "Agent tool-call count on the calculator word problem: GPT-5.5 1 call (one combined expression), DeepSeek 4 calls.",
+   "t": "22:26"
+  },
+  {
+   "claim": "Travel agent: GPT-5.5 made parallel flight and hotel searches in turn one; Kimi used two turns and two extra budget-check calls.",
+   "t": "26:02"
+  },
+  {
+   "claim": "LLM-as-judge results on the custom eval: most models 2 of 3 passing; Mistral 1 of 3.",
+   "t": "38:10"
+  },
+  {
+   "claim": "RAG eval set size guidance: at least about 200 test cases, sometimes 800, each judged case costs two LLM calls.",
+   "t": "37:00"
+  },
+  {
+   "claim": "Assert travel-planner comparison: GPT-5.5 had the fewest violations (lower is better) of the models tested, ahead of Kimi and DeepSeek.",
+   "t": "43:11"
+  },
+  {
+   "claim": "DSPy/GEPA prompt optimization run took about six minutes on the constrained-writing task.",
+   "t": "47:08"
+  }
+ ],
+ "hot_takes": [
+  "Built-in evaluators such as coherence and fluency are rarely what you need; custom evaluators tied to your agent's behavior matter more.",
+  "Most agent frameworks are more similar than different, so the models and the tool-calling loop (the harness) matter more than the framework choice.",
+  "Agents forget earlier steps as context fills, and Mistral often stopped after the first few searches; plan for steering or loop control.",
+  "With DSPy, the prompt becomes a build output, and the spec in code becomes the source of truth.",
+  "The speaker says a trustworthy LLM judge has to be calibrated with human labels; an uncalibrated judge can hide app failures."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Directly supports the thesis that the proxy should route across models: the per-model results for counting, RAG refusal, tool-call args and call efficiency are the kind of evidence strategy routing needs. The eval material (custom judges, trace-based checks, calibration) also applies to MemoryMesh and RAGAS-style evals.",
+   "action": "Add a model-swap eval suite that runs the same tool-call, RAG-refusal and call-count cases through the L1 proxy for each model, with calibrated LLM-judge cases, and record per-model pass rates and tool calls per task."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI, and the talk's point that harness and model should be compared together is relevant, but the talk does not cover Claude Code itself.",
+   "action": "Read the Assert and DSPy sections before building the plan-critique-debate evaluation so that critiques are judged by checks rather than by free-text opinion."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

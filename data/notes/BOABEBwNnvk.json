@@ -1,0 +1,179 @@
+{
+ "one_line": "Walkthrough of the Shai-Hulud npm worm's fourth wave, which hit TanStack and about 160 other packages. It explains the persistence, credential theft, and how a poisoned CI cache plus OIDC publishing let attackers ship validly signed malicious releases.",
+ "summary": "The video explains a fourth wave of the Shai-Hulud npm supply-chain worm, which published 84 malicious versions across 42 TanStack packages in minutes and also reached UiPath, Mistral, and about 160 other npm and PyPI packages. On install, a lifecycle script detaches into the background, and the payload persists by writing copies of itself into Claude Code's hooks directory and VS Code tasks so it re-runs whenever a project is opened. It harvests broadly: CI runner memory and workflow secrets, cloud metadata endpoints, Kubernetes service-account tokens, Vault secrets, SSH and git keys, shell history, and Claude Code session history, then exfiltrates via the Session messenger network and GitHub branches named after Dune references. A background monitor wipes the user directory if a stolen GitHub token is revoked. TanStack's root cause, per its postmortem as relayed by the host, was a fork PR run through a pull_request_target benchmark workflow that poisoned the pnpm store cache; an unrelated merge later restored that cache in the release workflow, which used OIDC to publish without needing a stored npm token. The host's main point is that three trust boundaries chained together, so valid provenance and trusted publishing no longer prove a package is clean.",
+ "speakers": [
+  "Better Stack host (unnamed in transcript)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "TanStack",
+  "npm",
+  "GitHub",
+  "UiPath",
+  "Mistral",
+  "Guardrails AI",
+  "Anthropic",
+  "HashiCorp",
+  "Session"
+ ],
+ "format": "news",
+ "topics": [
+  "security-guardrails",
+  "claude-code",
+  "dev-tools"
+ ],
+ "tags": [
+  "supply-chain",
+  "npm",
+  "shai-hulud",
+  "github-actions",
+  "oidc",
+  "trusted-publishing",
+  "cache-poisoning",
+  "pull-request-target",
+  "claude-code-hooks",
+  "credential-theft",
+  "tanstack",
+  "incident-review"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A fourth Shai-Hulud wave hit TanStack and about 160 other packages, including UiPath, Mistral and Guardrails AI (PyPI). TanStack alone got 84 malicious versions across 42 packages in a few minutes.",
+   "detail": "Goal is the same as earlier waves: steal credentials from developer machines and CI runners, then use them to reach more packages.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The install-time payload hides itself. An injected optional dependency points at an orphan commit on a fork that GitHub displays under the original repo's URL. A prepare script runs the payload and then exits 1 so the install continues quietly, and the payload forks a detached copy so the install logs stay clean.",
+   "detail": "The speaker says the exit-1 trick makes the optional dependency fail after the payload has already run, which leaves fewer obvious traces in install logs.",
+   "t": "0:51"
+  },
+  {
+   "idea": "Persistence through developer tooling. The payload copies itself into the Claude Code hooks directory and edits Claude settings so it runs on every Claude Code use in that project. It does the same with VS Code's task runner, so workspace auto-run features are also a path back in.",
+   "detail": "This survives past the original install and re-triggers whenever the project is opened in Claude Code.",
+   "t": "1:57"
+  },
+  {
+   "idea": "Credential harvesting is broad and CI-focused. In GitHub Actions it reads runner process memory for masked secrets and inserts a fake CodeQL-looking workflow to serialize repo secrets. It also reaches AWS IMDSv2 and ECS task metadata, Kubernetes service-account tokens, and Vault tokens, then uses Kubernetes access to pull Vault-managed secrets.",
+   "detail": "On a workstation it also targets SSH keys, npm and git credentials, shell history, cloud keys, crypto keys, Signal, Slack and Discord files, and Claude Code session history. Data leaves via the Session messenger network, with GitHub branches as a dead-drop backup.",
+   "t": "3:00"
+  },
+  {
+   "idea": "A dead-man switch sits on the machine. A background service re-exfiltrates GitHub tokens and checks their validity every minute. If a token has been revoked, it deletes the user's home directory. It also creates an npm token whose description says revoking it wipes the owner's computer.",
+   "detail": "The speaker says revoking tokens before isolating the machine and killing the background process can trigger the wipe, so incident response has to go in that order.",
+   "t": "4:14"
+  },
+  {
+   "idea": "Propagation is the bigger risk, and CI is the worst case. Locally, the worm looks for npm tokens that can publish without 2FA and republishes infected versions of every package they cover. In GitHub Actions it asks GitHub for an OIDC JWT, exchanges it with npm trusted publishing for a short-lived publish token, and publishes as latest with valid provenance.",
+   "detail": "Because the publish comes from a real trusted workflow, provenance checks pass, so the package looks legitimate to downstream installers.",
+   "t": "5:41"
+  },
+  {
+   "idea": "TanStack's entry point was a fork PR. The attacker opened a PR on a workflow that uses pull_request_target, which runs in the base repo's security context. The workflow checked out and built the fork's code, which poisoned the pnpm store cache under the key the release workflow uses. The PR was then reset to a no-op and closed.",
+   "detail": "The malicious commit was fake-authored as Claude with a skip-ci prefix. The attacker precomputed the cache key from the public pnpm lock file using the same formula as the workflow.",
+   "t": "7:03"
+  },
+  {
+   "idea": "The poisoned cache fired eight hours later. An unrelated maintainer merge to main triggered the release workflow, which restored the poisoned cache and ran attacker code. It published all 84 versions even though the action failed on test failures before the publish step, because the malicious code ran earlier.",
+   "detail": "The speaker's summary is that three trust boundaries were chained: fork PR code poisons base-repo cache, the cache is restored in the release workflow, and that workflow's OIDC permission becomes publish access.",
+   "t": "8:06"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Audit for agent-hook persistence after installing a package",
+   "how": "Check the Claude Code hooks directory and project settings for hook entries you did not add, and check VS Code task and auto-run config, since the worm writes copies of itself there. Treat any unexpected entry as a compromise indicator.",
+   "when": "After installing or updating any npm or PyPI package, and before opening an untrusted repo in Claude Code or VS Code with auto-run enabled."
+  },
+  {
+   "name": "Incident response order for a suspected worm",
+   "how": "The speaker's warning: first isolate the machine and kill the background monitor process, then revoke stolen tokens. Revoking first can trigger the dead-man wipe.",
+   "when": "When you find evidence of this payload, or any credential-stealing worm with a token-liveness check."
+  },
+  {
+   "name": "Trace install-time payloads through lifecycle scripts and optional dependencies",
+   "how": "The payload was reached through an injected optional dependency pointing at a fork commit, and a prepare lifecycle script that exits 1 so the install looks like a failure but the payload has already run. Check optional dependencies and prepare scripts whose URLs resolve to a fork rather than the named project.",
+   "when": "When reviewing a dependency diff or a suspicious install log, especially one that shows an error after the install."
+  },
+  {
+   "name": "Treat CI cache restores as a trust boundary",
+   "how": "The chain was: a pull_request_target workflow checks out and builds fork PR code, writes a cache under a key the release job restores, then a later unrelated main merge restores that cache in the publish workflow. Keep untrusted PR code out of any job that shares a cache key with a publish job.",
+   "when": "When auditing GitHub Actions for workflows that combine pull_request_target, checkout of PR head code, and shared caches with release workflows."
+  },
+  {
+   "name": "Scope OIDC publishing to the release job only",
+   "how": "Because any code running in a job that has the id-token permission can exchange its OIDC token for a short-lived npm publish token, anything that runs inside the job is a publisher. Keep untrusted code and dependency installs out of jobs with id-token: write.",
+   "when": "When setting up npm trusted publishing or any OIDC-to-registry flow in CI."
+  },
+  {
+   "name": "Find 2FA-bypassing npm tokens on dev machines",
+   "how": "The worm looks for npm tokens that publish without 2FA, then enumerates all packages those tokens can reach. Audit ~/.npmrc and CI secrets for long-lived tokens, and remove any that do not need 2FA bypass.",
+   "when": "During credential rotation after a supply-chain incident, or as routine hygiene for maintainers with many packages."
+  }
+ ],
+ "tools": [
+  "npm",
+  "npm trusted publishing (OIDC)",
+  "pnpm",
+  "Bun (bun run task runner)",
+  "GitHub Actions",
+  "GitHub pull_request_target",
+  "Claude Code (hooks, settings, session history)",
+  "VS Code tasks",
+  "AWS IMDSv2",
+  "AWS ECS task metadata",
+  "Kubernetes service accounts",
+  "HashiCorp Vault",
+  "Session messenger",
+  "PyPI",
+  "Guardrails AI",
+  "UiPath",
+  "Mistral",
+  "TanStack Router"
+ ],
+ "numbers": [
+  {
+   "claim": "The worm hit TanStack plus about 160 other packages, including UiPath, Mistral and PyPI packages such as Guardrails AI.",
+   "t": "0:00"
+  },
+  {
+   "claim": "84 malicious versions were published across 42 TanStack packages in just a few minutes.",
+   "t": "0:00"
+  },
+  {
+   "claim": "The background monitor checks GitHub token validity every minute.",
+   "t": "4:14"
+  },
+  {
+   "claim": "The fork PR was opened the day before publication, and the poisoned cache was restored about eight hours later.",
+   "t": "8:06"
+  },
+  {
+   "claim": "The release workflow published all 84 versions even though the action failed on test failures before reaching its publish step.",
+   "t": "8:06"
+  }
+ ],
+ "hot_takes": [
+  "Title hype (\"So Much Worse\") overstates a bit, but the incident analysis is grounded and specific.",
+  "The speaker says the Python variant has country-specific behaviour (a language check and a random wipe trigger). This is reported from the payload analysis and was not independently verified in the video.",
+  "The closing advice points to blog posts in the description rather than giving concrete defensive commands. Substance is an incident walkthrough, not a how-to.",
+  "The dead-man-switch and self-wipe claims come from the speaker's reading of the payload, so treat the exact behaviour as reported, not verified."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Crucible runs untrusted code, and this worm shows that package install scripts and agent hook files are a persistence path that sandboxing should block.",
+   "action": "In the Crucible/celld design, block lifecycle-script execution and writes to agent hook config (.claude/settings*, hooks dirs) from installed packages, and add a test that checks both."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and resumes long runs, so a poisoned .claude hook or extracted session history could persist across checkpoints.",
+   "action": "Before resuming a checkpointed run, diff .claude/settings*.json and the hooks dir against what ProsHarness wrote, refuse unknown hook entries, and confirm session-history files never leave the machine."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

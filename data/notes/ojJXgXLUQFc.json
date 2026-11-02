@@ -1,0 +1,183 @@
+{
+ "one_line": "Atlassian team walks through its AI SDLC stack (Jira Coding Agent, AI Reviewer, AutoDev, AI SRE, AI Planner) built on a shared context engine, with a hands-on workshop that was largely lost to Wi-Fi problems.",
+ "summary": "Three Atlassian presenters describe the agent tools they have built across the software development lifecycle: a Jira Coding Agent, an AI Reviewer for pull requests, AI AutoDev for turning backlog tickets into PRs, AI SRE for incidents, and AI Planner for feasibility checks. They argue that the remaining productivity gains are left and right of code (planning, orchestration, review, operations) and that the common foundation is a context engine built on Atlassian's teamwork graph plus code search. Much of the session was a workshop that stalled on Wi-Fi, so the live demos were short; the standards-creation demo and the talk track carry most of the content. The most useful material is the design thinking: humans must set which context is authoritative, review noise is filtered with trained models, agent work is throttled by per-engineer PR quotas and spend caps, and underspecified tickets are sent back to humans before any agent runs. Claims are product-level and mostly unbenchmarked, apart from one review-comment resolution figure.",
+ "speakers": [
+  "Andy Wong",
+  "Andrei Bocan",
+  "Shane Wolf"
+ ],
+ "orgs": [
+  "Atlassian"
+ ],
+ "format": "workshop",
+ "topics": [
+  "software-factory",
+  "pr-code-review",
+  "context-engineering",
+  "governance-compliance"
+ ],
+ "tags": [
+  "jira-coding-agent",
+  "autodev",
+  "ai-reviewer",
+  "ai-sre",
+  "ai-planner",
+  "context-engine",
+  "teamwork-graph",
+  "code-search",
+  "standards",
+  "review-noise-filtering",
+  "human-in-the-loop",
+  "cost-limits",
+  "wip-limits",
+  "epic-decomposition",
+  "atlassian"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Productivity gains from AI coding tools are tapering, so Atlassian is betting on the parts of the lifecycle around code: planning, orchestration, review and operations.",
+   "detail": "The speaker says that as more coding tools arrive, the extra output from each one shrinks, and that the biggest opportunity is in the steps before and after writing code.",
+   "t": "1:40"
+  },
+  {
+   "idea": "A shared context engine is the core of the stack. It links Jira, Confluence, code and third-party tools such as Slack and Notion into one graph and serves agentic search over it.",
+   "detail": "Connections are inferred from use or set explicitly (for example, a Jira ticket linked to the spec it implements). The engine feeds every agent tool, and the team wants agents to pull in cross-team context during a coding session.",
+   "t": "16:34"
+  },
+  {
+   "idea": "Code-level search can make many product repos behave like one monorepo without the monorepo cost. The speaker argues that code is the current source of truth and that Confluence pages are only snapshots.",
+   "detail": "The speaker says teams that opt for monorepos end up building and maintaining a lot of tooling. Querying code on demand avoids that, and it also avoids stale documentation.",
+   "t": "17:59"
+  },
+  {
+   "idea": "A human, not the system, should decide which context is authoritative. Auto-derived facts should not quietly become authoritative, and the speaker says Jira work items are harder to verify this way.",
+   "detail": "Atlassian's mechanism is a manual 'verified' badge in Confluence that tells search to favour a page. The speaker presents recency and verification as a way to handle very old docs that are still the reference.",
+   "t": "20:49"
+  },
+  {
+   "idea": "Review-comment noise is handled by a separate filter: Atlassian trained its own models to drop low-value comments before they reach the author.",
+   "detail": "The speaker cites about 40% comment resolution with the filter, against a human baseline of about 45%. The talk gives no method detail for the training data.",
+   "t": "6:07"
+  },
+  {
+   "idea": "An agent verifies its own work against the acceptance-criteria checklist in the ticket before it reports done, inside a full container sandbox that can run the app and drive a browser.",
+   "detail": "The sandbox is a Docker-enabled container that can install and run the repo. Verification steps come from instructions stored in the repository, and the speaker says the sandbox is proprietary and not yet available outside Atlassian.",
+   "t": "25:08"
+  },
+  {
+   "idea": "Autonomous backlog work is throttled by people's review capacity. AutoDev caps PRs per engineer per week, scans existing code for standards gaps and lands small progressive PRs, and sets spend limits per ticket and per week.",
+   "detail": "The speaker says nobody will review a huge PR or 50 PRs a day, so teams set quotas such as three to five PRs per engineer per week. Work-in-progress limits and spend caps are described as basic requirements.",
+   "t": "39:43"
+  },
+  {
+   "idea": "Underspecified tickets are sent back to a human before any agent starts. Reviews are the step where autonomous work stalls, so AutoDev uses Slack to nudge reviewers at a good moment.",
+   "detail": "The speaker says many backlog items are one-line summaries, so the system asks a human to clarify the goal and then to specify the work. The review queue is described as where things 'go to die', so Slack is the first channel for pulling people back in.",
+   "t": "45:01"
+  },
+  {
+   "idea": "Epics can be broken into tickets by the agent, and automation rules can then start one agent session per ticket. This gives a wave-style run that could be extended to further tiers of epics.",
+   "detail": "The presenter says they tried this the day before: the agent split an epic into Jira tasks, and an automation rule started a session for each task. He says the same approach could be pushed to multiple epics, such as V0, V1 and V2.",
+   "t": "53:11"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Org-wide standards as enforceable PR rules",
+   "how": "Define a named standard with a description and rules, choose target repos by manual pick or name pattern, and have a reviewer agent comment on PRs that break it, on any SCM. The speaker says a binary pass/fail check is not available out of the box yet.",
+   "when": "Enforcing team or org conventions (for example, design-token use) that linters are too rigid for, across many repos."
+  },
+  {
+   "name": "Trained filter on review comments",
+   "how": "Train a model to classify AI review comments as low-value or noise, and hide the ones it flags before they reach the author. Measure with the rate at which comments get resolved.",
+   "when": "An AI reviewer produces too many nitpicks, so authors ignore its output."
+  },
+  {
+   "name": "Human-set authority flag on context sources",
+   "how": "Let a person mark a document as verified or current so search ranks it above others, instead of letting the system infer authority.",
+   "when": "Retrieval over long-lived documents where old pages still look authoritative, or where agents could promote their own derived facts."
+  },
+  {
+   "name": "Acceptance-criteria self-check in a sandbox",
+   "how": "Give the agent the ticket's acceptance criteria as a checklist. Before reporting done, it runs the repo in a container, opens a browser if needed, and checks each item. The repo carries the run instructions.",
+   "when": "Agent-written changes where the spec is a checklist and the app can be run locally."
+  },
+  {
+   "name": "Progressive migration with per-engineer quotas",
+   "how": "Scan the existing codebase for gaps against a new standard, open small PRs on a schedule, and cap how many each engineer is assigned per week.",
+   "when": "Rolling out a new standard across a large codebase without flooding reviewers."
+  },
+  {
+   "name": "Automation-triggered agent session per sub-ticket",
+   "how": "Have the agent break an epic into Jira tasks, then use an automation rule to start a fresh agent session on each task.",
+   "when": "Large feature work that can be split into independent tickets, run as waves."
+  },
+  {
+   "name": "Per-skill and per-subagent model selection",
+   "how": "Set the model at the top level of the harness, then override it per skill or subagent in the skill definition. The speaker says automatic routing does not exist yet and that they plan to base routing on success metrics per task type.",
+   "when": "Mixing cheap and strong models across subtasks, with a metrics check before any routing policy is enforced."
+  },
+  {
+   "name": "Spend caps and WIP limits on autonomous work",
+   "how": "Configure a monthly credit cap, a per-user ticket limit and a repo allow-list. Show run status and ROI metrics on a dashboard, with the work visible on the Jira board so people can step in.",
+   "when": "Running agents on a backlog in an org where spend and reviewer load must stay bounded."
+  }
+ ],
+ "tools": [
+  "Jira Coding Agent",
+  "AI Reviewer",
+  "AI AutoDev",
+  "AI SRE",
+  "AI Planner",
+  "Rovo Dev",
+  "Teamwork Graph CLI",
+  "Confluence",
+  "Bitbucket",
+  "Slack",
+  "Docker",
+  "Claude",
+  "Codex",
+  "Cursor"
+ ],
+ "numbers": [
+  {
+   "claim": "Comment resolution with Atlassian's trained filter model is about 40%, against a human baseline of about 45%.",
+   "t": "6:07"
+  },
+  {
+   "claim": "AutoDev has configurable caps: maximum credits per month, maximum tickets per user, and the choice of repos or all repos.",
+   "t": "7:27"
+  },
+  {
+   "claim": "Teams are assigned about three to five AutoDev PRs per engineer per week as an example of a review quota.",
+   "t": "41:06"
+  },
+  {
+   "claim": "Atlassian has about 15,000 repositories across the company.",
+   "t": "47:26"
+  }
+ ],
+ "hot_takes": [
+  "Productivity gains from AI coding tools are tapering, so the real leverage is outside the code editor.",
+  "A monorepo is a debt you pay for in tooling; an on-demand code context engine can make product repos feel like one.",
+  "Autonomous workflows die at the review step, not at the coding step.",
+  "Context sources should not become authoritative automatically; a human should mark them."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The authority and verification points map loosely onto MemoryMesh conflict resolution and provenance. The talk gives no method or data.",
+   "action": "In MemoryMesh conflict resolution, add a human-set verified flag that outranks auto-derived entries at retrieval, so the system never promotes its own inferred facts to authoritative."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "AutoDev routes questions to a human through Slack at a chosen moment and treats unspecified work as something to clarify before running. ProsHarness already has phone-driven approvals, so the timing and nudge logic is a direct comparison.",
+   "action": "Add reminder and timing rules to ProsHarness phone approvals, so a pending approval is re-sent at a good moment instead of stalling. Also consider a step that sends underspecified tasks back to the user before a run starts."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

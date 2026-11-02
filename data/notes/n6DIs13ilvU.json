@@ -1,0 +1,132 @@
+{
+ "one_line": "Better Stack summarizes reports that Grok's coding CLI uploaded whole repos, git history and env vars to xAI, what xAI changed afterward, and why the /privacy toggle is not real local protection.",
+ "summary": "Better Stack summarizes reports that Grok's coding CLI (Grok Build) uploaded entire repositories, including git history and environment variables, to xAI servers. The main evidence is a researcher's MITM-proxy capture in which a session told only \"reply okay, do not open any files\" still sent a full repo bundle. The video says Claude Code, Codex and Gemini send only the files the agent reads, and that a 12 GB repo was still uploaded whole under Grok. It reports a trace-upload flag that was always true, even with the \"help improve\" setting off. After the story went viral, the trace flag reportedly flipped off and a server-side disable-codebase-upload flag was set for accounts, with a /privacy command added. The speaker argues /privacy only changes server-side retention (200 stored vs 204 discarded), so the client still transmits everything, and recommends grepping the CLI logs for upload sessions, rotating exposed keys and hardening the config. The opening claim that a whole home directory with SSH keys and a password manager was uploaded comes from a user's tweet; the detailed evidence in the video covers the repo bundle.",
+ "speakers": [],
+ "orgs": [
+  "xAI",
+  "Cereblab"
+ ],
+ "format": "news",
+ "topics": [
+  "security-guardrails",
+  "coding-agents",
+  "governance-compliance"
+ ],
+ "tags": [
+  "grok",
+  "grok-build",
+  "xai",
+  "data-exfiltration",
+  "codebase-upload",
+  "privacy",
+  "zero-data-retention",
+  "mitm-proxy",
+  "telemetry",
+  "secrets-exposure"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Grok CLI reportedly uploaded the full repo bundle, including all git history and environment variables, even when the session said not to open files.",
+   "detail": "A researcher (Cereblab) used a MITM proxy; the only prompt sent was 'reply okay, do not open any files', yet a POST with the whole repo bundle followed.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The video frames this as unlike other coding CLIs, which it says send only files the agent reads.",
+   "detail": "Claude Code, Codex and Gemini were said to behave differently in the same test. The speaker calls the behavior unique to Grok CLI.",
+   "t": "1:20"
+  },
+  {
+   "idea": "The upload ran regardless of the 'help improve the model' setting, driven by a trace_upload_enable flag that was always true.",
+   "detail": "The flag was found by fetching user settings from the API. Turning off the setting did not stop the upload.",
+   "t": "1:20"
+  },
+  {
+   "idea": "xAI's response was a quiet server-side change first, then a public statement.",
+   "detail": "Within about a day of going viral, trace upload was reportedly disabled and a server-side disable-codebase-upload flag set to true. A public statement then cited zero data retention for teams and pointed to a new /privacy command.",
+   "t": "2:30"
+  },
+  {
+   "idea": "The /privacy command is only a server-side retention toggle, not a client-side block.",
+   "detail": "The researcher found that session traces are still sent in full. Privacy mode gets a 204 (discarded) and the default gets a 200 (stored). The toggle is per session, and the upload code remains in the binary.",
+   "t": "3:22"
+  },
+  {
+   "idea": "Practical response: audit logs for upload sessions, rotate exposed secrets, and harden the config.",
+   "detail": "A grep over the CLI logs shows which sessions triggered uploads. If one did, the speaker advises rotating keys unless xAI's deletion is fully trusted. A hardening write-up (not shown) covers disabling codebase upload in config.",
+   "t": "3:22"
+  },
+  {
+   "idea": "The problem is trust in the server rather than a local control: the client still transmits everything, so privacy depends on xAI discarding data.",
+   "detail": "The speaker says he would not rely on a retention switch that the client does not enforce, and that the upload code should not ship at all.",
+   "t": "3:22"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Audit a CLI's uploads with a MITM proxy",
+   "how": "Route the agent CLI through a MITM proxy, run a trivial prompt that tells it not to open files, then inspect the outbound POST bodies for repo bundles, git history, or env vars. Compare the payload against the files the agent actually read.",
+   "when": "Before trusting a third-party coding agent with a repo that holds secrets, or when a vendor's privacy claims and behavior may differ."
+  },
+  {
+   "name": "Grep CLI logs for upload sessions",
+   "how": "Search the Grok CLI's local logs for the upload-queue entries the video shows (the exact grep command is on screen, not spoken). Each hit identifies a session that triggered an upload.",
+   "when": "After having used the affected CLI, to see which sessions may have sent code and which keys need rotating."
+  },
+  {
+   "name": "Rotate secrets if an upload is confirmed",
+   "how": "For any session that shows an upload, rotate the keys and credentials that were present in the repo or environment, unless the vendor's deletion can be fully trusted.",
+   "when": "When log audit shows a session uploaded a repo that contained secrets or env vars."
+  },
+  {
+   "name": "Harden the CLI config and verify the flags",
+   "how": "Set the disable-codebase-upload option in the CLI config, and check that trace upload is off in the account settings. Do not rely on /privacy, which the speaker says only changes server-side retention and is per session.",
+   "when": "If you must keep using Grok CLI on sensitive code. Recheck after every update, since the code path remained in the binary."
+  }
+ ],
+ "tools": [
+  "Grok CLI (Grok Build)",
+  "xAI API / account settings",
+  "MITM proxy",
+  "Claude Code",
+  "Codex",
+  "Gemini CLI"
+ ],
+ "numbers": [
+  {
+   "claim": "Repo upload observed for a 12 GB repository; the whole repo was still sent.",
+   "t": "1:20"
+  },
+  {
+   "claim": "Trace upload flag (trace_upload_enable) was always true, even with 'help improve' turned off; after going viral it was reportedly disabled and a disable-codebase-upload flag was set true server-side.",
+   "t": "1:20"
+  },
+  {
+   "claim": "Server responses: 200 means stored; 204 (no content) under privacy mode means discarded. The client sends the data either way.",
+   "t": "3:22"
+  }
+ ],
+ "hot_takes": [
+  "Uploading an entire repo and its git history is unjustified, unlike sending traces, and the upload code should not be in the binary at all.",
+  "The /privacy command is theater: it only flips a server-side retention flag and is per session, so the user has to trust xAI.",
+  "The video's opening claim (whole home directory, SSH keys, password manager uploaded) is secondhand from a user's tweet; the verified evidence it shows is the repo bundle.",
+  "Elon Musk's statement that pre-existing data was deleted and his request to keep the setting on for debugging is quoted without independent verification."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and handles credentials, so it is exposed to the same question of what a coding CLI sends off the machine.",
+   "action": "Run a MITM capture on the Claude Code session that ProsHarness launches and assert in a test that only read files and expected payloads leave the machine."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS already has a proxy with PII scanning and an audit log, and this incident is about bulk egress from a coding CLI, which the proxy could detect.",
+   "action": "Consider a proxy-side check that flags unusually large request bodies or repo-like archives in outbound agent traffic."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

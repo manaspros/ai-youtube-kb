@@ -1,0 +1,156 @@
+{
+ "one_line": "WorkOS product lead Garrett Galow demos Studio, an internal agent that answers business questions and turns repeat questions into live widgets. Main lessons: pre-flight checks, runtime tool context, query validation, and keeping the LLM out of widget refresh.",
+ "summary": "Garrett Galow, who runs product at WorkOS, describes Studio, an internal workspace where non-engineers ask business questions in plain language and get answers from Snowflake, Linear and Notion. The agent runs on Claude Opus inside a LangGraph-style loop, reached through a Slack bot or internal dashboard, with state kept in Convex. When a question recurs, the agent builds a \"widget\": sandbox JavaScript that makes the API and SQL calls and renders a UI, which anyone can rerun without involving the LLM. The talk's practical lessons are to run pre-flight checks and ask clarifying questions before choosing tools, inject tool-specific schema context only when a tool is invoked, layer prompts (base, defaults, org rules, per-tool), and validate that generated queries return data before they are hardcoded. The team skips RAG, runs the same evals in staging and production, and is moving from per-user integrations to org-level connectors with role-based default access. The talk is partly a product showcase, but the design lessons are concrete and reusable.",
+ "speakers": [
+  "Garrett Galow"
+ ],
+ "orgs": [
+  "WorkOS",
+  "Cursor",
+  "Anthropic",
+  "OpenAI"
+ ],
+ "format": "demo",
+ "topics": [
+  "data-engineering",
+  "agent-architecture",
+  "context-engineering",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "internal-tools",
+  "text-to-sql",
+  "self-serve-analytics",
+  "widgets",
+  "generated-code-artifacts",
+  "tool-context-injection",
+  "org-connectors",
+  "langgraph",
+  "convex",
+  "snowflake",
+  "claude-opus",
+  "slack-bot"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Business questions create a bottleneck",
+   "detail": "Non-technical teams need SQL or an engineer to answer one-off questions, which turns into back-and-forth in Slack. Rigid dashboards need a rebuild for each new question. Studio lets people answer and build tools themselves.",
+   "t": "1:06"
+  },
+  {
+   "idea": "Architecture: agent, guidance layer, integration proxy",
+   "detail": "Requests come from a Slack bot or internal dashboard, then go through an API to an agent graph that uses Opus. Tools connect through an integration proxy to Snowflake, Linear and Notion. A guidance layer defines how to query the data and what context is needed. State is stored in Convex so sessions persist.",
+   "t": "3:56"
+  },
+  {
+   "idea": "Widgets: LLM-written code that is reusable and reliable",
+   "detail": "A widget is sandbox code that combines UI, API calls and queries. It is declarative, so refreshing reruns the queries without the LLM. The LLM only runs again when someone asks for a change, so cost is paid per new question, not per view.",
+   "t": "6:25"
+  },
+  {
+   "idea": "Sequencing: pre-flight checks, then clarify",
+   "detail": "Before acting, the agent checks that tools are connected and that it has enough context. If not, it asks clarifying questions, then works through a checklist to choose tools.",
+   "t": "10:12"
+  },
+  {
+   "idea": "Inject tool context at call time, not up front",
+   "detail": "Long Snowflake context (schema, how to join teams to resources) is added only when the Snowflake tool is invoked. The speaker argues that preloading all tool context fills the context window.",
+   "t": "10:12"
+  },
+  {
+   "idea": "Validate queries before hardcoding them",
+   "detail": "Generated SQL can be valid and still return zero rows. The agent runs each query, checks for data, and only then writes it into a widget. Evals run in both staging and production, using the same path.",
+   "t": "11:14"
+  },
+  {
+   "idea": "No RAG, and encode domain traps in context",
+   "detail": "They call tools directly with a context block and no retrieval database. The context covers join paths and filter columns such as non-deleted or active status, which prevents common mistakes like a bare count-group-by that ignores status.",
+   "t": "13:41"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Generated declarative widgets",
+   "how": "The agent writes sandbox JavaScript that makes the same API and query calls to the data tools, with UI on top. The artifact is saved, so refresh runs the code without the LLM. Changes go back through the LLM.",
+   "when": "A question recurs and needs a shared, live tool that many people will reuse or refresh."
+  },
+  {
+   "name": "Pre-flight checks and clarifying questions",
+   "how": "Before tool use, check that connectors work and the request has enough context. If not, ask the user. Then pick tools from a checklist.",
+   "when": "Agents face ambiguous business questions across several data sources."
+  },
+  {
+   "name": "Runtime tool-context injection",
+   "how": "Keep tool-specific schema and usage guidance out of the base prompt. Attach it when the agent decides to call that tool.",
+   "when": "Tool documentation is long, such as a large warehouse schema, and would crowd out the context window if loaded up front."
+  },
+  {
+   "name": "Layered prompts",
+   "how": "Stack a base system prompt, product defaults, org rules, and per-tool context, and keep the layers separate so edits to one tool keep its context.",
+   "when": "Several teams or tools share one agent and need different rules."
+  },
+  {
+   "name": "Distrust model priors for product facts",
+   "how": "Tell the model to check primary docs for product-specific facts instead of relying on training data, because the product changes quickly.",
+   "when": "The product or APIs change faster than model training data."
+  },
+  {
+   "name": "Execute-and-validate before deploy",
+   "how": "Run each generated query and check for non-empty results. Only then save it into the dashboard or widget.",
+   "when": "Generated SQL can be syntactically valid but semantically empty or wrong."
+  },
+  {
+   "name": "Org-level connectors with role-based defaults",
+   "how": "One admin sets up the connection for the org. Access defaults are set by rule (for example read-only), and higher access is granted by app role. This avoids per-user OAuth for every employee.",
+   "when": "Many employees need access to the same SaaS data sources and per-user logins are a burden."
+  }
+ ],
+ "tools": [
+  "Snowflake",
+  "Linear",
+  "Notion",
+  "Convex",
+  "LangGraph",
+  "Claude Opus",
+  "Slack bot",
+  "Retool",
+  "WorkOS Pipes"
+ ],
+ "numbers": [
+  {
+   "claim": "Customer-to-users entity join in Snowflake is about 4 joins deep, which new hires have to copy and paste until the context block covers it",
+   "t": "12:37"
+  },
+  {
+   "claim": "Hit rate for generated cross-list queries is described as 'very, very high', with no figure given",
+   "t": "13:41"
+  },
+  {
+   "claim": "Model choice: Opus is kept because the speaker says cheaper models would trade off quality in a way they would not accept. No cost figures are given",
+   "t": "16:29"
+  }
+ ],
+ "hot_takes": [
+  "RAG is not needed when the agent calls tools directly and gets the right context block.",
+  "Generated widgets should be code that runs without the LLM. Paying for an LLM on every view is the wrong design.",
+  "Spend on the best model for question-answering (Opus), because quality matters more than per-question cost."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The widget pattern (LLM writes code once, then runs without the LLM) is related to SkillForge's goal of turning telemetry into reusable skills. The talk gives no measured results for this.",
+   "action": "When designing SkillForge output, consider storing each learned skill as deterministic code that is validated against real data before it is saved, rather than as a prompt that reruns the LLM every time."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The pre-flight step (check connectors and context, ask clarifying questions, then choose tools) and layered prompts are relevant to how ProsHarness starts a run.",
+   "action": "Add a pre-flight stage to ProsHarness runs that checks that the Claude Code CLI, skills and credentials are ready, and asks for clarification if the task is underspecified, before any plan step starts."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

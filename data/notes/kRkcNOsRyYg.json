@@ -1,0 +1,202 @@
+{
+ "one_line": "Neo4j workshop on graph shapes for agents over a lakehouse: a metadata semantic layer over the warehouse, a deterministic document-tree-plus-links graph, and Leiden community \"themes\" built without LLM labels.",
+ "summary": "Zach Blumenfeld (Neo4j) runs a hands-on workshop, driven by Claude Code and a Neo4j course, on giving agents context over a lakehouse, with a fictional auto-repair chain as the scenario. He presents three graph \"shapes\": a connection shape that holds only BigQuery metadata and join paths as a semantic layer, an outline shape that loads documents as a containment tree with hierarchical URIs and link edges, and a themes shape that runs Leiden community detection over the document links. The core argument is that graphs answer estate-level questions (what is missing, what patterns recur) that semantic search cannot, because search only finds things that exist. He pushes a deterministic, non-LLM document load for structured manuals, and says it is idempotent and often faster than entity-extraction GraphRAG. He also recommends giving the agent the Neo4j CLI and vendor Cypher/GDS skills rather than relying on text-to-Cypher from model memory. The talk is heavily product-oriented (NeoCarta, Virtual Graph, Neo4j platform), no benchmarks are run, and he admits the agent sometimes takes a slow exhaustive path instead of the outline traversal.",
+ "speakers": [
+  "Zach Blumenfeld"
+ ],
+ "orgs": [
+  "Neo4j",
+  "Google BigQuery",
+  "Databricks",
+  "Snowflake",
+  "Anthropic"
+ ],
+ "format": "workshop",
+ "topics": [
+  "rag-retrieval",
+  "data-engineering",
+  "context-engineering"
+ ],
+ "tags": [
+  "knowledge-graph",
+  "graphrag",
+  "semantic-layer",
+  "neo4j",
+  "cypher",
+  "lucene-fulltext",
+  "leiden",
+  "community-detection",
+  "text-to-sql",
+  "deterministic-ingest",
+  "hierarchical-uri",
+  "claude-code",
+  "skills",
+  "workshop",
+  "vendor-pitch"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Three context shapes for a lakehouse: connection (semantic layer over structured warehouse tables), outline (document containment tree plus link edges), and themes (global clusters). Each answers a different question type.",
+   "detail": "The speaker frames them as the course structure. The first is the structured side, the second a navigable table of contents over PDFs, the third a global view across the document graph.",
+   "t": "6:03"
+  },
+  {
+   "idea": "Graphs are for estate-level questions, not single lookups. Semantic search can only match what is present, so it cannot prove a gap or a negative and struggles with corpus-wide pattern questions.",
+   "detail": "Examples given: what documentation is missing for codes that occur in the field, and which recall groupings keep recurring. He says vector search can complement the graph but does not replace it.",
+   "t": "4:59"
+  },
+  {
+   "idea": "Put only metadata in the graph for the warehouse case. The graph holds tables, columns and primary/foreign-key join paths, and the agent reads them to write SQL against data that stays in place.",
+   "detail": "No ETL of rows. Full ETL into a graph is justified when you need graph-native performance (deep recursive joins, graph algorithms, embeddings). Security posture and sync cost often rule out moving operational data.",
+   "t": "26:31"
+  },
+  {
+   "idea": "Load already-structured documents deterministically with no LLM extraction. Containment edges, next-section ordering and named link edges come from parsing the documents, using regex in the demo.",
+   "detail": "The speaker's claims: the load is idempotent (same docs give the same graph), often faster, and good enough when manuals share a consistent structure. He says messier sources may need GLiNER or an LLM.",
+   "t": "44:56"
+  },
+  {
+   "idea": "Hierarchical URIs act as node IDs and a navigation tool. Prefix matching gives subtree scoping, and a depth parameter gives subtree traversal, so the agent can walk the library like a book's table of contents.",
+   "detail": "Full-text search runs first on document and section nodes, then a starts-with filter on the URI narrows results to a subtree. Folder nodes are kept out of the Lucene index.",
+   "t": "46:20"
+  },
+  {
+   "idea": "Themes come from Leiden community detection on the document-link graph, with no LLM labels. Labels are just the top shared link targets and most central documents, so output is stable across reruns on unchanged data.",
+   "detail": "Sections are collapsed to document level before projection. Tightness is measured with conductance. Granularity is tuned with the gamma parameter (13 groups at default, 14 at gamma=2). The trade-off: labels are only as good as the existing titles and link names, and reruns on changed data can shift IDs.",
+   "t": "1:23:37"
+  },
+  {
+   "idea": "Spec-first agentic query writing. The author writes a markdown spec for the output shape and has the agent write Cypher against it using the Cypher and GDS skills. The spec also covers parameters such as traversal depth.",
+   "detail": "He says this is how he writes complicated Cypher. The agent then emits a reusable script with the depth exposed as a parameter, not a hand-built tool.",
+   "t": "54:22"
+  },
+  {
+   "idea": "Use the vendor CLI and maintained skills instead of text-to-Cypher from model memory. The speaker warns that model memory returns outdated query patterns, while the skills carry current syntax and let the agent read the schema before querying.",
+   "detail": "He says improvement over text-to-Cypher from a year or six months ago is large. The skills are installed through the Neo4j agent client in the dev container.",
+   "t": "1:39:03"
+  },
+  {
+   "idea": "Agents do not always take the efficient path. In one estate-level run the agent did an exhaustive full-text crawl instead of using the outline traversal, so shape guidance in the prompt matters for speed.",
+   "detail": "He observed that when the outline was used, the run came back faster. He also says a graph is not a replacement for vector search, and a production system would combine lexical, vector and graph retrieval.",
+   "t": "1:51:28"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Metadata-only semantic layer graph",
+   "how": "Pull warehouse schema metadata (tables, columns, PK/FK join paths, optional representative values) into a graph, expose it through an MCP server or CLI, and have the agent read join paths before writing SQL. Rows stay in the warehouse.",
+   "when": "Many tables with look-alike schemas where the agent gets joins wrong, and where moving the data is blocked by sync cost or security."
+  },
+  {
+   "name": "Deterministic document-structure graph",
+   "how": "Model library, folder, document and section nodes with a containment edge, a NEXT_SECTION ordering edge, and named LINKS_TO edges taken from in-document references. Parse with regex or simple NLP. Keep relationship names short and uniform (for example a single containment name for every level).",
+   "when": "Documents already have consistent structure and cross-references, and you want a fast, idempotent, LLM-free graph before considering entity extraction."
+  },
+  {
+   "name": "Hierarchical URI IDs for scoped search and traversal",
+   "how": "Encode the containment path into every node ID. Run a Lucene full-text query over document and section nodes, then apply a starts-with filter on the URI to scope the search to a subtree. Use a variable-length path query with an exposed depth parameter to fetch subtrees.",
+   "when": "You need cheap subtree-scoped search over a large document set without many extra graph hops, or you want the agent to navigate like a table of contents."
+  },
+  {
+   "name": "Semantic query expansion for full-text search",
+   "how": "Have the model generate synonyms or related failure terms (for example misfire or rough idle for an engine symptom), then search across those terms in the Lucene index.",
+   "when": "Users describe symptoms in different words than the documents use, and you want to avoid running several vector stores."
+  },
+  {
+   "name": "Structure-only community themes",
+   "how": "Project the document-level link graph into memory (collapse section-level links to documents), run Leiden, and label each cluster only with its top shared link targets, most central documents and conductance. No LLM summarisation.",
+   "when": "You need a stable, reproducible global view of a corpus that is cheap to run and can be rerun as data changes. Add LLM summaries only if the budget allows and the labels are too opaque."
+  },
+  {
+   "name": "Spec-driven Cypher generation with a vendor skill",
+   "how": "Write a markdown spec of the desired output shape and parameters, point the coding agent at the spec plus the vendor Cypher and GDS skills, and have it emit a parameterised script you can rerun.",
+   "when": "A non-trivial graph query is needed and you do not want to hand-write Cypher."
+  },
+  {
+   "name": "Agent with a database CLI for ad hoc graph reasoning",
+   "how": "Give the coding agent a CLI that runs queries and dumps the schema, so it can write custom queries for questions nobody anticipated. Keep the prebuilt shape scripts as fast paths.",
+   "when": "Questions span several shapes and the fixed tools are not enough."
+  },
+  {
+   "name": "Partial re-sync of a deterministic graph",
+   "how": "Re-ingest only changed documents, but also update inbound link references, because renaming a document changes URIs that other documents point to.",
+   "when": "The corpus changes often and a full reload is too slow. The speaker says he has tested this but did not show it."
+  }
+ ],
+ "tools": [
+  "Neo4j",
+  "Neo4j CLI",
+  "Cypher",
+  "Graph Data Science (GDS)",
+  "NeoCarta",
+  "Neo4j Virtual Graph",
+  "Lucene full-text index",
+  "Leiden",
+  "Louvain (mentioned)",
+  "Claude Code",
+  "Claude Opus 4.8 (model used in demo)",
+  "BigQuery",
+  "Databricks",
+  "Snowflake",
+  "PageIndex (mentioned as a navigation idea)",
+  "GLiNER (mentioned)",
+  "Microsoft GraphRAG (mentioned)",
+  "Obsidian-style links (mentioned)",
+  "Graph Academy"
+ ],
+ "numbers": [
+  {
+   "claim": "The course has about 17 lessons, grouped by shape.",
+   "t": "8:59"
+  },
+  {
+   "claim": "The connection demo creates six metadata tables with five reference join paths from the warehouse schema.",
+   "t": "24:16"
+  },
+  {
+   "claim": "Leiden on the demo corpus gave 13 themes at the default gamma of 1, and 14 at gamma=2.",
+   "t": "1:30:20"
+  },
+  {
+   "claim": "The demo corpus is only a couple hundred documents, which is why the unscoped return-everything query was acceptable.",
+   "t": "55:36"
+  },
+  {
+   "claim": "Rerunning the deterministic load on unchanged documents gives the same graph (idempotent).",
+   "t": "1:18:09"
+  },
+  {
+   "claim": "The speaker says he has not run any benchmark on the approach shown; he suggests customers build their own benchmarks against vector search.",
+   "t": "1:55:37"
+  },
+  {
+   "claim": "The workshop runs about two hours (length 1:59:10), with the speaker noting the course is free online.",
+   "t": "1:59:10"
+  }
+ ],
+ "hot_takes": [
+  "Semantic (vector) search cannot prove that something does not exist, so estate-level gap questions need graph traversal.",
+  "Text-to-Cypher from model memory produces outdated, bad Cypher; use vendor-maintained skills and the CLI instead.",
+  "Plain regex is enough for consistently structured manuals, and LLM-based entity extraction is not always needed for a useful graph.",
+  "Explicit node types for every entity (for example a parts node) matter less now that agents infer entities, but ontology-heavy domains such as life sciences still need them.",
+  "Moving operational data into a graph is harder than it looks because of sync, bulk, and security posture; a metadata-only graph is often the better first step."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already plans hybrid BM25 plus pgvector retrieval and GraphRAG; this talk offers a deterministic, LLM-free document graph (containment tree, link edges, hierarchical URIs with subtree scoping) as a cheaper structural baseline, plus a structure-only community-theme view.",
+   "action": "Build a small prototype of a deterministic document-link graph with URI-prefix scoping in MemoryMesh, and compare it against entity-extraction GraphRAG on the RAGAS eval set before adding LLM extraction."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The spec-first workflow (write the output shape in a markdown spec, then have the agent write the query with vendor skills loaded) is a usable pattern for ProsHarness analytics tasks. The graph content does not apply.",
+   "action": "For the next non-trivial ProsHarness query or analysis task, write a short spec file first and have the agent generate against it, then compare the result with an unspecced attempt."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

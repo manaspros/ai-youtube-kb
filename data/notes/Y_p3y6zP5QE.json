@@ -1,0 +1,166 @@
+{
+ "one_line": "Google DeepMind's Jack Wotherspoon demos Gemini managed agents: a cloud sandbox, harness and API in one call, with reusable environments for multi-agent handoff, credential-injecting proxies, and scheduled triggers.",
+ "summary": "The speaker argues that coding or research agents should run in a cloud sandbox rather than on a laptop, since local runs collide with the user's browser and machine and do not scale or share well. Building that yourself means managing containers or VMs, writing a harness, and handling networking and firewall rules. Google's Gemini managed agents reduce this to one API call. The offering uses the Antigravity harness inside a sandbox, with built-in tools for web search, file I/O and code execution, plus custom functions and remote MCP servers. Two stateful primitives matter: interactions hold conversation turns (chained by ID), and environments hold the sandbox filesystem, which different agents can reuse for handoffs. Credentials are injected by an egress proxy so the sandbox only sees placeholder tokens, and triggers (schedules or webhooks) can run agents on a timer. The talk ends with live demos of a three-agent SEC-filing, quant and report pipeline and a stock-analysis app, all of which are vendor showcase examples with no benchmarks or pricing shown.",
+ "speakers": [
+  "Jack Wotherspoon"
+ ],
+ "orgs": [
+  "Google DeepMind"
+ ],
+ "format": "talk",
+ "topics": [
+  "sandboxing-execution",
+  "multi-agent",
+  "agent-architecture",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "managed-agents",
+  "cloud-agents",
+  "sandbox",
+  "interactions-api",
+  "environments",
+  "credential-proxy",
+  "agent-handoff",
+  "triggers",
+  "gemini",
+  "antigravity",
+  "vendor-talk"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Run coding agents in a cloud sandbox instead of on the local machine",
+   "detail": "Local runs can hijack the laptop browser and pop-ups during verification, and local setups (skills, customized agents) are hard to share with colleagues or embed in customer-facing apps without using a personal subscription. A sandboxed cloud agent avoids these problems.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Self-hosting a managed agent stack is tedious; the managed offering collapses it to one API call",
+   "detail": "Doing it yourself means spinning up a container or VM, building your own harness inside it, and handling networking, firewall rules and security. The managed version bundles sandbox, harness and scaling, so more agents means more API calls.",
+   "t": "2:30"
+  },
+  {
+   "idea": "Interactions API plus environment=remote is the entry point",
+   "detail": "The agent-first Interactions API (GA earlier this year) replaces the single model input/output call with a multi-step agent call. Setting environment to remote tells the platform to provision a cloud sandbox for the base Antigravity agent.",
+   "t": "3:43"
+  },
+  {
+   "idea": "Two separate server-side primitives: interactions (conversation) and environments (filesystem)",
+   "detail": "An interaction ID can be passed to the next call to continue a conversation. An environment ID persists the sandbox files, so later agents can pick up work from earlier ones.",
+   "t": "8:50"
+  },
+  {
+   "idea": "Multi-agent handoff through a shared environment with fresh context windows",
+   "detail": "Agent A writes files (for example filings and metrics JSON) into an environment. Agent B starts with a fresh context window but the same environment ID and reads those files. This keeps each agent narrow and makes its work checkable.",
+   "t": "10:11"
+  },
+  {
+   "idea": "Secrets never enter the sandbox",
+   "detail": "A proxy between the sandbox and the API puts a placeholder token in the sandbox. When an outbound call hits a matching API host (for example GitHub), the proxy swaps in the real secret. The agent cannot find or leak credentials it never holds.",
+   "t": "12:10"
+  },
+  {
+   "idea": "Triggers and fan-out make managed agents schedulable and composable",
+   "detail": "Triggers can run an agent on a cron-like schedule (for example a pre-market financial analysis) or via webhook (for example posting to Slack or querying a Jira board). One managed agent can call other managed agents through the API to fan out work.",
+   "t": "13:12"
+  },
+  {
+   "idea": "Step traces make the agent's actions inspectable",
+   "detail": "Each action (function result, file write, code execution) is saved as a step trace. The speaker suggests using these traces to tighten workflows over time.",
+   "t": "14:41"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Single-call managed agent",
+   "how": "Call the Interactions API with the base Antigravity agent and set environment to remote, then send normal input. Set the model with a one-line parameter in the agent config. Upload files such as agents.md or skills into the sandbox, and load a GitHub repository at startup. Save a tuned configuration with agents.create and invoke it later by agent ID.",
+   "when": "When you want a cloud-run coding or research agent without building sandbox and harness infrastructure yourself, or when you need to call the same agent repeatedly from an app."
+  },
+  {
+   "name": "Chain turns with the interaction ID",
+   "how": "Save each interaction's ID and pass it into the next interaction call to continue the same conversation.",
+   "when": "Multi-turn work where the same agent needs prior conversation context."
+  },
+  {
+   "name": "Hand off work between agents via a shared environment ID",
+   "how": "Run agent A with an environment; it writes intermediate artifacts (filings, metrics.json, a Markdown analysis). Start agent B with the same environment ID and a fresh conversation, so it reads the files and continues. Repeat for a third report-writing agent.",
+   "when": "Pipelines where each stage should have a clean context window but must reuse prior outputs without re-sending them in the prompt."
+  },
+  {
+   "name": "Narrow single-purpose agents with fan-out",
+   "how": "Split the job into agents with one purpose each (SEC researcher, quant analysis, report writer). Let a coordinating managed agent call the others through the API to fan out subtasks, and inspect each run through its step traces.",
+   "when": "When a broad prompt gives you no way to measure what the agent is doing, and you want each stage to be testable."
+  },
+  {
+   "name": "Placeholder credentials with egress injection",
+   "how": "Store the real token only in the platform proxy. Give the sandbox a dummy token. The proxy matches outbound requests by target API host and injects the real credential, so the agent never holds it. Credentials and MCP OAuth can be injected this way per service.",
+   "when": "Any agent that calls third-party APIs from an untrusted sandbox and must not be able to exfiltrate or discover secrets."
+  },
+  {
+   "name": "Scheduled and webhook-triggered runs",
+   "how": "Create a trigger on the managed agent with a schedule (for example before market open) or a webhook. The agent runs its input, writes its output, and can post results to Slack or another service.",
+   "when": "Recurring briefings, monitoring, or report generation that should not depend on someone starting a session."
+  }
+ ],
+ "tools": [
+  "Gemini API Interactions API",
+  "Gemini managed agents",
+  "Antigravity harness",
+  "Gemini Flash",
+  "Gemini 4 Argonne (name as spoken in the talk)",
+  "Google Search (built-in tool)",
+  "remote MCP servers",
+  "agents.md",
+  "agent skills",
+  "GitHub",
+  "Google Drive",
+  "Google Docs",
+  "Slack",
+  "Jira",
+  "Google AI Studio",
+  "Python (demo code execution)"
+ ],
+ "numbers": [
+  {
+   "claim": "Typical model output token cap is about 64k tokens; Gemini long decode shares the 1M-token context window across input, thinking and output.",
+   "t": "7:31"
+  },
+  {
+   "claim": "The new Gemini frontier model (named Gemini 4 Argonne in the talk) was released the day before the talk. The speaker cites strength on financial tasks and math benchmarks, but shows no numbers.",
+   "t": "7:31"
+  },
+  {
+   "claim": "Trigger example: a morning financial analysis scheduled before market open (8:30 a.m. in the example).",
+   "t": "6:02"
+  }
+ ],
+ "hot_takes": [
+  "Vendor talk for a Google product: the demos are showcase examples, and no latency, cost, pricing or benchmark numbers are given for managed agents.",
+  "The 'secrets never enter the sandbox' claim is stated, not demonstrated, and the proxy's scope (which hosts, how matching works, what happens with non-HTTP protocols) is not explained.",
+  "'Anything you can do on your own coding agent, you can turn into a managed agent' is an overreach. Local access, interactive use and cost are not covered.",
+  "Long-decode and benchmark claims for the new model are asserted without any figures on screen."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Sandbox plus egress-proxy credential injection and environment-based handoff map to Crucible (sandboxed execution) and to multi-agent handoff in the agent stack.",
+   "action": "Prototype an egress proxy in front of Crucible sandboxes that hands out placeholder credentials and injects real tokens per target host, then test that the agent never sees the secret."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Environment-ID handoff gives a resumable workspace across fresh contexts, which is close to checkpoint/resume. Triggers match loops and schedules, and placeholder credentials match zero-token credential handling.",
+   "action": "Persist the working directory and a manifest of intermediate artifacts as a named checkpoint, so a fresh Claude Code session can resume from files, and compare that design against placeholder-token injection."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Narrow agents that share files but restart with fresh context are a clean multi-agent pattern for context engineering.",
+   "action": "Read the managed-agents docs on environment reuse to see how file-based handoff is documented before designing one of our own pipelines."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

@@ -1,0 +1,44 @@
+# Verifiable Environments for AI in Biology — Kenny Workman, LatchBio
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `3ZMUiFaQ3qg` · [watch](https://youtu.be/3ZMUiFaQ3qg) · **date:** 2026-08-18 · **length:** 17:42 · **format:** talk · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Kenny Workman · **orgs:** LatchBio, Anthropic, Acquid, American Wetware
+- **topics:** evals, data-engineering, models-research · **tags:** verifiable-environments, benchmarks, spatial-biology, rubrics, human-verification, long-horizon-evals, refusal-evals, bio-agents, biosecurity
+
+> LatchBio's CTO on building verifiable benchmarks for biology agents: DAG-decomposed spatial-omics evals, human verification of ambiguous tasks, rubrics for long-horizon work, and refusal testing.
+
+## Summary
+Kenny Workman, CTO of LatchBio, argues that biological data analysis is a verifiable substrate for agents, much like code was for software engineering. Modern biology experiments produce very large datasets, and the analysis is a multi-step pipeline with no consensus on each step. LatchBio built agent prototypes on coding models, then found that existing benchmarks did not measure real experimental analysis. They built SpatialBench (146 problems, released the previous December), which splits analysis into single DAG nodes with a task prompt and a Python grader. Human scientists then graded each other's work, which exposed ambiguous task wording and arbitrary numeric thresholds, and a verified subset was published. Their long-horizon version, with roughly week-long tasks, shows that end-of-task rewards are too uninformative, so they are testing rubrics built on nodes that are invariant across analysis paths, though these correlate only loosely with numeric outcomes. The talk closes with refusal evals that pair routine biology questions with disguised red-team tasks, and reports that the speaker's benchmarks have started appearing in recent frontier model cards.
+
+## Key ideas
+- **Biology data analysis can serve as a verifiable substrate for agent training, similar to how code gave verifiable tasks to software agents.** — The speaker says experiment outputs are huge (single-cell 2 to 6 TB per run, spatial about 7 TB, proteomics a few hundred GB), and that analysis is a DAG of steps. He claims this gives a natural way to benchmark and climb capability, but says the claim is not settled. ([1:26](https://youtu.be/3ZMUiFaQ3qg?t=86))
+- **Prototype agents on coding models worked badly but showed early signs of working, so the speaker expects agentic science to follow the same pattern as code, with teams of agents orchestrated by harnesses.** — LatchBio built chat and dashboard agents that dispatch jobs to external compute. Coding models had not been seriously post-trained on biology, and the speaker says frontier models still lack the capability to extract scientific insight from real data. ([4:08](https://youtu.be/3ZMUiFaQ3qg?t=248))
+- **Benchmark tasks should be cut into single DAG nodes, because end-to-end grading of biology outcomes is too sparse while models are weak.** — Each eval is one or more data nodes (a matrix or high-content image), a task prompt stating a scientific goal, and a grader config that is a Python function. The speaker says this is modelled on SWE-bench and states the properties a good biology test needs: verifiable, durable across valid analysis paths, and requiring interaction with data rather than recall. ([8:21](https://youtu.be/3ZMUiFaQ3qg?t=501))
+- **Human scientists grading each other's work was the best proxy for ground truth, and it exposed bad tasks.** — Problems included ambiguous wording (how to split gene lists, what counts as inflammatory, what radius to use) and numeric QC thresholds chosen arbitrarily. After two rounds of human attempts the team kept a verified subset and published it. ([9:44](https://youtu.be/3ZMUiFaQ3qg?t=584))
+- **Long-horizon tasks need rubrics, because a single verifiable end reward carries little information.** — The long-horizon set simulates the results section of a paper or a go/no-go drug decision and takes about a week for three people to write each task. The team builds rubrics on choke-point nodes that are invariant across the analysis tree. The speaker says these rubrics are loosely correlated with numeric outcomes, so they do not yet trust them for RL or benchmarking. ([12:40](https://youtu.be/3ZMUiFaQ3qg?t=760))
+- **Refusal evals should pair routine science questions with red-team tasks that look innocuous, because refusals hurt real biology work.** — The speaker gives an example of a request that calls a toxin-like construct a harmless glowing protein. He reports that routine tasks are hit by refusals far more often than the red-team tasks, but the sentence is garbled in the transcript and the exact comparison is unclear. ([15:29](https://youtu.be/3ZMUiFaQ3qg?t=929))
+
+## Techniques
+- **Per-node verifiable eval specs** — Store each task as a JSON blob with input data nodes (matrix or image), a task prompt, and a Python grader function. Set the starting state to the point just before a scientist would act, so each node can be scored on its own. *When:* When end-to-end outcomes are too sparse to grade and the domain has a clear analysis DAG.
+- **Human-verification pass over agent trajectories** — Have domain experts grade each other's work and read agent trajectories across several model releases. Use disagreements to find ambiguous wording and arbitrary thresholds, then rewrite or drop those tasks and keep a verified subset. *When:* When the task has no canonical answer and automated graders may encode wrong assumptions.
+- **Rubrics on invariant choke-point nodes** — Treat the set of valid analysis paths as a tree. Find nodes that every valid path must pass through, and write rubric items for those nodes using domain knowledge of how the task works. *When:* For long-horizon tasks where a single end-of-task verifier is uninformative.
+- **Paired routine and red-team refusal evals** — Build routine tasks that match what scientists ask for, plus red-team tasks that look benign but hide a harmful goal. Measure both refusal rates together. *When:* When tuning safety behaviour in a domain where over-refusal blocks legitimate work.
+
+## Numbers
+- Single-cell experiments yield 2 to 6 TB per run ([1:26](https://youtu.be/3ZMUiFaQ3qg?t=86))
+- Spatial runs yield about 7 TB per run; proteomics a few hundred GB ([1:26](https://youtu.be/3ZMUiFaQ3qg?t=86))
+- SpatialBench has 146 problems and was released the previous December ([6:52](https://youtu.be/3ZMUiFaQ3qg?t=412))
+- Each long-horizon task takes about a week for a group of three people to write ([12:40](https://youtu.be/3ZMUiFaQ3qg?t=760))
+- A verified subset was produced after two rounds of human attempts ([11:11](https://youtu.be/3ZMUiFaQ3qg?t=671))
+
+## Hot takes
+- Frontier models cannot yet be trusted to do real scientific work.
+- Verifiability, not raw knowledge, is what will carry intelligence further, including in science.
+- Numeric QC thresholds used in bioinformatics are arbitrary.
+- Benchmarks for science are useful when model labs adopt them into their model cards.
+
+## Tools mentioned
+Python grader functions, SWE-bench-style task format, Claude models (named by the speaker as the models used for the evals)
+
+## Relevance to our work
+- **agentos** (1/3): The talk's per-node verifiable graders and human-verified subset are a way to test agent workflows, which is relevant to AgentOS evals. Only weakly tied to the current infra work. → *When writing AgentOS agent evals, split multi-step tasks into per-node graders and check a small human-verified subset for ambiguous task wording.*
+- **general** (1/3): The talk gives a worked example of rubrics on invariant nodes for long-horizon evals, which applies to any agent benchmark. → *Read the LatchBio benchmark and preprint materials to compare their rubric approach with rubric designs used for long-horizon agent evals.*

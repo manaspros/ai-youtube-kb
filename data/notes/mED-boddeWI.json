@@ -1,0 +1,245 @@
+{
+ "one_line": "Kai tests Strata, an MIT-licensed local inference engine that runs DeepSeek V4.1 Flash (763B MoE) on a 12GB GPU by tiering experts across GPU, RAM and SSD. Conclusion: it works, but RAM is now the real cost, and the viral 100+ tok/s figure was prefill, not decode.",
+ "summary": "Kai Explains reviews Strata, a local inference engine (MIT, open source, desktop app for Windows, Linux and Mac) that runs large mixture-of-experts models on consumer hardware. Strata places each part of the model by access frequency: the hot core and most-used experts go on the GPU, the next tier in RAM, and rarely used data such as DeepSeek's roughly 110 GB engram table on SSD. Qwen 3.8 Flash Next (125B) runs at about 94 tok/s on a 12GB card and is a usable local assistant. DeepSeek V4.1 Flash runs at only 4-6 tok/s decode on a 12GB card with 64GB RAM, and a viral 100+ tok/s figure was the prefill (prompt-reading) speed. The video's price math shows DDR5 RAM now costs about the same per GB as the VRAM that Strata was built to avoid, so the bottleneck has moved to RAM capacity. Counterintuitively, a 2021 RTX 3060 beat an RTX 5070 on DeepSeek because it had more RAM and faster CPU/storage, and a 2018 MI50 matched an RTX 5090 with the same 32GB. The video recommends renting the API for DeepSeek unless privacy requires local, and gives hardware tiers (16/32/64/128GB) for what runs usably.",
+ "speakers": [
+  "Kai (host of Kai Explains, not named in the transcript)"
+ ],
+ "orgs": [
+  "DeepSeek"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "strata",
+  "local-inference",
+  "mixture-of-experts",
+  "expert-offload",
+  "prefill-vs-decode",
+  "ssd-offload",
+  "ddr4-vs-ddr5",
+  "quantization",
+  "kv-cache",
+  "engram",
+  "hardware-cost",
+  "api-vs-local"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Strata runs a 763B MoE model on a 12GB GPU by keeping only the hot part on the card. Experts are tiered by how often they are used: GPU, then RAM, then SSD.",
+   "detail": "DeepSeek V4.1 Flash has 40 layers with 384 experts each, and each token activates 6 per layer. Its roughly 196.6B-parameter engram lookup tables (about a quarter of the model, around 110 GB) are read only for specific rows, so they can sit on SSD and be pulled on demand.",
+   "t": "3:58"
+  },
+  {
+   "idea": "The viral 100+ tok/s number measured prefill (reading the prompt), not decode (writing output). Decode on the same card was 4-6 tok/s, more than 20x slower.",
+   "detail": "Prefill batches thousands of tokens so each expert fetch is amortized across the batch. Decode needs a fresh expert fetch per token, which is why decode from RAM or SSD is slow.",
+   "t": "6:44"
+  },
+  {
+   "idea": "At decode speeds the cost of long agent contexts is paid at the start of every task.",
+   "detail": "A 30k-token coding-agent prompt takes over 2 minutes of prefill on the 5070 PC with DeepSeek, before the first output token. A 1000-token answer takes about 3.5 minutes at 4.7 tok/s, versus about 11 s for Qwen 3.8 Flash Next at 94 tok/s.",
+   "t": "8:10"
+  },
+  {
+   "idea": "RAM is now the expensive tier. The cost of the bottleneck moved rather than disappearing.",
+   "detail": "As of late October the video cites: used RTX 3060 12GB at about $310 (~$26/GB VRAM), 64GB DDR5 at about $1,200 (~$19/GB, up from about $191 a year earlier), 2TB PCIe 4 SSD at about $253 (~$0.13/GB). DDR4 64GB is about $500 (~$7.80/GB). The advice is to compare per-GB cost across all three tiers and check how many GB the model needs in each.",
+   "t": "10:50"
+  },
+  {
+   "idea": "Speed on DeepSeek depends on how many experts fit on the card, which is a capacity question rather than a GPU-speed question.",
+   "detail": "The MI50 kept about 2,700 of 15,360 experts on the card and the 5090 about 1,450 (because it reserved memory for a long context). The MI50 wrote 22-23 tok/s and the 5090 15-25 tok/s. The RTX 3060 (2021, 46GB RAM) ran at 9-11 tok/s on DeepSeek versus 4-6 tok/s for the RTX 5070 PC (64GB RAM). Caveats: different settings, single runs on a warm cache.",
+   "t": "14:44"
+  },
+  {
+   "idea": "Qwen 3.8 Flash Next is the model that actually delivers on the 12GB promise. DeepSeek needs 64GB RAM at minimum and 128GB+ to feel usable.",
+   "detail": "Qwen Q2 build: about 94 tok/s on the 5070 PC; 28.8 GB lookup table on SSD, about 34 GB of active experts in RAM, about 3.5 GB on the GPU. DeepSeek with 128GB RAM plus a 5070 Ti and fast SSD: 28.8 tok/s at the smallest quantization, dropping to 19 tok/s when spilling to SSD.",
+   "t": "17:23"
+  },
+  {
+   "idea": "Performance settings in fast-moving engines can silently trade quality for speed. Re-check task success, not only tok/s.",
+   "detail": "Strata shipped 63 releases in 38 days. One routing shortcut for 12GB NVIDIA cards made code generation 37% faster, but it failed 4.5 of 10 agent tasks (normal: 5.6) and was turned off two days later. Recommended 2-bit quantization kept about 100% of the original's average on several hard reasoning tasks but may need more tokens to think.",
+   "t": "19:48"
+  },
+  {
+   "idea": "For DeepSeek specifically on a 12GB card with 64GB RAM, the API is far cheaper than buying hardware. Local is justified mainly by privacy.",
+   "detail": "Off-peak API output is $0.60 per million tokens and peak is $1.20. A $1,200 RAM kit buys about 2B output tokens, which would take roughly 13.5 years at 4.7 tok/s, or about 7 years at the peak API price. Local is the right choice when code cannot leave the machine, such as under client contracts.",
+   "t": "19:48"
+  },
+  {
+   "idea": "Before buying hardware, list your GPU and VRAM, your RAM size and type (DDR4 or DDR5), and your SSD, then match them to a row in Strata's performance table.",
+   "detail": "Tiers from the video: 16GB runs Qwen in low-RAM mode pulling experts from SSD (about 8 tok/s on a 3060 with one 16GB stick; a community fork called Betel Juice reports 22 sustained tok/s with a different quantization). 32GB is the Qwen sweet spot (laptop with an 8GB card and 32GB DDR5 reached up to 30 tok/s; a coder build keeps 256 of 512 experts per layer in about 30GB). 64GB fits all Qwen builds. 128GB+ makes DeepSeek useful.",
+   "t": "21:14"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Three-tier expert placement by access frequency",
+   "how": "Rank experts (and engram rows) by how often they are used. Put the hot core and most-used experts on the GPU, the next tier in system RAM, and rarely used data on NVMe SSD, fetched only when a token needs it. Fill the GPU with as many experts as it can hold; the count of experts resident on the card is the main decode-speed driver.",
+   "when": "A mixture-of-experts model is larger than VRAM plus RAM can comfortably hold, and most experts are touched only sometimes."
+  },
+  {
+   "name": "Report prefill and decode separately, with context length, quantization and cache state",
+   "how": "Never publish one tok/s number for a local model. Report prompt-processing (prefill) tok/s and output (decode) tok/s separately. State the context length used, the quantization, whether the cache was warm, and whether the number came from one run or several.",
+   "when": "Benchmarking local inference or reading a benchmark or viral claim before acting on it. Directly relevant to InferCraft-style benchmark reporting."
+  },
+  {
+   "name": "Per-tier cost math for a hardware decision",
+   "how": "For each tier (VRAM, RAM, SSD), multiply the GB the target model needs in that tier by the current $/GB. Compare the total with the API cost of the same number of output tokens: tokens = budget / price per token; time = tokens / decode tok/s. Example from the video: $1,200 at $0.60 per M output tokens is about 2B tokens; at 4.7 tok/s that is about 13.5 years of writing.",
+   "when": "Deciding between buying hardware, renting an API, or running locally for a model at a given size."
+  },
+  {
+   "name": "Quantization and KV-cache choices for large local models",
+   "how": "Use the smallest quantization that still passes your evals. The video recommends 2-bit weights for DeepSeek V4.1 Flash, and a 4-bit KV cache was used on the 128GB build. Re-check task success after every engine release; a speed gain can come with a regression.",
+   "when": "Squeezing a large model into limited memory on consumer hardware."
+  },
+  {
+   "name": "Reduced-memory mode and specialized builds",
+   "how": "Use Strata's low-RAM mode to stream experts from SSD (Qwen on 16GB). Use the coder build, which keeps 256 of each layer's 512 experts and needs about 30GB, when the target is code generation. Pick a smaller sibling model (the Qwen 35B-class model, transcribed as 'Quen 3.635B') if speed matters more than size; reported 59.7 tok/s on an RTX 3060.",
+   "when": "Running a model on 16GB or 32GB of RAM, or when the task is code and the memory budget is tight."
+  },
+  {
+   "name": "Pre-purchase hardware checklist",
+   "how": "Write down: GPU model and VRAM; RAM size and type (DDR4 or DDR5) and current price; SSD model and speed. Find the Strata performance-table row closest to your setup, then check which operation (prefill or decode) and which context length each number measured before deciding what to buy.",
+   "when": "Before buying a GPU or RAM for local inference, to avoid paying for a bottleneck you do not have."
+  }
+ ],
+ "tools": [
+  "Strata (local inference engine, MIT license, GitHub, Windows/Linux/Mac desktop app)",
+  "llama.cpp (mentioned as a comparison)",
+  "Ollama (mentioned as a comparison)",
+  "Qwen 3.8 Flash Next (125B, Q2 build)",
+  "Qwen smaller sibling (transcribed as 'Quen 3.635B', measured at 59.7 tok/s on RTX 3060)",
+  "DeepSeek V4.1 Flash (763B MoE, MIT license, 1M context; transcribed as 'DeepSeq V4.1 Flash')",
+  "DeepSeek API (off-peak and peak output pricing)",
+  "Betel Juice (community fork, transcribed as 'betel juice')",
+  "NVIDIA RTX 3060, RTX 5070, RTX 5070 Ti, RTX 5090, RTX 4090 (price reference)",
+  "AMD MI50 (2018 data-center GPU, about $700 used)",
+  "PCIe 4 NVMe SSD (2TB, about $253)"
+ ],
+ "numbers": [
+  {
+   "claim": "Strata: released on GitHub Sept 24, 63 releases in 38 days, about 37,000 GitHub stars",
+   "t": "1:26"
+  },
+  {
+   "claim": "DeepSeek V4.1 Flash: 763B parameters, 1M-token context, claimed to run on 12GB VRAM",
+   "t": "2:37"
+  },
+  {
+   "claim": "DeepSeek MoE: 40 layers, 384 experts per layer, 6 experts used per layer per token; engram lookup tables 196.6B params (about 1/4 of model, about 110 GB)",
+   "t": "3:58"
+  },
+  {
+   "claim": "Viral claim of 100+ tok/s on RTX 5070 was prefill; decode was 4-6 tok/s (prefill about 110 tok/s), a gap of more than 20x",
+   "t": "6:44"
+  },
+  {
+   "claim": "1000-token response: about 3.5 min at 4.7 tok/s (DeepSeek, 12GB + 64GB RAM); about 11 s at 94 tok/s (Qwen 3.8 Flash Next)",
+   "t": "8:10"
+  },
+  {
+   "claim": "30k-token agent prompt: over 2 minutes of prefill before the first output token on the RTX 5070 PC with DeepSeek",
+   "t": "8:10"
+  },
+  {
+   "claim": "One agent run: 11 min 30 s for a simple codebase question on a 12GB + 24GB GPU setup (DeepSeek)",
+   "t": "9:35"
+  },
+  {
+   "claim": "Used RTX 3060 12GB about $310 (~$26/GB VRAM)",
+   "t": "10:50"
+  },
+  {
+   "claim": "64GB DDR5 kit about $1,200 (median of 77 kits, ~$19/GB), up from about $191 (~$3/GB) a year earlier",
+   "t": "10:50"
+  },
+  {
+   "claim": "64GB DDR4 about $500 (~$7.80/GB), more than 2x the capacity per dollar of DDR5",
+   "t": "11:28"
+  },
+  {
+   "claim": "2TB PCIe 4 SSD about $253 (~$0.13/GB), about 150x cheaper per GB than DDR5",
+   "t": "12:01"
+  },
+  {
+   "claim": "DeepSeek 110 GB engram table: about $14 of SSD versus about $2,100 in DDR5",
+   "t": "12:01"
+  },
+  {
+   "claim": "Bandwidth: SSD tier about 10x slower than DDR5; DDR5 about 4x slower than VRAM; DDR4 about half the bandwidth of DDR5",
+   "t": "12:01"
+  },
+  {
+   "claim": "RTX 3060 PC (2021, 46GB RAM) at 9-11 tok/s on DeepSeek vs RTX 5070 PC (64GB DDR5, 3.6 GB/s SSD) at 4-6 tok/s",
+   "t": "14:44"
+  },
+  {
+   "claim": "MI50 (2018, about $700 used, 32GB) at 22-23 tok/s vs RTX 5090 (32GB, about 11x the price, about $8,000) at 15-25 tok/s on DeepSeek",
+   "t": "14:44"
+  },
+  {
+   "claim": "Experts resident on the card: MI50 about 2,700 of 15,360; RTX 5090 about 1,450 (long context reserved memory)",
+   "t": "16:06"
+  },
+  {
+   "claim": "Qwen 3.8 Flash Next Q2: about 94 tok/s on RTX 5070 PC; 28.8 GB lookup table on SSD; about 34 GB active experts in RAM; about 3.5 GB on GPU",
+   "t": "17:23"
+  },
+  {
+   "claim": "DeepSeek on 128GB RAM + RTX 5070 Ti + fast SSD: 28.8 tok/s smallest quantization with 4-bit KV cache; 19 tok/s when spilling to SSD",
+   "t": "23:47"
+  },
+  {
+   "claim": "32GB card from 2018 at 22-23 tok/s on DeepSeek",
+   "t": "17:23"
+  },
+  {
+   "claim": "Release regression: routing shortcut for 12GB NVIDIA cards made code generation 37% faster but failed 4.5 of 10 agent tasks (normal 5.6); reverted two days later",
+   "t": "19:48"
+  },
+  {
+   "claim": "DeepSeek API output price: $0.60 per M tokens off-peak, $1.20 at peak; $1,200 buys about 2B output tokens; local would take about 13.5 years at 4.7 tok/s (about 7 years at peak API price)",
+   "t": "19:48"
+  },
+  {
+   "claim": "16GB setup: Qwen in low-RAM mode about 8 tok/s on RTX 3060 with one 16GB stick (one developer); Betel Juice fork reported 22 sustained tok/s with different quantization",
+   "t": "21:14"
+  },
+  {
+   "claim": "Laptop with 8GB GPU + 32GB DDR5 reached up to 30 tok/s on Qwen Q2 (Reddit post, almost 900 upvotes)",
+   "t": "22:32"
+  },
+  {
+   "claim": "Qwen smaller sibling: 59.7 tok/s on RTX 3060; coder build keeps 256 of 512 experts per layer in about 30GB",
+   "t": "22:32"
+  }
+ ],
+ "hot_takes": [
+  "The viral 100+ tok/s claim for DeepSeek on a 12GB RTX 5070 was a prefill number presented as generation speed; decode is 4-6 tok/s.",
+  "Running DeepSeek V4.1 Flash locally on a 12GB card with 64GB RAM does not beat renting the API on cost (about 13.5 years of local generation for the price of 2B API output tokens). Local makes sense mainly for privacy.",
+  "The 'you don't need an expensive GPU' premise has shifted: RAM is now about as expensive per GB as VRAM was, so the cost moved to RAM capacity rather than disappearing.",
+  "A 2018 MI50 (about $700 used) matched or beat an RTX 5090 on DeepSeek decode because expert capacity, not GPU speed, sets decode throughput here. Caveat: single warm-cache runs with different settings.",
+  "Strata performance optimizations can trade quality for speed (a routing shortcut was reverted after a drop in agent task success), so re-benchmark tasks, not just tok/s, after each release."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft (L2B) plans pluggable KV-cache strategies including CPU offload, and this video gives a concrete tiered-placement model (GPU / RAM / SSD by access frequency) plus benchmark-reporting pitfalls (prefill vs decode, context length, warm cache) that InferCraft benchmarks should follow.",
+   "action": "In InferCraft benchmarks, report prefill tok/s and decode tok/s as separate metrics, with context length, quantization and cache state for every number. Consider tiered expert or KV placement by access frequency as a design option. Read Strata's model guide for the tiering approach."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Checkpoint/resume of long Claude Code runs re-sends large contexts; on slow hardware the prefill cost of resuming a 30k-token context can dominate.",
+   "action": "Record prompt-token count and time-to-first-token at each resume in ProsHarness checkpoint metadata, so resume latency can be measured and budgeted."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

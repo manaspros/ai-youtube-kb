@@ -1,0 +1,180 @@
+{
+ "one_line": "Vercel's chief of software traces an internal data-science agent from a mega-prompt, to a multi-agent chain, to one file-system agent with distilled skills, then introduces the Eve agent framework.",
+ "summary": "Andrew Qu (chief of software at Vercel) describes how Vercel's internal data-science agent, D0, evolved. It began as one mega-prompt where a human ran the generated SQL. It then became a chain of role-specific agents (query, planning, execution, reporting) with scoped tools, and then one large agent that managed its own state. Early rollout was poor, at roughly 30% on evals. The turn came when Claude Code with Opus 4.5 showed that a plain file system plus bash was enough, and rebuilding D0 that way in a sandbox roughly doubled the eval score. A recurring job distills frequent queries into reusable skills, and Vercel now has about 100. The talk closes by introducing Eve, a \"Next.js for agents\" framework with convention-based folders for skills, tools and channels, and argues that company-specific knowledge beats off-the-shelf vertical agents. The talk also pitches Vercel's hosting, durability and sandbox services.",
+ "speakers": [
+  "Andrew Qu"
+ ],
+ "orgs": [
+  "Vercel",
+  "Aura"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "skills-self-improvement",
+  "context-engineering",
+  "multi-agent"
+ ],
+ "tags": [
+  "file-system-agent",
+  "bash-tool",
+  "sandbox",
+  "skills-distillation",
+  "data-science-agent",
+  "eve",
+  "next-js-for-agents",
+  "text-to-sql",
+  "semantic-layer",
+  "vercel",
+  "claude-code",
+  "internal-agents"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Start with a mega-prompt, then split only where it breaks",
+   "detail": "The first D0 version pasted a Snowflake schema and a question into one system prompt, and a human ran the SQL. The team then split work into query, planning, SQL and reporting agents, each with its own prompt and scoped tools. That chain still passed only summaries between steps.",
+   "t": "3:06"
+  },
+  {
+   "idea": "Collapse the chain into one long-running agent that manages its own state",
+   "detail": "Around the chain's limits, the team moved to one large call (max about 100 steps) where the agent plans, builds, executes and reports, and can look back at its own steps to recover from errors.",
+   "t": "5:52"
+  },
+  {
+   "idea": "A minimal file-system toolset beat the hand-built agent",
+   "detail": "After Claude Code with Opus 4.5 appeared, the speaker found the key was the tools: list file, read file and run bash, with few prescriptive tools. Agents are well trained on these, so the model explored and found emergent behaviour.",
+   "t": "8:12"
+  },
+  {
+   "idea": "Rebuild the agent as a file-system agent in a sandbox with the semantic layer as files",
+   "detail": "The new D0 runs in a sandbox, has the whole semantic layer dumped in as files, and adds a few Vercel-specific tools on top. The speaker says this was the biggest unlock and the eval score roughly doubled. An npm bash-tool helper attaches files and a sandbox.",
+   "t": "8:12"
+  },
+  {
+   "idea": "Distill recurring queries into skills with a scheduled job",
+   "detail": "Thousands of queries a day turned out to share a few shapes (aggregation, product lookup, billing). A recurring job takes recent queries and distills them into skills. About 100 skills now exist, so new runs start with prior context instead of from nothing.",
+   "t": "9:41"
+  },
+  {
+   "idea": "Eve: convention-over-configuration folders for agents",
+   "detail": "Eve is pitched as Next.js for agents. An agent is a runtime plus channels. You declare skills, tools and channels as folders, and the framework builds the agent. Durability, isolated execution, model calls and connections are part of the runtime, and adapters are open source.",
+   "t": "12:09"
+  },
+  {
+   "idea": "Company-specific knowledge beats off-the-shelf vertical agents",
+   "detail": "The speaker says vertical startup agents for a single system such as Snowflake lacked company context. Value comes from knowing when to query what and how things link. He recommends building your own agent and adding as much company knowledge as you can.",
+   "t": "14:53"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Decompose-then-collapse",
+   "how": "Begin with one prompt. Split into role agents only where the single prompt fails. When hand-off summaries lose information, merge back into one agent that owns its state across phases.",
+   "when": "Building a first internal agent where the workflow is clear but the failure points are not yet known."
+  },
+  {
+   "name": "File-system agent with minimal tools",
+   "how": "Give the agent list-file, read-file and run-bash tools inside a sandbox. Dump the domain context (for example the semantic layer) as files. Add only the domain-specific tools needed on top.",
+   "when": "The agent must explore varied questions and the domain context is documentation-like."
+  },
+  {
+   "name": "Query-to-skill distillation job",
+   "how": "Run a recurring job over recent agent queries, group them by shape, and turn each shape into a skill that new runs load as context.",
+   "when": "Many requests repeat in structure, and agents keep rediscovering the same procedures."
+  },
+  {
+   "name": "Convention-based agent folders",
+   "how": "Organise an agent as folders for system instructions, skills, tools and channels, with the framework wiring the runtime. Keep adapters for storage and model APIs swappable.",
+   "when": "Standing up many small internal agents that should share one deploy and observability path."
+  },
+  {
+   "name": "Built-in run observability",
+   "how": "Log every agent run, tool call and step, with estimated cost, so runs can be compared and optimised.",
+   "when": "Running agents in production and needing to see where steps and cost go."
+  }
+ ],
+ "tools": [
+  "Vercel AI SDK",
+  "Eve",
+  "Vercel Workflows",
+  "Vercel Sandbox",
+  "Vercel Connect",
+  "bash-tool (npm)",
+  "SkillsSH",
+  "Claude Code",
+  "Claude Opus 4.5",
+  "Snowflake",
+  "Next.js",
+  "Postgres",
+  "OpenAI responses API",
+  "Docker"
+ ],
+ "numbers": [
+  {
+   "claim": "Initial agent-based D0 rollout scored roughly 30% on evals (speaker says it was 'nailing 30%' before wider rollout, and users found it awful)",
+   "t": "7:14"
+  },
+  {
+   "claim": "Eval score roughly doubled after moving to the file-system agent in a sandbox",
+   "t": "8:12"
+  },
+  {
+   "claim": "Thousands of data queries per day from employees",
+   "t": "9:41"
+  },
+  {
+   "claim": "About 100 distilled skills built from recent queries",
+   "t": "10:41"
+  },
+  {
+   "claim": "Single-agent loop allowed max steps of about 100",
+   "t": "5:52"
+  },
+  {
+   "claim": "Speaker says the blog post about the file-system agent drove 70% of Vercel.com traffic in the week it was posted (self-reported, anecdotal)",
+   "t": "9:41"
+  },
+  {
+   "claim": "AI SDK replaces roughly 300-400 lines of provider-specific code with one line of model-switching code (speaker's figure)",
+   "t": "0:12"
+  },
+  {
+   "claim": "About 20 internal agents reached decent product-market fit (speaker's phrase 'roughly 20 decently PMF agents')",
+   "t": "16:16"
+  },
+  {
+   "claim": "Aura beta customer reports fewer steps and better success with Eve than with an off-the-shelf Claude Code setup (qualitative, no figures given)",
+   "t": "13:26"
+  }
+ ],
+ "hot_takes": [
+  "Off-the-shelf vertical agents are weaker than an agent built with deep company-specific knowledge.",
+  "A file system plus bash is a better agent substrate than a prescriptive set of custom tools.",
+  "Teams should start from the latest known patterns rather than rebuilding from a simple prompt.",
+  "One agent that manages its own state beats a chain of hand-off agents once the models are good enough."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The distill-recent-queries-into-skills job is close to SkillForge's goal of mining agent telemetry into governed, reusable skills. The talk gives a concrete, if anecdotal, pipeline for it.",
+   "action": "Prototype a SkillForge spike: group recent successful agent runs by query shape and draft one skill per shape, then measure whether skilled runs need fewer steps."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code with checkpoint/resume and plan-critique-debate. The talk's evidence that a single file-system agent beat a multi-agent chain is a direct design question for it.",
+   "action": "Run a comparison on one ProsHarness long task: the current multi-role plan/critique flow against one Claude Code session with a file-based plan and checkpoint files, scored on success and step count."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Relevant to recurring interests in subagents versus one agent and context engineering. Includes a useful minimal-tools argument, but the evidence is one anecdote with no published eval.",
+   "action": "Read the Vercel blog post on the file-system agent (linked by the speaker) for the exact eval setup before reusing the 'doubled score' claim."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

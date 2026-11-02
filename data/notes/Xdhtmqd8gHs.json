@@ -1,0 +1,123 @@
+{
+ "one_line": "Better Stack walkthrough of Depot, a remote Docker build service with cloud machines and shared caching, cutting one project's rebuild from 7m44s to 12s with depot build and depot bake.",
+ "summary": "The presenter demonstrates Depot, a remote Docker build service that runs builds on a cloud machine with a remote cache that persists across builds and team members. On a project with backend and frontend services, a rebuild dropped from 7 minutes 44 seconds to 12 seconds. Setup is a Depot account, a project, and a depot build run that authenticates through a browser URL and creates a depot.json file, which must have the same project ID across the team. Builds fail if the Dockerfile is not in the root, so the file flag is used to point at each service's Dockerfile. The first build is slow because it uploads the build context and fills the cache; later builds are fast. For a multi-service project, depot bake takes the existing Docker Compose file so both services build in one run, and teammates who connect to the same project benefit from the cached layers. The presenter says Depot is premium and suggests optimizing local builds as a cheaper alternative, without quantifying pricing.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "Depot"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "docker",
+  "remote-build",
+  "build-cache",
+  "docker-compose",
+  "depot",
+  "ci-speed",
+  "developer-productivity"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Remote build offload plus shared cache is the source of the speedup",
+   "detail": "Depot runs the Docker build on a faster cloud machine and keeps a cache, so rebuilds do not start from scratch. The presenter credits both factors for the 7m44s to 12s drop on one project.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Project setup creates a shared depot.json",
+   "detail": "Create a Depot account and a project, then run depot build to authenticate via a URL and select the project. This generates depot.json, which must hold the same project ID for every team member.",
+   "t": "0:54"
+  },
+  {
+   "idea": "Dockerfiles outside the root break the default invocation",
+   "detail": "With no Dockerfile at the repo root, depot build fails with a failed-to-solve error about a missing Dockerfile. Pointing the file flag at each service's Dockerfile fixes it.",
+   "t": "1:51"
+  },
+  {
+   "idea": "First build is the slow one",
+   "detail": "The first build uploads the whole build context and fills the remote cache, so it takes a while. Subsequent builds reuse most layers and finish much faster.",
+   "t": "1:51"
+  },
+  {
+   "idea": "Teammates share the cache",
+   "detail": "Once teammates install Depot and connect to the same project, their builds populate the cache that others then benefit from.",
+   "t": "2:57"
+  },
+  {
+   "idea": "depot bake handles multi-service compose files",
+   "detail": "Instead of running depot build per service, depot bake with the file flag pointing at the existing docker-compose file builds all services with their own contexts and Dockerfiles.",
+   "t": "2:57"
+  },
+  {
+   "idea": "Cost is the stated barrier, with local optimization as the alternative",
+   "detail": "The presenter calls Depot a premium service aimed at teams that value time savings. For smaller budgets he points to optimizing local Docker builds and a separate Better Stack Docker best-practices video, without giving prices.",
+   "t": "4:06"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Offload Docker builds to a remote builder with a shared cache",
+   "how": "Install the Depot CLI, run `depot build` once to log in through the browser URL and select a project, which creates depot.json. Commit depot.json so every teammate uses the same project ID. Set the image tag (the transcript says to tag it bs articles) and build; the first run fills the cache.",
+   "when": "Several developers or CI runs rebuild the same images, and local builds are slow or the machine is weak."
+  },
+  {
+   "name": "Point the build at a non-root Dockerfile with the file flag",
+   "how": "When Dockerfiles live in service subfolders (backend/, frontend/), pass the file flag with each service's Dockerfile path to depot build. Without it, depot build looks for a Dockerfile at the root and fails with failed to solve.",
+   "when": "A monorepo where each service keeps its own Dockerfile and there is none at the repo root."
+  },
+  {
+   "name": "Build all compose services in one remote run with depot bake",
+   "how": "Reuse the existing docker-compose.yml, which already lists each service's build context and Dockerfile. Run `depot bake` with the file flag pointing at that compose file so both services build together.",
+   "when": "A docker-compose project with several services, where you want one build command and cache shared across them."
+  }
+ ],
+ "tools": [
+  "Depot (depot.dev) CLI",
+  "depot build",
+  "depot bake",
+  "Docker",
+  "Docker Compose",
+  "Dockerfile",
+  "VS Code"
+ ],
+ "numbers": [
+  {
+   "claim": "Rebuild of one Docker image set dropped from 7 minutes 44 seconds to 12 seconds with Depot's remote build and cache (roughly 40x, the title's figure)",
+   "t": "0:00"
+  },
+  {
+   "claim": "First-ever Depot build is slower because it uploads the full build context and fills the remote cache; later builds are much faster, with no timing given",
+   "t": "1:51"
+  },
+  {
+   "claim": "Pricing is not quantified; the presenter only calls Depot premium",
+   "t": "4:06"
+  }
+ ],
+ "hot_takes": [
+  "The 40x headline compares a warm-cache rebuild on one project against an uncached local build. The first build is not shown as faster, and the speedup depends on the team sharing the cache.",
+  "Depot is presented as premium with no pricing, and the presenter suggests local build optimization for smaller budgets. Nothing in the transcript shows a sponsorship disclosure.",
+  "Short tutorial with real commands and a clear setup order, but it is thin on caching internals, failure modes, and CI integration."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS is a multi-service self-hosted stack (proxy, Postgres, Redis, observability), so slow multi-service docker builds could matter, but the video only covers a generic two-service compose project.",
+   "action": "If AgentOS image builds get slow on the single 5090 box or in shared CI, try a remote builder with a shared cache (Depot or similar) on the compose file and measure cold vs warm build times before adopting it."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI and has no Docker build pipeline described; the video does not bear on its checkpoint, planning or credential work.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

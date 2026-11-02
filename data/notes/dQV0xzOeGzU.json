@@ -1,0 +1,232 @@
+{
+ "one_line": "Project-based Redis crash course for Express + TypeScript + Zod: cache-aside, write-through, and the hash, list, set, sorted-set, JSON, search and Bloom filter types on a restaurant-directory API.",
+ "summary": "The video builds a restaurant-directory backend in Express 4, TypeScript and Zod, and uses Redis as both a cache and a primary store. It opens with the cache-aside pattern (check Redis, fall back to the source on a miss, write back with an expiry) and write-through for writes. Each Redis data type is then introduced and used in turn: hashes for flat restaurant records with a view counter, lists for review IDs with pagination, three sets acting as manual indexes for cuisines, a sorted set as a rating leaderboard, and string caching of OpenWeather responses with a one-hour TTL. The last sections cover RedisJSON for nested contact and link data, RedisSearch over hashes via a one-time index-creation script, and a Bloom filter to reject duplicate name-plus-location restaurants. Setup commands, key-naming helpers and a seed-script pattern are shown along the way. The speaker admits the sample app effectively uses Redis as its primary store rather than pairing it with a database.",
+ "speakers": [],
+ "orgs": [
+  "Redis",
+  "OpenWeather",
+  "Total TypeScript"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "redis",
+  "redis-stack",
+  "caching",
+  "cache-aside",
+  "write-through",
+  "node-redis",
+  "express",
+  "typescript",
+  "zod",
+  "redisjson",
+  "redissearch",
+  "bloom-filter",
+  "sorted-sets",
+  "sets",
+  "lists",
+  "hashes"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Redis is an in-memory store that works as a cache for speed, and the speaker notes it can also be used as a primary database.",
+   "detail": "Positions Redis as a low-latency layer that also reduces load on the database or on a paid third-party API.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Cache-aside for reads: check Redis first, fall back to the source of truth on a miss, then write the result to the cache with an expiry.",
+   "detail": "Expiry is set per key so staleness is bounded. The demo uses it for a third-party weather API.",
+   "t": "0:47"
+  },
+  {
+   "idea": "Write-through for writes: write to the primary store and Redis at the same time so new data is cached immediately.",
+   "detail": "The speaker says the caching pattern depends on application type and data type; the sample app mostly writes straight to Redis.",
+   "t": "1:45"
+  },
+  {
+   "idea": "Use node-redis (the package the Redis team now recommends) rather than ioredis, and run Redis Stack in Docker to get RedisJSON, RedisSearch and Bloom filters plus the RedisInsights UI on port 8001.",
+   "detail": "Port 6379 is the server and 8001 is RedisInsight. Core Redis types still work without Stack.",
+   "t": "2:51"
+  },
+  {
+   "idea": "Hashes hold flat field/value pairs (strings or numbers only) with no schema. Nested data like arrays must go elsewhere, such as sets or RedisJSON.",
+   "detail": "The app stores restaurant id, name and location in a hash, then cuisines in sets and contact details in JSON.",
+   "t": "34:13"
+  },
+  {
+   "idea": "Lists store review IDs in insertion order, and pagination is a LRANGE over computed start and end indexes, then a per-ID hash fetch.",
+   "detail": "LPUSH returns the new list length, which the speaker reuses later as a review count.",
+   "t": "1:03:58"
+  },
+  {
+   "idea": "Three sets act as manual indexes: a global unique cuisine set, a per-cuisine set of restaurant IDs, and a per-restaurant set of cuisines.",
+   "detail": "Sets remove duplicate cuisines automatically, and lookups by cuisine need no scanning.",
+   "t": "1:14:29"
+  },
+  {
+   "idea": "A sorted set keyed by score gives a rating leaderboard. The score is updated on every review from a running total and count.",
+   "detail": "Restaurants are created with score 0 so unreviewed places still appear. Reads use reverse range for high-to-low.",
+   "t": "1:26:29"
+  },
+  {
+   "idea": "Caching the weather response cut the endpoint from about 186 ms to about 26 ms on a hit.",
+   "detail": "The cached value is the stringified JSON with EX set to 3600 seconds. The TTL is visible in RedisInsights.",
+   "t": "1:48:48"
+  },
+  {
+   "idea": "A Bloom filter gives a fast probabilistic duplicate check on name plus location before creating a restaurant.",
+   "detail": "Reserved once via a seed script with error rate 0.001 and capacity 1,000,000. A positive check returns HTTP 409.",
+   "t": "2:12:00"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Project setup and scripts",
+   "how": "pnpm init; pnpm install express nanoid redis zod; pnpm install -D @types/express @types/node tsx typescript. In package.json set \"type\": \"module\" and scripts: dev = \"tsx watch --env-file .env index.ts\", build = \"tsc\", start = \"node dist/index.js\". .env holds PORT=3000 and the OpenWeather key. Run Redis Stack via Docker (the exact command comes from the Redis docs page, not spelled out in the video).",
+   "when": "Starting a Node service that needs Redis locally with hot reload."
+  },
+  {
+   "name": "Singleton Redis client",
+   "how": "Module-level `let client = null`. An async initialize() creates the client only if null, attaches client.on('error') and client.on('connect') logging, then awaits client.connect(). Every route calls initialize() and reuses the instance.",
+   "when": "Any Express app where each request needs Redis but connections should be created once per process."
+  },
+  {
+   "name": "Key-name helper",
+   "how": "getKeyName(...parts) joins string arguments with ':' and prefixes the project name (the demo uses 'bytes'). One exported function per key family (restaurant, review list, review details, cuisine set, restaurants-by-rating, weather, restaurant details, bloom, index). Key names: bytes:restaurants:<id>, bytes:reviews:<restaurantId>, bytes:review_details:<reviewId>, bytes:cuisines, bytes:cuisine:<name>, bytes:restaurant_cuisines:<id>, bytes:restaurants_by_rating, bytes:weather:<id>, bytes:restaurant_details:<id>, bytes:bloom:restaurants, bytes:idx:restaurants.",
+   "when": "Any project with several Redis key families, to avoid typos and keep naming in one place."
+  },
+  {
+   "name": "Hash entity plus atomic counters",
+   "how": "client.hSet(key, { id, name, location }) returns the number of new fields. client.hGetAll(key) reads the whole record. Run hIncrBy(key, 'view_count', 1) in the same Promise.all as the read to count views without a race. Running totals use hIncrByFloat (the video calls it a float increment) for total stars.",
+   "when": "Flat objects and counters that are read often and written concurrently."
+  },
+  {
+   "name": "Promise.all for independent Redis ops",
+   "how": "Wrap several independent client calls (hSet + sAdd + zAdd, or lPush + hSet) in one Promise.all. Spread arrays of promises from a map into the same outer Promise.all.",
+   "when": "Multi-key writes or reads with no dependency between them."
+  },
+  {
+   "name": "Paginated list read",
+   "how": "start = (page - 1) * limit; end = start + limit - 1; ids = await client.lRange(reviewKey, start, end); then Promise.all(ids.map(id => client.hGetAll(detailKey(id)))). Defaults used: page 1, limit 10. Writes: lPush(reviewKey, reviewId) and hSet(detailKey, data). Delete: lRem(reviewKey, 0, reviewId) and del(detailKey); if both results are 0, return 404.",
+   "when": "Ordered collections (newest reviews) where you need page slices plus a per-item lookup."
+  },
+  {
+   "name": "Sets as manual indexes",
+   "how": "On restaurant create, for each cuisine: sAdd('cuisines', name); sAdd(cuisineKey(name), restaurantId); sAdd(restaurantCuisinesKey(id), name). Read: sMembers for the global list, sMembers(cuisineKey) for IDs then hGet name for each. The video notes that an array-valued field must live in sets, since hashes cannot hold arrays.",
+   "when": "Many-to-many lookups and unique tag lists without a full scan."
+  },
+  {
+   "name": "Sorted-set leaderboard with running average",
+   "how": "On create: zAdd(restaurantsByRatingKey, { score: 0, value: id }). On review: reviewCount = result of lPush (the new list length); totalStars = hIncrByFloat(restaurantKey, 'total_stars', rating); average = Number((totalStars / reviewCount).toFixed(1)); zAdd(restaurantsByRatingKey, { score: average, value: id }); hSet(restaurantKey, 'average_stars', average). Read: zRange with the REV option for high-to-low, then hGetAll for each ID.",
+   "when": "Ranked lists that change on every write, such as ratings or scores."
+  },
+  {
+   "name": "Cache-aside with TTL for a third-party API",
+   "how": "Key weather:<id>. Get the restaurant hash, read the 'location' field (stored as 'lat,lon' and split on the comma). GET the key; if non-null, return JSON.parse of it and log a cache hit. On a miss, fetch https://api.openweathermap.org/data/2.5/weather?lat=<lat>&lon=<lon>&units=imperial&appid=<key>; if status is 200, await client.set(key, JSON.stringify(json), { EX: 60 * 60 }) and return. Otherwise return a 500.",
+   "when": "A slow or rate-limited upstream API whose responses can be stale for a known window."
+  },
+  {
+   "name": "RedisJSON storage",
+   "how": "Set nested data with client.json.set(key, '.', data) (the video uses the root path '.'). Read with client.json.get(key). Edit subpaths by passing a different path, such as the links array. RedisInsights shows the JSON and allows edits.",
+   "when": "Nested objects like contact info or link arrays that are awkward in hashes."
+  },
+  {
+   "name": "RedisSearch one-time index script",
+   "how": "Create seed/create-index.ts and run it with tsx. Connect, then try { await client.ft.dropIndex(indexKey) } catch to ignore a missing index. Then client.ft.create(indexKey, { id: TEXT, name: TEXT (sortable), average_stars: NUMERIC (sortable) }, { ON: 'HASH', PREFIX: restaurantsKeyPrefix }). Query with client.ft.search(indexKey, `@name:${value}`). The video says to index only the fields you need, because every index field adds recalculation cost on writes.",
+   "when": "Search or filter over hashes by field value, including numeric ranges, without manual sets."
+  },
+  {
+   "name": "Bloom filter for duplicate guard",
+   "how": "Seed script: await Promise.all([client.del(bloomKey)]) then await client.bf.reserve(bloomKey, 0.001, 1000000). On create: bloomString = `${name}:${location}`; seenBefore = await client.bf.exists(bloomKey, bloomString); if true return 409 with 'restaurant already exists'. Otherwise add with client.bf.add(bloomKey, bloomString) in the create Promise.all.",
+   "when": "Fast, memory-bounded rejection of likely duplicates where a rare false positive is acceptable."
+  },
+  {
+   "name": "Zod validation middleware and standard responses",
+   "how": "validate(schema) returns an Express middleware. It runs schema.safeParse(req.body); on failure it returns res.status(400).json({ success: false, error: result.error.errors }); otherwise next(). Response helpers successResponse(res, data, message) and errorResponse(res, status, message) keep one JSON shape. Mount the error handler last with app.use. Express 4 needs try/catch with next(error) inside async handlers; the video says Express 5 handles this.",
+   "when": "Express APIs that need one validation pattern and uniform error bodies."
+  }
+ ],
+ "tools": [
+  "Redis",
+  "Redis Stack",
+  "RedisInsights",
+  "RedisJSON",
+  "RedisSearch",
+  "Bloom filter (RedisBloom)",
+  "node-redis (redis npm package)",
+  "ioredis (mentioned as the alternative)",
+  "Express 4",
+  "Express 5 (mentioned)",
+  "TypeScript",
+  "tsx",
+  "tsc",
+  "Zod",
+  "nanoid",
+  "pnpm",
+  "npm",
+  "Docker",
+  "OpenWeather API (openweathermap)",
+  "Insomnia",
+  "Postman (mentioned)",
+  "VS Code",
+  "Total TypeScript tsconfig cheat sheet (linked)",
+  "GitHub .gitignore templates (linked)"
+ ],
+ "numbers": [
+  {
+   "claim": "Weather endpoint response time on a cache miss: about 186 ms (first run).",
+   "t": "1:48:48"
+  },
+  {
+   "claim": "Weather endpoint response time on a cache hit: about 26 ms.",
+   "t": "1:48:48"
+  },
+  {
+   "claim": "After the TTL was added, a second miss took 129 ms and the following cache hit took 16 ms.",
+   "t": "1:50:07"
+  },
+  {
+   "claim": "Weather cache TTL set to 3600 seconds (60 * 60), shown in RedisInsights as about 59 minutes remaining.",
+   "t": "1:50:07"
+  },
+  {
+   "claim": "Bloom filter reserved with error rate 0.001 and capacity 1,000,000.",
+   "t": "2:12:00"
+  },
+  {
+   "claim": "Demo restaurants show average_stars values of 3.8, 1.9 and 0 in the sorted-set listing, after sample reviews of ratings 5, 4 and 1 for one place and 1s and a 3 for another.",
+   "t": "1:39:30"
+  },
+  {
+   "claim": "Review rating validated as a number from 1 to 5 inclusive with Zod.",
+   "t": "0:22:53"
+  }
+ ],
+ "hot_takes": [
+  "The speaker says the cache-aside and write-through patterns are the basis, yet the sample app mostly writes only to Redis and says so; no database is paired with it, so the durability question is left unanswered.",
+  "The video names persistence only briefly (a Docker persistence setup page is mentioned) and does not discuss what happens to Bloom filter or sorted-set state if Redis restarts without persistence.",
+  "Reviewer note (my check, not stated in the video): the sorted-set page code uses end = start + limit, and ZRANGE ends are inclusive, so each page may return one extra item. Start + limit - 1 is likely correct.",
+  "The Bloom filter is only consulted on create, and the seed script deletes and recreates it. Restaurants added before the filter existed are not in it, so the duplicate check misses them."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L3 storage already lists Redis, and the roadmap mentions Redis multi-instance budget counters. The video covers hash counters (HINCRBY/HINCRBYFLOAT), sorted sets for ranking, and TTL caching, all relevant to budget tracking and cache-backed lookups.",
+   "action": "Prototype Govrix budget counters as a Redis hash per tenant using HINCRBYFLOAT, and compare that with the planned multi-instance design before committing to it."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "This is a general Redis and Express tutorial. No agent run, checkpoint, or approval concept appears, and nothing maps to the harness.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

@@ -1,0 +1,59 @@
+# Fable 5.1 is here, and its REALLY good
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `0lBvjhcRqyU` · [watch](https://youtu.be/0lBvjhcRqyU) · **date:** 2026-09-02 · **length:** 14:00 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Better Stack host (unnamed in transcript) · **orgs:** Anthropic, OpenAI, Artificial Analysis, Cursor, Better Stack
+- **topics:** models-research, token-cost-efficiency, coding-agents, vibe-coding-app-building · **tags:** fable-5.1, fable-5, pricing, effort-levels, cost-per-task, token-usage, benchmarks, artificial-analysis, cursor-bench, single-file-html-test, three.js, web-design-test, data-retention, cyber-safeguards, subscription-limits, gpt-5.6-sol, grok-4.6, kimi-k3
+
+> Better Stack's hands-on review of Fable 5.1: a pricing and benchmark rundown, then five one-shot builds (F1 browser game, tennis-club site) comparing cost, time and tokens against Fable 5, GPT 5.6 Sol, Grok 4.6 and Kimi K3.
+
+## Summary
+The host goes through Anthropic's Fable 5.1 announcement: cache-read price cut, claimed 25% (up to ~45% agentic) savings on API usage, a subscription-limit reduction, and changes to data retention and cyber safeguards. He then checks the claims against Artificial Analysis and Cursor's benchmark, finding that per-task cost at max effort can rise because Fable 5.1 uses more tokens, while high effort looks like the better value. Two one-shot builds follow, a single-file three.js F1 game and a tennis-club website, each run once per model with time, cost and token counts reported. Fable 5.1 produced the most playable F1 game and the most complete site, but at the highest time and cost. Grok 4.6 and Kimi K3 were the cheap options, and GPT 5.6 Sol gave the weakest game. Each model was tested once and effort levels were not matched across models, so the results are anecdotal.
+
+## Key ideas
+- **Fable 5.1 cuts cache-read pricing from $1 to $0.25 per million tokens, which the host says is cheaper than GPT 5.6 Sol.** — Anthropic estimates about 25% cheaper for typical workloads and up to ~45% for highly agentic work, but only for API usage. The host says subscriptions do not get the saving, and that limits are reduced on Sept 14 (the exact figure is garbled in the captions). ([1:00](https://youtu.be/0lBvjhcRqyU?t=60))
+- **Per-task cost at max effort can go up even though the per-token price went down.** — Artificial Analysis scores Fable 5.1 max at 66 on its Intelligence Index, four points above Fable 5. But Fable 5.1 max used about 45k tokens per task against Fable 5's 36k, so cost per task was higher. Cache-read savings were outweighed by more reasoning and output tokens. ([2:15](https://youtu.be/0lBvjhcRqyU?t=135))
+- **Fable 5.1 at high effort matches Fable 5 at max on the index and costs much less per task.** — The host says Fable 5.1 high matches Fable 5 max, beats GPT 5.6 Sol by one point, costs a bit over half as much and uses about a third of the tokens. His advice is to drop effort rather than use max, since max will drain a subscription quickly. ([2:15](https://youtu.be/0lBvjhcRqyU?t=135))
+- **Cursor's benchmark tells a more favourable story than the index, and Anthropic's own benchmarks show large leads.** — On the Cursor bench, Fable 5.1 max cost per task fell from 17.32 to 9.64 with a 3% higher score and about 30k fewer tokens per task. Fable 5.1 high beats Fable 5 xhigh on this bench while being cheaper. Anthropic's blog shows large leads, including about double the Terminal Bench Science score and a 13% lead on agentic coding. The host notes DeepSWE results are not yet available. ([3:19](https://youtu.be/0lBvjhcRqyU?t=199))
+- **On a single-file three.js F1 game test, Fable 5.1 was the most bug-free result and the most expensive.** — The prompt asked for a self-contained HTML file using three.js with AI opponents, WASD steering and other features. Fable 5.1 xhigh took 59m58s, used 8.1M tokens and would have cost about $18.87 via the API. The host found no major bugs: working track, minimap, timing, lap record, and correct WASD mapping. Fable 5 xhigh took 25m30s, $13.73 and about half the tokens, and was judged somewhat more basic. ([4:38](https://youtu.be/0lBvjhcRqyU?t=278))
+- **The cheap or fast models produced weaker F1 games, with Kimi K3 being the only playable one besides Fable.** — GPT 5.6 Sol xhigh took 6m54s, about $5.15 and 6.8M tokens, and the host called its result one of the worst. Grok 4.6 took about nine minutes, $0.38 and 200k tokens, and he could not complete a lap. Kimi K3 max took about 35 minutes, $1.26 and 1.7M tokens, and was playable but had twitchy steering and weak barriers. ([7:43](https://youtu.be/0lBvjhcRqyU?t=463))
+- **On a tennis-club website prompt, Fable 5.1 produced the strongest design but cost the most, while Grok 4.6 had the best price-to-performance.** — Fable 5.1 took 51 minutes and about $17 and delivered a bold layout with working court booking, classes, coach, membership pricing and events. Fable 5 took 8 minutes and about $4.15 with a similar design but few images. GPT 5.6 Sol built a full-stack app in 22 minutes for $4.10, and Grok 4.6 took 8 minutes for $0.65 with the best court-booking widget. Kimi K3 was the cheapest at $0.55 in about nine minutes, but looked barer. ([8:45](https://youtu.be/0lBvjhcRqyU?t=525))
+- **The data-retention change does not affect non-enterprise users, and the cyber safeguards now block 60% fewer false positives.** — The host says the retention policy only changes for special enterprise customers. The new safeguards are said to reduce cyber false positives by 60%, because Fable 5.1 can find software vulnerabilities but is not meant to build exploits for them. The host calls the retention change weaker than the headline suggests and the safeguard change positive. ([12:14](https://youtu.be/0lBvjhcRqyU?t=734))
+
+## Techniques
+- **Pick effort level by cost per task, not per token** — Compare models on total cost and total tokens for the same task, using benchmark cost-per-task figures. Choose the lowest effort level whose score matches the higher-effort result of the previous model (e.g. Fable 5.1 high versus Fable 5 max). Avoid max effort for subscription-limited work. *When:* Choosing a model and effort for agent runs where cost, token budget or subscription limits matter.
+- **Same prompt, single-file runnable artifact, measure time/cost/tokens** — Give every model the same prompt asking for one self-contained HTML file (three.js for the game) with a list of required features. Record wall-clock time, API-equivalent cost and total tokens. Judge by playing or using the output, not by reading the code. *When:* Quick, reproducible side-by-side model comparisons for frontend or game-style generation where you want an artifact you can run.
+- **Use the same effort level across models before comparing** — The host mixes effort levels (xhigh, max, and unspecified for Grok and Kimi), then compares across them. Matching the effort level, or reporting cost per task at each level, makes the comparison fairer. *When:* Reading or running this kind of single-run comparison. Note this as a caveat in your own tests.
+
+## Numbers
+- Cache-read price cut from $1 to $0.25 per million tokens (API only) ([1:00](https://youtu.be/0lBvjhcRqyU?t=60))
+- Estimated 25% cheaper for typical workloads and up to ~45% for agentic work (API) ([1:00](https://youtu.be/0lBvjhcRqyU?t=60))
+- Artificial Analysis Intelligence Index: Fable 5.1 max 66, four points above Fable 5 ([2:15](https://youtu.be/0lBvjhcRqyU?t=135))
+- Per task, Fable 5.1 max used ~45k tokens vs Fable 5 max ~36k ([2:15](https://youtu.be/0lBvjhcRqyU?t=135))
+- Fable 5.1 high costs a little over half of Fable 5 max and uses about a third of the tokens ([2:15](https://youtu.be/0lBvjhcRqyU?t=135))
+- Cursor bench: Fable 5.1 max cost per task 17.32 -> 9.64, +3% score, ~30k fewer tokens per task ([3:19](https://youtu.be/0lBvjhcRqyU?t=199))
+- Anthropic blog: about double Terminal Bench Science, 13% lead on agentic coding ([3:19](https://youtu.be/0lBvjhcRqyU?t=199))
+- F1 game: Fable 5.1 xhigh 59m58s, 8.1M tokens, ~$18.87 API equiv. ([4:38](https://youtu.be/0lBvjhcRqyU?t=278))
+- F1 game: Fable 5 xhigh 25m30s, ~$13.73, about half the tokens of Fable 5.1 ([5:48](https://youtu.be/0lBvjhcRqyU?t=348))
+- F1 game: GPT 5.6 Sol xhigh 6m54s, ~$5.15, 6.8M tokens ([5:48](https://youtu.be/0lBvjhcRqyU?t=348))
+- F1 game: Grok 4.6 ~9 min, $0.38, ~200k tokens ([6:54](https://youtu.be/0lBvjhcRqyU?t=414))
+- F1 game: Kimi K3 max ~35 min, $1.26, 1.7M tokens ([7:43](https://youtu.be/0lBvjhcRqyU?t=463))
+- Tennis site: Fable 5.1 51 min, ~$17; Fable 5 8 min, ~$4.15 ([8:45](https://youtu.be/0lBvjhcRqyU?t=525))
+- Tennis site: GPT 5.6 Sol 22 min, $4.10 (full-stack app); Grok 4.6 8 min, $0.65; Kimi K3 ~9 min, $0.55 ([10:54](https://youtu.be/0lBvjhcRqyU?t=654))
+- New cyber safeguards block 60% fewer false positives ([12:14](https://youtu.be/0lBvjhcRqyU?t=734))
+
+## Hot takes
+- Fable 5.1 is a new frontier model, but at max effort it can cost more per task than Fable 5 despite the cheaper per-token price.
+- Dropping Fable 5.1 to high effort gives Fable 5 max quality at a fraction of the cost, and the host recommends it for subscription users.
+- The API price cut does not reach subscriptions, and subscription limits are being reduced, which the host finds frustrating.
+- Anthropic models stay at the expensive end of price charts, and the host wishes it were closer to GPT pricing.
+- Grok 4.6 gives the best price-to-performance on the design test, at $0.65 against Fable 5.1's ~$17.
+- The data-retention change is much smaller than the headline suggests for non-enterprise users.
+- The evidence is anecdotal: one run per model, mixed effort levels, and results the host admits may be influenced by Fable 5.1 thinking for an hour.
+- Vendor-blog benchmark claims are relayed without independent checks, and the host acknowledges that the benchmarks disagree.
+
+## Tools mentioned
+Fable 5.1, Fable 5, Mythos 5.1, Opus 5, GPT 5.6 Sol, GPT Image 2, Grok 4.6, Kimi K3, Three.js, Artificial Analysis Intelligence Index, Cursor bench, Terminal Bench Science, DeepSWE, ChatGPT site hosting feature, Claude subscription
+
+## Relevance to our work
+- **agentos** (2/3): AgentOS has budgets and strategy routing (L1 Govrix Scout). This video shows per-token pricing can mislead, since per-task cost depends on tokens used at each effort level. → *Make the budget and routing cost model track cost per task (tokens actually used times price) rather than per-token price, and record effort level alongside model in routing decisions.*
+- **prosharness** (2/3): ProsHarness wraps the Claude Code CLI and handles loops and subscription burn. The effort-level finding directly affects how long runs burn through a subscription. → *Add a per-stage effort-level setting in ProsHarness plans, default to high rather than max, and warn when a loop is set to max effort.*

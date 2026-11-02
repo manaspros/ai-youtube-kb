@@ -1,0 +1,210 @@
+{
+ "one_line": "Better Stack podcast with Dreams of Code's Elliot on leaving dev work, betting on Rust, and practical AI-coding habits: stub-first interfaces, git-staged checkpoints, human-steered architecture.",
+ "summary": "Three Better Stack hosts interview Elliot (Dreams of Code) about his path from professional developer to full-time creator and product builder. Most of the episode is anecdote and opinion: terminal-first tooling (Neovim, Codex CLI, Claude Code), building a cross-platform Rust video editor with heavy AI help, and why he distrusts AI for architecture. He describes concrete habits for working with coding agents: writing public interfaces or stubs first, hand-building small spikes before delegating a new framework, and staging git changes as checkpoints. On the business side he reports YouTube ad revenue of a couple of thousand dollars a month, a course that sold less as agentic tools spread, and income now coming from sponsorships and products. The closing segment is hot takes: diminishing returns in frontier models, the end of AI marketing hype, a push toward local models, and LLM-driven product recommendations as a new form of SEO. Most of it is unsourced personal opinion, so treat the predictions as opinion, not evidence.",
+ "speakers": [
+  "Richard (host, Better Stack)",
+  "James (host, Better Stack)",
+  "Andrews (host, Better Stack)",
+  "Elliot (guest, Dreams of Code)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Dreams of Code",
+  "Anthropic",
+  "Zed",
+  "Vercel",
+  "Apple",
+  "Microsoft",
+  "Sony",
+  "Ladybird",
+  "Oven (Bun)",
+  "Supabase",
+  "Resend",
+  "NVIDIA"
+ ],
+ "format": "interview",
+ "topics": [
+  "coding-agents",
+  "claude-code",
+  "context-engineering",
+  "dev-tools"
+ ],
+ "tags": [
+  "podcast",
+  "ai-coding-workflow",
+  "codex-cli",
+  "claude-code",
+  "rust",
+  "stub-first-development",
+  "git-checkpoints",
+  "cross-platform-media",
+  "agent-hot-takes",
+  "opinion"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent-written code is a terminal-first, no-autocomplete workflow: he reads output as it streams and interrupts the agent when it drifts, using Claude Code and Codex in the terminal and no inline AI completion.",
+   "detail": "Speaker reads agent output live and stops it when it goes off-path. He uses Codex CLI mostly now and Claude Code less. Autocomplete is off in Neovim, used only for reading and navigating code.",
+   "t": "2:46"
+  },
+  {
+   "idea": "Architecture stays human. Unguided agents put everything into main.rs, so he defines the structs, public interface and file layout himself.",
+   "detail": "Unprompted, the agent produced a roughly 20,000-line main.rs and he restarted. Agents also make everything pub. He keeps architectural decisions and delegates the typing and refactoring.",
+   "t": "26:16"
+  },
+  {
+   "idea": "Stub-first contract: write the struct and public interface (or empty functions) as a contract, then let the agent fill in implementations that must match it.",
+   "detail": "He borrows the C++ header-file habit of declaring the public surface first. The contract stops the agent from exporting everything. It fits typed languages where the signature is the contract.",
+   "t": "28:40"
+  },
+  {
+   "idea": "Learn a new framework by hand before letting the agent touch it, otherwise you do not understand refresh and rendering behaviour.",
+   "detail": "He wrote small apps himself in GPUI (with gpui-component), Iced and egui before delegating. Hand-writing is also his rule for any concept he is learning, since you cannot learn it if you do not write it yourself.",
+   "t": "27:41"
+  },
+  {
+   "idea": "Git staging is his checkpoint system: stage each direction you accept, then revert to the staged state when the agent breaks things. He wants per-message code checkpoints built into the tools.",
+   "detail": "Codex has no built-in code checkpoint per message. Claude Code's checkpoint view is hidden behind a double-escape. Rolling back by asking the agent to undo its last change is unreliable when it has gone many messages.",
+   "t": "31:28"
+  },
+  {
+   "idea": "Trust level depends on stakes: toy scripts and one-off converters can be left to the agent, but production code needs close steering because agents keep trying to break the constraints they were given.",
+   "detail": "He says agents will break constraints in the instructions and that CLAUDE.md-style rules are only guidelines to the model. Fully autonomous rip-and-replay loops are not something he trusts for maintained code.",
+   "t": "30:07"
+  },
+  {
+   "idea": "Cross-platform media apps need a swappable decoder/encoder layer over native APIs, and licensing decides what you can bundle.",
+   "detail": "macOS uses AVFoundation through Rust FFI. Linux uses GStreamer over FFmpeg. Windows uses Media Foundation, which supports fewer codecs. FFmpeg's GPL build cannot be bundled on Windows, so only the LGPL build is shipped. The AI-generated first pass did not separate these backends.",
+   "t": "17:51"
+  },
+  {
+   "idea": "Bullish on Rust for 2026 because AI-accelerated code needs stability. He argues correct Rust removes a whole class of bugs and that companies are starting to adopt it.",
+   "detail": "The argument is that cheap, fast AI output sacrifices stability, which pushes teams toward Rust. He cites Bun's rewrite of about a million lines and Ladybird porting C++ code to Rust as examples.",
+   "t": "20:36"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Stub-first public interface",
+   "how": "Write the structs, traits, and public function signatures (empty bodies) by hand, restrict visibility to what callers need, then prompt the agent to fill in implementations that match the stubs. Re-check that the agent did not widen pub surfaces or edit the stubs to fit its code.",
+   "when": "Strongly typed codebases you plan to maintain, where the agent might otherwise export everything or drift from the intended design."
+  },
+  {
+   "name": "Hand-built spike before delegating",
+   "how": "Before letting an agent touch a new framework, write a small app yourself to learn its lifecycle and rendering model. Then use that code as the reference for conventions in later agent-generated code.",
+   "when": "Adopting an unfamiliar framework or concept, especially where refresh/state behaviour is subtle."
+  },
+  {
+   "name": "Git staging as manual checkpoints",
+   "how": "After each direction you accept, stage the changes (git add, no commit needed). If the agent breaks things, revert the working tree to the staged state. The speaker uses this instead of relying on the agent's own undo.",
+   "when": "Interactive agent sessions where the agent makes multi-file changes and you want a reliable rollback point."
+  },
+  {
+   "name": "Architecture-owner, typing-delegate split",
+   "how": "Decide the module boundaries and which file each part belongs in. Hand the agent a stub or file layout and ask it to implement or refactor into it. Rewrite or pick at code yourself when the agent's output is structurally wrong.",
+   "when": "Projects where the agent tends to dump everything into one file or make poor structural decisions."
+  },
+  {
+   "name": "Codec backend abstraction",
+   "how": "Put decoders and encoders behind a module interface so each platform backend is swappable. Use the platform-native API (AVFoundation on macOS, Media Foundation on Windows, GStreamer on Linux) through FFI, and check licensing before bundling FFmpeg.",
+   "when": "Building cross-platform media tools in Rust or another systems language."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex CLI",
+  "Cursor",
+  "OpenCode",
+  "Bun",
+  "Zig 0.16",
+  "Rust",
+  "GPUI",
+  "gpui-component",
+  "Iced",
+  "egui",
+  "Tauri",
+  "Electron",
+  "ZeroNative",
+  "xterm.js",
+  "AVFoundation",
+  "Media Foundation",
+  "GStreamer",
+  "FFmpeg",
+  "rust-analyzer",
+  "Neovim",
+  "Doom Emacs",
+  "Emacs",
+  "org-mode",
+  "zoxide",
+  "croc",
+  "HTMX",
+  "Alpine.js",
+  "Alpine Ajax",
+  "Go",
+  "Templ",
+  "Next.js",
+  "NixOS",
+  "nix-darwin",
+  "Kubernetes",
+  "Git",
+  "Claude Mythos",
+  "T3 Code",
+  "Supabase",
+  "Resend",
+  "Sony FX30 / FX3",
+  "Sigma 23mm f/1.4"
+ ],
+ "numbers": [
+  {
+   "claim": "YouTube AdSense revenue of a couple of thousand dollars per month, described as not livable in the US",
+   "t": "9:48"
+  },
+  {
+   "claim": "Unguided agent output reached a roughly 20,000-line main.rs before he restarted the Rust project",
+   "t": "26:16"
+  },
+  {
+   "claim": "Bun's rewrite was a roughly million-line PR merged about seven days after the experiment was announced",
+   "t": "24:57"
+  },
+  {
+   "claim": "Hosts say Claude Max at about $200 per month is an option that non-developers compare against hiring a developer",
+   "t": "53:22"
+  },
+  {
+   "claim": "Speaker estimates AdSense income is not enough to live on in the US, and says sponsorships would likely earn more than the course",
+   "t": "9:48"
+  },
+  {
+   "claim": "Speaker says a Mac app dependency and a Sony FX3 setup (ISO up to 12,800) is used for B-roll, not a technical benchmark",
+   "t": "43:29"
+  }
+ ],
+ "hot_takes": [
+  "LLMs are reaching diminishing returns; frontier models like Claude Mythos will stay enterprise-only because they are too expensive to serve to consumers (opinion, not evidence).",
+  "The AI-marketing hype will wind down in 2027 because consumers do not want AI bolted onto everything; the speaker admits he could be wrong.",
+  "Rust will be the trend for 2026 as companies trade speed for stability when using AI to write code.",
+  "Unpredictable AI pricing will push more people toward local models and buying GPUs before prices rise further.",
+  "LLM-driven product recommendations (for example, which host to deploy to) will become a new SEO market, with product makers using llms.txt and robots.txt-style tricks to get picked.",
+  "Convergence: when everyone asks AI for the same architecture and product advice, relying on your own intuition becomes the differentiator.",
+  "Electron, Tauri and similar web-view wrappers are good for developers but worse for users, and the speaker prefers native tools."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Govrix Scout is a Rust proxy, so the stub-first and no-accidental-pub guidance applies to it. The rest of the episode is about desktop/video apps and personal workflow, not agent infra.",
+   "action": "When an agent fills in a Rust module for AgentOS, define the public trait and types first and reject any change that widens pub visibility or edits the stubs."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The speaker explicitly wants per-message code checkpoints, which is what ProsHarness's checkpoint/resume of long Claude Code runs needs. He also treats git staging as the rollback that actually works, which matches the harness's checkpoint design.",
+   "action": "Make ProsHarness checkpoints snapshot the working tree (git stage or commit per agent turn) so resume and rollback restore files, not only the conversation. Check what Claude Code's built-in checkpoint restores before building the feature."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

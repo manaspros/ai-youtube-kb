@@ -1,0 +1,158 @@
+{
+ "one_line": "Better Stack walkthrough of Bun 1.2.20 and 1.2.21 release notes: yarn-to-bun.lock migration, faster AbortSignal timeouts and postMessage, bun test return-value matchers, unified SQL client, native YAML, idle CPU fix.",
+ "summary": "The video narrates the Bun 1.2.20 and 1.2.21 release notes from November 2025, mostly by reading them out with short demos of the new bun test matchers. Headline changes are an automatic yarn-to-bun.lock migration that preserves resolved versions, an AbortSignal timeout reimplemented on the setTimeout mechanism (said to be 40x faster), and faster worker messaging via postMessage. A new bun test matcher set asserts mock return values, and a single Bun SQL client now covers PostgreSQL, MySQL, MariaDB and SQLite with a Zig-written MySQL driver. Other items are a fix that stops the server from firing a per-second timer when idle, native YAML import and parsing, Bun.secrets using OS-native credential storage, and about 69 fixed issues. The presenter also announces this is his last video for the channel. Most performance numbers are the release notes' own claims and are not independently benchmarked on screen.",
+ "speakers": [
+  "Bernard"
+ ],
+ "orgs": [
+  "Bun",
+  "Better Stack"
+ ],
+ "format": "news",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "bun",
+  "javascript-runtime",
+  "bun-test",
+  "lockfile",
+  "yarn-migration",
+  "bun-sql",
+  "mysql",
+  "postgres",
+  "sqlite",
+  "yaml",
+  "postmessage",
+  "abortsignal",
+  "idle-cpu",
+  "bun-secrets",
+  "release-notes",
+  "zig"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Bun 1.2.20 and 1.2.21 both shipped in the same month; the video covers the highlights rather than the full changelog.",
+   "detail": "Speaker says about 69 issues were fixed across the two releases and that he cannot cover them all; the full list is in Bun's blog, linked in the description.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Bun now migrates a yarn.lock to bun.lock automatically, keeping the resolved dependency versions.",
+   "detail": "Pitched as making a move from yarn to Bun easier. The video shows no commands, so the exact trigger (install vs. a separate step) is not stated.",
+   "t": "0:00"
+  },
+  {
+   "idea": "AbortSignal timeouts were reimplemented on the same mechanism as setTimeout and are said to be about 40x faster.",
+   "detail": "The speaker links this to sharper async behaviour and immediate cancellation of in-flight fetch requests.",
+   "t": "0:00"
+  },
+  {
+   "idea": "bun test gained three return-value matchers for mock functions, letting you target any call, the last call, or the nth call.",
+   "detail": "Demoed on mocks that return an object, a string based on input, and input multiplied by 10. Matcher names are reconstructed from garbled auto-captions, so check the exact spelling in the Bun docs.",
+   "t": "1:03"
+  },
+  {
+   "idea": "Bun SQL is one client for PostgreSQL, MySQL, MariaDB and SQLite with zero external dependencies, using the same API across them.",
+   "detail": "The MySQL/MariaDB driver is written in Zig and is claimed to be up to 9x faster than the mysql2 package on Node.js. No code is shown for the unified client.",
+   "t": "2:05"
+  },
+  {
+   "idea": "postMessage between workers is far faster for large payloads, and idle servers no longer burn CPU on a per-second timer.",
+   "detail": "Worker messaging is claimed up to 500x faster for large strings with about 20x less memory. The server used to refresh the HTTP Date header every second; now that timer runs only while requests are in flight.",
+   "t": "3:06"
+  },
+  {
+   "idea": "Bun now imports, bundles, requires and parses YAML natively, with the parser also written in Zig.",
+   "detail": "YAML files can be imported like modules and accessed with dot notation. A built-in yaml module exposes a parse function. The speaker says Bun will be 100% Zig, and asks viewers to quote him.",
+   "t": "4:06"
+  },
+  {
+   "idea": "One release-to-release benchmark in the video drops from about 2 seconds (1.2.19) to 0.02 seconds (1.2.21).",
+   "detail": "The on-screen benchmark is not named in the transcript, so the workload behind the number is unknown.",
+   "t": "4:06"
+  },
+  {
+   "idea": "Bun.secrets now uses OS-native credential storage.",
+   "detail": "Mentioned briefly among smaller fixes such as a scrollable bun update UI and new filters for bun audit.",
+   "t": "5:07"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Migrate a yarn project to bun.lock",
+   "how": "Per the release notes read in the video, Bun converts yarn.lock to bun.lock automatically and keeps the resolved versions. The video shows no commands, so verify the trigger in Bun's docs before relying on it.",
+   "when": "Moving an existing yarn-based project to Bun while keeping dependency versions pinned."
+  },
+  {
+   "name": "Assert mock return values with the three bun test matchers",
+   "how": "Use the return-value matcher for 'returned this value at least once' (any call), the last-returned matcher for the most recent call, and the nth-returned matcher to pin a specific call number. Matcher names are inferred from garbled captions, so confirm them in the docs. Demo: a mock called with 1, 2, 3 that returns input times 10 has its second call checked for 20.",
+   "when": "Writing precise tests for mocks whose output changes between calls, instead of only checking call arguments."
+  }
+ ],
+ "tools": [
+  "Bun 1.2.20",
+  "Bun 1.2.21",
+  "bun test",
+  "bun install",
+  "Bun SQL",
+  "bun update",
+  "bun audit",
+  "Bun.secrets",
+  "bun.lock",
+  "yarn",
+  "mysql2",
+  "Node.js",
+  "MySQL",
+  "MariaDB",
+  "SQLite",
+  "PostgreSQL",
+  "Zig",
+  "setTimeout",
+  "fetch"
+ ],
+ "numbers": [
+  {
+   "claim": "AbortSignal timeout is about 40x faster after reimplementation on the setTimeout mechanism (release notes, as read by speaker).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Worker postMessage up to 500x faster for large strings, with about 20x less memory use.",
+   "t": "3:06"
+  },
+  {
+   "claim": "MySQL/MariaDB driver in Bun SQL up to 9x faster than mysql2 on Node.js (vendor benchmark, as stated).",
+   "t": "2:05"
+  },
+  {
+   "claim": "Benchmark from 1.2.19 to 1.2.21 drops from about 2 seconds to 0.02 seconds (benchmark not named).",
+   "t": "4:06"
+  },
+  {
+   "claim": "About 69 issues fixed across these releases.",
+   "t": "4:06"
+  }
+ ],
+ "hot_takes": [
+  "Speaker claims Bun will be written 100% in Zig; this is his prediction, not a stated project plan.",
+  "Quality capped at 2: this is mostly a narrated changelog with vendor-supplied benchmarks and no hands-on depth, and the captions garble several API names.",
+  "The 0.02-second benchmark and the 9x and 500x speedups are vendor claims shown without methodology."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Bun is a JavaScript runtime and nothing in AgentOS (Rust proxy, Python/vLLM stack) depends on it.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI; nothing in this release notes roundup changes that harness.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

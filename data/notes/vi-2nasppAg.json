@@ -1,0 +1,170 @@
+{
+ "one_line": "Iterate's workshop on building event-sourced agent harnesses as stream processors: pure reducers for state, side effects after append, pause-based circuit breakers. Live demos mostly failed; the design ideas are the value.",
+ "summary": "Jonas Templestein and Misha from Iterate run a one-hour workshop on building agent harnesses that are purely event-sourced, so every action is an append-only event that can be replayed and debugged. Agents are paths on a hosted event service that speaks HTTP and SSE, with the server assigning offsets to events. Agent behaviour lives in stream processors: a synchronous reducer derives state from events, and side effects such as LLM calls run in an after-append hook. The speakers show a circuit breaker that pauses a stream when too many events arrive too fast, sub-agents modelled as child paths, and scripts stored as events that run as dynamic workers. They argue against before-hooks in favour of eventually consistent enrichment. Most of the live coding failed (editor, network and runtime problems), so the working demos are few and the ideas are presented mainly as design argument. The talk is practitioner-level and early-stage, with no benchmarks.",
+ "speakers": [
+  "Jonas Templestein",
+  "Misha"
+ ],
+ "orgs": [
+  "Iterate"
+ ],
+ "format": "workshop",
+ "topics": [
+  "agent-architecture",
+  "multi-agent",
+  "observability",
+  "sandboxing-execution"
+ ],
+ "tags": [
+  "event-sourcing",
+  "stream-processing",
+  "agent-harness",
+  "circuit-breaker",
+  "durable-streams",
+  "sub-agents",
+  "dynamic-workers",
+  "eventual-consistency",
+  "live-demo-failure"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Make the agent harness purely event-sourced so every action and side effect is an event in a log, which makes it debuggable and replayable.",
+   "detail": "The speaker's complaint is that side effects often show up only in hosted traces and cannot be reconstructed afterwards. If everything that can happen is an event, the log is the debugging record and extension points are easier to add.",
+   "t": "1:54"
+  },
+  {
+   "idea": "Each agent is a path on a server that speaks plain HTTP, and the server assigns an auto-incrementing offset to every appended event.",
+   "detail": "Events have a type (ideally a URL that points to docs), an optional payload, a stream path taken from the URL, and an offset. Appends are serialized at the server, and SSE with live=true gives a streaming subscription. Webhooks can use idempotency keys so duplicate deliveries do not append twice.",
+   "t": "8:16"
+  },
+  {
+   "idea": "Pausing a stream is itself an event, and a circuit breaker can stop runaway event loops.",
+   "detail": "The service pauses a stream after more than about 100 events in a second, and while paused, appends are rejected without writing error events, so the log is not flooded. The speaker says infinite loops from plugins are very easy to create by accident.",
+   "t": "11:32"
+  },
+  {
+   "idea": "A stream processor is a synchronous reducer (state plus event gives new state) with side effects kept in a separate after-append hook.",
+   "detail": "The split matters because a processor that sleeps and wakes with a backlog should catch up on state without firing LLM calls for every past event. The reducer decides what the state is, and the after-append hook decides what to do now.",
+   "t": "31:07"
+  },
+  {
+   "idea": "Agent state is a small typed object (model, system prompt, history), and each new capability is a reducer plus an event type.",
+   "detail": "The OpenAI-based example stores model, system prompt and message history in state. Each streamed response fragment is stored as its own event. The speaker says adding a feature such as model switching or compaction should take a few lines: a new event type and a one-line reducer.",
+   "t": "40:03"
+  },
+  {
+   "idea": "Sub-agents are child paths: a parent appends to a child path and is woken when the child appends its result event.",
+   "detail": "This reuses the filesystem-like path hierarchy as the agent tree. The parent subscribes to specific result events from the child. This was described as the intended design, not a tested demo.",
+   "t": "32:28"
+  },
+  {
+   "idea": "Avoid before-hooks. Let context enrichment run as an async processor with a time budget, and make the LLM request go ahead regardless.",
+   "detail": "The speaker's example waits up to 200 ms for a RAG processor to add context before calling the model. If the processor is late, the request still goes out. The speaker says before-hooks broke context caching and hurt performance in another agent harness, so the whole system is designed to be eventually consistent.",
+   "t": "58:53"
+  },
+  {
+   "idea": "Code can itself be an event. A dynamic-worker event carries a processor script that the service runs, and secrets stay outside the stream.",
+   "detail": "A basic agent of about 40 lines was appended to a stream as a script string and answered ping with pong. Processors can run on Cloudflare dynamic workers. API keys are kept outside the event payloads and substituted into outbound fetch headers by the service. The script must have no npm dependencies unless bundled. This is the speaker's favourite feature, though it was not shown working live.",
+   "t": "51:05"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Event-sourced agent log",
+   "how": "Model every input, model response fragment, tool call and control action as an append-only typed event on one path. Derive all state by reducing the log. Log the raw inbound webhooks as-is and record validation errors as events too.",
+   "when": "When you need to debug or replay an agent run, or to extend a harness without changing its core loop."
+  },
+  {
+   "name": "Reducer plus after-append split",
+   "how": "Write the state logic as a pure synchronous reducer. Put LLM calls, API writes and appends in an after-append hook that runs only for live events, so catch-up after a restart does not repeat side effects.",
+   "when": "When a long-lived processor can sleep, restart or fall behind, and replaying old events must not trigger model calls."
+  },
+  {
+   "name": "Pause-event circuit breaker",
+   "how": "Keep a sliding window of recent event timestamps in a processor state. When the rate is too high, append a paused event with a reason. Reject further appends while paused and require an explicit resume event.",
+   "when": "When plugins or processors can create feedback loops that flood the log with events."
+  },
+  {
+   "name": "Deferred enrichment with a time budget",
+   "how": "Have side processors add context (for example, RAG results) as events. The main agent step waits a fixed short window, such as 200 ms, for them, then proceeds with whatever has arrived.",
+   "when": "When extra context is useful but must not block or slow the model call, and caching of the prompt prefix matters."
+  },
+  {
+   "name": "Child paths for sub-agents",
+   "how": "Give each sub-agent its own path under the parent path. The parent sends work by appending to the child, and the child appends a result event that wakes the parent's subscription.",
+   "when": "When you want the agent tree to match a filesystem-style hierarchy and avoid a separate orchestration layer."
+  },
+  {
+   "name": "Secret substitution at fetch time",
+   "how": "Store the secret outside the event stream under a name. Events reference the name, and the service inserts the real value into outbound request headers at fetch time.",
+   "when": "When events are shared or logged and must not contain credentials."
+  }
+ ],
+ "tools": [
+  "events.iterate.com (event service)",
+  "Cloudflare dynamic workers",
+  "OpenAI SDK (Responses API)",
+  "Zod",
+  "Pi",
+  "Claude",
+  "OpenCode",
+  "Convex",
+  "Kafka",
+  "Cursor",
+  "OpenClaw",
+  "Electric SQL",
+  "Durable Streams spec"
+ ],
+ "numbers": [
+  {
+   "claim": "Circuit breaker trips when more than about 100 events arrive within one second (the processor checks the last 100 event timestamps).",
+   "t": "11:32"
+  },
+  {
+   "claim": "Circuit breaker processor inspects the timestamps of the last 100 events and pauses the stream if they fall within one second.",
+   "t": "46:03"
+  },
+  {
+   "claim": "Heartbeat example appends an event every 5 seconds.",
+   "t": "13:04"
+  },
+  {
+   "claim": "A RAG-style side processor is given up to 200 ms before the model request goes out anyway.",
+   "t": "46:03"
+  },
+  {
+   "claim": "A basic AI agent takes about 40 lines of code to append as a dynamic-worker script.",
+   "t": "52:31"
+  }
+ ],
+ "hot_takes": [
+  "Before-hooks in agent harnesses break context caching and can cause large performance and cost regressions; eventually consistent processors are better.",
+  "Every agent should have a URL the moment it exists, so webhooks and forms feed it directly without a connector layer.",
+  "LLMs are good enough to consume raw webhook payloads directly, without a validation or transformation layer.",
+  "Agent harness plugins should be composable, so one person's extension can be combined with another's by sharing the event stream."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The event log with reducer-derived state and the pause-event circuit breaker map onto AgentOS's budget and audit goals. The talk gives concrete patterns, though the speakers did not show them working.",
+   "action": "Prototype an append-only event log for one AgentOS run, derive budget and PII-scan state with a pure reducer, and add a pause event that trips when event rate exceeds a threshold, then measure the overhead."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness does checkpoint and resume of long Claude Code runs. An event log with reducer-derived state is a direct alternative to snapshot checkpoints, and the talk gives a separation of replay from side effects.",
+   "action": "Compare ProsHarness checkpoints with an append-only run log: resume by reducing the log, and make sure replay does not re-run tool calls or model requests."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The before-hook argument and time-budgeted enrichment bear on context-engineering choices, and the speakers cite prompt caching as the reason.",
+   "action": "When designing context injection for agents, use async enrichment with a fixed wait budget rather than blocking pre-request hooks, and measure prompt-cache hit rate on both designs."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

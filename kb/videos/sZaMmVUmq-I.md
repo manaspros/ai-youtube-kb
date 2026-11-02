@@ -1,0 +1,44 @@
+# The AI Bug Apocalypse Has Officially Started
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `sZaMmVUmq-I` · [watch](https://youtu.be/sZaMmVUmq-I) · **date:** 2026-10-25 · **length:** 9:05 · **format:** news · **quality:** 3/5 · **depth:** intro
+- **speakers:** Andrus (Better Stack host) · **orgs:** Better Stack, Trend Micro, Zero Day Initiative, Linux kernel project, Phoronix, OpenAI, Anthropic, Microsoft, Google, UK National Cyber Security Centre, ProPublica, Wired, Axios
+- **topics:** security-guardrails, dev-tools · **tags:** linux-kernel, ksmbd, smb, cve, vulnerability-disclosure, patch-wave, ai-bug-finding, php, gitlab, nodejs, chrome, agent-security, patch-management, black-october
+
+> Better Stack news roundup on "Black October" 2026: a leaked batch of Linux kernel SMB bugs, a wave of AI-found vulnerability disclosures, and what to patch this week.
+
+## Summary
+On October 22, 2026, Trend Micro's Zero Day Initiative sent a batch of unpatched Linux kernel vulnerability reports to the public kernel mailing list by mistake. The two worst bugs are 9.0 CVSS remote code execution flaws in the kernel's SMB code, including a race condition in ksmbd. The host ties this to a broader stretch of disclosures in the same week, including PHP bugs and a GitLab bug. He argues the kernel project's report volume has already exploded, with maintainers reporting 5 to 10 security reports a day versus 2 to 3 a week earlier. He frames the trend as a coming "vulnerability patch wave" where AI makes bug-finding cheap and the bottleneck moves to triage, fixing and shipping patches. He also flags agent-facing risk: banks can't always tell whether an agent acting in a customer's account is acting for that customer, so they are moving toward read-only agent access. The practical advice is continuous patching with an update-by-default policy, starting with internet-exposed systems, plus specific updates for PHP, the kernel SMB fixes, GitLab and Node.js. The video is news reporting on second-hand sources with no original measurement, and its "apocalypse" framing overstates what the evidence shows.
+
+## Key ideas
+- **A batch of unpatched Linux kernel bug reports went to the public kernel mailing list by mistake** — Trend Micro's Zero Day Initiative sent the reports to the public list instead of the private security list on October 22. Greg Kroah-Hartman replied to each one asking why. The host reads it as an accident, not a deliberate disclosure. The leak was reported by Phoronix. ([0:00](https://youtu.be/sZaMmVUmq-I?t=0))
+- **The two worst leaked bugs are network-reachable RCE flaws in SMB code** — Both are rated 9.0 CVSS. One is an RCE in SMB Direct caused by an integer underflow. The other is a race condition in ksmbd, the kernel's built-in SMB server. An SMB server accepts data from other machines, so it can be reached without a login. The host compares this to WannaCry, which spread through an SMB bug in 2017. ([1:06](https://youtu.be/sZaMmVUmq-I?t=66))
+- **Kernel maintainers say AI-found bug reports are overwhelming security triage** — The host cites a March report that security lists went from 2 to 3 reports a week to 5 to 10 a day. In May, Linus Torvalds called it almost entirely unmanageable because several people were running the same AI tools and filing duplicate bugs. The kernel docs now say AI-found bugs should be reported publicly, since they are by definition not secret. ([2:34](https://youtu.be/sZaMmVUmq-I?t=154))
+- **Black October is mostly a disclosure wave of old bugs, not an attack wave** — The host says many bugs were found weeks or months earlier and went public in the same few days. OpenAI says that, to its knowledge, AI found the PHP bugs before attackers did. Most organizations seem to have patched in time. He still calls the week a preview of how security will work from now on. ([3:43](https://youtu.be/sZaMmVUmq-I?t=223))
+- **The NCSC predicted a vulnerability patch wave, and the numbers are already here** — The UK NCSC warned in May that AI can dig through years of technical debt at once, so patches will arrive in surges across open source, commercial software and SaaS. Reported figures: Anthropic's Mythos model found 90 critical and 141 important SharePoint bugs in April, and Microsoft's July Patch Tuesday fixed more than 600 bugs. ([4:52](https://youtu.be/sZaMmVUmq-I?t=292))
+- **Finding bugs is now cheap, so triage, fixing and shipping are the bottleneck** — Chrome 149 and 150 together fixed 1,072 security bugs, more than the previous 23 Chrome releases combined, including a sandbox escape that had been in the code for over 13 years. Google now tests security updates twice a week. The host says attackers get the same models, and every published patch shows them which code changed, so the gap between fix and exploit keeps shrinking. ([6:04](https://youtu.be/sZaMmVUmq-I?t=364))
+- **Agents acting inside accounts create a new attack surface, and banks are limiting them to read-only access** — Banks can't always tell whether an agent in a customer's account is acting for that customer, so most are moving toward letting agents read account data without taking actions. Chrome's security team told Wired that new findings should drop off once the bugs AI can find have been fixed. ([7:17](https://youtu.be/sZaMmVUmq-I?t=437))
+- **Treat patching as continuous, not quarterly, and start with internet-exposed systems** — The NCSC recommends an update-by-default policy and starting with whatever is exposed to the internet. Take inventory of what runs on your servers, automate updates where you can, and replace anything that can no longer be patched. Named actions for this week: update PHP, watch for the kernel SMB fixes, unload ksmbd if you don't use it, and update GitLab and Node.js. ([8:30](https://youtu.be/sZaMmVUmq-I?t=510))
+
+## Techniques
+- **Unload an unused kernel SMB server** — If ksmbd is not used, unload the module so its attack surface is gone until the kernel fixes ship. The host gives this as the interim mitigation for the leaked SMB bugs and does not name the exact command. *When:* A Linux host has ksmbd loaded but doesn't serve SMB shares, and the kernel SMB fixes are not yet applied.
+- **Update-by-default patch policy** — Set a policy to apply security updates by default, automate them wherever possible, and start with systems reachable from the internet. Keep an inventory of everything running on your servers and plan to replace anything that can't be patched anymore. *When:* Running a fleet or self-hosted services where AI-driven disclosure waves are expected to keep increasing the patch volume.
+- **Read-only scope for agents that touch accounts** — Let agents read account information but not take actions, which is the direction banks are taking with agents inside customer accounts. Actions that change state need a separate, explicit grant. *When:* Designing an agent that has access to sensitive accounts or data, where you cannot yet verify whose intent an action serves.
+
+## Numbers
+- Two leaked Linux kernel SMB bugs, each rated 9.0 CVSS, both RCE-capable ([0:00](https://youtu.be/sZaMmVUmq-I?t=0))
+- Security report volume to kernel lists: 2 to 3 per week (earlier) rising to 5 to 10 per day (March report) ([2:34](https://youtu.be/sZaMmVUmq-I?t=154))
+- Mythos reportedly found 90 critical and 141 important SharePoint bugs in April, per ProPublica internal documents ([4:52](https://youtu.be/sZaMmVUmq-I?t=292))
+- Microsoft July Patch Tuesday shipped fixes for more than 600 bugs ([4:52](https://youtu.be/sZaMmVUmq-I?t=292))
+- Chrome 149 and 150 fixed 1,072 security bugs, more than the previous 23 Chrome releases combined ([6:04](https://youtu.be/sZaMmVUmq-I?t=364))
+- Google now tests security updates twice a week ([6:04](https://youtu.be/sZaMmVUmq-I?t=364))
+
+## Hot takes
+- The title calls this an "AI bug apocalypse", but the host's own evidence describes a disclosure wave of mostly older bugs that most organizations patched in time.
+- The host says the leak was most likely accidental, and that the timing fits where the kernel's own AI-disclosure rules are heading. He admits this is speculation, since it is not known whether ZDI used AI.
+- Google's Chrome team suggests the flood may settle once AI-findable bugs are fixed, which the host presents as the hopeful outcome.
+
+## Tools mentioned
+Linux kernel, ksmbd, SMB / SMB Direct, PHP, GitLab, Node.js, VMware graphics driver, NVMe target code, Chrome, Microsoft SharePoint, Microsoft Patch Tuesday, Anthropic Mythos model, OpenAI audit program
+
+## Relevance to our work
+- **agentos** (1/3): The agent-account security section (banks limiting agents to read-only) is relevant to AgentOS guardrails, but the video does not discuss proxies, budgets or policy enforcement. → *Add a default read-only scope to AgentOS tool grants, so state-changing tool calls need an explicit allow in the manifest.*

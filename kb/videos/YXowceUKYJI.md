@@ -1,0 +1,49 @@
+# KV Cache-Aware Routing and P/D Disaggregation on Kubernetes — Yuchen Fama & Ashish Kamra, Red Hat
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `YXowceUKYJI` · [watch](https://youtu.be/YXowceUKYJI) · **date:** 2026-09-18 · **length:** 21:48 · **format:** talk · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Ashish Kamra, Yuchen Fama · **orgs:** Red Hat, Google, IBM, CoreWeave, NVIDIA, CNCF
+- **topics:** inference-serving, infra-cost-scaling, agent-architecture · **tags:** kv-cache, prefill-decode-disaggregation, llm-d, kubernetes, agentic-workloads, prefix-aware-routing, vllm, nixl, session-pinning, p90-latency, glm-5.2, gpt-oss-120b
+
+> Red Hat engineers explain why agentic multi-turn traffic breaks classic LLM serving, and how llm-d uses KV-cache-aware routing and prefill/decode disaggregation on Kubernetes, with benchmark data and a GLM 5.2 case study.
+
+## Summary
+Ashish Kamra (performance engineering) and Yuchen Fama (product manager, Red Hat Inference) describe how agentic workloads differ from classic chat serving: long multi-turn sessions, cache hit rates above 90%, very high input-to-output ratios, and high variance that makes averages misleading. They argue cached tokens are roughly 10x cheaper than uncached ones, so cache throughput should be measured separately. The talk covers llm-d's endpoint picker, which routes each request to the pod with the best mix of queue depth, KV utilization and prefix-cache availability, plus a demo of prefix routing cutting time-to-first-token from about 3 s to about 1 s on cache hits. They then explain prefill/decode (PD) disaggregation, where prefill and decode run on separate pools so long prompts do not stall token streaming. Their GPT-OSS 120B results show P99 inter-token latency near 100 ms with PD versus about 900 ms aggregated in one multi-turn test. They stress that PD is a trade-off, not a universal fix: it needs a fast RDMA or RoCE fabric to move KV cache and suits long context, large models and middle concurrency. The closing case study runs GLM 5.2 on H200 GPUs with a multi-worker prefill pool, a single decode worker and NIXL-based KV transfer, and the speakers say the work is still in progress.
+
+## Key ideas
+- **Agentic workloads break classic serving assumptions** — Sessions run from a few turns up to about 3,000 turns. Agents reuse system prompts and tool definitions, so cache hit rates often exceed 90%. Input-to-output ratios are very high, and variance is large enough that planning should use P90 and distributions, not averages. ([3:03](https://youtu.be/YXowceUKYJI?t=183))
+- **Measure cache-hit tokens separately because they are far cheaper** — The speaker cites a roughly 10x price gap between cached and non-cached tokens, so throughput and cost metrics should split the two. ([5:37](https://youtu.be/YXowceUKYJI?t=337))
+- **Endpoint picker routes to the pod with the best cache locality and load** — llm-d's EPP probes each vLLM pod for running and waiting requests, KV cache utilization and prefix-cache availability, then sends the request to the pod with the lowest load and highest chance of a cache hit. ([6:41](https://youtu.be/YXowceUKYJI?t=401))
+- **Session-aware KV tiering and eviction** — Current work adds offload tiers (NVMe, SSD, filesystem) and a KV-centric store such as Mooncake, plus eviction policies that use priority and session pinning so a session's context stays where it is needed. ([6:41](https://youtu.be/YXowceUKYJI?t=401))
+- **Prefill and decode have opposite resource profiles** — Prefill is compute-heavy and bursty and builds the KV cache. Decode is memory-bandwidth-bound and latency-sensitive. Running both on one GPU causes phase interference, where a long incoming prompt stalls token streaming. ([10:09](https://youtu.be/YXowceUKYJI?t=609))
+- **PD disaggregation is a trade-off, not a magic bullet** — PD suits long context with high input-to-output ratios, large models that can use parallelism, middle concurrency, and strict inter-token latency targets. It needs an RDMA or RoCE fabric for KV transfer. Short context, low concurrency, strict TTFT needs, or no fast network point to aggregated serving. ([15:20](https://youtu.be/YXowceUKYJI?t=920))
+- **The scheduler and the PD pool ratio have to adapt** — The scheduler should weigh SLO targets, queue depth, cache locality, PD ratio and network topology. Start with a static prefill-to-decode ratio, then let autoscaling change it as traffic shifts. ([16:22](https://youtu.be/YXowceUKYJI?t=982))
+- **GLM 5.2 on H200 case study uses separate pools with NIXL transfer** — A prefill pool of up to three high-throughput workers (DeepEP) feeds one low-latency decode worker, with NIXL moving KV cache between them. Each worker is a leader-worker set using TP1, DP8 and EP8. Adding prefill workers scales throughput without reconfiguring decode. The speaker notes BF16 KV cache beat FP8 on long prefill in early tests. ([17:42](https://youtu.be/YXowceUKYJI?t=1062))
+
+## Techniques
+- **KV-cache-aware pod routing** — Score each replica on queue depth, KV utilization and prefix-cache hit likelihood, and keep a session's turns on the pod that already holds its system prompt and tool definitions. *When:* Multi-turn agent traffic that reuses a long, stable prefix across many turns.
+- **Prefill/decode disaggregation with KV transfer** — A router sends the prompt to a prefill worker, which builds the KV cache and emits transfer metadata. A decode worker pulls the cache over RDMA and streams tokens. Prefill and decode pools scale independently. *When:* Long prompts with strict inter-token latency targets, on a cluster with a fast network fabric, at middle concurrency.
+- **Tiered KV offload with session pinning** — Keep hot KV in GPU memory, push warm and cold KV to NVMe, SSD or a filesystem tier, and use priority-based eviction that pins active sessions. *When:* Agent sessions whose context must survive idle gaps and be reused later.
+- **Distribution-based capacity planning and trace replay** — Plan on P90 and full distributions of context length and turn count instead of means, and replay real agent traces with the inference-perf trace replay tool. *When:* Sizing or benchmarking for agentic workloads where traffic is bursty and variable.
+- **Decision matrix before choosing PD** — Check context length, input-to-output ratio, model size, concurrency regime, ITL vs TTFT requirements and network fabric. Choose aggregated serving when the fabric is missing or the workload is short or low-concurrency. *When:* Deciding whether PD disaggregation is worth its operational cost for a given model and workload.
+
+## Numbers
+- Multi-turn sessions range from a few turns up to about 3,000 turns ([3:03](https://youtu.be/YXowceUKYJI?t=183))
+- Cache hit rates often exceed 90% on agentic traffic because system prompts and tool definitions are reused ([3:03](https://youtu.be/YXowceUKYJI?t=183))
+- Cached tokens are about 10x cheaper than non-cached tokens (cited from Anthropic API pricing) ([5:37](https://youtu.be/YXowceUKYJI?t=337))
+- Demo: first request about 3 s (miss); same system prompt on the next turn about 1 s (hit on the same pod); changed system prompt about 3 s (miss on another pod) ([8:04](https://youtu.be/YXowceUKYJI?t=484))
+- GPT-OSS 120B, 16 H100s, multi-turn with 10,000-token prefix and 128 tokens per turn: P99 inter-token latency about 900 ms aggregated (4 replicas, TP4) vs about 100 ms with PD (2 prefill + 2 decode, TP4), roughly 9x better and smoother ([12:40](https://youtu.be/YXowceUKYJI?t=760))
+- GPT-OSS 120B, 64 H100s, prefill-heavy (about 5,000 input / 500 output): PD (3 prefill + 5 decode, TP8) Pareto curve dominates aggregated (8 replicas, TP8) across the interactivity range ([14:06](https://youtu.be/YXowceUKYJI?t=846))
+- GLM 5.2 on H200, agentic dataset with input-to-output ratio about 45:1: with 2 prefill workers and even 1 decode worker, the speaker reports 4x better TTFT and 60% more requests (baseline not stated clearly; described as work in progress) ([20:07](https://youtu.be/YXowceUKYJI?t=1207))
+
+## Hot takes
+- Public inference benchmarks are steady-state and sanitized, so they hide the chaotic multi-turn reality of agent traffic.
+- Prefill/decode disaggregation is a phase-separation trade-off, not a universal fix, and without an RDMA-class fabric you should stay with aggregated serving.
+- BF16 KV cache beat FP8 on long-prefill agentic workloads in early tests (the speaker called it an interesting, still-unexplained finding).
+
+## Tools mentioned
+llm-d, vLLM, Kubernetes, NIXL, DeepEP, Mooncake, inference-perf, LeaderWorkerSet, RDMA/RoCE
+
+## Relevance to our work
+- **agentos** (2/3): InferCraft (L2B) already plans pluggable KV-cache strategies and session-level scheduling. The talk's session-pinning, eviction and cache-hit metrics map directly onto it, though PD disaggregation needs multi-node hardware the single RTX 5090 lacks. → *Add per-session cache-hit rate, cached vs uncached token counts and P90 TTFT/ITL to InferCraft's metrics, and replay a multi-turn agent trace to test whether session pinning in the KV-strategy layer improves P90 TTFT.*
+- **prosharness** (1/3): ProsHarness wraps Claude Code and runs long multi-turn agent loops, where the stability of the prompt prefix decides how often cached tokens are reused. The talk's 10x cached-vs-uncached cost gap bears on that. → *Keep ProsHarness's system prompt and tool definitions byte-stable across turns, and log cache-read vs uncached input tokens per checkpointed run to confirm the cache is hitting.*
+- **general** (1/3): The advice to plan on P90 and distributions rather than means applies to any capacity or latency work with agent traffic, including the cheap-model pipelines. → *When sizing any agent pipeline, report P90 and max context length and turn count alongside the mean.*

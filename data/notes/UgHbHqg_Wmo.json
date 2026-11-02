@@ -1,0 +1,162 @@
+{
+ "one_line": "Walkthrough of a tmux-based orchestrator that lets one Claude Code agent spawn and manage several Claude Code teams via scheduled check-ins, spec-driven phases, and a skip-permissions setting. Useful pattern, but the live demo never ran.",
+ "summary": "The host presents a tmux-orchestrator setup in which a main Claude Code agent runs inside a tmux session, opens sub-terminals, and briefs separate front-end and back-end teams, each with a project-manager window, a developer window, and a test/server window. The build is driven by a spec folder (main spec with per-phase timings, integration spec, front-end and back-end specs), and the orchestrator checks on each team every 15 minutes and commits changes as restore points. The host gives two required fixes to the cloned repo: hard-coded usernames in paths, and swapping the claude command for the variant with the skip-permissions flag, because otherwise the sub-terminals block on approval prompts (he says the system sat frozen for 15 minutes). He prefers stepping through phases with approval at each checkpoint rather than running all phases unattended. The host reached his usage limit, so the build itself is not shown live; the autonomy claims rest on the walkthrough of setup and a few check-in screens. He also suggests using GitIngest to turn the repo into a text summary that Claude can use to explain the install steps, since the exact commands are not shown on screen and are said to be in the description.",
+ "speakers": [
+  "AI LABS host (unnamed in transcript)"
+ ],
+ "orgs": [
+  "AI LABS",
+  "ShadCN"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "multi-agent",
+  "software-factory",
+  "claude-code"
+ ],
+ "tags": [
+  "tmux",
+  "claude-code",
+  "orchestration",
+  "spec-driven-development",
+  "scheduled-check-ins",
+  "skip-permissions",
+  "shadcn",
+  "shadcn-mcp",
+  "gitingest",
+  "terminal-multiplexer",
+  "subagents"
+ ],
+ "key_ideas": [
+  {
+   "idea": "tmux lets one Claude Code instance open extra terminals in the same session and send them tasks, so a single agent can coordinate many Claude Code instances.",
+   "detail": "The host frames tmux (terminal multiplexer) as the mechanism: the main agent creates sub-terminals and assigns tasks, and the sessions persist, so you return to where you left off. He describes one instance controlling as many instances as it wants.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Scheduling is the second ingredient: agents run tasks at set times and move on without monitoring.",
+   "detail": "The host describes timed task assignment as what turns the terminal into a self-running system. Each team is checked every 15 minutes in the setup he shows.",
+   "t": "1:03"
+  },
+  {
+   "idea": "The cloned framework needed two manual fixes before it worked on another machine.",
+   "detail": "Paths were hard-coded with the author's username, so the first self-check fails until Claude fixes them. The second fix was replacing the claude command in the scripts with the variant that uses the skip-permissions flag, which the upstream version lacks.",
+   "t": "3:03"
+  },
+  {
+   "idea": "Skip-permissions is needed for unattended multi-terminal runs, and the host says it hung his first run.",
+   "detail": "With approval prompts on, each sub-terminal waits for a human. He says his first run stayed frozen at phase 1 for 15 minutes for this reason. He says he used the flag many times without problems, but the video does not discuss the risk of letting every command run unapproved.",
+   "t": "4:13"
+  },
+  {
+   "idea": "The spec folder is the blueprint: the main spec sets per-phase timing, and separate integration, front-end and back-end specs define what gets built.",
+   "detail": "Specs are written step by step from a template with default full-stack requirements. The host says the orchestrator is told the full path to the spec folder, starting from the home directory (relative paths are not allowed). Teams are named in the start prompt, and new teams follow the same pattern (his example is an auth team).",
+   "t": "5:41"
+  },
+  {
+   "idea": "Each team gets a fixed window layout and is briefed by a message script, with phase-gated progress.",
+   "detail": "Each team has three windows: project manager, developer, and a server that runs tests and error checks. The main agent sends briefings via a 'Send Claude message' script, and after phase 1 it asks permission before phase 2. The host prefers this step-by-step review over automatic progression, though main.md can be set to run all phases.",
+   "t": "8:24"
+  },
+  {
+   "idea": "GitIngest is a practical shortcut for understanding an unfamiliar repo's setup steps.",
+   "detail": "Replace github.com with gitingest.com in the repo URL to get an AI-readable text summary, paste it into Claude (he says it did better than ChatGPT for this), and ask for the install and workflow steps.",
+   "t": "9:40"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "tmux-based agent orchestrator setup",
+   "how": "1) cd to the target directory and git clone the tmuxorchestrator repo (URL from the video description). 2) cd into tmuxorchestrator and run the setup commands from the repo or description (not shown on screen; they make the scripts executable). 3) Start a named tmux session (he uses one named 'my second agent') and run claude inside it. 4) Give Claude a prompt that runs two checks: can it control other tmux windows, and does the scheduling work. Expect the scheduling/path check to fail until the hard-coded paths are fixed.",
+   "when": "When you want one top-level Claude Code agent to run and supervise several parallel Claude Code workers in tmux windows, for example for a full-stack build."
+  },
+  {
+   "name": "Fix hard-coded paths and permission command in the orchestrator",
+   "how": "Ask Claude to find paths containing the original author's username and replace them with your own. Then ask it to go through all commands and replace the claude invocation with the variant that uses the 'dangerously skip permissions' flag (the transcript does not spell out the flag name; it is most likely --dangerously-skip-permissions). Restart the orchestrator session with that flag.",
+   "when": "Before the first run of any orchestrator copied from another person's repo, and before any run that needs all sub-terminals to proceed unattended."
+  },
+  {
+   "name": "Spec folder as the build blueprint",
+   "how": "Create an app folder with spec/ and task-manager/ subfolders. Inside spec/, write a main spec with timing for each development phase, an integration spec, and separate front-end and back-end specs; start from the provided template with default full-stack requirements and edit it. For UI work, add a reference folder with a design image and an implementation markdown plan that names the component library (he uses shadcn with its MCP).",
+   "when": "When you want agents to build a multi-part app against explicit phase deadlines instead of an open-ended prompt."
+  },
+  {
+   "name": "Team start prompt pattern",
+   "how": "Start Claude with the orchestrator and give one prompt that includes the full home-relative path to the spec folder (no relative paths), then the teams to create. Each team is listed with a project manager and a developer, for example 'a front-end team and a back-end team, each with a project manager and developer'. Add more teams with the same wording (for example, 'create an auth team').",
+   "when": "To kick off a run once the spec is ready and the setup checks pass."
+  },
+  {
+   "name": "Scheduled check-ins with restore-point commits",
+   "how": "The orchestrator checks each team every 15 minutes, reviews progress against the phase timing, updates the to-do list, and commits regularly so there is a restore point. Keep the default phase gating, or set main.md to advance through phases automatically.",
+   "when": "When you want to bound agent drift by time and by phase, and keep rollback points during long autonomous runs."
+  },
+  {
+   "name": "Summarize an unfamiliar repo with GitIngest",
+   "how": "Take the GitHub URL, change github.com to gitingest.com, copy the generated text summary, paste it into Claude, and ask it to explain the workflow and install steps in order.",
+   "when": "When a repo's README or setup is confusing and you want the commands assembled from its code."
+  }
+ ],
+ "tools": [
+  "tmux",
+  "Claude Code",
+  "tmuxorchestrator (repo name as spoken)",
+  "Cursor (used only to show the folder structure on screen)",
+  "shadcn",
+  "shadcn MCP",
+  "GitIngest (gitingest.com)",
+  "ChatGPT (mentioned as a comparison for the summary step)",
+  "Git (version control and restore-point commits)"
+ ],
+ "numbers": [
+  {
+   "claim": "Team check-in interval is 15 minutes (the orchestrator checks each team on that schedule).",
+   "t": "5:41"
+  },
+  {
+   "claim": "About 8 terminals were running at once in his setup; he showed 3 sub-terminals on screen.",
+   "t": "4:13"
+  },
+  {
+   "claim": "Layout per team: 3 windows (project manager, developer, server/tests). Two teams plus the main agent and the 'second agent' session.",
+   "t": "8:24"
+  },
+  {
+   "claim": "His first run stayed frozen at phase 1 for about 15 minutes because sub-terminals were waiting for approval.",
+   "t": "4:13"
+  },
+  {
+   "claim": "The live build was not run because the host had reached his cloud usage limit. The check-in results shown were from earlier in the demo, and the video does not measure output quality or time saved.",
+   "t": "7:08"
+  }
+ ],
+ "hot_takes": [
+  "The title says 'INSANE' and the intro promises an autonomous team that needs no monitoring, but the video shows no completed build. The 'just works' claim rests on setup screens and two check-ins, and the host had to patch the repo twice before it ran.",
+  "Turning on skip-permissions so every sub-terminal runs commands unapproved is presented as a necessary fix, with no discussion of the security or blast-radius cost.",
+  "The host himself prefers approval at each phase boundary, which contradicts the 'runs all by itself' framing in the intro.",
+  "Quality is capped near the middle: it is a real, reproducible workflow, but the exact commands are deferred to the description and the repo, and the on-screen result is not shown."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Shows a simple parallel multi-agent pattern (one supervisor agent in tmux, scheduled check-ins) that overlaps with the subagent and orchestration side of AgentOS. Not a core pillar, and the approach is shell-scripted rather than infrastructure.",
+   "action": "Read the tmuxorchestrator scripts to see how check-ins and window control are implemented, and compare them with the scheduling assumptions in AgentOS before adding any agent-run scheduler."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code with checkpoint/resume, loops and schedules, and phone-driven approvals. This video's 15-minute check-ins, phase gates, and the skip-permissions stall (he says the run hung on approval prompts) show the exact failure mode ProsHarness approvals should handle without turning off permissions.",
+   "action": "Test how ProsHarness handles a sub-agent waiting on a permission prompt: queue it as a phone-approval event rather than disabling approvals as this video does, and compare its scheduled check-in cadence with the 15-minute default."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Directly matches the recurring interests in subagents, multi-agent orchestration, and Claude Code workflows. The spec-folder and phase-gated team pattern is a concrete, reusable way to structure a multi-agent build.",
+   "action": "Try the spec-folder plus phase-timed main spec with two team prompts on a small throwaway project, and measure whether the agents stay on schedule without the permission stall."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

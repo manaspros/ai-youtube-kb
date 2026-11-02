@@ -1,0 +1,56 @@
+# Dark Factory: OpenClaw Ships Faster Than You Can Read the Diff — Vincent Koc, OpenClaw
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `pmoDeA3RBZY` · [watch](https://youtu.be/pmoDeA3RBZY) · **date:** 2026-06-18 · **length:** 16:44 · **format:** talk · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Vincent Koc · **orgs:** OpenClaw, OpenAI, NVIDIA, Anthropic, Spotify, Vercel
+- **topics:** software-factory, multi-agent, coding-agents, skills-self-improvement · **tags:** OpenClaw, dark factory, swim lanes, parallel agents, Codex, git worktrees, plugin architecture refactor, overfitting tests, skills, GEPA, PR triage, embeddings, synthetic evals, token efficiency, agent management
+
+> OpenClaw maintainer Vincent Koc on running dozens of parallel coding agents as a "dark factory": swim lanes, opinionated loops, a big plugin refactor, and token efficiency over token maxing.
+
+## Summary
+Vincent Koc, a core maintainer of the open-source OpenClaw project, describes how the team ships at very high commit volume using many parallel Codex sessions. He frames the shift as engineers becoming factory managers, where the bottleneck moves from typing code to taste and to attention. He walks through the workflow: swim lanes by workstream, a plugin-architecture refactor that touched most of the core code, and the lesson that AI-written unit tests overfit but still work as a rough go/no-go signal. He admits that git worktrees overloaded his machine and says cloning the repo per session would have been simpler. He also covers skills kept as versioned files and improved from session logs, an embedding graph used to triage a backlog of about 6,000 PRs, and a synthetic fake-Slack harness for channel evals. He judges agent health by how clearly the agent explains itself, and he closes with the claim that 2025 was about token maxing and 2026 is about token efficiency.
+
+## Key ideas
+- **Engineers become factory managers and the bottleneck shifts to taste, not typing speed.** — He frames agent-driven shipping as a production-line problem, like the move from hand looms to mills. Taste and attention are the scarce resources, not code output. ([0:00](https://youtu.be/pmoDeA3RBZY?t=0))
+- **Looping should be opinionated, with a reward signal, not just burning tokens for hours.** — He contrasts 'Ralph looping' (give a task, burn tokens, hope) with a more deliberate loop. The question he poses is what the reward mechanism is. ([5:32](https://youtu.be/pmoDeA3RBZY?t=332))
+- **A big plugin-architecture refactor was done by agents in one push, and it was held together by test signal.** — About 2,700 commits and close to a million changed lines, touching roughly 82% of core code. Tests were failing at night, and the team recovered because overfitting AI-generated unit tests still went green when the code was close to right. ([6:59](https://youtu.be/pmoDeA3RBZY?t=419))
+- **Run parallel swim lanes by workstream and vary how closely each one is watched.** — Stable lanes such as test refactors get a 'take your time, push' instruction. Lanes for Docker or messaging channel issues get active conversation. A triage lane watches new P0/P1 issues and recent release activity. ([9:58](https://youtu.be/pmoDeA3RBZY?t=598))
+- **Compute and human attention are now the limit, not tokens.** — With many sessions running, the constraints are raw machine compute and the operator's ability to keep track of every session. ([9:58](https://youtu.be/pmoDeA3RBZY?t=598))
+- **Git worktrees per PR overloaded the machine, and cloning the repo per session is the simpler option he regrets not choosing.** — He reports 70 to 80 active worktrees a day and a machine that was nuked by a heavy test harness. He patched his Codex setup to be worktree-aware, and says he should have used one clone per session. ([11:27](https://youtu.be/pmoDeA3RBZY?t=687))
+- **Read the agent's explanation to judge whether it is working, the way a manager would.** — He says he can feel when a session is off from how it explains itself: waffling and vague reasoning are the warning sign. In that case he kills the session or hands the area to someone else. He says this intuition came from a lot of past usage. ([12:45](https://youtu.be/pmoDeA3RBZY?t=765))
+- **Skills are versioned files that get improved from real session logs and then deployed across environments.** — His skills and dotfiles are on GitHub. He improves skills by having an agent read recent Codex logs, optionally with a GEPA-style skill gym, then deploys them through a skills.sh-style mechanism. ([14:10](https://youtu.be/pmoDeA3RBZY?t=850))
+- **Backlog triage can use an embedding graph of PRs and issues, and duplicate reports work as a priority signal.** — He built a semantic graph of about 6,000 PRs. Many people filing the same issue is read as evidence that it matters. He also describes a fake Slack with synthetic and real models to run evals across providers and channels. ([14:10](https://youtu.be/pmoDeA3RBZY?t=850))
+- **The shift is from token maxing to token efficiency, and the hard part is the management skill of running many agents.** — He compares running 10+ agents to managing people, and says the soft skills (asking the agent what is going on, spotting bluffing) matter most. His framing: 2025 was about token maxing and 2026 is about not wasting tokens. ([15:36](https://youtu.be/pmoDeA3RBZY?t=936))
+
+## Techniques
+- **Swim-lane parallel agents** — Split the work into lanes by workstream (test refactors, features, bugs/channel issues, triage of new P0/P1s). Match the supervision level to the lane's stability: a fire-and-forget instruction for stable work, and an active conversation for risky areas. *When:* A stable codebase with several independent streams of work, where one operator runs many agent sessions at once.
+- **Big refactor gated by existing tests** — Rip out and restructure large parts of the code with agents, and use the test suite as the go/no-go signal. Accept that some AI-generated unit tests overfit, since they still give a rough pass/fail on whether the code is close. *When:* A large architectural change, such as moving to plugins, where the team needs a fast signal that things are roughly still correct.
+- **Plugin split for blast-radius control** — Move each provider or channel into its own plugin so that owners can maintain their piece on their own. This also limits how far any single agent change can spread. *When:* A codebase where many features and providers are being added in parallel and would otherwise cause bloat or conflicts.
+- **One clone per session instead of worktrees** — Give each agent session its own full clone of the repo, instead of creating a git worktree per PR. He says worktrees created about 70 to 80 directories a day and crashed the machine under a heavy test harness. *When:* Many parallel agent sessions that each run heavy tests on the same machine.
+- **Explanation quality as a health check** — Watch how the agent explains its work. Vague, waffling reasoning is a sign to stop the session and restart it or reassign the area, rather than reviewing every diff. *When:* Too many parallel sessions to read every diff, but a human still needs to decide which sessions to trust.
+- **Skill improvement from session logs** — Keep skills as versioned files. Periodically have an agent read recent session logs, propose skill edits, and optionally test candidates in a skill gym (GEPA-style). Then deploy the improved skills to each environment. *When:* Teams that reuse the same instructions across many agent sessions and want them to improve from real use.
+- **Embedding graph for backlog dedupe** — Embed all PRs and issues and link similar ones into a graph (one PR had 106 edges). Treat clusters and the number of duplicate reports as a priority signal. *When:* A large open-source or internal PR backlog where many people file overlapping requests.
+- **Synthetic plus real fake-chat eval harness** — Build a fake Slack-like environment that mixes synthetic models and real models, and run evaluation loops to check that each provider and channel integration works. *When:* Testing messaging or channel integrations that need repeatable end-to-end checks across several providers.
+
+## Numbers
+- Peak OpenClaw pace of about 800 commits a day, from roughly 10 to 15 core maintainers who all have day jobs. ([4:34](https://youtu.be/pmoDeA3RBZY?t=274))
+- Speaker personally hit close to 3,000 commits in one day (March 15). ([4:34](https://youtu.be/pmoDeA3RBZY?t=274))
+- Across two maintainers, roughly 60 to 70 agents running including sub-agents, with about 15 in the foreground as swim lanes. ([5:32](https://youtu.be/pmoDeA3RBZY?t=332))
+- Plugin refactor: about 2,700 commits, close to 1 million lines changed, touching about 82% of core code. ([6:59](https://youtu.be/pmoDeA3RBZY?t=419))
+- About 70 to 80 active git worktrees per day on one machine before it became unmanageable. ([11:27](https://youtu.be/pmoDeA3RBZY?t=687))
+- Backlog of about 6,000 PRs, which the speaker tried to cluster with an embedding graph; one PR had 106 edges. ([14:10](https://youtu.be/pmoDeA3RBZY?t=850))
+- A cited peer claims about 50 PRs a day solo (speaker attributes it to a named developer). ([4:34](https://youtu.be/pmoDeA3RBZY?t=274))
+
+## Hot takes
+- The bottleneck in agent-driven engineering becomes taste, not code output.
+- In a world where tokens are cheap, saying yes to every feature turns the codebase into a dump; the real skill is saying no.
+- AI-generated unit tests overfit the code, but they are still useful as a rough go/no-go signal during a large refactor.
+- You can tell whether an agent is working from how it explains itself, not only from its diff.
+- 2025 was about token maxing; 2026 is about not wasting tokens and about token efficiency.
+- Running 10+ agents is a people-management problem, and the soft skills matter more than the model.
+
+## Tools mentioned
+Codex, Git worktrees, GitHub, Discord, Slack, MS Teams, Docker, GEPA, skills.sh, OpenClaw, NemoClaw, vector embeddings
+
+## Relevance to our work
+- **agentos** (2/3): The talk's skill-from-logs loop and synthetic-plus-real eval harness map to SkillForge (L2D) and to the RAGAS/eval work, but he gives no measured results. → *Prototype a SkillForge step that has an agent read recent Claude or Codex session logs, propose one skill edit, and A/B test it with a small eval set before accepting it.*
+- **prosharness** (2/3): Swim-lane supervision, checkpointed loops with a reward signal, and clone-per-session isolation are all close to ProsHarness's checkpoint/resume and loop design. → *Add a per-lane status view with a stop and resume control, and try a clone-per-session option for parallel runs in place of worktrees if ProsHarness hits the same disk and compute limits.*

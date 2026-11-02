@@ -1,0 +1,155 @@
+{
+ "one_line": "Agent production failures are mostly harness failures, not model failures; the talk gives a state-ownership, ordered-commit, lifecycle, authority and receipt framework, using OpenClaw incidents as case studies.",
+ "summary": "The speaker argues that most production agent failures come from the harness around the model: state that is lost or stale, concurrent writers that overwrite each other, runs that wait forever, approvals that outlive their scope, and successes reported by internal components that the user never saw. He uses OpenClaw as a public case study and frames the production contract as \"a model proposes, the harness commits, and the receipt proves it.\" The core checklist is to name an owner for every fact that must be replayed, route each mutable state through one ordered commit path, bound every external wait with a deadline or terminal outcome, bind approvals to a specific action and arguments, and verify the outcome at the user-visible edge. He closes with a five-question audit (what woke it, what state it inherited, which authority it used, what executed, what evidence survived) to run on one real production path. The talk is conceptual and gives no benchmarks; the last minute promotes the OpenAI Agents SDK.",
+ "speakers": [
+  "Vinoth Govindarajan"
+ ],
+ "orgs": [
+  "OpenAI",
+  "OpenClaw"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "observability",
+  "security-guardrails"
+ ],
+ "tags": [
+  "harness-engineering",
+  "durable-state",
+  "state-ownership",
+  "ordered-commit",
+  "idempotency",
+  "approvals",
+  "receipts",
+  "audit-trail",
+  "lifecycle-deadlines",
+  "openclaw"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Most agent failures are harness failures, not model failures",
+   "detail": "The opening incident is a silent success: the user saw a confirmation, but the durable record had a hole, so the next turn could not reconsider the fact. Coherent replies over a broken history look normal, so silent failures are worse than crashes.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Production contract: model proposes, harness commits, receipt proves",
+   "detail": "The model may suggest a message, tool call, edit or command, but the harness owns state transitions and authority checks, and the receipt is the evidence that survives the turn. Three rules: own the state, order the mutation, prove the action.",
+   "t": "2:24"
+  },
+  {
+   "idea": "The harness rebuilds the working set every turn",
+   "detail": "Agent runtimes are stateless in the human sense. Each turn is assembled from transcript, session state, memory, policy and tool definitions. If one input is missing or stale, the answer can still sound coherent, so coherence does not prove the working set was complete.",
+   "t": "4:33"
+  },
+  {
+   "idea": "Storage is not ownership: every replayable fact needs a named owner",
+   "detail": "A system of record is whatever persisted state the team treats as truth (calendar, ticketing, repo, transcript, memory store). A fact is reliably remembered only if a named owner can replay it. A successful send proves the transcript got the message, not that future context has it.",
+   "t": "7:19"
+  },
+  {
+   "idea": "Serialize commits per mutable state, not globally",
+   "detail": "Overlapping load-modify-save writers can each be locally correct and still lose one update. The invariant is one ordered commit path per mutable state boundary. Parallel reads, independent retrieval and many sessions are fine. Last writer wins is not a consistency model.",
+   "t": "8:28"
+  },
+  {
+   "idea": "Every external wait needs an ending",
+   "detail": "A dangling tool call (call recorded, no result) blocks the whole lane, and the agent looks stuck to the user. Give runs deadlines and cancellation, tools timeouts that return error results, a watchdog for visibility, and recovery commands that do not queue behind the stuck work. Record the terminal outcome in the receipt.",
+   "t": "10:38"
+  },
+  {
+   "idea": "Approval is scoped execution state, not a remembered yes",
+   "detail": "An expired approval callback stayed retrievable and blocked later work. A useful approval records who approved, which session and run, which tool and exact arguments, how long it lasts, what the outcome was, and a pointer to the receipt. Expiry must terminate, not loop.",
+   "t": "11:42"
+  },
+  {
+   "idea": "Internal success is not external proof; verify at the visible edge",
+   "detail": "A message tool reported success in a web chat or TUI run, but nothing rendered, and the agent later said it had already sent the message. The receipt should record the chain: model proposed, policy allowed or denied, execution attempted, user-visible surface confirmed or failed to confirm.",
+   "t": "12:44"
+  },
+  {
+   "idea": "Five-question audit to run on one real production path",
+   "detail": "For one agent path, ask: what woke it up (trigger and identity), what state it inherited (transcript, session, memory snapshot, policy version, tool surface), which authority it used (actor, session, tool, args, scope, lifetime), what executed (call, args, attempt number, idempotency key, external result), and what evidence survived at the edge the user cares about.",
+   "t": "13:49"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Session lane / single ordered writer",
+   "how": "Map each event to a session key that defines the state boundary, give each boundary one active writer, and serialize commits with a queue, mutex, transaction or lock. Use locks across sessions and queues or transactions within one. Keep the commit section small.",
+   "when": "Any shared mutable state that concurrent agents, retries, channels or timers can write. Parallel reads and independent retrieval can stay unserialized."
+  },
+  {
+   "name": "Run deadlines, cancellation and watchdog",
+   "how": "Give every run a deadline and cancel path. Give every tool a timeout that returns an error result. Add a watchdog that makes stuck work visible. Give channels a recovery command that bypasses the stuck lane. Record success, failure, timeout, cancel or max-attempts as the terminal outcome.",
+   "when": "Any run that waits on an external event, tool result or callback, to prevent dangling tool calls and silent hangs."
+  },
+  {
+   "name": "Scoped approval object",
+   "how": "Store approvals as a record bound to the actor, session, run, tool, exact arguments, expiry and outcome, with a link to the receipt. Narrow the tool surface with least privilege and use scoped credentials. If a retry, replay or callback drops a field, fail closed.",
+   "when": "Human-in-the-loop approvals for agent actions, especially ones delivered through chat buttons, phone notifications or async callbacks."
+  },
+  {
+   "name": "Run receipt as the audit record",
+   "how": "For each run, persist trigger and identity, the state snapshot used (transcript, session state, memory snapshot, policy version, tool surface), the authority used, the executed call with args, attempt number and idempotency key, and the external result at the user-visible boundary.",
+   "when": "Debugging wrong or missing side effects, and proving that an agent action happened as approved."
+  },
+  {
+   "name": "Idempotency keys on side effects",
+   "how": "Attach an idempotency key to each external side effect and record the attempt number, so retries and replays can be deduplicated and checked against the receipt.",
+   "when": "Any tool call that sends messages, writes records or triggers external actions that retries could repeat."
+  },
+  {
+   "name": "Verify at the user-visible edge",
+   "how": "After a side effect, check the surface the user actually sees (rendered message, updated ticket, changed file) rather than trusting the tool's success return. Record confirmed or failed-to-confirm.",
+   "when": "Multi-surface agents (chat, web, TUI, ticketing) where internal success and user-visible delivery can diverge."
+  },
+  {
+   "name": "Five-question production audit",
+   "how": "Pick one agent path and answer: what woke it, what state it inherited, which authority it used, what executed, and what evidence survived. Use the answers to find gaps in the receipt.",
+   "when": "Reviewing an existing agent system for reliability before scaling it, or after an incident."
+  }
+ ],
+ "tools": [
+  "OpenClaw",
+  "OpenAI Agents SDK",
+  "Codex",
+  "Cursor",
+  "OpenCode",
+  "Claude Code",
+  "Hermes",
+  "Telegram"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Most agent failures are harness failures, not model failures.",
+  "Last writer wins is not a consistency model.",
+  "A transcript is not proof; it only tells you what the agent said.",
+  "Capability is not execution, and requestability is not authority.",
+  "Users experience ordering bugs as personality: a late correction feels forgetful, a stuck lane feels dead."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Its audit log, budget counters and exec-gate guardrails are the same kinds of state and authority boundaries the talk covers. The talk's ordering and receipt ideas apply directly to shared budget state and audit records.",
+   "action": "Before the Redis multi-instance budget counter work, define one ordered commit path for budget state, and extend the Merkle audit entry to record trigger, policy version, idempotency key, attempt number and the observed upstream result."
+  },
+  {
+   "project": "prosharness",
+   "score": 3,
+   "why": "ProsHarness is a harness around Claude Code with checkpoint and resume, phone-driven approvals, and loops and schedules. The talk's approval scoping, deadlines and receipt design apply directly.",
+   "action": "Turn phone approvals into scoped objects bound to session, run, tool, exact args, expiry and outcome, make expired approvals terminate, and write a per-run receipt that records the terminal outcome and the user-visible confirmation (e.g. the notification actually delivered)."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The talk's working-set point (coherence does not prove completeness) applies to context engineering, but it is a single talk and not a concrete change.",
+   "action": "When debugging a wrong agent answer, log which memory, policy and tool-definition versions were in the context for that turn, so stale or missing inputs can be ruled in or out."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

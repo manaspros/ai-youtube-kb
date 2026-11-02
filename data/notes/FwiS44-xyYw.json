@@ -1,0 +1,218 @@
+{
+ "one_line": "OpenAI's hands-on Codex workshop walks through context, computer use, long-running goals, subagents, hooks and automations, then shows the app server for embedding Codex in your own product.",
+ "summary": "Two OpenAI developer-experience engineers run a live \"cooking\" workshop on Codex, structured as six steps: give context, build, take action with computer use, collaborate on long tasks, make loops repeatable, and embed Codex everywhere. Most of the talk is live demos, and much of it promotes product features (Codex app, remote mobile, plugins, Sites, Chronicle), so the signal sits in the patterns rather than the product tour. The strongest concrete material is about long-running work: goals with verifiable success criteria, progress dashboards, side threads for unblocking, subagents versus visible thread handoffs, and hooks for deterministic checkpoints. The talk ends with heartbeat and scheduled automations that spawn worktree threads and PRs, and with the App Server protocol as an open-source base for custom UIs. Speaker claims about native compaction and multi-hour runs are unbenchmarked and come from demos.",
+ "speakers": [
+  "Charlie Guo",
+  "Gabriel Chua"
+ ],
+ "orgs": [
+  "OpenAI"
+ ],
+ "format": "workshop",
+ "topics": [
+  "coding-agents",
+  "multi-agent",
+  "context-engineering",
+  "software-factory"
+ ],
+ "tags": [
+  "codex",
+  "goals",
+  "subagents",
+  "thread-handoff",
+  "hooks",
+  "heartbeat-automation",
+  "computer-use",
+  "chrome-extension",
+  "app-server",
+  "agents-md",
+  "memory",
+  "plugins",
+  "compaction",
+  "side-threads",
+  "slack-triage",
+  "digitalocean",
+  "convex",
+  "vercel"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Context is the first ingredient. Plugins (Slack, Gmail, Linear), app screenshots that carry embedded text, dictation, AGENTS.md and opt-in memory all feed the agent before it builds.",
+   "detail": "The speakers argue that most of the leverage comes from giving the agent personal and team context (conversations, docs, tickets), not from clever prompts. They describe the 'have you asked Codex' habit as the entry point.",
+   "t": "5:42"
+  },
+  {
+   "idea": "Verifiable success criteria are what make a long goal work. Vague criteria lead to technically-compliant but wrong results.",
+   "detail": "The speaker says to write criteria that can be checked. The agent evaluates itself against them every turn and decides whether to keep going. He compares an unclear goal to a 'monkey's paw' outcome.",
+   "t": "43:52"
+  },
+  {
+   "idea": "Long runs need external visibility. The agent writes a goals file and a progress dashboard HTML so the human can see what is done, active and blocked.",
+   "detail": "For a 7-hour port, the agent split the work into milestone goals in a goals file and built a progress dashboard. It also spawned separate threads at each milestone for code review and a goal audit that nudges the main thread if it drifts.",
+   "t": "31:48"
+  },
+  {
+   "idea": "Subagents and thread-to-thread handoff serve different audiences. Subagents hide work from the user to keep context separate. Handoffs keep work visible when the human wants to watch or steer.",
+   "detail": "The rule of thumb: if the delegation only needs to be visible to the model, use a subagent. If the human needs to see or intervene, use a thread. Subagents can be customized with their own instructions and model size, such as a light model for a fast reviewer.",
+   "t": "45:13"
+  },
+  {
+   "idea": "Side threads are a way to unblock and steer a running agent. They are ephemeral, so anything that must persist has to be written back to the main thread.",
+   "detail": "The speaker asks a side thread for a status summary, blockers and next steps, then has it update the main thread. He also notes that blocked tasks surface in the UI and can be answered from a side chat. Credentials are passed through a secure path rather than pasted into chat.",
+   "t": "34:33"
+  },
+  {
+   "idea": "Hooks give deterministic checkpoints where a model-based instruction is not enough. Examples are secret scanning before a prompt leaves, allowlist checks before a tool call, and tidy-up scripts at end of turn.",
+   "detail": "Hooks are configured in config.toml in the Codex home directory. The speaker's advice is to give the agent as many boundaries as possible and let it work within them, with hooks enforcing the boundaries that matter.",
+   "t": "47:46"
+  },
+  {
+   "idea": "Automations turn one-off runs into a loop. A heartbeat automation keeps re-checking inside a thread until a condition is met, and a scheduled automation can spawn new threads that go all the way to a PR.",
+   "detail": "Heartbeat example: poll a provisioned droplet every five minutes until ready. Scheduled example: every 30 minutes, classify Slack feedback, and for bug fixes open a worktree thread, make a PR, and request review. The speaker frames this as an early software factory.",
+   "t": "51:28"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Verifiable goal with milestone files",
+   "how": "Give a long task a verifiable completion criterion. Ask the agent to split it into a series of goals in a goals markdown file and to build a progress dashboard HTML. Use the 'define goal' skill from the OpenAI skills repo.",
+   "when": "Multi-hour greenfield builds, migrations, large refactors and experiment loops where the human will not watch every step."
+  },
+  {
+   "name": "Milestone-triggered review and goal-audit threads",
+   "how": "Have the main agent spawn separate threads at each milestone to run code review and a goal audit. The audit checks whether the main thread has drifted from the original plan and nudges it back.",
+   "when": "Long runs where the plan may drift and you need an independent check without interrupting the main thread."
+  },
+  {
+   "name": "Side-thread unblock and status query",
+   "how": "While a run is going, open a side thread on the same project and ask for what was done, what is next and what is blocked. Then tell it to push the fix or decision back to the main thread. Write any lasting decision into the main thread.",
+   "when": "Runs that stall on a credential, an approval or a wrong direction, especially when the human is away from the keyboard."
+  },
+  {
+   "name": "Subagent vs thread handoff split",
+   "how": "Use subagents for focused delegation the human does not need to see, with custom instructions and model size per role. Use a visible thread for work the human wants to inspect or steer. Tell agents in AGENTS.md to check with a named role, such as a creative director thread, before finishing.",
+   "when": "Choosing between hidden context separation and visible multi-agent coordination."
+  },
+  {
+   "name": "Hook-based deterministic guardrails",
+   "how": "Configure hooks in config.toml to run scripts at fixed points: before a prompt is sent (secret scan), before a tool call (whitelist check), and at turn end (linter, custom validation, repo tidy-up).",
+   "when": "Checks that must run every time, where a model instruction in AGENTS.md is not reliable enough."
+  },
+  {
+   "name": "Heartbeat automation for external waits",
+   "how": "Create an in-thread automation with a timer that re-checks a condition (for example, is the infrastructure ready) and takes the next step when it passes.",
+   "when": "Waiting on a provisioning step, a deploy pipeline or an event that takes minutes to hours."
+  },
+  {
+   "name": "Scheduled triage that spawns worktree threads to PRs",
+   "how": "Run a scheduled automation that reads a feedback channel, sorts items into categories, and for safe bug fixes opens a worktree thread that makes a PR and requests human review. Add a follow-up reminder if approval does not arrive.",
+   "when": "High-volume feedback where routine fixes can be drafted for review without manual triage."
+  },
+  {
+   "name": "Choosing a control surface: computer use vs Chrome extension vs in-app browser",
+   "how": "Use computer use for desktop and legacy apps with no API, running in the background without taking the cursor on macOS. Use the Chrome extension when the agent needs the user's signed-in session. Use the in-app browser for local web app layout and interaction testing.",
+   "when": "Deciding how an agent should drive a UI, based on whether auth state, legacy software or deep rendering inspection matters."
+  },
+  {
+   "name": "Embedding via the App Server protocol",
+   "how": "Build a custom UI or product on the open-source App Server, which exposes the same harness used by the Codex app, CLI and VS Code extension, including tool calls, plugins and compaction. Computer use and other local-only features are not included.",
+   "when": "Building a product that wraps Codex or a unified layer over several agent providers."
+  }
+ ],
+ "tools": [
+  "Codex app",
+  "Codex CLI",
+  "Codex remote (ChatGPT mobile)",
+  "Codex Chrome extension",
+  "Codex computer use",
+  "Codex in-app browser",
+  "Agents SDK",
+  "Sites",
+  "Chronicle (research preview, Pro)",
+  "AppShots (screenshot with embedded text)",
+  "AGENTS.md",
+  "config.toml hooks",
+  "Codex plugins (Build macOS, OpenAI Developers, Slack, Gmail, Linear, Convex, Vercel, DigitalOcean)",
+  "App Server protocol",
+  "define-goal skill",
+  "ImageGen skill",
+  "Obsidian vault"
+ ],
+ "numbers": [
+  {
+   "claim": "One session with nearly 300 subagents, mentioned as a community example.",
+   "t": "0:18"
+  },
+  {
+   "claim": "Live goal ran for about 15 hours 30 minutes on a remote instance at the time of the talk.",
+   "t": "27:57"
+  },
+  {
+   "claim": "A form-builder run took 5 hours 57 seconds; a Julia-to-Python/Rust port ran 7 hours 1 minute 40 seconds.",
+   "t": "30:33"
+  },
+  {
+   "claim": "A Doom reimplementation in native Swift ran for 40 hours under a goal (community example).",
+   "t": "43:52"
+  },
+  {
+   "claim": "Speaker says GPT-5.1 Codex Max (Nov 2025) was trained natively on multiple context windows through compaction. This is an unbenchmarked product claim.",
+   "t": "42:28"
+  },
+  {
+   "claim": "Live translator app was built in about 4 minutes 2 seconds from a plugin-assisted prompt, on stage.",
+   "t": "13:13"
+  },
+  {
+   "claim": "Speaker says Codex categorises and answers feedback in a channel on a 30-minute heartbeat.",
+   "t": "52:47"
+  },
+  {
+   "claim": "Speaker estimates 90+ percent of the time, AppShot context lets Codex work out the right action without extra explanation (anecdotal).",
+   "t": "20:34"
+  }
+ ],
+ "hot_takes": [
+  "Prompt engineering in the magic-phrase sense is gone; clarity and context are what matter.",
+  "A verifiable success criterion is the single most important input to a long-running goal.",
+  "Everyone is becoming a manager of parallel agent threads.",
+  "The goal is to take the human out of routine loops, such as API key setup, and build the machine that builds the machine.",
+  "Compaction is solved enough that long threads spanning many compactions are reliable (speaker and quoted users)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Hooks in config.toml that scan prompts and gate tool calls map onto AgentOS L1 PII/injection scanning and L2C exec-gate guardrails, and the speaker treats them as the security layer for long autonomous runs.",
+   "action": "Compare Codex hook points (pre-prompt, pre-tool, turn-end) with the Govrix scan and exec-gate hook points, and check whether the AgentOS manifest can express the same checkpoints."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Agents that propose a skill or plugin after solving a workflow relate to the L2D SkillForge open question about skill-worthiness, but the talk gives no scoring method.",
+   "action": "Note the 'make this a skill' end-of-task pattern as one input for SkillForge's skill-worthiness experiment; no scoring method is shown in the talk."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Goal files with milestone dashboards, side-thread unblocking, heartbeat polling and goal-audit threads overlap ProsHarness checkpoint/resume, loops/schedules and phone-driven approvals.",
+   "action": "Add a heartbeat poll for pending phone approvals in ProsHarness loops, and test a goal-audit step that compares the run against its original plan before resume."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Subagent and handoff guidance gives a concrete split between hidden delegation and visible threads, relevant to multi-agent orchestration and context engineering.",
+   "action": "Read the subagent model-size and role-instruction guidance and test a Haiku-sized reviewer subagent in an existing pipeline."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Context-engineering claims (AGENTS.md as global instructions, opt-in memory with token cost) are general and mostly product-specific.",
+   "action": "Skip unless a memory trade-off study is planned; the talk gives no measurements of token cost."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

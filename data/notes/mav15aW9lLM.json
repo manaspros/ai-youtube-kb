@@ -1,0 +1,147 @@
+{
+ "one_line": "Christopher Lovejoy (Anthropic) and Saul Howard (Anterior) argue that enterprise AI agents need audit, data-boundary, escalation and eval primitives designed in from the start, not bolted onto a proof of concept.",
+ "summary": "The speakers describe a common failure: a healthcare admin-workflow agent proof of concept (two engineers, four weeks) impresses stakeholders, then stalls when compliance asks for an audit trail, data-handling rules, clinician escalation, prompt-injection protection and evals. They say a compliance audit trail is a complete, replayable record of every agent action, data access and authorization, which is more than a developer log. Their proposed architecture uses an immutable, append-only event log as the single source of truth, so auditability and point-in-time reconstruction fall out of the storage model, with read cost as the trade-off. Regulated data such as PHI is kept in schema-driven immutable object storage, referenced by events, and accessed by agents with tokens at the point of use, which separates observability from the data itself and helps break the lethal-trifecta pattern. Escalation is simplified by defining \"agent\" to include humans, so any LLM action can be performed by a human and downstream steps do not care who acted. The same primitives make evals a byproduct: replay the ledger, diff human versus agent on the same task, and run evals on production data inside the customer environment without exposing it. Their closing warning is that bolting enterprise requirements onto a POC yields something brittle, so constraints should shape the architecture from day one.",
+ "speakers": [
+  "Christopher Lovejoy",
+  "Saul Howard"
+ ],
+ "orgs": [
+  "Anthropic",
+  "Anterior"
+ ],
+ "format": "talk",
+ "topics": [
+  "governance-compliance",
+  "enterprise-adoption",
+  "evals",
+  "security-guardrails"
+ ],
+ "tags": [
+  "enterprise",
+  "healthcare",
+  "audit-trail",
+  "event-sourcing",
+  "immutable-ledger",
+  "object-storage",
+  "zero-trust",
+  "human-in-the-loop",
+  "human-agent-equivalency",
+  "privacy-preserving-evals",
+  "production-readiness",
+  "lethal-trifecta",
+  "HIPAA",
+  "SOC2"
+ ],
+ "key_ideas": [
+  {
+   "idea": "POC success hides production blockers",
+   "detail": "A POC that hits accuracy, speed and cost targets still stalls in productionization, because stakeholders then ask about audit trails, sensitive-data handling, clinician approval, untrusted-data manipulation, ongoing performance and integrations. The speakers focus on four of these: audit, data handling, escalation and evals.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Compliance audit trails are more than logs",
+   "detail": "Frameworks such as SOC2, HITRUST and HIPAA expect a complete record of every agent action, every data access and every authorization. The speaker frames it as chain-of-evidence: could you justify the decision in a court of law?",
+   "t": "5:23"
+  },
+  {
+   "idea": "Append-only event log as source of truth",
+   "detail": "An immutable, timestamped, unified event log across all agents makes auditability a by-product, since you can roll back and see the system state at any point. Writes become trivial. Reads get harder, so caching and snapshots are needed. Different views of the data are ephemeral projections computed from the log.",
+   "t": "6:38"
+  },
+  {
+   "idea": "Separate events from regulated data blobs",
+   "detail": "Healthcare data is complex, unstructured or structured, often over 1 MB, and has strict RBAC rules. The speaker stores it immutably in schema-driven object storage. Events hold only references to those blobs. Developers can debug agent steps by seeing data shapes without access to the PHI itself. Some customers will not let data leave their VPC.",
+   "t": "9:18"
+  },
+  {
+   "idea": "Zero-trust token access to break the lethal trifecta",
+   "detail": "Agents carry tokens and fetch data at the point of use instead of letting it flow through the system. Keeping data segregated from the orchestration stream means an agent cannot reach data from another context within the same process. The speaker presents this as a structural mitigation for prompt injection.",
+   "t": "12:05"
+  },
+  {
+   "idea": "Define agent to include humans for escalation",
+   "detail": "Escalation is hard because it is dynamic and LLMs and humans process context differently. If the platform defines agent to cover humans too, any LLM action can be done by a human, and downstream steps are indifferent to which actor acted. Shared context definitions can be mapped to an LLM prompt or to a human UI.",
+   "t": "12:05"
+  },
+  {
+   "idea": "Evals as a byproduct of the architecture",
+   "detail": "Evals are hard because LLM output is nondeterministic, offline datasets are unrepresentative and data drifts. The three primitives give evals almost for free. Replaying the ledger lets you test a prompt, model or code change and see its exact effect. Human-versus-agent performance on the same task gives an eval score. Evals can run on production data inside the customer's environment, since only references leave.",
+   "t": "14:53"
+  },
+  {
+   "idea": "Constraints first, then rebuild toward POC accuracy",
+   "detail": "The common error is taking a promising POC and adding security, evals and auditability afterwards, which is brittle and hard to generalize. The speakers recommend treating production constraints as foundational principles, then rebuilding toward the POC's accuracy using these primitives. Patterns from finance, defense and big tech already address many of these needs.",
+   "t": "17:49"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Immutable append-only event log as system of record",
+   "how": "Record every agent action as a timestamped event in one unified, append-only store. Build all read views as computed projections, and add caching or snapshots to keep reads fast.",
+   "when": "When you need a complete audit trail, point-in-time reconstruction, or replay for debugging and evals in a regulated system."
+  },
+  {
+   "name": "Event log plus schema-driven immutable blob store",
+   "how": "Keep events small and reference-only. Store the actual regulated payloads immutably in object storage with schemas, so the event history can be reconstructed without exposing the payloads to observers.",
+   "when": "When payloads are large, sensitive or subject to residency rules (for example PHI kept inside a customer VPC) but the orchestration history must stay inspectable."
+  },
+  {
+   "name": "Token-based access at point of use",
+   "how": "Agents hold scoped tokens and fetch data only when a step needs it. Data is not pushed through the pipeline. Keep data stores separate from the process holding untrusted inputs.",
+   "when": "When an agent could be exposed to untrusted content while also having access to sensitive data (the lethal trifecta)."
+  },
+  {
+   "name": "Human-agent equivalency in the action model",
+   "how": "Give humans and LLMs the same action interface and actor abstraction. Escalation then means swapping the actor for one step, and downstream steps are unchanged. Define shared context objects that render to a prompt or to a UI.",
+   "when": "When some decisions need clinician or human approval and escalation points are dynamic or rule-based."
+  },
+  {
+   "name": "Replay plus human-vs-agent diff as eval",
+   "how": "Replay recorded event sequences with changed prompts, models or code to measure the exact impact. Run the same task with a human and with the agent, and treat the difference as the eval score.",
+   "when": "When offline datasets do not match production or drift over time, and you need evals that cannot leak sensitive data."
+  },
+  {
+   "name": "Run evals inside the customer environment",
+   "how": "Ship eval logic to where the data lives and return only aggregate results or references, so production data never moves to the agent's environment.",
+   "when": "When customer data residency or privacy rules forbid exporting data for evaluation."
+  }
+ ],
+ "tools": [],
+ "numbers": [
+  {
+   "claim": "Example POC scope: two engineers for four weeks before stakeholder review",
+   "t": "0:08"
+  },
+  {
+   "claim": "A single healthcare data object can exceed 1 MB",
+   "t": "9:18"
+  },
+  {
+   "claim": "Four architectural principles: immutable action ledger, orchestration-adjacent object storage, human-agent equivalency, and evals as a first-class property",
+   "t": "16:23"
+  }
+ ],
+ "hot_takes": [
+  "Bolting enterprise requirements (audit, security, evals) onto a working POC produces something brittle; design around the constraints from day one.",
+  "An immutable event log makes auditability trivial, because it falls out of the storage model rather than being added as a feature.",
+  "Defining an agent to include humans turns escalation into a simple actor swap, and gives you evals for free."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already has a Merkle audit log and exec-gate guardrails, and this talk sets a stricter bar: a complete record of every action, data access and authorization, with payloads kept separate from events.",
+   "action": "Audit the AgentOS Merkle audit log against this bar: does it record data-access references and authorization decisions separately from payloads, and can state be reconstructed at any past point?"
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already has phone-driven approvals and checkpoint/resume. The human-agent equivalency idea would let a human approval act as an actor in the same action interface as the agent, not a separate path.",
+   "action": "Model ProsHarness phone approvals as one actor type in the same step/action log the agent uses, so escalation and resume behave the same whichever actor acted."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

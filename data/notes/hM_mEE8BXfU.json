@@ -1,0 +1,153 @@
+{
+ "one_line": "Better Stack walkthrough of running Qwen 3.5 35B-A3B (a mixture-of-experts model) on an iPhone 17 at about 11 tokens/s by streaming experts from SSD, relying on the OS page cache, and tiered 4-bit/2-bit quantization, with the Flash MoE / Flash iOS setup steps.",
+ "summary": "The presenter runs a 35B-parameter mixture-of-experts model (Qwen 3.5 35B-A3B, about 3B active per token) on an iPhone 17 at roughly 11 tokens per second. Only the always-needed weights (embeddings, attention, routers, shared expert, about 1.4 GB) stay resident in RAM; the roughly 12 GB of routed experts sit on flash and are read on demand, eight per layer per token. The app keeps no expert cache of its own. The authors found that removing their 9.8 GB cache made things 38% faster, because iOS's page cache uses spare RAM better. Tiered quantization keeps the hot experts at 4-bit and drops the cold ones to 2-bit, shrinking the file from about 19 GB to 13 GB. A thinking-loop bug came from a size check that silently skipped the half-size 2-bit experts; the fix is to compare each read against that expert's own size. The engine is Flash MoE (originally a MacBook project by Dan Woods) wrapped by a small iOS port called Flash iOS. The video ends with build and install steps. The results are single-device, single-prompt anecdotes with no quality evaluation, and the presenter notes the phone heats up quickly.",
+ "speakers": [
+  "Warren"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "local-ai",
+  "inference-serving"
+ ],
+ "tags": [
+  "mixture-of-experts",
+  "ssd-streaming",
+  "page-cache",
+  "tiered-quantization",
+  "iphone",
+  "ios",
+  "qwen",
+  "flash-moe",
+  "on-device-inference",
+  "xcode"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Mixture-of-experts models only activate a small slice per token, so the inactive experts can live on SSD instead of RAM. Qwen 3.5 35B-A3B has 40 layers with 256 experts plus one shared expert, and a router picks 8 per token.",
+   "detail": "A 4-bit file is about 20 GB, but only about 1.4 GB (embeddings, attention, routers, shared expert) must stay resident. The roughly 12 GB of routed experts (40 files of about 300 MB) stay on flash.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Each token needs 8 expert reads per layer, so about 320 reads per token. Rather than keeping an app-level expert cache, the engine leaves caching to the OS page cache.",
+   "detail": "The authors built a 9.8 GB cache of their own, then deleted it, and the result was 38% faster. Any RAM the app grabs is taken from both the GPU and the page cache, and the page cache does most of the work.",
+   "t": "1:57"
+  },
+  {
+   "idea": "Streaming every expert from flash would need over 5 GB/s at 11 tok/s, but an iPhone's flash delivers about 1.6 GB/s, so the page cache has to serve most reads.",
+   "detail": "This is the bandwidth argument for why the caching behaviour matters at all.",
+   "t": "1:57"
+  },
+  {
+   "idea": "Tiered quantization exploits skew in expert usage: about 25% of experts handle about 80% of the work, so hot experts stay at 4-bit and cold ones drop to 2-bit.",
+   "detail": "Cold experts are 44% smaller and the whole file shrinks 34%, from about 19 GB to 13 GB. The smaller file fits more of the page cache. Quality impact is not measured in the video.",
+   "t": "3:16"
+  },
+  {
+   "idea": "A thinking-loop bug came from an async pre-read size check. Cold 2-bit experts are half the size of hot ones, so they failed the check and were silently skipped.",
+   "detail": "The model effectively ran with half its experts and repeated two tokens. The fix is to validate each expert read against that expert's own expected size, not one global size.",
+   "t": "4:28"
+  },
+  {
+   "idea": "The on-device setup is a build-and-sideload workflow: clone the repo, patch, build in Xcode with your own team and bundle ID, then push a pre-packed model over USB.",
+   "detail": "Requires a paid Apple developer account. The pre-packed tiered model is about 13 GB and took about 7 minutes to transfer over USB.",
+   "t": "4:28"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Stream MoE experts from SSD and leave caching to the OS page cache",
+   "how": "Keep attention, embeddings, routers and the shared expert resident in RAM. Memory-map or read each token's selected routed experts from flash per layer. Do not add an app-level expert cache, since it competes with the OS page cache for RAM. The authors measured a 38% speedup from removing their own 9.8 GB cache.",
+   "when": "Running a MoE model larger than device RAM, where only a few experts are active per token and the device has fast flash and spare memory."
+  },
+  {
+   "name": "Tiered quantization by expert hotness",
+   "how": "Profile which experts handle most of the routing traffic. Keep the top about 25% (which carry about 80% of the work) at 4-bit and quantize the rest to 2-bit. Pack them into a single tiered model file.",
+   "when": "A MoE model needs to fit a memory or storage budget and the routing distribution is skewed. Validate quality afterwards, since the video does not."
+  },
+  {
+   "name": "Validate expert reads against per-expert sizes",
+   "how": "In the async pre-read path (metalinfer.m, function async pre-read weight), check each expert read against that expert's own expected size. Do not use one size for all experts, because mixed-precision experts differ in size. A global check silently skips the smaller ones.",
+   "when": "Mixing tensor precisions within one model, where a size-based integrity check would otherwise drop valid data without an error."
+  },
+  {
+   "name": "Build and sideload Flash iOS onto an iPhone (tutorial steps)",
+   "how": "1) Clone the Flash MoE repo, then apply the pre-read fix to metalinfer.m. 2) Open the Xcode project and set your team and bundle ID. You need a paid Apple developer account. 3) Build a Release build and install it on the iPhone. 4) Download the pre-packed tiered model (about 13 GB). 5) Push the model to the app over USB (about 7 minutes). 6) Open the Flash MoE app, tap the model, and start chatting.",
+   "when": "You want to run a large open-weight MoE model locally on an iPhone for experimentation. Expect the phone to heat up under sustained generation."
+  },
+  {
+   "name": "Thinking-loop diagnosis for on-device MoE",
+   "how": "If output repeats the same short token sequence after about 10 words, check whether some expert reads are failing validation and being skipped silently. The model then runs with fewer experts than intended.",
+   "when": "Debugging degenerate output from a streamed or partially loaded MoE model."
+  }
+ ],
+ "tools": [
+  "Flash MoE (Dan Woods; originally written for a MacBook)",
+  "Flash iOS (iPhone port wrapping the Flash MoE engine)",
+  "Qwen 3.5 35B-A3B (mixture-of-experts model, 35B total, about 3B active)",
+  "Xcode",
+  "iPhone 17",
+  "metalinfer.m (file in the Flash MoE repo)",
+  "Apple developer account"
+ ],
+ "numbers": [
+  {
+   "claim": "Model is 35B total parameters with about 3B active per token. A standard 4-bit file is about 20 GB.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Resident RAM needed is about 1.4 GB. The routed experts (about 12 GB total, 40 files of about 300 MB) sit on SSD.",
+   "t": "0:55"
+  },
+  {
+   "claim": "Throughput is about 11 tokens/s on an iPhone 17, with thinking mode enabled.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Each token needs 320 small expert reads (8 experts across 40 layers).",
+   "t": "1:57"
+  },
+  {
+   "claim": "Streaming all experts from flash at 11 tok/s would need over 5 GB/s. The iPhone flash delivers about 1.6 GB/s.",
+   "t": "1:57"
+  },
+  {
+   "claim": "Removing the authors' own 9.8 GB expert cache made inference 38% faster.",
+   "t": "1:57"
+  },
+  {
+   "claim": "About 25% of experts handle about 80% of the work. Cold experts at 2-bit are 44% smaller, and the whole file shrinks 34% (about 19 GB to 13 GB).",
+   "t": "3:16"
+  },
+  {
+   "claim": "Pre-packed tiered model is about 13 GB. USB transfer to the phone takes about 7 minutes.",
+   "t": "4:28"
+  }
+ ],
+ "hot_takes": [
+  "The 11 tok/s figure is one device, one model, with thinking mode on. No benchmark or quality comparison against the 4-bit or uniform 2-bit baseline is shown.",
+  "The presenter says the phone heats up noticeably from a single 'hello' prompt, so sustained use may be impractical.",
+  "The 38% speedup from removing the custom cache is presented as a counter-intuitive win. It is a claim about iOS page-cache behaviour, not a controlled experiment.",
+  "The tiered quantization quality cost is not measured. Shrinking the file 34% is shown, but intelligence impact is not."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "InferCraft (L2B) is built around KV-cache offload and memory-tier strategies on one RTX 5090. The page-cache versus explicit-cache finding and expert-level tiered quantization are adjacent ideas, but this is an iPhone demo with no serving-scale or latency data.",
+   "action": "Read Flash MoE's approach to page-cache-backed weight streaming and compare it with InferCraft's CPU offload, then benchmark an explicit cache against relying on the OS page cache at our memory budget."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Local iPhone inference is not part of the Claude Code harness, checkpointing, approvals or credential handling.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

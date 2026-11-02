@@ -1,0 +1,221 @@
+{
+ "one_line": "Why running Xiaomi MiMo V2.6 Pro/Flash locally rarely beats the API on cost: weights already 4-bit, bandwidth caps speed, electricity alone outprices hosted tokens. Only privacy or speed justify it.",
+ "summary": "The host works through the hardware and cost math for running Xiaomi's MiMo V2.6 Pro (about 1T parameters) and Flash locally. Xiaomi already shipped the expert weights in a native 4-bit format (MXFP4), so the usual \"quantize it further\" advice buys little and quality drops sharply below 4 bits. Memory needs are split between weights and KV cache; MiMo's hybrid attention keeps KV cost per token low, but cold prefill of long prompts is very slow. Hardware tiers are mapped by memory: 128 GB fits only a 2-bit Flash build, 256 GB is the practical Flash target, and Pro needs a roughly 768 GB server. Decode speed is bounded by memory bandwidth divided by bytes read per token, giving a hard ceiling under 16 tokens/s for Pro on a $40,800 EPYC box. Against API pricing ($0.87 per million output tokens for Pro, $0.28 for Flash), local hardware never breaks even on cost, and the host argues speed and data residency are the only real reasons to self-host. The video also flags a default config that caps output at 2048 tokens with sampling disabled, which silently truncates reasoning and causes tool-call loops, and it notes a 9B distilled MiMo variant that runs on a 12 GB GPU. Evidence is mostly secondhand (community benchmarks and forum threads) plus the host's own arithmetic.",
+ "speakers": [
+  "Host of Kai Explains (name not given in transcript)"
+ ],
+ "orgs": [
+  "Xiaomi",
+  "Apple",
+  "NVIDIA",
+  "AMD",
+  "DeepSeek",
+  "Artificial Analysis"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "token-cost-efficiency",
+  "models-research"
+ ],
+ "tags": [
+  "xiaomi-mimo",
+  "open-weight-models",
+  "mxfp4",
+  "kv-cache",
+  "memory-bandwidth",
+  "moe",
+  "hybrid-attention",
+  "prefill",
+  "local-hardware-cost",
+  "reasoning-tokens",
+  "max-output-tokens",
+  "api-pricing",
+  "self-hosting"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The Pro weights are already 4-bit, so further quantization is mostly pointless",
+   "detail": "Pro is about 573 GB for roughly 1T parameters, about half a byte per parameter. The experts were trained natively in MXFP4, so the squeeze happened upstream. Community MLX 4-bit and 8-bit builds were both about 169 GB. Reported perplexity penalties: about 2% at 3.5-bit, 7% at 3-bit, 61% at 2-bit.",
+   "t": "1:23"
+  },
+  {
+   "idea": "MiMo's KV cache is cheap to store but slow to fill",
+   "detail": "Most layers use a 128-token window; only 10 of 70 layers on Pro keep full history, about 51 KB per token, so a 1M-token context needs about 54 GB of KV. Prefill is the bottleneck: one report had a cold 1M-token prompt on Flash across two DGX Spark boxes taking 67 minutes before the first output token. Xiaomi's lead researcher reportedly said the next architecture will cut this 5x.",
+   "t": "3:56"
+  },
+  {
+   "idea": "Memory tier determines which MiMo build is usable at all",
+   "detail": "128 GB machines (DGX Spark about $4,700, Ryzen AI Max desktop about $3,450) only run a 2-bit Flash build, which reportedly hit 32 tok/s on one Spark but froze on a 32K-token llama-bench prompt. Flash needs about 190 GB with real working context, so 256 GB is the target. Options cited: Mac Studio M5 Ultra 256 GB at $11,300, or two linked DGX Sparks at about $9,400 (42-51 tok/s on code, falling to 12 tok/s at 200K context).",
+   "t": "5:17"
+  },
+  {
+   "idea": "Decode speed is capped by memory bandwidth divided by bytes read per token",
+   "detail": "Pro's spec sheet (42B active parameters) hides that attention stays at 8/16-bit while only the experts are 4-bit. Per token the host estimates about 11 GB of expert reads and 26 GB of attention reads, roughly 39 GB total. Dividing a 614 GB/s EPYC server (768 GB DDR5, about $40,800) by 39 GB gives a ceiling under 16 tok/s. Squeezing experts to 2-bit still leaves about 28 GB per token.",
+   "t": "9:08"
+  },
+  {
+   "idea": "Local hardware never breaks even against hosted API prices",
+   "detail": "Xiaomi API prices: Pro $0.87 per million output tokens, Flash $0.28, cached input about $0.003 per million. A local EPYC Pro box at about 9 tok/s and 550 W at $0.18/kWh costs about $2.90 in electricity per million output tokens, more than the API price. An $11,300 Mac Studio running Flash nonstop at 59 tok/s makes about 5M tokens/day, about 21 years to recoup the hardware.",
+   "t": "9:08"
+  },
+  {
+   "idea": "Self-hosting only makes sense for speed or data residency",
+   "detail": "Hosted Pro runs about 18-40 tok/s and one benchmark prompt took over 30 minutes. A rig of two RTX Pro 6000 cards with a patched stack reportedly hit 190 tok/s, cutting one job from about an hour (hosted) or 37 minutes (M3 Ultra) to 11.5 minutes. The host says that rig costs over $30K and never saves money. Data-residency and compliance needs are the other legitimate reason.",
+   "t": "10:26"
+  },
+  {
+   "idea": "MiMo reasons verbosely, and the default config can silently truncate it",
+   "detail": "On one comparison task MiMo used 131,400 reasoning tokens, nearly double DeepSeek V4.1 Flash. The shipped config caps max output at 2048 tokens with sampling disabled; thinking counts toward that cap, so replies get cut mid-thought, and greedy decoding can loop on the same tool call forever. Many tool-call complaints were attributed to serving bugs rather than the model.",
+   "t": "11:37"
+  },
+  {
+   "idea": "A 9B distilled MiMo variant is the practical local option",
+   "detail": "MiMo V2.6 Distilled is a 9B model trained on Pro's answers, reported at 61 on SWE-bench Verified. Someone ran it on a 12 GB RTX 3060 at about 47 tok/s, which the host recommends as the model most people can run on hardware they already own.",
+   "t": "12:45"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Check whether a release is already quantized before quantizing",
+   "how": "Divide the download size by parameter count. About 0.5 bytes per parameter means already 4-bit (MXFP4-style native experts). Compare sibling releases: if the previous generation was about 2x larger at the same parameter count, the squeeze happened upstream. Only go lower if you accept the quality curve (2% at 3.5-bit, 7% at 3-bit, 61% at 2-bit perplexity loss, per the host).",
+   "when": "Before downloading or planning a memory tier for any newly released open-weight model, especially MoE models with native low-precision expert weights."
+  },
+  {
+   "name": "Estimate the decode speed ceiling from memory bandwidth",
+   "how": "Sum the bytes read per generated token, counting active experts and always-active attention/shared weights at their stored precision. Ceiling in tok/s = memory bandwidth (GB/s) / bytes per token. Real throughput is lower. The host's example: 614 GB/s / 39 GB per token is under 16 tok/s.",
+   "when": "When sizing local hardware for a large MoE model, or when a quoted tok/s figure looks too good to be true."
+  },
+  {
+   "name": "Compare local vs API on electricity and break-even before buying hardware",
+   "how": "Electricity cost per million output tokens = (watts x hours) x price per kWh, where hours = 1,000,000 / (tok/s x 3600). Hardware break-even days = price / (API price per token x tokens per day - electricity per day). The host's inputs: 550 W, $0.18/kWh, 9 tok/s gives about $2.90 per million tokens.",
+   "when": "Deciding whether to self-host a model that has a hosted API price, or when someone claims local inference is cheaper."
+  },
+  {
+   "name": "Raise the output cap for reasoning models and turn sampling back on",
+   "how": "The host says Xiaomi's shipped config caps max output at 2048 tokens with sampling disabled. Thinking tokens count toward that cap. Raise the max output limit well above the default, enable sampling, and watch for repetitive tool-call loops. The exact config keys and file name are not shown in the video, so verify them against the model card.",
+   "when": "When a reasoning model's replies are cut mid-thought, or an agent repeats the same tool call indefinitely. Check serving config before blaming the model."
+  },
+  {
+   "name": "Measure prefill and decode separately for long contexts",
+   "how": "Time-to-first-token on a cold long prompt (prefill) can dominate, even when decode speed is fine. The host's example is 67 minutes to read a 1M-token prompt on two DGX Sparks. Benchmark prefill at your real context lengths (e.g. 32K, 64K, 200K) alongside tok/s, since speed can fall from 40 to 12 tok/s as context grows.",
+   "when": "When choosing hardware or a serving stack for agent workloads with large codebases in context."
+  }
+ ],
+ "tools": [
+  "Xiaomi MiMo V2.6 Pro",
+  "Xiaomi MiMo V2.6 Flash",
+  "Xiaomi MiMo V2.6 Distilled (9B)",
+  "DeepSeek V4.1 Flash",
+  "MLX (Apple)",
+  "llama-bench (llama.cpp)",
+  "NVIDIA DGX Spark",
+  "AMD Ryzen AI Max (Framework desktop)",
+  "Apple Mac Studio M5 Ultra / M3 Ultra",
+  "AMD EPYC (12-channel DDR5 server)",
+  "NVIDIA RTX Pro 6000",
+  "NVIDIA RTX 3060 (12 GB)",
+  "SWE-bench Verified",
+  "Artificial Analysis"
+ ],
+ "numbers": [
+  {
+   "claim": "Pro download is about 573 GB for roughly 1T parameters (about 0.5 bytes/param); V2.5 Pro at 8-bit was over 1 TB",
+   "t": "1:23"
+  },
+  {
+   "claim": "Community MLX 4-bit and 8-bit builds of the same model are both about 169 GB",
+   "t": "2:32"
+  },
+  {
+   "claim": "Perplexity penalty: about 2% at 3.5-bit, 7% at 3-bit, 61% at 2-bit (Pro)",
+   "t": "2:32"
+  },
+  {
+   "claim": "KV cache about 51 KB per token; 1M-token context about 54 GB; only 10 of 70 layers keep full history; others use a 128-token window",
+   "t": "3:56"
+  },
+  {
+   "claim": "Cold 1M-token prompt on Flash across two DGX Spark took 67 minutes before first output token (single user report)",
+   "t": "3:56"
+  },
+  {
+   "claim": "Hardware: DGX Spark about $4,700 and Ryzen AI Max desktop about $3,450 (128 GB class); Mac Studio M5 Ultra 256 GB + 2 TB about $11,300; two linked DGX Sparks about $9,400; EPYC 768 GB box about $40,800",
+   "t": "5:17"
+  },
+  {
+   "claim": "Flash needs about 190 GB with working context; 2-bit build about 90-108 GB; 2-bit Flash about 32 tok/s on one Spark",
+   "t": "5:17"
+  },
+  {
+   "claim": "M3 Ultra running Flash: 59 tok/s; two linked Sparks: 42-51 tok/s on code",
+   "t": "5:17"
+  },
+  {
+   "claim": "Spark pair speed: about 40 tok/s on a short prompt, 15 tok/s at 64K, 12 tok/s at 200K",
+   "t": "6:41"
+  },
+  {
+   "claim": "Pro loads at about 566 GB; largest Mac is 512 GB (about 550 real GB, less after macOS); 512 GB M3 Ultra discontinued in March; M5 Ultra 512 GB listed for late October with no price",
+   "t": "7:46"
+  },
+  {
+   "claim": "Memory traffic per token about 39 GB (about 11 GB experts + about 26 GB attention); EPYC bandwidth 614 GB/s gives a decode ceiling under 16 tok/s",
+   "t": "9:08"
+  },
+  {
+   "claim": "API prices: Pro $0.87 per million output tokens; Flash $0.28; cached input about $0.003 per million",
+   "t": "9:08"
+  },
+  {
+   "claim": "Local EPYC Pro at about 9 tok/s and 550 W at $0.18/kWh: about 30 hours and $2.90 electricity per million output tokens",
+   "t": "9:08"
+  },
+  {
+   "claim": "Mac Studio buys about 40B Flash tokens at API pricing; running nonstop at 59 tok/s gives about 5M tokens/day, about 21 years to break even on hardware",
+   "t": "10:26"
+  },
+  {
+   "claim": "Hosted Pro speed 18-40 tok/s; one 6-cent benchmark prompt took 30 min 50 s; one user saw a coding tool drop from 150 to 23 tok/s between days",
+   "t": "10:26"
+  },
+  {
+   "claim": "MiMo used 131,400 reasoning tokens on one task, nearly double DeepSeek V4.1 Flash; about 1 hour hosted, about 37 min on M3 Ultra, 11.5 min on two RTX Pro 6000 at 190 tok/s (rig over $30K)",
+   "t": "11:37"
+  },
+  {
+   "claim": "Default config caps max output at 2048 tokens with sampling off",
+   "t": "11:37"
+  },
+  {
+   "claim": "MiMo V2.6 Distilled: 9B parameters, 61 on SWE-bench Verified, about 47 tok/s on a 12 GB RTX 3060",
+   "t": "12:45"
+  }
+ ],
+ "hot_takes": [
+  "Quantizing an already-4-bit native release is pointless and the 'just quantize it' advice from other creators does not apply to MiMo.",
+  "Self-hosting a 1T-parameter MoE for cost savings never breaks even; the only real reasons are speed or data residency.",
+  "Many tool-call loops and cut-off replies are serving-config bugs (2048-token cap, sampling disabled), not model failures.",
+  "The host calls the release's hype and hosted speed issues out directly and says the 9B distilled variant is the most useful one for most people.",
+  "No sponsorship detected. Cost figures rely on quoted prices and a stated electricity rate, and some hardware (M5 Ultra 512 GB) has no price yet. Several key numbers are single anecdotal reports."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft runs vLLM with KV-cache strategies on one RTX 5090. The per-token KV math for a hybrid-attention model (only some layers keep full history) and the separation of cold prefill from decode both bear on InferCraft sizing and benchmarks.",
+   "action": "When sizing InferCraft KV-cache budgets for hybrid-attention or MoE models, compute KV bytes per token from only the full-attention layers, and benchmark cold prefill at long context lengths separately from decode tok/s."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness drives Claude Code runs where routing a task to a slow or verbose reasoning model changes both cost and wall-clock time. The video's break-even and time-per-job math applies to that routing choice.",
+   "action": "Before routing a long agent job to a reasoning model, estimate the time and token cost from measured output tok/s and typical reasoning-token overhead, not the per-token list price alone."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

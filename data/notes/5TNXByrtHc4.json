@@ -1,0 +1,189 @@
+{
+ "one_line": "Better Stack walkthrough of Anthropic's Opus 5.5 prompting guide: state the finish line up front, drop \"think carefully\" lines, steer with CLAUDE.md stop rules, split audits across subagents, track tasks in a file, and handle safeguard flags.",
+ "summary": "The video summarizes Anthropic's guide to prompting Opus 5.5 for long-running work. The core advice is to give the whole task in one message, state what \"done\" means, and let the model run without staged hand-holding. It recommends deleting \"think carefully\" or \"think step by step\" lines because the model already decides how much to think, and it says specific banned-style lists work better than vague \"avoid generic design\" instructions. For steering, it suggests typing follow-ups mid-run (they are read after the current step) rather than interrupting, and adding a CLAUDE.md rule like \"keep going unless you need me, or it's destructive\" to reduce unwanted stops. For big audits or migrations it suggests sub-agents with evidence checks, plus a tasks.md file that survives context summarization. It ends runs with blocked-on-me, changed and found headings, and suggests a review pass limited to merge-blocking issues. The video also covers Opus 5.5 safeguard flags that can switch models, with advice to rephrase, state the work is on your own codebase, avoid asking for internal reasoning, and start a new thread after a flag. The presenter partially disagrees on using the same model for review and prefers a different model as reviewer. Content is mostly practitioner tips drawn from a vendor guide, with little independent data.",
+ "speakers": [
+  "Better Stack presenter (unnamed)"
+ ],
+ "orgs": [
+  "Anthropic",
+  "Better Stack",
+  "OpenAI"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "context-engineering",
+  "multi-agent"
+ ],
+ "tags": [
+  "opus-5.5",
+  "prompting",
+  "claude-md",
+  "subagents",
+  "tasks-md",
+  "long-running-agents",
+  "code-review",
+  "safeguards",
+  "model-switching",
+  "fast-mode"
+ ],
+ "key_ideas": [
+  {
+   "idea": "State the whole task and the finish line in one message, then let it run",
+   "detail": "Opus 5.5 is tested on long coding tasks and needs little oversight. Done should be explicit, e.g. every endpoint uses the new client, the old one is deleted, and all tests pass. Adding 'only stop if a test fails for a reason you can't explain' helps it self-recover.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Delete 'think carefully' and 'think step by step' from prompts and skills",
+   "detail": "Opus 5.5 always thinks first and sizes its own thinking. Anthropic reported that removing these lines made replies start sooner with no clear quality drop. Specific finish lines help; vague thinking nudges do little.",
+   "t": "0:50"
+  },
+  {
+   "idea": "Ban specific design defaults instead of saying 'avoid a generic look'",
+   "detail": "Without design direction the model falls back to a few default styles, and 'avoid generic' just swaps one template for another. Naming styles to ban works better, e.g. numbered sections, monospace labels, pill-shaped buttons.",
+   "t": "0:50"
+  },
+  {
+   "idea": "Type follow-ups mid-run instead of interrupting",
+   "detail": "Stopping a run to add something restarts it, which costs more. In Claude Code, typing a follow-up queues it to be read once the current step finishes, without stopping the run.",
+   "t": "2:13"
+  },
+  {
+   "idea": "Use CLAUDE.md to set when to stop versus keep going",
+   "detail": "Opus 5.5 sometimes stops to report progress when it should continue. A rule like 'keep going unless you need me, or unless it's something destructive' reduces full stops while keeping the stops you want.",
+   "t": "2:13"
+  },
+  {
+   "idea": "Split large audits and migrations across sub-agents, then check each result",
+   "detail": "Sub-agents keep each context smaller. The guide has the model verify each sub-agent's evidence before accepting it, which gives a multi-step review.",
+   "t": "2:13"
+  },
+  {
+   "idea": "Keep a tasks.md file for long runs",
+   "detail": "Context summarization can drop original tasks and detail from older turns. A file on disk survives that and lets both the user and the model see what is done and what is left.",
+   "t": "3:29"
+  },
+  {
+   "idea": "End runs with 'blocked on me / changed / found' and use a merge-blocker-only review",
+   "detail": "The final summary should list what the model needs from you first. For review, the guide suggests a pass on the diff listing only problems that would block a merge, each with file, line, why it is wrong, and how to show it fails. One early tester said Opus 5.5 at low effort caught more bugs than Opus 5 at high effort, with fewer false alarms.",
+   "t": "3:29"
+  },
+  {
+   "idea": "Safeguard flags can silently move you to an older model",
+   "detail": "Opus 5.5 is the first Opus with Fable-level bio and cyber safeguards, which can flag legitimate work such as finding vulnerabilities in your own code. Options: Esc twice to edit the last message, reword to sound less suspicious, and state that the work is on your own codebase. Prompts about showing internal reasoning are a known flag trigger. Settings can make Claude ask before switching models.",
+   "t": "4:45"
+  },
+  {
+   "idea": "Start a new thread after a flag instead of continuing",
+   "detail": "The flagged message stays in context, so switching back to Opus 5.5 in the same thread can get flagged again.",
+   "t": "5:49"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "One-message task with explicit finish line",
+   "how": "Give the full task in a single prompt. State what done means as observable conditions (e.g. all endpoints migrated, old client deleted, all tests pass). Optionally add: only stop if a test fails for a reason you cannot explain.",
+   "when": "Long-running coding tasks such as migrations or large refactors, where you want the agent to finish without staged check-ins."
+  },
+  {
+   "name": "Remove thinking-nudge lines",
+   "how": "Search your prompts, CLAUDE.md and skills for 'think carefully' / 'think step by step' and delete them. The model decides its own thinking budget.",
+   "when": "Prompts and skills written for older models that needed explicit reasoning prompts."
+  },
+  {
+   "name": "Ban specific styles for design",
+   "how": "List concrete styles to avoid (e.g. numbered sections, monospace labels, pill-shaped buttons) rather than writing 'avoid generic design'.",
+   "when": "Generating UI or frontend pages where the default output looks templated."
+  },
+  {
+   "name": "Queue follow-ups during a run",
+   "how": "In Claude Code, type the follow-up while the run is active. It is read after the current step ends and the run is not restarted.",
+   "when": "You remember something to add mid-run and do not want to restart work."
+  },
+  {
+   "name": "CLAUDE.md stop-rule",
+   "how": "Add a rule such as: keep going unless you need me, or unless it is something destructive.",
+   "when": "Opus 5.5 stops to report status mid-task when you want it to proceed."
+  },
+  {
+   "name": "Sub-agent split with evidence check",
+   "how": "For an audit or migration across a large codebase, ask the model to split work across sub-agents and verify each sub-agent's evidence before accepting it.",
+   "when": "Large sweeps where a single context would be too big or where you want a second check on claims."
+  },
+  {
+   "name": "tasks.md progress file",
+   "how": "Ask Claude to keep its task list in a file such as tasks.md, updated as it works.",
+   "when": "Long runs that may exceed the context window and get summarized."
+  },
+  {
+   "name": "Structured end-of-run summary",
+   "how": "Add a CLAUDE.md rule to end every run with three headings: blocked on me, changed, found.",
+   "when": "Long runs, so the actionable items come first."
+  },
+  {
+   "name": "Merge-blocker diff review",
+   "how": "Have the model review a diff before a human does. Report only problems that would block a merge, each with file, line, why it is wrong, and how to reproduce the failure.",
+   "when": "Pre-merge review of agent-written changes."
+  },
+  {
+   "name": "Cross-model review",
+   "how": "Have a different model from the implementer do the review and pass its notes back. The presenter uses an OpenAI model for review and feeds the notes to Opus.",
+   "when": "When you want less correlated review results than a same-model reviewer gives."
+  },
+  {
+   "name": "Recover from safeguard flags",
+   "how": "Press Esc twice to edit the last message. Reword to sound less suspicious, and state that the work is on your own codebase. Avoid asking for internal reasoning. Start a new thread if the flagged message is still in context.",
+   "when": "Opus 5.5 flags legitimate work such as vulnerability analysis of your own code."
+  },
+  {
+   "name": "Answer quickly prompt",
+   "how": "Add a phrase like 'answer quickly' or 'answer directly' to the prompt. The presenter prefers this over the paid fast mode, which uses extra usage.",
+   "when": "Simple questions where you want a short reply and not a long run."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude Opus 5.5",
+  "CLAUDE.md",
+  "tasks.md",
+  "OpenAI model (named Astra in transcript)"
+ ],
+ "numbers": [
+  {
+   "claim": "Anthropic's example migration done-criteria: every endpoint uses the new client, the old client is deleted, all tests pass",
+   "t": "0:50"
+  },
+  {
+   "claim": "A tester reports Opus 5.5 at lowest effort caught more bugs than Opus 5 at high effort, with fewer false alarms",
+   "t": "3:29"
+  },
+  {
+   "claim": "Removing thinking-nudge lines made replies start sooner with no clear drop in quality, per Anthropic's testing",
+   "t": "0:50"
+  }
+ ],
+ "hot_takes": [
+  "Deleting 'think carefully' lines from prompts and skills, since Opus 5.5 already decides its own thinking budget.",
+  "Banning named design tropes (numbered sections, monospace labels, pill buttons) works better than asking to avoid a generic look.",
+  "Use a different model from the implementer for code review, since same-model reviews give less unique results; the presenter partly disagrees with the guide here.",
+  "Opus 5.5 safeguards can flag legitimate own-codebase security work, and rewording plus a new thread is the practical workaround."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Prompting guidance for long-running agents and subagent splits is loosely relevant to AgentOS's agent workflows, but nothing here changes the infra.",
+   "action": "Read the Anthropic Opus 5.5 prompting guide and check whether any of the stop-rule or finish-line patterns apply to AgentOS's internal agent prompts."
+  },
+  {
+   "project": "prosharness",
+   "score": 3,
+   "why": "ProsHarness wraps the Claude Code CLI for long runs, so the finish-line rule, tasks.md checkpointing, end-of-run summary format, and stop-vs-continue CLAUDE.md rule apply directly.",
+   "action": "Add a finish-line field and a blocked-on-me / changed / found summary block to ProsHarness run prompts, and write a tasks.md checkpoint file alongside each run for resume."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

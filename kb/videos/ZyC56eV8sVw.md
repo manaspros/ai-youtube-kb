@@ -1,0 +1,57 @@
+# AI Security Engineer Foundations + Certificate — Javier Garza, Snyk
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `ZyC56eV8sVw` · [watch](https://youtu.be/ZyC56eV8sVw) · **date:** 2026-10-12 · **length:** 1:57:34 · **format:** workshop · **quality:** 2/5 · **depth:** intro
+- **speakers:** Javier Garza · **orgs:** Snyk, OWASP, Lakera (Gandalf), MITRE ATLAS
+- **topics:** security-guardrails, mcp-and-tools, governance-compliance, coding-agents · **tags:** prompt-injection, indirect-prompt-injection, OWASP-LLM-top-10, shadow-AI, AI-BOM, CycloneDX, threat-modeling, STRIDE, MCP-security, tool-poisoning, skill-supply-chain, slopsquatting, least-privilege, human-in-the-loop, agent-hooks, vibe-coding, OpenClaw, secure-by-default
+
+> A two-hour Snyk workshop on AI security basics: OWASP LLM Top 10, shadow AI and AI bills of materials, AI threat modeling, MCP and skill supply-chain risk, and secure-by-default coding hooks.
+
+## Summary
+Javier Garza of Snyk runs a compressed version of a six-module AI Security Engineer Foundation workshop. He walks through the OWASP Top 10 for LLMs with live demos (Gandalf prompt-injection levels), and explains direct versus indirect prompt injection with a hidden-text profile example. He argues that blanket AI bans fail and that governance needs education, inventories and continuous scanning rather than one-time reviews. The MCP and skills section is the most concrete: third-party skills and MCP servers are code, the speaker reports malware in a scan of about 10,000 skills, and he shows a Figma MCP command-injection example. The closing section covers vibe-coding risk, OpenClaw-style incidents, and a recommended hook loop that scans generated code and re-scans after each fix. Much of the talk is a generic recap and a vendor pitch, and several statistics are quoted from memory.
+
+## Key ideas
+- **Indirect prompt injection is the easier attack: hidden text (white on white) in a web page or profile is read by the agent and treated as instructions.** — The speaker shows a profile with invisible text telling an LLM to send a recipe. Direct injection is typed by the user; indirect comes from content the agent reads. Defence is to treat everything the agent reads as data, not commands. ([8:21](https://youtu.be/ZyC56eV8sVw?t=501))
+- **Least privilege is the main control for excessive agency: give the agent only the access the task needs.** — For a database, give the agent a read-only SQL view with just the needed columns (e.g. name and phone, not address), not the whole database. A prompt injection then cannot write or read beyond the view. ([15:16](https://youtu.be/ZyC56eV8sVw?t=916))
+- **Bans do not work; training and transparency do. People route around blocked AI tools (e.g. a private laptop), so policy has to come with education.** — The speaker expects 80-90% of developers to find a workaround to a company-wide ban. Guardrails should come with an explanation of what they protect against. ([18:06](https://youtu.be/ZyC56eV8sVw?t=1086))
+- **Third-party skills and MCP servers are code and can carry malware, even when the skill is plain text.** — He reports a scan of about 10,000 skills that flagged roughly 367 with malware (his figure, quoted from memory). Advice: read a skill fully before installing, install from reputable sources, and re-scan installed MCP servers regularly, because a clean version today can change next week. ([20:24](https://youtu.be/ZyC56eV8sVw?t=1224))
+- **Auto-approve ('always allow') habits are a real attack surface; keep human approval for destructive or outbound actions.** — He describes using a system prompt that asks before any disk or email action, and a physical button that flags a paused agent. He does not recommend always-allow. Keep approvals for deployment, database deletes and privilege changes. ([24:54](https://youtu.be/ZyC56eV8sVw?t=1494))
+- **An AI bill of materials (AI-BOM) is an inventory of models, datasets, agents, MCP servers and pipelines, so a new zero-day can be traced quickly.** — It extends SBOM (CycloneDX or SPDX) to non-deterministic components that change over time. Because the inventory must be kept current, he recommends scanning at least daily rather than doing a one-time audit. ([34:02](https://youtu.be/ZyC56eV8sVw?t=2042))
+- **Threat modeling should be done at design time and tied to CI triggers, using STRIDE, with AI-specific scope such as prompts, context windows, memory and trust boundaries at data ingress.** — Ask the coding agent to produce data-flow diagrams, abuse cases and mitigations as part of the design prompt. Re-run the model when architecture or infrastructure-as-code changes, using webhooks or file watchers. ([46:09](https://youtu.be/ZyC56eV8sVw?t=2769))
+- **MCP tool descriptions can hide instructions that poison the agent, and the code behind an MCP server should be scanned before it is trusted.** — Examples include tool text that asks the model to send API tokens, and a Figma MCP command-injection bug where unsanitised URLs were passed to curl. Given his observation that few people read MCP code, he recommends automated scanning of MCP code and tool definitions. ([1:09:41](https://youtu.be/ZyC56eV8sVw?t=4181))
+- **Attackers register package names that agents hallucinate (slopsquatting), so verifying that a suggested package exists is not enough.** — A hallucinated package name can be registered by an attacker and installed by anyone whose agent makes the same guess. He recommends typo-squat and lookalike detection, plus checks of package provenance before install. ([1:43:29](https://youtu.be/ZyC56eV8sVw?t=6209))
+
+## Techniques
+- **Treat LLM input and output as untrusted data** — Use structured function calls with validated output schemas instead of free text that drives actions. Sanitise what the agent reads before it enters the context. *When:* Any agent that reads external content (web pages, emails, APIs) or whose output triggers tool calls.
+- **Read-only database views for agents** — Expose a SQL view with only the required columns and read-only access instead of table access. *When:* An agent needs data for answers but should not read or write sensitive fields.
+- **Approval gate for high-risk actions** — Use a system prompt that requires confirmation before deleting, sending email or changing privileges. Add a visual alert (he uses a Stream Deck) when a run pauses for approval. Avoid always-allow. *When:* Long-running or background agent runs where destructive or outbound actions are possible.
+- **Full action logging plus a background log scanner** — Enable verbose logging of agent actions to a file, then run a separate tool that scans the log for risky patterns such as reads of secret stores. *When:* Agents run in the background or the user is not watching the UI; actions the UI does not show.
+- **Scan-fix-rescan agent hook** — Use an agent hook that runs a security scanner after each code generation. If findings appear, have the agent fix them and scan again, repeating until clean. *When:* Coding agents (Claude Code, Cursor, Windsurf) generate code that is merged or deployed.
+- **Pre-install scanning of MCP servers and skills** — Read the code or run an automated scanner (he uses Snyk agent-scan via uvx) for tool poisoning and malicious code before first run; re-scan on version changes. *When:* Installing third-party MCP servers or skills from registries or GitHub.
+- **AI-BOM inventory with query by component** — Generate a CycloneDX-style inventory of models, datasets, agents and MCP servers per repo, store it centrally and query it when a component is affected. *When:* Organisations with many agent apps where a zero-day in one model, dataset or MCP tool must be traced quickly.
+- **Security requirements inside the prompt** — Spell out required controls in the prompt (rate limiting, parameterised queries, login and logout behaviour) instead of a generic request; he also suggests asking the agent to explain how it reached an answer to spot hallucinations. *When:* Generating auth, data-access or any security-sensitive code with an AI tool.
+
+## Numbers
+- Scan of about 10,000 third-party skills flagged 367 as containing malware (speaker's figure, approximate) ([20:24](https://youtu.be/ZyC56eV8sVw?t=1224))
+- About 80% of organisations have no sanctioned AI use (speaker citing an earlier survey, unverified) ([33:02](https://youtu.be/ZyC56eV8sVw?t=1982))
+- Shadow-AI breach cost above $670,000 (speaker's recollection of an earlier report) ([33:02](https://youtu.be/ZyC56eV8sVw?t=1982))
+- Share of employees using AI tools went from about 60% to near 80% (speaker, vague) ([33:02](https://youtu.be/ZyC56eV8sVw?t=1982))
+- Developer survey: about 45% said AI code completion is not part of the supply chain, or only partly ([21:52](https://youtu.be/ZyC56eV8sVw?t=1312))
+- More than 50% of AI-generated login pages from one simple prompt had at least five vulnerabilities (speaker's live-demo experience, no dataset) ([47:34](https://youtu.be/ZyC56eV8sVw?t=2854))
+- MCP SDK at about 8.3 million downloads a week ([1:08:37](https://youtu.be/ZyC56eV8sVw?t=4117))
+- About 30,000 OpenClaw instances with exposed ports reported worldwide ([1:34:59](https://youtu.be/ZyC56eV8sVw?t=5699))
+- OpenClaw usage went from zero to more than 40% in a matter of days on a usage chart, against about 20% for Claude Code and Codex ([1:34:59](https://youtu.be/ZyC56eV8sVw?t=5699))
+
+## Hot takes
+- Blanket bans on AI coding tools do not work; most developers will find a workaround, so education matters more than rules.
+- Read every skill in full before installing, even if it is only a text file, because skills can run bash.
+- Popular or highly starred MCP servers and skills are not safer by default; scan them anyway.
+- One-time AI inventories are not enough; scan daily.
+- If you cannot explain code you generated, do not ship it.
+
+## Tools mentioned
+Snyk agent-scan (MCP and tool scanner), Snyk AI-BOM (CycloneDX-style inventory), Gandalf (Lakera) prompt-injection game, Claude Code, Cursor, Windsurf, OpenClaw, CycloneDX, SPDX, STRIDE, MITRE ATLAS, uvx
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness wraps Claude Code and already has phone-driven approvals. The talk supports approval gates for destructive actions, logging of agent actions, and a scan-fix-rescan hook loop, but most of it is general security advice. → *Add a Claude Code post-edit hook in ProsHarness that runs a security scanner on generated code, feeds findings back for a fix, and re-scans, with a capped number of iterations, and check that approval prompts never default to always-allow.*
+- **agentos** (2/3): The L1 proxy already scans for PII and prompt injection. The AI-BOM idea and the skill-scanning point fit SkillForge (L2D) and the governance pillar, though the talk gives no benchmark for an approach. → *Have the L1 proxy record which models, MCP servers and skills each caller uses, and export the inventory as a CycloneDX-style JSON, so a new advisory can be traced to affected callers. For SkillForge, run a static scan on mined or third-party skill text before governance.*
+- **general** (1/3): Relevant to context engineering: the talk says generic prompts give insecure code, and that security requirements should be stated explicitly. → *Read the OWASP Top 10 for LLMs entry on excessive agency and consider adding a short security-requirements block to the CLAUDE.md template.*

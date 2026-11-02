@@ -1,0 +1,163 @@
+{
+ "one_line": "A Google DeepMind research VP argues code is now nearly free to write, so the bottlenecks move to specification, verification, architecture and open-ended evals, with self-play replacing scarce human code data.",
+ "summary": "Benoit Schillings, VP of Research at Google DeepMind, traces the history of his team's ML-for-code work from the 2018 \"Pitchfork\" project at Google X to today. He argues that software design used to be shaped by hardware limits and then by the limited working memory of human engineers, and that writing code is no longer the hard part. The hard parts now are making sure generated code does what was really wanted, managing large multi-step codebase changes, and securing code. He says code is a good domain for ML because it has abundant data and cheap verification, but human-written data is running out, so self-play against verifiable challenges is the next step. He predicts that generated code will soon go unread, as compiler output does, which makes new process and guardrails necessary. He closes by arguing for open-ended, scored benchmarks over pass/fail tests, for languages that put the correctness burden on the model, and for code experiments that spread into chemistry and biology. The talk is a vision piece with few data points, and most claims are unsourced.",
+ "speakers": [
+  "Benoit Schillings"
+ ],
+ "orgs": [
+  "Google DeepMind",
+  "Google X",
+  "Google"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "evals",
+  "models-research"
+ ],
+ "tags": [
+  "software-engineering-future",
+  "self-play",
+  "verifiable-rewards",
+  "open-ended-evals",
+  "formal-verification",
+  "code-security",
+  "multi-step-codebase-work",
+  "gemini",
+  "ml-for-code"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Software design has been shaped by its limiting factor: first the machine, then human working memory (modular design), and now the bottleneck is specifying and checking what the code should do.",
+   "detail": "The speaker splits software history into eras. Assembly was limited by the machine, the cloud era by modularity, and the limit then was a human's short working memory (he cites roughly 7 to 9 chunks). He says that limit is ending because model context is becoming effectively unbounded.",
+   "t": "5:32"
+  },
+  {
+   "idea": "Writing a function is no longer the frontier. Multi-step work across a large codebase, and architecture, is.",
+   "detail": "He says models already write syntax-level code better than he can. The hard part is changing a very large existing system (his example is 35 million lines of PHP), decomposing it, and designing for hardware, security and long-term maintainability.",
+   "t": "6:58"
+  },
+  {
+   "idea": "ML worked for code because code is abundant and verifiable, and self-play is the way past the end of human training data.",
+   "detail": "Code can be compiled and tested, so outputs can be checked. He says most new code on GitHub may already be machine-generated, so human data is running out. He proposes AlphaZero-style self-play, where the model creates its own verifiable challenges, judges its answers and trains on them.",
+   "t": "9:20"
+  },
+  {
+   "idea": "When writing code becomes nearly free, the amount of code explodes and reading it stops being the main check.",
+   "detail": "He says the economics of software were built on the assumption that writing code was expensive. He predicts that within a year models will generate code that nobody reads, in the way compiler assembly output goes unchecked. That makes macro-level reliability and new processes the key questions.",
+   "t": "10:41"
+  },
+  {
+   "idea": "Security effort should move from finding and patching vulnerabilities to teaching models to write correct code from the start.",
+   "detail": "He points to models that find many vulnerabilities and says detect-then-patch will never end. His team is working on generating correct code directly, which he calls very hard because correctness depends heavily on context.",
+   "t": "13:09"
+  },
+  {
+   "idea": "Pass/fail benchmarks miss most of software engineering, so evals should use open-ended tasks with a continuous score.",
+   "detail": "He calls SWE-style benchmarks, which he seems to mean by the auto-caption \"3bench\", too narrow because they only check that code runs and produces the right output. His example is a lossless compressor for a 10 MB corpus, scored by compressed size plus source size. The task has no ceiling, which he argues pushes models toward new algorithms.",
+   "t": "14:36"
+  },
+  {
+   "idea": "Languages designed for humans may be the wrong target for models. Stronger typing or proof-style languages could move correctness into the language.",
+   "detail": "He suggests that once writing code is cheap, making it harder to write but easier to verify (strong types, Lean-style proofs) could be better, and that the result need not be human-readable. He admits program proofs have limits.",
+   "t": "16:05"
+  },
+  {
+   "idea": "Code experiments are now cheap, so progress can spread into chemistry, biology and other sciences.",
+   "detail": "He says code-driven experimentation is becoming nearly free and sees chemistry and biology as the next frontier. He argues that human intuition is biased, so models may find solutions people cannot see.",
+   "t": "17:32"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Self-play with verifiable coding challenges",
+   "how": "Let the model create its own coding challenges, then check each answer automatically with compilation, unit tests and output validation. Use those checks as the training or selection signal. He treats the amount of self-play compute as the limit on how far coding capability can go. This is a described direction, not a method he details.",
+   "when": "Use it in domains where cheap automatic checks exist and human-labeled data is scarce."
+  },
+  {
+   "name": "Open-ended scored eval instead of pass/fail",
+   "how": "Give the model a fixed large input, such as a 10 MB corpus, and ask for a lossless compressor. Score the result as compressed size plus the size of the source code, so better solutions score lower without a ceiling. Example given: lossless text compression.",
+   "when": "Use it to measure algorithmic novelty and engineering quality, which pass/fail tests miss."
+  },
+  {
+   "name": "Shift the correctness burden to the language or type system",
+   "how": "Choose or design a strongly typed, proof-oriented language (he suggests Lean as inspiration) so that the model must produce provably correct code. Human readability is not required. This is a proposal from the talk, not a tested practice.",
+   "when": "Consider it for high-reliability code once generation is cheap and reading it is no longer the check."
+  },
+  {
+   "name": "Decompose before generating",
+   "how": "Have the model break a complex problem into sub-problems and decide the decomposition before writing code. The speaker calls planning and decomposition a skill that models still need to learn. He does not describe a concrete prompt or procedure.",
+   "when": "Use it for large, multi-step codebase changes where the decomposition drives correctness."
+  },
+  {
+   "name": "Generate correct code directly instead of detect-and-patch",
+   "how": "Train or prompt the model to write code that is secure and correct from the start, instead of scanning for vulnerabilities and suggesting fixes afterward. The speaker says this is very hard and context-dependent.",
+   "when": "Use it as a long-term direction for security-sensitive code generation."
+  }
+ ],
+ "tools": [
+  "Gemini",
+  "Google DeepMind research stack (unnamed)",
+  "AlphaZero (reference point)",
+  "Python",
+  "Lean (proof assistant, referenced as inspiration)",
+  "Mythos (model that found vulnerabilities, referenced in news)",
+  "GitHub (as the source of public code)",
+  "Pitchfork (internal ML-for-code project started at Google X in 2018)"
+ ],
+ "numbers": [
+  {
+   "claim": "Human working context is roughly 7 to 9 chunks (speaker's figure, unsourced).",
+   "t": "5:32"
+  },
+  {
+   "claim": "Roughly 80% of new code added to GitHub today is machine-generated (speaker's claim, unsourced).",
+   "t": "9:20"
+  },
+  {
+   "claim": "The speaker has been writing code for 45 years and started on Apple II and Commodore 64.",
+   "t": "3:07"
+  },
+  {
+   "claim": "The Pitchfork ML-for-code project started at Google X in 2018.",
+   "t": "1:36"
+  },
+  {
+   "claim": "Example eval: lossless compression of a 10 MB corpus, scored by compressed size plus source size.",
+   "t": "14:36"
+  },
+  {
+   "claim": "Chemistry threshold: beyond about 20 atoms in a molecule the behavior becomes hard to predict. At about 10,000 atoms it starts to look like life (rhetorical).",
+   "t": "18:34"
+  },
+  {
+   "claim": "Aspiration: hundreds of millions of hours of code self-play, as in AlphaZero (aspiration, not a result).",
+   "t": "9:20"
+  }
+ ],
+ "hot_takes": [
+  "Writing code is nearly free now, and within a year models will generate code that nobody reads.",
+  "Pass/fail coding benchmarks are narrow and should be replaced by open-ended scored tasks.",
+  "Languages designed for humans are the wrong target for models. Strongly typed or proof-style languages should be designed for them.",
+  "Code is now a universal tool for experimentation, and its progress will spread into chemistry and biology.",
+  "Quality cap: a vision talk with no sponsor or product pitch, but most key claims (80% machine-generated code, the 7 to 9 chunk limit) are unsourced. Quality is 3, not higher."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Open-ended, continuously scored evals (for example compression size plus source size) would extend AgentOS's RAGAS and pass/fail-style evals. The talk also raises code security as a generation-time problem, which touches the exec-gate guardrails in Crucible.",
+   "action": "Add one open-ended, score-graded coding task (a fixed input with a numeric objective) to the eval suite next to the pass/fail tests, and track its score across model and strategy changes."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The plan, critique, debate loop in ProsHarness could use a verifiable stop criterion. The talk's split between generation and verification (compile, test, score) is the same idea.",
+   "action": "Add an automatic verifier (test run or scored objective) as the stop condition for plan, critique and debate rounds, and log the score per round."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

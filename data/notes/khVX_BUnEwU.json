@@ -1,0 +1,161 @@
+{
+ "one_line": "Yohei Nakajima presents Active Graph, an experimental event-sourced graph runtime where an immutable typed log is the agent's ground truth and small behaviors coordinate through shared state; main takeaway is that log-centric design gives replay, forks, resume and gated self-modification for free.",
+ "summary": "The speaker, who built the original BabyAGI in 2023, presents Active Graph as a runtime (not a harness) where every change to the agent, including prompt and config edits, is an event in one immutable log. A graph projected from that log is the agent's state, and small behaviors (deterministic or LLM-based) react to graph changes and emit new events, so LLMs coordinate through shared state rather than messages. Policies gate which graph changes are allowed, such as human approval for prompt edits or contradiction checks for facts, and views use graph queries as context management. He reports that log-as-memory retrieval (embed the query, pull neighbouring messages from the log) did reasonably on LongMemEval without extraction, that a benchmark run could resume from question 353 after an API key failure, and that coding agents built on the runtime produced logs and graphs natively. Two self-improvement experiments are described: a failure-classified loop that accepted only patches that raised held-out accuracy, and an 80-pass Kaggle Pokemon card-game effort where roughly 20 to 30 changes were accepted and the score reached about 27. The talk is anecdotal with no published comparison baselines, and the speaker closes with a hypothesis that agent identity should be derived from its own experiential log alongside predictive priors.",
+ "speakers": [
+  "Yohei Nakajima"
+ ],
+ "orgs": [
+  "Untapped Capital",
+  "BabyAGI"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "skills-self-improvement",
+  "memory",
+  "multi-agent"
+ ],
+ "tags": [
+  "event-sourcing",
+  "blackboard-architecture",
+  "append-only-log",
+  "graph-runtime",
+  "policies",
+  "self-modification",
+  "longmemeval",
+  "resumable-runs",
+  "packs",
+  "kaggle-pokemon-tcg",
+  "open-source-experiment"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Build the agent around the log, not the LLM",
+   "detail": "Agent behaviour and agent changes (prompt edits, config, tools) go into one immutable typed event log, which is the ground truth. The state is a graph projected from that log. This gives replay, rollback and fork as native features.",
+   "t": "2:24"
+  },
+  {
+   "idea": "LLMs coordinate through shared state, not messages",
+   "detail": "Behaviors subscribe to graph changes, emit events, and those events trigger further behaviors. Behaviors can be deterministic or LLM-based. This is framed as a Blackboard / Kafka-style micro-worker design rather than a message-passing loop.",
+   "t": "2:24"
+  },
+  {
+   "idea": "Policies decide what the agent may change",
+   "detail": "Some graph changes are auto-accepted (adding a source), while others need a proposed patch, a test, or human approval (changing a prompt, changing a fact). Contradiction checks are an example.",
+   "t": "3:39"
+  },
+  {
+   "idea": "Self-modification accepted only on measured gain",
+   "detail": "A loop classifies the failure type and is only allowed to edit the part of the agent tied to that failure. Each proposed patch passes a static check and a sandbox check, and is accepted only if it raises accuracy on a separate question set. Rejected patches are kept so the agent knows what did not work.",
+   "t": "11:21"
+  },
+  {
+   "idea": "Resumable runs without restarting",
+   "detail": "After an API key ran out at about question 350 of 500, the rerun resumed at question 353 instead of starting over. The speaker attributes this to the event log making progress recoverable.",
+   "t": "8:59"
+  },
+  {
+   "idea": "Experiment history as a guard against repeats",
+   "detail": "Across about 80 Pokemon card-game passes, an acceptance policy (200 simulated games against reference agents, win-rate threshold with a Wilson score bound) meant the agent could cite what had already been tried and failed. He says this avoided the usual YOLO pattern of retrying the same ideas.",
+   "t": "13:35"
+  },
+  {
+   "idea": "Packs as swappable bundles",
+   "detail": "Object types, behaviors, and policies are bundled into packs (memory, tool, identity, chat, and so on). A memory pack can be replaced by another one. Packs could be loaded from other repos without extra work, per the speaker.",
+   "t": "10:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Log-as-memory retrieval",
+   "how": "Embed the incoming query, retrieve matching messages from the typed event log, add a few messages before and after each hit to keep order context, and fit the result into the context window. No semantic ingestion, fact extraction, or entity extraction step.",
+   "when": "When conversation or run history is already logged in order and you want a cheap memory baseline before adding extraction layers."
+  },
+  {
+   "name": "Graph-subscription behaviors and graph-query views",
+   "how": "Each behavior subscribes to a graph pattern (for example, a claim object created that contradicts another claim). Context for a behavior is a graph query that selects the subset of state it sees.",
+   "when": "When many small agents must react to shared state and you want context selection expressed as an explicit query rather than prompt stuffing."
+  },
+  {
+   "name": "Failure-type-scoped, gated self-edits",
+   "how": "Classify each failure, restrict the editable surface to the component tied to that class, run static and sandbox gates, then keep the patch only if accuracy on a held-out set improves. Store rejected patches with their verdicts.",
+   "when": "For an agent that improves itself and needs to avoid regressions or unexplained changes."
+  },
+  {
+   "name": "Acceptance test by simulated win rate with a confidence bound",
+   "how": "For a deterministic agent in a game, run a fixed batch of simulated matches against reference agents and accept a change only if the win rate beats a threshold by a confidence-bound margin (Wilson score).",
+   "when": "When the agent's changes must be validated statistically before merging, and when the eval is cheap to simulate."
+  },
+  {
+   "name": "Debug by querying the event log, not session logs",
+   "how": "Give the coding agent the typed event store and let it query it directly to explain what happened, instead of reading unstructured session transcripts.",
+   "when": "When runs are long and a clean typed trace already exists."
+  },
+  {
+   "name": "Pack-based composition of agents",
+   "how": "Bundle object schemas, tools, deterministic and LLM behaviors, and policies into a pack. Assemble agents by attaching packs, and replace a component by swapping its pack.",
+   "when": "When you want to reuse agent components across projects with a clear contract."
+  }
+ ],
+ "tools": [
+  "Active Graph",
+  "BabyAGI",
+  "LongMemEval",
+  "Replit",
+  "Claude Code",
+  "LangSmith (mentioned as a comparison)",
+  "Kaggle Pokemon trading card game competition"
+ ],
+ "numbers": [
+  {
+   "claim": "BabyAGI has gone through nine iterations since March 2023",
+   "t": "1:03"
+  },
+  {
+   "claim": "LongMemEval run has about 500 questions; the first run hit an API key failure around question 350, and the rerun resumed at question 353",
+   "t": "8:59"
+  },
+  {
+   "claim": "Self-modification loop: about 20 questions used for diagnosis, changes checked on 50 questions, loops ran 8 to 13 times and accepted 4 to 5 patches; the gain on LongMemEval was described as modest but statistically significant (no figures given)",
+   "t": "11:21"
+  },
+  {
+   "claim": "Kaggle Pokemon card-game effort: about 80 passes, each a 200-game simulation against three reference agents; roughly 20 to 30 changes accepted; score rose slowly to about 27 (unit not stated)",
+   "t": "13:35"
+  },
+  {
+   "claim": "The speaker has built two papers on this line of work, and the first is titled 'The log is the agent'",
+   "t": "7:37"
+  }
+ ],
+ "hot_takes": [
+  "Long-running agents should be built around an immutable event log of every change, not around the LLM.",
+  "Harnesses will not disappear as models improve; agents need both a predictive world model and an experiential world model built from their own log.",
+  "The identity of an agent may be derived from its own log.",
+  "AI-written code is now good enough that the speaker does not write Active Graph code himself, and LLM-based agent design may be better served by old blackboard and Kafka-style ideas that are likely in training data."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The log-as-memory retrieval (embed query, pull neighbouring log messages) is a cheap baseline for MemoryMesh. The failure-classified, held-out-gated self-edit loop speaks directly to SkillForge/EvolveCraft's open question on success signals and skill-worthiness.",
+   "action": "Benchmark a log-neighbour retrieval baseline (query embedding plus before/after messages from the event log) on LongMemEval against MemoryMesh hybrid retrieval, and write down the result."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Resuming a long run at question 353 after a failure is the same problem as ProsHarness checkpoint/resume. The rejected-patch memory also matches the plan, critique, and debate loop.",
+   "action": "Check whether ProsHarness checkpoints can rebuild run state from an append-only typed event log and resume from the last failed step, with a test that kills a run mid-step."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Shows how a shared-state multi-agent setup can work without message passing. Anecdotal, with no baselines.",
+   "action": "Read the Active Graph repo and docs to see how behaviors and policies are written, as a reference for multi-agent design."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,202 @@
+{
+ "one_line": "Uber's Uber Eats image pipeline (routing, enhancement, publish QA) and how they keep it aligned with human labels through offline evals, auto-tuning and a diagnoser that closes the production feedback loop.",
+ "summary": "Uber's computer vision team describes a production multimodal agent that improves merchant food photos on Uber Eats. The flow is an image-understanding and routing agent, then an enhancement agent that loops with a QA gate, then a final publish-ready QA. Every run is logged as one flat JSON trace so both engineers and non-engineers can inspect cases and aggregate them. Offline, human labels on a representative golden set are the source of truth, with recall as the guardrail for the router. Online, sampled production outputs are re-labelled by humans, a diagnosis agent localises mismatches, and a reflect-and-synthesize prompt optimizer auto-tunes the config, which is benchmarked and registered without a human in the loop. Enhancement is scored with pass@K and a pairwise yes/no/unsure judge whose criteria were agreed with product, design, policy and legal. A higher-level diagnoser takes feedback from dogfooding, thumbs up/down and merchant free text and routes it to the agent that needs changing. Changes are checked by replaying flagged examples and then tracked in production by segment, with conversion as a key metric.",
+ "speakers": [
+  "Soumya Gupta",
+  "Jai Chopra"
+ ],
+ "orgs": [
+  "Uber",
+  "Uber Eats",
+  "Arize"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "observability",
+  "agent-architecture"
+ ],
+ "tags": [
+  "closed-loop evals",
+  "image enhancement agent",
+  "pass@k",
+  "pairwise judge",
+  "prompt auto-tuning",
+  "diagnoser",
+  "human labels",
+  "drift",
+  "reward hacking",
+  "swiss cheese QA",
+  "Uber Eats",
+  "multimodal"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Constrain agency with guardrails instead of choosing rules or free agents",
+   "detail": "Rule systems are brittle at marketplace scale and unconstrained agents break safety rules. The team aims for a balance: the agent has creative freedom, inside explicit guardrails on safety and authenticity.",
+   "t": "4:11"
+  },
+  {
+   "idea": "Start with logging, because you cannot optimise or self-learn without it",
+   "detail": "Each run is one flat JSON structure covering all agents in the end-to-end flow. Technical and non-technical staff can inspect single cases or roll them up in aggregate.",
+   "t": "6:39"
+  },
+  {
+   "idea": "Treat the router as a classifier and pick its guardrail metric by the cost of each error",
+   "detail": "The router is scored with a confusion matrix. Recall is the guardrail because a bad image that slips through is costly. A false positive wastes compute and can degrade a good photo. A false negative can make the enhancer hallucinate missing items, such as extra wings, to match the menu text.",
+   "t": "8:03"
+  },
+  {
+   "idea": "Offline golden set from human labels with objective guidelines is the reference for shipping",
+   "detail": "Samples are chosen to cover cuts such as geography, dish type and image quality. Labelers follow an objective guideline to reduce subjective bias. An agent version ships only when it meets the guardrail metrics on this set.",
+   "t": "8:03"
+  },
+  {
+   "idea": "Static offline models drift, so production sampling and auto-tuning keep the system current",
+   "detail": "Production data is sampled on a schedule and re-labelled by humans. A diagnosis agent finds where the agent and labels disagree and triggers an auto-tuning pipeline. The new version must pass the golden set before it is registered. The speaker says this loop is config-driven and needs no human in the loop.",
+   "t": "10:41"
+  },
+  {
+   "idea": "Auto-tuning is a prompt optimizer built from two sub-agents, reflect and synthesize",
+   "detail": "Reflect looks at the mismatches, removes noise and finds systemic issues in the data. Synthesize updates the agent config from that feedback and benchmarks again. Passing versions are registered in a config store that production reads from. Guardrail observability and quick rollback are in place.",
+   "t": "12:08"
+  },
+  {
+   "idea": "Score the enhancement loop with pass@K and feed QA rejections back as input",
+   "detail": "Each step generates an image-specific prompt, edits the image, and runs a multidimensional QA gate covering plating, faithfulness and colour. A failed output goes back to the prompt generator with the QA feedback. Images that never pass after K iterations are not enhanced, which costs coverage.",
+   "t": "13:32"
+  },
+  {
+   "idea": "Judge enhancement with pairwise comparison, and bake in criteria agreed with product, design, policy and legal",
+   "detail": "The judge compares input and output and returns yes, no or unsure. Criteria include faithfulness, completeness, naturalness and realism. Recurring failures are added shrimp, removed sauce, a plate hiding the dish, and a wonton count that cannot be verified. Reward hacking shows up as the editor becoming overly conservative after overcorrecting.",
+   "t": "14:59"
+  },
+  {
+   "idea": "Use redundant final QA, Swiss-cheese style, and treat its catches as upstream signal",
+   "detail": "A publish-ready gate runs policy and quality checks after the earlier QA. It is deliberately redundant. It also flags issues that should have been caught earlier, so each failure can be traced back to the step that missed it.",
+   "t": "17:46"
+  },
+  {
+   "idea": "A diagnoser generalises feedback from many sources and routes each signal to the agent that needs to change",
+   "detail": "Inputs include internal dogfooding thumbs up/down, merchant and design-team free-text feedback, and production signals. The diagnoser decides which agent or agents to tune. Before a config is pushed, flagged good and bad examples are replayed and the metrics are benchmarked.",
+   "t": "18:48"
+  },
+  {
+   "idea": "Judge changes in production by segment, not only in aggregate",
+   "detail": "Production data can be sliced by geography, device type and dish type, so improvements and regressions can be seen per segment and tuned per segment. Conversion (add-to-cart and order completion) is the example marketplace metric.",
+   "t": "20:11"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Flat per-run JSON trace across the whole agent chain",
+   "how": "Log every agent step (description, structured output, router decision, edit, QA verdict) in one flat structure per run, so one record can be inspected or aggregated.",
+   "when": "Before building any evals or self-learning loop, and so that non-engineers can diagnose cases."
+  },
+  {
+   "name": "Router as a classifier scored by a confusion matrix, with an N-by-N extension",
+   "how": "Compare the router's decisions with labels in a confusion matrix. Choose the guardrail metric by error cost (recall here). For multi-branch routing, use an N-by-N matrix to see correct routing per branch.",
+   "when": "When an agent routes inputs to a skip path or to one of several model tiers (for example, a cheaper, lower-latency model)."
+  },
+  {
+   "name": "Golden human-label set plus ship gate",
+   "how": "Build a representative labelled set across slices, using an objective guideline to reduce labeller bias. Ship a new agent version only when it passes the guardrail metrics on that set.",
+   "when": "Offline, as the first model release gate, and again for every candidate config."
+  },
+  {
+   "name": "Production drift loop: sample, re-label, diagnose, tune, benchmark, register",
+   "how": "Sample production at a fixed cadence and send it to human labelers. Compare agent outputs with labels. A diagnosis agent localises mismatches and writes config changes, which are benchmarked on the golden set before a new version is registered in a config store.",
+   "when": "When the static offline model is no longer enough and the system must keep adapting to drift without a human in the loop."
+  },
+  {
+   "name": "Reflect-and-synthesize prompt optimizer",
+   "how": "One sub-agent reflects on the mismatched cases, removing noise and naming systemic issues. A second sub-agent rewrites the agent config from that feedback, and the result is benchmarked again.",
+   "when": "To auto-tune any agent's prompt or config from labelled mismatches."
+  },
+  {
+   "name": "Generate-edit-QA loop scored with pass@K",
+   "how": "Generate an image-specific edit prompt, edit, run a multidimensional QA gate, and pass the rejection reason back to the generator. Report the pass rate at each iteration K. Images that do not pass by K are not published.",
+   "when": "For iterative generation or editing where QA feedback can be used to retry, and where the budget caps retries."
+  },
+  {
+   "name": "Pairwise judge with yes/no/unsure and product-agreed criteria",
+   "how": "Give the judge the input and output and ask whether the output is better on defined criteria (faithful, complete, natural, realistic, plus policy-driven ones). Use yes/no/unsure rather than a forced choice.",
+   "when": "When absolute scores are hard to calibrate and a clear better-or-worse call is needed, especially with policy criteria."
+  },
+  {
+   "name": "Redundant Swiss-cheese final gate",
+   "how": "Add a final holistic QA and policy gate after earlier QA on purpose. Record the failures it catches as upstream gaps.",
+   "when": "When a single bad output reaching production is costly and each layer has blind spots."
+  },
+  {
+   "name": "Diagnoser as a routing layer over all feedback",
+   "how": "Feed thumbs, free-text, dogfooding and production signals to a diagnoser that decides which agent's config to optimise, one or many.",
+   "when": "When a system has several agents and several feedback sources, so the tuning target is not known in advance."
+  },
+  {
+   "name": "Replay flagged examples before releasing a config",
+   "how": "Replay the examples that were flagged as good or bad through the new config version, benchmark the metrics, then push.",
+   "when": "Before every production config change, as a regression check."
+  },
+  {
+   "name": "Per-segment production metrics",
+   "how": "Slice online metrics by geography, device, dish type and so on. Tune for segments that are weak, and watch for regressions in any single segment.",
+   "when": "When aggregate metrics can hide segment-level regressions at large scale."
+  }
+ ],
+ "tools": [
+  "Arize"
+ ],
+ "numbers": [
+  {
+   "claim": "Uber Eats runs at about $90 billion run rate per year, with millions of items added each month",
+   "t": "0:08"
+  },
+  {
+   "claim": "Marketplace growing about 20% year-on-year across 10,000 cities",
+   "t": "1:14"
+  },
+  {
+   "claim": "Pass@K is the enhancement metric; the speaker's example passed on the second iteration after QA feedback on portion size and plating",
+   "t": "13:32"
+  },
+  {
+   "claim": "Routing guardrail metric is recall; the speaker gives no numeric target",
+   "t": "8:03"
+  },
+  {
+   "claim": "No latency, cost, accuracy or sample-size figures are given in the talk",
+   "t": "21:39"
+  }
+ ],
+ "hot_takes": [
+  "Logging is the first thing to build, because without it there is nothing to optimise and no self-learning loop is possible.",
+  "A static offline model will not hold up in production. The loop that re-labels and re-tunes production data is what keeps the system working.",
+  "Consumers distrust AI-generated food photos, so authenticity is a hard constraint on image editing, not a nice-to-have.",
+  "Reward hacking appears in image editing: after an overly creative edit fails QA, the agent overcorrects into a generic, conservative result that barely changes the image."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS needs evals for agents. The pass@K loop, pairwise judge and replay-before-release pattern map onto its eval-driven development, and the flat per-run trace fits its L4 observability.",
+   "action": "Add a pass@K iteration metric and a yes/no/unsure pairwise judge to the first generate-then-QA eval in AgentOS, and log each agent run as one flat JSON trace."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The reflect-and-synthesize optimizer with a versioned config store and rollback is close to ProsHarness's plan, critique and skill-ranking loops, but the talk does not cover coding agents.",
+   "action": "Consider a versioned config store for ProsHarness skills or prompts that only promotes a change after a replay benchmark passes, with a rollback path."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Closed-loop evals are a recurring interest. The talk shows a complete offline-to-production loop with human labels, a diagnoser and config promotion, all with concrete design choices.",
+   "action": "Read the talk's closed-loop pattern alongside the recurring context-engineering and agent-eval notes, and compare its drift loop with the current autoresearch harness."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

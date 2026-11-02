@@ -1,0 +1,155 @@
+{
+ "one_line": "Walkthrough of installing operative.sh's web-eval MCP agent into Cursor and using plain-English test cases, including edge cases, to drive a Playwright browser against a local login page. Vendor-specific, thin on evidence.",
+ "summary": "The presenter wants AI coding agents to test the apps they write, starting with the login page. The setup is operative.sh's MCP installer, which registers two tools in Cursor: a web eval agent that runs a natural-language task in a Playwright browser, and a setup-browser-state tool that saves a signed-in session. The demo targets a locally hosted site on port 3000 that was built with Aceternity UI. The first run signed up, logged in and logged out successfully but tested no edge cases. The presenter then asked Cursor to generate about 28 granular login test cases into a markdown file, and the agent ran them one at a time in headless mode, writing pass/fail results back into the file. Roughly 10 cases took about 7 minutes. The final tally was 9 tests not executed, with 60% of the rest passing, and the presenter did not show any failing case being fixed. The video is a single-app, single-flow demo with vendor promotion and a free-tier quota, so the evidence is anecdotal.",
+ "speakers": [
+  "unnamed presenter (AI LABS channel host)"
+ ],
+ "orgs": [
+  "operative.sh",
+  "Cursor",
+  "Anthropic"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "testing-verification",
+  "mcp-and-tools",
+  "coding-agents"
+ ],
+ "tags": [
+  "mcp",
+  "browser-testing",
+  "playwright",
+  "e2e-testing",
+  "test-generation",
+  "cursor",
+  "operative.sh",
+  "claude-4",
+  "headless-browser",
+  "login-testing"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Let the coding agent test what it wrote, using a browser MCP tool, instead of writing test scripts by hand.",
+   "detail": "The presenter frames login edge cases (invalid input, injection-style attacks) as the motivating problem, and proposes plain-English task descriptions as the test spec, since the agent already knows the code it wrote.",
+   "t": "0:00"
+  },
+  {
+   "idea": "operative.sh installs as an MCP server via an interactive installer that wires into Cursor's MCP config.",
+   "detail": "The installer asks which tool to install into (the presenter picks Cursor), downloads its components, installs Playwright, and asks for an API key. Restart Cursor afterwards; if the tools do not appear, refresh or close and reopen.",
+   "t": "2:33"
+  },
+  {
+   "idea": "The package exposes two tools: a web eval agent and a setup-browser-state tool.",
+   "detail": "The web eval agent takes a URL, a natural-language task and a headless flag (default false). The setup-browser-state tool takes an optional URL, lets you sign in once, and saves the session for later runs.",
+   "t": "3:55"
+  },
+  {
+   "idea": "Cursor turns a plain-English request into the tool call and the step-by-step task.",
+   "detail": "In the demo, the presenter only said the app runs on localhost:3000 and what to test. Cursor filled in both the URL and the task arguments, and the presenter did not write any logic.",
+   "t": "5:47"
+  },
+  {
+   "idea": "A dashboard shows live progress: preview, agent status, console logs and network requests.",
+   "detail": "It works in headless mode too. The presenter says the status tab gave little detail on individual steps, while the console and network tabs had the full record.",
+   "t": "5:47"
+  },
+  {
+   "idea": "The first run only checked the happy path, so the edge cases had to be added as a separate step.",
+   "detail": "The sign-up, login and logout flow passed. Edge cases were not covered, so the next step was asking Cursor to generate them and run them through the agent.",
+   "t": "7:07"
+  },
+  {
+   "idea": "Test-case file loop: generate the cases into a file, then have the agent run them one by one and write each result back into the file.",
+   "detail": "Cursor generated about 28 granular login test cases in a file. The agent ran them sequentially in headless mode and marked each as passed or failed in the file as it went.",
+   "t": "8:06"
+  },
+  {
+   "idea": "The workflow is slow, and the presenter suggests a tracking layer could be built on top of it.",
+   "detail": "About 7 minutes passed while 10 cases ran. The presenter notes the loop could grow into a system that tracks which cases were parsed or missed and retries them.",
+   "t": "9:27"
+  },
+  {
+   "idea": "The final tally is incomplete, and the failure path was not shown.",
+   "detail": "9 tests were not executed, for reasons the presenter groups as missing tools, manual browser setup, or environment limits. Of the rest, 60% passed. The presenter says failures would be sent back to Cursor to fix, but no failure is shown being fixed.",
+   "t": "10:29"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Install operative.sh web-eval MCP into Cursor",
+   "how": "Get an API key from the operative.sh dashboard (API keys section). Run the installer command from the site in a terminal. It fetches and runs an install script, then deletes the script. Choose Cursor when asked where to install, paste the API key when prompted, and restart Cursor (refresh, or close and reopen, if the tools do not show up). The speaker says the installer edits the MCP config file, which he names mcpconfig.json. The exact installer command is not shown on screen.",
+   "when": "When you want Cursor or another MCP client to drive a real browser against a running app without writing Playwright code."
+  },
+  {
+   "name": "Call the web eval agent with url, task and headless",
+   "how": "Ask in plain English, for example 'test the login on the local app'. The agent fills the url (for example http://localhost:3000), the task (step-by-step actions derived from your description) and headless (default false; say 'headless' to run it hidden). Watch the live preview and console/network tabs in the dashboard.",
+   "when": "For end-to-end checks of user flows (sign-up, login, logout) on a locally running web app."
+  },
+  {
+   "name": "Save an authenticated session once with setup-browser-state",
+   "how": "Call the setup-browser-state tool, optionally with a URL, and sign in manually in the opened browser. The session is saved, so later web-eval runs do not need to log in again.",
+   "when": "When the app under test sits behind authentication and you do not want each run to log in again."
+  },
+  {
+   "name": "Generate test cases to a file, then run them sequentially and write results back",
+   "how": "Ask the coding agent to write test cases for a feature, including edge cases, into a markdown file (the demo used login test cases). Then ask it to run each case with the web eval agent (url localhost:3000, headless on) and mark each as passed or failed in the file. Results appear in the file one case at a time.",
+   "when": "For broad coverage of one feature without writing test scripts by hand. Expect it to be slow (about 7 minutes for 10 cases in the demo) and to need a review of the skipped cases."
+  }
+ ],
+ "tools": [
+  "operative.sh (web eval agent, setup-browser-state tool, MCP installer, API key)",
+  "Cursor (IDE, MCP host)",
+  "Playwright (browser automation, installed by the setup)",
+  "Claude 4 (Anthropic model; the presenter says it was released 2-3 days before recording and praises it)",
+  "Aceternity UI (the demo site's UI library; auto-caption reads it as 'as eternity ui')",
+  "MCP (Model Context Protocol, the integration path)"
+ ],
+ "numbers": [
+  {
+   "claim": "Free-tier quota: 100 browser chat completion requests per month before an upgrade is needed.",
+   "t": "1:21"
+  },
+  {
+   "claim": "About 28 granular login test cases generated from one prompt.",
+   "t": "8:06"
+  },
+  {
+   "claim": "About 7 minutes of wall time to get through roughly 10 test cases, run sequentially in headless mode.",
+   "t": "9:27"
+  },
+  {
+   "claim": "Final result: 9 tests not executed; 60% of the remaining tests passed. The total count is never stated, so the pass count is unknown from the video. If the total was 28, the remaining 19 would imply about 11 passes, but this is my arithmetic, not a figure from the speaker.",
+   "t": "10:29"
+  }
+ ],
+ "hot_takes": [
+  "The 60% pass rate is reported only over the tests that were actually run, after 9 were skipped for unstated reasons. There is no full-suite number and no failing case shown being fixed, so the result is not verifiable from the video.",
+  "The claim that the agent can 'test the whole app from front end to back end' is supported by one login flow on a local demo site, with no backend assertions shown. The console and network tabs were displayed but not analyzed.",
+  "Presenter says the process is slow ('it does take time') but calls the approach 'how real software development works'. The demo shows generated test cases, not reviewed test cases, so coverage quality is unknown.",
+  "The video is a vendor-specific walkthrough with a free-tier quota, subscribe and super-thanks asks, and praise for Claude 4 that is anecdotal. Quality is capped at 2 for thin substance and vendor framing."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "An MCP-attached browser test agent that runs natural-language tasks against a live app. Loosely related to the Crucible sandboxed-execution and exec-gate work, but this is end-to-end UI testing, not code execution or guardrails.",
+   "action": "Only if we add UI-level end-to-end tests to the stack: note the pattern of saving an authenticated browser session once and reusing it across agent test runs."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI and needs a verification step for long runs. This demo's pattern of generating cases to a file, running them, and writing pass/fail back into the file is a simple, observable checkpoint for the harness.",
+   "action": "Consider whether a ProsHarness run should end by generating its acceptance cases to a file, executing them, and recording each result there, so the harness can tell whether a run is done."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Shows one concrete way to wire a browser-testing MCP into Cursor and how plain-English test specs map to tool calls. The evidence is thin and vendor-specific.",
+   "action": "Skip unless we need a hosted browser-testing MCP. Better sources for agent test verification are in the testing-verification category."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

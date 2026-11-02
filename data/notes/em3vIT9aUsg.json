@@ -1,0 +1,147 @@
+{
+ "one_line": "Walkthrough of GitHub's open-source Spec Kit, a four-phase (specify, plan, tasks, implement) spec-driven workflow for AI coding agents, shown building a small Pokedex app.",
+ "summary": "The host argues that vibe coding fails mainly because prompts leave the model guessing, and that treating a written spec as the source of truth fixes this. He introduces GitHub's Spec Kit, which provides a CLI, templates and steering prompts for agents such as GitHub Copilot, Claude Code and Gemini CLI, and frames it as a follow-on to Amazon's Kiro. Spec Kit runs four gated phases: specify (user journeys and outcomes, producing a spec with acceptance scenarios, edge cases and \"needs clarification\" blocks), plan (tech stack and constraints, producing a data model, research doc and contracts), tasks (a numbered, testable task list), and implement (the agent works through tasks incrementally while the user reviews each change). He demonstrates it on a Pokemon team builder using Grok Code Fast 1 in Copilot, and the default flow is test-first. The result works, but he notes that model choice matters: a GPT-4.1 run gave a worse result than the Grok run. The video is a single-project demo with no benchmarks.",
+ "speakers": [
+  "Andres"
+ ],
+ "orgs": [
+  "GitHub",
+  "Better Stack",
+  "Amazon"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "context-engineering",
+  "coding-agents",
+  "testing-verification"
+ ],
+ "tags": [
+  "spec-driven-development",
+  "spec-kit",
+  "github-copilot",
+  "claude-code",
+  "gemini-cli",
+  "kiro",
+  "tdd",
+  "task-decomposition",
+  "model-choice",
+  "vibe-coding"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Vibe coding fails from unclear specification, not only from the model; a written spec should be the source of truth that code is generated and checked against.",
+   "detail": "Spec-driven development inverts the usual order: write the spec first, then code. The spec is treated as a living artifact that all stakeholders and AI tools align on.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Broad prompts leave the model guessing thousands of details, so structured guidance is what improves results.",
+   "detail": "Using 'add photo sharing to my app' as the example, the speaker says most guessed details will not match intent. The spec is meant to remove that guesswork.",
+   "t": "1:11"
+  },
+  {
+   "idea": "Spec Kit splits work into four gated phases, each with a validation checkpoint before the next.",
+   "detail": "The phases are specify, plan, tasks and implement. The speaker says the toolkit came from frustration with coding models acting like search engines rather than literal-minded pair programmers.",
+   "t": "2:12"
+  },
+  {
+   "idea": "The specify phase produces the spec with user stories, acceptance scenarios, edge cases, functional requirements and key entities, and marks unresolved decisions in a 'needs clarification' block.",
+   "detail": "The user is expected to resolve the clarification blocks and edit the spec file directly if the direction changes. The speaker says he would be too lazy to write these details himself.",
+   "t": "4:18"
+  },
+  {
+   "idea": "The plan phase turns the spec into a technical plan that respects the stack the user specifies, and writes a research doc explaining framework choices and alternatives.",
+   "detail": "Outputs include a data model (with a Zod schema), a research document with rationales and alternatives, and contracts for object types. The speaker says the agent also raises needs the user did not mention.",
+   "t": "5:44"
+  },
+  {
+   "idea": "The tasks phase breaks the plan into numbered, testable units that can be run one at a time and reviewed.",
+   "detail": "Tasks 1 to 4 covered environment setup. After this, the workflow becomes free-flowing: the user asks the agent to implement specific task numbers and checks progress as it goes.",
+   "t": "6:53"
+  },
+  {
+   "idea": "Spec Kit defaults to test-driven development: the agent writes tests before implementing features, and this can be changed in the spec or plan.",
+   "detail": "The speaker observed this behaviour in the template and suggests changing the spec or plan if a different approach is wanted.",
+   "t": "8:03"
+  },
+  {
+   "idea": "Model choice still matters even with a structured workflow; the same scaffold gave a weaker result with GPT-4.1 than with Grok Code Fast 1.",
+   "detail": "This is one anecdotal comparison from a single project, not a benchmark. The speaker says Spec Kit is designed to work with most coding models.",
+   "t": "9:04"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Four-phase spec-driven loop",
+   "how": "Run the Spec Kit initialiser in the terminal with a project name and pick the agent (the demo uses GitHub Copilot). Open the generated workspace, which contains a scripts folder and a templates folder; the speaker leaves both unchanged. In the agent, run 'specify' followed by a prose description of the goal, basic features and a simple user journey. Review the generated spec file and edit it if needed. Run 'plan' with the stack and technical constraints. Run 'tasks' to produce the numbered task list. Then ask the agent to implement specific task numbers (e.g. 'implement' followed by task numbers), and review each change before moving on.",
+   "when": "Greenfield features or small apps where the requirement is vague and you want a reviewable trail of spec, plan and tasks before code is written."
+  },
+  {
+   "name": "Resolve 'needs clarification' blocks before planning",
+   "how": "After specify, scan the spec for the block the agent adds when it cannot choose a path. Answer it in the spec file yourself, then proceed to plan.",
+   "when": "Any time the agent flags an ambiguity; treat it as a gate instead of letting the agent pick a default silently."
+  },
+  {
+   "name": "Put performance guardrails in the plan prompt",
+   "how": "The demo adds an explicit instruction in the plan prompt to debounce the search endpoint so the external API is not overwhelmed, alongside stack choices and other technical requirements.",
+   "when": "When you have known non-functional requirements (rate limits, latency, dependency constraints) that the agent would not infer from the spec alone."
+  },
+  {
+   "name": "Track progress through the tasks file",
+   "how": "Each task has a unique number and the agent ticks completed tasks in the file. Execute tasks in order and check the file after each batch.",
+   "when": "Long implementation runs where you need an audit trail and the ability to pause and resume."
+  }
+ ],
+ "tools": [
+  "Spec Kit (GitHub open-source spec-driven toolkit with CLI, templates and steering prompts)",
+  "GitHub Copilot (agent used in the demo)",
+  "Claude Code (referred to as 'CloudCode' in the auto-captions; listed as a supported agent)",
+  "Gemini CLI (listed as a supported agent)",
+  "Amazon Kiro (earlier spec-driven framework, mentioned only)",
+  "Grok Code Fast 1 (base model for the demo; auto-captions say 'grokcodefast1')",
+  "GPT-4.1 (comparison model, one run)",
+  "Zod (schema library used in the generated data model)",
+  "shadcn/ui (likely; auto-captions say 'Shotzi' for the UI library)"
+ ],
+ "numbers": [
+  {
+   "claim": "Four gated phases: specify, plan, tasks, implement",
+   "t": "2:12"
+  },
+  {
+   "claim": "Tasks 1 to 4 were the environment setup tasks in the demo",
+   "t": "8:03"
+  },
+  {
+   "claim": "Single-project comparison: GPT-4.1 produced a weaker result than Grok Code Fast 1 on the same scaffold. No benchmarks, timing or cost data given.",
+   "t": "9:04"
+  },
+  {
+   "claim": "Video length 10:33",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Spec-driven development is presented as the future of coding and as a paradigm 'we'll be seeing much more of'. This is opinion; the evidence is one demo app.",
+  "Spec-driven workflows improve steering, but the coding model still makes a large difference (GPT-4.1 vs Grok Code Fast 1). Structure does not fully replace model quality.",
+  "The 'vibe coding' label is used for a workflow that is actually spec-first, so the framing is partly marketing.",
+  "No sponsor segment is visible; the content is a substantive walkthrough, so it does not hit the sales-pitch cap."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The gated spec, plan, tasks and implement artifacts are a clear example of structured intermediate artifacts for coding agents, but AgentOS is an infra project and this is a single-app workflow.",
+   "action": "Compare Spec Kit's numbered tasks file with how our planning flows record intermediate state, and consider whether any of the artifact structure is worth borrowing for agent-written work."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness plans, critiques and checkpoints long Claude Code runs. Spec Kit's plan to numbered tasks with per-task review is a similar gated flow, though this is manual, not automated.",
+   "action": "Look at whether ProsHarness's plan step should write a numbered, resumable task list with a review gate per task, similar to Spec Kit's tasks file."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

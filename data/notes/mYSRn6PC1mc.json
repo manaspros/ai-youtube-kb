@@ -1,0 +1,236 @@
+{
+ "one_line": "Workshop on building a deep-research agent (MCP server plus Claude Code skills) that feeds a separate LinkedIn writer workflow with evaluator-optimizer review and a calibrated LLM-judge eval loop.",
+ "summary": "Three Towards AI instructors walk through a two-part system: a research agent that gathers sources and writes research.md, and a deterministic writing workflow that turns that file plus a human-written guideline into a LinkedIn post. The research agent is a FastMCP server exposing tools (deep research via Gemini grounding, YouTube analysis via Gemini's direct video understanding, and a compile step), prompts and resources, driven from Claude Code. The speakers argue for the simplest architecture that works: a fixed-step workflow where possible, an agent only where branching is needed, and one agent with tools-as-specialists rather than many agents for tightly coupled work. The writer uses three static style profiles, a few few-shot examples, and an evaluator-optimizer loop where the reviewer runs in a fresh context window and returns Pydantic-structured feedback, with a fixed number of iterations instead of a score threshold. The eval section builds a 20-post dataset, generates synthetic inputs (never outputs), labels pass/fail with critiques, and calibrates an LLM judge with F1 on dev and test splits. The live demo shows the judge overfitting in practice: it passed every online trace despite labels saying otherwise. The talk is a long hands-on workshop, mostly practical and candid about what did not work.",
+ "speakers": [
+  "Louis-François Bouchard",
+  "Paul Iusztin",
+  "Samridhi"
+ ],
+ "orgs": [
+  "Towards AI",
+  "Anthropic",
+  "Google",
+  "Opik",
+  "Firecrawl",
+  "Perplexity",
+  "FastMCP"
+ ],
+ "format": "workshop",
+ "topics": [
+  "agent-architecture",
+  "evals",
+  "mcp-and-tools",
+  "context-engineering"
+ ],
+ "tags": [
+  "deep-research",
+  "linkedin-writer",
+  "evaluator-optimizer",
+  "llm-as-judge",
+  "f1-calibration",
+  "synthetic-eval-data",
+  "fastmcp",
+  "claude-code-skills",
+  "progressive-disclosure",
+  "context-rot",
+  "pydantic-structured-output",
+  "opik",
+  "gemini-youtube",
+  "few-shot-trimming",
+  "workflow-vs-agent"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Pick the simplest architecture: prompt, then context or retrieval, then a fixed-step workflow, and only then an agent. Agents are for steps that must branch or react to the environment.",
+   "detail": "The speakers use an autonomy slider. A support-ticket flow with the same six steps in fixed order is a workflow, because an agent would add overhead and uncertainty. Agents fit when the system must choose tools or branch dynamically.",
+   "t": "9:46"
+  },
+  {
+   "idea": "For tightly coupled sequential tasks, use one decision-making agent with tools as specialists instead of splitting the work across several agents.",
+   "detail": "Splitting a marketing-content task across agents caused hand-off errors and lost context. Tools can carry their own system prompt, validation logic, or LLM calls, so the global context stays in one agent.",
+   "t": "14:41"
+  },
+  {
+   "idea": "Context rot starts well before the window limit, around 200k tokens, so the context budget has to be managed actively.",
+   "detail": "The speaker ties this to long-context training that teaches needle retrieval more than whole-context reasoning. Remedies are summarizing, retrieving selectively, compaction, and delegating to tools or sub-agents that have their own context.",
+   "t": "17:32"
+  },
+  {
+   "idea": "Split exploratory research from constrained writing, and let the two agents communicate only through files.",
+   "detail": "The research agent writes research.md and the writer reads it. They run sequentially from a plain script with no orchestration framework, and sit in one project so a coding agent can maintain both.",
+   "t": "26:30"
+  },
+  {
+   "idea": "A human-written guideline with less freedom gives better results. The guideline states the topic, angle, key points, and links.",
+   "detail": "The speakers found that the more the goal was defined, the better the output. Links are scraped, YouTube is analysed directly, and GitHub is ingested, and then the agent fills gaps with its own searches.",
+   "t": "28:31"
+  },
+  {
+   "idea": "Run the reviewer in a separate context window from the writer so it does not favour its own draft. Feed the reviewer the guideline, the research, and the style profiles, and have it return structured objects.",
+   "detail": "Each review is a Pydantic object with location and comment fields, and each field description explains what goes there. The editor applies the reviews with the same context the writer had. Feedback is prioritised as guideline first, then research, then profile.",
+   "t": "1:21:14"
+  },
+  {
+   "idea": "For subjective creative output, loop a fixed number of times instead of stopping on a score threshold, and keep every version so a human can pick.",
+   "detail": "Scores on creative work are noisy and the threshold is hard to set. The speakers ran 3 to 4 review-edit rounds and kept v0 through v4 on disk.",
+   "t": "1:23:35"
+  },
+  {
+   "idea": "Build the eval dataset by having an LLM generate inputs only, then run your real system for outputs and label them pass/fail with a short critique, stopping at the first failure.",
+   "detail": "Generating outputs with an LLM would test the wrong thing. The speaker labelled 20 posts this way and noted that 100 would be a better size for a real eval.",
+   "t": "1:40:22"
+  },
+  {
+   "idea": "Calibrate an LLM judge against labels with a dev/test split and F1. A perfect dev score with a low test score means the judge is overfitted.",
+   "detail": "Tune the judge prompt and few-shot examples on dev until F1 converges, then run the test split once as a final check. The speaker used only about 5 samples per split, so the perfect scores are not meaningful.",
+   "t": "1:43:27"
+  },
+  {
+   "idea": "A judge that looks good offline can fail on live traces. The speaker's online simulation had the judge pass every trace, so the eval set needs to grow.",
+   "detail": "The fix proposed is to add failing live cases to the dev split and repeat calibration. The speaker is candid that this part did not yet work.",
+   "t": "1:53:56"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Autonomy-ladder architecture choice",
+   "how": "Ask in order: does the model already know enough (prompt, few-shot)? Can context fit in the prompt (use caching)? Does it need retrieval? Are the steps fixed (workflow)? Only then consider an agent.",
+   "when": "Before designing any LLM feature, to avoid building an agent where a workflow is enough."
+  },
+  {
+   "name": "Tools as specialists inside one agent",
+   "how": "Keep one planner agent with the global context. Wrap specialised work such as format validation or channel-specific writing as tools, each with its own prompt or LLM call.",
+   "when": "Tightly coupled tasks where splitting into separate agents would cause hand-off errors."
+  },
+  {
+   "name": "Delegation to keep context lean",
+   "how": "Send heavy sub-tasks to tools or sub-agents that run in their own context window, and return only summaries to the main agent.",
+   "when": "When the main context grows past roughly 200k tokens, or when there are more than about 20 tools."
+  },
+  {
+   "name": "Files as the inter-agent contract",
+   "how": "One agent writes a markdown artifact such as research.md, the next reads it. Run the steps from a plain script in the same repo.",
+   "when": "Sequential pipelines where the handoff can be inspected, and when no orchestration framework is needed."
+  },
+  {
+   "name": "Guideline plus static style profiles",
+   "how": "Keep a per-piece human brief (topic, angle, key points, constraints) as input. Keep static profiles for structure, terminology and banned words, and character. Let the brief override the profiles when needed.",
+   "when": "Generating many pieces of content with a consistent voice."
+  },
+  {
+   "name": "Start with many few-shot examples, then trim",
+   "how": "Begin with a large set of varied examples, then remove them one at a time until quality drops. Put back the last one that mattered.",
+   "when": "Few-shot prompts that are always sent, where cost and latency grow with prompt size."
+  },
+  {
+   "name": "Evaluator-optimizer with fresh context and typed feedback",
+   "how": "Writer produces a draft. A reviewer in a new context returns Pydantic objects with location and comment, with field descriptions. The editor applies them and loops a fixed number of times. Prioritise feedback sources.",
+   "when": "Content that must follow a spec and avoid hallucination, where self-review is biased."
+  },
+  {
+   "name": "Synthetic eval inputs, real outputs, binary labels with critiques",
+   "how": "Generate the input conditions with an LLM. Run the real system to produce outputs. Label each pass/fail with 2-3 sentences of critique and stop at the first failure.",
+   "when": "Building an eval dataset for a generative workflow without ground truth."
+  },
+  {
+   "name": "Judge calibration with dev/test F1",
+   "how": "Use the judge's few-shot examples from the train split. Tune on dev until F1 converges. Check the test split once. Treat a perfect dev score as a warning sign.",
+   "when": "Before trusting any LLM-as-judge in regression tests or production monitoring."
+  },
+  {
+   "name": "MCP server exposes tools, prompts and resources; skills wrap prompts for progressive disclosure",
+   "how": "Put actions in MCP tools, instructions in MCP prompts, and static data such as model names and flags in resources. Register the server in a project .mcp.json that runs it via uv. Convert repeated prompts into skills, which load only the front matter until invoked.",
+   "when": "Packaging agent capabilities for a coding agent such as Claude Code, and sharing logic across a team without ad-hoc installs."
+  },
+  {
+   "name": "Trace-based debugging with threads and traces",
+   "how": "Log every LLM and tool call with inputs, outputs, latency, tokens and cost in Opik. Group runs into threads and inspect traces to find where a run went wrong.",
+   "when": "Multi-step agent or workflow runs that are too hard to debug from terminal logs."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "FastMCP",
+  "MCP",
+  "Gemini API (grounding, multimodal YouTube)",
+  "Firecrawl",
+  "Perplexity",
+  "Opik",
+  "Pydantic",
+  "git-ingest",
+  "uv",
+  "Python"
+ ],
+ "numbers": [
+  {
+   "claim": "Context rot begins well before the window limit, around 200k tokens, per the speaker's rule of thumb.",
+   "t": "17:32"
+  },
+  {
+   "claim": "Multi-agent split is suggested when there are more than about 20 tools or the context becomes very large.",
+   "t": "18:59"
+  },
+  {
+   "claim": "Writing few-shot set was 3 example LinkedIn posts, picked by guess and trimmed down from a larger starting set.",
+   "t": "1:18:22"
+  },
+  {
+   "claim": "A dataset of about 20 real high-traction posts was used for the writing workflow.",
+   "t": "1:19:49"
+  },
+  {
+   "claim": "The evaluator-optimizer loop ran 3 to 4 review-edit iterations, with versions v0 to v4 kept.",
+   "t": "1:22:13"
+  },
+  {
+   "claim": "The YouTube video analysis takes 2-3 minutes because Gemini processes the full video, not a transcript.",
+   "t": "46:36"
+  },
+  {
+   "claim": "A full deep-research run through Claude Code took about 2-3 minutes.",
+   "t": "1:04:54"
+  },
+  {
+   "claim": "One writing thread in Opik held 44 messages across the user and the LLM.",
+   "t": "1:34:55"
+  },
+  {
+   "claim": "The eval demo used only about 5 samples per split, which the speaker says is too few for meaningful F1.",
+   "t": "1:49:56"
+  },
+  {
+   "claim": "The eval dataset started with 20 posts, and the speaker says at least 100 is needed in practice.",
+   "t": "1:40:22"
+  }
+ ],
+ "hot_takes": [
+  "Most agents clients want are simple workflows, so start with a fixed-step workflow and add agency only where branching is needed.",
+  "Never ask an LLM to generate the outputs of your eval set. Generate the inputs and run the real system.",
+  "Use a reviewer in a separate context window to avoid self-preference bias, and loop a fixed number of times rather than chase a noisy score threshold for creative work.",
+  "Few-shot examples should be cut to the smallest set that works, because they are sent on every call; fine-tuning is the only real way to shrink that load."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS SkillForge has an open question about the success signal for mined skills. The talk's dev/test-calibrated LLM judge with critiques is a concrete method for that signal.",
+   "action": "For the SkillForge success-signal question, hand-label 20-30 agent runs as pass/fail with critiques, split dev/test, and check the judge's F1 on both before trusting it."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness has plan, critique and debate steps around Claude Code. The talk's fresh-context reviewer with schema-typed findings and a fixed round count maps directly onto that.",
+   "action": "Run the critique step in a fresh context with a typed findings schema (location, comment, severity) and a fixed round count, then compare against the current critique output."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The talk gives a practical recipe for eval datasets and LLM-judge calibration that applies to any agent. The dev-test overfit check is a useful guard.",
+   "action": "Before adding any LLM judge to regression tests, build a labelled dev/test set, report F1 on both splits, and treat a perfect dev score as overfitting."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

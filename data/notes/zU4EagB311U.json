@@ -1,0 +1,197 @@
+{
+ "one_line": "Sachin Gupta argues agents need feature-flag discipline: six flag types (prompt, tool, model, memory, autonomy, kill switch), a middleware layer, and a kill switch shipped first, with four metrics to track.",
+ "summary": "The speaker, a back-end engineer, says agent behavior (prompts, tools, models, memory, autonomy, sub-agents) ships to all users at once with no canary, segment, or rollback. He cites four incidents from the past 14 months (a support bot citing a nonexistent policy, a database deletion with fabricated users, a four-agent LangChain loop costing $47,000, and a coding agent running a production DB command with a wrongly used token). He proposes six flag types, one per behavior surface, resolved in a middleware layer that sits between users and the agent loop and that every spawned sub-agent must also pass through. A live-style demo (illustrative, not real measurements) shows a tool flag turning off mid-conversation and a kill switch halting a runaway loop within about 30 seconds. He gives a five-step rollout order (kill switch first, then tool wrapping, staged autonomy, prompt variants, then watching metrics) and four suggested metrics with default thresholds. He closes with common failure modes (flags resolved per session, sub-agent bypass, caching masking flips, silent kill-switch fires, flag sprawl) and a case for why enterprise buyers will ask for these controls.",
+ "speakers": [
+  "Sachin Gupta"
+ ],
+ "orgs": [
+  "Cursor",
+  "Replit",
+  "LangChain",
+  "Railway",
+  "LaunchDarkly",
+  "Unleash",
+  "Air Canada"
+ ],
+ "format": "talk",
+ "topics": [
+  "governance-compliance",
+  "security-guardrails",
+  "agent-architecture"
+ ],
+ "tags": [
+  "feature-flags",
+  "kill-switch",
+  "canary-rollout",
+  "autonomy-levels",
+  "tool-access-control",
+  "model-routing",
+  "memory-policy",
+  "audit-trail",
+  "agent-middleware",
+  "rollout-playbook"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents change behavior in ways a plain on/off feature flag cannot express",
+   "detail": "Prompts, tools, models, memory, autonomy, and sub-agents each change what the agent does, so each needs its own flag type. A single boolean feature flag does not cover them.",
+   "t": "4:36"
+  },
+  {
+   "idea": "Current agent releases are all-or-nothing",
+   "detail": "A merged prompt chain or tool addition reaches 100% of users immediately, with no canary, segment, or rollback. The speaker frames this as the failure mode behind the talk.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Incidents cited as the motivation",
+   "detail": "He cites four incidents in 14 months: a support bot inventing a policy, an agent deleting a production database and fabricating users, a four-agent loop costing $47,000, and an agent using an unrelated token against production. These are his cited sources, not verified by this note.",
+   "t": "3:05"
+  },
+  {
+   "idea": "Six flag types, one per behavior surface",
+   "detail": "Prompt variant, tool access, model routing, memory policy, autonomy level, and kill switch. He says none need a new flag backend, since existing tools like LaunchDarkly or Unleash can host them.",
+   "t": "4:36"
+  },
+  {
+   "idea": "Middleware layer is where flags are enforced",
+   "detail": "A middleware sits between the user and the agent loop. It resolves flags, gates tools, routes models, applies autonomy, and honors the kill switch. The agent loop itself stays unchanged.",
+   "t": "11:35"
+  },
+  {
+   "idea": "Sub-agents must go through the same middleware",
+   "detail": "The biggest failure mode he sees is a parent with correct flags spawning a child that calls the model and tools directly. The kill switch then never reaches the child, so middleware must wrap every spawn.",
+   "t": "13:06"
+  },
+  {
+   "idea": "Autonomy should be staged: suggest, then auto-approve, then auto-execute",
+   "detail": "Default every surface to suggest. Move to auto-approve per surface as trust builds. Auto-execute is opt-in per tool. He calls autonomy the largest blast-radius dial.",
+   "t": "9:04"
+  },
+  {
+   "idea": "Ship the kill switch first",
+   "detail": "One agent-wide kill switch and one per tool, shipped before anything else. He lists three properties: it takes effect in seconds, in-flight requests check it at the next decision point, and it is wired in at design time.",
+   "t": "9:04"
+  },
+  {
+   "idea": "Business case: enterprise buyers will ask for these controls",
+   "detail": "He lists five buyer questions (kill switch demo, prompt rollout policy, beta isolation, mitigation speed, and who can flip flags and whether it is audited). He says a team that cannot demo them will lose deals.",
+   "t": "15:36"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Six-surface flag taxonomy",
+   "how": "Create one flag type per surface: prompt variant (route cohorts to prompt versions), tool access (allow or revoke tools per segment or risk class), model routing (cost tier to model, with a stable fallback), memory policy (retention, scope, write-enabled, user-visible), autonomy level (suggest, auto-approve, auto-execute), and kill switch (agent-wide and per tool).",
+   "when": "Any agent that ships prompt, tool, or model changes to users, especially with money-moving, data-deleting, or compliance-sensitive tools."
+  },
+  {
+   "name": "Flag middleware between user and agent loop",
+   "how": "Resolve flags in one layer that gates tools, picks the model, sets autonomy, and checks the kill switch. Wrap every sub-agent spawn with the same layer, not only the entry point.",
+   "when": "When an agent system has parent-child spawning, or when you need one place to enforce flags."
+  },
+  {
+   "name": "Kill switch with three properties",
+   "how": "Flip takes effect in seconds without a deploy. In-flight requests re-check the flag at each decision point. Wire the switch in during agent design, not during an incident.",
+   "when": "Before anything else ships; the speaker says it is the highest-value first step."
+  },
+  {
+   "name": "Canary prompt variant",
+   "how": "Route about 5% of beta traffic to a new prompt. Watch hallucination rate and escalation rate. Promote only when the metrics hold, and block promotion if error rate rises more than 2% over baseline.",
+   "when": "Any prompt change, before it goes to all users."
+  },
+  {
+   "name": "Five-step rollout order",
+   "how": "1) Kill switch for agent and each tool. 2) Wrap every tool call in a flag check. 3) Default autonomy to suggest and promote per surface. 4) Move system prompts out of code into flag-resolved config. 5) Watch four metrics from day one.",
+   "when": "When adding flags to an existing agent system and deciding what to build first."
+  },
+  {
+   "name": "Resolve flags per turn and log segment context",
+   "how": "Evaluate flags on each turn, not only at session start. Log the user's segmentation context at the conversation level so later turns are traceable.",
+   "when": "Long conversations where user segment or flag state can change mid-session."
+  },
+  {
+   "name": "Bypass caching for flag-sensitive responses",
+   "how": "Make sure the LLM gateway cache does not return an old prompt's response after a flag flip.",
+   "when": "Any gateway or response cache sitting in front of agents whose behavior is flag-controlled."
+  },
+  {
+   "name": "Flag hygiene rules",
+   "how": "Give every flag an owner and a removal date. Delete temporary rollout flags right after the rollout. Keep a documented flag inventory. Test the Cartesian product of concurrently active prompt variants.",
+   "when": "When flags accumulate; he cites an example of around 600 undocumented flags."
+  }
+ ],
+ "tools": [
+  "LaunchDarkly",
+  "Unleash",
+  "Lift (as spoken)",
+  "homegrown flag service"
+ ],
+ "numbers": [
+  {
+   "claim": "Four named agent incidents in the last 14 months (speaker's cited examples)",
+   "t": "3:05"
+  },
+  {
+   "claim": "Four-agent LangChain pipeline looped 11 days and cost $47,000 (cited incident)",
+   "t": "3:05"
+  },
+  {
+   "claim": "Demo baseline of 428 tool calls per minute; illustrative simulation, not measured data",
+   "t": "11:35"
+  },
+  {
+   "claim": "Kill switch flipped about 20 seconds into the demo; in-flight agents shut down gracefully by about 30 seconds, flattening the cost graph",
+   "t": "11:35"
+  },
+  {
+   "claim": "Prompt variant canary at 5% of beta traffic, with promotion blocked if error rate rises more than 2% over baseline",
+   "t": "6:09"
+  },
+  {
+   "claim": "Suggested target: kill switch fires should be zero per week; investigate if more than two per week",
+   "t": "14:33"
+  },
+  {
+   "claim": "Suggested target: under 5 minutes to mitigate via kill switch, under 30 minutes for a prompt rollback",
+   "t": "14:33"
+  },
+  {
+   "claim": "Suggested target: 100% flag audit trail completeness (who flipped what, and when)",
+   "t": "14:33"
+  },
+  {
+   "claim": "Example of a team with around 600 flags and no documentation (anecdotal)",
+   "t": "16:37"
+  }
+ ],
+ "hot_takes": [
+  "Ship the kill switch first; if you do nothing else, build one agent-wide and one per-tool kill switch.",
+  "Sub-agents bypassing the middleware is the biggest failure mode in agent flag systems.",
+  "Flags are the demo: an enterprise deal can be lost if the team cannot show a kill switch, rollout policy, and audit trail.",
+  "2026 was about adoption; 2027 will be about control."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already toggles pillars through a manifest and routes traffic through one proxy, so a per-agent and per-tool kill switch plus a model-routing fallback fit its L1 proxy design.",
+   "action": "Add an agent-wide and per-tool kill switch to the Govrix Scout proxy path, checked on each request, with an audit log entry for each flip. Measure kill-switch fire rate and time to mitigation from day one."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already has phone-driven approvals and long-running loops and schedules. The autonomy levels (suggest, auto-approve, auto-execute) and a kill switch checked at each step map onto that design.",
+   "action": "Add a per-tool autonomy level (suggest by default) and a harness-wide kill switch that the loop re-reads at each checkpoint, not only at session start. Log who changed each flag."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The talk's advice to test combinations of concurrently active prompt variants is a general point for any agent project that uses prompt flags.",
+   "action": "If more than one prompt flag can be on at once, test the combinations as a matrix instead of testing each flag alone."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

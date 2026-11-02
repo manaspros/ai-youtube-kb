@@ -1,0 +1,134 @@
+{
+ "one_line": "Short walkthrough of Portless, a Vercel Labs CLI that gives dev servers stable named localhost URLs through a local proxy instead of fixed port numbers, aimed at humans and parallel AI agents.",
+ "summary": "The video demos Portless, a Vercel Labs CLI, which replaces port numbers in local dev with stable hostnames such as name.localhost, so parallel projects and agents stop colliding on \"address already in use.\" You start the proxy once (default port 1355), then run `portless <name> <command>`; Portless picks a random free port in the 4000-4999 range, records the name-to-port mapping in a routes JSON file, and passes the port to the app via the PORT environment variable. A browser request hits the proxy on 1355, which looks up the hostname in the routes file and forwards the request (including WebSockets) to the app's real port. The speaker shows running the proxy on port 80 with sudo to drop the port suffix, an optional HTTPS flag, and debug options (foreground proxy, run without proxy). The caveats are that non-Next.js apps like Vite must honor the PORT variable and need a host-check workaround that the speaker says allowedHosts did not solve, and Windows is not yet supported. No benchmarks; this is a single-user demo, and the video is not sponsored.",
+ "speakers": [],
+ "orgs": [
+  "Vercel Labs",
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools",
+  "coding-agents"
+ ],
+ "tags": [
+  "portless",
+  "port-conflicts",
+  "local-dev",
+  "dev-servers",
+  "reverse-proxy",
+  "vite",
+  "nextjs",
+  "parallel-agents",
+  "websockets",
+  "https-localhost"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Portless gives each dev server a stable hostname, so the port number changes behind the scenes while the URL stays the same.",
+   "detail": "The motivating failure is the EADDRINUSE 'address is already in use' error when a forgotten background server holds a port. The pitch is that agents running in several tabs always get a predictable address.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Basic usage: `portless <name> <command>` gives a free port and a name.localhost URL.",
+   "detail": "The speaker runs `bun run dev` under a name and gets a random free port in the 4000-4999 range, exposed at name.localhost:1355. A second project gets a different port with the same name pattern.",
+   "t": "1:13"
+  },
+  {
+   "idea": "Moving the proxy to port 80 removes the port from the URL entirely.",
+   "detail": "This needs sudo for both the proxy and the process. The HTTPS flag can be added on top. Vite additionally needs its port and hosts settings adjusted.",
+   "t": "1:13"
+  },
+  {
+   "idea": "Startup path: the CLI starts the proxy if it is not running, picks a random free port, writes a routes JSON file, and sets PORT.",
+   "detail": "Proxy ports below 1024 prompt for confirmation, and the default is 1355. The port is chosen randomly within 4000-4999 because a sequential scan would be slow when many processes are running.",
+   "t": "2:35"
+  },
+  {
+   "idea": "Request path: the browser's DNS lookup and TCP connection go to the proxy on 1355, which maps the hostname to the app port and relays the response.",
+   "detail": "The browser always sees a response from 1355, not the randomly assigned port. The speaker says WebSockets also work through this path.",
+   "t": "4:00"
+  },
+  {
+   "idea": "Non-Next.js frameworks need extra setup: the app must read the PORT variable, and Vite may need a hosts setting that disables its origin check.",
+   "detail": "The speaker says Vite rejects unrecognized origins, so the hosts key has to be set to a permissive value. He reports that the allowedHosts key with different values did not work. The exact value is not shown in the transcript.",
+   "t": "4:00"
+  },
+  {
+   "idea": "The speaker treats the security trade-offs as acceptable for local use and expects Windows support and fixes to come later.",
+   "detail": "Dropping the origin check and running the proxy on port 80 are presented as low-risk on a developer machine. Windows support is listed as missing.",
+   "t": "5:16"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Named stable dev hostnames via a local proxy",
+   "how": "Install Portless, start its proxy (default port 1355), then run `portless <name> <dev command>` for each project. Open http://<name>.localhost:1355. The app reads PORT from the environment, and the proxy maps <name> to that port via the routes JSON file.",
+   "when": "Several dev servers or parallel AI agents run on one machine and port collisions or forgotten background processes are a problem."
+  },
+  {
+   "name": "Portless URLs without a port suffix",
+   "how": "Start the proxy on port 80 with sudo and run the app through portless with sudo too. Use http://<name>.localhost. Optionally add the HTTPS flag. For Vite, also set the port key from PORT and the hosts setting as the speaker describes.",
+   "when": "You want clean URLs for demos, OAuth callback URLs, or cookie-scoped subdomains on localhost."
+  },
+  {
+   "name": "Debugging Portless itself",
+   "how": "Run the proxy in the foreground to watch requests. Run a command without the proxy as an escape hatch. The speaker mentions these options but does not show the flag names.",
+   "when": "Requests are not reaching the app, or you need to confirm whether the proxy or the app is at fault."
+  },
+  {
+   "name": "Making a framework respect a dynamic port",
+   "how": "Make the dev server read the port from the PORT environment variable, not a hard-coded number. Next.js does this out of the box per the speaker; Vite needs its config to read PORT.",
+   "when": "Any non-Next.js bundler is used with Portless."
+  }
+ ],
+ "tools": [
+  "Portless (Vercel Labs CLI)",
+  "Bun (bun run dev in the demo)",
+  "Vite",
+  "Next.js",
+  "Agent Browser (Vercel Labs; plugged for next video, not covered)",
+  "JSON Render (Vercel Labs; named only in passing)"
+ ],
+ "numbers": [
+  {
+   "claim": "Default Portless proxy port is 1355 (the speaker says 'less' as a pun on port-less).",
+   "t": "1:13"
+  },
+  {
+   "claim": "Randomly assigned app ports fall in the 4000-4999 range.",
+   "t": "1:13"
+  },
+  {
+   "claim": "Proxy ports below 1024 prompt for confirmation before starting; higher ports start automatically.",
+   "t": "2:35"
+  },
+  {
+   "claim": "Video length is 5:42; no benchmarks or latency measurements are given.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Portless solves a real local collision problem, but the speaker is frank that it asks for a risky-looking setting (disabling the Vite host check) and sudo on port 80, and dismisses both as fine for local use.",
+  "The routes file and random-port approach is a clever way to get stable URLs without changing the app's code, but the video shows only one user on one machine, so multi-agent claims are untested here.",
+  "Quality is capped by length and depth: a short tool walkthrough with no sponsor, no benchmarks, and no comparison to alternatives such as hard-coded ports or existing proxies."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS's L1 proxy (Govrix Scout) is on :4000, which falls inside Portless's 4000-4999 random pool. Local stacks that run many services could collide if Portless is adopted alongside it.",
+   "action": "If Portless is used locally, check that its 4000-4999 pool does not overlap with Scout's :4000 or other fixed AgentOS ports, or set the pool range before running the stack."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs Claude Code in long, possibly parallel sessions that start dev servers. The video's point that agents in multiple tabs hit port collisions applies directly to its loops and schedules.",
+   "action": "Try having ProsHarness set PORT (or use a named Portless hostname) for each agent-started dev server, so parallel or resumed runs get predictable URLs and do not leave orphaned ports."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

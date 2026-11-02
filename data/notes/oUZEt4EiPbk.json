@@ -1,0 +1,176 @@
+{
+ "one_line": "Neo4j's Jeremy Adams builds a personal agent on a Raspberry Pi 4B: NanoClaw in Docker, WhatsApp as the channel, cloud LLMs, and graph memory, with a live demo and an offline capture mode for conference Wi-Fi.",
+ "summary": "The speaker built a personal agent on a Raspberry Pi 4B. He chose NanoClaw over OpenClaw because it is small (about 15 source files) and runs each agent process in a Docker container. The Pi does no LLM inference; it receives WhatsApp messages and calls Claude-based cloud services. He connected a cloud Neo4j database to the agent through an MCP server, so chat questions such as which movies an actor appeared in are answered by running graph queries. For memory he used the POLE+O entity schema (person, object, location, event, organization), written as an agent skill on a persistent mount. For a conference booth-mapping task he added an offline mode: a local Neo4j on the Pi, plus regex parsing of voice-transcribed booth numbers into Cypher inserts, synced to the cloud later. He then loaded his full WhatsApp history into Neo4j's agent memory service, which distilled it into memories that the agent reaches over MCP. The talk is mostly a live hardware demo with a Neo4j product plug at the end, so the reusable material is the architecture pattern rather than measured results.",
+ "speakers": [
+  "Jeremy Adams"
+ ],
+ "orgs": [
+  "Neo4j",
+  "Anthropic"
+ ],
+ "format": "demo",
+ "topics": [
+  "memory",
+  "agent-architecture",
+  "mcp-and-tools",
+  "sandboxing-execution"
+ ],
+ "tags": [
+  "raspberry-pi",
+  "edge-agent",
+  "personal-agent",
+  "nanoclaw",
+  "whatsapp-channel",
+  "neo4j",
+  "graph-memory",
+  "pole-plus-o",
+  "mcp",
+  "offline-first",
+  "docker-isolation",
+  "cypher",
+  "conference-demo"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Keep the personal agent small, cheap and hackable rather than feature-rich",
+   "detail": "The speaker is a conservative sysadmin/DevOps person. He preferred a cheap, open, understandable box to a laptop-resident agent, and noted the Mac mini price he cited has since risen.",
+   "t": "6:07"
+  },
+  {
+   "idea": "Pick a compact agent framework that isolates each agent process in a container",
+   "detail": "He chose NanoClaw over OpenClaw because it has about 15 source files and uses Docker containers so agent processes cannot run arbitrary commands on the host. It is built on the Claude Agent SDK and is meant to be modified with Claude Code.",
+   "t": "7:29"
+  },
+  {
+   "idea": "Split the device from the brain: the Pi only handles I/O and orchestration",
+   "detail": "WhatsApp messages reach the Pi, which runs the agent. All LLM inference runs in the cloud, so the small board needs no model capacity. The speaker calls this a big brain reached over a wire.",
+   "t": "8:27"
+  },
+  {
+   "idea": "Expose the graph database to the agent as a tool through MCP",
+   "detail": "A chat question such as which movies Tom Hanks acted in goes through an MCP server to Neo4j, and the results are sent back through the messaging channel. He also had to fix auth before it worked.",
+   "t": "9:38"
+  },
+  {
+   "idea": "Use a typed entity schema for memory and write it as an agent skill",
+   "detail": "He used POLE+O (person, object, location, event, organization), a schema from policing graph work, and asked the agent to build the memory system as a skill on a mount that survives reboots. Memory nodes record places, events and people, linked into one graph.",
+   "t": "11:03"
+  },
+  {
+   "idea": "Capture offline and sync later, with a deterministic parser at the edge",
+   "detail": "For conference Wi-Fi he ran a local Neo4j on the Pi. Voice-to-text output is parsed with regexes for booth numbers and turned into Cypher inserts. Raw notes are later uploaded and enriched in the cloud database.",
+   "t": "13:32"
+  },
+  {
+   "idea": "Graph structure can show themes that were not stored explicitly",
+   "detail": "Linking exhibitors to shared theme nodes surfaced clusters such as evaluation and observability. The speaker presents this as knowledge that may be new, though it is an informal observation with no measurement.",
+   "t": "17:00"
+  },
+  {
+   "idea": "Distill long chat histories into memories and expose them over MCP",
+   "detail": "He loaded his full WhatsApp history into Neo4j's agent memory service. It produced memories about conversations, people, locations and concepts, which the agent can browse through MCP.",
+   "t": "18:25"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Edge orchestrator, cloud brain",
+   "how": "Run the agent runtime and message channel on a small device and send every model call to a hosted API. The device holds no model weights or GPU.",
+   "when": "Low-power hardware or a personal agent where local inference is unnecessary."
+  },
+  {
+   "name": "Container per agent process",
+   "how": "Run each agent process inside a Docker container so it cannot execute commands on the host, and use a compact framework that is easy to read and change.",
+   "when": "Running an agent on personal or shared hardware where you want containment without a large framework."
+  },
+  {
+   "name": "Messaging app as the agent front end",
+   "how": "Use WhatsApp or Telegram as the chat channel and route messages to the agent on the device.",
+   "when": "You want to reach the agent from a phone with no custom UI."
+  },
+  {
+   "name": "Graph database as an MCP tool",
+   "how": "Wrap a graph database in an MCP server so the agent can run queries as tool calls, then return the results in chat.",
+   "when": "The answer lives in connected data, such as entities and relationships."
+  },
+  {
+   "name": "Offline-first capture with deterministic parsing and later sync",
+   "how": "Keep a local database on the device. Use regexes to parse speech-to-text output into structured inserts when there is no network. Upload and enrich the records when the connection returns.",
+   "when": "Unreliable network, such as a conference venue, where data is captured on the spot."
+  },
+  {
+   "name": "Typed entity memory schema written as a skill",
+   "how": "Define memory nodes by entity type (person, object, location, event, organization) and let the agent create its own memory layer as a skill stored on a persistent mount.",
+   "when": "Personal or cross-session memory where entities and their links matter more than free text."
+  },
+  {
+   "name": "Batch distillation of chat history",
+   "how": "Load an archive of past conversations into a memory service that extracts memories, then expose the result to the agent through MCP.",
+   "when": "You have a long conversation history and want searchable, distilled memories rather than raw logs."
+  }
+ ],
+ "tools": [
+  "Raspberry Pi 4B",
+  "NanoClaw",
+  "OpenClaw",
+  "Claude Agent SDK",
+  "WhatsApp",
+  "Telegram",
+  "Docker",
+  "Neo4j",
+  "Neo4j Aura",
+  "Cypher",
+  "MCP",
+  "Neo4j agent memory service",
+  "POLE+O schema",
+  "Obsidian",
+  "USB microphone"
+ ],
+ "numbers": [
+  {
+   "claim": "NanoClaw is about 15 source files, which the speaker cites as the reason he chose it over OpenClaw",
+   "t": "7:29"
+  },
+  {
+   "claim": "Hardware is a Raspberry Pi 4B, first run on a 32-bit OS and later moved to 64-bit ARM",
+   "t": "4:43"
+  },
+  {
+   "claim": "The Mac mini price the speaker cited was about $600 before recent price increases, which he said no longer holds",
+   "t": "6:07"
+  },
+  {
+   "claim": "Talk length is 20:10",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "A personal agent on a laptop is too much exposure for someone who wants to understand what it does; a cheap, hackable box is the better start.",
+  "The Pi should hold no model: keep all inference in the cloud and use the device only for channels and orchestration.",
+  "Conference Wi-Fi is bad enough that an offline capture mode is worth building."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk's POLE+O entity schema and graph memory overlap with MemoryMesh's graph layer, but it is a personal demo with no measured retrieval results.",
+   "action": "Try one entity-typed preset (person, location, event, organization) for MemoryMesh's graph layer and compare entity-based recall against the current BM25 plus pgvector retrieval on a small personal chat history."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "A chat app as the control channel for a containerized agent matches ProsHarness's phone-driven approvals. The talk shows no approval flow or credential handling.",
+   "action": "Compare the per-process container isolation and messaging-channel control described in the talk against ProsHarness's phone approval path, and check whether it can cover the zero-token credential handling."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Offline-first capture with a regex parser and later sync is a small reusable pattern, but nothing is measured.",
+   "action": "Read the NanoClaw source (about 15 files) to see how the container and channel setup is structured before copying any of it."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

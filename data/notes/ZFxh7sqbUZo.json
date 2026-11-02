@@ -1,0 +1,174 @@
+{
+ "one_line": "David Brumley (CMU, Bugcrowd) on designing RL environments for vulnerability discovery and exploitation, using deterministic oracles, an open-world \"audit\" task scored by precision and recall, and a 16-rung capability ladder run against V8.",
+ "summary": "Brumley argues that cybersecurity is a good fit for RL because tasks form a ladder with deterministic pass/fail oracles. Benchmarks that ask a model to find one bug let it reward-hack the easiest bug, and naming the bug (for example with a backtrace) removes the need to reason. His fix is an \"audit\" task: the model is not told how many bugs exist, submits proof-of-vulnerability inputs for each one it finds, and a deterministic grader deduplicates them by stack backtrace (the same method crash-reporting systems use). Scoring is precision and recall over a set that includes bugs the authors did not know about, which allows open-world evaluation on real open-source code. He rejects LLM-as-judge for this domain because models always claim success. For harder targets he measures a 16-rung ladder on V8 (Chrome's JS engine), from triggering a bug up to arbitrary code execution. On 41 hand-verified V8 bugs, models that look equal on crash-only benchmarks separate sharply at the top of the ladder. He reports that the Mythos model reached full code execution on 73% of the bugs, GPT on 68%, and Gemini and Kimi on 0%. He also says the model found exploit routes that experts had not published. He says his group produces up to 10,000 RL environments per month from zero-days it mines from open-source code. The transcript is auto-captioned, and the speaker says some bar charts on his slides are wrong while the stated numbers are correct.",
+ "speakers": [
+  "David Brumley"
+ ],
+ "orgs": [
+  "Carnegie Mellon University",
+  "Bugcrowd",
+  "DARPA",
+  "OpenAI",
+  "Anthropic",
+  "Google",
+  "Cloudflare",
+  "Chrome"
+ ],
+ "format": "talk",
+ "topics": [
+  "security-guardrails",
+  "training-finetuning-rl",
+  "evals"
+ ],
+ "tags": [
+  "rl-environments",
+  "vulnerability-discovery",
+  "exploit-generation",
+  "deterministic-oracle",
+  "audit-task",
+  "precision-recall",
+  "reward-hacking",
+  "v8",
+  "capability-ladder",
+  "exploitbench",
+  "mcp"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Cyber tasks suit RL because they form a ladder with deterministic oracles",
+   "detail": "A vulnerable program runs in a container, and the grader is code, not an LLM judge. Brumley says LLM judges always claim success on hacking tasks. The model must produce a witness input (for example, a crash input), and the oracle checks whether the program misbehaved.",
+   "t": "0:12"
+  },
+  {
+   "idea": "Single-bug task framing causes reward hacking",
+   "detail": "Asking 'find the vulnerability' lets the model return the easiest bug. Benchmarks that give a backtrace or name the function remove the need to reason. The model also learns to repeat its first answer. Even DARPA's hand-curated challenges had unknown bugs: about 50% of them, per the speaker, and 18 unintended bugs at AIxCC.",
+   "t": "9:30"
+  },
+  {
+   "idea": "The audit task: don't tell the model how many bugs exist",
+   "detail": "The model is asked to find all vulnerabilities and submit a proof input for each. The grader deduplicates crashes by stack backtrace, which is how crash-reporting pipelines triage bugs. This works without an LLM judge and lets the model find bugs the authors did not know about.",
+   "t": "13:10"
+  },
+  {
+   "idea": "Score open-world results with precision and recall",
+   "detail": "Recall is the share of known-plus-discovered bugs that the model found. Precision is the share of submissions that are real. Precision stops the model from spamming bogus proofs, and recall rewards finding unknown bugs. Both are normalised and multiplied to give one score, so the model cannot just keep finding the same easy bug.",
+   "t": "14:22"
+  },
+  {
+   "idea": "Hardened targets need a capability ladder, not a pass/fail",
+   "detail": "On V8, a hard target where most attempts fail, Brumley defines 16 rungs: trigger the bug, crash an in-sandbox object, get in-sandbox read/write primitives, get out-of-sandbox primitives, then arbitrary code execution. Graded this way, the signal stays informative when the top rungs are hard to reach.",
+   "t": "19:45"
+  },
+  {
+   "idea": "Crash-only benchmarks overstate hacking ability",
+   "detail": "On the 41 V8 bugs, GPT, GPT 5.5, and Mythos each triggered 39 of 41 (95%). Lower-tier models such as Gemini, Kimi, Minimax and GLM triggered about 50%. Yet only the top models reached code execution, so crash-only scoring hides the real gap between models.",
+   "t": "21:02"
+  },
+  {
+   "idea": "Evidence that the results are not memorised",
+   "detail": "Brumley reports that Mythos produced exploit routes that the Chrome security community had not published, such as forging a pointer by reversing JavaScript's Math.random. On one CVE he says even an internal expert did not believe the bug was exploitable on x86, and Mythos succeeded. He says these were not public exploits, but he gives no independent verification.",
+   "t": "22:25"
+  },
+  {
+   "idea": "Expert-built oracles are the real work",
+   "detail": "Brumley's closing point is that the hard part is building oracles that check whether the model was memorising, reward-hacking, or finding new bugs. The environments are Docker images with an MCP interface. Public release is limited: the Mythos transcripts are withheld under NDA.",
+   "t": "25:53"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Deterministic witness-based grading",
+   "how": "Require the model to submit a concrete input (a PoC) that the oracle replays. The oracle checks program behaviour (crash, control-flow hijack, unauthorised process launch) with no LLM in the loop.",
+   "when": "Any agent task where success can be checked by running code, and an LLM judge would be fooled by plausible-sounding claims."
+  },
+  {
+   "name": "Open-world audit task with dedup and precision/recall",
+   "how": "Ask for all issues without stating the count. Dedup submitted witnesses by stack-backtrace signature. Score recall over known plus discovered issues and precision over submissions. Combine them into one normalised score.",
+   "when": "Evaluating search or discovery agents on real code where the ground truth is incomplete, and where spam or repeated answers must be penalised."
+  },
+  {
+   "name": "Capability ladder for hard targets",
+   "how": "Break the goal into ordered milestones (trigger, primitive, chained primitive, full escape, arbitrary execution). Report how far each model gets rather than a single success rate.",
+   "when": "When top-tier tasks are mostly failed and a pass/fail score gives almost no signal."
+  },
+  {
+   "name": "Withhold the answer key and the most dangerous artifacts",
+   "how": "Publish environments and transcripts, but hold back transcripts where the model produced weaponised, previously unknown exploits.",
+   "when": "When a public benchmark would give attackers a usable artifact, or when licensing rules out release."
+  }
+ ],
+ "tools": [
+  "MCP (exposed setup, read/write, and grading tools)",
+  "Docker",
+  "exploitbench.ai",
+  "V8",
+  "AIxCC",
+  "DARPA Cyber Grand Challenge",
+  "SciBench",
+  "CyberGym",
+  "BountyBench"
+ ],
+ "numbers": [
+  {
+   "claim": "PicoCTF hacking contest has about 1 million high school players per year; the 2016 unknown player (17 years old) placed second and later won Pwn2Own, taking $375,000 and a Tesla for one exploit",
+   "t": "1:39"
+  },
+  {
+   "claim": "DARPA's Cyber Grand Challenge: about 50% of the hand-curated challenges had unknown vulnerabilities; the program cost $60M",
+   "t": "11:43"
+  },
+  {
+   "claim": "AIxCC: 18 of the bugs found were unintended",
+   "t": "13:10"
+  },
+  {
+   "claim": "V8 bug bounty rewards start at $10,000 and go up to $100,000; black-market sale can reach millions (speaker's figures)",
+   "t": "18:46"
+  },
+  {
+   "claim": "16-rung capability ladder used on 41 hand-verified V8 vulnerabilities",
+   "t": "19:45"
+  },
+  {
+   "claim": "GPT, GPT 5.5 and Mythos each triggered 39/41 (95%); Gemini, Kimi, Minimax, GLM about 50% on the trigger rung",
+   "t": "21:02"
+  },
+  {
+   "claim": "Full arbitrary code execution: Mythos 73% (30/41); GPT 68%; Gemini and Kimi 0%. Speaker says the bar chart on the slide is wrong but these numbers are correct",
+   "t": "22:25"
+  },
+  {
+   "claim": "Up to 10,000 RL environments per month provided to some partner companies",
+   "t": "25:53"
+  }
+ ],
+ "hot_takes": [
+  "LLM-as-judge is unreliable for cybersecurity because models always claim they succeeded.",
+  "Crash-only benchmarks are not evidence of hacking; they mostly measure whether a model can crash a program.",
+  "Single-bug benchmarks teach reward hacking, and any hand-curated single-bug environment will contain extra bugs."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Crucible runs opt-in sandboxed code execution with exec-gate guardrails. The deterministic-oracle and witness-based grading pattern is a way to score that sandbox's agent behaviour without an LLM judge.",
+   "action": "Read exploitbench.ai's environment packaging (Docker plus an MCP interface) and consider it as a template for Crucible's own sandboxed task environments."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness needs a way to prove a Claude Code run is done. The talk's rule to use a deterministic grader, not an LLM judge, applies to the harness's verify step.",
+   "action": "Where a ProsHarness run has a checkable outcome, add a deterministic oracle to the completion check and do not rely on the agent's own claim of success."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The open-world precision and recall scoring, with dedup by a signature, applies to any discovery agent whose ground truth is incomplete, such as entity-resolution match audits.",
+   "action": "Try scoring an open-ended discovery task with recall over known plus new findings and precision over submissions, normalised, to penalise spam."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

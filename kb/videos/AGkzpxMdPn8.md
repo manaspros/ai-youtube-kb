@@ -1,0 +1,47 @@
+# Most Enterprise Agentic Projects Are Doomed, Here's Why — Jess Grogan-Avignon & Jack Wang, Accenture
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `AGkzpxMdPn8` · [watch](https://youtu.be/AGkzpxMdPn8) · **date:** 2026-06-18 · **length:** 20:35 · **format:** talk · **quality:** 3/5 · **depth:** intro
+- **speakers:** Jess Grogan-Avignon, Jack Wang · **orgs:** Accenture
+- **topics:** enterprise-adoption, governance-compliance, product-ux · **tags:** enterprise-agents, progressive-autonomy, exposure-ladder, governance, approval-as-code, hypothesis-driven-delivery, feedback-loops, trust, ai-achievers, portfolio-funding
+
+> Accenture talk on why enterprise agentic projects stall: human-speed governance, business cases, and trust. Argues for hypothesis-driven delivery, portfolio funding, progressive autonomy, and feedback loops as the moat.
+
+## Summary
+Two Accenture practitioners argue that most enterprise agentic AI projects fail because the organization's scaffolding (approvals, change freezes, multi-team reviews, annual business cases) runs at human speed. They cite a delivery example where a two-week build took about 12 months to reach production because of sign-off chains. They say AI coding agents move the bottleneck to code review and deployment, so approval processes should be turned into executable code. They recommend hypothesis-driven delivery measured by statistical confidence, finance teams that fund a portfolio of bets like a VC, and a staged autonomy ladder (shadow, advisory, controlled autonomy with kill switches) where each step is gated on outcome evidence. Their closing point is that the durable advantage is the proprietary feedback signal from real customer use, not transactional data that competitors can copy. Much of the talk is framing and motivation, with a few concrete patterns and survey figures that the speakers did not fully source.
+
+## Key ideas
+- **Enterprise scaffolding built for human speed is now the main drag on agent value, more than model quality, data access, or engineering skill.** — Approvals, security reviews, change freezes and steering meetings were designed for human pace. The speakers say this is the real blocker to scaling AI value. ([3:22](https://youtu.be/AGkzpxMdPn8?t=202))
+- **A two-week build can take about 12 months to reach production in a large enterprise.** — Infrastructure, security, AI gateway, data governance and application teams all had to align. Each config change needed manual review before a test run. The speakers say this is how enterprise AI delivery works today. ([4:22](https://youtu.be/AGkzpxMdPn8?t=262))
+- **Coding agents move the bottleneck from writing code to code review and deployment.** — Code supply is growing fast as more people become builders. Approval and deployment infrastructure has not changed. The speakers say every human process should become executable code, not another meeting or sign-off chain. ([5:24](https://youtu.be/AGkzpxMdPn8?t=324))
+- **Business cases assume scope, value and cost are knowable up front, which is often backwards for AI.** — With AI you learn the solution and its value by doing the work. Near-zero prototyping cost makes previously uneconomic experiments possible. The speakers suggest asking what it costs not to do the project. ([6:37](https://youtu.be/AGkzpxMdPn8?t=397))
+- **Finance should fund a portfolio of AI bets, the way a VC does, rather than demand certain payback per project.** — Most bets will not pay off, but a few compound. The speakers argue that judging each project in isolation kills the power-law upside. ([9:02](https://youtu.be/AGkzpxMdPn8?t=542))
+- **Agent delivery should be hypothesis-driven, with small build-evaluate-iterate loops that build statistical confidence.** — Models are non-deterministic and agent behavior is emergent, so fixed scope and milestones do not fit. Teams need people who can explain what they learned and turn statistics into stakeholder confidence. ([10:27](https://youtu.be/AGkzpxMdPn8?t=627))
+- **Autonomy should be expanded in stages, with each stage gated on observed outcomes instead of project-plan completion.** — The ladder runs from shadow mode (agent runs but cannot act; its decisions are compared with humans), to advisory (agent recommends and humans approve), to controlled autonomy (narrow, low-risk actions with kill switches), then wider scope as confidence grows. ([13:49](https://youtu.be/AGkzpxMdPn8?t=829))
+- **Trust in outputs is the asset that persists, and it is built or spent through each delivery.** — The speakers frame trust as accuracy, responsible use and privacy, which end users must believe. They say a feature can be replaced, but accumulated trust cannot. ([13:49](https://youtu.be/AGkzpxMdPn8?t=829))
+- **The moat is proprietary feedback from real customer interactions (living memory), not enterprise records like CRM or ERP.** — Transactional memory such as CRM, ERP and SOPs is something competitors can also have. Edge cases, corrections and behavior at your scale are the signals that compound. Each shipped feature should either generate feedback or act on past feedback. ([17:46](https://youtu.be/AGkzpxMdPn8?t=1066))
+
+## Techniques
+- **Exposure ladder for agent rollout** — Run the agent in shadow mode beside humans and compare its decisions with theirs. Move to advisory mode, where humans approve or reject its recommendations. Then allow controlled autonomy for narrow, low-risk actions with clear limits and kill switches. Widen scope only when outcome metrics meet a set bar. *When:* Introducing an agent into a live workflow where wrong actions have real consequences, such as deployments or customer-facing decisions.
+- **Approval-as-code** — Turn each manual review or sign-off step into an automated, executable check that runs in the pipeline. Treat the process as code that can be tested and changed. *When:* Agent-written code or config is piling up faster than human review and deployment gates can handle.
+- **Hypothesis-driven agent delivery** — Frame the project as a set of hypotheses instead of fixed requirements. Run short build, evaluate, iterate loops. Report progress as statistical confidence in target behaviors, not features shipped. *When:* Building non-deterministic agent systems whose behavior cannot be fully specified up front.
+- **Portfolio funding for AI bets** — Fund many small experiments across the organization and judge the portfolio, not each project alone. Ask what the cost of not doing a project is, instead of requiring a fixed payback. *When:* Setting budgets and approval rules for AI work where outcomes are uncertain and returns are power-law shaped.
+- **Kill switches and hard limits on autonomous actions** — Give each autonomous agent explicit scope limits and a switch that stops it. Expand the limits only after evidence accumulates. *When:* Any agent that can trigger actions in production systems.
+- **Instrument every feature as a feedback source** — Design each shipped feature so it either collects a signal from real use (edge cases, corrections, user intent) or uses past signals to improve. Count signal capture as a delivery requirement. *When:* Deciding what to build next when competitors can copy the core functionality.
+
+## Numbers
+- About 12% of companies reached the 'AI Achiever' stage in the speakers' research; most others are still piloting, with 'spending millions' and little return. The speakers cite 80% in this context without a clear base. ([1:07](https://youtu.be/AGkzpxMdPn8?t=67))
+- A large-enterprise agentic app took about two weeks to build and about 12 months to get into production. ([4:22](https://youtu.be/AGkzpxMdPn8?t=262))
+- GitHub reported about 1 billion commits in 2025. The speakers say the 2026 run rate is about 275 million per week, on track for about 14 billion by year end. ([5:24](https://youtu.be/AGkzpxMdPn8?t=324))
+- AI Achievers reportedly see about 50% higher revenue growth than peers, which the speakers attribute to new offerings rather than cost cutting. ([7:55](https://youtu.be/AGkzpxMdPn8?t=475))
+
+## Hot takes
+- Most enterprise agentic projects are doomed because the governance layer, not the models, is the constraint.
+- The IT crowd is never the problem; the organization needs to learn the language of statistical confidence.
+- Feedback is the only moat; anything you ship without a feedback loop can be copied.
+- Finance should think like a VC, and the CFO is the first place transformation should start.
+- Engineer for trust, not just for completion.
+
+## Relevance to our work
+- **agentos** (1/3): The exposure ladder and kill-switch pattern map onto AgentOS's manifest-based pillar toggles, but the talk is about enterprise org process, not infra. → *Add a rollout mode per AgentOS pillar (shadow, advisory, controlled) in the manifest, and log agent-versus-human decisions in shadow mode before enabling action.*
+- **prosharness** (1/3): ProsHarness already has phone-driven approvals and scheduled loops, and the talk's staged autonomy ladder could define how much authority a scheduled run gets. → *Consider an autonomy level setting per ProsHarness loop (shadow, advisory, controlled), with the level promoted only after recorded outcome checks.*
+- **general** (1/3): The talk argues for treating human overrides and corrections as signals to store and use, which applies to any eval loop. → *Record human approve, reject and override events from agent runs as labeled data to feed the eval suite.*

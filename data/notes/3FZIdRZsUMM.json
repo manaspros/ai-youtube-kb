@@ -1,0 +1,169 @@
+{
+ "one_line": "AI LABS argues the implementation middle of software work is being replaced by agents, so developers should focus on planning, context setup, and reviewing or testing agent output.",
+ "summary": "The host argues that coding agents now produce most implementation, so the developer's job shifts to planning intent up front and reviewing and testing output at the end. Planning is treated as the main job: refine the plan until it is right, then let the agent run in a single implementation pass with bypass-permissions mode. Specs should be split into separate documents (risks, mitigations, tech specs, constraints and trade-offs) so the agent can navigate them. Context engineering is named as the next core skill, built from CLAUDE.md, a change log, slash commands, skill.md files, plugins, MCP servers, and a Slack feedback loop. For verification, the host describes a test-driven flow where tests are written first in a fresh context and must not be edited during implementation, followed by black-box user-story testing via the Claude Chrome extension and white-box XML-guided architecture review through a slash command. The talk is mostly opinion, with a Dart AI sponsor read and a plug for a paid tier, and the concrete artifacts are not shown in the transcript.",
+ "speakers": [
+  "AI LABS host (unnamed)"
+ ],
+ "orgs": [
+  "AI LABS",
+  "Linear",
+  "Dart AI",
+  "Microsoft"
+ ],
+ "format": "talk",
+ "topics": [
+  "context-engineering",
+  "testing-verification",
+  "coding-agents",
+  "claude-code"
+ ],
+ "tags": [
+  "plan-mode",
+  "spec-driven",
+  "tdd",
+  "black-box-testing",
+  "white-box-testing",
+  "claude-md",
+  "slash-commands",
+  "bypass-permissions",
+  "user-stories",
+  "code-review",
+  "sponsor"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The implementation middle of software work is being absorbed by agents, so the developer role moves toward supervising agents and reviewing their code.",
+   "detail": "The host says IDEs have become code viewers, and he now mostly comments on agent output in VS Code so the agent can apply the feedback.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Planning is the primary job, because agents execute whatever the plan says and cannot fill in gaps the way humans did.",
+   "detail": "Keep refining the plan with the agent's planning mode until it matches what you want. Clarity about the problem, the customer, and usage comes before any implementation.",
+   "t": "2:31"
+  },
+  {
+   "idea": "Once plans are good, agents can build from a spec in one run using bypass-permissions mode. The host says this was not reliable until about three months before the recording.",
+   "detail": "He cites the Claude Code creator starting implementations in plan mode. He claims the risk of hallucination is now low enough to skip step-by-step permission approval.",
+   "t": "3:50"
+  },
+  {
+   "idea": "Split documentation into several focused files instead of one large spec.",
+   "detail": "Use separate docs for risk assessment, mitigation, tech specs, and constraints and trade-offs. The constraints doc tells the agent what counts as acceptable on performance, cost, and time.",
+   "t": "3:50"
+  },
+  {
+   "idea": "Context engineering, not a framework choice, is the next key skill. Agents only do well when they get the right context with minimal noise.",
+   "detail": "The components are reusable commands, skills, markdown files, MCP servers, and sub-agents. He says there is no single correct setup, and the right mix depends on the project.",
+   "t": "5:18"
+  },
+  {
+   "idea": "Review becomes the bottleneck once agents run unattended, and unreviewed code can cause performance and cost problems.",
+   "detail": "Structured review workflows reduce later bugs. The host argues testing needs several layers, not a single prompt asking whether the app works.",
+   "t": "8:41"
+  },
+  {
+   "idea": "Use black-box testing from user stories and white-box testing from code-level sections to cover different failure types.",
+   "detail": "Black-box tests check functionality against requirements, using user stories that include likely error paths. White-box tests read the code to find architecture and performance problems. The host says black-box testing alone misses performance issues.",
+   "t": "10:09"
+  },
+  {
+   "idea": "Structure around the agent is a set of artifacts, and feedback loops from real users close the gap.",
+   "detail": "He lists CLAUDE.md for project guidance, a change log, reusable slash commands, skill.md files with scripts, plugins, and MCP tools. He also describes a Slack connection so teams can report errors directly to Claude.",
+   "t": "6:19"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Refine the plan, then run one-shot implementation",
+   "how": "Write the feature spec and ask the agent's planning mode to draft a plan. Iterate on the plan until it matches intent, then turn on bypass-permissions mode and let the agent implement the spec in one run. Use the Claude Code creator's plan-mode-first habit as the model.",
+   "when": "Features where the spec is clear and well documented. The host says earlier agents hallucinated despite good plans, so verify output after the run."
+  },
+  {
+   "name": "Split spec into per-concern documents",
+   "how": "Create separate files for risk assessment, mitigations, technical specs, and a constraints and trade-offs file that states acceptable performance, cost, and time limits. Point the agent at these files so it can navigate them without loading one large document.",
+   "when": "Any project large enough that a single spec mixes concerns, so the agent can load only the relevant part."
+  },
+  {
+   "name": "Test-first with a context reset and locked tests",
+   "how": "(1) Ask the agent to write tests for the feature without writing implementation code. (2) Clear the context and start a new window so the implementer does not know how the tests were written. (3) Ask the agent to run the tests and confirm they fail. (4) Ask it to implement the feature, with an explicit instruction not to modify the tests. Let the failing tests be the target it iterates against.",
+   "when": "Features with clear acceptance criteria. Use after the spec is settled and before the implementation pass."
+  },
+  {
+   "name": "Black-box testing from user stories with a browser agent",
+   "how": "Write user stories that describe how real users interact with the app, including the interactions likely to trigger errors. Have the Claude Chrome extension work through each story section by section, testing functionality against the requirements without reading the code.",
+   "when": "Checking end-user functionality and UI flows after implementation."
+  },
+  {
+   "name": "White-box review with an XML test plan and a slash command",
+   "how": "Write an XML document with sections and subsections of tests that tell the agent how to read the code and look for architectural and performance problems. Put a slash command in a testing folder that (a) gives initialization instructions, (b) logs results to a structured file, and (c) generates a final report. The host does not show the file contents.",
+   "when": "Reviewing architecture and performance, which black-box testing does not reach."
+  },
+  {
+   "name": "Layered project structure for agents",
+   "how": "Keep a CLAUDE.md with project guidance, maintain a change log, add reusable slash commands and skill.md files that bundle scripts and references, extend with plugins and MCP tools, and connect a Slack channel so users can report errors into the agent loop.",
+   "when": "Any multi-session project using Claude Code where agents keep ignoring constraints."
+  }
+ ],
+ "tools": [
+  "Linear",
+  "Dart AI",
+  "VS Code",
+  "Claude Code",
+  "Claude Chrome extension",
+  "Cursor",
+  "Slack",
+  "CLAUDE.md",
+  "skill.md",
+  "MCP",
+  "XML"
+ ],
+ "numbers": [
+  {
+   "claim": "The Claude Code creator says 100% of his contributions in the past month were effectively written by Claude Code (secondhand claim).",
+   "t": "7:35"
+  },
+  {
+   "claim": "The host cites Microsoft's CEO saying AI generates 20% to 30% of Microsoft's integrated code, with notable progress in Python and C++ (secondhand claim).",
+   "t": "7:35"
+  },
+  {
+   "claim": "The host says agents were not trusted with bypass-permissions mode until about three months before the recording.",
+   "t": "3:50"
+  },
+  {
+   "claim": "The video runs 11:31.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The title overclaims: nothing is shown to be solved. The talk is a workflow opinion that restates a Linear CEO article rather than presenting new data.",
+  "Sponsored Dart AI segment (about 3:50 to 5:18) and a plug for a paid AI Labs Pro tier with the prompts and templates. The concrete artifacts are not in the transcript.",
+  "The Claude Code 100% figure and the Microsoft 20-30% figure are secondhand and unsourced.",
+  "Claims one-shot bypass-permissions builds are now reliable, reversing its own stance from three months earlier, with no evidence or failure rate shown.",
+  "Quality capped at 2: hype title, sponsor read, and thin substance. The TDD and black-box/white-box steps are the only reusable parts."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and runs plan to critique to debate, so the plan-refine step, split spec docs, and locked-test TDD flow map directly onto its pipeline.",
+   "action": "Have ProsHarness's plan stage produce separate risk, constraints/trade-offs, and tech-spec files, and make the implement step fail if it edits test files."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Context engineering is a recurring interest, and this gives a concrete layering of CLAUDE.md, slash commands, skill.md, and split specs.",
+   "action": "Audit the CLAUDE.md and slash-command setup in the Codes repos and split constraints and trade-offs into their own document."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Black-box user-story testing and white-box XML review are a generic pattern that could be applied to pillar acceptance tests, but the talk gives little detail.",
+   "action": "Consider writing AgentOS pillar acceptance tests as user stories, plus a separate white-box checklist for the latency and budget code paths."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

@@ -1,0 +1,49 @@
+# Laravel Scheduled Tasks
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `gMOkw_x9ByY` · [watch](https://youtu.be/gMOkw_x9ByY) · **date:** 2024-11-02 · **length:** 28:06 · **format:** tutorial · **quality:** 3/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Better Stack, Laravel
+- **topics:** dev-tools, observability · **tags:** laravel, php, scheduled-tasks, cron, artisan, eloquent, sqlite, migrations, seeders, heartbeat, uptime-monitoring, better-stack
+
+> Walkthrough of Laravel's task scheduler (kernel schedule method, schedule:run vs schedule:work, cron), building a custom artisan command that publishes scheduled blog posts, and monitoring it with a Better Stack heartbeat.
+
+## Summary
+A step-by-step Laravel tutorial on scheduled tasks. It shows where tasks live (the schedule method in app/Console/Kernel.php), why schedule:run is one-shot and needs a per-minute cron entry (schedule:work is the foreground dev alternative), and how output is discarded unless sendOutputTo is set. It then builds a demo: SQLite, a Post model with migration and seeder, a custom artisan command that flips published to true for past-due posts, and scheduling it everyMinute. It fixes an Eloquent updated_at error by disabling timestamps on the model. Finally it adds a Better Stack heartbeat: the job sends an HTTP GET to the heartbeat URL after its work, and a missed beat raises an incident. The content is practical and reproducible, with a product plug for Better Stack's heartbeat feature.
+
+## Key ideas
+- **Laravel tasks are defined in the schedule() method of app/Console/Kernel.php, using the injected scheduler to call artisan commands on a frequency.** — Example: schedule->command(...) followed by a frequency such as everyMinute; the demo starts from the hourly default and changes it. ([2:27](https://youtu.be/gMOkw_x9ByY?t=147))
+- **schedule:run is a one-shot evaluator, so something must invoke it every minute. In production that is a cron entry; schedule:work is a foreground loop for local development.** — The speaker notes that schedule:run only checks which tasks are due at that moment, so it needs a per-minute cron entry that cds into the project and runs it. ([4:35](https://youtu.be/gMOkw_x9ByY?t=275))
+- **Scheduled command output is discarded by default (sent to /dev/null), so sendOutputTo is needed to see anything.** — The demo appends ->sendOutputTo to a log file and then sees the output of the inspire command. ([3:18](https://youtu.be/gMOkw_x9ByY?t=198))
+- **The demo task publishes blog posts: a posts table with title, content, a datetime release time and a boolean published flag. A custom command flips published to true for unpublished posts whose release time has passed.** — The seeder uses a random offset of -4 to +4 minutes, so some seeded posts are already past due when the command first runs. ([11:05](https://youtu.be/gMOkw_x9ByY?t=665))
+- **A stock Eloquent model assumes created_at and updated_at columns, so update() fails when the table lacks them. The fix is setting timestamps to false on the model.** — The speaker diagnoses this from the log file that sendOutputTo wrote, which shows the missing updated_at column. ([20:24](https://youtu.be/gMOkw_x9ByY?t=1224))
+- **Better Stack heartbeat monitoring: the job sends an HTTP request to a unique URL after its work succeeds. A missed heartbeat within the expected interval plus grace period opens an incident and triggers alerts.** — Configured with a one-minute interval and a 5-second grace period. The speaker cites Better Stack's suggestion to reserve about 20% over the expected run time. Alert channels include phone, SMS, email and push, plus escalation if the on-call person does not acknowledge. ([22:45](https://youtu.be/gMOkw_x9ByY?t=1365))
+- **The heartbeat call sits at the end of handle(), after the database work, so a failed run produces no heartbeat and the monitor detects it.** — The speaker demonstrates this by skipping a run: the status changed to down and an incident was raised after the expected window. ([24:04](https://youtu.be/gMOkw_x9ByY?t=1444))
+
+## Techniques
+- **Define a scheduled artisan task** — In app/Console/Kernel.php, inside schedule(Schedule $schedule): $schedule->command('<signature>')->everyMinute(); add ->sendOutputTo(storage_path('logs/...')) (the video uses a file named taskoutput.log in the app directory) to keep output. Trigger it with `php artisan schedule:run`, which the speaker runs by hand to test. *When:* Any recurring job in a Laravel app. Add sendOutputTo from the start so failures leave a trace.
+- **Run the scheduler in production via cron** — Add a crontab entry that runs every minute: `* * * * * cd /path/to/project && php artisan schedule:run`. For local development, `php artisan schedule:work` runs the same loop in the foreground until you stop it. *When:* Deploying a schedule, or a local dev loop where you need to watch tasks run every minute.
+- **SQLite database for a demo project** — Create the file (`touch database/database.sqlite`), then set environment variables: DB_CONNECTION=sqlite and DB_DATABASE to the absolute path of that file (from `pwd` in database/). Install the PHP sqlite3 extension for your PHP version (the speaker uses PHP 8.2; the exact package name is not shown). *When:* Quick prototyping or tests without a database server.
+- **Scaffold model, migration and seeder** — `php artisan make:model Post -s` creates app/Models/Post.php and a seeder (-s). `php artisan make:migration create_posts_table` (speaker names the posts table) and define the schema in up() with Schema::create, using $table->id(), a string title, a text content, a dateTime for the scheduled release, and a boolean published. Then run `php artisan migrate`. *When:* Starting a new Laravel table-backed feature.
+- **Seed test data with a randomized schedule** — In the seeder's run(): take Carbon::now() plus a random offset from mt_rand(-4, 4) minutes as the scheduled time, set published when now is at or after that time, then insert rows with DB::table('posts')->insert([...]) using Faker for title and text. Run with `php artisan db:seed --class=PostSeeder`. *When:* Testing time-dependent logic, so some rows are already due and some are not.
+- **Custom command to release due posts** — Generate the command (the speaker's make command call, named ReleaseScheduledPosts; the exact class name is not clearly shown). In handle(): Post::where('published', false)->where('scheduled', '<=', Carbon::now())->update(['published' => true]), then log a success line. Set `public $timestamps = false;` on the Post model if the table has no created_at or updated_at. Schedule it with the command's signature and everyMinute(). *When:* Time-based state transitions in a table, such as publishing content or expiring records.
+- **Better Stack heartbeat after the job succeeds** — In Better Stack's UI, create a heartbeat with the expected period (1 minute in the demo) and a grace period (5 seconds in the demo). Copy the URL, then at the end of handle() call `Http::get($url)` (Laravel's HTTP client facade). The speaker says any of head, get or post works. *When:* Detecting silent failures of cron or scheduled jobs; the heartbeat is only sent when the job reaches the end of its logic.
+- **Verify DB state with tinker** — `php artisan tinker`, then DB::table('posts')->select('published','scheduled')->get() to inspect rows directly. *When:* Checking what a scheduled command actually changed, without writing a test.
+
+## Numbers
+- Demo heartbeat interval set to 1 minute, with a 5-second grace period. ([22:45](https://youtu.be/gMOkw_x9ByY?t=1365))
+- Better Stack recommends about 20% headroom above the job's expected duration as the grace period. ([22:45](https://youtu.be/gMOkw_x9ByY?t=1365))
+- Seeder schedules each post a random -4 to +4 minutes from now; the first seed run produced four posts, one already due. ([13:41](https://youtu.be/gMOkw_x9ByY?t=821))
+- After a heartbeat is missed, the status changed to down. The incident page showed the service down for 52 seconds when the speaker stopped to show it, and the last heartbeat was 13 seconds old right after the first send. ([25:22](https://youtu.be/gMOkw_x9ByY?t=1522))
+- Video length 28:06. ([0:00](https://youtu.be/gMOkw_x9ByY?t=0))
+
+## Hot takes
+- Quality is capped at a practitioner tutorial with no architecture insight: it is a Laravel how-to, and about the last 3 minutes promote Better Stack's heartbeat feature.
+- The sound practice here is the placement of the heartbeat call after the job's logic, so a failure surfaces as a missed beat rather than a log line nobody reads. The video does not spell out this reasoning.
+- Output going to /dev/null by default is a silent-failure trap, and the speaker's Eloquent timestamps error shows why logging output to a file matters.
+- schedule:run is not a daemon. Anyone who runs it once and expects periodic execution is wrong, and the video calls this out directly.
+
+## Tools mentioned
+Laravel, Artisan, PHP, SQLite, Eloquent, Faker, Carbon, Better Stack heartbeats, VS Code, cron
+
+## Relevance to our work
+- **agentos** (1/3): Background or periodic jobs (budget counter maintenance, archive or telemetry export) need the same dead-man's-switch monitoring, which is a small piece of the L4 observability story. → *For any periodic AgentOS job, have it ping a heartbeat only after its work finishes, and alert on a missed interval (plus grace period) instead of on log output alone.*
+- **prosharness** (1/3): ProsHarness runs loops and schedules for long-running Claude Code tasks; the scheduler-plus-heartbeat pattern gives a missed-run alert without extra infrastructure. → *For scheduled ProsHarness loops, send a heartbeat only after a run completes successfully, and treat a missed beat as a failed run to alert on.*

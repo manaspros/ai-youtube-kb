@@ -1,0 +1,176 @@
+{
+ "one_line": "Recap of Anthropic's report accusing Alibaba, Moonshot, DeepSeek, Z.ai, Xiaomi and others of industrial-scale distillation of Claude via fake accounts and proxies, plus the API changes it prompted.",
+ "summary": "The presenter summarizes an Anthropic report that accuses several Chinese labs of \"illicit distillation\": running large volumes of Claude requests through thousands of fake accounts, stolen payment cards and keys, and residential proxy networks. Alibaba (Qwen) is named as the largest case, with 151M+ exchanges between May and July, targeting Claude's chain-of-thought to fine-tune Qwen 3.5 to 3.7 on agentic coding. Moonshot (Kimi) and DeepSeek are described as silently routing customer requests through Opus and then recovering reasoning by \"cross-session replay\" of thinking signatures, with DeepSeek also routing requests from Claude Code, the Agent SDK and OpenCode to Opus. Smaller cases cover Z.ai, Xiaomi, SenseTime and MiniMax. The report also says forwarded requests exposed sensitive data such as surveillance records and live credentials. Anthropic's countermeasures, as described, are reasoning summaries, \"Preserved Thinking\" for new accounts, classifiers for extraction prompts, and identity checks for accounts from China, Russia or Iran. Every attribution comes from Anthropic's own report and is not independently verified in the video.",
+ "speakers": [
+  "Unnamed Better Stack presenter"
+ ],
+ "orgs": [
+  "Anthropic",
+  "Alibaba",
+  "Moonshot AI",
+  "DeepSeek",
+  "Xiaomi",
+  "Z.ai",
+  "SenseTime",
+  "MiniMax",
+  "Better Stack"
+ ],
+ "format": "news",
+ "topics": [
+  "security-guardrails",
+  "models-research",
+  "governance-compliance"
+ ],
+ "tags": [
+  "distillation",
+  "api-abuse",
+  "proxy-networks",
+  "chain-of-thought",
+  "thinking-signatures",
+  "cross-session-replay",
+  "preserved-thinking",
+  "identity-verification",
+  "anthropic",
+  "china-labs"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Distillation itself is a normal technique. 'Illicit distillation' is the report's term for doing it to someone else's model at industrial scale, without permission, using fraud.",
+   "detail": "The presenter explains teacher-to-student training (the way cheaper Haiku-class models come about) and then the fraud layer: thousands of accounts, stolen cards and keys, and residential proxies the report calls 'transfer stations'.",
+   "t": "0:00"
+  },
+  {
+   "idea": "A February report had already named DeepSeek, Moonshot and MiniMax, with 24,000+ fake accounts and 16M exchanges. The new report says the problem has grown.",
+   "detail": "Speaker's summary of the earlier Anthropic report, used as the baseline for the escalation.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Alibaba (Qwen) is the largest case. The target was chain-of-thought, not final answers, and the traffic was agentic coding and kernel work.",
+   "detail": "A fixed injected prompt forced Opus 4.6 and 4.7 to write its reasoning in inline tags before answering. The extracted traces became SFT data for Qwen 3.5, 3.6 and 3.7. The report also says Alibaba used Claude to build an RL environment and to do architecture research.",
+   "t": "1:27"
+  },
+  {
+   "idea": "Banning accounts does not stop the traffic. After 5,000 accounts were banned, traffic moved to a second pool that also carried DeepSeek and Xiaomi requests.",
+   "detail": "The same proxy networks serve several labs at once, so bans on individual accounts are not enough.",
+   "t": "1:27"
+  },
+  {
+   "idea": "Moonshot (Kimi) allegedly routed customer requests through Claude and showed Claude's answers as if they came from Kimi.",
+   "detail": "The report cites about 300k requests in one 10-day window through 5,380 fake accounts, mostly appearing to come from Singapore and Japan. Total attributed exchanges are 23M for May to July.",
+   "t": "2:34"
+  },
+  {
+   "idea": "The 'cross-session replay' attack gets around the thinking defense. The API returns a thinking signature instead of raw reasoning, and labs reportedly saved the signatures and used them in new sessions to recover full reasoning traces.",
+   "detail": "Speaker's account of the report. Anthropic had treated the signature as protection because the raw reasoning is not returned. The report calls the technique a cross-session replay attack and says Moonshot and DeepSeek both used it.",
+   "t": "2:34"
+  },
+  {
+   "idea": "DeepSeek reportedly fingerprinted the harness in each request and sent agentic-coding traffic to Opus. Claude Code, the Claude Agent SDK and OpenCode were named as the targeted harnesses.",
+   "detail": "The reasoning given is that these clients are good sources of agentic coding data. The report puts DeepSeek at about 12.1M exchanges over 14 days in July.",
+   "t": "3:45"
+  },
+  {
+   "idea": "The report also describes serious data exposure in forwarded requests, including surveillance data, live credentials, internal specs and a government database credential.",
+   "detail": "Speaker's summary of the report's examples. The presenter treats these as evidence of poor data handling by the labs and their proxy chains.",
+   "t": "4:52"
+  },
+  {
+   "idea": "Smaller cases widen the picture. Z.ai, Xiaomi, SenseTime and MiniMax are each accused of a distinct data-harvesting pattern.",
+   "detail": "Z.ai used 273 accounts and about 3.4M exchanges over 17 days to clean Opus traces by replay. It also tried to distill Fable's cyber capabilities and gave up when the safeguards blocked it. Xiaomi allegedly replayed its own users' coding sessions through Claude, about 400k requests over 1,500 accounts, around the end of a free trial. SenseTime allegedly bought Claude transcripts from data vendors. MiniMax allegedly ran a shell company operating a proxy service that harvested training data.",
+   "t": "4:52"
+  },
+  {
+   "idea": "Anthropic's countermeasures change API behavior. Reasoning is summarized before it is returned, and Preserved Thinking limits edits to earlier history for new accounts.",
+   "detail": "Per the speaker, Fable 5.1 added Preserved Thinking, which stops new API accounts from editing the system prompt, tools, or earlier messages before a reasoning block in a multi-turn conversation. Anthropic also trains classifiers for extraction prompts and requires identity verification, or a ban, for accounts that look like they come from China, Russia or Iran.",
+   "t": "6:57"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Preserved Thinking constraint (Anthropic API, per speaker)",
+   "how": "For multi-turn conversations, keep earlier messages and reasoning blocks unchanged when continuing a conversation. Per the speaker, new API accounts cannot edit the system prompt, tools, or messages before a reasoning block. Do not rewrite history in place to compact or re-inject context.",
+   "when": "Any agent loop that changes history: context compaction, checkpoint/resume, or re-running a turn with a modified prompt. Test these paths on a new API account before relying on them. The speaker's description is secondhand, so check the current API docs."
+  },
+  {
+   "name": "Do not depend on raw reasoning text",
+   "how": "Per the speaker, Claude now summarizes its reasoning before responding, and thinking signatures are opaque references. Avoid code that expects full, verbatim thinking text in responses, or that stores and replays thinking blocks as if they were raw traces.",
+   "when": "Code that logs, parses or persists thinking blocks, for example eval or trace pipelines that assume complete chain-of-thought."
+  },
+  {
+   "name": "Platform-side extraction defenses (extrapolated, not stated in the video)",
+   "how": "The speaker describes Anthropic classifiers for extraction prompts, with examples of prompts that ask the model to reveal or re-emit its reasoning, and identity verification for risky origins. An operator running a multi-tenant proxy could apply the same idea: flag requests with fixed injected prefixes that ask for reasoning output, and flag bulk account patterns, and log both.",
+   "when": "A gateway or proxy that serves many tenants or relays model traffic. This is an extrapolation by the reviewer, not a technique the video teaches."
+  }
+ ],
+ "tools": [
+  "Claude Opus 4.6",
+  "Claude Opus 4.7",
+  "Claude Opus 4.8",
+  "Claude Haiku",
+  "Fable (model name as spoken; Fable 5.1 cited for Preserved Thinking)",
+  "Claude Code",
+  "Claude Agent SDK",
+  "OpenCode",
+  "Qwen 3.5/3.6/3.7 (Alibaba)",
+  "Kimi (Moonshot)",
+  "DeepSeek",
+  "GLM 5.3 (Z.ai)",
+  "MiMo V2 Pro (Xiaomi)",
+  "Anthropic API (thinking signatures, Preserved Thinking)"
+ ],
+ "numbers": [
+  {
+   "claim": "February report: DeepSeek, Moonshot and MiniMax used 24,000+ fake accounts for 16M exchanges with Claude",
+   "t": "0:00"
+  },
+  {
+   "claim": "Alibaba: 151M+ exchanges May to July, peak near 3M requests per day, 3,500+ fraudulent accounts (largest case)",
+   "t": "1:27"
+  },
+  {
+   "claim": "First pool of 5,000 banned accounts was replaced by a second pool carrying DeepSeek and Xiaomi traffic",
+   "t": "1:27"
+  },
+  {
+   "claim": "Moonshot: about 300k requests in a 10-day window via 5,380 fake accounts; 23M exchanges May to July",
+   "t": "2:34"
+  },
+  {
+   "claim": "DeepSeek: about 12.1M exchanges over 14 days in July",
+   "t": "3:45"
+  },
+  {
+   "claim": "Z.ai: 273 fake accounts, about 3.4M exchanges over 17 days",
+   "t": "4:52"
+  },
+  {
+   "claim": "Xiaomi: over 400,000 requests across 1,500 accounts",
+   "t": "5:50"
+  }
+ ],
+ "hot_takes": [
+  "The whole video is a secondhand recap of one vendor's report (Anthropic). None of the attributions are independently checked, and the presenter does not say how the numbers were measured.",
+  "The presenter's asides, such as the sympathy-for-Anthropic joke and the '10% chance of destruction' remark, are opinion and not analysis.",
+  "The transcript is auto-captioned and garbles lab and model names. They were corrected to DeepSeek, Kimi, Qwen, GLM and Z.ai. 'Fable' and 'Opus 4.8' are kept as the speaker said them and could not be verified from the video.",
+  "The Preserved Thinking limit (Fable 5.1, new accounts only) and the summarized-reasoning change are API behavior claims made in passing. Verify them against current docs before building around them.",
+  "Practitioner value is limited: the video gives no reproducible steps. Its main value is the implications for API usage and for proxy and gateway operators."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Govrix Scout is a proxy that sits between clients and model APIs. The report's cases (bulk fake-account pools, rotating proxy networks, harness-based routing and silent response substitution) are the abuse patterns a proxy with budgets and an audit log should be able to detect and record.",
+   "action": "Add detection and audit-log events in Govrix Scout for bulk-account traffic and for requests with repeated fixed injected prefixes that ask the model to expose its reasoning, and record them in the Merkle audit log."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and does checkpoint/resume of long runs. Preserved Thinking, as described, limits edits to earlier history for new accounts, which could break resume logic that rewrites prior turns. Harness-based routing is also a reason to check how ProsHarness identifies itself to the API.",
+   "action": "Test ProsHarness checkpoint/resume against a fresh API account to confirm it does not rewrite messages before a reasoning block, and confirm that no code depends on raw thinking text."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

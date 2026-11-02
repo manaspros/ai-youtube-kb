@@ -1,0 +1,157 @@
+{
+ "one_line": "Walkthrough of Shannon, an open-source AI pentester built on the Claude Agent SDK: Temporal-orchestrated phases, parallel vulnerability agents, and a 2.5-hour, roughly $60 run against OWASP Juice Shop.",
+ "summary": "The creator installs Shannon on a VPS under a non-root user and runs it against OWASP Juice Shop, a deliberately vulnerable app, with the target repo placed inside the Shannon repo directory. Shannon runs through Docker Compose and uses Temporal for durable execution, so a crash or running out of API credits resumes from the last checkpoint rather than restarting. The pipeline has five phases: pre-flight checks, pre-recon static code analysis, Playwright-driven recon of the live app, five parallel vulnerability-analysis agents (injection, XSS, auth, SSRF, authorization) each followed by an exploit agent, and a final report agent. The full run took almost two and a half hours, with retries after the creator ran out of credits. The deliverables directory holds detailed reports, including an auth report claiming 11 critical findings with reproduction steps such as curl commands. The creator says Shannon Pro adds CVSS scoring, CI/CD support, API access and enterprise compliance reporting, but not speed. The run cost about $60 in Sonnet 4.6 API credits, and the video notes that Claude subscriptions cannot be used. The verdict is that Shannon suits startups replacing paid pentests, not indie hackers with tight budgets.",
+ "speakers": [],
+ "orgs": [
+  "Anthropic",
+  "KeyGraph",
+  "OWASP",
+  "Temporal"
+ ],
+ "format": "review",
+ "topics": [
+  "security-guardrails",
+  "agent-architecture",
+  "token-cost-efficiency",
+  "sandboxing-execution"
+ ],
+ "tags": [
+  "pentesting",
+  "security-scanning",
+  "shannon",
+  "temporal",
+  "durable-execution",
+  "playwright",
+  "docker-compose",
+  "juice-shop",
+  "agent-sdk",
+  "api-cost",
+  "claude-sonnet-4-6",
+  "ci-cd"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Shannon is an autonomous pentester: it analyses source code, then exercises the running app through browser automation to confirm exploits, rather than only flagging code patterns.",
+   "detail": "Presented as covering SSRF, XSS, SQL injection and more, with a report that includes working exploit details. The 'zero false positives' claim is the pitch and is not tested in the video.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Multi-hour agent runs need durable execution. Shannon uses Temporal so a crash or exhausted credits resumes from the last checkpoint instead of restarting.",
+   "detail": "The creator says runs can take hours, that Temporal remembers where the run stopped, and that it orchestrates all phases and activities. Monitoring is through the Temporal web UI or real-time logs.",
+   "t": "2:36"
+  },
+  {
+   "idea": "The pipeline separates static analysis from live recon. Pre-recon maps architecture, entry points and security patterns in code; recon uses Playwright to click through the app, fill forms, and observe network requests, cookies and screenshots.",
+   "detail": "Recon discovers the app's real functionality, which static analysis alone would miss.",
+   "t": "2:36"
+  },
+  {
+   "idea": "Vulnerability analysis fans out into five specialist pipelines in parallel (injection, XSS, auth, SSRF, authorization), each followed by a matching exploit agent.",
+   "detail": "The creator describes 5 vulnerability agents and 5 exploit agents, with a report agent that combines the results at the end.",
+   "t": "2:36"
+  },
+  {
+   "idea": "Retries after running out of credits make the run slower than it would otherwise be, but the creator thinks it would still take nearly two hours without them.",
+   "detail": "The Temporal log shows retried stages with a visible marker. The auth exploit stage was the slowest. The creator says later runs are faster, but this comes from research he did, not from his own measurement.",
+   "t": "3:56"
+  },
+  {
+   "idea": "Reports are per-area and include reproduction steps. The auth report lists an 11-critical total, endpoint-level findings, and curl commands for exploits.",
+   "detail": "Findings include HTTPS enforcement gaps on auth endpoints (none of six were enforced when run locally), a missing proper cast control, and missing rate limiting. The creator checked the detail, not whether the findings were correct.",
+   "t": "5:22"
+  },
+  {
+   "idea": "The paid tier is about reporting and integration, not runtime. Shannon Pro adds CVSS scoring, CI/CD pipeline support, API access and, for enterprise, OWASP, SOC 2 and PCI DSS compliance reporting.",
+   "detail": "The creator says Pro does not make runs faster.",
+   "t": "6:51"
+  },
+  {
+   "idea": "Cost and billing are the main barrier. The run needs an Anthropic API key, the Claude subscription does not work, and the creator spent about $60 of API credit, which is still cheaper than a human pentest.",
+   "detail": "He suggests the upcoming Claude Code security product might allow subscription-based use, but that is speculation. Verdict: useful for startups that would otherwise pay for a human tester, less so for indie hackers.",
+   "t": "8:01"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Temporal-backed durable agent pipeline",
+   "how": "Run each phase as a Temporal workflow activity so progress is checkpointed. After a crash or a credit top-up, the run restarts from the last checkpoint. Watch progress in the Temporal web UI or the real-time logs (the creator prefers logs because the UI does not always show enough detail).",
+   "when": "Long-running agent jobs (hours) where a crash or an external limit should resume rather than restart, such as security scans, large code migrations, or batch evals."
+  },
+  {
+   "name": "Static analysis then live-app recon",
+   "how": "First run a code-analysis pass that maps architecture, entry points and security patterns. Then run a browser agent (Playwright) against the running app to click through functionality, fill forms, capture network requests, cookies and screenshots. Feed both into the vulnerability stage.",
+   "when": "When findings must be confirmed against real runtime behaviour, not just code patterns, and the app can run locally."
+  },
+  {
+   "name": "Parallel specialist fan-out with paired exploit agents",
+   "how": "Split the vulnerability search into independent classes (injection, XSS, auth, SSRF, authorization). Each class gets a vulnerability-finding agent, followed by an exploit agent. Run all classes in parallel, then have a report agent combine the output.",
+   "when": "When the search space splits into independent categories and total wall-clock time matters more than token cost."
+  },
+  {
+   "name": "Reproduction setup as described in the video",
+   "how": "Clone the Shannon repo. Place the target repository inside the Shannon repo directory. Start the target app locally so the browser agent can reach it. Start Shannon with Docker Compose; the first run pulls images from Docker Hub. Set a Claude API key, since subscriptions do not work. The exact run command is not shown in the transcript, so check the Shannon README.",
+   "when": "Reproducing the pentest on a local or VPS test target, such as Juice Shop."
+  }
+ ],
+ "tools": [
+  "Shannon (open-source AI pentester)",
+  "Claude Agent SDK (Anthropic)",
+  "Claude Sonnet 4.6",
+  "Docker Compose",
+  "Temporal",
+  "Playwright",
+  "OWASP Juice Shop",
+  "Kali Linux (mentioned as the manual alternative)",
+  "Claude Code Security (announced, not yet released per the creator)",
+  "Shannon Pro (paid tier)",
+  "OpenAI Agents SDK (speculated port)",
+  "Vercel AI SDK (speculated port; transcript spells it 'Vasell')"
+ ],
+ "numbers": [
+  {
+   "claim": "Full run took almost 2.5 hours (around 150 minutes) on a single pentest of Juice Shop, plus retries after running out of credits.",
+   "t": "3:56"
+  },
+  {
+   "claim": "Auth report claims 11 critical vulnerabilities; zero of six auth endpoints enforced HTTPS, and four critical auth vulnerabilities were fully exploited.",
+   "t": "5:22"
+  },
+  {
+   "claim": "Creator topped up about $66 and about $60 was spent on the run. Model is Claude Sonnet 4.6.",
+   "t": "6:51"
+  },
+  {
+   "claim": "Pipeline fan-out: 5 vulnerability-analysis agents and 5 exploit agents, in parallel.",
+   "t": "2:36"
+  },
+  {
+   "claim": "The 'zero false positives' claim is the creator's pitch from the intro and is not measured in the video.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The title says 'Powered By Claude Code', but the video itself says Shannon is built on the Anthropic Agent SDK, not on Claude Code. The title is misleading.",
+  "The 'zero false positives' claim is not tested. The creator does not verify any finding against a known ground truth.",
+  "Shannon's runs cannot use a Claude Pro or Max subscription, so cost is the main barrier. The creator says a subscription would have made this much cheaper.",
+  "The claim that later runs are much faster than the first run comes from the creator's research, not from a measured second run.",
+  "Shannon Pro is sold on compliance and integration, not speed, which means the paid tier does not address the main pain point the creator raises."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Shannon is a security-scanning agent with phase-gated execution and a sandboxed browser stage, which relates to Crucible's exec-gate and guardrail work but is not a direct match.",
+   "action": "Read Shannon's phase and exploit-gating design as a reference point for Crucible's exec-gate, to see how it separates finding from exploitation."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Shannon's Temporal-backed checkpoint and resume after crashes or exhausted credits is closely analogous to ProsHarness checkpoint/resume of long Claude Code runs.",
+   "action": "Compare Shannon's resume-from-last-activity semantics with ProsHarness checkpointing, and decide whether ProsHarness should checkpoint at phase boundaries rather than only at run level."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

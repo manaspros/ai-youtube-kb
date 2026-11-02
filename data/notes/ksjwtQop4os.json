@@ -1,0 +1,200 @@
+{
+ "one_line": "Hands-on Elastic workshop on why hybrid search (BM25 plus dense vectors, fused with RRF or linear weights, then reranked) beats vector-only retrieval for RAG and agent tool use.",
+ "summary": "Jeff Vestal (AI architect) and James Williams (search solutions architect) at Elastic ran a live workshop where attendees worked through labs in an Elastic serverless environment and a Python notebook. The argument is that retrieval still matters even as agents take over search, because models trust whatever bad data they are given. The labs go from vector search, to where it breaks on exact identifiers, to BM25 keyword search, then to hybrid search combined with RRF or a tunable linear blend. Later labs cover Agent Builder (tools, skills, ES|QL, index search) and reranking, with point-wise versus list-wise rerankers. The speakers say the default happy path is BM25 plus semantic search, adding a reranker only if the latency budget allows and the precision gain is measured. Much of the talk is product pitch for Elastic's built-in inference and Agent Builder, and the auto-tuned relevance they describe is not shipped yet.",
+ "speakers": [
+  "Jeff Vestal (transcribed as Jeff Estill; AI architect, Elastic)",
+  "James Williams (solutions architect, search, Elastic)",
+  "Sunil (Elastic distinguished architect; last name not given)"
+ ],
+ "orgs": [
+  "Elastic"
+ ],
+ "format": "workshop",
+ "topics": [
+  "rag-retrieval",
+  "evals",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "hybrid-search",
+  "bm25",
+  "dense-vectors",
+  "rrf",
+  "linear-combination",
+  "reranking",
+  "listwise-reranker",
+  "semantic-text",
+  "chunking",
+  "hnsw",
+  "int8-quantization",
+  "bbq",
+  "disk-bbq",
+  "agent-builder",
+  "esql",
+  "search-templates",
+  "citations",
+  "relevance-tuning",
+  "judgment-sets",
+  "elasticsearch",
+  "vendor-pitch"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Retrieval still matters for agents. Models will confidently repeat bad retrieved data, so the retrieval layer decides answer quality.",
+   "detail": "Speakers argue that RAG did not go away; it moved under agents. Models need fresh, proprietary, or time-based data they were not trained on, and garbage input yields confident wrong answers.",
+   "t": "2:47"
+  },
+  {
+   "idea": "Vector search alone fails on exact identifiers; BM25 covers that gap.",
+   "detail": "Semantic search works on meaning, so paraphrases match well. It breaks when the query depends on a literal token such as a product ID that carries no semantic meaning. Lexical BM25 handles those, so the core thesis is to combine both.",
+   "t": "17:06"
+  },
+  {
+   "idea": "Embedding model consistency is enforced by binding the model to the field.",
+   "detail": "Query vectors must come from the same embedding model used at ingest, or results are meaningless. Elastic's semantic_text field stores the inference ID, so the model is set once and every writer or reader of the index uses it automatically.",
+   "t": "14:34"
+  },
+  {
+   "idea": "Scores from BM25 and vector search are on different scales, so naive score addition is wrong.",
+   "detail": "BM25 is unbounded while vector similarity sits roughly in 0 to 1, so a weak lexical hit can outscore a good semantic hit. RRF avoids this by discarding scores and fusing ranks; a linear combination normalises scores (min-max) and then applies tunable weights.",
+   "t": "37:32"
+  },
+  {
+   "idea": "Start simple and add a reranker only if the latency budget and measured precision gain justify it.",
+   "detail": "The stated rule of thumb: first check whether BM25 plus semantic search hits the relevance target. Every added stage costs latency. The next lever is a reranker, validated on your own corpus. The speaker prefers wiring dense vectors in from day one over starting lexical-first.",
+   "t": "27:00"
+  },
+  {
+   "idea": "Reranking is a second phase that scores the query and each candidate together, so it cannot be precomputed.",
+   "detail": "Retrieve a larger first-phase set, then rerank only that small set at query time, which costs inference per query. Point-wise rerankers score each document alone; list-wise rerankers see up to about 64 candidates together and help when candidates are very similar. Passing too many candidates to an LLM invites picking the wrong one.",
+   "t": "1:08:39"
+  },
+  {
+   "idea": "Inference latency, not the index, is often the bottleneck in semantic search.",
+   "detail": "Dense search adds an embedding call per query; lexical search has no ML step and usually has lower latency. That is part of the speakers' reason for running inference inside the data platform.",
+   "t": "29:52"
+  },
+  {
+   "idea": "Tuning weights is hard without judgment sets, and the speakers say auto-tuning is still missing.",
+   "detail": "A judgment set maps queries to the documents that should come back, labelled by a human or an LLM. You sweep weights against it. The speakers also describe telemetry-driven auto-tuning (clicks, thumbs up or down) as a wanted but unreleased feature.",
+   "t": "41:27"
+  },
+  {
+   "idea": "Citations need the answer to come from retrieved text, not from the model's memory.",
+   "detail": "Models generate tokens from training and can invent convincing answers. Feeding them retrieved documents and asking for citations, with URLs stored as document fields, gives a traceable audit trail. The speakers tie this to legal cases where fabricated citations got lawyers in trouble.",
+   "t": "44:52"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Reciprocal Rank Fusion (RRF) hybrid search",
+   "how": "Run BM25 and vector queries in parallel, discard raw scores, and fuse the two rank lists so documents ranked high in both rise to the top. Use the rank constant knob if needed.",
+   "when": "Default first hybrid setup when query mix is unknown and there is no time to tune weights."
+  },
+  {
+   "name": "Linear combination with min-max normalisation",
+   "how": "Normalise BM25 and vector scores to a 0 to 1 range, then blend them with tunable weights and check against a judgment set.",
+   "when": "When RRF is not precise enough and you have labelled queries to tune against."
+  },
+  {
+   "name": "Filter before ranking",
+   "how": "Apply keyword, geo, or date filters first to shrink the candidate pool, then run semantic or lexical ranking inside it.",
+   "when": "When structured constraints exist in the query or user context; reduces noise and latency."
+  },
+  {
+   "name": "Retrieve then rerank in one request",
+   "how": "Set a reranker stage in the retriever so the first-phase query and the rerank run in one API call, rather than separate inference and query calls.",
+   "when": "When top-k order matters for the answer and the latency budget allows an extra inference step."
+  },
+  {
+   "name": "Search templates routed by an LLM (poor man's auto-tuning)",
+   "how": "Store several search strategies (RRF, linear, reranked) as templates. A small LLM or classifier reads the incoming query and picks which template to invoke.",
+   "when": "When one retrieval strategy does not fit all query types and you want per-query strategy without a learned ranker."
+  },
+  {
+   "name": "Semantic_text with default sentence chunking",
+   "how": "Use a semantic_text field so chunking and embedding happen automatically at ingest (sentence boundaries, around 250 tokens by default). Change chunk boundaries (word, paragraph, page) through the chunking settings when needed.",
+   "when": "For fast setup with a large-context embedding model; tune chunk size per corpus rather than assuming more context is better."
+  },
+  {
+   "name": "LLM answer with citations from retrieved sources",
+   "how": "Retrieve documents first, pass them to the LLM with instructions to cite, and store a source URL field in each document so the UI can link back.",
+   "when": "Any answer where users must verify claims, such as legal, compliance, or support answers."
+  },
+  {
+   "name": "Index-description tool for agents",
+   "how": "Give the agent a tool that describes what each index is for, its field mappings, and how indices join, so it does not spend round trips discovering the schema.",
+   "when": "When agents run exploratory queries against a cluster and token cost of schema discovery is high."
+  },
+  {
+   "name": "Point-in-time pagination",
+   "how": "Open a point-in-time snapshot and page through results with a checkpoint key, so later pages do not re-run the full search.",
+   "when": "When users or agents need to walk a large result set in chunks."
+  }
+ ],
+ "tools": [
+  "Elasticsearch (serverless)",
+  "Kibana / Discover",
+  "Elastic Inference Service",
+  "Jina embedding and reranking models (Elastic acquisition)",
+  "Agent Builder (Elastic agent platform)",
+  "ES|QL",
+  "Jupyter notebooks",
+  "Elastic workflows and MCP endpoint"
+ ],
+ "numbers": [
+  {
+   "claim": "Default semantic_text chunking breaks text on sentence boundaries into roughly 250-token chunks with one sentence of overlap (as described by the speaker).",
+   "t": "11:53"
+  },
+  {
+   "claim": "int8 quantization is the default: float32 vectors are quantised before being held in memory, while full vectors are kept on disk.",
+   "t": "20:09"
+  },
+  {
+   "claim": "BBQ compresses the HNSW graph vectors down to roughly one bit per dimension while keeping recall high (vendor claim).",
+   "t": "20:09"
+  },
+  {
+   "claim": "Disk BBQ, a proprietary Elastic option that does not use HNSW, is said to remove most memory overhead for vector search.",
+   "t": "20:09"
+  },
+  {
+   "claim": "Elastic says it targets multi-billion vector datasets (vendor claim).",
+   "t": "23:17"
+  },
+  {
+   "claim": "List-wise reranker (Jina v3) takes up to about 64 candidates at once; point-wise (v2) scores each document independently.",
+   "t": "1:10:01"
+  },
+  {
+   "claim": "Lexical search is generally lower latency than dense semantic search because no ML inference call is made per query (speaker's general claim).",
+   "t": "29:52"
+  }
+ ],
+ "hot_takes": [
+  "Start with hybrid search (BM25 plus dense vectors) from day one rather than lexical first and semantic only when needed.",
+  "Graph databases do not scale to the vector sizes Elastic targets, so they are not needed for most retrieval; ML classification at query time can cover some graph-style filtering.",
+  "RRF is a good out-of-the-box default that needs no tuning, but it is not the end state.",
+  "Relevance auto-tuning from user telemetry would move the needle a lot, but no product has shipped it yet.",
+  "Pure data platforms are increasingly pulling inference into the database; pluggable retrieval backends look like the old ORM promise and will break at scale."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already does hybrid retrieval (BM25 plus pgvector). The talk gives concrete fusion options (RRF vs linear with min-max), a judgment-set tuning method, and the rule to add a reranker only when latency allows.",
+   "action": "Add a retrieval eval for MemoryMesh with a small labelled judgment set and compare BM25-only, dense-only, RRF, and weighted linear fusion before adding any reranker."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness does skill ranking; the RRF point (fuse two rank lists without score normalisation) could apply to skill matching, but the talk gives no loop, checkpoint, or approval ideas.",
+   "action": "When ranking candidate skills, try RRF over keyword and embedding rank lists instead of adding their raw scores."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

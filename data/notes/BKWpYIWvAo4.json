@@ -1,0 +1,236 @@
+{
+ "one_line": "Google AI Edge on running small Gemma models on-device via LiteRT-LM, the on-device agent-skills pattern (progressive disclosure, constrained tool calls), and fine-tuning tiny models with synthetic data.",
+ "summary": "Cormac Brick (Google AI Edge) gives a state-of-the-art tour of on-device LLMs. He splits models into system-level (2-5B, built into the OS) and in-app \"tiny\" models (under 1B), and argues tiny models need fine-tuning for production reliability. He covers the Gemma 4 E2B/E4B models, which add built-in function calling and thinking, and their memory tricks. The core of the talk is an on-device agent-skills system in the AI Edge Gallery app: a one-line skill description sits in the prompt, the model loads a skill's full instructions on demand, and a small set of primitives (load skill, run JS, run intent) runs it. He describes a tiny-model playbook: synthetic data from a large model, fine-tuning a small Gemma derivative, quantization, and shipping one LiteRT-LM file across CPU/GPU, with AOT compilation for NPUs. The last part shows the offline dictation app Eloquent, built from modular ASR, personalization and text-polish models. Most numbers are vendor self-reports from internal evals. The talk is partly product showcase, but it contains concrete engineering patterns.",
+ "speakers": [
+  "Cormac Brick"
+ ],
+ "orgs": [
+  "Google",
+  "Google AI Edge",
+  "Google DeepMind",
+  "Qualcomm",
+  "Intel",
+  "Apple",
+  "NVIDIA"
+ ],
+ "format": "talk",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "skills-self-improvement",
+  "training-finetuning-rl"
+ ],
+ "tags": [
+  "on-device",
+  "edge-ai",
+  "litert-lm",
+  "gemma-4",
+  "function-gemma",
+  "agent-skills",
+  "progressive-disclosure",
+  "constrained-decoding",
+  "lora",
+  "synthetic-data",
+  "quantization",
+  "npu",
+  "tiny-llm",
+  "voice",
+  "offline"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Two deployment trends: system-level gen AI (2-5B models built into the OS) and in-app tiny models (under 1B) shipped with the app for wide device reach.",
+   "detail": "System models are customized by prompting or skills. Tiny models are customized per task and aim for reach across all devices, not just premium phones.",
+   "t": "7:13"
+  },
+  {
+   "idea": "Below roughly 500M parameters, the speaker says fine-tuning is needed to reach production reliability. Above that, general prompting can work better.",
+   "detail": "He says the 500M line is his team's experience, and that a single narrow task fine-tuned on a small model can reach strong performance.",
+   "t": "10:52"
+  },
+  {
+   "idea": "Agent skills work on small on-device models because of progressive disclosure: only one-line skill descriptions sit in context, and full instructions load only when the model chooses a skill.",
+   "detail": "The speaker contrasts this with MCP, where all function details are loaded up front. Less context matters a lot for small models with weaker long-context reasoning.",
+   "t": "24:03"
+  },
+  {
+   "idea": "Constrained decoding is applied only to tool-call output and limited to the finite set of valid tools, which gives small models stronger guardrails.",
+   "detail": "He says this helped a lot for the 2B model, and matters less as models get larger.",
+   "t": "27:50"
+  },
+  {
+   "idea": "Skills are built with coding agents. The team's favorite pattern was asking Gemini CLI or Claude Code to write a skill from docs and examples, then testing it on a phone over ADB.",
+   "detail": "Of about 80 team skills, the speaker says more than half were vibe-coded at first. Community skills are collected through GitHub discussions and promoted into the app.",
+   "t": "35:24"
+  },
+  {
+   "idea": "Multi-skill use works across turns (one skill per turn). Skill stacking inside a single prompt works only when the prompt is very explicit, and its limits are still being explored.",
+   "detail": "The speaker says the Gemma models were not specifically trained for the skill structure. The skill structure came after the model was tested.",
+   "t": "1:13:37"
+  },
+  {
+   "idea": "Tiny-model playbook: a large cloud model generates synthetic data, a small base model is fine-tuned on it, then it is quantized and shipped. Modular small models are preferred over one large model in the app.",
+   "detail": "The Eloquent app splits speech recognition, a personalization word-bias list and a text-polish LLM. The split makes the pipeline easier to debug and lets models be reused. Scale of synthetic data mentioned is low millions to tens of millions of examples.",
+   "t": "55:30"
+  },
+  {
+   "idea": "Memory footprint: E2B/E4B keep about 2B/4B parameters resident. The per-layer embedding tables are memory-mapped and only the rows needed for each token are read.",
+   "detail": "This is why the models are called effective-2B and effective-4B. The speaker says the KV cache per input token was also optimized for edge.",
+   "t": "12:04"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Progressive disclosure for skills",
+   "how": "Put a one-line description of each skill in the system prompt. Give the model a load_skill tool that returns the full SKILL.md (instructions, tool calls, scripts) only when it picks a skill. Trigger metadata is always loaded; the body is loaded on demand.",
+   "when": "Many tools or skills, a small model with a limited context window, or when token efficiency and reliability matter more than having every detail in context."
+  },
+  {
+   "name": "Three-primitive orchestrator",
+   "how": "Build a small set of primitives (load_skill, run_js, run_intent) and let the model compose them. Skills can be local JavaScript, Android intents, or web API calls that need a user-provided API key.",
+   "when": "Extending an on-device assistant without fine-tuning, with a low barrier for third parties to add skills."
+  },
+  {
+   "name": "Constrained decoding scoped to tool calls",
+   "how": "Enable constrained decoding only for the output span that is a tool call, and constrain it to the finite set of tool names that are valid for the current turn instead of generic JSON.",
+   "when": "Small models (around 2B) doing function calling where the tool set is finite and known."
+  },
+  {
+   "name": "Synthetic data then fine-tune then quantize",
+   "how": "Use a strong cloud LLM to generate a large synthetic dataset for one narrow task, fine-tune a small base model on it (the speaker says low millions to tens of millions of examples), then quantize and ship as a single file.",
+   "when": "A narrow feature that must run on a wide range of devices offline and at low cost."
+  },
+  {
+   "name": "Modular pipeline of small models",
+   "how": "Split a voice product into separate models: ASR, a custom vocabulary/bias list (names, technical terms) and a text-polish LLM (remove filler words, apply the vocabulary, handle self-corrections). Each model can be inspected and reused.",
+   "when": "Offline dictation or transcription where custom terms matter and the team wants to debug each stage."
+  },
+  {
+   "name": "LoRA hot-swap on one base model",
+   "how": "Keep one base model resident and fine-tune small LoRA adapters per task (about 8-100 MB each, depending on rank). Swap adapters at runtime without reloading the base model.",
+   "when": "Embedded or robotics devices with several narrow tasks and limited memory."
+  },
+  {
+   "name": "Skill testing loop with a coding agent and a device",
+   "how": "Give a coding agent the docs, example skills and a connected phone (ADB). Ask it to write the skill, run it on the device, check the behaviour, and iterate.",
+   "when": "Fast prototyping of agent skills or tools that must run in a real app."
+  },
+  {
+   "name": "Build-once, deploy-everywhere model file with AOT for NPU",
+   "how": "Export a PyTorch model to a single LiteRT-LM file (tokenizer included) that runs on CPU/GPU via JIT. For NPU, run a vendor compiler plugin ahead of time to produce a device-specific artifact. The same runtime API is used for both.",
+   "when": "Shipping one model to many platforms, and adding NPU acceleration where the hardware supports it."
+  }
+ ],
+ "tools": [
+  "LiteRT-LM",
+  "LiteRT (formerly TensorFlow Lite)",
+  "LiteRT-Torch",
+  "Google AI Edge Gallery",
+  "MediaPipe",
+  "Gemma 4 (E2B, E4B)",
+  "Function Gemma (270M)",
+  "Gemma 3 270M",
+  "EmbeddingGemma (300M)",
+  "FastVLM (500M, Apple)",
+  "Qwen 0.6B",
+  "Gemini CLI",
+  "Claude Code",
+  "Antigravity",
+  "Android ADB",
+  "Hugging Face",
+  "XNNPACK",
+  "ML Drift"
+ ],
+ "numbers": [
+  {
+   "claim": "Function Gemma (270M) on 10 Android voice-to-function-call tasks: about 85-90% reliability on internal eval.",
+   "t": "9:33"
+  },
+  {
+   "claim": "Mobile-actions fine-tune on 10 functions: eight simple functions above 93%; two harder functions pulled the average to about 86%.",
+   "t": "1:04:43"
+  },
+  {
+   "claim": "Fine-tuning improved small models by about 20-40 points on the team's evals.",
+   "t": "1:04:43"
+  },
+  {
+   "claim": "Models under 500M parameters need fine-tuning for production reliability (speaker's experience).",
+   "t": "10:52"
+  },
+  {
+   "claim": "Tiny models are defined as under 1B parameters; system-level OS models are typically 2-5B.",
+   "t": "7:13"
+  },
+  {
+   "claim": "E2B needs about 2B parameters resident in RAM and E4B about 4B; the rest is per-layer embeddings that are memory-mapped.",
+   "t": "12:04"
+  },
+  {
+   "claim": "E2B on a high-end Android phone GPU and on a MacBook: thousands of tokens per second (prefill and decode). On a Raspberry Pi: about 133 tokens per second.",
+   "t": "17:10"
+  },
+  {
+   "claim": "E2B and E4B support context up to 32K tokens; the larger Gemma 4 models support 128K. The Gallery app defaults to about 8K-12K for performance.",
+   "t": "1:16:38"
+  },
+  {
+   "claim": "Gemma 4 E2B/E4B are multimodal (audio, image, text) and released under Apache 2.0, the first Gemma release under that license.",
+   "t": "15:50"
+  },
+  {
+   "claim": "Team built about 80 skills for the Gallery app; more than half were vibe-coded at first.",
+   "t": "36:36"
+  },
+  {
+   "claim": "All Gallery skill demos ran on the 4B model; 2B also works, with more variability for complex skills.",
+   "t": "37:42"
+  },
+  {
+   "claim": "FastVLM (Apple, 500M) runs with Qualcomm hardware acceleration on an S25; about 250-260 MB extra in the app if 4-bit quantized (speaker's estimate, not done in the demo).",
+   "t": "48:14"
+  },
+  {
+   "claim": "EmbeddingGemma is about 300M parameters and is intended for on-device RAG embeddings.",
+   "t": "52:00"
+  },
+  {
+   "claim": "Synthetic data scale for tiny-model fine-tuning: low millions to tens of millions of examples.",
+   "t": "1:01:05"
+  },
+  {
+   "claim": "LoRA adapters for the 2B model are about 8-100 MB depending on rank, and the runtime can hot-swap them without reloading the base.",
+   "t": "1:20:26"
+  }
+ ],
+ "hot_takes": [
+  "For models under about 500M parameters, prompting is not enough for production; fine-tune.",
+  "Skills are a better extension path than fine-tuning for the 2B/4B Gemma models, but tiny models should be fine-tuned.",
+  "Most of the team's skills were vibe-coded with coding agents at first, and this lowered the barrier to extending a model.",
+  "On-device, one of the most valuable things is a narrow, fine-tuned, modular model pipeline rather than one large model."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L2B targets one RTX 5090 with vLLM, and the talk's progressive-disclosure skill loader and constrained tool-name decoding are directly applicable to a small-model local tier and to SkillForge's skill format.",
+   "action": "Prototype a load_skill-style layer for SkillForge: put only one-line skill descriptions in the system prompt, load full SKILL.md on demand, and measure prompt tokens and tool-call accuracy against the current full-description approach on a 4B-class local model."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code and ranks skills. The talk's skill-writing loop (agent writes a skill, tests it on a device, iterates) and load-on-demand pattern are relevant to skill ranking and validation.",
+   "action": "Read the talk's skill-spec and load-skill approach to check whether ProsHarness skill ranking should gate skills on an automated run-and-verify step before they are ranked."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The synthetic-data-then-fine-tune loop for a narrow task, and constrained decoding limited to a finite tool set, apply to cheap-model (Haiku) pipelines and to structured extraction work.",
+   "action": "For a narrow cheap-model task in the entity-resolution or extraction pipeline, generate synthetic labelled data with a larger model, fine-tune a small model, and measure the gain on a held-out set; also try restricting output to the valid label set for constrained decoding."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

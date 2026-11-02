@@ -1,0 +1,170 @@
+{
+ "one_line": "Compound's Yijia Liang explains why they rebuilt Excel, PowerPoint and Word as headless Rust engines for finance agents, using the real Office apps as an oracle in agent loops, plus email-based multiplayer agents and swarm-based file processing.",
+ "summary": "Yijia Liang of Compound argues that personal-agent patterns (reliable background tasks, proactivity, integrations) do not transfer to institutional finance, where work is multiplayer, long-running, and built on huge file sets. Compound gives each agent an email inbox so every deal-team member on a thread can talk to it, which needs per-participant auth and deliberately delayed replies to avoid spammy acknowledgments. Off-the-shelf options (Office plugins, VM-based computer use, open-source libraries) were too slow for parallel work, so the team built its own headless Office engines, starting from IronCalc for Excel. The method was an objective-function loop: recreate Office at full fidelity, use the real apps as the oracle, benchmark on real and internal files, and render with Rust to get pixel parity. Owning the engine also gives a write-render-check-fix loop and async comment-driven collaboration. For breadth, the talk recommends grep-based reading plus lead-agent slicing and swarms over vector indexing, with citations per finding; for depth, a structured engine layout beats having the model write OpenPyXL code over a 30 MB workbook. The speaker's headline numbers are vendor claims and are not independently verified.",
+ "speakers": [
+  "Yijia Liang"
+ ],
+ "orgs": [
+  "Compound"
+ ],
+ "format": "talk",
+ "topics": [
+  "multi-agent",
+  "evals",
+  "rag-retrieval",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "finance",
+  "excel",
+  "office-automation",
+  "headless-engine",
+  "email-agents",
+  "objective-function-loop",
+  "agent-swarms",
+  "grep-over-vector-db",
+  "rust",
+  "citations",
+  "write-render-check-fix",
+  "vendor-pitch"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Personal-agent success factors (reliable background execution, proactivity, integrations) do not map cleanly to institutional finance, where the equivalent is compressing a multi-week data-room-to-IC-materials process into days.",
+   "detail": "The speaker lists three reasons personal agents took off recently and argues finance needs the same reliability and integrations, but with managing-director-level control over token burn and unsolicited actions.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Make the agent a multiplayer teammate by giving it an email inbox, since finance work runs through Outlook threads.",
+   "detail": "Each agent has a built-in inbox. Every participant in a thread needs read and write access (auth), and the agent should add latency so repeated emails in quick succession do not trigger a flood of acknowledgments.",
+   "t": "3:12"
+  },
+  {
+   "idea": "Off-the-shelf office tooling did not scale for many parallel tasks, so the team rebuilt Office as headless engines.",
+   "detail": "They evaluated desktop Office plugins, VM-based computer use, open-source libraries and commercial engines, and found none that cut it. Coding agents made building their own cheaper.",
+   "t": "4:41"
+  },
+  {
+   "idea": "The core method is an objective function with the real application as oracle: agents loop against Office, benchmarking on real-world and internal files until output matches.",
+   "detail": "Started from IronCalc for Excel. Pixel parity is checked with Rust renders, because firms only trust what they can download and send. The same loop was run for PowerPoint and Word.",
+   "t": "6:09"
+  },
+  {
+   "idea": "A headless engine beats desktop Office on parallelism and speed, and owning the editor enables asynchronous, comment-driven agent collaboration.",
+   "detail": "Desktop Office is bound to one CPU. The speaker claims 20 MB workbooks recalculate about 4x faster. Team review works by dropping comments on drafts, which he says let a team of five rip through a 100-page deck in an afternoon.",
+   "t": "8:06"
+  },
+  {
+   "idea": "Owning the engine gives the agent a write-render-check-fix loop, which library-only approaches like OpenPyXL cannot provide because they have no renderer to check formatting.",
+   "detail": "Without a render, the model guesses and checks cell colors and fonts by parsing. With its own engine, the team controls the full iterative loop and can expose richer APIs.",
+   "t": "9:08"
+  },
+  {
+   "idea": "For breadth across very large data rooms, use grep-driven coding agents and swarms instead of indexing everything in a vector DB.",
+   "detail": "A lead agent slices the file directory, swarms return findings, and every finding is tied to a citation in the source document. The loop repeats until the output is satisfactory. Vector indexing is reserved for specific use cases.",
+   "t": "10:34"
+  },
+  {
+   "idea": "For depth in large models, serve the model a structured, pre-laid-out view of the workbook from a native engine instead of having it write code that prints the whole model.",
+   "detail": "Generic LLMs write OpenPyXL code and dump every cell into context, which is slow and expensive. The engine processes the 30 MB, 2M-formula workbook and presents it in an easy-to-read format, which is also more accurate.",
+   "t": "12:02"
+  },
+  {
+   "idea": "Trust in agent output must be built with checks before finance teams move from copilot to autopilot, just as coding teams did after Opus 4.5.",
+   "detail": "The speaker's analogy is that teams started trusting generated code once there were sufficient checks and tests. He frames the goal as letting a deal team drop in a data room and trust the outputs.",
+   "t": "13:03"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Objective-function loop against the incumbent app as oracle",
+   "how": "Define the objective as reproducing the target product at full fidelity. Collect a benchmark of real files (public corpus plus internal examples). Run agents in loops, comparing their output to the oracle app's output, and render with a Rust renderer to check pixel parity. Repeat until parity. Start from an open-source base where one exists (IronCalc for Excel).",
+   "when": "When you need a faithful, testable reimplementation of a complex proprietary format or app, or any eval where a reference implementation gives ground truth."
+  },
+  {
+   "name": "Own the write-render-check-fix loop with a headless engine",
+   "how": "Run the document engine headlessly so the agent can write a file, render it, inspect the render, and fix it. Expose structured APIs and a pre-parsed layout of the document, rather than making the model print the raw contents as code.",
+   "when": "When outputs are visual or formatting-sensitive (spreadsheets, decks) and library-only tools give no render feedback, or when large files make raw dumping too costly."
+  },
+  {
+   "name": "Grep-first agent swarm over a large file corpus with citations",
+   "how": "A lead agent reads the file directory, uses grep or similar search, and slices the corpus into chunks. Parallel sub-agents each return findings tied to a source citation. Iterate on the swarm output until satisfied. Skip vector indexing unless a specific use case requires it.",
+   "when": "When the corpus is too large for one context window but each finding must be traceable to a source document (e.g. a 15,000-file data room)."
+  },
+  {
+   "name": "Email as the multiplayer interface for an agent",
+   "how": "Give each agent an inbox that joins existing email threads. Authenticate and authorize every participant on a thread for read and write access. Add deliberate latency and batching to replies so that multiple quick messages do not produce repeated acknowledgments.",
+   "when": "When work is collaborative and already runs through email threads, and you want one agent shared across several people without a new app."
+  }
+ ],
+ "tools": [
+  "Compound (getCompound.ai)",
+  "IronCalc",
+  "Microsoft Excel",
+  "Microsoft PowerPoint",
+  "Microsoft Word",
+  "OpenPyXL (transcribed as 'OpenPAxcel' / 'OpenPi Excel')",
+  "Outlook",
+  "SharePoint",
+  "Box",
+  "Microsoft Teams",
+  "Claude",
+  "ChatGPT",
+  "Opus 4.5",
+  "Rust (renderer and engine)"
+ ],
+ "numbers": [
+  {
+   "claim": "Personal-agent process compression: a data-room-to-IC-materials process taking about 4 weeks with multiple review rounds compressed to a few days (aspirational target)",
+   "t": "1:15"
+  },
+  {
+   "claim": "Data rooms can hold about 15,000 files, some over 20 MB; firm archives span about 40 years and petabytes of unstructured data",
+   "t": "2:16"
+  },
+  {
+   "claim": "Rebuilding Office consumed about 1.5 trillion input-output tokens and over 8 million lines of code (speaker's figure)",
+   "t": "6:09"
+  },
+  {
+   "claim": "The Rust Excel engine is about 800,000 lines and was built from IronCalc",
+   "t": "6:09"
+  },
+  {
+   "claim": "A 20 MB Excel workbook recalculates about 4x faster than in desktop Excel (vendor claim, no methodology given)",
+   "t": "8:06"
+  },
+  {
+   "claim": "A team of five can review a 100-page deck in an afternoon with comment-driven agent revisions, versus multiple weeks (vendor claim)",
+   "t": "8:06"
+  },
+  {
+   "claim": "Example finance model: 30 MB workbook, about 2 million formulas, five sensitivity tables, about 5 minutes to recalculate",
+   "t": "9:08"
+  }
+ ],
+ "hot_takes": [
+  "Vendor pitch: the talk promotes Compound's own product and gives no independent benchmark, dataset or methodology behind the 4x and token figures.",
+  "Owning a headless engine is a bigger lever than prompt or orchestration work: the speaker argues that library-only tools (OpenPyXL) and VM-based computer use cannot give agents a usable render-check loop.",
+  "Vector DBs are overused for large corpora: grep plus lead-agent slicing and swarms with citations is preferred unless the use case needs indexing.",
+  "Finance is at a copilot-to-autopilot inflection point, analogous to coding after Opus 4.5."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The oracle-benchmark loop on real files is a direct pattern for evals, and the grep-first swarm with citations is a concrete alternative to pure vector retrieval for MemoryMesh's knowledge buckets.",
+   "action": "Run a head-to-head on one document corpus: grep-first lead-agent swarm with citation tracking versus MemoryMesh BM25+pgvector retrieval, scored on citation accuracy, and keep the oracle-style benchmark loop as an eval harness pattern."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The copilot-to-autopilot argument maps to ProsHarness's plan-critique-debate and approval flows: trust should follow automated checks.",
+   "action": "Consider adding an oracle or check step (tests or a reference run) that must pass before ProsHarness marks a long delegated run as trusted, instead of relying only on approval prompts."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

@@ -1,0 +1,176 @@
+{
+ "one_line": "Walkthrough of the Reverse Engineer Anything (REA) MCP skill for Claude Code: feature cloning, black-box QA, competitor teardown, security sweep. Takeaway: tag findings by evidence, not guesses.",
+ "summary": "AI LABS demos \"Reverse Engineer Anything\" (REA), an MCP server plus skill that lets Claude Code or Codex take apart a website or app by following UI actions back to the client code and the server requests they trigger. The tool saves each captured request or code path as evidence with an ID, and its skill labels every finding as seen (backed by evidence), guessed (inferred), or unknown. The video shows five uses: cloning a feature from another app (Obsidian's graph view, Notion's board view) after first writing a behavior spec, deep-diving competitors including their pre-login page code, black-box QA of a live site without reading its code, a pre-launch performance and layout checkup, and a security sweep for exposed keys and logic flaws. The demos run on the author's own test app, including planted security bugs, so detection rates are anecdotal. The Firecrawl sponsor segment in the middle is a vendor pitch. The setup steps are concrete, though the transcript gives no repo URL, so the install command must come from the GitHub repo itself.",
+ "speakers": [
+  "AI LABS host (unnamed in transcript)"
+ ],
+ "orgs": [
+  "AI LABS",
+  "Firecrawl",
+  "Anthropic",
+  "OpenAI",
+  "Stripe",
+  "Notion",
+  "Obsidian",
+  "GitHub"
+ ],
+ "format": "review",
+ "depth": "practitioner",
+ "topics": [
+  "claude-code",
+  "skills-self-improvement",
+  "testing-verification",
+  "security-guardrails"
+ ],
+ "tags": [
+  "reverse-engineering",
+  "mcp",
+  "claude-code",
+  "codex",
+  "black-box-testing",
+  "competitor-research",
+  "security-audit",
+  "evidence-labeling",
+  "hopper",
+  "firecrawl",
+  "trending-github-repo"
+ ],
+ "key_ideas": [
+  {
+   "idea": "REA is an MCP server with a companion skill that connects to Claude Code or Codex. It goes beyond screenshot-based browser tools by following a UI click back to the client code that sends the request and recording the server response at each step.",
+   "detail": "Browser tools that only click and screenshot miss behavior such as drag, delete, and what the server returns. REA saves each captured request or code execution as evidence with an ID, then writes an explanation of the feature from that evidence.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Findings are tagged seen, guessed, or unknown. Seen means an evidence ID backs the claim; guessed means it was inferred from other clues; unknown means nothing supports it. The tag prevents guesses from passing as facts.",
+   "detail": "The skill enforces the labels. The author notes that REA only sees what reaches the browser, so behavior on the company's own servers stays hidden.",
+   "t": "1:23"
+  },
+  {
+   "idea": "Desktop coverage is limited. Electron-style apps that are built like websites work the same way. Apps that keep their program files locally can be read directly. Apps that load everything from the internet give REA nothing local to read.",
+   "detail": "Binary analysis for the local-files case uses Hopper, which is optional and only needed for non-web apps.",
+   "t": "2:51"
+  },
+  {
+   "idea": "The installer detects installed coding tools and lets you pick which to configure with arrow keys and enter. It installs the skill into the user-level Claude folder rather than a project, so every Claude Code session can use it.",
+   "detail": "After installation, running the MCP command in Claude Code shows the connected REA server with around 170 tools.",
+   "t": "2:51"
+  },
+  {
+   "idea": "The first use case is cloning a feature from another app. The workflow is to have the agent write a behavior list first, then implement from it. The list separates what REA actually observed from what it could not pin down.",
+   "detail": "The demo reverse engineers Obsidian's graph view from its code and Notion's board view through the Notion MCP. The resulting spec covers node placement, link drawing, link attraction, and drag behavior. The author then changed the deleted-note behavior from Obsidian's default of leaving broken links.",
+   "t": "4:18"
+  },
+  {
+   "idea": "Competitor research gets deeper with REA. Asking for a plain Claude research pass gave only pricing and recording basics. Reading the code the sign-in page loads before login exposed features the marketing site never mentioned.",
+   "detail": "Workflow: have Claude list competitors, pick the top five, then run REA on each one.",
+   "t": "6:59"
+  },
+  {
+   "idea": "Black-box QA on a live site catches bugs that code review misses. The author tells the agent not to read or change code, has it write test scenarios into a folder, and runs them through the MCP. The run is headless by default, but the author can ask for a visible browser.",
+   "detail": "The billing-page run found that two accounts saw one price and were charged another, one saw half the real total, and one saw zero. The bug traced to the final total-summing step. The run also found a negative seat count accepted by the server and one invoice missing from the billing log. The agent marked its guess about a page-built settings list as a guess.",
+   "t": "8:02"
+  },
+  {
+   "idea": "The same browser-test approach can run as a full-site checkup covering speed, broken links, and layout. It caught a mobile header that overflowed the screen, which the agent then fixed.",
+   "detail": "The author's point is that slow pages and broken layouts drive users away, so the checkup should run often.",
+   "t": "9:29"
+  },
+  {
+   "idea": "Before publishing, an agent-driven security sweep flags exposed API keys, passwords, and logic flaws. The report is sorted by severity and includes a fix for each item. The test app had planted bugs, so this shows detection on seeded issues rather than real-world recall.",
+   "detail": "Findings in the demo included OpenAI and Stripe keys reachable without much effort, plus a logic flaw that let users read customer data without backend access.",
+   "t": "10:56"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Behavior spec before implementation",
+   "how": "Prompt the agent to load the REA skill and the reference docs for the app type, then write a behavior-list file for the reference app (Obsidian graph, Notion board). The file should split observed behavior from unresolved behavior. Implement from that file, and use it later as a comparison target.",
+   "when": "Cloning a UI feature from another product, or matching an existing feature's behavior rather than its look."
+  },
+  {
+   "name": "Evidence-tagged findings",
+   "how": "Require every claim in an agent report to be tagged seen (backed by an evidence ID), guessed (inferred), or unknown. Review guessed items before acting on them.",
+   "when": "Any agent-written investigation or audit where the reader needs to separate verified facts from inference."
+  },
+  {
+   "name": "Black-box feature QA",
+   "how": "Tell the agent the site URL, the feature to check, and not to read or change code. Have it write the test scenarios to a folder, then run them through REA one by one. Ask for a full report of issues. Use non-headless mode to watch the run.",
+   "when": "Finding runtime bugs such as pricing mismatches or edge cases that a code read looks fine on."
+  },
+  {
+   "name": "Check the site against your written rules and promises",
+   "how": "Give the agent the pricing rules you wrote and the claims on your marketing page. Ask it to check the live billing page against both, then trace any mismatch step by step through the browser.",
+   "when": "Billing, pricing, or any feature where the spec lives in docs and marketing copy rather than only in code."
+  },
+  {
+   "name": "Competitor teardown",
+   "how": "Ask Claude to list competitors for what you are building, have it pick the top five, then run REA on each. Include the pre-login page code, which often reveals features the marketing site leaves out.",
+   "when": "Product planning or feature gap analysis."
+  },
+  {
+   "name": "Pre-publish security and performance sweep",
+   "how": "Ask the agent to run the app, then run REA's security check for exposed keys and passwords, and request a report sorted by danger with a fix for each item. Use the same browser-test pass for speed, broken links, and layout across the whole site.",
+   "when": "Before publishing an AI-built app, especially one with several users or customer data."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "Reverse Engineer Anything (REA) MCP server and skill",
+  "Hopper (binary analysis, optional)",
+  "Firecrawl MCP server (sponsor)",
+  "Notion MCP",
+  "Obsidian",
+  "Notion",
+  "OpenAI API",
+  "Stripe",
+  "GitHub"
+ ],
+ "numbers": [
+  {
+   "claim": "REA exposes around 170 tools once the MCP server is connected.",
+   "t": "4:18"
+  },
+  {
+   "claim": "Billing bug: two accounts were charged a different amount from what was displayed, one seeing half the real total and one seeing zero.",
+   "t": "9:29"
+  },
+  {
+   "claim": "Firecrawl sponsor claim: 500 free searches a month with no API key.",
+   "t": "6:59"
+  },
+  {
+   "claim": "Competitor workflow picks the top five competitors for deep analysis.",
+   "t": "6:59"
+  },
+  {
+   "claim": "Video length is 12:16.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The seen/guessed/unknown labeling is the most reusable idea here, and it is cheap to adopt in any agent report.",
+  "The Firecrawl segment (about 6:00 to 7:00) is a sponsored vendor pitch; quality is capped at 2 because of it.",
+  "The security and billing findings come from the author's own test app, including deliberately planted bugs, so the detection claims are anecdotal and the recall rate is unknown.",
+  "The claim that screenshot-only browser tools miss behavior is plausible but not benchmarked in the video.",
+  "The title says trending, but most of the content is a tool tour; the install step depends on a repo link the transcript does not give."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The provenance labeling and severity-sorted security report are generic agent QA patterns; the video does not touch the proxy, budgets, or infra layers.",
+   "action": "Low priority: borrow the seen/guessed/unknown tagging for any AgentOS report that mixes captured evidence with inference."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI and runs a plan, critique, and debate loop, so evidence-tagged critique output would fit it.",
+   "action": "Try the seen/guessed/unknown tags in ProsHarness's critique (Codex) step so unverified claims are visibly marked, and check that a user-level skill installs cleanly in a harness-run Claude session."
+  }
+ ],
+ "quality": 2,
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

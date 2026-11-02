@@ -1,0 +1,172 @@
+{
+ "one_line": "Better Stack walks through llmfit, a terminal tool that detects your CPU, RAM and GPU, scores local models for fit and speed, and tests its estimates on machines from a 2012 Raspberry Pi to an RTX 5090.",
+ "summary": "The host introduces llmfit (spoken as \"LLM Fit\"), a terminal tool that detects CPU cores, RAM and GPUs (including multi-GPU), checks for an acceleration backend, and ranks models from its database by how well they fit and how fast they would run. Each model gets scores for quality, speed, fit and context, combined into one score whose weights change with the use case, such as chat favoring speed and reasoning favoring quality. Token-per-second estimates come from memory bandwidth divided by model size, with per-backend fallback constants when a GPU is missing from the bandwidth table; an advanced config panel lets users tune these after a GitHub report of overestimates. The host then runs the tool on five machines: a first-gen Raspberry Pi, a Luckfox Pico Ultra W, a 2015 MacBook Pro with 8 GB RAM, an M2 Max with 32 GB, and an RTX 5090 workstation. The small boards get absurd recommendations (DeepSeek R1 at roughly 400B parameters), and the Pi's estimate for a small model was about 800x its measured speed, so the tool's numbers are not trustworthy at the low end. On the MacBook and the big workstation, the recommendations look sensible, though the speaker still thinks the MacBook's 8-bit estimates are too generous. The video's practical value is the sanity check: use the fit and filter features to shortlist, then calibrate against real runs and the community leaderboard.",
+ "speakers": [
+  "Andrus (Better Stack host)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Hugging Face",
+  "Nvidia"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "dev-tools"
+ ],
+ "tags": [
+  "llmfit",
+  "local-llm",
+  "hardware-sizing",
+  "quantization",
+  "tokens-per-second",
+  "memory-bandwidth",
+  "model-selection",
+  "raspberry-pi",
+  "apple-silicon",
+  "rtx-5090",
+  "calibration"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The problem is choosing among a huge number of models and quantizations without knowing whether one fits your machine.",
+   "detail": "The host cites over 3 million public models on Hugging Face and notes that a repo can offer nine quantizations and four parameter sizes with no indication of what runs on your hardware. llmfit is pitched as a check before a multi-GB download.",
+   "t": "0:00"
+  },
+  {
+   "idea": "llmfit detects your hardware and scores models against it.",
+   "detail": "One terminal command detects CPU cores, RAM and GPU (multi-GPU included), checks for an acceleration backend, picks a likely quantization for the hardware, and lists models from its database with estimated tokens per second.",
+   "t": "1:06"
+  },
+  {
+   "idea": "Each model gets four sub-scores whose weighting depends on the task.",
+   "detail": "Quality, speed, fit and context are combined into one score. Chat weights speed more, while reasoning weights quality more, so the same model can rank differently by use case.",
+   "t": "2:07"
+  },
+  {
+   "idea": "Speed estimates assume decode is memory-bound: each generated token reads all weights from VRAM once.",
+   "detail": "llmfit uses the detected memory bandwidth of the specific card and divides by model size to estimate tokens per second. For GPUs missing from its bandwidth table it falls back to per-backend constants (CUDA, Metal, ROCm), so the estimate is never zero. An advanced config panel exists because a GitHub user reported overestimates for some models.",
+   "t": "2:07"
+  },
+  {
+   "idea": "A community leaderboard of real results on the same hardware is the practical check against the estimates.",
+   "detail": "The host suggests comparing a model's estimate with what real users on identical hardware measured, rather than trusting the theoretical number.",
+   "t": "3:16"
+  },
+  {
+   "idea": "Recommendations are meaningless on very small devices.",
+   "detail": "On a 2012 Raspberry Pi (single core, 700 MHz, 512 MB RAM) the tool ran but very slowly. It still recommended DeepSeek R1 (about 400B parameters, 230 GB disk) at 0.8 tokens/s. A Luckfox Pico Ultra W (Cortex-A7, 256 MB) got the same recommendation and score.",
+   "t": "3:16"
+  },
+  {
+   "idea": "The speed estimates are badly off on the Pi, and the speaker's own measurement shows it.",
+   "detail": "For Falcon H1 Mini, which the host had earlier run at about 0.3 tokens/s on this Pi, llmfit showed a score of 51 and an estimate of about 141 tokens/s. The host calls this roughly 800x too high and attributes it to the tool not calibrating for boards this old.",
+   "t": "4:32"
+  },
+  {
+   "idea": "Real laptops and workstations get sensible shortlists, and the task filter narrows them further.",
+   "detail": "On a 2015 MacBook Pro with 8 GB DDR3 and an i5, the list finally looks usable, with 8-bit models estimated at 40 to 170 tokens/s, which the host still thinks is generous. Filtering for coding models surfaced Qwen 3.6 12B at 2-bit, around 2.3 tokens/s.",
+   "t": "6:00"
+  },
+  {
+   "idea": "The high-end picks follow from the same method, and the context-size sort surfaced a model the speaker prefers.",
+   "detail": "On the M2 Max with 32 GB unified memory, DeepSeek R1 was top overall and Gemma 4 12B was top for coding, which the host agrees with from his MLX experience. On the RTX 5090 workstation (64 GB DDR5, Core Ultra 9 285K), many Qwen models got near-perfect scores. Sorting by context size showed a Kimi K2.7 Flash variant (the host says Nvidia released it), which he would pick over the Qwen options.",
+   "t": "8:13"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Pre-download hardware fit check",
+   "how": "Run llmfit once on the target machine (the transcript does not show the exact command; it is described as a single terminal command). Read the fit and speed columns, then sort or filter by context size or by use case (for example, coding) before downloading any weights.",
+   "when": "Choosing a local model and quantization for a specific machine, especially on unfamiliar or older hardware, before pulling multi-GB files."
+  },
+  {
+   "name": "Back-of-envelope decode speed check",
+   "how": "Estimate tokens/s as memory bandwidth divided by model weight size in bytes. Get bandwidth from the card's spec (llmfit does this from its own table). Use the result to sanity-check any tokens/s figure before trusting it.",
+   "when": "Judging whether a model will feel usable on a GPU or unified-memory machine, or spotting an implausible estimate."
+  },
+  {
+   "name": "Calibrate the tool against a real run",
+   "how": "Run one model for real on the same machine, measure tokens/s, and compare it with the tool's estimate. If they differ a lot, use llmfit's advanced config panel to tune bandwidth and constants, and check the community leaderboard for real results on identical hardware.",
+   "when": "Before relying on the estimates for a decision, and especially on small boards or hardware missing from the bandwidth table."
+  },
+  {
+   "name": "Use-case-weighted ranking",
+   "how": "Apply the task filter (for example coding) so the score weights quality for reasoning or coding tasks and speed for chat, then compare the top results across quantizations rather than only the overall top pick.",
+   "when": "Picking one model out of a long list where the best overall model is not the best for the task."
+  }
+ ],
+ "tools": [
+  "llmfit (spoken as LLM Fit; no version stated)",
+  "Hugging Face",
+  "DeepSeek R1",
+  "Qwen 3.6 12B (transcribed as Quen 3.6)",
+  "Qwen 3.x models (transcribed as Quen 3.8 on the RTX 5090)",
+  "Gemma 4 12B",
+  "Kimi K2.7 Flash variant (transcribed as Kimi K 2.7 D flash)",
+  "Falcon H1 Mini",
+  "Llama 3 (mentioned, not tested)",
+  "MLX",
+  "CUDA",
+  "Metal",
+  "ROCm",
+  "Raspberry Pi (first gen)",
+  "Luckfox Pico Ultra W"
+ ],
+ "numbers": [
+  {
+   "claim": "Over 3 million publicly available models on Hugging Face (host's figure).",
+   "t": "0:00"
+  },
+  {
+   "claim": "DeepSeek R1 recommended on the Raspberry Pi at about 400B parameters and 230 GB disk, with an estimate of 0.8 tokens/s.",
+   "t": "3:16"
+  },
+  {
+   "claim": "Falcon H1 Mini on the Pi: llmfit score 51 and about 141 tokens/s estimated, versus about 0.3 tokens/s measured by the host earlier, roughly 800x off.",
+   "t": "4:32"
+  },
+  {
+   "claim": "2015 MacBook Pro (8 GB DDR3, i5): 8-bit models estimated at 40 to 170 tokens/s, which the host thinks is too high.",
+   "t": "6:00"
+  },
+  {
+   "claim": "Qwen 3.6 12B at 2-bit on the 2015 MacBook for coding: about 2.3 tokens/s.",
+   "t": "7:07"
+  },
+  {
+   "claim": "M2 Max with 32 GB unified memory: DeepSeek R1 top overall, Gemma 4 12B top for coding.",
+   "t": "7:07"
+  },
+  {
+   "claim": "RTX 5090 workstation (64 GB DDR5, Core Ultra 9 285K): many Qwen models score near-perfect; Kimi K2.7 Flash variant surfaces when sorting by context size.",
+   "t": "8:13"
+  }
+ ],
+ "hot_takes": [
+  "The tool's speed estimates are unreliable on small or old hardware; the Pi result (about 800x overestimate) is the strongest evidence.",
+  "The host thinks the 2015 MacBook's 8-bit speed estimates are too generous.",
+  "The tool's recommendations on tiny boards are not meaningful; a 400B model is absurd for 512 MB of RAM.",
+  "The host is not a fan of Qwen models and would pick Kimi K2.7 Flash over the Qwen options for coding on the RTX 5090.",
+  "The video is a light tool walkthrough with no sponsor segment; the most useful part is the calibration against real measurements, not the recommendations."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS InferCraft runs vLLM on one RTX 5090. llmfit is a quick hardware-fit and speed shortlist for choosing models and quantizations for that box, but its estimates are shown to be unreliable, so it cannot replace measured benchmarks.",
+   "action": "Run llmfit on the RTX 5090 box and compare its tokens/s estimate for two candidate models with a measured vLLM run before settling InferCraft's default models and quantizations."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI, and this video covers picking local models for self-hosted inference.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

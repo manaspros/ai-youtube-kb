@@ -1,0 +1,45 @@
+# Gemini 3 is My New Daily Driver (Best Model)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `aLjt3H-hDGs` · [watch](https://youtu.be/aLjt3H-hDGs) · **date:** 2025-12-02 · **length:** 5:22 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** Unnamed Better Stack host · **orgs:** Google, Anthropic, OpenAI, xAI, Better Stack, Design Arena, Artificial Analysis
+- **topics:** models-research, coding-agents, token-cost-efficiency · **tags:** gemini-3, gemini-3-pro, model-comparison, one-shot-test, design-arena, artificial-analysis, arc-agi, swe-bench, pricing, long-context, antigravity, three-js, ui-generation, spatial-reasoning
+
+> Better Stack's first-look review of Gemini 3 Pro: strong one-shot 3D and UI demos, benchmark leads and tiered pricing, all based on anecdotal single-prompt tests.
+
+## Summary
+The host reviews Gemini 3 Pro on launch day, starting with vendor benchmark claims (close to Anthropic on SWE-Bench, ahead elsewhere, with a Deep Think mode that does better still). He runs a one-shot test asking each model for a 3D Minecraft-style clone, using Three.js (transcribed as "3GS"), and judges Gemini's output better than Claude Sonnet 4.5's, though Gemini's movement feels too fast and the item selection does nothing. He then uses Design Arena's blind pairwise voting and ELO leaderboard to show Gemini 3 ranked first for UI generation, and notes that its UIs still drift toward purple gradients. A Netflix-style landing page test shows both Gemini and Claude copying the Netflix look, with a minor scroll bug in Gemini's version. He cites Artificial Analysis rankings (top for intelligence and coding, large ARC-AGI lead) and lays out pricing: a small increase over Gemini 2.5 Pro, with rates that step up above 200k input tokens and a 1M-token context window. He concludes that Gemini 3 is the smartest model but that GPT-5.1 or Grok 4 Fast may offer a better price-performance balance, and that he expects to use it as a daily driver for a while.
+
+## Key ideas
+- **Vendor benchmarks put Gemini 3 at or near the top, trailing Anthropic on SWE-Bench by about 1 point, with a Deep Think mode that scores higher still.** — The host calls it the first model in a while to make a real jump rather than an incremental gain. Benchmark names are partly garbled in the captions. Treat these as launch-day vendor numbers. ([0:00](https://youtu.be/aLjt3H-hDGs?t=0))
+- **One-shot 3D game generation: Gemini 3 Pro built a playable voxel-style world in a single prompt, while Sonnet 4.5 built a version that could break blocks but moved too slowly.** — Gemini's run needed one follow-up 'please continue' after the Antigravity IDE stalled. Gemini's movement was too fast and the item selector did nothing. Sonnet's version caused motion sickness per the host. The host concludes Gemini won the single-prompt test. ([0:00](https://youtu.be/aLjt3H-hDGs?t=0))
+- **Gemini 3 seems strong at spatial logic and 3D apps; the host says he saw many similar community examples on social media.** — Examples he mentions include a 3D Lego editor and a power-plant walkthrough. This is anecdotal and drawn from social feeds rather than a controlled test. ([1:01](https://youtu.be/aLjt3H-hDGs?t=61))
+- **Design Arena uses blind pairwise voting between model outputs to produce an ELO leaderboard, where Gemini 3 leads by a clear margin for UI generation.** — The host still sees the purple-gradient style common to AI-generated UIs, and says the output is only somewhat better at looking like a normal, well-laid-out interface. ([2:06](https://youtu.be/aLjt3H-hDGs?t=126))
+- **A Netflix-clone landing page test shows both models copying Netflix's look without being asked; Gemini's version has a small scrolling bug that the host thinks prompting could fix.** — He ran the same prompt on Claude 4.5 and got a similar result, though he judges the Claude output to have more of the gradient-and-purple problem. ([2:06](https://youtu.be/aLjt3H-hDGs?t=126))
+- **Third-party rankings: Artificial Analysis ranks Gemini 3 first for intelligence and coding, with GPT-5.1 next, and ARC-AGI shows a large lead, especially with Deep Think.** — No numeric scores are given in the video. ([3:16](https://youtu.be/aLjt3H-hDGs?t=196))
+- **Pricing is a modest increase over Gemini 2.5 Pro and steps up above 200k input tokens, while the 1M-token context window is kept.** — The host sees Gemini as priced between Claude and GPT-5.1 and wants to see Gemini 3 Flash pricing before deciding. For balance he suggests GPT-5.1 or Grok 4 Fast, using an intelligence-versus-price chart. ([3:16](https://youtu.be/aLjt3H-hDGs?t=196))
+
+## Techniques
+- **Same-prompt one-shot comparison** — Send the identical spec prompt (here, a Minecraft-like 3D voxel game with basic features) to each candidate model in its own IDE or agent. Allow one 'please continue' follow-up if the IDE stalls. Then compare the playable result on movement, world generation, interaction and motion comfort. *When:* Use for a quick first impression of a new model on a concrete build task. The sample is one run per model, so do not treat it as a reliable ranking.
+- **Blind pairwise preference voting with ELO** — Submit one UI prompt to a blind arena that runs several models. The user picks the preferred output without knowing which model made it, and votes aggregate into ELO ratings on a leaderboard. *When:* Use to judge subjective output such as UI and design generation, where automated metrics do not capture quality.
+- **Cross-check launch claims with third-party leaderboards** — Compare vendor benchmark claims with independent rankings (here Artificial Analysis and ARC-AGI), and look at intelligence-versus-price charts to find the best balance for a workload rather than the single smartest model. *When:* Use when choosing a model for a workload, to keep launch-day marketing numbers from driving the decision.
+- **Account for tiered long-context pricing** — Model input and output cost as a step function of prompt size, for example a higher rate above 200k input tokens, rather than a flat per-token price. *When:* Use when estimating costs or routing for long-context requests, where crossing the threshold can roughly double the per-token rate.
+
+## Numbers
+- Gemini 3 trails Anthropic by about 1 point on SWE-Bench and leads other reported benchmarks; Deep Think scores higher still (no exact figures given) ([0:00](https://youtu.be/aLjt3H-hDGs?t=0))
+- Pricing: input $2 up to 200k tokens and $4 above that; output $12 up to 200k and $18 above (units as spoken, likely per million tokens) ([3:16](https://youtu.be/aLjt3H-hDGs?t=196))
+- Context window kept at 1 million tokens ([3:16](https://youtu.be/aLjt3H-hDGs?t=196))
+- Design Arena ELO: Gemini 3 is first by 'quite a bit' (no numeric values shown) ([2:06](https://youtu.be/aLjt3H-hDGs?t=126))
+- Single-prompt Minecraft-style test: one 'please continue' follow-up needed for Gemini because the IDE broke ([0:00](https://youtu.be/aLjt3H-hDGs?t=0))
+
+## Hot takes
+- Gemini 3 is the first model in a while to make a real jump rather than an incremental gain.
+- Gemini 3 is probably the best at spatial logic and 3D app generation.
+- Google is probably the strongest of the AI companies, a reversal from when Google Bard was mocked.
+- Gemini 3 is the smartest model, but GPT-5.1 or Grok 4 Fast may be the better daily choice on price-performance.
+- Gemini's UI output still shows AI's habitual purple-gradient look.
+
+## Tools mentioned
+Gemini 3 Pro (Gemini 3 Pro High in Antigravity), Gemini 2.5 Pro, Gemini 3 Flash (mentioned as upcoming, no evaluation), Antigravity (Google's AI IDE), Three.js (transcribed as '3GS'), Claude Sonnet 4.5, Claude 4.5, GPT-5.1, Grok 4 Fast, Design Arena, Artificial Analysis, ARC-AGI benchmark, SWE-Bench
+
+## Relevance to our work
+- **agentos** (1/3): Tiered pricing above 200k input tokens and the intelligence-versus-price tradeoff are relevant to the L1 budget and strategy-routing cost model, but the video gives no measured routing or cost data. → *Add Gemini 3 Pro's tiered rates ($2/$12 up to 200k, $4/$18 above) as a test case for the budget and routing cost model.*

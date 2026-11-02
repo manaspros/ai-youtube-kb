@@ -1,0 +1,154 @@
+{
+ "one_line": "Tim Ainge (Good Collective) on when graphs help AI apps: schema-first graph extraction, entity matching, and graph-native retrieval (personalized PageRank, shortest paths, subgraph pattern matching) for cheaper, more reliable results.",
+ "summary": "The speaker argues that graphs often disappoint when teams rush into GraphRAG or a graph database, and that the payoff depends on building the graph carefully. He starts with the basics of nodes, edges, labels and direction. He then recommends extracting graphs from text against an explicit schema (recipe, ingredients, steps, techniques) rather than generic subject-predicate-object triples, and adds ontology rules such as normalised names and metric units. Entity matching is best done with embeddings before new nodes are created, so that duplicates collapse without needing every entity known in advance. On the query side, he covers multi-hop traversal (simpler than deep SQL joins), personalized PageRank for ranking nodes near a seed (citing Pinterest's PixieRank and HippoRAG), and shortest-path variants for explaining how two known nodes relate. He closes with subgraph pattern matching, which finds code or legal structures by shape without knowing names. The main evidence is a 40% cut in tool calls for code search on the eShop .NET codebase. The talk deliberately skips GraphRAG and agent memory graphs.",
+ "speakers": [
+  "Tim Ainge"
+ ],
+ "orgs": [
+  "Good Collective"
+ ],
+ "format": "talk",
+ "topics": [
+  "rag-retrieval",
+  "data-engineering",
+  "context-engineering"
+ ],
+ "tags": [
+  "knowledge-graph",
+  "graph-rag",
+  "personalized-pagerank",
+  "subgraph-matching",
+  "shortest-path",
+  "schema-extraction",
+  "entity-resolution",
+  "ontology",
+  "code-search",
+  "cypher"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Graphs are often the wrong tool, and many projects stall after an early letdown.",
+   "detail": "The speaker opens by saying a graph is not always the right answer, and that teams who rush into GraphRAG or a graph DB often see no quick payoff. He frames getting past that as the real challenge.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Give the extractor a schema, not generic triples.",
+   "detail": "Generic subject-predicate-object triples produce messy, hard-to-query graphs. Defining typed nodes and edges (recipe -> ingredients -> steps -> techniques) and using structured outputs makes relationships consistent and queryable.",
+   "t": "2:33"
+  },
+  {
+   "idea": "Ontology rules matter as much as the schema.",
+   "detail": "Extra instructions such as lowercase ingredient names and metric units standardise values so that matching and conversion work later. He says these rules are as important as the schema itself.",
+   "t": "4:40"
+  },
+  {
+   "idea": "Resolve entities with embeddings before creating new nodes.",
+   "detail": "Retrospective string-based dedup needs all entities known in advance. Embedding-based matching handles variants such as garlic cloves vs minced garlic without a fixed list, and he calls this a hybrid of graph and AI techniques.",
+   "t": "6:12"
+  },
+  {
+   "idea": "Multi-hop traversal is where graph queries beat SQL.",
+   "detail": "Finding recipes with garlic is a simple query, but the SQL equivalent grows quickly as you traverse 5, 10 or 20 edges. Graph query languages make deep traversal easier to write and run.",
+   "t": "7:10"
+  },
+  {
+   "idea": "Personalized PageRank surfaces nodes near a seed.",
+   "detail": "A random walker with teleports back to the start node marks nodes as it goes. Nodes with the most marks are the ones most strongly related to the starting point. It is most useful in dense clusters where importance is not obvious.",
+   "t": "8:14"
+  },
+  {
+   "idea": "Shortest-path variants explain how two known nodes relate.",
+   "detail": "When both endpoints are known but the link is not, k-shortest, through-a-node, or weighted cheapest paths return the intermediate nodes. Those nodes can then go to the agent as a subgraph of context, which vector search would not have found.",
+   "t": "9:46"
+  },
+  {
+   "idea": "Subgraph pattern matching finds code by its shape.",
+   "detail": "Querying for a structure, such as a class that wraps another class and both implement the same interface (a decorator), finds matches without knowing any names. He calls this an enabling capability rather than an optimisation, useful for anti-patterns, security issues or legal argument patterns.",
+   "t": "10:42"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Schema-constrained graph extraction",
+   "how": "Define typed node and edge classes (for example recipe, ingredient with quantity, step, technique) and use the LLM's structured-output mode to fill them, rather than free-form triples.",
+   "when": "Any time unstructured text must become a graph that will later be queried or traversed."
+  },
+  {
+   "name": "Ontology normalisation instructions",
+   "how": "Add explicit extraction rules next to the schema, such as lowercase names and a single unit system, so values match across documents.",
+   "when": "When the same entity or unit appears in many surface forms and you need clean joins."
+  },
+  {
+   "name": "Embedding-based entity resolution before node creation",
+   "how": "For each newly extracted entity, embed it and match against existing nodes above a similarity threshold. Only create a new node when nothing matches.",
+   "when": "When the full entity list is unknown up front and duplicates would weaken relationship signal."
+  },
+  {
+   "name": "Personalized PageRank from a seed node",
+   "how": "Run a random walk from the query's starting node with periodic teleport back to it, then rank nodes by visit count to get a relevance-ordered context set.",
+   "when": "Dense graphs where you need the nodes most related to a starting entity, for example multi-hop retrieval or recommendation."
+  },
+  {
+   "name": "Subgraph context retrieval via path queries",
+   "how": "Given two known nodes, pull k-shortest or constrained paths between them and return the intermediate nodes, symbols or summaries as agent context.",
+   "when": "Explaining a failure or relationship between two known entities, such as tracing from a changed constructor to a broken test."
+  },
+  {
+   "name": "Subgraph pattern matching on code graphs",
+   "how": "Express the structure you want (for example an interface shared by a wrapper and its target) as a graph pattern and match it against the codebase graph.",
+   "when": "Finding design patterns, anti-patterns or security shapes when you do not know the names of the symbols involved."
+  }
+ ],
+ "tools": [
+  "Cypher (graph query language, ASR-garbled as 'cipher')",
+  "SQL (used as the comparison baseline)",
+  "HippoRAG",
+  "Pinterest PixieRank (cited as the PPR reference)",
+  "Embedding models",
+  "Structured outputs from an LLM",
+  "eShop (.NET reference codebase)"
+ ],
+ "numbers": [
+  {
+   "claim": "40% reduction in tool calls for code search on a .NET codebase when using path/subgraph context retrieval to find the context needed for the agent",
+   "t": "10:42"
+  },
+  {
+   "claim": "Subgraph matching found a decorator-style wrapper pair (catalog view model service and its cached version) in the eShop codebase in one query",
+   "t": "11:50"
+  },
+  {
+   "claim": "Citation graph example: Miranda v. Arizona was found through citation relationships even though the Canvas v. Sheba case does not cite it directly",
+   "t": "9:12"
+  }
+ ],
+ "hot_takes": [
+  "Graph RAG and graph databases often give no quick payoff, and many teams abandon them in the valley of disillusionment.",
+  "Subgraph matching is less an optimisation and more an enabling algorithm for questions that other tools cannot easily answer.",
+  "Schema and ontology design for extraction are as important as the prompt or the model choice."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "MemoryMesh already lists GraphRAG and Neo4j in its plan, and the talk gives a concrete ranking method (personalized PageRank) for multi-hop retrieval. The talk explicitly skips GraphRAG and memory graphs, so the fit is partial.",
+   "action": "Prototype PPR seeded from query entities over the existing Neo4j graph as a re-ranker next to the BM25 and pgvector retrieval, and compare recall and context size on a small multi-hop question set."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The talk does not address checkpoints, planning, critique, scheduling, skill ranking, approvals or credentials.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The 40% fewer tool calls result for code-context retrieval from graph paths and subgraphs is relevant to context engineering for coding agents, although the evidence is a single speaker-reported run.",
+   "action": "Read the eShop code-graph example in the presentation pack and compare it with how current coding-agent sessions gather context for one task."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

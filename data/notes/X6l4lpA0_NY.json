@@ -1,0 +1,166 @@
+{
+ "one_line": "Drew Knox of Tessl on building a \"software factory\" through harness engineering: three loops (inner, outer, meta), a three-layer setup order, and how Tessl's skills registry and automation support it.",
+ "summary": "Drew Knox, head of product and design at Tessl, defines a software factory as an agentic system where agents create the shipped product and engineers build and improve that system. He frames progress as autonomy (how much humans correct the agent), then automation (how much you trust it to run unreviewed), with quality held constant. He argues the payoff is higher quality over time, not only faster shipping, because the backlog of fixes and refactors shrinks. The core practice is harness engineering, which he splits into three loops: a cheap inner loop while the agent works, an expensive outer loop run once a PR is up, and a meta loop that mines logs, PRs, issues and user feedback to fix recurring mistakes. He says raw harness engineering is hard because the field changes weekly, the work is unplanned, and the useful data sits in local logs or people's heads. His recommended build order is control plane first (issues to headless sandboxed agents to PRs, so every touchpoint is recorded), then the \"Agent IT\" grab bag of access, governance and execution environments, then improvement loops. The second half pitches Tessl's skills registry with governance, Linear-to-GitHub connectors, a Tessl Agent that mines repeated tasks into scheduled workflows, and a launch command that runs Codex, Claude Code or Gemini in sandboxes. The talk gives no benchmarks and little measured evidence, so most of its value is the framework.",
+ "speakers": [
+  "Drew Knox"
+ ],
+ "orgs": [
+  "Tessl"
+ ],
+ "format": "talk",
+ "topics": [
+  "software-factory",
+  "agent-architecture",
+  "skills-self-improvement"
+ ],
+ "tags": [
+  "harness engineering",
+  "software factory",
+  "loop engineering",
+  "inner loop",
+  "outer loop",
+  "meta loop",
+  "control plane",
+  "skills registry",
+  "agent IT",
+  "manual takeover metric",
+  "Tessl",
+  "Claude Code",
+  "Codex",
+  "GitHub Actions",
+  "Linear"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Software factory: agents build the shipped product, engineers build the factory",
+   "detail": "No strict definition. The speaker's working version is any agentic system where all shipped product is agent-made and the engineering team's job shifts to making the factory more autonomous, automated and high-quality.",
+   "t": "2:32"
+  },
+  {
+   "idea": "Autonomy and automation are different, and autonomy comes first",
+   "detail": "Autonomy = how often humans must correct or nudge the agent. Automation = how much you can let it run unreviewed. An agent can one-shot tasks (high autonomy) and still be reviewed line by line (low automation), so you build autonomy before you remove review.",
+   "t": "2:32"
+  },
+  {
+   "idea": "The payoff is quality, not just velocity",
+   "detail": "Speed gains from factories are short-term. Once the backlog of bug fixes, test-quality work and refactors is cleared, the team has capacity to raise code quality, and non-technical staff can contribute ideas more easily.",
+   "t": "3:56"
+  },
+  {
+   "idea": "Three loops map to phases of development",
+   "detail": "Inner loop: fast, cheap checks the agent runs on its own while working on a PR, which improves autonomy. Outer loop: expensive checks run once when the PR opens (example: agentic QA, mutation testing), with the agent iterating on the results. Meta loop: sits outside the process, watches agent logs, PRs, issue tracker and user feedback, and feeds fixes back into the inner and outer loops.",
+   "t": "6:47"
+  },
+  {
+   "idea": "The meta loop is where a team becomes more AI-native",
+   "detail": "The meta loop finds mistakes that either reached users or had to be fixed by hand, then writes them back into checks and skills so they do not recur. The speaker presents investing here as the main lever for raising AI-nativeness.",
+   "t": "8:10"
+  },
+  {
+   "idea": "Why raw harness engineering fails in practice",
+   "detail": "Three reasons: the practice changes so fast that teams become AI researchers just to keep up, best practices turn into anti-patterns within weeks, and the work is unplanned and competes with shipping deadlines, so it gets skipped. Useful signals are also hidden in local agent logs or people's heads.",
+   "t": "9:36"
+  },
+  {
+   "idea": "Build a legible control plane first",
+   "detail": "The first layer is making all agent touchpoints recorded and queryable. At Tessl, work starts as a tracker issue, goes to a headless agent in a sandbox, opens a PR, and engineers respond with review comments. Because every step is saved on shared surfaces, tools can later mine it.",
+   "t": "11:01"
+  },
+  {
+   "idea": "Agent IT is the unplannable part, and the improvement loops take the most time",
+   "detail": "Agent IT covers CLI and API access, service governance, production log access, compliance, and an execution environment for the agent's code. Each item may take a week or two. The loops are the largest ongoing area: repo sweeps, playbooks for common changes, automating repeated tasks, and reviewing output quality to update skills.",
+   "t": "13:26"
+  },
+  {
+   "idea": "Turn repeated work into a skill, then into a scheduled automation",
+   "detail": "The Tessl Agent mines PRs and issues for repeated tasks (example: a weekly flaky-test hunt), codifies one as a skill, and runs it as a scheduled GitHub Action. Out-of-the-box weekly scans cover architecture quality, duplication, test-suite quality and security.",
+   "t": "17:12"
+  },
+  {
+   "idea": "Track human-intervention metrics to measure progress",
+   "detail": "Watch manual takeovers and human PR comments per PR. Over time, the share of PRs started with no human input should rise. Hold quality constant first, then push it up.",
+   "t": "19:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Three-tier loop design for agent quality",
+   "how": "Put cheap checks in the inner loop so the agent runs them on every iteration. Put expensive checks (agentic QA, mutation testing) in the outer loop, run once when the PR opens, and let the agent iterate on the results. Run a meta loop over logs, PRs, issues and user feedback to find recurring mistakes and update the inner and outer loop checks.",
+   "when": "Once coding agents reliably handle easy and medium tasks in a few parallel sessions, and you want fewer human corrections and fewer review hours."
+  },
+  {
+   "name": "Issue-to-PR control plane for agents",
+   "how": "Start all agent work from a tracked issue. Run a headless agent in a sandbox that opens a PR. Keep human review on the PR. Store every step on a shared surface so later tooling can pull the data.",
+   "when": "Before building improvement loops, so the signals needed to improve agents exist in one place."
+  },
+  {
+   "name": "Governed skills registry",
+   "how": "Publish workflows as versioned skills, with security and quality reviews on each publish, and permissions on who can publish or update. Install the skills into agent workflows.",
+   "when": "When several teams need shared agent playbooks and you need controls over what gets changed."
+  },
+  {
+   "name": "Mistake-to-skill feedback",
+   "how": "When a reviewer corrects an agent, decide whether the playbook or skill should change, then update it so the same error stops recurring.",
+   "when": "During routine PR review, as the cheapest form of the meta loop."
+  },
+  {
+   "name": "Repeated task to scheduled skill",
+   "how": "Mine PRs and issues for tasks done again and again, write them as a skill, then run that skill on a schedule (for example a weekly GitHub Action) or hand it to a coding agent in a sandbox that can open PRs and respond to comments.",
+   "when": "For recurring chores such as flaky-test hunts, duplication scans or security sweeps."
+  },
+  {
+   "name": "Human-intervention metrics as the factory KPI",
+   "how": "Track manual takeovers, human PR comments per PR, and the share of PRs created without human input. Keep quality flat while these numbers improve.",
+   "when": "To measure progress toward a software factory without relying on velocity alone."
+  }
+ ],
+ "tools": [
+  "Tessl",
+  "Tessl Agent",
+  "tessl launch",
+  "Linear",
+  "GitHub",
+  "GitHub Actions",
+  "Codex",
+  "Claude Code",
+  "Gemini"
+ ],
+ "numbers": [
+  {
+   "claim": "Each Agent IT item (access, governance, execution environment) takes about a week or two to set up, per the speaker's experience",
+   "t": "13:26"
+  },
+  {
+   "claim": "Illustrative only: 'six months later you are about 40% there' to a software factory. It is a hypothetical, not measured data",
+   "t": "15:48"
+  },
+  {
+   "claim": "Weekly cadence for out-of-the-box maintenance scans (architecture quality, code duplication, test-suite quality, security). No measured results given",
+   "t": "17:12"
+  }
+ ],
+ "hot_takes": [
+  "Speed gains from software factories are a short-term effect, and the lasting payoff is higher code quality.",
+  "Harness engineering is unplanned work that competes with shipping, so teams skip it and stay stuck at local maxima.",
+  "Agent IT is 'worse than you think': every assumption about CLI, API and environment access breaks when a non-local agent has to run the work.",
+  "Meta-loop investment is the main lever for becoming AI-native."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The meta loop, which mines agent logs and PRs for recurring mistakes, and the talk's KPI of manual takeovers per PR bear directly on SkillForge's open question about what success signal to use.",
+   "action": "Test manual-takeover rate and human PR comments per PR as candidate success signals for SkillForge skill mining, and compare them with the signals already planned."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The inner, outer and meta loop tiers map onto ProsHarness's loops and schedules. The talk's scheduled weekly repo sweeps and mistake-to-skill feedback are candidate uses.",
+   "action": "Sort ProsHarness's loops into inner (per-iteration), outer (once per PR) and meta (log-driven) tiers, and check whether the schedule feature can run weekly repo-sweep skills."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

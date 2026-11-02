@@ -1,0 +1,137 @@
+{
+ "one_line": "Introspection's Roland Gavrilescu argues self-improving agent loops should distill a team's taste into versioned recipes of evals, judges and skills, validated in production and measured as value per watt.",
+ "summary": "The speaker, a co-founder of Introspection (formerly at xAI), presents a framing he calls \"the loop is the product\" for always-on, long-running agents. He traces the idea to an early OpenClaw (originally CloudBot) example where an agent looped over Reddit, dealer and inventory data to negotiate a car price, with a verifiable end state. He says each loop's artifacts should feed a second loop, which he calls system distillation, and that these artifacts (harness, profiles, evals, tools, models, environment) should be packaged as portable, versioned \"agent recipes\" in a Git repo, which he says are an early release called Py.Recipes built on a harness and Harbor for evals. A worked example, a talent-sourcing agent, shows the method: cluster traces to find recurring behaviors, have agents draft judges from those patterns, and have a human only confirm the judgment rather than write the evals. Recipe changes are then tested offline and promoted only after production A/B or bandit tests show users agree with the taste encoded. The talk closes by proposing \"value per watt\" (value delivered versus economic cost) as the metric to optimize. Most claims are conceptual and the talk ends with a product pitch, with no benchmarks or cost figures given.",
+ "speakers": [
+  "Roland Gavrilescu"
+ ],
+ "orgs": [
+  "Introspection",
+  "xAI"
+ ],
+ "format": "talk",
+ "topics": [
+  "skills-self-improvement",
+  "evals",
+  "agent-architecture",
+  "product-ux"
+ ],
+ "tags": [
+  "self-improving agents",
+  "agent loops",
+  "agent recipes",
+  "system distillation",
+  "LLM judges",
+  "calibration",
+  "pattern discovery",
+  "A/B testing",
+  "bandits",
+  "value per watt",
+  "harness versioning",
+  "Py.Recipes",
+  "Harbor"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The loop is the product",
+   "detail": "The speaker argues the valuable part of an agent is the loop of acting, getting a verifiable signal, and feeding results back. Signal quality sets the loop's success rate, and the verifier decides whether a success is real. Automating yourself as the higher-level judge is the goal.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Second loop distills the first loop's artifacts",
+   "detail": "Each loop produces information about harnesses, profiles, evals, models, tools and the environment. A second loop should read what went well or wrong in the first and change the system, similar to how RL data recipes were iterated to fix hallucinations and reward hacking.",
+   "t": "4:28"
+  },
+  {
+   "idea": "Agent recipe as a versioned, provider-agnostic artifact",
+   "detail": "The speaker proposes a recipe, kept in a Git repo, that bundles evals, prompts, skills, harness profiles and per-model tools. Failure patterns become judges and evals, and repeated behavior becomes skills and prompts. The recipe is meant to be owned by the team and not tied to one provider.",
+   "t": "5:27"
+  },
+  {
+   "idea": "Recipes encode the maker's taste",
+   "detail": "The speaker says a recipe should record how and why a system was built, so another team could adopt the taste along with the code. Agents should calibrate toward the owner's taste, with the owner as the top judge.",
+   "t": "7:49"
+  },
+  {
+   "idea": "Value per watt is the metric",
+   "detail": "Teams first reach a frontier by iterating in production, then need to make it economically viable. The speaker says the metric is the value delivered per unit of cost, and that a lower price for the same value is what would make users switch from a tool such as Claude Code.",
+   "t": "9:02"
+  },
+  {
+   "idea": "Humans calibrate judges instead of writing evals",
+   "detail": "In the talent-sourcing example, clustering traces surfaces a behavior the team did not intend, such as reaching out to big-tech employees instead of hidden gems. An agent can draft the judge and eval from that pattern, and a human only confirms whether the judgment is right.",
+   "t": "12:53"
+  },
+  {
+   "idea": "Promote recipes only after production validation",
+   "detail": "Recipe changes are proposed as diffs, tested on an offline eval set, then checked in production with A/B or multi-armed bandit tests. A version is promoted only when end users agree with the encoded taste.",
+   "t": "15:19"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Trace pattern clustering to find signals",
+   "how": "Pull agent traces, group them by common behaviors or user frustrations, and turn each cluster into a candidate signal for the next change.",
+   "when": "When you have many production traces and need to find unexpected agent behavior worth codifying."
+  },
+  {
+   "name": "Agent-drafted judges with human calibration",
+   "how": "From a trajectory pattern, have an agent write the judge and eval. The human reviews only whether the judgment is right, then the judge runs across traces.",
+   "when": "When you want consistent LLM-judge criteria without a human writing every eval, and the criterion is a judgment call (for example, which candidates to target)."
+  },
+  {
+   "name": "Recipe diffs as reviewable candidates",
+   "how": "Treat each change to the harness, prompts, skills, evals or tool profiles as a diff in a Git-versioned recipe. Check it on offline evals, then on live traffic.",
+   "when": "When you need reproducible agent configurations and a history of why each change was made."
+  },
+  {
+   "name": "Production A/B or bandit promotion",
+   "how": "Split live users between recipe versions, using a multi-armed bandit to shift traffic, and promote a version only when users prefer it.",
+   "when": "When offline evals do not show whether end users agree with the change."
+  },
+  {
+   "name": "Per-model harness profiles",
+   "how": "Keep separate harness profiles per model and store them in the same recipe so tools and prompts can be matched to each model.",
+   "when": "When one agent must run on several model providers."
+  }
+ ],
+ "tools": [
+  "Py.Recipes",
+  "Harbor",
+  "OpenClaw (originally CloudBot)",
+  "Claude Code",
+  "Codex",
+  "Cursor",
+  "Cognition"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "The model is a commodity; the harness is a commodity; the loop and its recipe are the real product.",
+  "Code was the first domain where this worked, and everything beyond customer support, legal and research will follow the same value-per-watt logic.",
+  "Teams should not write evals by hand; agents should draft them and humans should only calibrate the judgments.",
+  "A team's taste can be packaged as a portable recipe that another team can adopt."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "SkillForge's open questions are the success signal and skill-worthiness scoring. The talk's pattern clustering over traces, with an agent-drafted judge that a human calibrates, is a candidate answer to the success-signal question.",
+   "action": "Read the talk's trace-clustering and judge-calibration steps against SkillForge's open success-signal question; prototype a clustered-trace judge that a human approves before a skill is governed."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The recipe idea of versioning harness profiles and eval suites per model in one repo could tidy ProsHarness configuration. The talk gives no checkpoint or resume ideas.",
+   "action": "Consider storing ProsHarness harness profiles and eval settings per model as one git-versioned recipe so each change has a recorded reason."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The A/B and bandit promotion step for agent changes is a general eval method that could apply to any agent we run in production.",
+   "action": "Note the production A/B promotion pattern (offline eval, then a bandit split on live traffic, then promote) for any future agent change that needs user validation."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

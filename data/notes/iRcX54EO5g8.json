@@ -1,0 +1,134 @@
+{
+ "one_line": "Johan Lajili (Poolside) argues agent trust comes from verification: give agents a CLI to drive and test the app, make them reproduce bugs before fixing, and make the codebase easy for AI to check.",
+ "summary": "Johan Lajili of Poolside explains why AI coding results vary so much between users. The main difference he gives is the feedback loop: greenfield work goes well because the agent's intuition is usually right, while brownfield code has dead ends and parts the agent never read. An agent saying \"it works\" only means it works as far as it knows, so the real gap is whether the agent can verify its own work. He built an internal CLI that lets an agent drive a VS Code extension the way it would drive a web page, with token-compressed UI snapshots, log extraction, service restarts, and chained UI actions. His key rule is that the agent must reproduce a bug before it is allowed to fix it, which he calls the first step to trust and a prerequisite for unattended overnight runs. He argues that engineers' main job is shifting from building product features to making the codebase and tooling easy for the AI to work in and verify. He also prefers human-like, ephemeral testing over rigid automated tests, lets the AI notice problems itself rather than being told, and suggests periodically asking the agent to review its own logs for smells and repeated manual steps. The talk is short (about 10 minutes) and has no benchmarks, so its value is in the workflow advice.",
+ "speakers": [
+  "Johan Lajili"
+ ],
+ "orgs": [
+  "Poolside"
+ ],
+ "format": "talk",
+ "topics": [
+  "testing-verification",
+  "coding-agents",
+  "context-engineering"
+ ],
+ "tags": [
+  "brownfield",
+  "greenfield",
+  "reproduce-first",
+  "agent verification",
+  "app-driving CLI",
+  "self-testing agents",
+  "human-like testing",
+  "log review loop",
+  "AI-legible codebase",
+  "VS Code extension",
+  "Poolside"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The gap between AI enthusiasts and skeptics comes from the feedback loop, not from greenfield vs brownfield alone.",
+   "detail": "Greenfield work goes well because the agent's intuition about the code is usually right. Brownfield code has dead ends, unused code, and parts the agent never read, so surprises are common. Agents report success based only on what they can check, so verification is the real difference.",
+   "t": "1:08"
+  },
+  {
+   "idea": "An agent saying it is done only means done as far as it can tell.",
+   "detail": "Skeptics see the failure at once and blame the model. Users who keep going ask the agent to check logs and try again. The speaker wants the loop to be tighter so the agent verifies itself.",
+   "t": "2:19"
+  },
+  {
+   "idea": "Build a CLI that lets the agent drive the app, not just the code.",
+   "detail": "Poolside's app is a VS Code extension, not a web page, so an extra step is needed. The CLI can take compressed UI snapshots, pull logs from front end and back end, restart services, open menus, send chat messages and wait for replies, and upload images. Commands can be stacked.",
+   "t": "3:45"
+  },
+  {
+   "idea": "Make the agent reproduce a bug before it changes anything.",
+   "detail": "Agents are eager and will claim a fix without testing it. The speaker does not trust a fix until the bug has been reproduced first. He calls this the first step to trust, and it is what makes unattended overnight runs possible.",
+   "t": "4:53"
+  },
+  {
+   "idea": "The engineer's new job is to make the product easy for the AI to work on and verify.",
+   "detail": "This includes improving the codebase so it is easier to change, improving knowledge bases, and presenting the AI's work so it is easy to check. The tool can be a CLI, a skill, or an MCP server; he chose a CLI for simplicity. He compares it to putting your own oxygen mask on first: the investment slows you down now and pays off once you run agents over time.",
+   "t": "5:57"
+  },
+  {
+   "idea": "Prefer human-like, ephemeral tests to rigid automated tests, and let the AI notice problems itself.",
+   "detail": "He finds scripted tests brittle and hard to maintain. Instead he wants something that tests the way a human would. When he sees a problem, such as a button sitting slightly off, he steps back and tries to make the AI find that problem on its own instead of telling it.",
+   "t": "7:25"
+  },
+  {
+   "idea": "Run a regular review loop over the agent's logs and repeated work.",
+   "detail": "After many iterations, ask the AI to scan its logs for issues and smells, such as calling sleep(15) in many places. Also look for repeated manual steps, such as running storybooks, that should be automated. Consider whether the product itself is legible to AI, for example an ASCII view of a 3D scene or easy access to logins and permissions.",
+   "t": "8:50"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Reproduce-first gate",
+   "how": "Require the agent to write a failing reproduction of the bug and show it fails before any fix is accepted. Treat a fix without a reproduction as unverified.",
+   "when": "Bug fixing, especially in brownfield code, and before letting an agent run unattended overnight."
+  },
+  {
+   "name": "App-driving CLI for non-web apps",
+   "how": "Wrap the app in a CLI with high-level commands: open a menu, navigate to a page, send a chat message and wait for the reply, upload an image, pull logs from a given service, and restart a service. Let the agent chain these commands.",
+   "when": "The app is not a web page (for example a VS Code extension) and the agent needs end-to-end checks."
+  },
+  {
+   "name": "Token-compressed UI snapshot",
+   "how": "Give the agent a very compact text version of the current UI state instead of screenshots, similar to a page snapshot, so it can read state cheaply.",
+   "when": "Agents need to inspect UI state repeatedly without spending many tokens on images."
+  },
+  {
+   "name": "Let the agent discover its own UI problems",
+   "how": "Do not point out visual problems directly. Step back, work out what observation would let the agent see the problem itself, and give it that observation.",
+   "when": "Interactive sessions where you would otherwise keep correcting small UI issues."
+  },
+  {
+   "name": "Periodic self-review of logs and repeated actions",
+   "how": "Ask the agent to scan its logs and recent work for issues and code smells, and for manual steps it keeps repeating. Turn the repeated steps into commands or tools.",
+   "when": "After many agent iterations on the same codebase."
+  },
+  {
+   "name": "Human-like exploratory testing by the agent",
+   "how": "Have the agent test the app the way a human would, rather than writing and maintaining brittle scripted tests.",
+   "when": "UI and integration checks where scripted tests break often as the product changes."
+  }
+ ],
+ "tools": [
+  "Poolside internal app-testing CLI (unnamed)",
+  "VS Code extension",
+  "G-Stack (mentioned as an existing tool for screenshots and snapshots)"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Most of the gap between AI enthusiasts and skeptics comes down to whether the agent can verify its own work.",
+  "Engineers' main job is shifting from building product features to making the codebase and tooling easy for the AI to work on and check.",
+  "Scripted automated tests are too rigid for this work; agent-driven, human-like testing is preferable.",
+  "Do not trust an agent's bug fix until it has reproduced the bug first."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "The talk is about verifying app behavior in a coding-agent loop. AgentOS is infrastructure for self-hosted agents and does not map to this talk.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already runs long Claude Code loops with checkpoints. A reproduce-first gate and an app-driving CLI would strengthen the verification step in those loops, and the log-review loop fits its schedules.",
+   "action": "Add a reproduce-first gate to the ProsHarness run phase: the agent must write and show a failing repro before it may commit a fix, and record the repro in the checkpoint."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The talk gives concrete patterns for agent verification and for making a codebase easy for agents to check, which apply to agent work in general.",
+   "action": "Read the talk's points on reproduce-first and self-review loops, then add a short section to the CLAUDE.md of active coding projects listing reproduce-before-fix and periodic log review."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

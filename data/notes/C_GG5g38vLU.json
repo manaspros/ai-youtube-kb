@@ -1,0 +1,165 @@
+{
+ "one_line": "Tejas Kumar (IBM) walks through building a \"poor man's\" agent harness live: deterministic guardrails, outcome verification, and credential injection around a weak model, with the prompt left unchanged.",
+ "summary": "Tejas Kumar from IBM defines an agent harness as everything around the model that grounds it in a stable environment: tool registry, model, context management, guardrails, the agent loop, and a verify step. He argues the point of a harness is reliability when the underlying model is a black box you rent. In a live demo, he gives GPT-3.5 Turbo a browser task (upvote the top Hacker News post) and changes only the harness, never the prompt. The agent first claims success without checking, so he adds max-iteration and max-message guardrails, a naive context trimmer, and a deterministic verifier that reads the tool-call history and rejects failed logins. He then adds a login handler that runs in code before each loop turn, fills credentials from the harness rather than the model, and tells the model it is logged in. The run succeeds after six iterations. He closes by arguing that cheap or open models plus a good harness can go far, and he speculates that per-task, dynamically generated harnesses are the next step. The talk is short and demo-driven, aimed at beginners, and the enterprise pitch for IBM's OpenRAG is light.",
+ "speakers": [
+  "Tejas Kumar"
+ ],
+ "orgs": [
+  "IBM"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "testing-verification",
+  "security-guardrails",
+  "context-engineering"
+ ],
+ "tags": [
+  "agent harness",
+  "guardrails",
+  "verification",
+  "deterministic login handler",
+  "context compression",
+  "Playwright",
+  "cheap models",
+  "reliability",
+  "OpenRAG"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A harness is everything around the model, not the agent loop itself",
+   "detail": "Tool registry, model, context primitives, guardrails, the loop, and a verify step. The loop can even sit inside another loop. Claude Code is a harnessed coding agent.",
+   "t": "3:43"
+  },
+  {
+   "idea": "Fix the harness, not the prompt",
+   "detail": "The whole demo keeps the prompt fixed. The speaker's claim is that prompting harder is often the wrong fix, and that reliability should come from code wrapped around the model.",
+   "t": "6:29"
+  },
+  {
+   "idea": "Don't trust the model's claim of success; verify from the tool history",
+   "detail": "The agent clicked upvote on a login wall and reported success. A deterministic check that reads the recorded tool events and fails on known failure signatures (such as a failed auto-login, or landing on a login URL) makes the harness report the truth.",
+   "t": "14:33"
+  },
+  {
+   "idea": "Deterministic code handles state the model shouldn't own",
+   "detail": "A login handler runs before each loop turn. It checks the browser URL, and if it is on a login page it fills credentials and submits the form. It then pushes a message telling the model it is already logged in. Secrets stay in the harness and never pass through the model.",
+   "t": "15:52"
+  },
+  {
+   "idea": "Guardrails are plain code, composed and enforced at two levels",
+   "detail": "A per-attempt loop enforces a max-iteration limit (six steps) and a max-message threshold that triggers context trimming. An outer run-harness loop caps total attempts at three. Guardrails can be composed like functions.",
+   "t": "10:29"
+  },
+  {
+   "idea": "Naive context compression is a starting point",
+   "detail": "When the guardrail trips, the trimmer keeps the system prompt, the user prompt, and the last two messages, and drops everything in the middle. The speaker calls it naive and says better methods exist.",
+   "t": "11:50"
+  },
+  {
+   "idea": "Cheap or open models plus a strong harness",
+   "detail": "The speaker deliberately uses a weak 2023-era model and argues that with a good harness you can use Qwen or GPT-OSS and still get the job done. Models are non-deterministic and black boxes, so the harness is what gives you reliability.",
+   "t": "18:26"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Deterministic pre-turn hook for state and secrets",
+   "how": "Run a code function before each agent loop turn. It inspects real state (for example the browser URL), performs the fixed action (fill credentials, submit), and injects a short status message back into the model's history. Secrets come from the environment, not the prompt.",
+   "when": "A step is always needed in a known state, such as logging in, and you don't want the model spending tokens or risking mistakes on it."
+  },
+  {
+   "name": "Outcome verification from the trace",
+   "how": "After the loop ends, scan the recorded tool-call events. Return failure early when the event sequence matches a known bad pattern (for example a failed auto-login, or an upvote click with no confirmed result).",
+   "when": "The agent can report success it did not achieve, and you need a ground-truth check that doesn't depend on the model's self-report."
+  },
+  {
+   "name": "Guardrails as composable functions",
+   "how": "Write small guardrail functions (max iterations, max messages) that take the run state. Combine them into one check. When a limit trips, either kill the run or compress the context.",
+   "when": "Runs can loop or grow context without bound, and you want limits that live in code, not in the prompt."
+  },
+  {
+   "name": "Two-level retry around an attempt",
+   "how": "Wrap one agent attempt (loop + verify) in an outer loop with a max-attempts cap. Each attempt has its own step limit, and the harness gives up after the total cap.",
+   "when": "Single runs fail intermittently and a fresh attempt often succeeds, but unlimited retries would burn budget."
+  },
+  {
+   "name": "Naive head-and-tail context trimming",
+   "how": "Once the message count passes a threshold, keep the system prompt, the user prompt, and the last N messages, and drop the middle.",
+   "when": "You need a cheap, deterministic fallback for context growth before building anything smarter."
+  },
+  {
+   "name": "Tool definitions in the OpenAI SDK shape",
+   "how": "Each tool has a name, a description, a parameters schema, and an execute function that closes over a shared session object (here a Playwright browser session). The factory returns the tool list.",
+   "when": "You want a simple, portable tool layer that is independent of which model runs the loop."
+  }
+ ],
+ "tools": [
+  "Playwright",
+  "Chromium",
+  "OpenAI Agents SDK-style tool definitions",
+  "GPT-3.5 Turbo",
+  "Claude Code",
+  "Cursor",
+  "Codex",
+  "Qwen",
+  "GPT-OSS",
+  "OpenRAG"
+ ],
+ "numbers": [
+  {
+   "claim": "Claude Pro costs $20 a month and comes with a limited context window (the speaker's framing of renting a black-box model).",
+   "t": "1:10"
+  },
+  {
+   "claim": "Demo model is GPT-3.5 Turbo, a 2023-era model, chosen on purpose to show the harness does the work.",
+   "t": "6:29"
+  },
+  {
+   "claim": "Example guardrail: kill the run after more than five tool calls (illustrative, not the demo value).",
+   "t": "5:07"
+  },
+  {
+   "claim": "Demo guardrails: max iterations of six per attempt, and a max-messages threshold that triggers context trimming (threshold value not stated).",
+   "t": "10:29"
+  },
+  {
+   "claim": "Demo retry cap: up to three harness attempts before giving up.",
+   "t": "13:10"
+  },
+  {
+   "claim": "The final run upvoted the rank-two post after six iterations, with zero prompt changes made across all the harness changes.",
+   "t": "17:08"
+  }
+ ],
+ "hot_takes": [
+  "Reliability is the name of the game for harnesses: prompt-hacking a black-box model is not the fix.",
+  "2026 is the year of harnesses; 2027 could be the year of dynamically generated, per-task harnesses that an agent builds before doing the job.",
+  "Harness is not the same as the agent loop; it is the scaffolding around the loop.",
+  "Use a cheap or open model (Qwen, GPT-OSS) with a strong harness rather than a frontier model with none."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk's guardrails (max iterations, max messages, context trimming) are the kind of per-agent limits AgentOS's proxy and budget layer could enforce, but the talk works at the agent-loop level, not at a proxy.",
+   "action": "Compare the talk's max-steps and max-messages guardrails with the L1 budget checks, and decide whether per-agent step caps belong in the proxy or in the agent runtime."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness is a harness around Claude Code with zero-token credential handling. The talk's pre-turn login handler, which fills secrets in code and tells the model the result, is the same pattern. Its trace-based verifier also applies to checkpoint and resume.",
+   "action": "Check whether ProsHarness runs credential fill and state checks in code before each turn, and whether it verifies completion from the recorded tool events rather than the model's own report of success."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The talk argues for cheap or open models paired with a deterministic harness, which matches the cheap-model (Haiku) pipeline interest. It gives no measured results.",
+   "action": "Run one cheap-model task with step caps and a trace-based verifier, and compare the pass rate with the same task on a stronger model."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

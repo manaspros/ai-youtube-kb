@@ -1,0 +1,136 @@
+{
+ "one_line": "Beginner walkthrough of Dozzle, a lightweight web UI for real-time Docker container logs, run as a container with the Docker socket mounted read-only.",
+ "summary": "The video shows how to view Docker container logs in a browser instead of repeatedly running docker logs. The presenter pulls and runs two sample containers, an Nginx reverse proxy and a Redis cache, then starts Dozzle as its own container. Dozzle reads other containers through the Docker socket, which is bind-mounted into it and marked read-only. The web UI lists containers with CPU and memory figures, streams each container's logs live, and supports split-screen panels, search, and log download. The last section converts the setup into a Docker Compose service and explains why the read-only flag is a small security measure. This is a basic, reproducible tool demo with no benchmarks, and it does not cover authentication, multi-host setups, or the exact Dozzle image name as spoken.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "Docker"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "observability",
+  "dev-tools"
+ ],
+ "tags": [
+  "docker",
+  "docker-logs",
+  "log-viewer",
+  "web-ui",
+  "docker-socket",
+  "read-only-mount",
+  "docker-compose",
+  "nginx",
+  "redis",
+  "real-time-logs"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Dozzle is a web UI over Docker logs aimed at real-time monitoring and easier troubleshooting than the CLI.",
+   "detail": "Described as a lightweight, web-based Docker log viewer. The presenter cites about 3,700 GitHub stars as a sign of popularity only.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The sample setup is an Nginx container and a Redis container, both generating logs, viewed together in one dashboard.",
+   "detail": "Nginx is framed as a reverse proxy often sitting in front of an app; Redis as a key-value store used for caching.",
+   "t": "1:21"
+  },
+  {
+   "idea": "Dozzle reads other containers' logs by having the Docker socket bind-mounted into its container.",
+   "detail": "The socket (/var/run/docker.sock) is what the Docker CLI uses. Mounting it lets Dozzle run Docker commands and pull logs from other containers.",
+   "t": "5:44"
+  },
+  {
+   "idea": "The read-only flag on the socket mount is presented as a security measure.",
+   "detail": "The presenter says that if the Dozzle container were compromised, it could not change the socket file on the host. The claim is limited to the file itself and does not address what API calls the container can make through it.",
+   "t": "11:31"
+  },
+  {
+   "idea": "Copying a command from docs can break it: the leading dollar sign from the docs is pasted in and causes 'command not found'.",
+   "detail": "Fix was to delete the $ prompt character before running the docker run command.",
+   "t": "5:44"
+  },
+  {
+   "idea": "Dozzle shows per-container CPU and memory, live log streams, split-screen views, and search, with logs downloadable per container.",
+   "detail": "The presenter demonstrates a search for GET requests in the Nginx logs, and shows new log lines appearing live as requests are sent from another browser tab.",
+   "t": "7:02"
+  },
+  {
+   "idea": "Dozzle can be added as a Docker Compose service with the same socket mount and port mapping, so it can run alongside the app stack.",
+   "detail": "Docker Compose example is shown with a service name, container name, image, volume mount, and port mapping. The docs' compose section specifies the socket volume as read-only.",
+   "t": "10:14"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run sample containers with port mapping",
+   "how": "docker pull nginx and docker pull redis. Start Redis with docker run in detached mode and a --name. For Nginx, use the Docker Hub example command, delete the -v volume flag, and add a port mapping from host port 80 to container port 80. Verify with docker ps.",
+   "when": "Setting up a local test stack to demo or verify a log viewer."
+  },
+  {
+   "name": "Run Dozzle with read-only Docker socket and port mapping",
+   "how": "docker run with --name dozzle and -d (detached). Mount the host socket as -v /var/run/docker.sock:/var/run/docker.sock:ro (the trailing :ro makes it read-only). Map host port 8888 to container port 8080 with -p 8888:8080. Open http://localhost:8888. The exact image name is not spoken; take it from the Dozzle GitHub README or Docker Hub page shown on screen.",
+   "when": "Viewing logs for all containers on a single local Docker host without using the CLI."
+  },
+  {
+   "name": "Run Dozzle via Docker Compose",
+   "how": "Add a service named dozzle to docker-compose.yaml with container_name, the Dozzle image, a volume entry mounting /var/run/docker.sock to /var/run/docker.sock with the read-only suffix, and a ports mapping (host 8888 to container 8080). Use the compose example from the project's GitHub docs.",
+   "when": "Running Dozzle alongside a multi-service app stack that is already described in Compose."
+  },
+  {
+   "name": "Use the log UI for triage",
+   "how": "Open a container's logs page for live output. Use the split-screen icon to show two containers side by side. Use the search control at the top left to filter containers by name. Use the top-right dropdown to search within a container's logs or download them.",
+   "when": "Watching interdependent services, such as a proxy and a cache, during a request or a process."
+  }
+ ],
+ "tools": [
+  "Dozzle",
+  "Docker",
+  "Docker CLI",
+  "Docker Compose",
+  "Docker Hub",
+  "Nginx",
+  "Redis",
+  "GitHub"
+ ],
+ "numbers": [
+  {
+   "claim": "Dozzle GitHub repo has about 3,700 stars, cited as evidence of popularity.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Port mapping for Dozzle is host 8888 to container 8080.",
+   "t": "5:44"
+  },
+  {
+   "claim": "Nginx port mapping is host 80 to container 80.",
+   "t": "3:22"
+  },
+  {
+   "claim": "Three containers (Dozzle, Nginx, Redis) are shown running at once in the dashboard.",
+   "t": "7:02"
+  }
+ ],
+ "hot_takes": [
+  "The video is a beginner-level demo; the sample containers are idle, so the real-time claims are shown only lightly.",
+  "The read-only security point is narrow: it only protects the socket file, and the video does not explain what Docker API access the container still has through the socket.",
+  "The GitHub-stars figure is offered as social proof, not as a quality or security measure."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS L4 observability uses Prometheus, Grafana and OTel; a quick container log viewer could help local debugging of the multi-service AgentOS stack, but it does not replace metrics or traces.",
+   "action": "Try Dozzle locally against the AgentOS docker-compose stack for live log tailing during development; keep the docker.sock mount limited to that viewer container and out of the services themselves."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The video covers container log viewing, which does not touch the Claude Code harness, checkpointing, or approvals.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

@@ -1,0 +1,155 @@
+{
+ "one_line": "Argues an agent's identity is its append-only event log, not the model or runtime; once workers are disposable, reliability, forking, sharing and ownership follow from the log design.",
+ "summary": "Ishaan Sehgal of Omnara argues that an agent is its durable log, not its model, runtime or sandbox, using a video game save file as the analogy. The log is the append-only history of user inputs, model outputs, tool calls and results, permissions and failures. Each worker reads the log, advances the agent one step, appends the result and can then disappear, so any other worker can resume. Context windows, UIs, audit trails and compaction are all projections of that log. He concedes compaction is lossy and recommends keeping the raw log and treating a compaction as a forked log. He says the log records the agent's view of the world, not the world, so external side effects such as sent emails are not undone by a fork. Claimed benefits are reliability (a pending permission prompt survives a crashed process), scalability (one process advancing many agents), forking across models, multiplayer sharing by access grant, and migration as an adapter problem. He criticises current harnesses for treating logs as a side effect (fire-and-forget JSONL writes, SQLite corruption issues), and argues log lock-in is deeper than model lock-in because managed providers would own the agent by owning its log. The talk closes with a pitch for Omnara's open-source managed agents platform, and gives no benchmarks.",
+ "speakers": [
+  "Ishaan Sehgal"
+ ],
+ "orgs": [
+  "Omnara"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "context-engineering",
+  "observability"
+ ],
+ "tags": [
+  "event-sourcing",
+  "append-only-log",
+  "durable-execution",
+  "agent-state",
+  "resumability",
+  "compaction",
+  "session-log",
+  "vendor-lock-in",
+  "managed-agents"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The agent's identity is its data, specifically its log, not the model or the runtime",
+   "detail": "Speaker uses a Skyrim save file analogy: the console can burn down and the character survives in the save. The model and runtime are interpreters of the log.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The log is an append-only event history of every state transition",
+   "detail": "It includes user inputs, model outputs, tool calls, tool results, permissions and failures. Every operation is either reading the log or appending to it.",
+   "t": "1:22"
+  },
+  {
+   "idea": "Workers should be disposable; the loop reads the log, takes one step, appends, and exits",
+   "detail": "A simplified loop reconstructs state from the log, calls the model, appends the response, runs any requested tool, appends that result and repeats. Any worker can pick the session up later.",
+   "t": "2:49"
+  },
+  {
+   "idea": "Context, UI, debugging, auditing and compaction are all projections of the log",
+   "detail": "Like a materialised view over a database, each of these is derived from the durable log, and the log itself is not a projection.",
+   "t": "4:12"
+  },
+  {
+   "idea": "Compaction is lossy, so keep the raw log and treat a compaction as a forked log",
+   "detail": "A compacted summary throws information away. If you keep the raw log you can regenerate new projections; if you discard it you have lost part of the agent.",
+   "t": "5:17"
+  },
+  {
+   "idea": "The log records the agent's view of the world, not the world itself",
+   "detail": "Forking back does not unsend an email or undo a file change made outside the log. The log can resume identity and context but cannot make the outside world deterministic.",
+   "t": "6:11"
+  },
+  {
+   "idea": "Reliability and scale fall out of treating the log as the primary state",
+   "detail": "A pending permission prompt should survive a dead process and reappear on resume. One process can advance many agents because state is rebuilt from the log each turn, which makes failover and scaling simple.",
+   "t": "7:25"
+  },
+  {
+   "idea": "Current harnesses treat the log as a side effect, and that is the problem",
+   "detail": "He cites JSONL writes that are fire-and-forget in Claude SDK mode, SQLite corruption reports in OpenCode, and sharded durable objects that make history hard to reconstruct.",
+   "t": "9:51"
+  },
+  {
+   "idea": "Log lock-in is deeper than model or API lock-in",
+   "detail": "Models, runtimes and machines are replaceable. If a provider owns the log, it effectively owns the agent, which is his argument against managed agent offerings.",
+   "t": "11:07"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Log-first agent loop",
+   "how": "Store every user input, model output, tool call, tool result, permission request and failure as an appended event. Each turn, rebuild state by reading the log, call the model, append its output, run tools, append results. Do not hold state in the process.",
+   "when": "Long-running or multi-step agents that must survive worker crashes, restarts or timeouts."
+  },
+  {
+   "name": "Persist pending permissions as events",
+   "how": "Write the permission request into the log before blocking on it, so a fresh worker that reconstructs the session shows the same pending prompt rather than silently dropping it.",
+   "when": "Agents that pause for human approval and may be resumed later or on another machine."
+  },
+  {
+   "name": "Projections over one record",
+   "how": "Keep one raw durable log and generate context windows, UI views, audit trails and debug views from it on demand, instead of maintaining each as its own source of truth.",
+   "when": "You need several views of the same agent history (model input, UI, audit, debugging) without them drifting apart."
+  },
+  {
+   "name": "Compaction as forked log",
+   "how": "When the context window fills, write a summarised log as a new branch that references the raw log, and keep the raw log intact for regenerating other projections.",
+   "when": "Sessions outgrow the model's context window but you still need the full record."
+  },
+  {
+   "name": "Fork at a point in the log",
+   "how": "Copy history up to a chosen event and continue on a different model or strategy as a new branch.",
+   "when": "Comparing models on the same starting state, or trying a different provider mid-session."
+  },
+  {
+   "name": "Share by access grant, not transcript copy",
+   "how": "Give a teammate or observer read or edit access to the session log instead of exporting a transcript.",
+   "when": "Handing an agent session to a colleague or letting a manager watch without taking over."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "OpenCode",
+  "Claude SDK",
+  "Cloudflare Durable Objects",
+  "SQLite",
+  "JSONL"
+ ],
+ "numbers": [
+  {
+   "claim": "One process can advance thousands of agents when state is rebuilt from the log each turn (speaker's claim, no benchmark shown)",
+   "t": "7:25"
+  },
+  {
+   "claim": "Talk length 15:11; no latency, cost or reliability benchmarks are presented",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The agent is its log, not the model or the runtime.",
+  "Log lock-in is a deeper lock-in than model or API lock-in, and managed agent providers want to own the log.",
+  "Current agent harnesses treat the session log as an afterthought, and that is a reliability problem.",
+  "Permission prompts should survive a crashed process and reappear on resume."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already plans durable storage (Postgres, Redis, Timescale) and cross-session memory; the talk's append-only session log with projections for context, audit and resume maps onto that design.",
+   "action": "Prototype one AgentOS agent session as an append-only event table in Postgres (input, model output, tool call, tool result, permission, failure), derive the model context from it, and test resume by killing the worker mid-tool-call."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness does checkpoint and resume of long Claude Code runs and phone-driven approvals; the talk's examples of a permission prompt lost on resume and a fire-and-forget write path are concrete failure cases to test the checkpoint format against.",
+   "action": "Add a resume test that kills the run while a permission prompt is pending and checks the prompt reappears on restart; also confirm checkpoint writes are acknowledged rather than fire-and-forget."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Speaker's critique of Claude Code and Codex writing session state as fire-and-forget JSONL applies to any harness we run on top of those tools.",
+   "action": "Read how Claude Code writes its session JSONL and whether a write failure can silently lose a session before relying on it for resume."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

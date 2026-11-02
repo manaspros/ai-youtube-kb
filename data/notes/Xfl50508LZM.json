@@ -1,0 +1,231 @@
+{
+ "one_line": "A two-hour Arize Phoenix workshop on evaluating a Claude-powered financial research agent: read traces first, then write code evals, LLM judges, meta-evals and experiments.",
+ "summary": "Laurie Voss (Arize, formerly co-founder of npm Inc.) runs a hands-on workshop on evals for agentic apps. He instruments a simple two-step financial research agent (Claude Haiku, Claude Agent SDK, web search) with Phoenix tracing, then runs 12 extra queries to get a varied trace set. The core method is to read traces first, turn observed failures into categories weighted by severity times frequency, and only then write evals. He walks through three eval types (deterministic code evals, LLM-as-judge, human review) and layers them like Swiss cheese. A built-in correctness judge scores 0/13 because the judge's knowledge is stale, while a faithfulness judge scores 13/13, which he presents as a lesson in choosing the right eval. He then builds a custom binary \"actionability\" judge from a five-part rubric, checks it against a small hand-labelled set with precision and recall, and closes the loop with experiments on a dataset of failing traces. The talk ends with the impact hierarchy, capability vs regression evals, pass@k vs pass^k, and a candid note that closed-loop self-improvement is still frontier work. Most demo numbers come from a 13-trace toy set, which he says is too small for shipping decisions.",
+ "speakers": [
+  "Laurie Voss"
+ ],
+ "orgs": [
+  "Arize",
+  "Anthropic",
+  "Descript",
+  "Bolt"
+ ],
+ "format": "workshop",
+ "topics": [
+  "evals",
+  "observability",
+  "agent-architecture"
+ ],
+ "tags": [
+  "arize-phoenix",
+  "openinference",
+  "opentelemetry",
+  "llm-as-judge",
+  "code-evals",
+  "faithfulness",
+  "rubric-design",
+  "meta-evaluation",
+  "golden-dataset",
+  "experiments",
+  "capability-vs-regression",
+  "pass-at-k",
+  "claude-haiku",
+  "claude-sonnet",
+  "claude-agent-sdk",
+  "tracing",
+  "impact-hierarchy"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Evals are tests whose inputs are traces (nested spans of LLM calls, tool calls and agent turns).",
+   "detail": "Each span stores input, output, timing and token counts. Root spans (no parent) represent a whole agent turn and are the unit you evaluate.",
+   "t": "6:18"
+  },
+  {
+   "idea": "Read the traces before writing any eval.",
+   "detail": "Speaker argues requirements come first (define what a good report is), then read traces and categorize failures. Eyeballing the Apple run showed the agent tried to write to disk; checking the output alone would have hidden that the research was fine.",
+   "t": "37:48"
+  },
+  {
+   "idea": "Prioritize failures by severity times frequency.",
+   "detail": "A rare but catastrophic failure can outrank a common minor one. Fix expensive, frequent failures first.",
+   "t": "47:30"
+  },
+  {
+   "idea": "Code, LLM and human evals are complementary and should be layered.",
+   "detail": "Code evals catch deterministic issues cheaply. LLM judges catch semantic gaps but miss subtle hallucinations. Humans catch what gets through but cannot scale. No single layer catches everything.",
+   "t": "48:49"
+  },
+  {
+   "idea": "Built-in judges can be wrong for your task, and choosing the right one matters more than tuning.",
+   "detail": "Correctness scored 0/13 because the judge model assumed it was 2025 and could not verify 2026 figures. Faithfulness (answer must come only from the research step) scored 13/13 on the same traces.",
+   "t": "59:33"
+  },
+  {
+   "idea": "Write LLM-judge rubrics as a five-part prompt, with a binary label and examples.",
+   "detail": "The parts are: judge role, explicit observable criteria for good and bad, clearly delimited data, labelled examples (most valuable), and a constrained output (one word). Ask for reasoning before the label. Avoid 1-10 ratings and god-evaluators that test many dimensions at once.",
+   "t": "1:04:21"
+  },
+  {
+   "idea": "Treat the judge as a classifier and measure it against a golden set.",
+   "detail": "Compare judge labels with human labels, track precision and recall, and split the golden set (about 75/25) so you do not overfit. Prompt wording changes judge behaviour a lot, so version prompts like code.",
+   "t": "1:16:48"
+  },
+  {
+   "idea": "Capability evals become regression evals once they reach 100%.",
+   "detail": "Capability evals are hill-climbing targets where the agent is expected to fail at first. Once passed, they move into the regression suite. Use cheap, compressed regression evals and spend more on capability evals.",
+   "t": "18:19"
+  },
+  {
+   "idea": "Experiments give controlled comparisons on a small failure set, then a full-set check before shipping.",
+   "detail": "Build a dataset from the failing traces, change one thing (here the research and write prompts), and rerun. All six previously failing cases then passed. Run the full dataset before shipping to catch overfitting or regressions.",
+   "t": "1:33:01"
+  },
+  {
+   "idea": "Prioritize changes by an impact hierarchy: data quality, then prompts, then model choice, then hyperparameters.",
+   "detail": "Stale or wrong sources cannot be fixed by prompting. Few-shot examples and explicit constraints are often the best return. Temperature and top-p rarely matter much.",
+   "t": "1:41:18"
+  },
+  {
+   "idea": "Judge accuracy has a ceiling set by human agreement, and failing evals can be wrong.",
+   "detail": "Inter-rater agreement between experts can be as low as 0.2-0.3, so a judge does not need to be perfect. The CoreBench example scored Opus at 42% until an overly strict answer check (96.12 vs 96.124991) was fixed, after which the score rose to about 95%.",
+   "t": "1:29:10"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Root-span code eval",
+   "how": "Filter the trace dataframe to spans with no parent, write a plain Python or TypeScript function (regex for ticker mention, JSON parse, token length, forbidden phrases), and register it as a code evaluator. Test the output, not the path the agent took.",
+   "when": "Any output with a deterministic check: format, length, required mention, forbidden phrases, or a lookup against a database or API."
+  },
+  {
+   "name": "Faithfulness eval using the research step as context",
+   "how": "Split the agent into research and writing turns, then build input, output and context columns, with context taken from the first turn only. Run the built-in faithfulness evaluator on that dataframe.",
+   "when": "RAG-like agents where you need to know if the answer used only the retrieved material."
+  },
+  {
+   "name": "Classification LLM judge with a binary label",
+   "how": "Use the classification evaluator with a name, a rubric template, a judge model (stronger than the production model), and choices mapped to scores (actionable = 1.0, not actionable = 0). Suppress tracing around the judge so its own calls do not pollute the traces.",
+   "when": "Semantic criteria that code cannot check, such as whether advice is actionable or tone is right."
+  },
+  {
+   "name": "Trace-to-dataset failure loop",
+   "how": "Select failing traces with a span query or the UI filter, add them to a named dataset, change the prompt, then run a task function that re-runs the agent (or a sub-part) on that dataset with the same evaluators.",
+   "when": "Iterating on a fix, when you want a cheap, controlled before-and-after signal instead of rerunning everything."
+  },
+  {
+   "name": "Wrap multi-turn agent runs in one parent span",
+   "how": "Put all agent turns inside a single OpenTelemetry span so each run is one root span, which makes evaluation per run possible.",
+   "when": "Agents that run several SDK turns (research then write) and should be scored as one unit."
+  },
+  {
+   "name": "Golden set with a held-out split and reference solutions",
+   "how": "Hand-label cases with explicit criteria, keep about 25% as a holdout, and write a reference answer per task. Include cases where the behaviour should not happen (for example, do not search when it is not needed) to catch agents that cheat the eval.",
+   "when": "Before trusting any LLM judge, and before making judge-driven decisions."
+  },
+  {
+   "name": "Pairwise comparison and reliability metrics",
+   "how": "Compare two outputs head to head for A/B tests. Measure pass@k (succeeds at least once in k tries) for coding assistants and pass^k (succeeds on every try) for customer-facing bots.",
+   "when": "A/B testing prompts or models, and choosing which reliability number matters for a product."
+  },
+  {
+   "name": "Cost-normalized accuracy and tiered models",
+   "how": "Compute accuracy divided by cost per query, and route simple queries to cheap models and complex ones to expensive ones. Filter traces by latency, tokens or cost to find expensive paths.",
+   "when": "Agents that are correct but slow or costly, and deciding whether a stronger model is worth the price."
+  }
+ ],
+ "tools": [
+  "Arize Phoenix (Phoenix Cloud)",
+  "OpenInference instrumentation",
+  "OpenTelemetry (phoenix.otel register, auto_instrument)",
+  "Claude Agent SDK",
+  "Claude Haiku (agent model)",
+  "Claude Sonnet (judge model)",
+  "Phoenix evaluators (correctness, faithfulness, classification)",
+  "Phoenix datasets and experiments",
+  "Arize AX (enterprise product, mentioned)"
+ ],
+ "numbers": [
+  {
+   "claim": "Test set of 12 agent queries, plus the original Tesla run, gives 13 top-level traces.",
+   "t": "35:46"
+  },
+  {
+   "claim": "Code eval (ticker mentioned in output) passed 11 of 13 traces. Tesla and Amazon failed, Amazon because the agent wrote about AWS and not Amazon.",
+   "t": "51:38"
+  },
+  {
+   "claim": "Correctness built-in judge: 0 of 13 passed, due to the judge's stale knowledge of 2026 figures.",
+   "t": "59:33"
+  },
+  {
+   "claim": "Faithfulness built-in judge: 13 of 13 passed on the same traces.",
+   "t": "1:02:06"
+  },
+  {
+   "claim": "Actionability judge: about 5-6 of 13 traces labelled actionable at first (speaker's recollections differ). After prompt changes, all six previously failing traces passed.",
+   "t": "1:12:51"
+  },
+  {
+   "claim": "Hand-labelled check on the six failing traces showed 2 of 6 disagreements. The labels were random, not real annotations, so the number is illustrative only.",
+   "t": "1:23:55"
+  },
+  {
+   "claim": "Sample size example: 200 samples at a 3% defect rate gives a 95% CI of 0.6% to 5.4%. Doubling to 400 narrows it to 1.3% to 4.7%.",
+   "t": "1:39:56"
+  },
+  {
+   "claim": "Speaker's rule of thumb: 12-20 examples gives directional signal in a workshop. 200-400 examples is a target for shipping decisions.",
+   "t": "1:41:18"
+  },
+  {
+   "claim": "Inter-rater reliability between human experts is often as low as 0.2-0.3 on the same rubric.",
+   "t": "1:29:10"
+  },
+  {
+   "claim": "CoreBench example: Claude Opus scored 42% before the eval was fixed and about 95% after (cited as Anthropic's finding).",
+   "t": "1:30:21"
+  },
+  {
+   "claim": "Cost example: 92% accuracy at $0.02 per query can beat 95% at $0.15 per query on cost-normalized accuracy.",
+   "t": "1:47:09"
+  },
+  {
+   "claim": "Judge disagreement with golden labels above about 40% suggests the rubric is poor (speaker's rule of thumb).",
+   "t": "1:15:21"
+  }
+ ],
+ "hot_takes": [
+  "Read 15 minutes of real traces before spending hours tuning prompts.",
+  "LLM judges should output a binary label. 1-10 ratings add noise, because nobody can define the difference between a 6 and a 7.",
+  "Do not write a god-evaluator that scores accuracy, tone, completeness and format in one prompt. It is hard to calibrate and you cannot tell which dimension failed.",
+  "Choosing the right built-in eval can matter more than tuning an eval.",
+  "An eval you have not validated against human labels is a fancy way of being wrong at scale.",
+  "Use a judge from a different provider or a stronger model than the agent, to avoid self-preference bias.",
+  "Closed-loop self-improving agents driven by evals are still frontier work and hard to get right today."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS has a proxy with a Merkle audit log and RAGAS evals planned. The talk's trace-first workflow, root-span filtering, and severity-times-frequency triage map onto Govrix Scout logs and the evals in MemoryMesh.",
+   "action": "Run a read-the-traces pass on Govrix Scout output for one agent flow, categorize failures, and add 2-3 deterministic code evals (format, forbidden phrases, budget/PII hits) before writing any LLM judge."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already runs plan, critique and debate loops and long checkpointed runs. The talk's pass^k reliability metric, capability-to-regression split, and different-provider judge idea map directly onto those loops.",
+   "action": "Add a pass^k metric (succeeds on all k tries) to the ProsHarness checkpoint/resume test set, and split its checks into a capability list and a regression list."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Evals for agents and LLM judges are a recurring interest. The talk gives a concrete method for judge validation (golden set, held-out split, precision and recall) that transfers to entity-resolution and Haiku pipelines.",
+   "action": "Before trusting any LLM judge in a Haiku pipeline, hand-label about 50 cases, keep 25% as a holdout, and report precision and recall on that holdout."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

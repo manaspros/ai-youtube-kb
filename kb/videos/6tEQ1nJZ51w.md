@@ -1,0 +1,40 @@
+# 5 Zustand BEST Practices in 5 Minutes
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `6tEQ1nJZ51w` · [watch](https://youtu.be/6tEQ1nJZ51w) · **date:** 2025-11-02 · **length:** 5:00 · **format:** tutorial · **quality:** 3/5 · **depth:** intro
+- **speakers:** ? · **orgs:** ?
+- **topics:** dev-tools · **tags:** zustand, react, state-management, react-hooks, selectors, re-renders, useShallow, immer, persist, redux-devtools, typescript
+
+> Five Zustand best practices in five minutes: export only custom hooks, use atomic or useShallow selectors, keep actions in a stable object modeled as events, keep stores small, and add middleware.
+
+## Summary
+The speaker walks through a small Zustand todo store and then five practices for keeping it maintainable as an app grows. The core pitch is that Zustand is about 1 KB and gives shared React state without providers or prop drilling. The practices are about avoiding unnecessary re-renders: wrap selectors in custom hooks and do not export the raw store hook, select single values rather than new objects (or use useShallow), and keep the actions object stable so components can destructure it. Actions should be domain events (addTodo, removeTodo, toggleIsSubscribed) that contain the business logic. Stores should be small and separate per concern rather than split into slices. Finally, middleware such as immer, persist and devtools is worth using. No AI-specific content, no benchmarks, and no sponsorship.
+
+## Key ideas
+- **Zustand is unopinionated but tiny (about 1 KB) and gives shared global state to any component without providers, context or prop drilling.** — The speaker builds a todo store with create() and an initial state of an empty todo array plus an isSubscribed boolean, updated through an immutable set action. ([0:00](https://youtu.be/6tEQ1nJZ51w?t=0))
+- **Only export custom hooks, never the raw store hook.** — Components should call a wrapper hook (for example one that returns the todos) rather than the store hook directly. Removing the export means no one can accidentally subscribe to the entire store, and the selector logic lives in one place. ([0:00](https://youtu.be/6tEQ1nJZ51w?t=0))
+- **Avoid object selectors that build a new object on each update.** — Selecting several values into one fresh object fails Zustand's strict equality check and causes re-renders even when none of the selected values changed. Prefer one hook per value (the speaker's useSubscribed), or wrap the selector in useShallow to get a shallow comparison. ([1:21](https://youtu.be/6tEQ1nJZ51w?t=81))
+- **Keep actions in a single, referentially stable actions object.** — Actions are static, so they can live together on the store and be exposed through one actions hook. Components can destructure them without re-rendering on unrelated state changes, which is why the speaker accepts this one exception to the atomic-selector rule. ([2:47](https://youtu.be/6tEQ1nJZ51w?t=167))
+- **Model actions as domain events, not generic setters.** — Instead of a generic set-todos action with business logic in components, actions such as addTodo, removeTodo and toggleIsSubscribed hold the logic. ([2:47](https://youtu.be/6tEQ1nJZ51w?t=167))
+- **Keep stores small and focused, and split by concern.** — When the app grows, create another store. The speaker would move isSubscribed out of the todo store into its own store. This keeps things organized, reduces accidental re-renders and makes testing easier. The speaker prefers this over Zustand's slices pattern. ([4:08](https://youtu.be/6tEQ1nJZ51w?t=248))
+- **Use middleware for common needs: immer, persist and devtools.** — immer reduces messy nested-update destructuring, persist syncs state to localStorage, and devtools connects the store to Redux DevTools in Chrome. ([4:08](https://youtu.be/6tEQ1nJZ51w?t=248))
+
+## Techniques
+- **Wrap selectors in custom hooks and hide the store hook** — Create one hook per piece of state (for example a todos hook) that calls the store with a selector. Do not export the store hook itself, so components only see the narrow hooks. *When:* Any Zustand store used by more than one component, or any store that might grow. It prevents accidental whole-store subscriptions and keeps selector logic in one place.
+- **Atomic selectors, or useShallow for object selectors** — Use one hook per value (the speaker's useSubscribed for the boolean). If a component truly needs several values, wrap the object-returning selector in useShallow so Zustand compares properties shallowly rather than object references. *When:* When a component reads several store values. Avoid returning a freshly built object from a plain selector because it re-renders on every store update.
+- **Stable actions object exposed through one hook** — Put all action functions on one actions object inside the store (the speaker keeps the action types separate and merges them into the store type). Expose an actions hook that returns that object, then destructure the functions in the component. *When:* When components need to call several actions. The actions object never changes, so destructuring it does not cause re-renders from unrelated state changes.
+- **Event-style actions that own business logic** — Name actions after domain events (addTodo, removeTodo, toggleIsSubscribed) and put the logic inside the action, so components only dispatch events. *When:* When the same state change is triggered from several places, or when business rules should be testable without rendering components.
+- **One small store per concern** — Create a separate store for each unrelated piece of state (the speaker moves isSubscribed out of the todo store) rather than one large store with slices. *When:* As soon as a second, independent piece of state appears. The speaker says it reduces accidental re-renders and eases testing.
+- **Middleware for immer, persist and devtools** — Wrap the store creator with the middleware: immer for nested updates, persist to save state to localStorage, and devtools to inspect the store in Redux DevTools. The transcript does not show the exact configuration calls. *When:* immer when updates get deeply nested, persist for state that should survive reloads, devtools during development.
+
+## Numbers
+- Zustand adds roughly 1 KB to the bundle. ([0:00](https://youtu.be/6tEQ1nJZ51w?t=0))
+- Video length is 5:00. ([0:00](https://youtu.be/6tEQ1nJZ51w?t=0))
+
+## Hot takes
+- Separate small stores are preferred over Zustand's slices pattern.
+- Object selectors are a Redux habit that does not suit Zustand; the speaker prefers atomic selectors and would use useShallow only if necessary.
+- Breaking the atomic-selector rule for a stable actions object is acceptable.
+- Re-render claims are asserted without measurement or a demo of render counts.
+
+## Tools mentioned
+Zustand, React, Redux DevTools, immer, Redux (named only as the origin of object-selector habits), TypeScript, useShallow (Zustand export), Chrome

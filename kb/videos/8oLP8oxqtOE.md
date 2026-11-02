@@ -1,0 +1,43 @@
+# Claude Code + CMUX: The Ultimate AI Coding Terminal
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `8oLP8oxqtOE` · [watch](https://youtu.be/8oLP8oxqtOE) · **date:** 2026-04-02 · **length:** 6:18 · **format:** review · **quality:** 3/5 · **depth:** intro
+- **speakers:** unnamed Better Stack host · **orgs:** Warp
+- **topics:** claude-code, coding-agents, multi-agent, dev-tools · **tags:** cmux, terminal, claude-code, subagents, notifications, browser-automation, opencode, macos, unix-socket, agent-cli
+
+> Walkthrough of cmux, a native macOS terminal whose CLI and Unix socket let Claude Code or OpenCode drive browser panes, spawn sub-agent panes, and send attention notifications.
+
+## Summary
+The video demos cmux, a native macOS terminal built on libghostty with WebKit browser panes and Bonsplit layouts, aimed at coding agents. Its CLI talks to the app over a Unix socket using JSON, so any agent harness that can run shell commands can control it. In the demos, Claude Code (switched to Haiku to save tokens) opens a browser split, searches Google, and clicks a result; it also spawns two Claude instances in split panes to study a project, collects their output, and closes the panes. Agent-triggered notifications and a flashing pane border flag when work finishes, and the same CLI calls worked from OpenCode in a separate workspace, where the agent also set a sidebar label with the git branch and an SF Symbol icon. The presenter used no hooks or skills for these demos and disabled Claude Code's sandbox after an error (the error text is not shown). The recommended setup is cmux's core and browser skills plus Claude Code hooks that send notifications, and the presenter wishes for a skills.sh-style installer. The video has no benchmarks for cmux itself, and the closing claim about the Stoolab database is a cross-promotion, not part of the tool review.
+
+## Key ideas
+- **cmux is a terminal built for coding agents, not a tmux wrapper, and its value is that the agent controls the app through a CLI and Unix socket API.** — Native Mac app built on libghostty (Ghostty's core) with a WebKit browser pane and Bonsplit for tabs and splits. The CLI creates workspaces and splits, shows logs and progress in the sidebar, and offers some tmux-compatible commands. ([0:00](https://youtu.be/8oLP8oxqtOE?t=0))
+- **An agent can open and drive a browser pane inside the terminal, so the developer watches its navigation and testing live.** — Claude Code opened a browser split, navigated to google.com, typed and ran a search, and clicked a result. The browser pane includes developer tools for debugging the page under development. ([1:18](https://youtu.be/8oLP8oxqtOE?t=78))
+- **Sub-agents can run in split panes, which makes parallel work visible.** — The main Claude instance created two split panes, started a Claude instance in each (one to understand the project, one to analyze the code), collected their results, and closed the panes. The presenter notes the risk of sub-agents getting stuck on permission prompts. ([2:40](https://youtu.be/8oLP8oxqtOE?t=160))
+- **Agent-triggered notifications solve the problem of not knowing when a background pane needs attention.** — The agent sends a cmux notification when its task finishes and triggers a blue flashing border on the pane. Clicking the notification jumps to the right pane. ([2:40](https://youtu.be/8oLP8oxqtOE?t=160))
+- **Because the interface is a CLI, the same controls work for other agent harnesses, not only Claude Code.** — OpenCode, run in its own workspace, sent notifications and used cmux commands to set the sidebar text to the git branch name with an icon. Its sidebar and notification output were the same as Claude Code's. ([4:02](https://youtu.be/8oLP8oxqtOE?t=242))
+- **The demos were run without any cmux skills or hooks, and the sandbox was disabled, which the presenter says is not recommended for real use.** — The presenter disabled Claude Code's sandbox after hitting an error; the error text is not shown. He recommends installing cmux's core and browser skills and adding Claude Code hooks for notifications, or writing a custom script. ([5:18](https://youtu.be/8oLP8oxqtOE?t=318))
+- **The presenter wants a one-step setup that detects the agent harness and installs the skill and hook files, like skills.sh does.** — Setup currently means copying skills and notification config into place by hand. He calls the native app good for memory and performance and the JSON-over-socket CLI fast and simple, but he gives no measurements. ([5:18](https://youtu.be/8oLP8oxqtOE?t=318))
+
+## Techniques
+- **Agent-driven browser pane for live testing** — Install cmux and let Claude Code call the cmux CLI to open a browser split, navigate to a URL, type into inputs, and click links. Use cmux's browser commands (similar in API design to a browser-agent API) and the pane's built-in devtools to debug the page. The video shows no exact command syntax. *When:* When you want to see an agent test a web UI in a pane next to its terminal, in real time.
+- **Sub-agents in split panes that report back and close** — Prompt the main Claude Code session to create split panes via the cmux CLI, start a Claude instance in each with a specific task (for example, understand the project, analyze the code), wait for their results, read them, then close the panes. The video does not show the exact prompt or commands. *When:* For parallel exploration or analysis where you want to watch each sub-agent's progress and catch permission prompts that block it.
+- **Attention notifications with pane flash** — At the end of a task, have the agent send a cmux notification with a message, then run the 'trigger flash' command (spoken aloud; exact syntax not shown) to flash a blue border on the target pane. Clicking the notification in cmux jumps to that pane. Wire this into Claude Code hooks (for example, on task completion) to make it automatic. *When:* When a long agent run finishes or needs input in a background workspace and you do not want to keep checking it.
+- **Sidebar status from the agent** — Have the agent write to the cmux sidebar via the CLI: the git branch name with an SF Symbol icon, and a progress bar, custom workspace color, and tab names (the last three are mentioned, not shown). Clear the sidebar text and close the split when the task ends. *When:* To show per-workspace state (branch, progress) at a glance across several agent sessions.
+- **Setup with cmux skills and hooks** — Install cmux's core and browser skills (made by the cmux author) into the Claude Code skills directory, and add Claude Code hook config that calls cmux for notifications. The presenter says the setup is manual copy-paste today. *When:* Before relying on cmux for real agent work instead of the demo setup.
+- **Cheap demo runs by switching the model** — Change the Claude Code session to Haiku before running the browser and sub-agent demos to reduce token spend. *When:* For scripted or exploratory runs where model capability is not the point.
+
+## Numbers
+- Stoolab, a Rust database, is claimed to be 138 times faster than SQLite. This is a plug at the end of the video, and no benchmark is shown. ([5:18](https://youtu.be/8oLP8oxqtOE?t=318))
+- The video is 6:18 long, and the browser demo, sub-agent demo, notifications and OpenCode run are all shown without any timing or latency figures. ([0:00](https://youtu.be/8oLP8oxqtOE?t=0))
+
+## Hot takes
+- cmux is more useful for agents than a plain terminal once the agent controls it through the CLI, not just through the human at the keyboard.
+- Setup is currently too manual; a skills.sh-style auto-installer for cmux skills and hooks is a missing piece.
+- The closing Stoolab claim (138x faster than SQLite) is an unbenchmarked plug, not part of the review.
+- The demos ran without cmux skills or hooks and with the Claude Code sandbox disabled; the presenter recommends both skills and hooks for real use.
+
+## Tools mentioned
+cmux, Claude Code, OpenCode, libghostty, Ghostty, WebKit, Bonsplit, tmux, Warp, soloterm, Demux, Haiku, SF Symbols, skills.sh, Stoolab, SQLite
+
+## Relevance to our work
+- **prosharness** (1/3): ProsHarness wraps the Claude Code CLI and plans phone-driven approvals and loops. This video shows an agent-side pattern of sending completion notifications and flashing a pane to signal that a background sub-agent needs attention, and it shows sub-agents writing results back to a parent session. → *Read the cmux notification and hook setup, then compare it with the ProsHarness approval path. The question is whether an agent's notify-when-done or needs-input call should go through a CLI socket like cmux's or through the phone channel.*

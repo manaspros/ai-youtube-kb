@@ -1,0 +1,200 @@
+{
+ "one_line": "Daniel Svonava (Superlinked) on serving fleets of small open models on your own GPUs: why top-down routers fail for many small requests, and how a centralized pull-based queue, a thin Rust gateway and a runtime sidecar fix it.",
+ "summary": "Svonava argues that small open models (ones that fit on one older GPU) can match frontier performance on narrow, well-defined tasks, so teams should split their workload by task and pick an evaluated open model for each slice. Serving a fleet of such models breaks the usual inference setup. Top-down routers that pre-assign requests to workers have stale state, which keeps GPU utilization around 20-30% under constant load with small requests. His team's open-source (Apache 2.0) cluster puts a thin Rust gateway in front of a shared NATS JetStream queue, and workers pull work and form their own batches. Multi-GPU machines get an extra local queue, and he says centralizing the queue roughly doubled cluster throughput. The workers talk to PyTorch, Candle, or SGLang through a Rust sidecar and socket, so they avoid runtime-specific plugins. He covers embedding and generation throughput on single GPUs, lazy model loading and eviction, and a shipped-with-tuned-config model where an autoresearch meta-loop does the tuning. The talk is a practitioner account with self-reported numbers and no published methodology, and it ends with a repo pitch.",
+ "speakers": [
+  "Daniel Svonava"
+ ],
+ "orgs": [
+  "Superlinked",
+  "Hugging Face",
+  "AWS",
+  "NVIDIA"
+ ],
+ "format": "talk",
+ "topics": [
+  "inference-serving",
+  "local-ai",
+  "infra-cost-scaling",
+  "training-finetuning-rl"
+ ],
+ "tags": [
+  "small-models",
+  "open-source-models",
+  "model-serving",
+  "centralized-queue",
+  "pull-based-batching",
+  "nats-jetstream",
+  "messagepack",
+  "rust-sidecar",
+  "lora",
+  "embeddings-throughput",
+  "knee-benchmark",
+  "model-packing",
+  "autoresearch",
+  "superlinked"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Small open models can match frontier quality on narrow tasks, so the workflow should be split into task slices with a best-fit model for each, checked by evals.",
+   "detail": "He says a 27B-class open model is roughly at GPT 5.1 level on general benchmarks, and that the work is to pick and evaluate a model per task rather than use one general model for everything. The result is a fleet of models, not one API.",
+   "t": "2:46"
+  },
+  {
+   "idea": "Open-source model serving is a do-it-yourself research project, not a drop-in deployment. The serving tools are not tuned for a given model and hardware pair.",
+   "detail": "vLLM and SGLang ship tuning guides, but parameter sweeps and traffic tailoring are left to the team. He also argues that managed options like Bedrock have a narrow, older model catalog, and that fine-tunes there are not artifacts you own.",
+   "t": "5:30"
+  },
+  {
+   "idea": "Top-down routing becomes the bottleneck when requests are small and numerous.",
+   "detail": "A router that pre-assigns requests to workers works from a slightly stale view of each worker's KV-cache and queue state. Balancing local queues is nearly impossible at that request rate.",
+   "t": "6:49"
+  },
+  {
+   "idea": "Centralizing the queue and letting workers pull and form their own batches roughly doubles cluster throughput.",
+   "detail": "The gateway annotates requests and puts them on a shared queue. Hundreds of GPU workers pull from it and size their own batches by their cost estimate. Workers can push items back onto the queue when they over-pull. Co-located multi-GPU machines get a local queue, which avoids network hops.",
+   "t": "10:53"
+  },
+  {
+   "idea": "The gateway should stay thin: look at the shape of a request, annotate it, and avoid full parsing. Large binary payloads should be offloaded in flight.",
+   "detail": "He prefers MessagePack over base64-in-JSON for binary data. Payloads over about 1 MB are split off to cloud storage while the request waits in the queue, so the user still sends everything through one API. The gateway, workers, and sidecar are all in Rust.",
+   "t": "12:18"
+  },
+  {
+   "idea": "A thin Rust sidecar with a socket abstracts over runtimes, so the team is not stuck with one runtime's plugin system.",
+   "detail": "The workers attach to PyTorch, Candle, or SGLang through the sidecar. Candle's worker binary is about a tenth the size of the 12 GB PyTorch image, which matters for cold starts across many machines. The team says about 50 model adapters are parameterized this way. SGLang is the baseline the team must match.",
+   "t": "16:24"
+  },
+  {
+   "idea": "Benchmark at the knee of the throughput curve, not at peak load.",
+   "detail": "The knee is the point where throughput stops rising linearly and latency starts climbing. It is the highest throughput the server can sustain without hurting latency, so it is a more useful number than raw peak.",
+   "t": "19:02"
+  },
+  {
+   "idea": "Embeddings and task-specific generation are the cheapest first wins for self-hosting small models.",
+   "detail": "On one GPU, he reports hundreds of thousands of tokens per second for embedding models up to a few hundred million parameters, with tens-of-milliseconds latency. Generation from task-specific models runs at hundreds of tokens per second per GPU. He suggests these as candidates for synthetic data and annotation.",
+   "t": "20:28"
+  },
+  {
+   "idea": "Pin hot models, lazy-load and evict the rest by memory pressure, and pack several models onto one GPU.",
+   "detail": "Per-model worker pools that preload models do not fit small models. The team mixes pinned models with on-demand loading and eviction, and packs models onto the same GPU when memory allows.",
+   "t": "22:51"
+  },
+  {
+   "idea": "Ship each supported model with its tuning already done, produced by an autoresearch meta-loop that builds the harness which runs the tuning loop.",
+   "detail": "The team builds internal measurement tooling to feed the loops. As a proof of concept, a LoRA adapter cost about 80 cents to train and raised German legalistic retrieval quality by 18%.",
+   "t": "23:51"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Centralized pull-based batching queue",
+   "how": "Put a thin gateway in front of a shared queue (NATS JetStream in the talk). Workers pull work and form their own batches from their local cost estimate. Items can go back to the queue when a worker over-pulls. Co-located multi-GPU machines use a local queue.",
+   "when": "Many small, fast requests across many GPU workers, where a top-down router cannot keep worker queues balanced."
+  },
+  {
+   "name": "Thin gateway with annotation, not full parsing",
+   "how": "The first hop looks at the request shape, attaches metadata, and enqueues it without deserializing the whole body. Use a binary format such as MessagePack, and offload payloads over roughly 1 MB to object storage while the request is queued.",
+   "when": "The gateway is on the hot path and its latency or throughput limits the cluster, or when requests carry large multimodal payloads."
+  },
+  {
+   "name": "Runtime sidecar behind a socket",
+   "how": "Keep the worker as a language-neutral process (Rust here) that talks to a runtime (PyTorch, Candle, SGLang) through a local socket. Put batching logic in the sidecar, not in runtime-specific plugins.",
+   "when": "You serve many models on several runtimes and want to avoid lock-in to one runtime's extension points or to heavy container images."
+  },
+  {
+   "name": "Knee-based benchmarking",
+   "how": "Ramp request rate and plot throughput and latency. Report the knee, where throughput flattens and latency rises, as the usable capacity.",
+   "when": "Comparing serving setups or hardware, and you need a sustainable capacity number instead of peak throughput."
+  },
+  {
+   "name": "Pin plus lazy-load model placement",
+   "how": "Pin the models that get steady traffic. Load the rest on demand and evict by memory pressure. Pack several small models onto one GPU when memory allows.",
+   "when": "A long tail of task-specific models with uneven traffic, where per-model worker pools would sit idle or take long to load."
+  },
+  {
+   "name": "Per-task model selection with evals, then cheap adaptation",
+   "how": "Split the workload into task slices. For each slice, evaluate candidate open models, then fine-tune a small LoRA when the eval gap justifies it. Measure the result on the task's retrieval or quality metric.",
+   "when": "Moving a pipeline off a large API model to a self-hosted small model for cost or latency."
+  },
+  {
+   "name": "Autoresearch loop for serving tuning",
+   "how": "Build a meta-loop that produces the harness, and that harness runs the tuning loop over runtime and batching parameters. Ship each model with the resulting tuned config so no sweep is needed by the user.",
+   "when": "You support many models or runtimes and cannot hand-tune each one, and you have measurement tooling to feed the loop."
+  }
+ ],
+ "tools": [
+  "vLLM",
+  "SGLang",
+  "PyTorch",
+  "Candle",
+  "NATS JetStream",
+  "MessagePack",
+  "Rust",
+  "AWS Bedrock",
+  "LoRA",
+  "Hugging Face"
+ ],
+ "numbers": [
+  {
+   "claim": "Small open model (~27B) said to be roughly at GPT 5.1 level on general benchmarks (speaker's framing, chart not shown in transcript)",
+   "t": "2:46"
+  },
+  {
+   "claim": "GPU utilization with vLLM and SGLang routers under constant load with small requests is only around 20-30%",
+   "t": "8:09"
+  },
+  {
+   "claim": "Centralized queue roughly doubles cluster throughput versus top-down routing",
+   "t": "14:55"
+  },
+  {
+   "claim": "PyTorch worker image about 12 GB; Candle static binary about 10% of that (about 1 GB), which speeds cold starts",
+   "t": "16:24"
+  },
+  {
+   "claim": "About 50 model adapters parameterized across runtimes",
+   "t": "17:43"
+  },
+  {
+   "claim": "Embedding models up to a few hundred million parameters: hundreds of thousands of tokens per second on one GPU (RTX Pro 6000 in the benchmark), latency in the low tens of ms vs hundreds of ms for managed embedding APIs",
+   "t": "20:28"
+  },
+  {
+   "claim": "Task-specific generative models: roughly 500 tokens per second per GPU (speaker's example)",
+   "t": "21:53"
+  },
+  {
+   "claim": "A LoRA adapter cost about $0.80 to train and improved German legalistic retrieval quality by 18% (proof of concept)",
+   "t": "23:51"
+  }
+ ],
+ "hot_takes": [
+  "Open-source AI in companies today mostly means AWS Bedrock, and fine-tunes there are not artifacts you own.",
+  "Top-down request routing is the bottleneck for fleets of small models, not the model compute itself.",
+  "Frontier model progress shows diminishing returns while small open models catch up, so many production pipelines can move to small models."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft (L2B) runs vLLM and Ray Serve on one RTX 5090 with a priority scheduler. The talk offers a concrete alternative: a central queue with worker-side batching, benchmarked at the knee. MemoryMesh embedding throughput is another possible use.",
+   "action": "Benchmark InferCraft's scheduler against a pull-based shared queue on constant small-request load, reporting knee throughput and GPU utilization."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The autoresearch meta-loop, which builds a harness that runs the tuning loop, is a loop-of-loops pattern close to ProsHarness loops and schedules.",
+   "action": "Read the autoresearch meta-loop idea (harness that builds the loop) against ProsHarness's loop and schedule design."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The per-task model selection workflow, with evals per slice and then a cheap LoRA, matches the cheap-model Haiku pipeline and entity-resolution interests. The talk gives concrete cost and throughput numbers.",
+   "action": "For one multi-step LLM pipeline, split the work by task, eval a small open model on each slice, and compare cost and quality against the current model."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

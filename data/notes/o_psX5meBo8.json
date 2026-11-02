@@ -1,0 +1,130 @@
+{
+ "one_line": "Better Stack walkthrough of croc, an open-source Go CLI for sending files peer-to-peer through a relay, with PAKE code phrases and resumable transfers; a tool intro with a self-hosted relay option.",
+ "summary": "The host argues that most file transfer tools trade off speed, security and simplicity, and presents croc as hitting all three. Croc is an open-source Go CLI that runs a full-duplex relay session instead of upload-then-download, and switches to a local transfer when both machines share a LAN. Security comes from PAKE: a disposable code phrase drives a key exchange, so a wrong phrase makes the transfer fail, and the relay only sees encrypted bytes and metadata. The default relay is a public one run by the tool's creator, and the video shows that a self-hosted relay can be started with a built-in command using a Docker image. The demo covers sending from a Windows machine to a MacBook with one command, receiving with a code phrase, and resuming a broken transfer. The video is a short product intro with little depth on internals or benchmarks.",
+ "speakers": [
+  "Andres (Better Stack host)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "croc (project by Zach Scholl)"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools",
+  "security-guardrails"
+ ],
+ "tags": [
+  "croc",
+  "file-transfer",
+  "pake",
+  "p2p",
+  "self-hosted-relay",
+  "cli",
+  "go",
+  "docker",
+  "wetransfer",
+  "scp"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Most file transfer tools miss at least one of fast, secure, simple.",
+   "detail": "The host frames speed, security and simplicity as three pillars and says link-based tools (WeTransfer-style) are simple but slow and only as secure as the link, while SCP/SSH/FTP are fast and secure but need a server and port forwarding.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Upload-then-download is slower than it needs to be.",
+   "detail": "With 5 Mbps up and 8 Mbps down, sequential transfer gives about 3.1 Mbps effective, which is below either link speed. A full-duplex relay avoids this by sending and receiving at the same time.",
+   "t": "2:05"
+  },
+  {
+   "idea": "Croc uses a relay for full-duplex transfer and goes direct on the LAN.",
+   "detail": "Croc relays both sides through a server so they send and receive simultaneously. If both machines are on the same local network, it detects that and transfers locally, which is faster still.",
+   "t": "3:06"
+  },
+  {
+   "idea": "PAKE replaces a static shared password.",
+   "detail": "The disposable code phrase is not used directly as an encryption key. Both sides run a cryptographic exchange with it to derive a stronger key; an interceptor with the wrong phrase makes the exchange fail and no data moves.",
+   "t": "4:25"
+  },
+  {
+   "idea": "The default public relay sees only ciphertext and metadata.",
+   "detail": "The file is encrypted end-to-end before leaving the sender, so the relay operator cannot read contents. The host still flags that a third-party relay in the middle may be a blocker for data-residency or policy reasons.",
+   "t": "4:25"
+  },
+  {
+   "idea": "Self-hosting the relay is presented as a short setup.",
+   "detail": "Croc has a built-in relay command that starts your own relay, with a Docker image included. Transfers are then pointed at it with a relay flag. The host calls it a five-minute setup for corporate environments.",
+   "t": "5:45"
+  },
+  {
+   "idea": "The user experience is one send command and one code phrase.",
+   "detail": "The sender runs croc send with a file and gets a generated code phrase. The receiver runs croc, enters the phrase, and accepts. Transfers resume from where they left off after a connection break.",
+   "t": "6:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Send a file with a one-time code phrase",
+   "how": "Sender: `croc send <file>` prints a randomly generated code phrase. Receiver: run `croc`, type the code phrase when prompted, then type y to accept. The video says install is a one-line command on Windows and Mac, with platform instructions on the project's GitHub page (the exact install commands are not shown).",
+   "when": "Quick one-off transfers between machines with no accounts, shared servers or port forwarding, for example a Windows PC to a Mac."
+  },
+  {
+   "name": "Resume an interrupted transfer",
+   "how": "After a connection drops mid-transfer, resume from the sending side. The transfer continues where it stopped instead of restarting. The video does not show the exact command.",
+   "when": "Large files over unreliable networks."
+  },
+  {
+   "name": "Self-host the relay for corporate use",
+   "how": "Start your own relay with croc's built-in relay command, which ships with a Docker image. Point transfers at it with the relay flag instead of the default public relay (the video does not spell out the flag name).",
+   "when": "Data-residency rules, or a policy against routing transfers through infrastructure you do not control."
+  }
+ ],
+ "tools": [
+  "croc (open-source Go CLI, by Zach Scholl)",
+  "Docker (croc relay image)",
+  "WeTransfer",
+  "Dropbox",
+  "AirDrop",
+  "SCP",
+  "SSH",
+  "FTP",
+  "Discord"
+ ],
+ "numbers": [
+  {
+   "claim": "Sequential upload-then-download with 5 Mbps up and 8 Mbps down gives about 3.1 Mbps effective (below either link), which is the basis for the full-duplex argument.",
+   "t": "2:05"
+  },
+  {
+   "claim": "Demo transfer between a Windows machine and a MacBook; no specific transfer speed or file size is reported.",
+   "t": "6:20"
+  },
+  {
+   "claim": "Video length 8:30.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Calls croc 'the best file transfer tool I've ever used' with no benchmark against alternatives.",
+  "Says self-hosting a relay is a 'five-minute setup' and 'not a deal breaker' without showing it.",
+  "The 3.1 Mbps figure assumes a strictly sequential upload-then-download model; it is a simple illustration, not a measurement."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "A file transfer CLI has no bearing on the AgentOS proxy, memory, inference or observability layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Its one-time code phrase with PAKE is a reference pattern for short-lived pairing between two devices, which relates to phone-driven approvals.",
+   "action": "If ProsHarness needs a phone-to-machine pairing step, skim croc's PAKE code-phrase design as a reference for short-lived pairing codes. Do not treat this as a security audit."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

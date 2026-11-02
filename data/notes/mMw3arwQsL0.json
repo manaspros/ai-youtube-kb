@@ -1,0 +1,169 @@
+{
+ "one_line": "Talk using AI Incident Database cases to argue for risk-based, system-level evals: test the whole deployment and the evaluator, try to falsify claims, and prioritize by harm.",
+ "summary": "Vishal Srivastava and Tanmay Shah analyze public AI failure reports from the AI Incident Database and ask what those failures imply for evaluation. They group failures into three core dimensions (technical strength, deployment controls, business context) split into 13 sub-dimensions, and say these cover about 98% of the incidents they reviewed, with about six sub-dimensions present per incident. Their finding is that deployment controls such as human mediation and harm detection are more tightly associated with harm than technical defects, so prioritization should follow harm rather than frequency. They propose a materiality scale per use case and decompose risk into failure frequency, whether the failure reaches a decision, whether it is caught, and severity. For agentic systems, they argue the evaluator itself must be checked for reliability, and that evals should be failure-driven: state a claim, try to break it, map the safe, uncertain and high-risk regions, and deploy only inside the confident region. A short airline-chatbot case (wrong fare advice, tribunal ruled against the airline) walks through the build-break-fix loop. The talk is a conceptual framework with little methodology shown, so the data claims are the speakers' own and unverified here.",
+ "speakers": [
+  "Vishal Srivastava",
+  "Tanmay Shah"
+ ],
+ "orgs": [
+  "New York Life",
+  "AI Incident Database"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "governance-compliance",
+  "agent-architecture"
+ ],
+ "tags": [
+  "AI failures",
+  "AI incident database",
+  "risk-based evals",
+  "system-level evaluation",
+  "deployment controls",
+  "human-in-the-loop",
+  "materiality",
+  "evaluator reliability",
+  "falsification",
+  "confirmation bias",
+  "agentic systems",
+  "failure modes"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Evaluate the AI system, not the model. Model strength is one part of a system that also includes deployment controls and business context.",
+   "detail": "The three core dimensions are technical strength, deployment controls (authority given to the AI, human mediation, exposure, monitoring) and business context (financial, legal, scale of impact). The argument is that the same model yields different risk depending on how it is deployed.",
+   "t": "2:48"
+  },
+  {
+   "idea": "Failures have structure: 13 sub-dimensions cover roughly 98% of the incidents the speakers reviewed.",
+   "detail": "Six technical sub-dimensions (data quality, design, predictive validity, fairness, failure modes, explainability), four usage sub-dimensions (decision authority, human mediation, exposure control, monitoring) and three business sub-dimensions (financial impact, legal consequences, scale). A typical incident involves about six of them at once.",
+   "t": "5:24"
+  },
+  {
+   "idea": "Prioritize by association with harm, not by how often a sub-dimension appears. Deployment controls are most tied to harm.",
+   "detail": "Human mediation effectiveness and harm detection (monitoring) sit high on the harm axis. Scale and system design are common but less tied to harm. Grouped, deployment controls rank above business impact, which ranks above technical failure. The speakers conclude that securing deployment controls for high-risk systems gives more assurance than fixing technical failures alone.",
+   "t": "8:12"
+  },
+  {
+   "idea": "Rank use cases with a materiality scale so resources go to the highest-harm use cases.",
+   "detail": "Materiality orders use cases by potential harm. The scale can be company-specific and can change over time. The talk does not show the scale's exact criteria.",
+   "t": "9:36"
+  },
+  {
+   "idea": "Decompose risk into four parts: how often the model fails, whether the failure reaches a real decision, whether it goes uncaught, and how severe it is.",
+   "detail": "Under this view, authority the system has, human review, and monitoring all change the risk even when the model is identical. So the eval has to cover the deployment setup, including retrieval, tool failures, human review, permission boundaries and recovery.",
+   "t": "10:50"
+  },
+  {
+   "idea": "The evaluator is part of the system you must govern. An AI judge can be wrong and can miss failures.",
+   "detail": "Check whether the judge is reliable, what evidence the test set covers, and whether the tests apply to the system as actually deployed. Traditional ML already tests held-out data and assumptions; agentic evals must also test the judge and the trajectory space.",
+   "t": "12:17"
+  },
+  {
+   "idea": "Use falsification, not confirmation: start from the claim, try to break it, then map where it holds.",
+   "detail": "The speakers cite the Wason 2-4-6 rule-discovery task, in which most people test cases that confirm their hypothesis. The method is a build-break-fix loop: state the system claim, try to break it, add supporting controls or restrict the system to where it is reliable, and repeat. The output is a failure-region map with safe, uncertain and high-risk zones.",
+   "t": "13:38"
+  },
+  {
+   "idea": "Worked example: the airline chatbot case shows how a narrow eval misses a failure chain.",
+   "detail": "A customer asked a chatbot about a discounted fare after a bereavement. The bot said he could buy a regular ticket and claim the discount within 90 days. The airline refused under its policy, and the tribunal held the airline responsible. The proposed eval: define the claim (advice must match approved policy), challenge the bot with policy questions, add a policy check or human escalation, then retest to confirm the control catches the error before it reaches the customer.",
+   "t": "16:18"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Three-dimension, 13-sub-dimension incident taxonomy",
+   "how": "Tag each AI incident against technical strength (6 sub-dimensions: data quality, system design, predictive validity, fairness, failure modes, explainability), usage controls (4: decision authority, human mediation, exposure control, monitoring) and business impact (3: financial, legal, scale). Record every sub-dimension present, since incidents usually involve several.",
+   "when": "Retrospective review of incidents or near-misses, or when auditing an AI system before deployment to see which failure types are unaddressed."
+  },
+  {
+   "name": "Prioritize controls by harm association, not frequency",
+   "how": "Plot each sub-dimension by how often it appears against how strongly it is associated with harm. Put investigation and control budget on the high-harm ones (human mediation effectiveness, harm detection/monitoring) before the common-but-low-harm ones (scale, system design).",
+   "when": "When there are more failure modes than review capacity and you need a defensible order of work."
+  },
+  {
+   "name": "Materiality scale per AI use case",
+   "how": "Score each use case by potential harm using a company-specific scale. Allocate the most testing and human review to the highest-materiality cases. Re-score when risk changes.",
+   "when": "Portfolio-level governance across many AI use cases with limited review capacity."
+  },
+  {
+   "name": "Four-part risk decomposition",
+   "how": "Estimate risk as: failure rate, probability the failure reaches a real decision, probability it goes uncaught by controls, and severity of consequences. Evaluate the controls (authority granted, review, monitoring) as part of the same risk estimate.",
+   "when": "Designing eval coverage for an agentic system, or explaining to a risk owner why the same model needs different sign-off in different deployments."
+  },
+  {
+   "name": "System-level stress testing of the deployment",
+   "how": "Test retrieval (does it return the right information), tool failure handling, whether human review catches mistakes, whether the agent stays within permission boundaries, and whether the system recovers. Select scenarios, and use AI agents or AI judges to generate or grade them, but validate those judges.",
+   "when": "Before any agentic deployment, and before each change to tools, permissions or review steps."
+  },
+  {
+   "name": "Evaluator reliability check",
+   "how": "Treat the judge (LLM or agent grader) as a system component. Check it against cases with known answers, measure what evidence the test suite covers, and confirm the tests reflect the deployed configuration.",
+   "when": "Whenever an AI judge is used to grade agent trajectories and results are used for a deployment decision."
+  },
+  {
+   "name": "Build-break-fix falsification loop",
+   "how": "1) Write a precise, testable claim (for example, advice must match approved policy). 2) Try adversarial cases to break it. 3) Add a control such as a policy check or human escalation. 4) Retest to confirm the control catches the failure. 5) Map the failure region into safe, uncertain and high-risk zones. 6) Deploy only in the confident zone.",
+   "when": "Deciding whether an agent is ready for a given task or customer-facing scope, and when writing acceptance evals for a new AI feature."
+  }
+ ],
+ "tools": [
+  "AI Incident Database (publicly available database of AI failure reports, used as the analysis corpus)"
+ ],
+ "numbers": [
+  {
+   "claim": "The title cites 1,368 AI failures; the speakers do not restate this count in the transcript.",
+   "t": "0:00"
+  },
+  {
+   "claim": "The speakers say AI failures in the incident database rose almost vertically across the last four years, in the foundation-model era.",
+   "t": "0:08"
+  },
+  {
+   "claim": "The 13 sub-dimensions cover almost 98% of the reviewed AI failures retrospectively.",
+   "t": "5:24"
+  },
+  {
+   "claim": "On average, six failure sub-dimensions are present in each investigated incident.",
+   "t": "6:53"
+  },
+  {
+   "claim": "In the Wason 2-4-6 rule-discovery study, 79% of participants got it wrong by testing confirming cases.",
+   "t": "13:38"
+  },
+  {
+   "claim": "In the airline chatbot case, the customer was told he could claim a discount within 90 days after buying a regular fare, and the policy did not allow that.",
+   "t": "16:18"
+  }
+ ],
+ "hot_takes": [
+  "Deployment controls matter more than model quality for harm. This is the core claim, and it comes from the speakers' own analysis of incidents. The talk shows no sample size, selection method or coding rules, so the ranking is hard to verify.",
+  "The 98% coverage figure is retrospective and measured on the same taxonomy that was built to explain those incidents, so it shows the taxonomy fits the data it was fit to, not that it will predict new failures.",
+  "Treating the AI judge as something to govern is the most actionable point. Many eval setups grade agent output with an LLM judge and never validate the judge."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already has budgets, PII/prompt-injection scanning and an exec gate. The talk's deployment-controls and materiality framing could decide which pillars a given agent must enable, but the talk does not address the specific infrastructure.",
+   "action": "Add a materiality tier to the AgentOS manifest so higher-tier agents must enable human escalation and monitoring, and test each tier with a build-break-fix eval before it runs."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness has phone-driven approvals. The talk's human-mediation finding, that human-in-the-loop effectiveness is strongly tied to harm, suggests measuring whether approvals are actually reviewed and not just whether they are requested.",
+   "action": "Track approval metrics in ProsHarness (time to decision, rejection rate, approvals on checkpoints that later failed) and check whether reviewers catch the failures the eval suite expects."
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

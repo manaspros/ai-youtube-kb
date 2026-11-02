@@ -1,0 +1,50 @@
+# Computer-Use 2.0: Agents Just Got Multi-Cursor — Francesco Bonacci, Cua
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `ZSQb5fzRFPw` · [watch](https://youtu.be/ZSQb5fzRFPw) · **date:** 2026-07-18 · **length:** 16:41 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Francesco Bonacci, Dillon, Rob · **orgs:** Cua, Snorkel AI
+- **topics:** voice-multimodal, sandboxing-execution, evals, infra-cost-scaling · **tags:** computer-use, background-agents, accessibility-tree, gui-agents, benchmark, reward-hacking, eval-validation, rl-training, sandbox-pool, autoscaling, gpu-utilization, kicad, world-model, android, cua-driver, cuabench, cuafleet
+
+> Cua's team presents "Computer-Use 2.0": a background computer-use driver (Cua Driver), a multi-platform benchmark (CuaBench, including a KiCad electrical-engineering set), and warm sandbox pools (CuaFleet) that cut idle GPU time in RL training.
+
+## Summary
+Francesco Bonacci (CEO of Cua) opens with the history of GUI agents and introduces Cua Driver, an open-source driver that lets agents operate apps in the background without taking over the user's screen, on macOS, Windows and Linux. CTO Dillon presents CuaBench, a benchmark whose tasks are setup, oracle (golden GUI trajectory) and evaluator, written once in a single Python file per task, and reports that a KiCad schematic set is very hard for current agents. He claims that switching to Cua Driver's window-scoped observation raises pass rate on a basic set from about 62% to 80% with 34% fewer tokens, and says every task is first attacked by reward-hacking agents before it enters the dataset. Dillon also describes measuring world models by forking runs at any step and probing a model's prediction of state or reward. Rob, the chief infra officer, argues that sandbox startup time leaves RL-training GPUs idle and proposes a demand-autoscaled warm sandbox pool (CuaFleet) that he says is cheaper than the GPUs it serves. The talk is part product pitch, but it contains concrete benchmark numbers and a usable pre-validation pattern for evals.
+
+## Key ideas
+- **Background computer use without screen takeover** — Cua Driver lets agents act on apps in the background. The speaker says it relies on some undocumented Apple framework APIs. For each action it first tries the accessibility tree and falls back to a pixel-level background click if that fails. Observation comes from a window-state call that returns both the tree and a screenshot. ([2:41](https://youtu.be/ZSQb5fzRFPw?t=161))
+- **Benchmark task = setup + oracle + evaluator, written once for all desktop platforms** — A CuaBench task has a setup function that puts the machine in a start state, an oracle that is a golden GUI-action trajectory, and an evaluator that probes the environment. The SDK lets one Python file cover more than five desktop platforms. The speaker reports 130+ verifiable tasks across 42 environments. ([6:50](https://youtu.be/ZSQb5fzRFPw?t=410))
+- **Current agents score poorly on real professional tasks** — On the KiCad set (built with Snorkel AI, using real professional software and circuit-simulating evaluators), the best agent fully passes only 6 of 25 tasks. All six successes involved editing an existing schematic. From a blank schematic the success rate is 0%. No model exceeds 30% reward. ([8:15](https://youtu.be/ZSQb5fzRFPw?t=495))
+- **Scope observation to a window, not the whole desktop** — The speaker says the pass rate on the basic set at 4K resolution rises from about 62% with the built-in computer tool to about 80% with Cua Driver, using 34% fewer tokens. He credits the gain mainly to focusing on a single window rather than the full desktop. ([9:17](https://youtu.be/ZSQb5fzRFPw?t=557))
+- **Try to break each eval environment before trusting it** — Before any agent is tested on a task, a matrix of agents tries reward hacking and environment breaking. The findings are compiled into a code-review-style report. Only tasks that survive this pipeline enter the dataset. The speaker's summary of trust is that it is evals all the way down. ([9:17](https://youtu.be/ZSQb5fzRFPw?t=557))
+- **Measure world-model understanding by forking trajectories** — Each recorded run can be forked at any step to recover the exact computer state. A model is then asked to predict the reward, internal state or another observation, and its prediction is compared against the fork. The speaker treats this prediction accuracy as a measure of the agent's world model. ([10:12](https://youtu.be/ZSQb5fzRFPw?t=612))
+- **Idle GPUs during RL are the hidden cost of slow sandbox startup** — In RL for computer-use agents, GPUs sit idle while each sandbox starts or resets. Some environments are about 40 GB, so pulling them takes a long time. Reducing startup time helps but is often not enough, so the speaker proposes moving the wait off the GPU side. ([11:40](https://youtu.be/ZSQb5fzRFPw?t=700))
+- **Demand-autoscaled warm sandbox pool** — A pool of pre-started sandboxes is grown or shrunk by a demand-based autoscaler that tracks how many GPU workers need one. Nobody has to set the pool size up front, and it can change over a multi-day run. The speaker says the pool costs 2 to 4 times less than GPUs, so the redundancy still saves money. ([13:07](https://youtu.be/ZSQb5fzRFPw?t=787))
+- **Mobile background use is mostly tool use, not GUI control** — In the Q&A, the speaker says Android can run containerized workloads in the background, and that the Android ecosystem leans toward this form of background use. In practice it is closer to tool use through the activity framework than to controlling the GUI. ([15:47](https://youtu.be/ZSQb5fzRFPw?t=947))
+
+## Techniques
+- **Two-tier background action with fallback** — Read the target window's accessibility tree plus a screenshot. Try the action through the accessibility tree first. If that fails, fall back to a pixel-level click sent to the background window. *When:* Driving desktop apps while the user keeps working, where full-screen takeover is unacceptable.
+- **Window-scoped observation** — Give the agent a screenshot and state of one target window instead of the whole desktop. *When:* Computer-use tasks where token cost and click accuracy matter, especially at high screen resolution. The speaker reports about 34% fewer tokens and higher pass rate.
+- **Single-file cross-platform task definition** — Write each eval task as setup, oracle and evaluator in one file, with a SDK that abstracts the OS differences. The oracle is a GUI-action trajectory. *When:* Building benchmarks that must run on several desktop platforms with reproducible environments.
+- **Adversarial pre-validation of evals** — Run a matrix of agents deliberately trying to reward-hack or break each environment before any model is scored on it. Keep only the tasks that survive, and report the findings like a code review. *When:* Before publishing or relying on any agent benchmark task, to check that the score reflects real completion.
+- **Trajectory forking for world-model probes** — Record each run so it can be forked at any step to recover the exact environment state. Ask a model to predict the reward or an observation at that point, then compare the prediction with the forked ground truth. *When:* Measuring whether an agent understands the environment it acts in, beyond whether it finished the task.
+- **Demand-autoscaled warm pool for sandboxes** — Keep a pool of pre-started sandboxes sized by a demand-based autoscaler that follows the number of GPU workers needing one. Let the pool grow and shrink during a training run. *When:* RL training where environments are large and slow to start, and GPU time is expensive.
+
+## Numbers
+- Pass rate on the basic dataset at 4K rises from about 62% (built-in computer tool) to about 80% (Cua Driver), with 34% fewer tokens. ([9:17](https://youtu.be/ZSQb5fzRFPw?t=557))
+- Top agent fully passes 6 of 25 KiCad tasks. All 6 involve editing an existing schematic. Blank-schematic success is 0%. No model exceeds 30% reward. ([8:15](https://youtu.be/ZSQb5fzRFPw?t=495))
+- CuaBench currently has over 130 verifiable tasks, 42 environments, across 5 desktop platforms. ([6:50](https://youtu.be/ZSQb5fzRFPw?t=410))
+- Roughly eight application harnesses are used to catch regressions between Cua Driver releases. ([5:19](https://youtu.be/ZSQb5fzRFPw?t=319))
+- Warm sandbox pool redundancy is said to cost 2 to 4 times less than the GPUs it keeps busy. ([13:07](https://youtu.be/ZSQb5fzRFPw?t=787))
+- Some computer-use RL environments are about 40 GB and slow to pull and start. ([11:40](https://youtu.be/ZSQb5fzRFPw?t=700))
+
+## Hot takes
+- Background computer use is possible today through undocumented OS APIs, without taking over the user's screen.
+- Benchmark trust reduces to 'evals all the way down', so every eval task should be attacked by reward-hacking agents first.
+- Idle GPU time during sandbox startup is pure cost, and a warm pool is a cheaper answer than making startup faster.
+- Current computer-use agents are close to useless on real professional software when they must build from a blank file.
+
+## Tools mentioned
+Cua Driver, CuaBench, CuaFleet, Codex computer-use model, TerminalBench, Harbor, Android activity framework, Hermes harness, KiCad
+
+## Relevance to our work
+- **agentos** (2/3): Crucible (L2C) runs sandboxed code execution. The warm-pool and autoscaler pattern directly applies to sandbox startup cost in any RL or eval loop that AgentOS might run on the local RTX 5090. → *Prototype a demand-autoscaled warm pool of Crucible sandboxes and measure startup wait versus GPU idle time before any RL or eval job.*
+- **prosharness** (1/3): ProsHarness wraps Claude Code and uses phone-driven approvals. Background, window-scoped computer use is a possible way to drive desktop apps without taking the screen, but no ProsHarness need for it is stated. → *Read the Cua Driver repo to compare its accessibility-tree-first, window-scoped approach with the current ProsHarness approach to driving desktop steps.*

@@ -1,0 +1,42 @@
+# Buying GPUs Should Work Like Buying Stocks — Carmen Li, Compute Exchange
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `laQ8wMysnkk` · [watch](https://youtu.be/laQ8wMysnkk) · **date:** 2026-10-24 · **length:** 18:05 · **format:** talk · **quality:** 2/5 · **depth:** intro
+- **speakers:** Carmen Lee · **orgs:** Compute Exchange, Silicon Data, CME, NVIDIA, DRW Trading
+- **topics:** infra-cost-scaling, token-cost-efficiency, product-ux · **tags:** gpu-procurement, compute-marketplace, forward-contracts, reserve-contracts, term-structure, gpu-price-index, secondary-market, residual-value, token-packages, rfq
+
+> Carmen Lee (Compute Exchange / Silicon Data) pitches a neutral GPU-procurement exchange and GPU term-structure and residual-value indices; useful market context, but mostly a company talk with few reusable engineering techniques.
+
+## Summary
+The speaker, CEO of Compute Exchange, describes it as a neutral marketplace for buying GPU capacity. It handles reserve and forward contracts, token packages and secondary server sales, and routes RFQs to verified providers. She says the platform verifies inventory, runs benchmarks and handles KYB/KYC, and that it does not own GPUs. The second half covers her sister company Silicon Data, which publishes GPU price indices and a forward term-structure curve. She reports that the curve moved from backwardated last year to flat or contango this year, which she reads as market expectation of rising prices. She also says those indices are used for CME futures, appraisal of GPU assets, and by NVIDIA in an investor deck. The talk is a company pitch with market data, not an engineering how-to.
+
+## Key ideas
+- **A neutral exchange for GPU procurement works like a stock exchange. It does not own GPUs, which avoids conflicts of interest with providers and clients.** — Compute Exchange says it takes no inventory position so it can route clients to the best-suited providers. It claims over 100 verified providers and over 80,000 GPUs in supply, and a 24-hour turnaround target. ([0:08](https://youtu.be/laQ8wMysnkk?t=8))
+- **Compute is being sold as forward and reserve contracts, not on-demand. The minimum term is one node for one month, and terms run out to 3-5 years.** — She describes reserve GPU contracts, forward GPU contracts and token forward contracts, which are dedicated deployments with fixed quantization and SLA for a period. Clients can also sell back excess capacity. ([5:11](https://youtu.be/laQ8wMysnkk?t=311))
+- **Buyers submit an RFQ and the platform routes it to matching providers. Responses come back as a standardized comparison of price, specs and SLAs.** — She says the platform sees over a billion RFQs per month, with requests ranging from one node to 20,000 nodes. Providers are scored, and the platform benchmarks existing capacity before presenting it. ([8:00](https://youtu.be/laQ8wMysnkk?t=480))
+- **Secondary used-GPU server sales are a distinct market, and some trade above MSRP.** — The secondary marketplace started in 2025 from providers asking the company to take over surplus hardware. It covers everything from H100 and B200 to older cards, and she cites secondary prices above MSRP. ([5:11](https://youtu.be/laQ8wMysnkk?t=311))
+- **The forward term structure of GPU rental prices has flipped from backwardation to contango, which she reads as a market expectation of rising prices.** — Last year the curve sloped down, so longer contracts were cheaper per GPU-hour. This year the whole curve shifted up and flattened, so long-term contracts give no discount. She reads this as consensus that prices will rise over the next 36 months, while noting that consensus is not necessarily right. ([12:49](https://youtu.be/laQ8wMysnkk?t=769))
+- **GPU residual values are modelled from discounted cash flows of forward rates, and the results are compared with straight-line depreciation.** — Silicon Data calculates residual values for A100, H100 and B200 servers using a discounted lease cash flow. The analysis assumes utilisation and cost, and is compared with the standard 5-year straight-line depreciation. A100 values sit above that curve, and H100 and B200 prices have risen. ([15:13](https://youtu.be/laQ8wMysnkk?t=913))
+
+## Techniques
+- **Forward-curve reading from GPU rental indices** — Plot the rental price against contract duration for each GPU. A downward slope means longer contracts are cheaper (backwardation). An upward or flat curve means no discount for longer terms (contango), which implies the market expects prices to rise. Use the shape to decide between a short and a long reserve contract. *When:* Deciding how long to reserve GPU capacity, or pricing a long-term contract against spot rates.
+- **Discounted-cash-flow residual valuation of GPU servers** — Take a lease rate for a server model, discount the remaining lease cash flows back to time zero using the forward curve, and state the utilisation and cost assumptions. Compare the result against straight-line depreciation over 5 years. *When:* Valuing GPU servers on a balance sheet, or checking whether an accounting depreciation schedule is conservative.
+- **Neutral exchange model for compute procurement** — Keep no inventory, verify each provider's inventory and performance with benchmarks such as MLPerf before routing, run KYB/KYC on buyers, and handle each transaction individually with a standard comparison of responses. *When:* Designing a marketplace or broker for compute, or thinking about how a buyer should evaluate providers.
+
+## Numbers
+- Over 300 cloud providers globally, with over 100 of them verified on the platform ([1:08](https://youtu.be/laQ8wMysnkk?t=68))
+- Over 80,000 GPUs in supply, with a 24-hour turnaround commitment ([2:29](https://youtu.be/laQ8wMysnkk?t=149))
+- Over 1 billion RFQs per month, with requests ranging from 1 to 20,000 nodes ([8:00](https://youtu.be/laQ8wMysnkk?t=480))
+- Minimum reserve term is one node for one month, with terms up to 3-5 years ([6:36](https://youtu.be/laQ8wMysnkk?t=396))
+- A GPU term-structure curve that was downward sloping last year and flattened or moved into contango this year ([12:49](https://youtu.be/laQ8wMysnkk?t=769))
+- Silicon Data indices are cited in the NVIDIA September investor day deck, the only data provider cited there according to the speaker ([15:13](https://youtu.be/laQ8wMysnkk?t=913))
+- Standard depreciation benchmark is straight-line over 5 years, and A100 residual values are above that curve ([16:45](https://youtu.be/laQ8wMysnkk?t=1005))
+
+## Hot takes
+- Speaker is the CEO of two companies she is promoting. The talk is a sales pitch with market data mixed in, and the claims about verification and provider counts are not independently checked. Quality is capped at 2 for that reason.
+- Her claim that the term-structure shift means the market expects prices to rise is an interpretation, and she says so herself. The 'only data provider cited by NVIDIA' claim is also unverified.
+
+## Tools mentioned
+NVIDIA DGX, InferenceX, MLPerf, CME futures
+
+## Relevance to our work
+- **agentos** (1/3): L2B InferCraft runs GPU capacity on a single RTX 5090, so GPU price term structure is only a loose analogy for capacity planning and does not affect how the stack is built. → *Optional: when planning long-term GPU budget for the InferCraft roadmap, compare reserve versus on-demand cost using a similar forward-curve view.*

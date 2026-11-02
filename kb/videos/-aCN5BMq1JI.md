@@ -1,0 +1,45 @@
+# OpenAI's GPT-6 (Astra) Solves Problems Beyond PhD Level. Is This AGI?
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `-aCN5BMq1JI` · [watch](https://youtu.be/-aCN5BMq1JI) · **date:** 2026-09-02 · **length:** 6:03 · **format:** news · **quality:** 3/5 · **depth:** intro
+- **speakers:** Unnamed Better Stack host, Jakob Puchacki (OpenAI chief scientist, as captioned; quoted from a podcast), Thomas Bloom (mathematician, quoted) · **orgs:** OpenAI, Better Stack
+- **topics:** models-research, multi-agent, testing-verification · **tags:** openai, astra, gpt-6, lean, formal-verification, long-horizon-agents, sub-agents, coherence, multi-agent-coordination, sol-ultra, token-cost, news-roundup
+
+> Reports OpenAI's claim that its internal Astra model solved 10 maths and CS problems, checkable via Lean proofs, and argues most of the gain comes from the agent harness, with real sub-agent coordination costs.
+
+## Summary
+Better Stack summarises OpenAI's post claiming an internal model, Astra, solved 10 open-style problems in mathematics and theoretical computer science, with every result written in Lean so the proofs can be machine-checked. The host contrasts this with OpenAI's October GPT-5 claim, which turned out to be existing papers, and notes the published reasoning runs to a 249-page paper with 62 pages of model narration. He points out that the roughly 2,000 token-cost figure only covers successful runs, and that the model is not available outside OpenAI, so the price and attempt count cannot be checked. He argues Astra is aimed at long-horizon work, where the failure mode is loss of coherence as context fills rather than raw intelligence. The reported architecture is a root agent that splits a problem across sub-agents and synthesises their results, and he says the gains come largely from this harness rather than the model alone. He warns that splitting tightly coupled work across agents adds coordination overhead that can cancel the benefit. He closes by quoting mathematician Thomas Bloom against the framing that AI is replacing mathematicians.
+
+## Key ideas
+- **OpenAI says an internal model, Astra, solved 10 problems in maths and theoretical CS, and published the results and a 249-page write-up** — The write-up includes 62 pages of the model's own reasoning narration. The host says he will not pretend to follow the maths. The claims are from a post titled '10 advances in mathematics and theoretical computer science'. ([0:00](https://youtu.be/-aCN5BMq1JI?t=0))
+- **Every result is written in Lean, so the proofs can be checked by a compiler without trusting OpenAI or understanding the maths** — The host draws the analogy to writing tests: the machine accepts or rejects the proof. He contrasts this with OpenAI's October claim that GPT-5 solved 10 open Erdos problems, which turned out to be existing human papers. ([1:16](https://youtu.be/-aCN5BMq1JI?t=76))
+- **The cost claim is low but incomplete: the roughly 2,000 token figure covers only the successful runs** — The host says the number is 'shockingly low' for the API cost. He notes the number says nothing about failed attempts, and the model is internal, so no outside party can check the run count or cost. ([1:16](https://youtu.be/-aCN5BMq1JI?t=76))
+- **Astra is likely a long-horizon model, separate from the day-to-day model family (Luna, Terra, Sol), built to work on one problem for hours or days** — The host cites an earlier statement by OpenAI's chief scientist wanting systems that work on problems for hours or days. He says the hard part of a long run is often coherence, not intelligence: early decisions scroll out of a full context and the model repeats old mistakes. ([2:33](https://youtu.be/-aCN5BMq1JI?t=153))
+- **Open maths problems are a good test of long-run persistence because they cannot be brute-forced or partially credited** — There is no feedback until the whole argument holds. The host argues that a system that stays on such a problem for hours without drifting could also stay on a large refactor. ([3:36](https://youtu.be/-aCN5BMq1JI?t=216))
+- **Much of the gain comes from the harness: a root agent creates sub-agents, hands each part of the problem, waits, and synthesises the results** — The host says the reported design is similar to what Sol Ultra already ships, except Sol Ultra's sub-agents can talk to each other while working. ([3:36](https://youtu.be/-aCN5BMq1JI?t=216))
+- **Splitting work across sub-agents has a coordination cost that can outweigh the gain on tightly coupled tasks such as planning** — The host says the design only pays off when splitting and stitching back together yields more than the coordination costs. He notes the 10 problems here seemed to clear that bar, but the results cannot be verified independently yet. ([3:36](https://youtu.be/-aCN5BMq1JI?t=216))
+- **Mathematician Thomas Bloom pushes back on the claim that AI is replacing mathematicians** — Bloom's point, as quoted: the result rests on a century of human mathematical work and an AI built and trained by mathematicians. The host agrees the replacement argument looks weak even if the results are promising. ([4:50](https://youtu.be/-aCN5BMq1JI?t=290))
+
+## Techniques
+- **Machine-checked verification with a proof assistant** — State each result in Lean so a compiler accepts or rejects the full proof. The reader does not need to understand the maths to check it. The host's analogy is writing a test for code. *When:* Use when a result can be expressed as a formal statement and a checker can decide correctness, so claims need not be trusted.
+- **Root agent fans out sub-agents and synthesises** — A root agent splits a problem into parts, gives each part to a sub-agent, waits for all results, then combines them into one answer. Sol Ultra's variant lets sub-agents communicate during work. *When:* Use for separable subproblems where the cost of coordination is small compared with the parallel gain. Avoid for tightly coupled work such as planning, where the host says coordination overhead and compounding errors can erase the benefit.
+- **Design long runs against loss of coherence** — The host names the failure mode, not a fix: as context fills, early decisions scroll out and the model repeats earlier errors. Keeping the plan and key decisions available beyond the context window is the implied countermeasure. *When:* Use for multi-hour agent runs. The video offers no concrete mechanism, so treat this as a problem statement rather than a tested technique.
+
+## Numbers
+- 10 problems in maths and theoretical CS solved by the internal Astra model, each with a Lean proof ([0:00](https://youtu.be/-aCN5BMq1JI?t=0))
+- 249-page paper with 62 pages of the model's own reasoning ([0:00](https://youtu.be/-aCN5BMq1JI?t=0))
+- Roughly 2,000 total tokens (stated as 'roughly 2,000 on sole API rights') to find solutions, counting only successful runs; failed attempts not counted ([1:16](https://youtu.be/-aCN5BMq1JI?t=76))
+- OpenAI's October GPT-5 claim of 10 previously unsolved Erdos problems, later shown to be existing human papers ([1:16](https://youtu.be/-aCN5BMq1JI?t=76))
+- Model family named as Luna, Terra and Sol, with Astra described as separate and aimed at long-horizon tasks ([2:33](https://youtu.be/-aCN5BMq1JI?t=153))
+
+## Hot takes
+- The headline 'beyond PhD level, is this AGI?' is not answered in the video. The host's content is about verifiable results, cost and harness design.
+- The host says much of the gain comes from the harness and tools around the model, not the model alone.
+- The 2,000-token cost figure is called 'shockingly low', but the host notes it excludes failed attempts and cannot be checked because the model is internal.
+- The host says the 'AI is replacing mathematicians' framing looks weak, citing Thomas Bloom's pushback.
+
+## Tools mentioned
+OpenAI Astra (internal, unreleased model), Lean (proof language and compiler), Sol Ultra (OpenAI model with sub-agents, as described in the video), Luna, Terra, Sol (named as OpenAI's existing model family), GPT-5 (OpenAI model, October claim discussed), Claude Code (mentioned only as the host's own point of comparison; not in the transcript)
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness runs long Claude Code jobs with checkpoint/resume and plan-critique-debate multi-agent steps. The video's points on coherence loss over long runs and on sub-agent coordination cost apply directly to that design. → *Keep the plan and key decisions outside the context window (checkpoint them) and measure whether splitting a plan across sub-agents beats a single agent on tightly coupled planning steps.*
+- **agentos** (1/3): The cost-per-success figure omits failed attempts, which matters for budget and cost tracking in the proxy. The video is news, with no measured data of its own. → *When benchmarking or budgeting agent runs, record failed attempts alongside successful ones so cost per solved task is not understated.*

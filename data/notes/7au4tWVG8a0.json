@@ -1,0 +1,183 @@
+{
+ "one_line": "Practical tips for getting better results and lower cost from Anthropic's Fable 5.1 in Claude Code: lower effort, prune old-model instructions, scope edits, and give whole-feature prompts. Mostly anecdotal.",
+ "summary": "The host argues that Fable 5.1 (Anthropic) behaves differently from earlier models, so habits from older models can produce worse or more expensive results. On the host's own client projects, Fable 5.1 was better than Fable 5 only on the hardest task, but it finished more attempts and cost less, partly because of a 75% cut in cached-read pricing. The host also cites Artificial Analysis figures: about 1.7x more output tokens and roughly 20% higher cost per task versus Fable 5, and a higher hallucination rate on unknown answers. The main warning is that when a safety guardrail triggers, Claude Code silently switches to a weaker model for the rest of the session. The seven tips are: start at low effort, delete CLAUDE.md instructions written for older models (using a prompt-audit command), tell the model nobody is watching and that reversible steps can proceed, fence off what not to touch, edit small parts of files instead of rewriting them, remove mannered prose, and give whole features in one prompt instead of many small steps. Evidence is a single channel's anecdotes plus a sponsor read, so treat the numbers as directional.",
+ "speakers": [],
+ "orgs": [
+  "Anthropic",
+  "Artificial Analysis",
+  "Porkbun"
+ ],
+ "format": "review",
+ "topics": [
+  "claude-code",
+  "token-cost-efficiency",
+  "context-engineering"
+ ],
+ "tags": [
+  "Fable 5.1",
+  "Fable 5",
+  "Opus 5",
+  "effort setting",
+  "prompt caching",
+  "cached reads",
+  "CLAUDE.md",
+  "prompt audit",
+  "guardrails",
+  "silent model fallback",
+  "hallucination",
+  "mannered prose",
+  "scope control",
+  "autonomous long-running tasks",
+  "whole-feature prompts"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Fable 5.1 does not behave like earlier models, so old prompting habits can make it perform worse and cost more.",
+   "detail": "The host says the model is best for long-running tasks but only with specific prompting. One setting Anthropic says to keep high is, in the host's view, making results worse.",
+   "t": "0:00"
+  },
+  {
+   "idea": "On the host's client tasks, Fable 5.1 finished more work for less money, not better work on most tasks.",
+   "detail": "Fable 5 did better work on most tasks. Fable 5.1 was better only on the hardest task. It finished about 40% faster and cost well under half as much. Fable 5 stopped before the end of some attempts, while Fable 5.1 finished every one.",
+   "t": "0:00-1:14"
+  },
+  {
+   "idea": "The apparent cost drop comes from pricing changes, not from fewer tokens.",
+   "detail": "A usage command in Claude Code estimates pay-per-use cost, and it shows Fable 5.1 about 47% cheaper than Fable 5. The host says the cut is mostly the 75% lower price on cached reads, which matters more on long tasks because the growing conversation is re-read on every turn.",
+   "t": "1:14-2:41"
+  },
+  {
+   "idea": "Output tokens are priced separately and rose, so the bill can still go up.",
+   "detail": "Per Artificial Analysis, Fable 5.1 wrote about 1.7x more output than Fable 5 and cost about 20% more per task, which offsets the cheaper reads.",
+   "t": "2:41"
+  },
+  {
+   "idea": "Guardrail hits can silently downgrade the model for the rest of the session.",
+   "detail": "Anthropic says guardrails interrupt Claude Code about 60% less often. When one does trigger, Claude Code switches to a weaker model without telling the user and keeps that model even for unrelated requests. The host gives an anecdote where one word in a joke file caused a switch.",
+   "t": "2:41"
+  },
+  {
+   "idea": "Fable 5.1 hallucinates more when it does not know an answer, so its confident answers need checking.",
+   "detail": "Per Artificial Analysis as relayed by the host, on questions it could not answer it made up answers 72.6% of the time, against 63.6% for Fable 5. The host says a model that admits uncertainty is better because you can verify it yourself.",
+   "t": "4:09"
+  },
+  {
+   "idea": "Low effort often gives better results and fewer tokens than high effort on the host's tasks.",
+   "detail": "On high effort the model spent a long time going back and forth on one part of a feature. On low effort it finished the whole feature with a better result. The host recommends starting at low and raising effort only when the output shows a reason.",
+   "t": "5:22"
+  },
+  {
+   "idea": "Instructions written for older models stay in CLAUDE.md and now cost tokens and sometimes cause problems.",
+   "detail": "The fix is to test each instruction by removing it and rerunning the same kind of task. If the result is unchanged, delete the instruction. A prompt-audit command, named in the transcript as a Claude API prompt audit, reports which instructions target older models and proposes exact edits. It changes nothing automatically.",
+   "t": "5:22-6:50"
+  },
+  {
+   "idea": "For unattended long runs, the prompt must say no one is watching, and must allow reversible steps the request already covers.",
+   "detail": "Fable 5.1 pauses to ask permission for steps already covered by the original request, and a pause with no one present is effectively a stop. The host says Anthropic's prompting guide suggests stating that nobody is watching and that the model should continue with covered steps that can be undone.",
+   "t": "8:04"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Start at low effort and escalate only on evidence",
+   "how": "Set the effort setting to low for a task first. Raise it only if the output shows the extra effort is needed. The host says high effort caused a lot of back-and-forth on one part of a feature.",
+   "when": "Default for most Fable 5.1 coding tasks. Raise effort only for work that is clearly hard."
+  },
+  {
+   "name": "Ablation test to prune CLAUDE.md",
+   "how": "For each instruction in CLAUDE.md, remove it and rerun the same kind of task. If the output is the same, delete the instruction permanently. Use the prompt-audit command the host names (Claude API prompt audit) to list instructions written for older models, with proposed diffs. Review and approve each change yourself.",
+   "when": "After switching models, or whenever CLAUDE.md has accumulated workaround rules for older behaviour."
+  },
+  {
+   "name": "Unattended-run preamble",
+   "how": "State in the prompt that no one is watching. Tell the model to continue with any step already covered by the original request as long as it can be undone. Ask it not to stop for questions that do not need asking.",
+   "when": "Long agent runs the user will not monitor, where a permission pause would stall the job indefinitely."
+  },
+  {
+   "name": "Explicit scope fence",
+   "how": "Add an explicit list of what must stay unchanged, for example test files or specific modules. Tell the model to mention any other problems it notices at the end of its reply instead of fixing them.",
+   "when": "Any feature task on a codebase where extra edits could change behaviour the user wants preserved."
+  },
+  {
+   "name": "Minimal-diff editing instruction",
+   "how": "Tell the model that when a small change gives the same result, it should edit only that part of the file, not rewrite the whole file. The host says this cut output tokens on a large project.",
+   "when": "Multi-file edits where full-file rewrites drain the usage limit."
+  },
+  {
+   "name": "Remove mannered prose",
+   "how": "Add an instruction to remove all mannered prose, meaning metaphors and fancy phrasing in place of plain statements. The host used this on a research-writing task.",
+   "when": "Long research or report writing where the point gets buried in figurative language."
+  },
+  {
+   "name": "Whole-feature prompts instead of step-by-step prompts",
+   "how": "Describe the end result of the whole feature clearly in one prompt, and let the model work through the steps itself rather than sending one small step at a time.",
+   "when": "Large, well-specified tasks where the model's ability to finish without stopping matters."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Fable 5.1",
+  "Fable 5",
+  "Opus 5",
+  "CLAUDE.md",
+  "Claude API prompt audit (command name as spoken; exact invocation not shown)",
+  "Artificial Analysis (independent model benchmarking)",
+  "Porkbun (sponsor, domain registrar)"
+ ],
+ "numbers": [
+  {
+   "claim": "Fable 5.1 finished about 40% faster and cost well under half as much as Fable 5 on the hardest client task (host's own tests, several runs each).",
+   "t": "1:14"
+  },
+  {
+   "claim": "Claude Code usage estimate shows Fable 5.1 about 47% cheaper than Fable 5, mainly from price changes.",
+   "t": "1:14"
+  },
+  {
+   "claim": "Cached-read price cut 75% for Fable 5.1.",
+   "t": "1:14"
+  },
+  {
+   "claim": "Artificial Analysis: Fable 5.1 produced about 1.7x the output of Fable 5 and cost about 20% more per task.",
+   "t": "2:41"
+  },
+  {
+   "claim": "Anthropic says guardrails interrupt Claude Code sessions about 60% less often with Fable 5.1.",
+   "t": "2:41"
+  },
+  {
+   "claim": "Hallucination rate when the model did not know the answer: Fable 5.1 72.6% vs Fable 5 63.6% (Artificial Analysis as relayed).",
+   "t": "4:09"
+  },
+  {
+   "claim": "Hardest task: Fable 5.1 finished about 40% faster and cost 58% less (the host states both 'well under half' at 1:14 and '58% less' at 10:59).",
+   "t": "10:59"
+  }
+ ],
+ "hot_takes": [
+  "Client comparisons (Fable 5 vs 5.1) rest on undisclosed projects and a handful of runs. Treat them as anecdotes, not a benchmark.",
+  "The most important warning, that a guardrail silently switches the session to a weaker model, is backed only by one anecdote and an Anthropic claim about guardrail frequency. It needs independent verification before anyone relies on it.",
+  "The cost figures conflict in the transcript: 'well under half as much' (1:14) versus '58% less' (10:59). The 47% figure is an estimate from a usage command, not billed cost.",
+  "The channel promotes its paid community (AI Labs Pro) and includes a sponsor read (Porkbun, roughly 6:50-8:04). Weigh the tips with that in mind.",
+  "The CLAUDE.md ablation method (remove an instruction, rerun, delete if unchanged) is sound practice regardless of model, and is the most reusable idea here.",
+  "Tips about low effort and scope fencing are reasonable but generic. Most are standard prompt hygiene, not Fable-specific findings."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Strategy routing and the Merkle audit log could record model substitutions. Silent mid-session downgrades under guardrails are exactly what that layer should surface, and per-token-class cost matters for budgets.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Long unattended Claude Code runs with checkpoint/resume and loops are the exact case the no-one-watching prompt pattern targets. Scope fences and CLAUDE.md pruning apply directly to the harness's prompts.",
+   "action": "Add an unattended-run preamble (no one watching; continue reversible covered steps) and an explicit scope-fence block to ProsHarness run prompts. Run an ablation pass on the CLAUDE.md the harness loads."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

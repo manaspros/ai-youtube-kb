@@ -1,0 +1,162 @@
+{
+ "one_line": "Yugabyte's CEO argues agent memory is solved but cross-agent learning is not, and demos Mako, a private-to-shared context store where humans promote memories and provenance is traceable.",
+ "summary": "The speaker, a Yugabyte co-founder, says per-agent memory works but learning across a group of agents is unsolved. He says handoffs through output files (MD, PDF) lose the reasoning and dead ends, so the receiving agent re-derives everything and burns tokens. He lists five misconceptions: more memory is not learning, shared files are not shared knowledge, RAG over everything is not quality, fine-tuning cannot persist lessons, and bigger context windows make context rot worse. He describes their failed attempts (a distributed RAG pipeline, per-agent Postgres, a headless backend with no human in the loop) and the tuning that followed. The product pitch is Mako, which stores private memories, promotes selected pieces to a shared space under human supervision, and records provenance and traces. A recorded, sped-up demo shows cross-session resumability and cross-IDE sharing via MCP tool calls. Most claims are vendor-side and the metrics are only partly specified, so treat the numbers as self-reported.",
+ "speakers": [
+  "Karthik Ranganathan"
+ ],
+ "orgs": [
+  "Yugabyte"
+ ],
+ "format": "talk",
+ "topics": [
+  "memory",
+  "multi-agent",
+  "context-engineering",
+  "observability"
+ ],
+ "tags": [
+  "agent-memory",
+  "shared-context",
+  "promotion-gate",
+  "provenance",
+  "resumability",
+  "data-pack",
+  "mcp",
+  "rag-tuning",
+  "token-cost",
+  "vendor-pitch"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Per-agent memory is solved, but learning across a group of agents is not, and single-agent memory infrastructure is not the same as what shared learning needs.",
+   "detail": "The speaker frames the gap as an infrastructure problem: memory is extracted from a single agent's conversations and reused by that agent, while learning requires sharing across agents.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Passing only the output of an agent to another agent loses the reasoning, the dead ends and the failed attempts, so the receiver re-derives the work at token cost.",
+   "detail": "He compares it to a new team member who needs the project history; without it they re-argue settled decisions.",
+   "t": "2:33"
+  },
+  {
+   "idea": "Five misconceptions: more memory is not learning, shared files are not shared knowledge, RAG over everything is not quality, fine-tuning does not persist lessons, and a bigger context window makes things worse.",
+   "detail": "He calls each one an architecture gap rather than a feature gap. Context rot is the stated reason larger windows fail.",
+   "t": "3:59"
+  },
+  {
+   "idea": "Shared context needs three properties: agents work on the same context, contributions are supervised (promoted) rather than open, and every fact can be traced to a source, person or conversation.",
+   "detail": "He compares contribution to code review: not everyone can write to the shared context, and promotion is what makes it durable.",
+   "t": "4:55"
+  },
+  {
+   "idea": "Their own earlier designs failed (a shared knowledge base with a distributed RAG pipeline, per-agent tiny Postgres, a headless backend with no UI), and tuning the RAG stack one variable at a time improved results.",
+   "detail": "Without a human in the loop they could not see what went wrong. Per-variable tuning from traces raised the reported scores and cut the context from about 7,000 chunks to about 1,000.",
+   "t": "6:24"
+  },
+  {
+   "idea": "Each memory is private by default and is promoted to a shared space one piece at a time, so access is fine-grained rather than whole-store.",
+   "detail": "In the demo, a memory was invisible to another client until it was promoted, and then it became retrievable. A maintainer can still open a whole data pack.",
+   "t": "14:34"
+  },
+  {
+   "idea": "Human promotion decisions can serve as labeled examples of good memory for future self-improving orchestration, and decision traces down to tool calls can show whether the memory actually saved tokens.",
+   "detail": "He says the trace lets a team check cost savings instead of assuming them. He presents training on promotions as a future direction, not something shipped.",
+   "t": "15:56"
+  },
+  {
+   "idea": "Shared incident memory stops many agents from repeatedly calling a service that is down, because the first agent to hit the failure records it for the rest.",
+   "detail": "This is a proposed use case with no measured result in the talk.",
+   "t": "17:24"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Private-to-shared promotion gate",
+   "how": "Agents write memories to a private scope. A human or a supervised step promotes selected items into a shared scope, so only reviewed items become shared context.",
+   "when": "When several agents or people share context and unreviewed memory would add noise or cost."
+  },
+  {
+   "name": "Provenance on every memory",
+   "how": "Store the source (data source, person or conversation) for each extracted fact so it can be traced back before it is trusted or promoted.",
+   "when": "When shared context must be audited or when a wrong fact needs to be traced to its origin."
+  },
+  {
+   "name": "Scoped data packs with a skill-driven MCP interface",
+   "how": "Group memories into named packs. Expose create and add operations over MCP, and use a skill to tell the agent when to write, so calls are not made on every turn.",
+   "when": "When the same memory must be read from different IDE or chat clients under one account."
+  },
+  {
+   "name": "Cross-session resumability via shared memory",
+   "how": "Start a session, kill it, and start a new one. The new session first searches the stored conversation and then continues, so no project or memory toggle is needed.",
+   "when": "When work on a topic spans days or devices and re-deriving prior reasoning costs tokens."
+  },
+  {
+   "name": "One-variable-at-a-time RAG tuning with traces",
+   "how": "Change a single retrieval variable, re-run with tracing, and keep only changes that improve the metric. Track context chunk count as well as precision.",
+   "when": "When a RAG pipeline built from best-of-breed components performs poorly and the cause is unknown."
+  },
+  {
+   "name": "Trace-based token accounting",
+   "how": "Inspect stored conversation traces down to the tool call to measure whether a retrieval avoided repeated token spend.",
+   "when": "When a team wants evidence that shared memory reduces cost rather than assuming it."
+  }
+ ],
+ "tools": [
+  "Mako (Yugabyte agent-native persistence layer)",
+  "YugabyteDB",
+  "Claude Desktop",
+  "Claude Design",
+  "Codex",
+  "ChatGPT",
+  "MCP",
+  "Postgres"
+ ],
+ "numbers": [
+  {
+   "claim": "Initial RAG faithfulness was 14% on an MD benchmark and 20% on a PDF benchmark. Context precision started at 57%.",
+   "t": "6:24"
+  },
+  {
+   "claim": "Scores rose to 65, 74 and then 82 after one-variable-at-a-time tuning. The speaker does not say which metric each value refers to.",
+   "t": "6:24"
+  },
+  {
+   "claim": "Context chunks dropped from over 7,000 to about 1,000 (about one-seventh of the context size), with higher precision and lower token spend.",
+   "t": "6:24"
+  },
+  {
+   "claim": "The speaker says the token savings from resumed sessions are large but gives no measured figure. The demo only shows the mechanism.",
+   "t": "11:49"
+  }
+ ],
+ "hot_takes": [
+  "Agent memory is solved, but agent learning is not.",
+  "Shared state is not shared knowledge.",
+  "A bigger context window is the surest way to the quickest, most expensive failure.",
+  "Fine-tuning cannot save and persist lessons that agents learn.",
+  "Running RAG over every transcript adds garbage and burns more tokens for worse results."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already has tiered cross-session memory with provenance and conflict resolution. The talk's private-to-shared promotion gate and per-memory traceability map onto that design, and the trace-based token check matches the benchmark-first thesis.",
+   "action": "Add a private-to-shared promotion step to MemoryMesh that requires a human or rule-based approval and stores the source reference, then measure chunk count and token use before and after promotion on a fixed task set."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Resumability across sessions is related to ProsHarness checkpoint/resume. The talk's approach is memory search over a shared store, not a checkpoint, so the overlap is partial.",
+   "action": "Compare ProsHarness checkpoint/resume with a memory-search resume on the same long run and check which needs fewer tokens to restart."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Stated general principle: shared agent context should be a reviewed, provenance-tagged layer rather than a raw RAG dump. The talk offers no independent evidence.",
+   "action": "Read the RAG tuning steps in the talk and check whether our own retrieval changes were tested one variable at a time with traces."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

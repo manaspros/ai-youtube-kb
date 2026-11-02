@@ -1,0 +1,177 @@
+{
+ "one_line": "Ara Khan (Cline) argues for four maturity levels of agent building: framework, hand-built state machine, Kanban as the UX, and cloud execution. Core warnings: keep prompts minimal, keep agents CLI-testable, and keep architecture human-owned.",
+ "summary": "Ara Khan, who works on Cline, presents a four-level maturity model for building AI agents: start with a framework to test whether an idea works, then build a hand-written agent as an explicit state machine, use Kanban boards as the working interface, and finally run agents in the cloud. The talk is mostly opinion and hot takes, with few measured numbers. The speaker says frameworks lose out once production needs customization. He argues that every instruction added to a prompt can make a frontier model worse, so prompts should be pruned, and that agents should be exposed through a CLI so coding agents can build and test them. He also warns that frontier-lab APIs need exact reasoning-trace handling, which he says is easy to get wrong silently. He says the architecture and state-machine design must be done by a human, even when models write the code. He describes Kanban as the right view for running several parallel agents, with the user acting as an engineering manager. He ends by saying cloud agents, run per task on their own machines and dispatched from a phone, will carry most of the compute. Auto-captions were corrected where obvious, including \"client\" to Cline or Claude Code depending on context and \"Canman\" to Kanban.",
+ "speakers": [
+  "Ara Khan"
+ ],
+ "orgs": [
+  "Cline"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "coding-agents",
+  "context-engineering",
+  "software-factory"
+ ],
+ "tags": [
+  "agent-maturity",
+  "state-machine",
+  "prompt-pruning",
+  "kanban",
+  "cloud-agents",
+  "reasoning-traces",
+  "framework-skepticism",
+  "cli-testability",
+  "cline",
+  "claude-code"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Use a framework to find product-market fit, not for production",
+   "detail": "Frameworks such as LangChain and LangGraph can produce a working agent quickly for a prototype. The speaker says that for production the needed customization, modularity and control usually fall outside what a framework offers, so he writes his agent layer by hand.",
+   "t": "2:31"
+  },
+  {
+   "idea": "Model every agent as a state machine and always know its current state",
+   "detail": "He says every agent is essentially a recursive while loop with a few conditions and end states. For a file-reading task he walks through the states: user task, read tool action, realize the read is done, call the completion tool, task complete. Keeping track of the current state is the mental model he recommends.",
+   "t": "3:54"
+  },
+  {
+   "idea": "Every instruction added to a prompt can make frontier models worse",
+   "detail": "Large system prompts, many edge cases and nested if-else logic can hurt newer models, which perform better with less guidance. He cites the Codex repo, where the prompt for GPT-5.3 is about a third the size of the GPT-5 prompt. His team rewrote Cline from scratch to remove accumulated junk, and he says Claude Code has been rewritten several times.",
+   "t": "5:09"
+  },
+  {
+   "idea": "Make the agent CLI-testable so coding agents can build and test it",
+   "detail": "If an agent can be built and tested through a CLI, other coding agents can change it, run it end to end and iterate on it, including in a long-running background thread. He ties this to a shift in which humans are increasingly guided by AI, and suggests writing AGENTS.md well, using skills, and setting up CI/CD for the agent.",
+   "t": "6:26"
+  },
+  {
+   "idea": "Architecture must be designed and read by a human, not left to models",
+   "detail": "He says the speaker and team learned that design should be thought through carefully and the generated code read, even when an agent writes it. He calls the high throughput of tokens a risk of producing slop and says the state machine should be decided before letting models run.",
+   "t": "7:49"
+  },
+  {
+   "idea": "Frontier APIs can silently degrade results if reasoning traces are not sent back exactly",
+   "detail": "Newer reasoning models expect reasoning traces returned in a precise format across turns. Sending them incorrectly still produces output, but performance drops with no visible error. He says many teams miss the gains from new models for this reason and that an abstraction layer such as OpenRouter is not enough. Each provider's API needs testing.",
+   "t": "8:58"
+  },
+  {
+   "idea": "Kanban is the right UX for running several agents in parallel",
+   "detail": "Agents are inference-bound and can run for 8 to 10 minutes, so the user should run two or three at once. Each task's state should be isolated because agents may mutate the same source. A Kanban board lets the user act as an engineering manager, watching each agent, seeing headline status, and chaining tasks so one starts when another finishes. He says the board shows tasks as in-progress or in review when they need input.",
+   "t": "10:18"
+  },
+  {
+   "idea": "Move agent execution to the cloud, one isolated machine per task",
+   "detail": "Cloud agents avoid local dependencies because each task gets its own machine and can set up its own environment. He sends tasks from his phone, and they can run 15 to 20 minutes or more, including GUI-like testing steps. He also says a shared cloud setup lets many people use and modify the same agent setup.",
+   "t": "12:59"
+  },
+  {
+   "idea": "Use the four levels as heuristics and move up or down with the effort required",
+   "detail": "He suggests starting with the simplest version that works, then moving up or down the levels based on how much effort and rigor the problem needs. He sees Kanban as the UX layer and cloud execution as the shipping layer.",
+   "t": "15:47"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Agent as explicit state machine",
+   "how": "Write the agent as a loop with named states (user task, tool action, completion) and defined end states. At any point, the state should be identifiable from the trace.",
+   "when": "Designing a new agent or debugging one that stalls or loops unexpectedly."
+  },
+  {
+   "name": "Prune the system prompt on every change",
+   "how": "Treat each added instruction or edge-case branch as a possible regression. Remove junk from older versions, compare behavior before and after, and rewrite from scratch when accumulated cruft is larger than the useful content.",
+   "when": "Prompts or agent logic have grown through patching, or a newer frontier model is being adopted."
+  },
+  {
+   "name": "CLI-first agent interface for agent-driven development",
+   "how": "Expose build, run and test steps through a CLI, document them in AGENTS.md, and add CI/CD so that other coding agents can test changes end to end without a human setup step.",
+   "when": "You want coding agents to iterate on your own agent, or want long background runs that modify and verify it."
+  },
+  {
+   "name": "Exact reasoning-trace round-tripping",
+   "how": "Return reasoning traces to the provider in the exact format it expects across turns. Test each provider's API separately and verify output quality, since failures degrade quietly.",
+   "when": "Building multi-turn conversations with reasoning models from frontier labs."
+  },
+  {
+   "name": "Kanban board as the multi-agent control surface",
+   "how": "Give each agent an isolated task state, show every task as a column card (in-progress, review, done), open a task to see its full trace, and chain dependent tasks so downstream work starts automatically.",
+   "when": "Running two or three or more agents in parallel that may touch the same codebase."
+  },
+  {
+   "name": "Per-task cloud agent dispatch",
+   "how": "Run each long task on its own cloud machine with its own environment, start tasks from a phone or laptop, and pull the resulting PR later. Shared cloud setups can be modified by several people.",
+   "when": "Tasks are long (15 to 60 minutes), numerous, or need to run without local dependencies."
+  },
+  {
+   "name": "Human-owned architecture before code generation",
+   "how": "Before an agent writes code, a human writes down the architecture and state machine, and reviews the generated code instead of letting models run through the codebase unsupervised.",
+   "when": "Starting a new agent or making a structural change to an existing one."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "Cursor",
+  "Factory",
+  "Cline",
+  "LangChain",
+  "LangGraph",
+  "OpenRouter",
+  "Linear",
+  "AGENTS.md",
+  "VS Code"
+ ],
+ "numbers": [
+  {
+   "claim": "The GPT-5.3 Codex repo prompt is about one third the size of the GPT-5 prompt.",
+   "t": "6:26"
+  },
+  {
+   "claim": "Claude Code has been rewritten from scratch at least seven times (speaker's hedged recollection).",
+   "t": "6:26"
+  },
+  {
+   "claim": "A coding agent may run for 8 to 10 minutes at a time, so the user can run two or three agents in parallel.",
+   "t": "11:36"
+  },
+  {
+   "claim": "Cloud agent tasks sent from a phone often run 15 to 20 minutes, and a complex task can take 50 to 60 minutes.",
+   "t": "14:24"
+  },
+  {
+   "claim": "The speaker's Kanban post on March 26 was followed about 10 hours before the talk by Claude Code shipping a similar Kanban view.",
+   "t": "11:36"
+  },
+  {
+   "claim": "The scale example is a company with 8,000 people that needs to use the same agent system.",
+   "t": "12:59"
+  }
+ ],
+ "hot_takes": [
+  "Most people building for production should not use an agent framework, because they will outgrow its customizability.",
+  "Frontier models do better with shorter prompts, and long system prompts make them worse.",
+  "Architecture and the state machine must be designed by a human even when agents write the code.",
+  "Frontier lab APIs are built to lock users in, and an OpenRouter-style abstraction is not enough to avoid quiet degradation.",
+  "Kanban boards are the future UX for working with agents, and most agent compute will move to the cloud."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The reasoning-trace warning matters for a proxy that sits between clients and model APIs. A proxy that rewrites or drops reasoning blocks would degrade quality silently, and the talk gives no measured numbers for it.",
+   "action": "Check that the L1 proxy passes reasoning or thinking blocks through unchanged across multi-turn calls to reasoning models, and add a test that fails if they are dropped."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already wraps long Claude Code runs with checkpoint/resume and phone approvals. The talk's state-machine framing, its in-progress and review states, and its push for CLI-testable agents directly apply to that harness.",
+   "action": "Model each ProsHarness run as an explicit state machine (running, needs-approval, complete) and show those states in the phone approval view, with the Claude Code CLI as the testable entry point."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

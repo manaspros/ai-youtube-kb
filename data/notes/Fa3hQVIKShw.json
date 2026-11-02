@@ -1,0 +1,182 @@
+{
+ "one_line": "Hrishi Olickel (Southbridge AI) argues there is no universal schema, so build just-in-time ontologies per decision, using cheap model tiers, cross-family disagreement, and a failure surface.",
+ "summary": "Olickel argues that data transformation was expensive because intelligence was expensive, and that cheap models now make it practical to build ontologies only when a specific decision needs them. He says there are four schemas (source, storage, decision, and the model's prior) and that the right merge is only known when the decision is known. He splits intelligence into three roles: designers (expensive, slow models), workers (cheap, repeatable models inside pipelines), and hill climbers that optimize the pipeline. In an Ohio campaign-finance entity-resolution job, a cheap model matched a frontier model at about 2% of the cost, and the full statewide run came to $795 against an $800 budget, versus about $10,000 projected. Cross-family model disagreement was used as the audit signal, and most remaining errors sat in the disagreement set. He closes with a four-part requirement for self-optimizing data work (deployment surface, bounded experiments, methodology, failure surface) and a six-stage process.",
+ "speakers": [
+  "Hrishi Olickel"
+ ],
+ "orgs": [
+  "Southbridge AI"
+ ],
+ "format": "talk",
+ "topics": [
+  "data-engineering",
+  "token-cost-efficiency",
+  "evals",
+  "agent-architecture"
+ ],
+ "tags": [
+  "entity-resolution",
+  "just-in-time-ontology",
+  "pareto-serving",
+  "cheap-models",
+  "cross-model-disagreement",
+  "failure-surface",
+  "campaign-finance",
+  "data-quality",
+  "priors",
+  "cost-control"
+ ],
+ "key_ideas": [
+  {
+   "idea": "There is no universal schema; there are four schemas, and the right merge is only known when the decision is known",
+   "detail": "Four schemas apply to any record: the source's, the storage's, the decision's, and the model's prior. A 'customer' means different things to billing, support and compliance. Pulling them together is transformation, and it can only be done once the question is known. He calls this a just-in-time ontology, built for a job, kept with its receipts, and reused.",
+   "t": "3:51"
+  },
+  {
+   "idea": "Three roles for intelligence in data work, and they pull in opposite directions",
+   "detail": "Designers break down the problem, write specs and authorize spend, and need slow, deep-thinking models. Workers sit inside pipelines doing repetitive tasks, and need cheap, fast, instruction-following models. Hill climbers take a first pipeline and self-optimize it over budgets, debugging and notes. Coding agents usually mash these roles into one context window, which he sees as the root problem.",
+   "t": "8:16"
+  },
+  {
+   "idea": "Cheap models with a rewritten question beat expensive models with the same question",
+   "detail": "The first design had a cheap reasoning model say no to every household link, missing nine links on a development set. The team did not change the models or thresholds. They rewrote the household question to say what counts as enough evidence, and the model went from no on all 13 dev questions to yes. Over a dozen rounds of this definition-fixing were needed statewide.",
+   "t": "11:37"
+  },
+  {
+   "idea": "Cross-family model disagreement as a cheap audit",
+   "detail": "Two model families agreed on 194 of 200 held-out families, and none of the shared answers was wrong. All errors sat in the six families where they disagreed. Models from the same group tend to share priors, so a different family is a better check. Only the disagreement set needs a stronger model or a human. He notes that models distilled from the same company are the exception.",
+   "t": "15:33"
+  },
+  {
+   "idea": "Priors cause silent errors that count checks and row totals do not catch",
+   "detail": "One pipeline missed in-kind contributions because the file spelled the label differently, so 15,658 in-kind rows were counted as ordinary money. Another tried four date formats when the file used a fifth, leaving 99.4% of transaction dates empty while row counts and dollar totals still matched. A negative loan sign was dropped and the absolute value stored, turning a net of 784,000 into 5.3 million of debt. He says this is now the largest class of error he sees.",
+   "t": "14:27"
+  },
+  {
+   "idea": "Define the failure surface before building anything",
+   "detail": "Before trying architectures, set a baseline to fail against: good models on a small slice, partly checked by hand, plus schema checks and behavioral measures. He says the agent needs a place to fail safely before it can iterate toward a solution. He credits this as the hardest part to turn into tooling and instructions.",
+   "t": "17:43"
+  },
+  {
+   "idea": "Six-stage pipeline lifecycle: split, fail-surface, pilot, rig, deploy, then Pareto-surf",
+   "detail": "Split 800,000 rows into 200,000 cases, then into typed questions. Set the failure surface. Run minimal bounded pilots. Promote working pilots into reusable loop code (called codons). Deploy to production. Then keep a baseline and swap in cheaper models while tightening the success bar, so the cost-quality frontier moves over time.",
+   "t": "18:49"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Split the job into typed cases before modeling",
+   "how": "Break a large table into many smaller cases (about 200,000 from 800,000 rows), then into typed questions, e.g. what kind of donor and which relation is being checked. Each question gets its own definition and failure check.",
+   "when": "Large entity-resolution or extraction jobs where one global prompt would mix unrelated decisions."
+  },
+  {
+   "name": "Fix the question definition, not the threshold",
+   "how": "When a model answers no to everything (or yes to everything), rewrite the criterion to say what counts as sufficient evidence. Keep models and thresholds fixed and rerun the dev set. Log each definition change as a round.",
+   "when": "A cheap model is systematically too conservative on a judgment question, and the cause is an underspecified definition."
+  },
+  {
+   "name": "Cross-family disagreement as the audit signal",
+   "how": "Run two models from different families over the full set. Accept agreements and send disagreements to a stronger model or a human. Sample-check the agreed set to measure what the audit misses.",
+   "when": "Large-batch classification or matching where human review is too slow and models from one family share the same blind spots."
+  },
+  {
+   "name": "Cost-tiered checking budget",
+   "how": "Set the total budget before running. Split spend into first answers, second opinions on disagreements, and a final audit, and track each. In his run, checking cost about four times the first pass.",
+   "when": "Any batch LLM job that needs a predictable cost ceiling and an audit trail."
+  },
+  {
+   "name": "Bounded pilots, then reusable codons, then production",
+   "how": "Test an architecture in a small bounded pilot with time, cost and access limits. Once it works, package the loop into a reusable segment and validate it independently. Chain validated segments into a pipeline and deploy it.",
+   "when": "Turning an ad hoc agent investigation into a repeatable pipeline that can be reverted and debugged."
+  },
+  {
+   "name": "Pareto surfing with a fixed baseline",
+   "how": "Keep a working architecture as the baseline. Swap in cheaper models or components one at a time, compare each against known intermediates, and tighten the success requirement as results improve.",
+   "when": "Optimizing an existing pipeline for cost and speed without losing accuracy."
+  },
+  {
+   "name": "Check for prior-driven silent errors",
+   "how": "Check null rates per column and count rows per category, not just totals. Check sign conventions and date formats against the source file. Use a human or a differently-trained model to test assumptions that the agent made on its own.",
+   "when": "Any agent-run data transformation where row counts and totals look fine but the content is wrong."
+  }
+ ],
+ "tools": [
+  "Hank Weave (captions: Hank Wave, open-source harness for headless data work)",
+  "Claude Code (captions: cloud code)",
+  "Opus",
+  "Anthropic Claude models (cheap reasoning tier and frontier tier)"
+ ],
+ "numbers": [
+  {
+   "claim": "Projected entity-resolution cost for the Ohio campaign-finance job before the new approach was about $10,000",
+   "t": "0:40"
+  },
+  {
+   "claim": "Final ground truth for every donor case in Ohio delivered under $800, about 10 days after the first model call",
+   "t": "1:06"
+  },
+  {
+   "claim": "A cheap reasoning model alone matched the frontier model on about 200 held-out families at roughly 2% of the cost",
+   "t": "11:05"
+  },
+  {
+   "claim": "Statewide run used 795 of an $800 budget set in advance; checking was about four times the cost of first answers (545 for second opinions, disagreements and audit vs 128 for first answers)",
+   "t": "12:11"
+  },
+  {
+   "claim": "Every one of Ohio's 203,317 cases received a label stating what the answer rests on and how far it was checked",
+   "t": "11:37"
+  },
+  {
+   "claim": "Two model families agreed on 194 of 200 held-out families; none of the shared answers was wrong, and all errors were in the 6 disagreeing families",
+   "t": "15:33"
+  },
+  {
+   "claim": "Agent ran about 10 days, tried over a dozen architectures, made about 90,000 calls to the decision model, ran more than 4,000 harness runs, and used roughly 6 billion tokens",
+   "t": "12:45"
+  },
+  {
+   "claim": "Input split: about 800,000 rows into about 200,000 smaller cases, each broken into typed questions",
+   "t": "18:15"
+  },
+  {
+   "claim": "A date-format bug left 99.4% of transaction dates empty while row counts and dollar totals still matched",
+   "t": "14:27"
+  },
+  {
+   "claim": "A negative-sign bug turned a net of 784,000 into 5.3 million dollars of debt",
+   "t": "15:00"
+  }
+ ],
+ "hot_takes": [
+  "There is no universal schema; every ontology is valid as long as its context is labeled and preserved.",
+  "Bigger models often hold their priors more firmly and argue for them harder, so they can be worse at catching silent data errors.",
+  "Disagreement between model families is a cheaper and better audit signal than a second run of the same family or a human.",
+  "Silent errors from model priors (sign conventions, date formats, label spellings) are becoming the largest class of data-work error, and row counts do not catch them.",
+  "The dominant failure in interactive data agents is that they always return a confident number; sometimes the right output is no number at all."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Cross-model disagreement and per-item receipts (label, basis, check depth) could fit MemoryMesh provenance, but the talk is about batch data jobs, not the proxy or memory layer.",
+   "action": "Read the talk's entity-resolution write-up and consider storing a per-record label with its basis and check depth as provenance metadata."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The failure-surface-first, bounded-pilot, then-codon, then-production sequence and the cost-tiered budget map onto ProsHarness checkpointed loops and plan/critique steps.",
+   "action": "Add a failure-surface step (baseline slice and schema checks) before ProsHarness plan loops, and log each 'definition fix' round as a versioned checkpoint."
+  },
+  {
+   "project": "general",
+   "score": 3,
+   "why": "Directly relevant to the recurring interests in entity resolution, cheap-model (Haiku) pipelines and LLM-based data quality: cheap workers, a stronger model only on disagreements, and prior-driven silent errors.",
+   "action": "For the next entity-resolution or extraction batch, run two cheap models from different families on a 200-item held-out slice, send only disagreements to a stronger model, and measure how many errors the agreed set still hides."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T16:26:27"
+}

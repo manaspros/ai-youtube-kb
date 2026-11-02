@@ -1,0 +1,170 @@
+{
+ "one_line": "Tutorial on running periodic Python jobs with the schedule package, scraping Hacker News, and alerting on missed runs with a Better Stack heartbeat.",
+ "summary": "The video builds a small Python script that scrapes the top Hacker News front-page articles with requests and BeautifulSoup, sorts them by points, and returns the top N. It then runs that function periodically using the schedule package, first with every(N).seconds/minutes and a daily at(\"11:49\") job, then with the @repeat decorator, and finally passes arguments such as n=1 into scheduled jobs. The speaker stresses that schedule is a simple library with no process manager, so the script needs its own while loop calling run_pending(), and that the package is not meant for persistence, exact timing, concurrency or localization. The second half adds monitoring: a Better Stack heartbeat with an expected interval and a grace period (20% extra recommended), pinged with a GET request at the end of each job, with an incident and email raised when pings stop. The video closes with alternatives (OS cron, Celery Beat, serverless functions) and notes that heartbeat monitoring works with all of them. It is a beginner-level tutorial, and most of the monitoring segment promotes Better Stack's own product.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools",
+  "observability"
+ ],
+ "tags": [
+  "python",
+  "schedule",
+  "job-scheduling",
+  "cron",
+  "heartbeat",
+  "dead-mans-switch",
+  "monitoring",
+  "web-scraping",
+  "beautifulsoup",
+  "requests",
+  "better-stack",
+  "celery-beat",
+  "serverless"
+ ],
+ "key_ideas": [
+  {
+   "idea": "schedule is a scheduler library, not a process manager",
+   "detail": "Jobs are declared with every(N).unit.do(fn) or every().day.at(\"HH:MM\").do(fn), but nothing runs them until the script has a loop (while True with schedule.run_pending() and time.sleep(1)) that keeps it alive.",
+   "t": "1:09"
+  },
+  {
+   "idea": "Scraped values are strings and need cleaning before sorting",
+   "detail": "The score span reads like '13 points'. The speaker splits on whitespace, takes the first token, and converts it with int() before sorting with sorted(key=..., reverse=True) and slicing the top N.",
+   "t": "9:59"
+  },
+  {
+   "idea": "Pairing scraped lists with zip and building dicts",
+   "detail": "Anchor tags (title text, href) and score spans come from two CSS selects over the same page and are combined with zip into one dict per article, which is then sorted.",
+   "t": "8:58"
+  },
+  {
+   "idea": "Decorator form keeps the schedule next to the job",
+   "detail": "Using @repeat(every(5).seconds) above the function replaces the separate schedule.every(...).do(...) call. Job arguments are passed as extra decorator keyword arguments (n=1), or as keyword arguments to .do().",
+   "t": "18:33"
+  },
+  {
+   "idea": "Know the limits of schedule before relying on it",
+   "detail": "The docs describe it as a solution for simple problems. The speaker lists job persistence, exact timing, concurrent execution and localization as reasons to move to a more robust tool.",
+   "t": "17:26"
+  },
+  {
+   "idea": "Silent failure is why scheduled jobs need monitoring",
+   "detail": "A periodic job can stop without any visible error. The speaker argues that you need a way to notice a missed run, not just a way to run the job.",
+   "t": "21:35"
+  },
+  {
+   "idea": "Dead-man's-switch heartbeat: ping at the end of the job",
+   "detail": "Create a heartbeat in Better Stack with an expected interval (about 30 seconds in the demo) and a grace period (20% over expected duration recommended), then request the URL at the end of the job. When pings stop, an incident is raised, and the speaker shows an email alert after stopping the script.",
+   "t": "23:36"
+  },
+  {
+   "idea": "Alternatives for other environments",
+   "detail": "OS cron suits backups and scripts, Celery Beat suits Django apps, and serverless platforms (AWS Lambda, Azure Functions) handle infrastructure. The speaker says heartbeat monitoring works with all of these.",
+   "t": "27:11"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Declarative recurring jobs with schedule",
+   "how": "pip install schedule. Declare jobs with schedule.every(5).seconds.do(fn), schedule.every(10).minutes.do(fn), or schedule.every().day.at(\"11:49\").do(fn). Run them with: while True: schedule.run_pending(); time.sleep(1). The speaker mentions a timezone argument to at() exists but does not show it.",
+   "when": "Single-process scripts with a few simple recurring tasks (scrapes, backups, digests) where a full scheduler or cron is more than needed."
+  },
+  {
+   "name": "Decorator-based job registration",
+   "how": "from schedule import repeat, every. Put @repeat(every(5).seconds) above the job function. For arguments, add them to the decorator: @repeat(every(1).day, n=1) on def get_top_n(n). The loop still calls schedule.run_pending().",
+   "when": "When the schedule belongs with the job definition and you want to avoid a separate block of .every().do() calls."
+  },
+  {
+   "name": "HTML scrape to dict list with BeautifulSoup",
+   "how": "resp = requests.get(url); soup = BeautifulSoup(resp.content, \"html.parser\"). Use soup.select(css) with class selectors to get the title spans and their child anchors (anchor.text, anchor[\"href\"]) and the score spans (span.text). Zip the two lists and build a dict per row with name, url and score (int of the first token). Sort with sorted(rows, key=lambda x: x[\"score\"], reverse=True)[:n].",
+   "when": "Periodic scraping of a listing page where each item has a title, link and numeric field to rank by. The speaker uses Hacker News as the example."
+  },
+  {
+   "name": "Heartbeat ping at the end of each scheduled job",
+   "how": "In Better Stack, open Heartbeats, click Create heartbeat, and set the expected period (the demo uses about 30 seconds) and a grace period (BetterStack recommends about 20% over expected duration). Copy the URL. At the end of the job, before returning, call requests.get(heartbeat_url). Set up on-call escalation for call, SMS, email or push alerts when pings stop.",
+   "when": "Any scheduled job, cron entry or serverless function where a silent failure or a missed run matters. The pattern is platform-neutral: any URL that accepts a GET or HEAD request can serve as the dead-man's switch."
+  },
+  {
+   "name": "Choose the scheduler by requirement",
+   "how": "Simple periodic script: schedule. Recurring database backup or script on a server: OS cron. Django app: Celery with Celery Beat. Managed infrastructure: AWS Lambda or Azure Functions on a timer trigger. The speaker says you can attach heartbeat monitoring to any of them.",
+   "when": "When deciding how to run a periodic job, especially once you need persistence, exact timing, concurrency or localization."
+  }
+ ],
+ "tools": [
+  "schedule (Python package)",
+  "requests",
+  "BeautifulSoup 4 (bs4) with html.parser",
+  "pprint",
+  "Better Stack (Heartbeats, incidents, on-call escalation)",
+  "VS Code",
+  "Hacker News (scraped source)",
+  "Unix cron",
+  "Celery",
+  "Celery Beat",
+  "Django",
+  "AWS Lambda",
+  "Azure Functions"
+ ],
+ "numbers": [
+  {
+   "claim": "Video length is 27:32; the scheduling portion is about 0:00 to 21:00 and monitoring follows.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Example score parsed from the page is '13 points' before conversion to int 13.",
+   "t": "9:59"
+  },
+  {
+   "claim": "Sorted sample shows top article at 380 points and the fifth at 235 points.",
+   "t": "11:02"
+  },
+  {
+   "claim": "Demo interval for every(5).seconds is 5 seconds, with a loop sleep of 1 second.",
+   "t": "14:03"
+  },
+  {
+   "claim": "Daily at() demo used 11:49, which was about one minute after the recording time.",
+   "t": "16:07"
+  },
+  {
+   "claim": "BetterStack recommends a grace period about 20% over expected duration.",
+   "t": "22:26"
+  },
+  {
+   "claim": "Heartbeat demo expects a ping roughly every 30 seconds; the dashboard waited 1 min 27 s before the first ping.",
+   "t": "23:36"
+  },
+  {
+   "claim": "After the script was stopped, the last heartbeat was 45 seconds old, and the job went down with an incident and email alert.",
+   "t": "24:43"
+  }
+ ],
+ "hot_takes": [
+  "The monitoring segment is product promotion for Better Stack (the channel's own platform). The heartbeat pattern is generic, but the walkthrough shows only that vendor's UI.",
+  "The video names concurrent execution as a limitation of schedule but does not show what happens when a job runs longer than its interval or when run_pending blocks. Overlapping runs go unaddressed.",
+  "Scheduling is demonstrated with wall-clock times in one timezone, and the timezone argument is mentioned but not shown.",
+  "Quality is capped at 3 because it is a beginner walkthrough with no sponsor segment and no production-grade discussion of failure handling."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs loops and schedules. The video's list of what schedule lacks (persistence, exact timing, concurrency control, localization) is a useful checklist for a checkpointed scheduler.",
+   "action": "Check whether ProsHarness loops overlap or resume after a crash. If they do not, add a heartbeat ping at the end of each loop iteration so a stalled loop triggers an alert."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Roadmap items such as the Parquet/DuckDB archive and budget counter sync are periodic jobs. The video covers the dead-man's-switch pattern for them, which is simple but is not an AgentOS-specific technique.",
+   "action": "Add a missed-run alert (heartbeat pattern) to the planned Parquet/DuckDB archive job before it runs in production."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

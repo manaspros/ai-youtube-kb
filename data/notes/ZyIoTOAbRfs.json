@@ -1,0 +1,165 @@
+{
+ "one_line": "Sean Cai argues data markets are the scarce input for turning generalist models into experts, and that single benchmark numbers and contrived expert-made data mislead buyers.",
+ "summary": "Sean Cai, an independent researcher writing on State of Data, argues that high-quality data, not compute or model architecture alone, is the underfunded input that turns generalist models into domain experts. He says the data supply chain is unbundling into specialist vendors, and that labs now spread purchases across 20 to 30 vendors because quality does not scale linearly with quantity. He separates Type 1 data (captured real workflows) from Type 2 data (experts manufacturing examples in artificial settings) and says most vendors sell Type 2 while billing it as Type 1. He offers three verifiability axes (decomposability, consensus on correctness, and how often fresh verified examples appear) to predict which domains mature next, and argues that most contrived benchmarks are cherry-picked and gamed. He recommends multi-harness benchmarking and per-criterion rubric analysis, since one score under one scaffold is a single noisy sample. He closes by claiming data companies are pivoting to enterprises and that enterprises need routing and RL-dataset tooling that can survive base-model swaps. He also announces his own RL-as-a-service venture, so parts of the talk are pitch.",
+ "speakers": [
+  "Sean Cai"
+ ],
+ "orgs": [
+  "Mercor",
+  "Handshake",
+  "Scale AI",
+  "Surge",
+  "Anthropic"
+ ],
+ "format": "talk",
+ "topics": [
+  "training-finetuning-rl",
+  "evals",
+  "data-engineering"
+ ],
+ "tags": [
+  "data-markets",
+  "rl-environments",
+  "verifiability",
+  "type-1-vs-type-2-data",
+  "process-based-data",
+  "benchmark-gaming",
+  "goodhart",
+  "rubric-analysis",
+  "cross-harness-benchmarking",
+  "long-horizon-tasks",
+  "model-layer-lock-in"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Scarce, badly priced data is what turns generalist models into experts",
+   "detail": "He argues that the data layer is underfunded relative to compute and talent, and that it is the leg that produces real expertise. Process-based data (trajectories, reasoning traces, sequences of decisions) matters more than final state outputs such as ERP rows.",
+   "t": "0:12"
+  },
+  {
+   "idea": "Type 1 (real workflow capture) beats Type 2 (expert-made contrived data), but most vendors sell Type 2 as Type 1",
+   "detail": "Type 2 is useful for starting out, but Type 1 is what moves a model from about 20% to 80% competence because realism comes from the work itself. He says the only durable supply is a live business partner, not acquired dead startups' codebases.",
+   "t": "5:22"
+  },
+  {
+   "idea": "Three axes of verifiability predict which domains mature first",
+   "detail": "Asymmetry of verification (how easily a task decomposes into checkable steps), veracity (how much consensus exists on what correct means), and proliferation (how often the real world yields fresh verified examples). Code scored high on all three because of GitHub, while biology, security, finance, healthcare, law and taste score low.",
+   "t": "6:25"
+  },
+  {
+   "idea": "Contrived benchmarks are often cherry-picked and then sold as training data, which is Goodhart's law with a profit motive",
+   "detail": "The recipe he describes: experts generate plausible tasks with chat, cherry-pick cases where the model diverged, package them as a North Star benchmark, then sell data that helps climb it. Such benchmarks test isolated in-distribution questions and miss long-horizon consistency.",
+   "t": "7:29"
+  },
+  {
+   "idea": "A single benchmark number is one sample from an unmeasured distribution, and harness and infrastructure differences drive much of the divergence",
+   "detail": "He says cross-harness and cross-infrastructure differencing is a main cause of benchmark disagreement, and that false positive and false negative rates are often invisible in headline stats.",
+   "t": "8:52"
+  },
+  {
+   "idea": "Rubric-level analysis reveals model shifts that totals hide",
+   "detail": "On three finance tasks (ARR waterfall reconciliation, LBO memo, long-short pair trade) scored with deterministic verifiers plus LLM-as-judge, he says two models within three points overall fell in opposite directions: one was stronger on arithmetic, the other on methodology.",
+   "t": "10:06"
+  },
+  {
+   "idea": "Lab data purchases act as a leading indicator for the next application-layer product",
+   "detail": "He says Anthropic's cybersecurity data buying in January and biological data buying in March and April preceded product launches by two to three months. He suggests classifying tasks on the three axes and tracking where labs spend.",
+   "t": "12:02"
+  },
+  {
+   "idea": "Long-horizon tasks have a checklist, and the raw data needs five signals",
+   "detail": "Checklist: enforced step length, heterogeneous non-interchangeable tool calls, state transitions that constrain future actions, and mandatory failure recovery. Data signals: sequential decisions on one entity, expert action per step, outcomes recorded by independent parties, and economically high-wage work.",
+   "t": "12:02"
+  },
+  {
+   "idea": "Enterprises that own models need an abstraction layer that does not exist yet",
+   "detail": "He lists serve-and-route for small models by cost, latency and performance profiles, and managing RL datasets so that a base-model swap reruns post-training automatically. He treats model lock-in as non-durable because models differ in efficiency and modality and are not fungible.",
+   "t": "15:04"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Three-axis verifiability scoring",
+   "how": "Score a candidate task on decomposability of verification, consensus on correctness, and frequency of fresh verified examples, then rank domains by the result.",
+   "when": "Deciding which domain or task to invest in for training data or evals, or predicting which application area matures next."
+  },
+  {
+   "name": "Multi-harness, multi-infrastructure benchmarking",
+   "how": "Run the same eval under several scaffolds and infrastructures and report the spread, instead of one number under one harness.",
+   "when": "Comparing models or agent configurations where the harness can shift results, so the comparison does not hinge on one run."
+  },
+  {
+   "name": "Per-criterion rubric analysis with deterministic checks plus LLM-as-judge",
+   "how": "Break long-horizon task outputs into rubric criteria, check what can be checked deterministically (for example arithmetic), judge the rest with an LLM, and compare models criterion by criterion.",
+   "when": "Evaluating non-verifiable, multi-step work where totals hide opposite strengths and weaknesses."
+  },
+  {
+   "name": "Long-horizon task checklist",
+   "how": "Check for enforced step length, heterogeneous non-interchangeable tool calls, state transitions that constrain future actions, and mandatory failure recovery before calling a task long-horizon.",
+   "when": "Designing or buying environments for agent training or evaluation."
+  },
+  {
+   "name": "Automatic post-training rerun on base-model swap",
+   "how": "Keep RL datasets as versioned assets so that changing the open-source base model triggers the post-training pipeline again, rather than starting from scratch.",
+   "when": "Maintaining a self-hosted model that is retrained as new open base models ship."
+  },
+  {
+   "name": "Lab spending as a leading indicator",
+   "how": "Track which domains labs buy data for and forecast the next product launch from that.",
+   "when": "Planning product bets or competitive research about frontier lab direction."
+  }
+ ],
+ "tools": [],
+ "numbers": [
+  {
+   "claim": "Data labeling market estimated at about $10 to $15 billion a year per lab, which he calls the least interesting part of data work",
+   "t": "0:12"
+  },
+  {
+   "claim": "Labs mandate vendor diversification across roughly 20 to 30 data vendors",
+   "t": "1:29"
+  },
+  {
+   "claim": "Type 1 data moves a model from about 20 to 80 (his rough framing of competence)",
+   "t": "5:22"
+  },
+  {
+   "claim": "Three finance tasks from real vendors, with GPT 5.5 and Opus 4.8 scoring within three points overall on the same task while showing opposite error patterns (his claim)",
+   "t": "10:06"
+  },
+  {
+   "claim": "Lab data-buying lead time of about two to three months before related product launches (his claim: cyber buying in January, bio in March and April, then Mythos and Claude bio)",
+   "t": "12:02"
+  },
+  {
+   "claim": "A claimed historical pattern that no pioneer infrastructure technology has held more than 10 percent of its market long-term (transcript reads '10'; likely 10 percent)",
+   "t": "15:04"
+  }
+ ],
+ "hot_takes": [
+  "Most benchmarks you see are quietly fake, and the same vendors sell the data that climbs them.",
+  "Everybody sells Type 2 contrived data and bills it as Type 1.",
+  "A single benchmark number under a single scaffold tells you almost nothing.",
+  "Data companies have to become neolabs, and the durable value sits in the services and app layer, not in data.",
+  "Robotics data vendors are largely unsophisticated and their modality choices are tied to an unsolved research question.",
+  "Opus 4.8 is worse than 4.7 on many rubrics, from over-engineered self-reflection (speaker's claim)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk's point about serving and routing small models by cost, latency and performance profiles matches the Govrix strategy-routing layer, but the talk gives no implementation detail.",
+   "action": "Consider adding per-model cost, latency and quality profiles to the Govrix strategy-routing config; no further reading needed."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The cross-harness benchmarking point applies to any evaluation of ProsHarness plan, critique or debate variants, since harness changes can move results.",
+   "action": "When comparing ProsHarness plan-critique variants, run the same eval under two harness configs and report the spread, not a single score."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

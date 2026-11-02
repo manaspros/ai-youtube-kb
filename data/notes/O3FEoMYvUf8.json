@@ -1,0 +1,169 @@
+{
+ "one_line": "Alejandro Vidal (Mindmakers) argues LLM benchmarks should use psychometrics: item response theory (IRT) gives per-question difficulty, per-model ability with intervals, and tools for auditing, shrinking, and protecting benchmarks.",
+ "summary": "The speaker says the industry scores models by counting right answers, which is classical test theory and treats every question as equally informative. He proposes item response theory (IRT) from psychometrics: fit each item with a difficulty (b) and discrimination (a) parameter, and estimate each model's ability (theta) with a likelihood interval. Using real Epoch AI data, he shows that two models with nearly identical raw scores (245 vs 247 of 337) can differ by about one standard deviation in ability. From the same fitted model he derives benchmark audits that flag mislabeled or bad items, a greedy subset method that keeps about 99% rank correlation with roughly 5x fewer items (but not on GPQA, where all items are discriminative), and residual-based outlier detection. He also covers adaptive \"anchor plus fingerprint\" test sets to detect leakage, differential item functioning across open and closed models, and residual correlation matrices as a model \"fingerprint\" that can hint at shared bases or distillation. He presents most of these as early and asks for collaborators.",
+ "speakers": [
+  "Alejandro Vidal"
+ ],
+ "orgs": [
+  "Mindmakers",
+  "Epoch AI"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "models-research"
+ ],
+ "tags": [
+  "item-response-theory",
+  "psychometrics",
+  "benchmark-audit",
+  "benchmark-subset-selection",
+  "residual-analysis",
+  "benchmark-contamination",
+  "adaptive-testing",
+  "differential-item-functioning",
+  "model-fingerprinting",
+  "distillation-detection",
+  "gpqa",
+  "epoch-ai"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Counting correct answers assumes every item is equally important, which is a strong and usually wrong assumption.",
+   "detail": "Classical test theory sums right answers. IRT instead fits each item separately (difficulty b, discrimination a) and estimates model ability theta on a shared scale, so better or more informative items can count for more.",
+   "t": "0:02"
+  },
+  {
+   "idea": "Raw scores can hide real ability differences.",
+   "detail": "Claude Opus 4.1 (245 of 337) and Gemini 3 Pro (247 of 337) look almost identical on accuracy. Under IRT the gap is about one standard deviation, with Gemini ranked higher. The speaker's explanation: a model can win by answering harder items even with fewer total correct.",
+   "t": "6:43"
+  },
+  {
+   "idea": "Item parameters can be used to audit a benchmark.",
+   "detail": "Items with negative discrimination are ones where stronger models tend to get the answer wrong. Flagging them and checking with another LLM found a real gold-label error and a question where the gold answer summed passengers and crew when the question asked only for passengers.",
+   "t": "8:09"
+  },
+  {
+   "idea": "Most of a benchmark can be dropped without changing the ranking, but this depends on the benchmark.",
+   "detail": "Greedily picking the highest-discrimination items reached about 99% rank correlation with about 97 of 484 items. Random picks did much worse. On GPQA, items were all discriminative and non-overlapping, so random subsets matched the full ranking poorly for the opposite reason: each item carried unique information.",
+   "t": "10:52"
+  },
+  {
+   "idea": "Per-item residuals reveal outliers, contamination, and unstable models.",
+   "detail": "Comparing expected and actual answers per item flags suspicious patterns, such as a model answering a question it should miss or missing one it should get. A model with many inconsistent answers (o4-mini in his example) could indicate a broken inference setup or wrong quantization.",
+   "t": "13:40"
+  },
+  {
+   "idea": "Adaptive testing can protect a private benchmark from leakage.",
+   "detail": "Each organization sees a shared anchor set of representative items plus a private fingerprint set of hard items. Later, unusually high residuals on one organization's fingerprint set suggest the benchmark leaked into that organization's training. The speaker says this is not bulletproof.",
+   "t": "16:26"
+  },
+  {
+   "idea": "Group-wise item curves can show bias or differences in training.",
+   "detail": "Splitting models into groups (open vs closed weights) and fitting item curves per group shows items where the curves diverge. Items better for one group share some pattern, which the speaker suggests could hint at training data differences.",
+   "t": "18:44"
+  },
+  {
+   "idea": "Residual correlation between models can map model families.",
+   "detail": "Correlating residual vectors clusters models from the same lab, versions of one model, distillations, and different effort levels. Correlation of about 0.38 appeared between a base model and its distilled version. He suggests this could detect unconsented distillation, but calls it early research.",
+   "t": "20:47"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "IRT calibration of benchmark items",
+   "how": "Build a models-by-items right/wrong matrix from many models. Fit a per-item difficulty b and discrimination a, and a per-model ability theta, with likelihood intervals. Interpret b relative to the model population (b=0 means about half of models answer correctly).",
+   "when": "When you have per-item results across many models and want a fairer ranking than raw accuracy, or need ability intervals."
+  },
+  {
+   "name": "Benchmark audit by discrimination",
+   "how": "Rank items by discrimination. Flag items with negative or near-zero discrimination. Review flagged items with a second LLM and by hand to find mislabeled or ambiguous questions, then fix or remove them.",
+   "when": "When a benchmark is noisy, or when stronger models seem to fail on items they should pass."
+  },
+  {
+   "name": "Greedy high-discrimination subset selection",
+   "how": "Start with the highest-discrimination item and add items in order until the subset's model ranking reaches a target correlation (99% in the talk) with the full benchmark. Compare against a random subset of the same size as a baseline.",
+   "when": "When running a large private benchmark is expensive, and you need a smaller suite that keeps the same ranking. Check first that items are not all redundant."
+  },
+  {
+   "name": "Residual-based outlier and consistency checks",
+   "how": "For each model and item, compare the IRT-predicted probability with the actual result. Large residuals flag possible leakage, bad items, or inference-setup problems. Count how often a model contradicts its own expected pattern to measure consistency.",
+   "when": "When you want to find contamination, check that a serving stack runs the intended model or quantization, or debug unexpected benchmark results."
+  },
+  {
+   "name": "Anchor plus fingerprint adaptive test sets",
+   "how": "Use a shared representative anchor set for all evaluated models. Give each organization a private set of hard items (its fingerprint set). Later, re-run and test whether that organization's residuals on its fingerprint set are unusually high.",
+   "when": "When a benchmark is valuable and must not leak into training data, and you need to detect leakage without publishing the full set."
+  },
+  {
+   "name": "Group-wise item curves for differential item functioning",
+   "how": "Split models by a grouping variable such as open or closed weights. Fit separate item curves per group and measure the gap per item. Items with large gaps are candidates for bias or group-specific training effects.",
+   "when": "When you want to check whether a benchmark favors one kind of model or group unfairly."
+  },
+  {
+   "name": "Residual correlation matrix as a model fingerprint",
+   "how": "Correlate per-item residual vectors across models and project to 2D for a quick view. High correlation suggests shared lineage, such as versions, distillations or effort settings.",
+   "when": "When you want to see how models are related, or to look for distillation signals in model behavior."
+  }
+ ],
+ "tools": [
+  "Epoch AI open benchmark datasets",
+  "GPQA benchmark (used as a counterexample)"
+ ],
+ "numbers": [
+  {
+   "claim": "Claude Opus 4.1 gets 245 of 337 questions right, Gemini 3 Pro gets 247. Under IRT the ability gap is about one standard deviation.",
+   "t": "6:43"
+  },
+  {
+   "claim": "IRT subset of about 97 items out of 484 keeps about 99% rank correlation with the full benchmark, roughly 5x fewer items.",
+   "t": "10:52"
+  },
+  {
+   "claim": "Worked example: a model with theta 1.2 on an item with difficulty -1.2 gets a predicted probability of about 99% of answering it right.",
+   "t": "2:41"
+  },
+  {
+   "claim": "On GPQA, random item subsets gave about the same result as the full benchmark, because the items are highly discriminative and non-overlapping.",
+   "t": "12:18"
+  },
+  {
+   "claim": "For one flagged item, the model predicted about 86% chance of a correct answer from Gemini 3 Pro, yet the recorded answer was wrong.",
+   "t": "13:40"
+  },
+  {
+   "claim": "Correlation of about 0.38 between residual patterns of a base model and its distilled version.",
+   "t": "20:47"
+  }
+ ],
+ "hot_takes": [
+  "Counting right answers is the wrong way to evaluate models because it weights every item equally.",
+  "Most of a large benchmark can probably be dropped without changing the ranking, which saves money on evals.",
+  "Residual correlation between models could detect distillation without the model owner's consent.",
+  "A high raw score can hide weaker ability if the model only answers easy items."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "MemoryMesh uses RAGAS-style evals. Item-level IRT analysis could show which eval items actually separate systems, but the talk is about model benchmarks, not agent memory retrieval.",
+   "action": "When the MemoryMesh RAGAS eval set grows, log per-item pass/fail for several configs and check which items have near-zero discrimination."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No link to checkpointing, Claude Code CLI harness, planning, or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Practical method for auditing and shrinking internal eval sets. Applies to any LLM eval suite, including the entity-resolution and Haiku pipeline evals, where a smaller high-signal set would cut token cost.",
+   "action": "Build a per-item correct/incorrect matrix across the existing ER eval runs and check for items with negative or near-zero discrimination, then review those labels."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

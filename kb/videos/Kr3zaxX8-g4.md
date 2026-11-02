@@ -1,0 +1,45 @@
+# DeepSeek R1 Lite: Open-Source AI That Might Beat OpenAI O1?
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `Kr3zaxX8-g4` · [watch](https://youtu.be/Kr3zaxX8-g4) · **date:** 2025-11-02 · **length:** 7:52 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** ? · **orgs:** DeepSeek, OpenAI, Anthropic, Google, Notion, Microsoft
+- **topics:** models-research, evals · **tags:** deepseek, r1-lite, reasoning-model, test-time-compute, manual-eval, svg, pseudocode, web-demo
+
+> Hands-on check of DeepSeek R1 Lite Preview's web demo on seven prompts (code, SVG, math, summarizing, pseudocode); six pass, one fails. Anecdotal, with no methodology.
+
+## Summary
+The host opens by relaying DeepSeek's preliminary claims for R1 Lite Preview: it is similar to OpenAI o1-preview, it reportedly beats Claude 3.5 Sonnet and o1-preview on math and coding, and a test-time scaling chart shows R1 improving with more thinking while o1 stays flat. The host then uses the web demo (Google login, deep-think toggle) to run seven prompts, tracking pass/fail in a Notion table. Outputs are checked by running them: code is pasted into VS Code, HTML is opened in a browser, SVG goes into a viewer, and a math answer is checked against a known value. The model passes the to-do app, SVG butterfly (which the host says looks more like a bug), math, Game of Life, paragraph summary and pseudocode tasks, and fails the Python library-borrowing system. The host concludes the model is worth exploring and promises a future model ranking system with no date. The video offers no benchmark data of its own, no scoring rubric, and no repeated trials except one ten-run Game of Life check.
+
+## Key ideas
+- **DeepSeek's R1 Lite Preview claims are preliminary, with no official benchmark results yet. The host relays claims that it beats Claude 3.5 Sonnet and o1-preview on math and coding.** — The host says the team's own preliminary tests show the lead, and the video does not verify them. ([0:00](https://youtu.be/Kr3zaxX8-g4?t=0))
+- **Test-time scaling chart: R1 keeps improving as it spends more thinking, while o1 stays flat near 44%. R1 reaches about 66.7%.** — The host reads the chart as showing that R1 benefits from more thought tokens and o1 does not. The chart's eval and setup are not named in the video, and this conflicts with the earlier 'no official benchmarks' remark. ([0:00](https://youtu.be/Kr3zaxX8-g4?t=0))
+- **Access is through a web demo with a Google login and a deep-think toggle. The host runs every test in the same chat UI.** — The toggle enables the reasoning feature; the video does not describe any API or local option. ([1:25](https://youtu.be/Kr3zaxX8-g4?t=85))
+- **Ad hoc test loop: a Notion table lists each test, the output is pasted into the real tool (VS Code, a browser for HTML, an SVG viewer), and pass or fail is marked by hand.** — Seven tasks in total: to-do app, SVG butterfly, math, Python library borrowing system, Game of Life, paragraph summary into four points, and pseudocode. Six pass and one fails. ([2:56](https://youtu.be/Kr3zaxX8-g4?t=176))
+- **The one clear failure: the Python library-borrowing system produced code that did not work when run in VS Code. The host had expected it to be easy and did not retry or diagnose it.** — The host calls this surprising given the simple requirements. The to-do app has a validation error and a delete button and is marked a pass. ([4:21](https://youtu.be/Kr3zaxX8-g4?t=261))
+- **Visible reasoning is shown as a feature. The host reads the thinking stream as evidence that the model identified the right quantity before giving the answer.** — The host describes the thinking as 'thinking like an actual human'. That is a presentation claim, not a measurement of reasoning. ([5:50](https://youtu.be/Kr3zaxX8-g4?t=350))
+- **Pseudocode was checked by comparing it with the real algorithm using other LLMs. The host treats the cross-model check as the verification step.** — The check is a cross-model comparison, not a run of the algorithm or a test suite. ([5:50](https://youtu.be/Kr3zaxX8-g4?t=350))
+
+## Techniques
+- **Manual pass/fail test tracker** — Keep a table of tasks with the prompt, the expected result and a pass/fail column (the host uses Notion). Paste each model output into the real environment and mark the result as you go. *When:* A quick first look at a new model when no eval harness exists yet. Good enough for triage, not for a decision on its own.
+- **Run generated artifacts in their real runtime** — Paste generated code into VS Code and run it. Open generated HTML in a browser. Render generated SVG in an SVG viewer. Run simulations and watch the output, e.g. Game of Life alternating states. *When:* Any generated artifact. The host's checks are only as strong as the run itself, so a rendered SVG that looks wrong still counts as the host's judgment.
+- **Repeat a nondeterministic run** — Run the same program 10 times, as the prompt asked for, to check it behaves consistently. *When:* Simulations or other stochastic outputs, where one run can look right by luck.
+- **Check the reasoning stream against a known answer** — For a math problem with a known answer, read the visible thinking first to see whether the model identified the right quantity, then compare the final answer to the known value. *When:* Arithmetic or word problems with a ground truth. Checking the thinking catches right-answer-wrong-reason cases better than the final answer alone.
+- **Cross-model verification with no ground truth** — Give the output to other LLMs and ask them to compare it with the reference, e.g. generated pseudocode vs. the actual algorithm. *When:* There is no test suite or reference output, but a reference exists to compare against.
+
+## Numbers
+- o1 flat at about 44% accuracy regardless of thinking time, while R1 climbs to about 66.7% (chart shown by the host, not verified; no source named in the video) ([0:00](https://youtu.be/Kr3zaxX8-g4?t=0))
+- Seven test tasks, six passes, one fail (Python library borrowing system) ([2:56](https://youtu.be/Kr3zaxX8-g4?t=176))
+- Game of Life run 10 times and behaved consistently with alternating output ([4:21](https://youtu.be/Kr3zaxX8-g4?t=261))
+
+## Hot takes
+- Anecdotal evaluation: seven hand-picked prompts, one run each (except Game of Life), with pass/fail judged by eye and no rubric. Results do not support a general claim about model quality.
+- The video contradicts itself on benchmarks: it says no official benchmark results exist yet, then presents a scaling chart with specific numbers as evidence. The chart's eval is never named.
+- Lenient grading: the SVG butterfly is called 'more like a bug than a butterfly' but still marked a pass. The host does the same with the summary task after reading only the output.
+- The 'thinks like a human' framing is presentation, not evidence. Visible chain-of-thought is a UI feature and does not show the reasoning is correct.
+- The title's 'Might Beat OpenAI O1?' is a hype framing. The content is a short hands-on test with no comparison against o1 or Claude run by the host.
+
+## Tools mentioned
+DeepSeek R1 Lite Preview (web demo, deep-think toggle), OpenAI o1-preview (comparison only), Claude 3.5 Sonnet (comparison only), Notion (test tracker), VS Code (running generated Python and HTML), SVG viewer (unnamed), Other LLMs (pseudocode cross-check, unnamed)
+
+## Relevance to our work
+- **agentos** (1/3): Reasoning models that spend more tokens on thinking are a possible routing candidate for the strategy router, but the video offers no measured data for that use. → *Add reasoning-model variants to the strategy-routing candidate set and measure them on our own evals before any routing decision.*
+- **prosharness** (1/3): The cross-model check (a second LLM compares generated output with a reference) is a cheap verification step that fits the plan-critique loop. → *Reuse the cross-model check as a cheap verification step in ProsHarness plan critique, alongside the Codex critique.*

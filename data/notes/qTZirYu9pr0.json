@@ -1,0 +1,185 @@
+{
+ "one_line": "AWS walkthrough of letting AI agents pay for content via the x402 HTTP 402 protocol, with AgentCore Payments on the buy side and WAF bot pricing on the sell side. Mostly product pitch, with some useful architecture.",
+ "summary": "The speaker argues that paywalls stall autonomous agents, and that blocking or freely serving bots both lose money or attribution. He presents x402, an HTTP 402 Payment Required flow where a client gets a 402, sends payment authorization, a facilitator verifies and settles on-chain, and then the content is returned. On the buyer side, AWS's AgentCore Payments (in preview, with Coinbase and Stripe wallets) keeps private keys in a KMS-backed store, enforces per-session spend caps with expiry, and keeps the payment path separate from the agent loop. On the seller side, AWS WAF bot detection identifies 650+ bot types, classifies intent (training vs RAG), verifies bots by signature, and applies per-path, per-bot and per-intent pricing at the CDN edge without origin changes. He cites Coinbase agentic-market traffic of about $50M volume over 170M transactions in 12 months, with roughly 200 ms settlement on Base. Most of the talk is product positioning, and the numbers are vendor-reported and unverified.",
+ "speakers": [
+  "Anil Nadiminti"
+ ],
+ "orgs": [
+  "AWS",
+  "Coinbase",
+  "Stripe",
+  "Google",
+  "Anthropic",
+  "Cloudflare",
+  "Circle",
+  "Linux Foundation"
+ ],
+ "format": "talk",
+ "topics": [
+  "governance-compliance",
+  "security-guardrails",
+  "infra-cost-scaling",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "x402",
+  "agent-payments",
+  "micropayments",
+  "bot-monetization",
+  "AWS",
+  "AgentCore",
+  "WAF",
+  "spend-limits",
+  "wallets",
+  "KMS",
+  "HTTP-402"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Paywalls are where autonomous agents stall",
+   "detail": "Agents hit paywalls, stop, and a human has to enter card details or API keys. The speaker says bot traffic now exceeds human traffic and that 95% of bot traffic is from AI agents (his figure, unverified).",
+   "t": "1:02"
+  },
+  {
+   "idea": "Sellers face a bad choice between blocking and free access",
+   "detail": "Blocking bots loses AI discovery, licensing deals and citations. Serving them freely raises infra cost and loses attribution and IP control. He argues for a third option where agents pay per request.",
+   "t": "2:30"
+  },
+  {
+   "idea": "Card-style fees make micropayments uneconomic",
+   "detail": "He cites a $0.25 minimum plus 2.5% per transaction. That is far above the sub-cent value of a single content request, so a new payment model is needed.",
+   "t": "6:21"
+  },
+  {
+   "idea": "x402 uses the HTTP 402 status code for machine payments",
+   "detail": "The flow is: client requests, server returns 402 Payment Required, client picks a method and sends authorization, a facilitator verifies and settles on-chain, then the server returns the content. Payment itself acts as the credential, with no API keys or subscriptions.",
+   "t": "6:21"
+  },
+  {
+   "idea": "Keep the payment path deterministic and separate from the agent loop",
+   "detail": "Skills and inputs can be poisoned, so payments should not run through the non-deterministic agent path. Spend policy lives in the payment layer, outside the agent code, so the agent's code does not have to change.",
+   "t": "12:57"
+  },
+  {
+   "idea": "Agents get payment capability, never the keys",
+   "detail": "Imported wallet secrets are stored in a KMS-secured token wallet. The agent can request payments but cannot read private keys. Spend limits are set per payment session as a maximum amount plus an expiry time (e.g., $5 over 30 days).",
+   "t": "10:09"
+  },
+  {
+   "idea": "Sellers can price bots per path, per verified identity and per intent",
+   "detail": "WAF rules classify bots and their intent (training vs RAG search), verify known bots by signature, and charge different rates for paths such as /blog, /research or an API. Verified partners can get different pricing. This runs on the CDN edge with no SDK or origin change.",
+   "t": "17:17"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Payment session spend caps with expiry",
+   "how": "Create a payment session with a programmatic max amount and an expiry time, so the agent can spend a bounded amount for a bounded period. Enforce it outside the agent's own code.",
+   "when": "Any agent that can spend money or call paid APIs, especially when enterprises need guardrails against runaway spending."
+  },
+  {
+   "name": "Deterministic payment layer decoupled from the agent loop",
+   "how": "Route every payment through a separate deterministic service that handles wallets, connectors and limits, while the agent loop stays non-deterministic. The agent only sees a success or failure result.",
+   "when": "When agent inputs or installed skills could be malicious or poisoned and money movement must stay under policy."
+  },
+  {
+   "name": "Key custody behind KMS, with agent-level capability only",
+   "how": "Store wallet secrets in a KMS-backed token store and expose only a capability to pay. The agent never handles raw keys.",
+   "when": "Any agent that must act on a credential, to limit what a compromised agent or prompt injection can exfiltrate."
+  },
+  {
+   "name": "x402 request/402/pay/retry flow",
+   "how": "On a 402 response, the client selects a payment method, sends a signed authorization, and retries. The server verifies and settles through a facilitator before returning content.",
+   "when": "Per-request content or API access where a human checkout or subscription is too heavy, and per-call prices are tiny."
+  },
+  {
+   "name": "Edge bot classification and differential pricing",
+   "how": "At the CDN/WAF, detect bot signatures, label intent (training vs RAG vs other), verify known bots, and apply different price rules per path and per class, while humans go through a separate path.",
+   "when": "Publishers who want to monetize or meter AI crawler traffic without changing their origin infrastructure."
+  }
+ ],
+ "tools": [
+  "AgentCore Payments",
+  "Bedrock AgentCore Gateway",
+  "Bedrock AgentCore Runtime",
+  "AWS WAF",
+  "Amazon CloudFront",
+  "AWS KMS",
+  "x402",
+  "Coinbase wallets",
+  "Stripe wallets",
+  "Base (L2 chain)"
+ ],
+ "numbers": [
+  {
+   "claim": "Bot traffic reportedly exceeds human traffic; 95% of bot traffic said to come from AI agents (speaker's claim)",
+   "t": "1:02"
+  },
+  {
+   "claim": "Projection: about 1 billion agents running by 2027, and 60% of enterprises using agentic workflows (speaker's citation, unverified)",
+   "t": "1:02"
+  },
+  {
+   "claim": "Card-style fee per transaction: $0.25 minimum plus 2.5%",
+   "t": "6:21"
+  },
+  {
+   "claim": "x402 introduced May 2025; now under Linux Foundation open governance",
+   "t": "7:45"
+  },
+  {
+   "claim": "AWS WAF detects 650+ bot types",
+   "t": "14:18"
+  },
+  {
+   "claim": "Discovery service exposes 10,000+ endpoints for transactions",
+   "t": "10:09"
+  },
+  {
+   "claim": "Coinbase agentic market, last 12 months: about $50M volume across 170M transactions",
+   "t": "18:17"
+  },
+  {
+   "claim": "Average settlement about 200 ms on Base",
+   "t": "18:17"
+  },
+  {
+   "claim": "Average cost about one tenth of a cent per transaction",
+   "t": "19:17"
+  },
+  {
+   "claim": "Publishers keep 100% of revenue; no transaction or subscription fee (vendor claim)",
+   "t": "16:57"
+  }
+ ],
+ "hot_takes": [
+  "Blocking AI bots loses discovery, citations and licensing revenue, and free access loses attribution and raises infra cost, so neither option is good.",
+  "Subscriptions are moving from humans in the loop to humans on the loop or out of the loop.",
+  "Payment logic should sit on a deterministic path outside the agent, because skills and inputs can be poisoned.",
+  "Per-transaction card fees make sub-cent content purchases impossible, so machine payments need a protocol like x402."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Its per-session spend caps with expiry and deterministic payment path match the budget idea in L1 (Govrix Scout), but payments are not on the roadmap.",
+   "action": "Read the payment-session and spend-cap design and compare it with Govrix Scout budgets, to see whether caps can be enforced outside agent code."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Keeping secrets in a KMS-backed store and giving the agent capability rather than keys is close to ProsHarness's zero-token credential handling.",
+   "action": "Compare the KMS-backed custody model with ProsHarness's zero-token credential handling and check for any gap in what the agent can read."
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "Mainly a vendor product walkthrough. Little on context, evals or orchestration.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

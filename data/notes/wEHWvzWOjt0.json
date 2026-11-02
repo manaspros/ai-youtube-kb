@@ -1,0 +1,194 @@
+{
+ "one_line": "Hands-on test of GLM 4.6 against Claude Sonnet 4.5 on a UI-design prompt and a multi-epic Svelte 5 build; GLM is far cheaper per message but needed Sonnet to finish integration.",
+ "summary": "The host tests GLM 4.6 (Z.ai) against Claude Sonnet 4.5 to see whether a much cheaper coding plan is worth switching to. He first checks the claimed 128k to 200k context expansion and the plan pricing, which he says gives far more messages per hour than Claude Max. In the first test he gives both models the same inventory-management prompt in plain HTML, CSS and JavaScript and judges UX and UI; Sonnet produces a more complete and polished result, while GLM's output is bare and has a misplaced add button and bugs it needed several commits to fix. In the second test he uses the BMAD method (epics split into stories) to build a dual physical and digital inventory app in Svelte 5 with Supabase and shadcn-svelte, with Sonnet implementing the first two epics. For epic 3 GLM produced correct-looking pages and Svelte code but broke on integration, leaving about 10 percent of the work for Sonnet. The host's conclusion is that GLM is a cheap option for React-style work and still needs a stronger model to finish Svelte integration. The evidence is a single run per model with subjective judgments, and the pricing figures are the host's own readings.",
+ "speakers": [],
+ "orgs": [
+  "Z.ai (ZAI)",
+  "Anthropic",
+  "Supabase",
+  "CodeRabbit",
+  "shadcn"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "token-cost-efficiency",
+  "models-research",
+  "context-engineering"
+ ],
+ "tags": [
+  "glm-4.6",
+  "glm-4.5",
+  "claude-sonnet-4.5",
+  "model-comparison",
+  "coding-plan-pricing",
+  "bmad-method",
+  "epics-and-stories",
+  "svelte-5",
+  "supabase",
+  "supabase-mcp",
+  "shadcn-svelte",
+  "sponsored",
+  "cheap-model",
+  "integration-failure"
+ ],
+ "key_ideas": [
+  {
+   "idea": "GLM 4.6 is pitched with a context window increase from 128k to 200k tokens, but the host says he will test it rather than trust the benchmarks.",
+   "detail": "He frames the release as hyped and says the benchmarks are not to be trusted, so the video is a practical comparison against Claude models.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The cost case rests on messages per hour: the host reads GLM's coding plans as far more generous than Claude Max.",
+   "detail": "He cites a $20 GLM Lite tier at about 45 messages per hour, a $6 tier at 50 to 120 messages per hour, Claude Max at $200 for 900 messages per hour, and a $60 GLM plan for up to 2,400 messages per hour. The intro pricing ($3 first month, then $6) is mentioned but not explained clearly. These are the host's figures and were not checked.",
+   "t": "0:00"
+  },
+  {
+   "idea": "In the UX and UI test, Sonnet 4.5 wins on creativity and polish, with demo-credential login and a page routing that works, while GLM's output is bare.",
+   "detail": "Both models got the same plain-HTML inventory prompt. Sonnet added demo logins in a pop-up, an AI search feature, and working page routing. GLM's dashboard lacked quick actions, put the add-item button in an odd place, and had only a small admin/team-lead/employee login section. The host concludes GLM is the wrong choice for creative or UI-heavy work.",
+   "t": "2:32"
+  },
+  {
+   "idea": "GLM's own commits show regressions, with an auth redirect loop and mock data that appears on only one page.",
+   "detail": "The host made four commits: the initial implementation, a fix for a login loop that bounced users back to the login page, and a commit adding mock inventory. The mock data showed on the dashboard but not on the inventory page, which he found odd.",
+   "t": "4:00"
+  },
+  {
+   "idea": "For the structured test, the host uses the BMAD method so the cheap model gets a planned context, with epics split into stories to keep each run small.",
+   "detail": "The project is a dual inventory app (physical items plus digital accounts and subscriptions) with four epics: foundation, physical inventory, account and tool inventory, and a fourth epic not covered. Each epic is split into stories so the agent implements one at a time without overloading its context. He says the context engineering is what lets the comparison be fair.",
+   "t": "5:27"
+  },
+  {
+   "idea": "Sonnet 4.5 finished epics 1 and 2 and the project setup, and the host credits Supabase MCP with provisioning the backend without manual setup.",
+   "detail": "Five tables, including auth, were set up through the Supabase MCP. The frontend is Svelte 5 with shadcn-svelte, and the UI direction was a Notion-like design chosen to keep the model from wasting time on design. He notes there are still alignment bugs.",
+   "t": "6:38"
+  },
+  {
+   "idea": "On epic 3 GLM's per-file code is technically valid, but integration fails, and it needed about 10 percent more work from Sonnet to finish.",
+   "detail": "Sonnet set up epic 3 correctly on its own. GLM created the pages properly and its Svelte 5 code was correct in isolation, but the account button and page structure failed to integrate. After several re-prompts the account inventory page was still broken, so GLM did roughly 90 percent of the work.",
+   "t": "7:57"
+  },
+  {
+   "idea": "The host's verdict is that GLM suits React-heavy work, and that a Svelte test is harder because the models have less training data for it.",
+   "detail": "He says the Svelte test was meant to probe how models handle languages they have not been trained on much, and expects different results for React. He recommends GLM for React if that is all you use, while noting a stronger model may still be needed alongside it for Svelte.",
+   "t": "8:58"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Same-prompt model bake-off for UI work",
+   "how": "Send the identical requirements-only prompt (user journeys, no technical or design guidance) to each model in separate runs, then judge the output on UX, UI, routing and mistakes. Record each model's commits to see how it fixes its own bugs. Note the billing path for each run, since the subscription and API comparison is not like-for-like.",
+   "when": "Quick screening of a cheap model before committing to it for front-end or creative tasks."
+  },
+  {
+   "name": "BMAD epic-to-story decomposition for agent builds",
+   "how": "Plan the project in the BMAD method: split it into epics (foundation, then one epic per feature area), split each epic into stories, and have the agent implement the stories one at a time so each run stays within context.",
+   "when": "Multi-feature builds where a model may lose coherence over a long run, or when you want a fair comparison across models with the same planned context."
+  },
+  {
+   "name": "Provision the backend through the database MCP",
+   "how": "Let the agent create the Supabase tables and auth through the Supabase MCP instead of setting them up by hand. The host set up five tables, including auth, this way before the agent built the features on top.",
+   "when": "Greenfield apps where the backend schema should be generated by the agent and checked by the user."
+  },
+  {
+   "name": "Commit per fix to attribute regressions to a model",
+   "how": "Commit after each step, including each bug fix, so you can see which model change introduced or fixed an issue. The host used this to show GLM's auth loop fix and its mock-data inconsistency.",
+   "when": "Comparing model output on the same task, or auditing an agent's work step by step."
+  },
+  {
+   "name": "Cheap model for most of the build, strong model for integration",
+   "how": "Let the cheaper model implement the isolated pieces, then hand the integration step to a stronger model. The host found GLM did about 90 percent of epic 3 and Sonnet finished the rest.",
+   "when": "Cost-sensitive builds where the cheap model is good at self-contained files but weak at wiring them together."
+  },
+  {
+   "name": "Use a stack with thin training data as a stress test",
+   "how": "Pick a framework the models have seen less of, such as Svelte 5, to see how a model handles unfamiliar APIs. The host expects React results to differ, which he has not tested.",
+   "when": "Evaluating a model's generalisation beyond its strongest framework."
+  }
+ ],
+ "tools": [
+  "GLM 4.6",
+  "GLM 4.5",
+  "GLM coding plan (GLM Lite and Max tiers)",
+  "Claude Sonnet 4.5",
+  "Claude Max plan",
+  "Claude Code",
+  "BMAD method",
+  "Svelte 5",
+  "Supabase",
+  "Supabase MCP",
+  "shadcn-svelte",
+  "CodeRabbit CLI (sponsor)",
+  "Cursor CLI (mentioned)",
+  "OpenCode (transcribed as 'Opendev', likely)",
+  "Roo Code (transcribed as 'Rucode', likely)",
+  "Cline (transcribed as 'Klein', likely)"
+ ],
+ "numbers": [
+  {
+   "claim": "Context window expanded from 128k to 200k tokens.",
+   "t": "0:00"
+  },
+  {
+   "claim": "GLM Lite $20 tier: about 45 messages per hour (host's figure).",
+   "t": "0:00"
+  },
+  {
+   "claim": "GLM $6 tier: 50 to 120 messages per hour depending on compute (host's figure).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Claude Max at $200 gives 900 messages per hour versus up to 2,400 per hour for the $60 GLM plan (host's figures, unverified).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Host says the GLM plan is about $140 cheaper than Claude Max at equal performance on complex prompts (his claim, one test).",
+   "t": "1:28"
+  },
+  {
+   "claim": "Four commits in the GLM UI test (initial, auth-loop fix, mock-inventory addition, plus one more).",
+   "t": "4:00"
+  },
+  {
+   "claim": "Five Supabase tables set up through the MCP, including auth; four BMAD epics planned.",
+   "t": "6:38"
+  },
+  {
+   "claim": "GLM did about 90 percent of epic 3 before needing Sonnet for the remaining 10 percent (host's estimate).",
+   "t": "7:57"
+  }
+ ],
+ "hot_takes": [
+  "The pricing argument rests on the host's own reading of plan quotas and a single headline comparison, not on measured throughput or a verified price sheet.",
+  "Each model was run once per test, and the UI verdict is subjective. The host made no attempt at repeat runs or a rubric.",
+  "The first test is not like-for-like on cost: GLM ran on API billing and Sonnet on a Claude Max subscription, so the spend comparison is not valid.",
+  "The host says the Svelte test is a stress test and that React would give different results, but he did not run a React test to support the claim.",
+  "The Sonnet-finishes-the-rest finding is the most useful result: a cheap model can carry most of the build, but the integration step still needed a stronger model.",
+  "The video contains a sponsored segment for CodeRabbit CLI at about 1:28, which caps the quality rating.",
+  "Transcript error: 'Superbase' is Supabase, and 'Opendev', 'Rucode' and 'Klein' look like OpenCode, Roo Code and Cline."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS's L1 proxy does budgets and strategy routing, and the video's per-message cost comparison is a data point for a cheap-model route.",
+   "action": "Add a cheap coding model to the strategy-routing benchmark in the proxy, scoring each route by cost per completed task and by integration success, not just by single-file output."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code runs and runs plan, critique and debate steps, and the epic-to-story split with a cheap-first, strong-finish pattern maps onto its checkpointed runs.",
+   "action": "Try splitting long ProsHarness runs into BMAD-style epics and stories as checkpoints, with a cheap model for the isolated stories and a stronger model for an integration pass."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The integration-failure finding (correct per-file code, broken wiring) is a concrete failure mode for cheap-model pipelines.",
+   "action": "Add a cross-file integration check, such as a build plus smoke test, after each cheap-model story before accepting the work."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

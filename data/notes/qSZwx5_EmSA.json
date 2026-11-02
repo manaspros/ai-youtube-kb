@@ -1,0 +1,149 @@
+{
+ "one_line": "Quick Ink (React for terminals) counter tutorial that measures its memory cost against Bubble Tea and points to OpenTUI as a leaner TypeScript alternative.",
+ "summary": "The video introduces Ink, a TypeScript library that renders React components in the terminal, and says it powers several AI coding CLIs (Qwen Code, Gemini CLI, Claude Code). The host builds a small counter app to show that web React skills transfer: a bordered Box layout, useInput-style key handling for K/J increment and decrement, and Ctrl+C to exit. He notes Ink's ecosystem (devtools, spinner packages) and that a coding LLM could build similar apps. The main point is cost: the same counter uses about 50 MB in dev mode and 32 MB bundled, versus 13 MB in dev and under 4 MB as a built binary in Go's Bubble Tea. He attributes this to the bundled JS runtime, React, and the WASM build of Yoga used for flexbox layout, and says Ink is hard-coded to 32 fps, which he links to OpenAI moving Codex CLI to Rust. He then points to OpenTUI (Zig core with TypeScript bindings via Bun FFI, from the OpenCode team) as a promising TypeScript option: his OpenTUI version of the app used less memory than Ink but more than Bubble Tea. The video ends with a sponsor segment for Better Stack.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "Anthropic",
+  "Google",
+  "OpenAI",
+  "OpenCode"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools",
+  "coding-agents"
+ ],
+ "tags": [
+  "ink",
+  "react",
+  "terminal-ui",
+  "typescript",
+  "opentui",
+  "bubble-tea",
+  "memory-footprint",
+  "cli",
+  "yoga-layout"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Ink brings React to the terminal, and it powers several AI coding CLIs",
+   "detail": "The host names Qwen Code, Gemini CLI and Claude Code as Ink-based tools (his claims; the video does not verify them).",
+   "t": "0:00"
+  },
+  {
+   "idea": "Web React skills transfer directly to terminal apps",
+   "detail": "A counter app is built with hooks, a bordered column Box, a Fragment wrapper, and dimmed instruction text. Keys K and J change the count, and the process only exits on Ctrl+C.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Ink has a usable ecosystem and is easy to scaffold with an LLM",
+   "detail": "He points to React DevTools support, rendering to stdout, and extra packages such as a spinner. He notes it is not new, so an LLM could generate a similar app.",
+   "t": "1:26"
+  },
+  {
+   "idea": "The memory cost of Ink is large for a trivial app",
+   "detail": "The counter uses about 50 MB in dev mode and 32 MB bundled. The same app in Go with Bubble Tea uses 13 MB in dev and under 4 MB as a built executable.",
+   "t": "1:26"
+  },
+  {
+   "idea": "Ink's footprint comes from its runtime stack, which he links to frame rate and a Rust migration",
+   "detail": "He cites the bundled JS core runtime, React code and the WASM build of Yoga for flexbox layout. He says Ink is hard-coded to 32 fps and that OpenAI's Codex CLI moved from Ink to Rust for this reason (speculation).",
+   "t": "2:41"
+  },
+  {
+   "idea": "OpenTUI is a TypeScript-facing alternative with a native core",
+   "detail": "OpenTUI, from the OpenCode team, is built in Zig with TypeScript on top and calls the Zig code through Bun's FFI. His OpenTUI version of the same React-style app used less memory than Ink but more than Bubble Tea.",
+   "t": "2:41"
+  },
+  {
+   "idea": "OpenCode is already moving its Bubble Tea UI to OpenTUI",
+   "detail": "The host says OpenTUI is already being used to replace the Bubble Tea side of OpenCode. He hopes Anthropic and Google will consider it for future CLI tools.",
+   "t": "2:41"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Ink counter component pattern",
+   "how": "Wrap the text in a Box with borderStyle round and flexDirection column. Handle keys with the useInput hook: K increments, J decrements, and Ctrl+C is the only exit. Show the count in its own Box, add a second Box below with dimmed instructions, and wrap the whole tree in a Fragment. Use ordinary React state and hooks for the counter. The exact package install and scaffold commands are not shown.",
+   "when": "Building a small interactive terminal UI when the team already knows React. Use it only if the memory footprint is acceptable for the tool."
+  },
+  {
+   "name": "Measure the runtime footprint before choosing a TUI framework",
+   "how": "Compare the same app in three forms: dev mode, a bundled JS build, and a compiled executable. Record memory for each (the host reports about 50 MB dev, 32 MB bundled for Ink, against 13 MB dev and under 4 MB built for Bubble Tea). The method used is not described.",
+   "when": "Before committing to a terminal UI framework for a long-running or frequently launched CLI, where startup and resident memory matter."
+  },
+  {
+   "name": "Keep the TUI process alive until an explicit exit key",
+   "how": "Use useInput to listen for keypresses and exit only when Ctrl+C is pressed, so the terminal app does not close on other input.",
+   "when": "Interactive terminal tools that should stay open while the user works."
+  }
+ ],
+ "tools": [
+  "Ink",
+  "React",
+  "TypeScript",
+  "Yoga (WASM build, flexbox layout)",
+  "Bubble Tea (Go)",
+  "OpenTUI (Zig and TypeScript)",
+  "Bun FFI",
+  "SolidJS implementation of OpenTUI",
+  "OpenTUI core",
+  "OpenCode",
+  "Qwen Code",
+  "Gemini CLI",
+  "Claude Code",
+  "OpenAI Codex CLI",
+  "React DevTools",
+  "Ink spinner package"
+ ],
+ "numbers": [
+  {
+   "claim": "Ink counter app memory: about 50 MB in dev mode, 32 MB as a bundled build",
+   "t": "1:26"
+  },
+  {
+   "claim": "Bubble Tea (Go) counter app memory: 13 MB in dev mode, under 4 MB as a built executable",
+   "t": "1:26"
+  },
+  {
+   "claim": "Ink is hard-coded to render at 32 frames per second (speaker's statement)",
+   "t": "2:41"
+  },
+  {
+   "claim": "The speaker's OpenTUI version of the app uses less memory than Ink and more than Bubble Tea. No exact figure is given.",
+   "t": "2:41"
+  }
+ ],
+ "hot_takes": [
+  "React in a terminal is not automatically a performance problem, but Ink's memory overhead for a trivial counter (about 32 MB bundled) is hard to justify for a CLI.",
+  "The Codex CLI move from Ink to Rust is linked to Ink's 32 fps cap, which is speculation.",
+  "OpenTUI (Zig core with TypeScript bindings) is the TypeScript terminal library to watch, and the host wants Anthropic and Google to adopt it.",
+  "Memory numbers come from one counter app, single runs, with no methodology given. Treat them as a rough indicator.",
+  "Sponsored segment for Better Stack at the end (about 4:06). Quality is capped at 2 for this reason."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Terminal UI framework choice has no bearing on the AgentOS proxy, memory or infra layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI, and the host says Claude Code's terminal UI is built on Ink (his claim). A TUI framework choice would matter only if ProsHarness adds its own interface.",
+   "action": "If ProsHarness gets a terminal UI, measure resident memory of dev vs built output for the candidate framework before choosing one (Ink used about 32 MB for a counter app in this video)."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Shows how TUI framework choice affects memory footprint for coding-agent CLIs, a general dev-tools decision.",
+   "action": "Read OpenTUI's README for its current status before committing to a TypeScript terminal UI stack."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

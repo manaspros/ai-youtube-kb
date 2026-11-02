@@ -1,0 +1,235 @@
+{
+ "one_line": "Kai Explains lists 10 open coding models split by hardware tier and task type, and argues that picking a model for your own hardware and job matters more than leaderboard rank.",
+ "summary": "The host opens with a failed attempt to run a 37 GB model on a 24 GB GPU, then argues that the best coding model and the best model you can actually run are different questions. He says to answer two questions first: what hardware you have (a 24 GB consumer card, a 64/96 GB Apple Silicon machine, a 128 GB Strix Halo box, or a laptop that stays on API), and what kind of work you do (sub-second autocomplete, multi-step agentic issue fixing, or large-context refactoring). The frontier-class open models (GLM 5.3, Kimi K2.7, DeepSeek V4 Pro and Flash, Qwen3-Coder 480B, Kimi K3) are presented as API-only for most people, with pricing and context-window claims. The locally runnable picks are Qwen3-Coder-Next, Qwen3.6 27B (his daily driver), Devstral Small 2 (for strict tool calling), and GPT-OSS-20B. He then makes the key point that autocomplete needs fill-in-the-middle training, not chat or agent models, and recommends Codestral 2 wired into Continue.dev, with Qwen 2.5 Coder 14B for smaller hardware. The numbers are the speaker's own recollections and leaderboard quotes, with no benchmark method shown.",
+ "speakers": [
+  "Unnamed host (Kai Explains channel)"
+ ],
+ "orgs": [
+  "Z.ai (ZAI)",
+  "Moonshot AI",
+  "DeepSeek",
+  "Alibaba (Qwen)",
+  "Mistral AI",
+  "OpenAI",
+  "AMD",
+  "Continue",
+  "Ollama",
+  "LM Studio",
+  "llama.cpp",
+  "GitHub"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "models-research",
+  "coding-agents",
+  "inference-serving"
+ ],
+ "tags": [
+  "local models",
+  "open-weight",
+  "coding models",
+  "hardware sizing",
+  "VRAM",
+  "quantization",
+  "fill-in-the-middle",
+  "autocomplete",
+  "tool calling",
+  "Apache 2.0",
+  "SWE-bench",
+  "Continue.dev",
+  "Ollama",
+  "cheap API pricing"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Pick a model by hardware first. A top leaderboard model is often too big to run locally; the speaker's 37 GB model did not load on a 24 GB GPU.",
+   "detail": "Split the question into what you can run (VRAM or unified memory ceiling) and what is best overall. The speaker says these answers have little overlap.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Hardware tiers set the ceiling. A consumer 24 GB card is the local ceiling for most people, Apple Silicon is capped at 64/96 GB, and 128 GB unified memory means Strix Halo (Ryzen AI Max+ 395) at about $3,999.",
+   "detail": "Anything bigger than these tiers, or a laptop, means API use. Multi-GPU clusters are for corporate accounts.",
+   "t": "1:20"
+  },
+  {
+   "idea": "Autocomplete, agentic issue fixing and large-context refactoring need different models. Autocomplete needs sub-second first-token latency, agentic work needs planning and tool reliability, and refactoring needs a long context that does not forget early files.",
+   "detail": "A deep-reasoning model is too slow for tab completion, and a fast completion model is too shallow for system design.",
+   "t": "2:30"
+  },
+  {
+   "idea": "Frontier open models are cheap to rent. GLM 5.3 gains come from post-training, not a new base model, and Kimi K2.7 was trained on compiler and test-failure trajectories so that errors become signals to retry.",
+   "detail": "The speaker cites GLM 5.3 Deep SWE going from 46.2 to 66.9 and SWE Marathon from 19.4 to 42.5. He claims Kimi K2.7 is a trillion-parameter, 32B-active model.",
+   "t": "3:42"
+  },
+  {
+   "idea": "Pricing is the reason to use DeepSeek V4 for bulk work. Flash is cheap enough for high-volume log, documentation and CI analysis, and both Pro and Flash have 1M context under MIT.",
+   "detail": "Quoted prices: Pro $0.435 per million input tokens; Flash $0.14 input and $0.28 output.",
+   "t": "5:09"
+  },
+  {
+   "idea": "License matters for shipping commercially. Qwen3-Coder (480B, 69.6% SWE-bench Verified) is Apache 2.0, so there is no custom license or revenue-threshold clause to review.",
+   "detail": "The speaker contrasts it with open-weight models that restrict commercial use.",
+   "t": "6:12"
+  },
+  {
+   "idea": "The local daily driver is a single-card dense model. Qwen3.6 27B (Apache 2.0, April 2026) needs about 17 GB at Q4 and runs through Ollama with community GGUF quants. Vision needs a separate mmproj file served via llama.cpp or LM Studio.",
+   "detail": "Qwen3-Coder-Next runs at about 46 GB at 4-bit on a 64/96 GB Mac or 128 GB Strix Halo, with 3B active parameters per token.",
+   "t": "7:39"
+  },
+  {
+   "idea": "Tool-call reliability is a separate choice. Devstral Small 2 (24B dense, 256K context, fits 24 GB at Q4) is picked for strict JSON and function calling in scripts and agent frameworks, not for raw capability.",
+   "detail": "Ollama can serve it the same way as the Qwen models.",
+   "t": "9:00"
+  },
+  {
+   "idea": "Autocomplete needs fill-in-the-middle (FIM) training, not chat or agent training. FIM sees the code above and below the cursor. The open answer is Codestral 2 (Apache 2.0, April 2026) in Continue.dev, with Qwen 2.5 Coder 14B (about 9.5 GB at Q4) for smaller hardware.",
+   "detail": "The speaker says his local setup matches GitHub Copilot in quality with lower latency and no subscription, after two years on Copilot. This is anecdotal.",
+   "t": "10:02"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Hardware-first model sizing",
+   "how": "Measure VRAM or unified memory first. Check the weight size at the quantization you plan to use (speaker's figures: about 17 GB for Qwen3.6 27B at Q4, about 46 GB for Qwen3-Coder-Next at 4-bit, about 14 GB for GPT-OSS-20B) and leave room for context before you download anything.",
+   "when": "Before downloading any local model, and before picking from a leaderboard."
+  },
+  {
+   "name": "Route models by job, not one model for everything",
+   "how": "Use a small FIM model for editor autocomplete (latency in milliseconds), a reasoning or agent model for multi-step issue-to-fix loops, a long-context model for large refactors, and an API model for the hardest architecture work.",
+   "when": "When setting up a mixed workflow across editor, agent and batch use."
+  },
+  {
+   "name": "Local tab completion with Continue.dev and a FIM model",
+   "how": "Install Continue, an open-source VS Code and JetBrains extension. Point it at a local FIM-trained model such as Codestral 2 for autocomplete. Use Qwen 2.5 Coder 14B if the hardware is smaller (about 9.5 GB at Q4).",
+   "when": "Replacing a subscription tab-completion tool such as GitHub Copilot with a local setup."
+  },
+  {
+   "name": "Running Qwen3.6 27B on one 24 GB card",
+   "how": "Pull a community GGUF build with Ollama for text coding work. For native vision, load the separate mmproj file and serve the model through llama.cpp or LM Studio instead, since the speaker says Ollama does not handle the vision file.",
+   "when": "Solo development on a single 24 GB consumer GPU, for refactoring, tests, code review and explaining unfamiliar code."
+  },
+  {
+   "name": "Pick for tool-call reliability",
+   "how": "For a local model that must emit strict JSON or call functions from a script or agent framework, choose Devstral Small 2 over a higher-capability model of similar size.",
+   "when": "Building agentic pipelines that depend on schema-compliant output."
+  },
+  {
+   "name": "Filter by license before commercial use",
+   "how": "Shortlist Apache 2.0 or MIT models (the speaker names Qwen3-Coder, Qwen3.6 27B, Codestral 2, DeepSeek V4) before any legal review.",
+   "when": "Choosing a model for a product you will ship commercially."
+  },
+  {
+   "name": "Cheap hosted model for bulk processing",
+   "how": "Send high-volume logs, documentation and CI pipeline text to DeepSeek V4 Flash through the API, where the speaker's quoted per-token prices make the cost small.",
+   "when": "Offline batch jobs where volume matters more than frontier reasoning."
+  }
+ ],
+ "tools": [
+  "GLM 5.3",
+  "Kimi K2.7",
+  "Kimi K3",
+  "DeepSeek V4 Pro",
+  "DeepSeek V4 Flash",
+  "Qwen3-Coder (480B)",
+  "Qwen3-Coder-Next",
+  "Qwen 3.6 27B",
+  "Qwen 2.5 Coder 14B",
+  "Devstral Small 2",
+  "GPT-OSS-20B",
+  "Codestral 2",
+  "Ollama",
+  "llama.cpp",
+  "LM Studio",
+  "Continue.dev",
+  "GitHub Copilot",
+  "VS Code",
+  "JetBrains IDEs",
+  "AMD Ryzen AI Max+ 395 (Strix Halo)",
+  "SWE-bench Verified",
+  "Deep SWE",
+  "SWE Marathon"
+ ],
+ "numbers": [
+  {
+   "claim": "A 37 GB model would not load on a 24 GB GPU (the speaker's own failed attempt).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Consumer RTX 4090 or 5090 gives about 24 GB VRAM. Apple Silicon Mac Studio capped at 64/96 GB unified memory. Strix Halo 128 GB at about $3,999.",
+   "t": "1:20"
+  },
+  {
+   "claim": "GLM 5.3: 743B total parameters, 40B active per token, 1M context. Deep SWE 46.2 to 66.9; SWE Marathon 19.4 to 42.5.",
+   "t": "3:42"
+  },
+  {
+   "claim": "Kimi K2.7: about a trillion total parameters, 32B active per token.",
+   "t": "5:09"
+  },
+  {
+   "claim": "DeepSeek V4 Pro $0.435 per million input tokens. V4 Flash $0.14 input and $0.28 output per million tokens. Both have 1M context under MIT.",
+   "t": "5:09"
+  },
+  {
+   "claim": "Qwen3-Coder (480B): 69.6% on SWE-bench Verified, Apache 2.0.",
+   "t": "6:12"
+  },
+  {
+   "claim": "Kimi K3: 2.8 trillion total parameters, 1M context, weights released July 26, 2026 (speaker's date).",
+   "t": "6:12"
+  },
+  {
+   "claim": "Qwen3-Coder-Next: about 46 GB unified memory at 4-bit; 3B active parameters per token (described as an 80B-class model).",
+   "t": "7:39"
+  },
+  {
+   "claim": "Qwen 3.6 27B: about 17 GB at Q4, released April 2026 under Apache 2.0, 27B dense.",
+   "t": "7:39"
+  },
+  {
+   "claim": "Devstral Small 2: 24B dense parameters, 256K context, fits a 24 GB card at Q4.",
+   "t": "9:00"
+  },
+  {
+   "claim": "GPT-OSS-20B: 21B total parameters, 3.6B active per token, about 14 GB VRAM.",
+   "t": "10:02"
+  },
+  {
+   "claim": "Qwen 2.5 Coder 14B: about 9.5 GB at Q4 (autocomplete alternative).",
+   "t": "11:28"
+  },
+  {
+   "claim": "Codestral 2: released April 2026 under Apache 2.0 with native FIM support. Speaker says it matches Copilot quality locally, based on his own use.",
+   "t": "11:28"
+  },
+  {
+   "claim": "Conclusion cites Qwen 3 Coder Next at 70.6 on SWE-bench, which differs from the 69.6 quoted for Qwen3-Coder (480B) earlier.",
+   "t": "12:42"
+  }
+ ],
+ "hot_takes": [
+  "The most useful idea is the split of hardware tier and job type, with fill-in-the-middle training for autocomplete. The model roster is a snapshot that will age quickly.",
+  "Most numbers are speaker-quoted leaderboard figures with no benchmark method shown. The SWE-bench figures for Qwen3-Coder (69.6) and Qwen3-Coder-Next (70.6) are not reconciled.",
+  "The claim that Codestral 2 matches Copilot and that Qwen3.6 handles 80% of daily tasks is one developer's anecdote, not a measurement.",
+  "Several model names and specs come from auto-captions and need checking against primary sources before use (for example Kimi K2.7 vs K3 naming and the Qwen3.6 27B details). Quality is capped by this, though the framing is practitioner-grade."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft runs on a single RTX 5090 and needs model choices by job. The video's hardware-tier framing and its split between FIM, agentic and long-context models fit that. Its tool-call reliability pick (Devstral Small 2) matters for InferCraft, and the job-based routing idea maps to Govrix strategy routing (L1). The speaker's figures are unverified.",
+   "action": "Run a tool-call JSON reliability eval on our RTX 5090 comparing Devstral Small 2 and Qwen3.6 27B at Q4 (plus GPT-OSS-20B), using our own evals rather than the video's numbers."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI, so local open-weight model selection is outside its current scope.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

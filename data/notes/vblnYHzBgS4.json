@@ -1,0 +1,228 @@
+{
+ "one_line": "Venky B of Plivo lists five voice-agent failure modes seen in production (latency, transcription, data collection, TTS output, barge-in) and the fixes his team uses. Main takeaway: treat voice as a structured pipeline problem, not a prompt problem.",
+ "summary": "Venky B, founder of Plivo (a 14-year-old telephony and voice API company that now sells an AI agent platform), walks through five failure modes that show up when voice agents move from prototype to production. He starts with latency, measured as time-to-first-audio, and argues that a self-hosted open model such as Qwen 3.5 or Gemma 4 can hit a sub-300ms target at lower cost than frontier APIs or dedicated fast-inference capacity. Next he covers transcription, where real noisy calls run at double-digit word error rates, and proposes dynamic per-state keyword boosting plus LLM post-processing and a normalization layer. He then argues that data collection should be modeled as typed fields with validation and confirmation, not open-ended transcripts, and that evals should run at the field level. The last sections cover a normalization layer between the LLM and TTS (emoji and markdown stripping, pronunciation dictionaries, slower speaking rate for entities) and barge-in and backchanneling, which he says can be done in a speech pipeline without a speech-to-speech model. Much of the talk is practitioner detail, and the closing minutes are a product pitch. Most numbers are his own internal observations and are not backed by published methodology.",
+ "speakers": [
+  "Venky B"
+ ],
+ "orgs": [
+  "Plivo",
+  "LiveKit",
+  "Pipecat",
+  "Cerebras",
+  "Groq"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "inference-serving",
+  "data-engineering",
+  "evals"
+ ],
+ "tags": [
+  "voice-agents",
+  "latency",
+  "time-to-first-audio",
+  "speech-pipeline",
+  "STT",
+  "TTS",
+  "word-error-rate",
+  "structured-data-collection",
+  "open-source-llm",
+  "Qwen",
+  "Gemma",
+  "barge-in",
+  "backchanneling",
+  "production",
+  "field-level-evals"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Latency is the first production failure. Measure time-to-first-audio from the moment the user stops speaking, not only per-model latency.",
+   "detail": "The speaker says users want under about 550ms. Most real deployments land between 750ms and 1.2s. Above 1.2s, users start hanging up. Each layer (STT, LLM, TTS, turn detection) adds to this budget.",
+   "t": "5:03"
+  },
+  {
+   "idea": "Voice agents must run with thinking off, so the LLM gains of the past year mostly do not apply.",
+   "detail": "Reasoning and RL-driven intelligence are disabled by default for speed. The speaker's trade-off is cost, intelligence, and latency, and for voice the latency axis usually wins.",
+   "t": "6:27"
+  },
+  {
+   "idea": "Frontier APIs have a fast median but a poor tail. Dedicated fast-inference capacity is expensive and needs long lead times.",
+   "detail": "He puts frontier P50 time-to-first-token at about 450 to 500ms, with P90 and P95 above 1.2s. Dedicated Groq or Cerebras capacity is costly and reportedly booked about 12 months ahead. He says the team chose self-hosted open models instead, targeting under 300ms.",
+   "t": "7:54"
+  },
+  {
+   "idea": "For multilingual voice, pick the model by tokens per word, not by benchmark score.",
+   "detail": "He says Gemma 4 needs about 2.5 to 3 times fewer tokens per word than Qwen 3.5 on non-English text (token fertility), which makes speech faster. Qwen 3.5 is fine for English-only.",
+   "t": "10:39"
+  },
+  {
+   "idea": "Use a mixture-of-experts model out of the box, and use a dense 8B or 12B model when you need fine-tuning.",
+   "detail": "MoE models at 3 to 4B active parameters reportedly get about 90% of the way without tuning. MoE fine-tuning is fragile and can break the model. For domain fine-tuning he says to start at 8B or 12B, and he expects smaller models to catch up later. He values fast tokens, instruction following, and high tool-calling success rates most.",
+   "t": "11:54"
+  },
+  {
+   "idea": "Transcription breaks in predictable places, and the failures spread downstream.",
+   "detail": "Vendors quote 4 to 6% word error rate on clean eval sets. Noisy real calls with accents and domain vocabulary reach double digits. Common failures: proper nouns, phone digits, long addresses, and code-switched speech. Output in the wrong script can break the LLM and then the TTS.",
+   "t": "14:08"
+  },
+  {
+   "idea": "Boost keywords dynamically by call state, not all at once, and post-process transcripts with an LLM that has domain context.",
+   "detail": "Loading all keywords for the whole call makes the STT hallucinate. Boosting only the keywords relevant to the current phase works better. An LLM can correct a misheard digit (for example, E to 3) because it knows the phone-number context. Transliteration into one normalized form should sit between STT and the LLM.",
+   "t": "16:39"
+  },
+  {
+   "idea": "Model data collection as typed fields with validation, not as open transcripts for the LLM to interpret.",
+   "detail": "Treat each value as a typed field (phone number, date, name) with a known shape, allowed values, and validation. Names should be collected letter by letter with a confirmation step. Relative dates such as next Wednesday at 8 need the current date and a daytime or evening constraint. Tool calling does most of this work. He reports accuracy rising from about 30% to 95%.",
+   "t": "18:26"
+  },
+  {
+   "idea": "Test voice agents at the field level with unit tests, not with hundreds of end-to-end call runs.",
+   "detail": "Each field collector is tested in isolation, so one broken field shows up as one failing test. The speaker reports 95 to 97% accuracy with per-state context and no fine-tuning. He describes this as breaking the context into the agent's current state rather than repeatedly editing one large prompt.",
+   "t": "21:02"
+  },
+  {
+   "idea": "Add a normalization layer between the LLM and TTS, and own the pronunciation rules.",
+   "detail": "Strip emojis and markdown before synthesis. Keep custom pronunciation dictionaries for brands, acronyms, and names. Slow speech to about 0.7 to 0.8x for entities such as emails and phone numbers. Normalize currency, dates, and emails in-house so the TTS vendor can be swapped without changing behavior.",
+   "t": "22:04"
+  },
+  {
+   "idea": "Barge-in and backchanneling can be built into a speech pipeline without a speech-to-speech model.",
+   "detail": "He says the team does interruption handling and backchanneling inside its STT-LLM-TTS pipeline. He says it does not need a speech-to-speech model for these behaviors. He gives no implementation detail in the talk.",
+   "t": "25:53"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Per-stage latency budget with time-to-first-audio as the metric",
+   "how": "Measure from user end-of-speech to first agent audio, and break the time down by STT, turn detection, LLM time-to-first-token, and TTS. Look at tail percentiles, not medians. The speaker's targets are under 550ms for natural feel and under 300ms for the LLM layer.",
+   "when": "Any real-time voice or streaming agent that is moving from demo to production."
+  },
+  {
+   "name": "Self-hosted small or MoE open model for the conversational LLM",
+   "how": "Run an open model such as Qwen 3.5 or Gemma 4 on your own GPUs. Choose by tokens per word for the target language. Use a MoE model for generic use. Use a dense 8B or 12B model when fine-tuning or when tool-calling reliability matters. Consider splitting roles: a small model for talking and a larger one for tool calls.",
+   "when": "Latency and cost are the binding constraints, and the agent is not trying to do deep reasoning on each turn."
+  },
+  {
+   "name": "Dynamic keyword boosting per call phase",
+   "how": "Add STT keyword boosts only for the entities relevant to the current state of the call, and remove them when the state changes. Do not keep one large keyword list for the whole call.",
+   "when": "Proper nouns, product names, or domain jargon that the STT mishears, and the call moves through distinct phases."
+  },
+  {
+   "name": "LLM post-processing of STT output with domain context",
+   "how": "Send the raw transcript and the current field context to an LLM and ask it to fix digits, names, and phone numbers before the agent acts on them. Normalize the output to one script, using transliteration if needed.",
+   "when": "Transcripts feed structured collection such as phone numbers, addresses, or names, and the STT lacks domain context."
+  },
+  {
+   "name": "Typed field schema with validation and confirmation for data collection",
+   "how": "Define each collected value as a typed field (phone, date, spelled name, enum) with its format, allowed values, and validation. On failure, either make a constrained guess and confirm it with the user, or ask again. For spoken names, confirm letter by letter. For relative dates, resolve them with tool calls using the current date.",
+   "when": "The agent must capture identifiers, dates, or names reliably on a call. He reports this moving accuracy from about 30% to 95%."
+  },
+  {
+   "name": "Field-level unit-test evals for voice agents",
+   "how": "Write unit tests for each field collector and each state transition, and run them on every change. Keep a smaller set of end-to-end call tests for integration.",
+   "when": "The agent has many states and fields, and end-to-end runs are too slow or too noisy to show which part broke."
+  },
+  {
+   "name": "Normalization layer between LLM and TTS",
+   "how": "Before synthesis, strip emojis and markdown. Expand emails, currency, and dates in your own code. Apply a custom pronunciation dictionary for brands and acronyms. Lower the speaking rate to about 0.7 to 0.8x for entities. Keep the layer independent of the TTS vendor so it can be swapped.",
+   "when": "The agent speaks brand names, identifiers, or structured data, or the team may change TTS vendors."
+  },
+  {
+   "name": "Pronunciation smoke tests with known hard names",
+   "how": "Keep a short set of hard-to-pronounce names, such as your own or your company's, and check that the pipeline says them correctly. Treat failures as a signal that the pipeline is not ready.",
+   "when": "Before launch, and after any change to the TTS, dictionary, or normalization rules."
+  }
+ ],
+ "tools": [
+  "LiveKit",
+  "Pipecat",
+  "Pydantic",
+  "Zod",
+  "Qwen 3.5",
+  "Gemma 4",
+  "Cerebras",
+  "Groq"
+ ],
+ "numbers": [
+  {
+   "claim": "Plivo runs about 14 years in business, handles over 1 billion voice calls per month, has a team of about 90, and reports about $50M in cash from profitability with no external VC funding.",
+   "t": "1:13"
+  },
+  {
+   "claim": "Target time-to-first-audio is under about 550ms, but most deployments land between 750ms and 1.2s. Above 1.2s, users hang up.",
+   "t": "5:03"
+  },
+  {
+   "claim": "Frontier model P50 time-to-first-token is about 450 to 500ms. P90 and P95 can exceed 1.2 to 1.3s.",
+   "t": "7:54"
+  },
+  {
+   "claim": "Dedicated Groq or Cerebras capacity is reportedly booked about 12 months ahead and is expensive.",
+   "t": "7:54"
+  },
+  {
+   "claim": "Target LLM latency is under 300ms for a self-hosted open model.",
+   "t": "9:10"
+  },
+  {
+   "claim": "Gemma 4 needs about 2.5 to 3 times fewer tokens per word than Qwen 3.5 for non-English text (token fertility), per the speaker's evals.",
+   "t": "10:39"
+  },
+  {
+   "claim": "Fine-tuning guidance: start at 8B or 12B dense. MoE models at 3 to 4B are said to reach about 90% out of the box.",
+   "t": "11:54"
+  },
+  {
+   "claim": "STT word error rate is about 4 to 6% on known eval sets and reaches double digits on noisy real calls.",
+   "t": "14:08"
+  },
+  {
+   "claim": "Field-based data collection reportedly raised accuracy from about 30% to 95%.",
+   "t": "18:26"
+  },
+  {
+   "claim": "The speaker reports 95 to 97% data-collection accuracy without fine-tuning, using per-state context.",
+   "t": "21:02"
+  },
+  {
+   "claim": "The speaker estimates that 50 to 60% of AI agents fail badly at data collection.",
+   "t": "17:39"
+  },
+  {
+   "claim": "Suggested speaking rate for entities is about 0.7 to 0.8x normal speed.",
+   "t": "22:04"
+  }
+ ],
+ "hot_takes": [
+  "Voice agents should run with thinking turned off, so reasoning-model advances largely do not help voice products.",
+  "Speech-to-speech models are not needed for barge-in and backchanneling. A well-built STT-LLM-TTS pipeline can do both.",
+  "Self-hosted open models around 8B to 12B beat paying for dedicated fast-inference capacity for most voice use cases.",
+  "Voice agent testing should be mostly field-level unit tests, not end-to-end call suites.",
+  "Most voice agent failures come from the pipeline around the LLM (STT, data collection, TTS), not from the LLM."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "InferCraft serves models on one RTX 5090 with vLLM and a priority scheduler. The talk's latency targets and the Qwen or Gemma size and tokens-per-word data are a rough reference point for picking local models, but voice is not in AgentOS scope.",
+   "action": "When benchmarking InferCraft, add P90 and P95 time-to-first-token as gating metrics next to P50, since the talk shows frontier tails of 1.2s or more while medians look fine."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The talk covers voice pipelines. Nothing in it maps to ProsHarness checkpointing, plans, critique, or CLI runs.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The speaker reports 95 to 97% accuracy by breaking context into per-state pieces and testing each piece at the unit level, not by tuning one large prompt. This matches the context-engineering and eval interests.",
+   "action": "Read the transcript section on per-state context and field-level unit tests (around 18:26 to 21:02), and compare it with how CLAUDE.md and skill context is split by phase in current agent setups."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

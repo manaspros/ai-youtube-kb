@@ -1,0 +1,161 @@
+{
+ "one_line": "Maven Clinic's CTO-level account of becoming an \"AI-native\" health company: AI in internal work and product, shorter planning cycles, changed code review, and tiered reliability bars with rubric-based evals.",
+ "summary": "Dan Feng from Maven Clinic, a digital health platform for women and families, describes two years of moving from a traditional tech company to an AI-native one. He defines AI-native in three parts: using AI for internal work, building AI into the product, and changing culture and process to fit. He describes adoption across early, middle and slow adopters, and says hiring and performance reviews now reward AI-leveraged impact and product understanding. On planning, he argues for one-year directional vision, two-to-four-week delivery sprints and short design docs. On code review, engineers now produce thousands of lines a day, so Maven lets engineers skip review for simple PRs (with accountability), caps PRs at 500 lines, and stacks PRs for large features. For reliability, he says each feature should define acceptable failure rates; high-stakes flows use multi-model agreement and human escalation. Pre-release, integration tests run many times with a pass-rate bar of about 90%, and post-launch conversations are scored against rubrics and spot-checked by people. The talk is high-level, with few hard numbers.",
+ "speakers": [
+  "Dan Feng"
+ ],
+ "orgs": [
+  "Maven Clinic"
+ ],
+ "format": "talk",
+ "topics": [
+  "enterprise-adoption",
+  "pr-code-review",
+  "evals"
+ ],
+ "tags": [
+  "ai-native",
+  "org-change",
+  "code-review",
+  "pr-size-limits",
+  "stacked-prs",
+  "reliability",
+  "failure-budgets",
+  "hiring",
+  "planning",
+  "integration-tests",
+  "rubric-evals",
+  "spot-check",
+  "multi-model-verification"
+ ],
+ "key_ideas": [
+  {
+   "idea": "AI-native means three things: AI used for internal work, AI built into the product, and changed culture and process",
+   "detail": "Maven does not treat AI-native as a fixed playbook. Internally, the test is whether a task done by hand today could use AI, including tasks you would otherwise hand to someone else. Externally, AI goes into the product for user experience and cost. Culture and process have to change too.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Adoption works best when you build shared infrastructure for the middle majority and listen to them",
+   "detail": "Early adopters need only tools and a push to share what they learn. The majority needs shared infrastructure and easy tools. Slow adopters need their concerns heard and a clear statement of where the company is going. Tool preferences changed within a year, from Cursor to Claude Code, so support has to cover both.",
+   "t": "2:36"
+  },
+  {
+   "idea": "Senior engineers now implement their own designs with AI, so delegating implementation costs more than it saves",
+   "detail": "Previously a senior engineer scoped a problem and handed implementation to others in parallel. Now engineers who understand the problem build it directly with AI. Hiring looks for people who are curious about AI, work across the PM and engineering boundary, and can solve ambiguous problems alone. Performance reviews ask what someone did with AI.",
+   "t": "5:19"
+  },
+  {
+   "idea": "Planning moves to a one-year direction, two-to-four-week delivery commitments, and short 1-2 page docs",
+   "detail": "The one-year plan is a directional wish list that assumes models will keep improving. The real commitment is what ships in the next 2-4 weeks, and a wrong sprint decision can be reversed quickly. Three-to-six-month plans are hard to make because model capability changes so fast. Long PRDs and TDDs are replaced by short documents used to communicate and iterate.",
+   "t": "6:35"
+  },
+  {
+   "idea": "Adoption of AI coding tools started with low-risk tasks, which built rules, skills and guardrails before the whole team was asked to use them",
+   "detail": "Maven began with unit tests and documentation because they are easy to verify and low-risk. That built team confidence and produced shared rules, skills and guardrails. Only then did the company ask all engineers to use the tools for implementation. Engineers now focus on review, architecture and evaluation. When someone declines to use the tools, leaders ask why, to learn.",
+   "t": "10:21"
+  },
+  {
+   "idea": "AI-written volume has broken code review, so Maven relaxes the gate and enforces accountability",
+   "detail": "A good engineer can now write thousands of lines a day, not hundreds. Engineers may self-identify a PR as simple enough to merge without review, and they are held accountable for it. If they do request review, PRs should stay under about 500 lines and large features should be stacked. Rubber-stamp approvals are the worst case because they create false confidence. AI review tools helped a little but were not trusted alone.",
+   "t": "10:21"
+  },
+  {
+   "idea": "Reliability is set per feature by deciding which failures are acceptable, not by trying to remove hallucinations entirely",
+   "detail": "Failing one scheduling request in a thousand is tolerable because the user can retry. A reimbursement with the wrong amount causes an escalation, so it needs extra checks. Those checks include running a receipt through several models and proceeding only when they agree. If they still disagree, the system offers a human agent.",
+   "t": "13:05"
+  },
+  {
+   "idea": "Pre-release tests run many times against a pass-rate bar, and post-launch conversations are scored against rubrics and spot-checked",
+   "detail": "Hundreds of integration tests cover known use cases, and each case runs multiple times, requiring about a 90% pass rate, because the model is non-deterministic. After launch, an automated system scores conversations against rubrics, and a dedicated team reviews samples. Reviews rise to about 20% of conversations when a new feature launches. The reviews also check whether the rubrics are too strict or too loose.",
+   "t": "15:21"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Staged AI-coding adoption from low-risk tasks",
+   "how": "Start with unit tests and docs, where output is easy to verify. Turn what the team learns into shared rules, skills and guardrails. Then expand to implementation, with engineers spending their time on review, architecture and evaluation.",
+   "when": "Rolling out coding agents to a whole engineering org that has not yet built trust in them."
+  },
+  {
+   "name": "Self-declared review tiers with accountability",
+   "how": "Engineers decide whether a PR needs review, merge simple ones themselves, and remain accountable for them. Keep a size cap around 500 lines for PRs that do get review, and stack PRs for large features so reviews stay meaningful.",
+   "when": "Review volume from agents exceeds what humans can read meaningfully, but you still want a human signal."
+  },
+  {
+   "name": "Repeated-run pass-rate gating for non-deterministic tests",
+   "how": "Run each integration test many times and require a set pass rate, around 90%, instead of one pass. Keep adding cases for each use case you learn about.",
+   "when": "Releasing an LLM-driven feature where a single green run does not show the behaviour is stable."
+  },
+  {
+   "name": "Rubric scoring plus human spot-checks on live conversations",
+   "how": "Define rubrics for good and bad outputs. Score production conversations automatically, then have a dedicated team sample them. Use the human results to adjust the system and also to tune the rubrics. Raise the sample rate to about 20% for new features.",
+   "when": "After launch, when you need to catch quality drift and check that the evaluator itself is calibrated."
+  },
+  {
+   "name": "Per-feature failure tolerance with multi-model agreement and human fallback",
+   "how": "Decide how much failure each feature can tolerate. Where failure is costly, such as money, run the same input through several models and proceed only on agreement. Route disagreements to a human agent.",
+   "when": "Designing an AI feature that handles money or other high-stakes actions."
+  }
+ ],
+ "tools": [
+  "Cursor",
+  "Claude Code",
+  "Jira"
+ ],
+ "numbers": [
+  {
+   "claim": "Maven began its AI journey about two years before the talk, and built an orchestration layer called Maven Intelligence",
+   "t": "0:08"
+  },
+  {
+   "claim": "Engineers used to write hundreds of lines of code a day. With AI tools they can write thousands",
+   "t": "10:21"
+  },
+  {
+   "claim": "PR size cap of about 500 lines for PRs that go to review",
+   "t": "11:42"
+  },
+  {
+   "claim": "Integration test pass-rate bar of about 90%, applied consistently across repeated runs",
+   "t": "15:21"
+  },
+  {
+   "claim": "Review about 20% of live conversations when launching new features, versus a smaller spot-check sample normally",
+   "t": "15:21"
+  },
+  {
+   "claim": "Scheduling failure of 1 in 1000 is treated as acceptable, while reimbursement errors are not",
+   "t": "14:20"
+  }
+ ],
+ "hot_takes": [
+  "Dedicating implementation work to other engineers now costs more overhead than it saves, because AI lets the person who understands the problem build it directly.",
+  "Long PRDs and TDDs are a waste of time now. One or two pages that get iterated on are enough.",
+  "Eliminating hallucinations completely is often too costly and sometimes unnecessary. Decide which failures are acceptable for each feature.",
+  "The worst code review outcome is a rubber stamp, because it creates false confidence that the code was reviewed."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The repeated-run pass-rate gate and rubric scoring of live conversations are relevant to AgentOS evals, but the talk gives no method details.",
+   "action": "Consider a pass-rate-over-N-runs gate for the MemoryMesh and agent regression suites, as a complement to the existing RAGAS evals."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Self-declared review tiers and a PR size cap are relevant to a harness that runs agent-written PRs.",
+   "action": "Consider a line-count threshold in ProsHarness that routes large agent-written diffs to stacked PRs or human review."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Staged rollout from low-risk tasks and per-feature failure budgets are general practices for agent work.",
+   "action": "Write down an explicit acceptable-failure rate for each agent-driven workflow before building its guardrails."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

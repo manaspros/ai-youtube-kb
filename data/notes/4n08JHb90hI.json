@@ -1,0 +1,242 @@
+{
+ "one_line": "Akamai hands-on workshop on self-hosting LLM agents on a single GPU with vLLM: memory budgets, prefill vs decode, FP8 quantization, speculative decoding, and finding the concurrency knee.",
+ "summary": "Duan Lightfoot and Khaja Omer (Akamai) run a 1h50m hands-on workshop on owning inference for production agents on dedicated GPUs. They cover the agent loop and its token cost, when owning a GPU beats renting a provider's API, and the memory math (weights plus KV cache) that sets how much context and concurrency one card can hold. Attendees run vLLM on one RTX 4000 Ada per person in a Kubernetes namespace and use load tests to measure throughput and time-to-first-token. The optimization section is the most useful part: FP8 quantization roughly doubled weight size savings and raised peak throughput about 1.4x in their run, but it needs your own evals. A badly matched speculative-decoding drafter cut throughput sharply, so acceptance rate has to be measured. The talk ends with a concurrency-knee sweep and a max-num-seqs change that lifted 64-concurrency throughput from about 800 to 1100 tokens/s. Live cluster problems cut the final demo short, and several numbers are single-run measurements on one card.",
+ "speakers": [
+  "Duan Lightfoot",
+  "Khaja Omer"
+ ],
+ "orgs": [
+  "Akamai Technologies"
+ ],
+ "format": "workshop",
+ "topics": [
+  "inference-serving",
+  "local-ai",
+  "infra-cost-scaling",
+  "evals"
+ ],
+ "tags": [
+  "vllm",
+  "kv-cache",
+  "prefix-caching",
+  "fp8-quantization",
+  "speculative-decoding",
+  "self-hosting",
+  "gpu-memory-budget",
+  "concurrency-knee",
+  "kubernetes",
+  "akamai-lke",
+  "qwen3",
+  "langfuse",
+  "rent-vs-own",
+  "load-testing"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Owning inference makes sense when usage is high and steady, data or compliance rules out public providers, and you have the hardware capacity; renting fits bursty or low traffic.",
+   "detail": "A GPU you pay for should stay busy. The speaker frames data residency, IP and governance as the main reasons to own, and bursty low-volume use as the reason to rent a provider's model.",
+   "t": "2:41"
+  },
+  {
+   "idea": "An agent is a loop of model calls, tool actions and results, and every turn costs generated tokens and latency.",
+   "detail": "Each pass through the model adds tokens and time, so cost and latency grow with the number of tool-call turns. This is the reason the workshop cares about per-token speed and cache reuse.",
+   "t": "1:12"
+  },
+  {
+   "idea": "vLLM is the production choice over Ollama for concurrent agents because of continuous batching and paged KV-cache memory, plus an OpenAI-compatible API.",
+   "detail": "Continuous batching lets new requests join while others are still running instead of waiting for a whole batch to finish. Paged memory avoids reserving the longest prompt's space for every request. The speaker says Ollama throttles much sooner under concurrency. Ollama is fine for one agent in development.",
+   "t": "9:02"
+  },
+  {
+   "idea": "GPU memory is weights plus a KV-cache pool, and the KV pool sets how many tokens of context and concurrent requests fit.",
+   "detail": "A 4B model in BF16 takes about 8 GB for weights. The remaining VRAM holds KV cache, which grows with every token in every active request, including system prompt, tool definitions and tool results. The speaker computes roughly 37k tokens of KV capacity on their card.",
+   "t": "28:29"
+  },
+  {
+   "idea": "Prefill is compute-bound and drives time-to-first-token, while decode is memory-bandwidth-bound and sets the tokens-per-second ceiling.",
+   "detail": "Decode cannot go faster than the card can read the weights, so only a smaller or quantized model, or more concurrent requests, raises total throughput. The speaker shows a roofline plot with a ridge point near 297 FLOPs per byte.",
+   "t": "39:? ",
+   "t_fix": "42:38"
+  },
+  {
+   "idea": "Size and tune to tail latency and the concurrency knee, not averages or the median.",
+   "detail": "Throughput flattens past a certain concurrency while latency keeps climbing. The useful operating point is just before the throughput plateau, while time-to-first-token is still acceptable. The speaker also argues to optimize against the slowest requests, not the median.",
+   "t": "25:07"
+  },
+  {
+   "idea": "FP8 quantization halves weight size, frees KV-cache room and speeds decode, but must be checked with your own evals and only on hardware that accelerates it.",
+   "detail": "The speaker's example is a pre-quantized Qwen3 4B FP8 checkpoint with partial (dynamic) quantization, so the file is about 5.1 GB rather than 4 GB. Quality issues they name include broken JSON, failed function calls, loops and hallucination. FP8 gains need hardware support, and the speaker says FP4 could slow things down on the RTX 4000 Ada.",
+   "t": "51:10"
+  },
+  {
+   "idea": "Speculative decoding helps only when the drafter's tokens are accepted often, so measure acceptance rate and treat a mismatched drafter as a likely slowdown.",
+   "detail": "A small draft model proposes several tokens and the main model verifies them in parallel. The speaker's drafter, trained for a different model, made throughput collapse (58 to 16 tokens/s at concurrency 1). Draft and target should share precision, the drafter should be trained for the target, and the draft-token count must be tuned. Their home setup reports 2-3x gains, and they note coding benefits more than browser use.",
+   "t": "1:15:07"
+  },
+  {
+   "idea": "Raising max-num-seqs and changing one flag at a time, with a load test after each change, moved the bottleneck the speaker had found at 32 concurrency.",
+   "detail": "Concurrency 64 went from about 800 tokens/s with about 2000 ms latency to about 1100 tokens/s with about 800 ms after raising max-num-seqs from 32 to 128. The speaker also says to tune gpu-memory-utilization (0.7 in the workshop, 0.9 to 0.95 for a single model) and to measure each change rather than stacking them.",
+   "t": "1:47:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Memory budget math",
+   "how": "Weight bytes = params x bytes per param (BF16 = 2, FP8 = 1). Subtract weights from usable VRAM to get the KV pool. Divide by KV bytes per token to estimate max context tokens, then check that concurrency x context fits.",
+   "when": "Before choosing a GPU or model size, or when deciding how many agents one card can serve."
+  },
+  {
+   "name": "Concurrency sweep to find the knee",
+   "how": "Run a load test at concurrency 1, 4, 8, 16, 32, 64 and higher. Plot aggregate tokens/s against time-to-first-token. Pick the highest concurrency before throughput plateaus and latency jumps.",
+   "when": "When sizing a deployment or after any serving config change."
+  },
+  {
+   "name": "One-flag-at-a-time tuning",
+   "how": "Change one vLLM flag (gpu-memory-utilization, max-num-seqs, max-num-batched-tokens, max-model-len, speculative config), redeploy, rerun the same load test, and keep the change only if the metric you care about improves.",
+   "when": "When tuning an inference endpoint against an SLA."
+  },
+  {
+   "name": "Quantize with your own eval set",
+   "how": "Build a small eval set for your task (JSON validity, function-call success, reasoning, looping) and run it on BF16 and the quantized model before switching. Keep a quantized model only if quality holds.",
+   "when": "Before deploying FP8, INT4, or any other quantized checkpoint."
+  },
+  {
+   "name": "Validate speculative decoding by acceptance rate",
+   "how": "Confirm the drafter was trained for the same target model and uses the same precision. Sweep the draft-token count (2, 4, 6 and so on), measure acceptance rate and throughput at low and high concurrency, and disable speculation if throughput drops.",
+   "when": "When adding a draft model or any other speculative method to a serving stack."
+  },
+  {
+   "name": "Prefix caching for repeated context",
+   "how": "Enable prefix caching so a shared system prompt and tool definitions are reused from the KV cache across requests, rather than recomputed each time.",
+   "when": "For agents that send the same long prefix on every turn or from many users."
+  },
+  {
+   "name": "Own-vs-rent break-even",
+   "how": "Count tokens per day, multiply by the hosted per-token price, and compare with the monthly cost of a rented GPU at the measured throughput for the same task.",
+   "when": "When deciding between a hosted API and self-hosted inference for a steady workload."
+  }
+ ],
+ "tools": [
+  "vLLM",
+  "Kubernetes",
+  "LKE (Akamai Linode Kubernetes Engine)",
+  "KServe",
+  "SGLang",
+  "TensorRT-LLM",
+  "llama.cpp",
+  "Ollama",
+  "Prometheus",
+  "Grafana",
+  "Langfuse",
+  "LLM Compressor",
+  "Hugging Face",
+  "Qwen3",
+  "DFlash drafter",
+  "Jupyter"
+ ],
+ "numbers": [
+  {
+   "claim": "Qwen3 4B in BF16 uses about 8 GB of VRAM for weights (4B params x 2 bytes), with a 1 GB notebook pod limit noted for CPU runs",
+   "t": "17:22"
+  },
+  {
+   "claim": "Single-request time-to-first-token about 37 ms and decode about 40-45 tokens/s on one RTX 4000 Ada for the 4B BF16 model",
+   "t": "17:22"
+  },
+  {
+   "claim": "KV-cache capacity on the card is about 37,000 tokens after weights are loaded",
+   "t": "33:18"
+  },
+  {
+   "claim": "Hosted-provider cost about 1500 USD/month for about 200k tokens/day vs about 1000 USD/month to rent a GPU (speaker's illustrative figures; depends on model and GPU size)",
+   "t": "25:07"
+  },
+  {
+   "claim": "Prefix cache cut a repeated prompt's time-to-first-token from about 220 ms to about 41 ms in their test",
+   "t": "41:08"
+  },
+  {
+   "claim": "Provider prompt caching can cut token cost by up to 75% (speaker's estimate, depends on provider)",
+   "t": "41:08"
+  },
+  {
+   "claim": "Enabling thinking on the 4B model raised output for one prompt from about 35 tokens to about 600 tokens",
+   "t": "46:22"
+  },
+  {
+   "claim": "Ridge point of about 297 FLOPs per byte for the roofline on the card (speaker's calculation)",
+   "t": "42:38"
+  },
+  {
+   "claim": "A 30B MoE with 128 experts and 8 active per token reads about 9x fewer bytes per decode step than a dense model of similar total size (speaker's calculation)",
+   "t": "44:10"
+  },
+  {
+   "claim": "Baseline BF16 load test at 32 concurrency: about 714 aggregate tokens/s, 37.5 tokens/s at concurrency 1, TTFT 61 ms",
+   "t": "54:44"
+  },
+  {
+   "claim": "TTFT rose from about 277 ms at concurrency 32 to about 1300 ms at 64 in the BF16 baseline",
+   "t": "54:44"
+  },
+  {
+   "claim": "FP8 switch: concurrency 1 went from 37.5 to 53.4 tokens/s; concurrency 64 peak went from about 800 to 1140 tokens/s (about 1.42x)",
+   "t": "1:04:15"
+  },
+  {
+   "claim": "Drafter-based speculative decoding with a mismatched drafter: concurrency 1 fell from 58.2 to about 16 tokens/s; concurrency 16 fell from about 700 to 240 tokens/s",
+   "t": "1:15:07"
+  },
+  {
+   "claim": "Speaker reports about 1.5x token-generation speedup from speculative decoding in a vLLM report, and about 2-3x in his home lab (Qwen 3.6 35B MoE with DFlash)",
+   "t": "1:24:04"
+  },
+  {
+   "claim": "Speaker sees about 1.5x speedup for browser agents and about 3x for coding with speculative decoding",
+   "t": "1:30:03"
+  },
+  {
+   "claim": "Raising max-num-seqs from 32 to 128: concurrency 64 went from about 800 tokens/s and 2000 ms latency to about 1100 tokens/s and 800 ms latency",
+   "t": "1:47:34"
+  },
+  {
+   "claim": "Cluster used for the workshop has about 200+ GPU nodes; each attendee gets one RTX 4000 Ada (about 20 GB VRAM); LKE nodes can hold up to 4 GPUs (80 GB) per node",
+   "t": "7:47"
+  },
+  {
+   "claim": "Transcript gives two different memory bandwidth figures for the card (260 GB/s and 360 GB/s), so the bandwidth number is unverified",
+   "t": "7:47"
+  }
+ ],
+ "hot_takes": [
+  "Ollama is fine for one developer agent, but use vLLM or SGLang once you run many agents in parallel",
+  "Benchmark numbers from others rarely match your own runs, so measure your own workload",
+  "A drafter model trained badly for the target can make speculative decoding several times slower, with no easy fix",
+  "FP8 is usually safe for simple cases, but JSON and function-call quality can break for specific workloads",
+  "Owning a GPU only pays off when it stays busy"
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 3,
+   "why": "InferCraft (L2B) is built on vLLM with KV-cache strategies, quantization, speculative decoding and a single RTX 5090, which are the same knobs this workshop measures.",
+   "action": "Add a concurrency-knee sweep (1 to 64+) and a memory-budget calculator to InferCraft's benchmark suite, recording tokens/s and TTFT per run. Gate any spec-decoding or FP8 config on measured acceptance rate and quality evals, not throughput alone."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The talk covers inference serving, not the Claude Code harness, checkpointing or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The talk has a concrete rule for cheap-model pipelines: write your own eval set before quantizing or changing the serving stack, because public benchmarks may not match your task.",
+   "action": "For any Haiku or small-model pipeline, build a 50 to 100 case task-specific eval (JSON validity, tool-call success, loops) and run it on each model or quantization change before rollout."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

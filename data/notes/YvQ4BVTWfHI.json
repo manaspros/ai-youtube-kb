@@ -1,0 +1,169 @@
+{
+ "one_line": "MiniMax's Morgan Suo argues a faster model must be judged on a whole research job (sources, numbers, cost, latency, retries), not on tokens/sec or averages, and walks through M3.1 Flash's sparse attention, KV-cache and expert quantization, speculative decoding, and reasoning-effort trade-offs.",
+ "summary": "Morgan Suo from MiniMax argues that \"is a faster model actually faster?\" should be answered by testing the whole finished job, not isolated speed numbers. He uses a financial research task (14 PCB supply-chain company reports) where the output must have openable sources, recalculable numbers, and evidence that could change the conclusion. He then goes through the M3.1 Flash changes: sparse attention for long inputs, 4-bit keys/values in the KV cache, low-precision MoE experts, speculative decoding, and a default max reasoning effort. For each change he shows a case where an aggregate metric hid a regression (a sub-score drop, lower accuracy at high effort, P95 first-token wait rising about 8x while throughput rose 1.9x). The closing advice is to define acceptance criteria up front, measure cost including retries and human fixes, load-test at expected concurrency, and record model/runtime versions, prompts, settings and sources for reproducibility, with a staged rollout and rollback. The talk is a vendor presentation for an unreleased MiniMax model, so the numbers come from single internal tests without full setups.",
+ "speakers": [
+  "Morgan Suo"
+ ],
+ "orgs": [
+  "MiniMax"
+ ],
+ "format": "talk",
+ "topics": [
+  "inference-serving",
+  "evals",
+  "token-cost-efficiency",
+  "models-research"
+ ],
+ "tags": [
+  "whole-job-eval",
+  "sparse-attention",
+  "kv-cache-quantization",
+  "moe-low-precision",
+  "speculative-decoding",
+  "p95-ttft",
+  "reasoning-effort",
+  "long-context-retrieval",
+  "needle-placement",
+  "vendor-talk"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Judge a model swap by the finished job, not the isolated metric. Faster output that misses a key source just moves the work to a human.",
+   "detail": "The speaker's test is a research report with an acceptance bar: analysts must be able to open sources behind claims, check reporting periods, recalculate numbers, and find evidence that could overturn the conclusion. Time and cost are measured on that same job.",
+   "t": "1:13"
+  },
+  {
+   "idea": "Profit and cash flow can tell different stories, so a research check has to point to the cash flow statement and disclosures.",
+   "detail": "Used as the example for why the task needs verifiable claims: revenue can rise while customers have not paid or inventory sits in storage. A short footnote can change the whole conclusion, so the model must include it.",
+   "t": "3:43"
+  },
+  {
+   "idea": "Sparse attention picks a small set of blocks per query, then runs full attention over those blocks plus nearby tokens. It is a cost cut that has to be checked for missed evidence.",
+   "detail": "A block-scoring selection step runs first, the main attention runs only on the selected blocks, and the nearest tokens are always kept. The selection changes with the query. The speaker says a retrieval check is needed because the first three layers use this mechanism.",
+   "t": "5:01"
+  },
+  {
+   "idea": "A single average score can hide the failure a user cares about. The KV-cache change kept the average nearly flat while one sub-score dropped about 6.6%.",
+   "detail": "M3.1 Flash stores keys and values at 4 bits instead of 8 while the query stays at 8 bits, and changes the positional layout of cached data. Comparing two full setups does not show which change caused which score, so ablations are needed.",
+   "t": "7:21"
+  },
+  {
+   "idea": "Low-precision MoE experts are only correct if the scale, compute and restore steps run in the right order.",
+   "detail": "Only the selected routed experts run in 4-bit weights and activations; the shared expert is excluded. The speaker says the order of scale and restore steps decides whether the answer is right, so the full implementation must be measured, not just the kernel.",
+   "t": "8:41"
+  },
+  {
+   "idea": "Speculative decoding's speedup has to be measured end to end, including draft and rejection time, and checked against real claims.",
+   "detail": "A fast draft proposes tokens, the target model verifies them, and the accepted prefix is kept with a correction on rejection. The opportunity is several tokens per target pass, but drafting, checking and rejecting all cost time. For the research job, source retrieval, tool calls and retries belong in the measurement.",
+   "t": "10:06"
+  },
+  {
+   "idea": "Throughput gains at higher concurrency can hide a large first-token latency regression that users feel.",
+   "detail": "Going from 32 to 64 concurrent requests raised total output throughput about 1.9x, but P95 time-to-first-token went from about 1.5 s to 11.6 s, roughly eight times longer. The speaker says to choose the load from the report's time requirement, not from throughput.",
+   "t": "10:57"
+  },
+  {
+   "idea": "The default reasoning-effort setting changes how much work the model does, and lowering it saves tokens at an accuracy cost.",
+   "detail": "In the document setup, thinking stays on and effort defaults to max if left blank. In a coding test, high effort used fewer output tokens than max but accuracy fell from 80% to 68%. The speaker recommends comparing budgets on the same reports and recording the chosen setting.",
+   "t": "13:04"
+  },
+  {
+   "idea": "Adoption checklist for a model change: acceptance criteria, whole-job cost, load-test at expected users, reproducibility records, staged rollout with rollback.",
+   "detail": "Define report acceptability before the comparison and fix the information cutoff. Measure cost including failed attempts and human repair. Test at expected concurrency and check the promised deadline. Save model and runtime versions, prompts, settings and sources, keep failure examples, roll out in stages, and keep a switch back.",
+   "t": "15:06"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Whole-job acceptance eval",
+   "how": "Write the finished-artifact bar first (every claim links to an openable source, periods match, recomputed numbers agree, a counter-evidence check passes). Run the same job set on old and new settings. Record pass rate, wall time, and total cost including retrieval, tool calls, retries and human fix time. Compare cost per accepted output, not per request.",
+   "when": "Before switching to a faster or cheaper model, changing quantization or serving, or changing reasoning effort. Use it whenever per-request speed is the only thing being compared."
+  },
+  {
+   "name": "Planted-fact position sweep for long-context retrieval",
+   "how": "Take real documents and move one critical passage (a footnote, a cash-flow disclosure, a conflicting figure) to different positions in the input. Ask the same question at each position and check the answer finds the fact and uses the right period. Run it again after enabling sparse attention or other long-input shortcuts.",
+   "when": "When a model uses sparse or block-selected attention, or when the context is very long (the speaker's test ran up to about 830k tokens)."
+  },
+  {
+   "name": "Per-subscore regression check instead of averages",
+   "how": "Break the eval into user-relevant categories and report the worst category next to the mean. Flag any drop above a set threshold even if the average holds. Where possible, change one component at a time (KV precision, expert precision, scale order) to attribute each drop.",
+   "when": "When a quantization or kernel change keeps the average flat, or when two full setups differ in several ways at once."
+  },
+  {
+   "name": "Concurrency sweep with P95 time-to-first-token",
+   "how": "Run the load test at the expected concurrency and at higher levels. Log total output throughput, P95 time-to-first-token, and the time until a usable report exists. Pick the maximum concurrency that still meets the latency target, not the one that maximizes throughput.",
+   "when": "Before exposing a serving setup to users, especially when throughput rises with concurrency."
+  },
+  {
+   "name": "Reasoning-effort budget comparison with a recorded setting",
+   "how": "Run the same reports at each effort level (the speaker's example uses high versus max). Score evidence-finding and calculation accuracy alongside output tokens. Store the chosen effort value in the run config so later runs reuse it. Keep a separate budget for quick first-pass drafts if needed.",
+   "when": "When the provider's default effort is high-cost or when token use grows faster than the task's quality needs."
+  },
+  {
+   "name": "Reproducibility record and staged rollout",
+   "how": "Save model and runtime versions, the full prompt, all settings, and the source document set and information cutoff for each eval run. Keep examples of failures. Roll out to a small slice first with a documented switch back to the previous model.",
+   "when": "Before any production switch, so the eval result can be rerun later and a regression can be rolled back quickly."
+  }
+ ],
+ "tools": [
+  "MiniMax M3.1 Flash (LLM, long context, MoE, sparse attention, KV-cache quantization, reasoning effort control)",
+  "MiniMax A3 (video generation model, shown in opening and closing segments)",
+  "speculative decoding (serving method)",
+  "KV cache (serving-side internal memory of keys and values)",
+  "MoE experts (routed experts with 4-bit weights and activations, shared expert unchanged)"
+ ],
+ "numbers": [
+  {
+   "claim": "Research task covers 14 company reports on the PCB supply chain for AI servers.",
+   "t": "2:16"
+  },
+  {
+   "claim": "M3.1 Flash has a 1M-token context window. Sparse attention is used in the first three layers.",
+   "t": "5:01"
+  },
+  {
+   "claim": "Long-context retrieval test: all 39 requests passed in one run, with the longest input about 830k tokens. The speaker notes this covers only the cases in that test.",
+   "t": "6:00"
+  },
+  {
+   "claim": "KV keys and values are quantized from 8 bits to 4 bits (query stays at 8 bits). Average score is nearly unchanged, but one sub-score drops about 6.6%.",
+   "t": "7:21"
+  },
+  {
+   "claim": "Concurrency raised from 32 to 64 requests: total output throughput grows about 1.9x (throughput above 300 tokens/s is cited).",
+   "t": "10:57"
+  },
+  {
+   "claim": "P95 time-to-first-token rises from about 1.5 s to 11.6 s at 64 concurrent requests, about 8x longer.",
+   "t": "12:09"
+  },
+  {
+   "claim": "Coding test: high reasoning effort uses fewer output tokens than max, but accuracy falls from 80% to 68%. Default effort is max when left blank.",
+   "t": "13:04"
+  }
+ ],
+ "hot_takes": [
+  "The talk is a vendor presentation. It opens by introducing the company, announces an unreleased model arriving next week, and closes with a plug for MiniMax A3, so its numbers are not independent benchmarks.",
+  "The numbers come from single internal tests with few setup details (no baselines, dataset sizes, or confidence intervals), so treat the 6.6% drop, the 830k-token retrieval pass, and the 80%-to-68% accuracy change as indicative only.",
+  "The core advice (judge the whole job, watch P95 latency at load, and record the setup) is sound and applies to any model swap. It is worth more than the MiniMax-specific numbers.",
+  "The talk says the deployment cost includes failed attempts and human repair, but gives no way to measure human repair time. Teams would need their own review-cost model."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft (vLLM, KV-cache strategies, speculative decoding, quantization, priority scheduler on one RTX 5090) is the subject of this talk. The whole-job eval, concurrency sweep with P95 first-token latency, and per-subscore regression ideas map directly to it.",
+   "action": "Add an InferCraft benchmark that sweeps concurrency (for example 32 to 64) and reports P95 time-to-first-token and time-to-usable-result next to throughput. Also add a planted-fact retrieval check that runs after enabling any KV-cache strategy (H2O, CPU offload, LMCache) or quantized KV."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The talk recommends recording the reasoning-effort setting, model and runtime versions, prompts and sources for each run. ProsHarness checkpoints and resumes long agent runs, so the same reproducibility record is useful there.",
+   "action": "Store the model version, effort setting, prompt hash and input sources in each checkpoint so a resumed or repeated run can be compared like for like."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

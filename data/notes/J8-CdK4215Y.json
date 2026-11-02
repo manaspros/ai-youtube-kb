@@ -1,0 +1,209 @@
+{
+ "one_line": "Better Stack gives seven coding agents the same SwiftUI \"Dog Tinder\" build prompt; Claude Opus 4.6 via Claude Code is the only one that works first try and looks best, while GLM-5 fails badly.",
+ "summary": "The speaker argues that AI coding models are weaker at Swift than at Python or JavaScript, citing a study and three causes: little public Swift code, API drift in SwiftUI and concurrency, and benchmarks that are mostly Python and web. He gives seven models (Qwen 3 Coder Next, Grok Code Fast, Kimi K2.5, Gemini 3 Pro, GPT-5.3 Codex, Opus 4.6, GLM-5) the same prompt to build an iOS swipe-and-chat app that uses the Dog CEO API. Where a vendor CLI did not produce an openable Xcode project, he switched to a manually created project and Xcode's built-in AI assistant pointed at OpenRouter, so tool and model change together. The same Gemini 3 Pro gave a broken app through its CLI and a strong first-try app through Xcode's assistant, which shows the harness matters. GPT-5.3 Codex was the first non-Claude model to produce a complete project unaided but had layout bugs. Opus 4.6 through Claude Code, with only permissions granted, produced a working project with the best design. GLM-5 needed three fix rounds and cycled through only three dogs. The ranking rests on one run per model and subjective grading.",
+ "speakers": [
+  "Andrus"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Apple",
+  "OpenAI",
+  "Anthropic",
+  "Google",
+  "xAI",
+  "OpenRouter"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "evals",
+  "models-research"
+ ],
+ "tags": [
+  "swift",
+  "swiftui",
+  "ios",
+  "xcode",
+  "xcode-ai-assistant",
+  "openrouter",
+  "claude-code",
+  "opus-4-6",
+  "gpt-5-3-codex",
+  "gemini-3-pro",
+  "glm-5",
+  "kimi-k2-5",
+  "qwen3-coder-next",
+  "grok-code-fast",
+  "app-building-eval",
+  "harness-vs-model",
+  "dog-ceo-api"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Swift is a weak spot for coding models, and the speaker attributes it to three causes: little public Swift code, API drift in SwiftUI and Swift concurrency, and benchmarks that are mostly Python and web.",
+   "detail": "He cites a study (not named in detail) finding Swift output consistently weaker than Python or Java across models, including GPT and Claude. The explanation is his, not measured. Training data is the main cause he gives.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Use a fixed build-an-app prompt as the test. The spec is a Tinder-style SwiftUI app with the Dog CEO API, swipe left/right, match popups, and a chat view per match.",
+   "detail": "The app is chosen because it needs native swipe animation and multi-screen state, which web-centric benchmarks do not test. Grading covers whether the project opens and compiles, whether images load, whether swipe and matches work, and visual design.",
+   "t": "2:16"
+  },
+  {
+   "idea": "The method is confounded. Each model was run through its own CLI where possible, then through Xcode's AI assistant via OpenRouter, so the ranking compares model and harness pairs.",
+   "detail": "Qwen and Kimi CLIs produced projects that would not open. Grok went through the VS Code Copilot extension and gave manual copy instructions. Several models needed multiple fix rounds, and the speaker wrote a project by hand for the failed cases.",
+   "t": "3:23"
+  },
+  {
+   "idea": "The same model gave opposite results depending on the tool. Gemini 3 Pro failed through the Gemini CLI, then produced the best first-try app through Xcode's assistant with OpenRouter.",
+   "detail": "The CLI run needed a YAML project spec and a codegen command to make an .xcodeproj. Once it had permission to run that, it had an asset error and a broken matches system. The Xcode run was the strongest app in the video.",
+   "t": "9:14"
+  },
+  {
+   "idea": "Opus 4.6 through Claude Code, with only the required permissions granted, created the Xcode project itself and produced the best app on the first try, with fluid animations and working matches and chat.",
+   "detail": "The speaker says no manual project setup was done beforehand. Its one shortcoming was no fancy logo, which he says Gemini had added. The result is still one run.",
+   "t": "11:36"
+  },
+  {
+   "idea": "GPT-5.3 Codex was the first non-Claude model to produce a complete Swift package without help, but it had a layout bug where wide images overflowed the card.",
+   "detail": "The speaker calls the design monotone blue and functionally complete. The ranking places it second behind Opus.",
+   "t": "10:22"
+  },
+  {
+   "idea": "GLM-5, which the speaker says was announced as beating Opus 4.6 at coding, needed three bug-fix rounds through Xcode's assistant. It cycled through only three dogs and could not open matches.",
+   "detail": "The speaker treats this as a Swift-specific failure. He says he did not test GLM-5 on web tasks, so his conclusion does not cover them.",
+   "t": "12:55"
+  },
+  {
+   "idea": "The closing takeaway is that a large model with strong reasoning can overcome weak Swift data, that iOS developers should use Apple's built-in AI tooling, and that language-specific coding models may be needed.",
+   "detail": "These are the speaker's conclusions from the seven tests. He does not test a language-specific model.",
+   "t": "14:47"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Fixed-spec, first-try app build as a coding-agent eval",
+   "how": "Give every agent the same single prompt that specifies the app, data source (Dog CEO API), and required features (swipe gestures, match list, per-match chat). Grade in stages: does the project open and compile on the first try, do images load, do swipe and matches work, and how does it look. Record how many fix rounds each run needed.",
+   "when": "Comparing coding agents on a stack that public benchmarks under-cover, such as Swift/SwiftUI. Use it as a smoke eval before a larger suite."
+  },
+  {
+   "name": "Check that the output opens, not just that files exist",
+   "how": "Treat a generated Xcode project as a pass only if it opens and compiles in Xcode. Several CLIs emitted files or a README instead of a working .xcodeproj, and the speaker counted that as a failure.",
+   "when": "Any agent that writes an IDE project, package or build config. Use it as an acceptance gate before scoring other qualities."
+  },
+  {
+   "name": "Generate an Xcode project from a YAML spec with the codegen CLI",
+   "how": "Write a YAML file with the project details, then run the CodeGen command to produce the .xcodeproj. The transcript says 'CodeGen'; this is probably XcodeGen, but the exact tool and flags are not shown. Give the agent permission to run that command.",
+   "when": "When an agent cannot produce a valid .xcodeproj directly. The speaker says some models refuse to write or do not know how to write it."
+  },
+  {
+   "name": "Use Xcode's built-in AI assistant with OpenRouter as the model backend",
+   "how": "Connect the OpenRouter account in Xcode's coding-intelligence settings, pick the model from the dropdown, then highlight all current build issues and ask the assistant to fix the selected issues in one request. Repeat until it compiles. Exact menu paths are not shown.",
+   "when": "When you are building an iOS app and want an IDE-native loop rather than a terminal agent. The speaker found it gave better results than some vendor CLIs."
+  },
+  {
+   "name": "Give Claude Code only the permissions it needs, then let it run the whole project",
+   "how": "Run Claude Code with the prompt and the permission prompts pre-approved. No manual Xcode project setup is done beforehand. The transcript does not show a CLAUDE.md or other config.",
+   "when": "When you want the agent to create the project, files and build from scratch. This was the only run in the video that worked first try with no pre-setup."
+  }
+ ],
+ "tools": [
+  "Swift",
+  "SwiftUI",
+  "Xcode",
+  "Xcode AI assistant (coding intelligence)",
+  "OpenRouter",
+  "Claude Code CLI",
+  "Opus 4.6",
+  "Gemini CLI",
+  "Gemini 3 Pro (preview on CLI)",
+  "Qwen CLI",
+  "Qwen 3 Coder Next",
+  "Kimi CLI",
+  "Kimi K2.5",
+  "Grok Code Fast",
+  "GitHub Copilot extension for VS Code",
+  "GPT-5.3 Codex app",
+  "GLM 5",
+  "Dog CEO API",
+  "CodeGen CLI (transcript name; probably XcodeGen)",
+  "HumanEval (benchmark, named as a bias example)"
+ ],
+ "numbers": [
+  {
+   "claim": "Cited study: across models including GPT and Claude, Swift code generation performance was consistently lower than Python or Java. No figures given.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Test set: seven models, each run once on the same prompt. Qwen 3 Coder Next and GLM-5 are the lowest; Opus 4.6 is the highest.",
+   "t": "2:16"
+  },
+  {
+   "claim": "Qwen 3 Coder Next needed several prompt-fix rounds in Xcode's assistant before a working build. The speaker calls the result a failure.",
+   "t": "4:30"
+  },
+  {
+   "claim": "Grok Code Fast needed two prompts to fix the remaining errors after the first build. The app worked but was visually poor.",
+   "t": "5:48"
+  },
+  {
+   "claim": "Kimi K2.5 needed one fix round after the first attempt. Swipe animations were buggy, and some cards floated off screen.",
+   "t": "7:10"
+  },
+  {
+   "claim": "Gemini 3 Pro through the Gemini CLI did not produce a project file until prompted. Its first build then had an asset error and a broken matches system.",
+   "t": "8:14"
+  },
+  {
+   "claim": "Gemini 3 Pro through Xcode's assistant via OpenRouter worked on the first try.",
+   "t": "9:14"
+  },
+  {
+   "claim": "GPT-5.3 Codex produced a complete working Swift package on the first try, with no pre-set-up Xcode project, but had a layout bug where some wide images overflowed the card.",
+   "t": "10:22"
+  },
+  {
+   "claim": "Opus 4.6 through Claude Code produced a working Xcode project and app on the first try.",
+   "t": "11:36"
+  },
+  {
+   "claim": "GLM-5 through Xcode's assistant via OpenRouter needed three bug-fix rounds to compile. It cycled through three dogs only, and no matches opened.",
+   "t": "12:55"
+  },
+  {
+   "claim": "Vendor claim relayed by the speaker: GLM-5 scores above Opus 4.6 on coding. He does not verify it.",
+   "t": "12:55"
+  }
+ ],
+ "hot_takes": [
+  "The leaderboard is one run per model with subjective grading, and tool and model change together, so it ranks model-plus-harness pairs, not models.",
+  "Gemini 3 Pro's CLI and Xcode results differ so much that 'which model is best' is ill-posed for this kind of test.",
+  "The strongest result (Opus 4.6) was run with only permissions granted and no pre-set-up project, but the transcript does not report config files, system prompts or retries.",
+  "The speaker suggests language-specific coding models for niche stacks but does not test one.",
+  "The GLM-5 claim is checked only on Swift, which he admits, so the Opus-beating claim is neither confirmed nor refuted for web tasks."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "This is a Swift/iOS app-building test of IDE and CLI coding agents. It has no bearing on the proxy, memory, inference or storage layers of AgentOS.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI. The video shows CLI output that looked complete but would not open, and Claude Code succeeded only when given permissions and left to create the project. This supports adding an acceptance gate to ProsHarness runs.",
+   "action": "In ProsHarness, add a post-run check that the generated project builds or opens before a Claude Code run is marked done, and log which CLI and model produced it."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The method lesson applies to any coding-agent eval: same model in a different harness gave different results. Grade model-plus-harness pairs and check that outputs run.",
+   "action": "When comparing coding agents, record the harness and the number of fix rounds for each run, and grade whether the output runs before grading quality."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

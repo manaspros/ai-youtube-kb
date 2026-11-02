@@ -1,0 +1,203 @@
+{
+ "one_line": "Legora (legal AI) walks through moving project and legal-research search from one Elasticsearch, to Postgres/pgvector, to turbopuffer, one namespace per project on object storage, and why that fits regulated multi-tenant workloads.",
+ "summary": "Jacob Lauritzen (Legora engineer) and Simon Eskildsen (turbopuffer CEO) describe Legora's search stack for legal documents, covering two workloads: project search confined to one matter, and legal research across laws, cases and regulations. The search backend moved in three stages: a single Elasticsearch cluster, then per-region clusters for data residency, then Postgres with pgvector for enterprise physical isolation. Postgres hash-packed projects into about 4,000 partitions, and hot and cold projects sharing partitions thrashed the cache, pushing P99 from roughly 100 ms to 20 s. Moving to turbopuffer with one namespace per project fixed latency and cost, and namespaces map cleanly onto per-tenant buckets and customer-managed keys. The talk then explains the storage design: writes go straight to object storage as a log with indexes built in the background, reads are tuned to a few round trips across a memory, NVMe and S3 cache hierarchy, and vector and full-text indexes are shaped around that hierarchy. For legal research, jurisdictional and temporal hierarchies cause heavy fan-out queries, and rarely queried jurisdictions can stay cold on blob storage. The talk is a joint vendor and customer case study with few hard benchmarks.",
+ "speakers": [
+  "Jacob Lauritzen",
+  "Simon Eskildsen"
+ ],
+ "orgs": [
+  "Legora",
+  "turbopuffer"
+ ],
+ "format": "talk",
+ "topics": [
+  "rag-retrieval",
+  "infra-cost-scaling",
+  "security-guardrails",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "turbopuffer",
+  "legora",
+  "namespace-per-tenant",
+  "object-storage",
+  "tiered-cache",
+  "bm25",
+  "full-text-search",
+  "vector-search",
+  "pgvector",
+  "elasticsearch",
+  "data-residency",
+  "customer-managed-keys",
+  "legal-ai",
+  "cold-storage"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Search backend evolved in three steps: one Elasticsearch cluster, then regional clusters (EU, US, APAC) for data residency, then Postgres/pgvector for enterprise physical isolation, then turbopuffer.",
+   "detail": "Largest scale mentioned is about 2B documents. Regional clusters were a copy of the whole stack per region. Enterprise banks and law firms asked for their own database and customer-managed encryption keys, which pushed the team to Postgres, where they already ran OLTP.",
+   "t": "2:39"
+  },
+  {
+   "idea": "Hash bin-packing projects into Postgres partitions failed because hot and cold projects shared partitions, so queries constantly evicted each other from cache.",
+   "detail": "Partitioning was aggressive (around 4,000 partitions, project keys hashed and bin-packed). Abandoned projects that are never queried landed next to very active ones, partitions grew large, and each query pulled big partitions into memory. P99 went from about 100 ms to about 20 s. Pgvector with DiskANN plus tsvector also lost some retrieval quality versus BM25.",
+   "t": "5:35"
+  },
+  {
+   "idea": "One namespace per project is the atomic unit: a namespace is a table-like isolated directory on object storage that can have its own bucket, its own encryption key, and be moved or re-encrypted.",
+   "detail": "This maps directly onto per-tenant data residency and CMEK. Some customers run thousands of buckets, one per namespace group, in their own cloud accounts. Cold projects cost only blob storage, so the namespace count can grow without a matching cost increase.",
+   "t": "10:11"
+  },
+  {
+   "idea": "Writes go straight to object storage as an append-only log with no disk replication, and indexes are built in the background.",
+   "detail": "Each write lands as a numbered log object, and vector, text and columnar indexes are built asynchronously. The stated trade-off is hundreds of milliseconds per write, which is fine for search but not for workloads like inventory reservations.",
+   "t": "7:53"
+  },
+  {
+   "idea": "Reads are designed around a memory, NVMe, then S3 cache hierarchy and a budget of about three round trips per query, since a 1 MB S3 read is roughly 200 ms at P99.",
+   "detail": "Requests have affinity to the node most likely to hold a namespace in cache. Concurrency is used to fill round trips efficiently, and the design minimizes round trips rather than bytes.",
+   "t": "8:52"
+  },
+  {
+   "idea": "Local NVMe cache is treated as volatile like memory, so it was disabled for Legora's multi-tenant encrypted workloads, and memory-only caching was still fast enough.",
+   "detail": "Keeping plaintext on local disk was not acceptable to the customer. The speaker says the memory-only path stayed fast, and that multi-tenant support for the disk cache is planned.",
+   "t": "10:11"
+  },
+  {
+   "idea": "Legal research is a fan-out problem over hierarchical, time-valid corpora, which is why the team moved jurisdictions into namespaces and let cold ones stay on blob storage.",
+   "detail": "Authority runs federal, state, county and city, and later decisions can overrule earlier ones. Regulations can carve exceptions out of other regulations, so one query expands into many sub-queries. The corpus is racing toward about 10B vectors. Hot jurisdictions such as EU law sit closer to memory, while small-jurisdiction law can stay cold, where roughly 500 ms to fetch a blob is acceptable for deep-research workloads.",
+   "t": "12:54"
+  },
+  {
+   "idea": "For vector search, the speaker prefers a clustered tree (clusters of clusters, B-tree-like) over graph indexes, because graph traversal makes many sequential round trips to S3.",
+   "detail": "Upper centroid levels stay in DRAM and are touched on every query. Leaves holding the documents sit on SSD with one roughly 1 ms round trip. The argument is that graph navigation fights the memory hierarchy, while a tree lets the cache hold the hot levels.",
+   "t": "14:48"
+  },
+  {
+   "idea": "Full-text search at web scale is harder than vector search, according to the speaker. It is a dictionary plus posting lists, fetched in about two round trips, then intersected and scored with BM25.",
+   "detail": "Each term maps to a set of document IDs, and the query intersects those sets. Documents with rarer terms score higher, and the posting lists are compressed. Once scores from very frequent terms dominate, low-scoring candidates can be dropped early.",
+   "t": "17:23"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Namespace-per-tenant isolation with per-namespace keys and buckets",
+   "how": "Make each project (or jurisdiction) its own namespace. Map each namespace to its own bucket and encryption key, so it can be re-encrypted, moved or revoked independently. Keep cold namespaces on blob storage only.",
+   "when": "Multi-tenant search where tenants need data residency, customer-managed keys, or physical isolation, and where many tenants are rarely queried."
+  },
+  {
+   "name": "Partition by access temperature, not by hash",
+   "how": "Do not bin-pack tenants into shared partitions by hashing their keys. Keep hot and cold tenants apart so a cache fill for one does not evict the others. Measure P99 per partition.",
+   "when": "Postgres-style partitioned search with very uneven tenant activity (many dormant projects plus a few hot ones)."
+  },
+  {
+   "name": "Object-storage-native write path",
+   "how": "Append each write as an immutable log object on S3 (no replicated disks). Build vector, text and columnar indexes in the background. Accept hundreds-of-milliseconds writes.",
+   "when": "Read-heavy search where ingestion latency is not user-facing. Wrong for synchronous transactional writes."
+  },
+  {
+   "name": "Round-trip budgeting over object storage",
+   "how": "Design each query for about three object-store round trips. Batch and parallelize fetches, and route requests to the node most likely to have the namespace in cache (memory, then NVMe, then S3).",
+   "when": "Any system where the source of truth is S3 and P99 per GET (about 200 ms for 1 MB) dominates latency."
+  },
+  {
+   "name": "Memory-only cache for encrypted multi-tenant data",
+   "how": "Treat the local NVMe cache as volatile. For tenants that forbid plaintext on local disk, disable the disk tier and serve from memory, then measure the impact.",
+   "when": "Compliance rules forbid unencrypted local persistence but the workload fits in RAM or tolerates object-store reads."
+  },
+  {
+   "name": "Clustered centroid tree for vector search",
+   "how": "Build clusters of clusters recursively. Keep the upper centroid levels in memory and let leaves live on SSD or object storage, so each query touches few random reads.",
+   "when": "Very large corpora (billions of vectors) where cost per stored vector matters more than the last point of recall."
+  },
+  {
+   "name": "Two-round-trip inverted index for full text",
+   "how": "Fetch the relevant dictionary slice first, then the compressed posting lists for the query terms. Intersect the lists, score with BM25, and prune candidates early once scores are settled.",
+   "when": "Keyword retrieval over web-scale corpora stored on object storage."
+  },
+  {
+   "name": "Fan-out with hierarchy and validity filters for legal research",
+   "how": "Expand one research query into sub-queries across jurisdiction namespaces, respecting authority levels, time-based overrules, and exceptions to other rules. Place frequently hit jurisdictions in hotter tiers.",
+   "when": "Deep-research retrieval over hierarchical, time-valid document sets where a single query must reach many related documents."
+  }
+ ],
+ "tools": [
+  "turbopuffer",
+  "Elasticsearch",
+  "PostgreSQL",
+  "pgvector (DiskANN index, transcribed as 'disk NN')",
+  "Postgres tsvector",
+  "BM25",
+  "Amazon S3 (object storage)",
+  "Google Cloud Storage",
+  "Azure Blob Storage",
+  "NVMe SSD cache"
+ ],
+ "numbers": [
+  {
+   "claim": "Largest search scale mentioned: about 2 billion documents on the search stack.",
+   "t": "2:39"
+  },
+  {
+   "claim": "Postgres partitioning used roughly 4,000 partitions with hash-based bin-packing.",
+   "t": "4:07"
+  },
+  {
+   "claim": "Search P99 went from about 100 ms to about 20 s on Postgres partitions under scale.",
+   "t": "5:35"
+  },
+  {
+   "claim": "Corpus size at the Postgres-to-turbopuffer move was about 400 million documents.",
+   "t": "5:35"
+  },
+  {
+   "claim": "S3 P99 for a roughly 1 MB object is about 200 ms; the design target is about 3 round trips per query.",
+   "t": "8:52"
+  },
+  {
+   "claim": "Median latency after the turbopuffer move improved by roughly an order of magnitude; P99 improved further (charts not described in transcript).",
+   "t": "11:26"
+  },
+  {
+   "claim": "Legal research corpus is approaching 10 billion vectors and growing fast.",
+   "t": "11:26"
+  },
+  {
+   "claim": "Roughly 500 ms cold blob fetch is considered acceptable for deep-research on rarely queried jurisdictions.",
+   "t": "13:45"
+  },
+  {
+   "claim": "Speaker cites web-scale corpora in the tens to hundreds of billions of documents.",
+   "t": "17:23"
+  },
+  {
+   "claim": "Legora serves 70+ tenants on turbopuffer (speaker also mentions 100 and 200 in passing).",
+   "t": "18:41"
+  }
+ ],
+ "hot_takes": [
+  "Vendor-led talk: the turbopuffer CEO co-presents a customer story, and the transcript gives median and P99 improvements without absolute numbers or a baseline comparison.",
+  "Speaker asserts that text search at web scale is harder and more computationally expensive than vector search, with no benchmark in the talk.",
+  "Postgres with pgvector and tsvector 'worked surprisingly well' at enterprise isolation scale, but the team gave up BM25 relevance to get there.",
+  "Disabling the NVMe cache for encrypted multi-tenant workloads is presented as costless, based on one customer workload.",
+  "Describing Legora as one of the fastest-growing companies is self-promotional, not backed by data in the talk."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh runs hybrid BM25 plus pgvector retrieval over per-tenant knowledge buckets. The talk shows where per-tenant Postgres partitioning broke down (hot/cold thrash), and proposes namespace-per-tenant with a cold tier as the alternative.",
+   "action": "Compare MemoryMesh bucket layout to namespace-per-tenant on object storage, and test whether a cold tier with partition separation by access frequency avoids the P99 spike before scaling pgvector partitions."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No direct link to checkpointing, Claude Code harness, planning, or approvals.",
+   "action": ""
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

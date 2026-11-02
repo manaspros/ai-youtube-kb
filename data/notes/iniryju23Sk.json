@@ -1,0 +1,161 @@
+{
+ "one_line": "Two Sigma's John Feminella ties a 2020 bank loan-payment error to AI agent governance and lays out five composable controls: registry, risk scoring, declared guardrails, shared evals, tiered approvals.",
+ "summary": "Feminella, an AI architecture lead at Two Sigma, opens with a 2020 incident in which a bank agent-run loan system (FlexCube) recorded a Revlon interest payment as a full principal payoff, so about $900M went to 300-plus lenders instead of about $8M of interest, and approvers and operators overrode the warning. He argues the failure was systemic: each person did what seemed right, and the controls were not designed to catch it. He applies this to agents, which he treats as non-deterministic like humans, and argues that safety and autonomy can coexist if controls are composable. He rejects three approaches: full sandboxing (safe but useless), unrestricted agents (weak isolation), and policy documents in prompts (not enforceable at runtime). His five controls are an agent registry that auto-registers agents built on approved frameworks, risk scoring that routes review by agent risk, guardrails where agents declare their tools and endpoints up front and policy is compiled into enforceable allowlists at initialization, a shared eval platform that teams extend with agent-specific checks, and runtime classification that sends only ambiguous or high-impact actions to a human. The talk is a conference narrative with no code or product details, and the framework is useful mainly as a design pattern.",
+ "speakers": [
+  "John Feminella"
+ ],
+ "orgs": [
+  "Two Sigma",
+  "Revlon",
+  "Citibank"
+ ],
+ "format": "talk",
+ "topics": [
+  "governance-compliance",
+  "security-guardrails",
+  "evals"
+ ],
+ "tags": [
+  "agent-governance",
+  "agent-registry",
+  "human-in-the-loop",
+  "approval-fatigue",
+  "risk-scoring",
+  "guardrails",
+  "capability-declaration",
+  "shared-evals",
+  "enterprise",
+  "incident-analysis"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A 2020 bank incident shows how controls fail when people follow procedure. A loan-payment transaction was booked as a full payoff, so about $900M in principal went to 300-plus lenders instead of about $8M of interest. Checkboxes were unset, and approvers and operators overrode the system's warning.",
+   "detail": "Revlon paid Citi, the administrative agent, which paid about 300 lenders. FlexCube was told to record a full payoff, and the wash-account routing was missing. The warning 'money is about to leave the bank' was overridden because the payment was in fact expected. The lenders then refused to return the money. Commercial loan agreements added a clause against this afterward.",
+   "t": "1:31"
+  },
+  {
+   "idea": "The failure was systemic, not one person's fault: everyone did what they believed was right. The question for agents is how to prevent accidents without locking everything down or relying on luck.",
+   "detail": "Speaker frames agents as non-deterministic like humans, who also make mistakes. Regulated firms give people bounded autonomy with visibility and controls rather than locking them in rooms. He argues safety and innovation are not opposite ends of one spectrum.",
+   "t": "5:04"
+  },
+  {
+   "idea": "Three tempting control approaches fail. Full sandboxing is safe but not useful. Unrestricted agents have weak isolation, which regulated enterprises cannot accept. Policy documents in prompts are not enforceable at runtime.",
+   "detail": "What worked instead was a mix of composable controls that set boundaries without blocking the work. He wants controls that are not a chasm teams must wait to cross.",
+   "t": "6:04"
+  },
+  {
+   "idea": "The five controls are composable, each doing one job: agent registry, risk scoring for review routing, guardrails based on declared access, shared evals, and runtime classification for approvals. Together they allow real autonomy at an acceptable safety level.",
+   "detail": "Summary at the end: registry so every agent is visible from creation, scoring so review lands in the right place, guardrails so agents touch only what they need, shared evals and metrics so teams do not reinvent the wheel, and runtime governance so classification happens at runtime.",
+   "t": "7:23"
+  },
+  {
+   "idea": "An agent registry makes agents visible. Agents built on approved frameworks register automatically, and the registry stores declared tools, endpoints contacted, owning product, and owner. Others can use it as the source of truth to discover and reuse agents.",
+   "detail": "Speaker says gates that require approval for every experiment push people to shadow IT, which is less visible. Manual registration is also allowed.",
+   "t": "8:43"
+  },
+  {
+   "idea": "A single review queue for every agent does not work. Low-risk experiments such as a summarizer should not wait in line with agents that touch production. Each agent is risk-scored so review effort goes to the right place.",
+   "detail": "Purpose-built agents with declared, circumscribed purposes can be told apart by what they declare up front. Open-ended agents such as Claude Code or Pi are a different case because they do not declare a narrow purpose.",
+   "t": "10:02"
+  },
+  {
+   "idea": "Agents declare their purpose, tools, and endpoints up front. Policy from the registry is looked up at initialization and compiled into enforceable rules on hosts, endpoints, and resources, so access changes do not need a ticket.",
+   "detail": "Example: a research summarizer may use a web tool, but a release deployer should not get that tool by default. The agent author picks a few tools from hundreds, and the firm enforces the chosen set.",
+   "t": "11:28"
+  },
+  {
+   "idea": "Evals are a runtime dependency. Model changes can change agent outputs, so evals should be as routine as unit tests. Provide one shared, firm-run eval approach that every team uses, and let each team write only what is true about its agent.",
+   "detail": "Central committees that approve every prompt change would recreate the queue problem, so the shared harness is what keeps iteration fast.",
+   "t": "14:51"
+  },
+  {
+   "idea": "Human-in-the-loop approval does not scale. Review fatigue leads to reflexive yes clicks, and a real incident (an OpenClaw agent deleting hundreds of emails after context compaction dropped its approval instruction) shows the risk. Use deterministic rules for explicit cases, classifiers for routine ambiguous calls, humans only for the most important ones, and outright denial for clearly dangerous actions.",
+   "detail": "If a request is approved about 99.99999% of the time, it should be a rule the agent follows, not a permission request. Ambiguous or potentially dangerous calls go to a person, and clearly dangerous calls are denied.",
+   "t": "16:17"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Tiered approval routing",
+   "how": "Use three tiers. Explicit rules are deterministic fast paths (allow or deny with no model involved). Routine or ambiguous calls go to an independent, conservative classifier. Only the high-impact or unclear cases reach a human. Any action approved nearly always becomes a standing rule, and clearly dangerous actions are denied outright.",
+   "when": "Agents run in parallel or in production and human approval requests exceed what reviewers can handle, so reviewers click yes reflexively."
+  },
+  {
+   "name": "Registry auto-registration through approved frameworks",
+   "how": "Agents built on the firm's approved agent framework register themselves automatically. Each record holds the declared tools, endpoints contacted, owning product, owner, and risk score. Manual registration is available as a fallback. Other humans, programs, and agents query the registry to find and reuse agents.",
+   "when": "Many teams build small agents and you need one legible inventory without a slow manual gate, to prevent duplicate builds and shadow IT."
+  },
+  {
+   "name": "Declared-capability manifest enforced at init",
+   "how": "The agent declares the tools, endpoints, and hosts it needs. At initialization, the runtime fetches the policy for that agent from the registry and turns it into enforceable allowlists for endpoints, hosts, and other resources. Access changes go through the registry policy, not a ticket.",
+   "when": "Agents have many possible tools and you want least-privilege access by default, while teams keep moving quickly."
+  },
+  {
+   "name": "Risk-based review routing",
+   "how": "Score each agent by what it can touch (for example, production systems versus a trivial summarizer). Send low-risk agents through a light path and high-risk agents through heavier review. Keep the two queues separate so experiments do not wait behind production agents.",
+   "when": "One review process for all agents causes queue backlogs, and reviewers drown in low-risk requests while high-risk ones wait."
+  },
+  {
+   "name": "Platform-owned shared eval harness",
+   "how": "The firm runs one shared eval framework. Teams write only the parts specific to their agent, such as what counts as correct for their agent. Treat model version changes as a dependency change that triggers the eval suite, similar to unit tests in ordinary software.",
+   "when": "Several teams build agents, each would otherwise reinvent evals, and prompt or model changes need quick checks without committee sign-off."
+  }
+ ],
+ "tools": [
+  "FlexCube (internal bank processing software, as named in the talk)",
+  "Claude Code",
+  "Pi (open-ended coding agent, as named in the talk)",
+  "OpenClaw (named as 'open claw' in the talk)"
+ ],
+ "numbers": [
+  {
+   "claim": "Commercial loan clause sprang up in loan agreements after August 2020.",
+   "t": "0:08"
+  },
+  {
+   "claim": "Revlon was paying about $8M of accrued interest to the lenders, and the loan was split across 300-plus lenders.",
+   "t": "1:31"
+  },
+  {
+   "claim": "The erroneous FlexCube payoff sent about $900M of principal to the lenders instead of the roughly $8M of interest due, with three approvers and human operators overriding the warning.",
+   "t": "2:52"
+  },
+  {
+   "claim": "Lenders had bought Revlon paper at about $0.60 on the dollar, which made the mistaken full repayment favorable to them.",
+   "t": "4:02"
+  },
+  {
+   "claim": "Speaker's illustration of review backlog: a trivial summarizer waiting about two months for the same sign-offs as a production-touching agent.",
+   "t": "10:02"
+  },
+  {
+   "claim": "OpenClaw agent deleted hundreds of emails after context compaction lost its wait-for-approval instruction.",
+   "t": "16:17"
+  }
+ ],
+ "hot_takes": [
+  "Safety and innovation are not opposite ends of a spectrum; you can have both if controls are composable (5:04).",
+  "Approval gates that try to cover every agent push teams to shadow IT, which is less visible than a permissive but governed path (8:43).",
+  "The fault is in the control design, not the operators: an overridable warning and unchecked boxes made the error possible (2:52 to 5:04).",
+  "Implied but not stated by the speaker: keep approval constraints out of the compactable context window, since the email incident happened when compaction dropped the approval instruction (16:17).",
+  "Quality note: a conference narrative with no code, no named registry or eval products, and no classifier thresholds. The value is the framing and the control pattern."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "L1 Govrix Scout already covers budgets, policy and routing, and the Merkle audit log. The talk's declared-capability allowlists and tiered approvals map onto that proxy layer.",
+   "action": "Add a per-agent capability manifest (declared tools, hosts, budgets) that the proxy checks at agent initialization, and record each allow/deny decision in the Merkle audit entry."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness has phone-driven approvals and checkpoint/resume. The talk's review-fatigue and context-compaction incident applies directly.",
+   "action": "Triage approval requests in three tiers: deterministic allow/deny rules, a classifier for routine calls, and phone approval only for ambiguous or high-impact ones. Keep approval constraints outside the compactable context so checkpoints cannot drop them."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

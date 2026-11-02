@@ -1,0 +1,160 @@
+{
+ "one_line": "Walkthrough of the MCP 2026-07-28 spec, which makes the protocol stateless: no handshake, no session IDs, explicit state handles, input-required round trips, and official tasks for long-running calls.",
+ "summary": "The host explains MCP's 2026-07-28 spec release, which removes the initialize/initialized handshake and the MCP session ID header so every request is self-contained. He walks through the old failure mode: a session pinned to one instance causes 400 \"session not found\" errors behind a load balancer, and sticky sessions or a shared Redis store add latency and cost. With stateless requests, plain round-robin load balancing and failover work, and servers on platforms like Cloudflare Workers or Cloud Run can scale to zero. The spec also adds MCP method and MCP name HTTP headers for gateways and firewalls, plus TTL and cache-scope hints on list calls. Handshake data now rides in a per-request meta field, with an optional serverDiscover method for capability discovery. For state, the recommended pattern is an explicit handle the tool mints and the model passes back. Server-initiated questions become an input-required result that the client answers and retries with echoed request state. Long-running calls use the tasks extension, now official. The breaking changes come with a 12-month minimum deprecation window, and SDKs have moved to v2 with a codemod for renames. The video is a spec changelog walkthrough with no code shown and no benchmarks; the claims are the spec's, not independently tested.",
+ "speakers": [
+  "Better Stack host (name not given in transcript)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Cloudflare",
+  "Google Cloud"
+ ],
+ "format": "news",
+ "topics": [
+  "mcp-and-tools",
+  "agent-architecture",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "mcp",
+  "stateless",
+  "spec-release",
+  "load-balancing",
+  "session-state",
+  "input-required",
+  "tasks",
+  "serverless",
+  "breaking-changes",
+  "sdk-migration"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The old stateful MCP ties a client to the instance that issued its session ID, so scaling out breaks requests with 400 'session not found' errors.",
+   "detail": "The initialize call mints a session ID that every later request must carry. Behind a load balancer with three instances, follow-up requests can land on an instance that never saw the session. Sticky sessions or a shared Redis store were the workarounds, and both add latency and cost.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The 2026-07-28 spec removes the handshake and the session ID header, so each request is independent.",
+   "detail": "Two proposals do this: one removes the initialize and initialized handshake, the other removes the MCP session ID header and the protocol-level session. The captions show the proposal IDs as SCP-2575 and SCP-2567.",
+   "t": "0:58"
+  },
+  {
+   "idea": "Stateless requests unlock plain round-robin load balancing, transparent failover, and scale-to-zero deployment.",
+   "detail": "Any container can serve any request, so a standard load balancer works and a crashed instance is skipped without the client noticing. Servers on Cloudflare Workers or Cloud Run no longer need to hold connections open, so they can scale to zero. He cites Cloudflare saying MCP no longer needs Durable Objects.",
+   "t": "2:17"
+  },
+  {
+   "idea": "Protocol info moves into a per-request meta field, and MCP method and MCP name headers let gateways decide without parsing the body.",
+   "detail": "Protocol version and client capabilities ride in a meta field on each request. A server can describe itself through an optional serverDiscover method. The new MCP method and MCP name HTTP headers let a gateway, rate limiter or firewall route on those headers without reading the JSON body. List calls also gain TTL and cache-scope hints.",
+   "t": "2:17"
+  },
+  {
+   "idea": "State is now an explicit application concern: a tool mints a handle and the model passes it back as an ordinary argument.",
+   "detail": "Examples given are a basket ID or browser ID. The protocol does not manage state, which he calls more flexible. Authorization is also said to have been hardened in this release.",
+   "t": "3:09"
+  },
+  {
+   "idea": "Server-initiated questions become a multi-round-trip flow instead of an open push stream.",
+   "detail": "The server returns an input-required result with a typed prompt, such as a boolean 'are you sure?', plus a request-state payload with the serialized call context. The client asks the user, then reissues the original call with the answers and the echoed request state. Any instance can resume the work, and the motivation given is that unsolicited prompts were a UX and security problem.",
+   "t": "4:12"
+  },
+  {
+   "idea": "Long-running tools use the official tasks extension: write the job to a store as working, return immediately, and let the client poll or subscribe.",
+   "detail": "The example is a refund tool. The task state is stored in a database, the async job starts, and the response tells the agent it is running. The client then uses tasks get or a subscription to track progress and fetch the result.",
+   "t": "5:10"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Stateless MCP tool calls",
+   "how": "Drop the initialize and initialized steps and the session header. Send each tool call as one self-contained request. Put protocol version and client capabilities in the per-request meta field, and optionally use serverDiscover to read server capabilities.",
+   "when": "Building or upgrading an MCP server that runs behind a load balancer, or one that should scale to zero on serverless."
+  },
+  {
+   "name": "Explicit state handle",
+   "how": "Have a tool create a handle such as a basket ID or browser ID and return it. The model passes that handle back as a normal argument on later tool calls. Keep the state store in your own backend, not in the protocol.",
+   "when": "A workflow needs multi-step state across calls, and the server runs on several instances or restarts."
+  },
+  {
+   "name": "Input-required round trip",
+   "how": "When the server needs confirmation, return an input-required result with a typed question (for example a boolean) and a request-state payload holding the serialized call context. The client collects the answer and reissues the same call with the input responses and the echoed request state. Any instance can handle the retry.",
+   "when": "Destructive or sensitive tool calls, such as deleting a file, that need a human yes/no without a persistent push channel."
+  },
+  {
+   "name": "Async tasks for slow tools",
+   "how": "Write a task record with status working to a database, start the background job, and return at once with a message saying the work is running. The client polls with tasks get or subscribes to updates, then reads the final result.",
+   "when": "Tool calls that take longer than a reasonable blocking request, such as refunds or batch jobs."
+  },
+  {
+   "name": "Gateway routing on MCP headers",
+   "how": "Read the MCP method and MCP name HTTP headers in the proxy, rate limiter or firewall to route, throttle or allow requests without parsing the JSON-RPC body.",
+   "when": "An MCP gateway or proxy that applies per-tool policy and needs lower latency."
+  },
+  {
+   "name": "Cache hints on list calls",
+   "how": "Use the TTL and cache-scope hints on tool, prompt and resource list responses so the client knows how long a list stays fresh and whether it can be shared across users.",
+   "when": "Serving tool lists to many clients, or deciding whether a cached list can be shared across tenants."
+  },
+  {
+   "name": "SDK migration",
+   "how": "Move to the v2 SDKs. For TypeScript, use the separate server and client packages in place of the monolithic package, and run the codemod for the standard API renames. Plan for the minimum 12-month deprecation window on the old features.",
+   "when": "Upgrading any existing MCP server or client before the old features are removed."
+  }
+ ],
+ "tools": [
+  "MCP (spec version 2026-07-28)",
+  "MCP TypeScript SDK v2 (separate server and client packages)",
+  "MCP SDK codemod",
+  "Cloudflare Workers",
+  "Cloudflare Durable Objects",
+  "Google Cloud Run",
+  "Redis"
+ ],
+ "numbers": [
+  {
+   "claim": "Example deployment with three load-balanced MCP server instances, where a follow-up request hits an instance that never saw the session and returns 400 'session not found'.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Spec version 2026-07-28. MCP versions are dates.",
+   "t": "0:58"
+  },
+  {
+   "claim": "Minimum deprecation window of 12 months before the removed features are gone.",
+   "t": "5:10"
+  },
+  {
+   "claim": "Video length 6:52.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The title 'MCP Was Wrong From The Start' frames a spec changelog as a reset. The content is an explainer with no code, benchmarks or testing, so the claims are the spec's and the Cloudflare post's, not verified.",
+  "The host calls the stateless design 'how it should have been from the start.' That is his opinion, and the video does not discuss the tradeoffs of pushing state into application code.",
+  "The host says the old server-push model was a security problem, but gives no specifics beyond unsolicited prompts."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS's L1 proxy can route on the new MCP method and MCP name headers without parsing JSON. Any MCP tools it exposes, such as Crucible's sandbox tools, could drop sticky-session assumptions and use explicit handles.",
+   "action": "If AgentOS exposes or proxies MCP tools, make them stateless and route on the MCP method and MCP name headers. Use explicit state handles for sandbox state."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The input-required round trip with echoed request state is the same shape as ProsHarness's checkpoint/resume and phone-driven approvals, and tasks are a model for long agent runs.",
+   "action": "Compare ProsHarness's approval and checkpoint flow with the input-required plus request-state pattern, and consider the tasks get/subscribe model for long runs."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "This changes how MCP servers and clients should be built for any agent, which affects context and tool-design choices.",
+   "action": "Read the 2026-07-28 MCP spec changelog before relying on session-based MCP patterns in any tooling."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

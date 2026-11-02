@@ -1,0 +1,210 @@
+{
+ "one_line": "Explainer on model distillation: how small students copy frontier models via API outputs, the DeepSeek R1 and budget-reasoning examples, the capability gaps that remain, and reported extraction campaigns.",
+ "summary": "The video explains distillation as training a small student model on a large teacher's outputs, and why black-box distillation works even without access to weights or probabilities. It traces the 2015 soft-label idea, the January 2025 DeepSeek R1 episode with OpenAI's accusation that outputs were used, and the distillation of R1 reasoning into open Qwen students. It then covers cheap reasoning recipes (Sky-T1 and S1) that use small curated datasets and a one-word \"Wait\" trick. The second half is the caveat section: domain-specific losses, brittleness under rephrasing, and a teacher-bounded ceiling compared with reinforcement learning. It closes with Anthropic's reported extraction campaigns and the defenses labs are adding. Much of the content is cost and benchmark figures from secondary sources, and several are presented without verification.",
+ "speakers": [
+  "Unnamed narrator (Kai Explains channel host); no other speakers"
+ ],
+ "orgs": [
+  "DeepSeek",
+  "Alibaba (Qwen)",
+  "OpenAI",
+  "Microsoft",
+  "Google",
+  "Anthropic",
+  "Nvidia",
+  "SemiAnalysis",
+  "UC Berkeley (Sky-T1)",
+  "Stanford",
+  "University of Washington (S1)",
+  "Moonshot AI",
+  "MiniMax",
+  "Nature",
+  "OpenRouter",
+  "Hugging Face"
+ ],
+ "format": "other",
+ "topics": [
+  "training-finetuning-rl",
+  "models-research",
+  "local-ai",
+  "security-guardrails"
+ ],
+ "tags": [
+  "knowledge-distillation",
+  "black-box-distillation",
+  "white-box-distillation",
+  "soft-labels",
+  "reasoning-distillation",
+  "model-extraction",
+  "open-weight-models",
+  "local-inference",
+  "deepseek-r1",
+  "qwen",
+  "robustness-eval"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Distillation copies a teacher's behavior by training a small student on its outputs; no weights are needed, only the API text.",
+   "detail": "Black-box distillation saves prompt/response pairs and trains on text alone. The speaker argues that a weaker signal still transfers habits when repeated over about 100,000 examples. The paid API is therefore the copy surface.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Soft labels (full probability distributions) carry 'dark knowledge' that hard labels lose.",
+   "detail": "A teacher's 90/9/1 cat/dog/car split tells the student that dogs look more like cats than cars. This needs access to internal probabilities (white-box). Black-box access only returns text, so the signal is weaker.",
+   "t": "1:19"
+  },
+  {
+   "idea": "The DeepSeek R1 episode made distillation a market and policy issue.",
+   "detail": "The speaker says OpenAI and Microsoft alleged that R1 was trained partly on ChatGPT outputs, which OpenAI's terms prohibit. A cited symptom was distilled models claiming to be ChatGPT, which suggests identity and phrasing transfer with the skills.",
+   "t": "2:43"
+  },
+  {
+   "idea": "Reasoning traces from a large teacher can be distilled into small open models that score well on math benchmarks.",
+   "detail": "R1 was used as the teacher to fine-tune Qwen 32B. Cited scores are 72.6 on AIME 2024 and 94.3 on MATH-500, versus 63.6 and 90.0 for o1-mini. The 7B version still clears 55% on AIME 2024 per the model card.",
+   "t": "4:01"
+  },
+  {
+   "idea": "Budget reasoning distills show that a small curated dataset plus an open base can match frontier reasoning benchmarks.",
+   "detail": "Sky-T1 matched o1-preview for under $450. S1 used about 1,000 curated questions answered by Gemini and trained in under 30 minutes on 16 GPUs. Appending the word 'Wait' when the student stopped reasoning early improved results.",
+   "t": "6:13"
+  },
+  {
+   "idea": "Distilled students inherit the teacher's ceiling and show memorization-like brittleness.",
+   "detail": "The speaker cites a June 2025 study in which the distilled R1 scored 14.7% lower than the Qwen base on medical tasks. Accuracy dropped 6 to 14 points when problem phrasing changed. RL-trained models generalized across domains, while distilled ones did not.",
+   "t": "7:36"
+  },
+  {
+   "idea": "Labs report organized extraction campaigns, and the common tactic is harvesting chain-of-thought at scale.",
+   "detail": "Anthropic reportedly detected three Chinese labs running campaigns with over 16 million conversations through about 24,000 fake accounts. Asking the model to write out its step-by-step reasoning was a common technique. Labs are responding with behavioral fingerprints, reasoning-harvest classifiers, and identity checks.",
+   "t": "9:01"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "White-box soft-label distillation",
+   "how": "Train the student on the teacher's full next-token probability distribution, not only its argmax answer. Requires access to the teacher's logits or weights.",
+   "when": "When you own or host the teacher. It gives a rich signal and needs little data, per the talk."
+  },
+  {
+   "name": "Black-box distillation via API sampling",
+   "how": "Send a large prompt set (the talk cites about 100k examples) to the teacher API, save the text responses, and run supervised fine-tuning on the student using only that text.",
+   "when": "When you only have API access. The signal is weaker, so expect to need a lot of volume. This is also the pattern labs describe as extraction when done against their APIs."
+  },
+  {
+   "name": "Reasoning-trace fine-tuning of an open base",
+   "how": "Use the teacher's step-by-step reasoning traces as targets and fine-tune an open base such as a Qwen model. The talk describes DeepSeek R1 traces used on Qwen 32B, 14B and 7B.",
+   "when": "To get a small local reasoning model without RL training. The talk notes it copies problem-solving moves but not domain knowledge."
+  },
+  {
+   "name": "Small curated dataset recipe (S1-style)",
+   "how": "Pick about 1,000 carefully chosen questions, collect teacher answers (Gemini in the talk), and fine-tune an open base for under 30 minutes on 16 GPUs.",
+   "when": "For a cheap experiment on reasoning. Compute cost was quoted at roughly $20 at cloud prices, and the training itself was reported at under $50."
+  },
+  {
+   "name": "Append 'Wait' to extend reasoning at inference",
+   "how": "When the student stops reasoning too early, append the single word 'Wait' so it reconsiders. The talk credits this trick with pushing S1 over the line.",
+   "when": "When a small reasoning model cuts its chain of thought short. It is a prompt-level fix that needs no retraining."
+  },
+  {
+   "name": "Paraphrase robustness check for memorization",
+   "how": "Rephrase each eval problem slightly, keep the answer the same, and compare accuracy before and after. The talk cites drops of 6 to 14 points as a memorization signature.",
+   "when": "Before trusting a distilled student on a task, and especially when the eval set is public and likely to be memorized."
+  },
+  {
+   "name": "Size the local student to the GPU",
+   "how": "Quantize to Q4 and match the size to VRAM. The talk gives about 8.5 GB of VRAM for 14B, about 17.5 GB for 32B at Q4 (an RTX 4090), and says a 7B runs on a decent laptop. It says the 14B runs on a 12 GB RTX 4070. Runs use a one-command setup in Alma, with the command not shown.",
+   "when": "When choosing a distilled student to run on your own hardware."
+  }
+ ],
+ "tools": [
+  "DeepSeek-R1",
+  "Qwen (32B, 14B, 7B distilled variants)",
+  "OpenAI o1-mini",
+  "OpenAI o1-preview",
+  "OpenAI ChatGPT",
+  "Google Gemini",
+  "Sky-T1 (Berkeley)",
+  "S1 (Stanford / University of Washington)",
+  "Alma (local model runner, as named)",
+  "OpenRouter",
+  "Hugging Face model cards",
+  "AIME 2024 benchmark",
+  "MATH-500 benchmark",
+  "RTX 4070 / RTX 4090 (hardware)"
+ ],
+ "numbers": [
+  {
+   "claim": "Example soft-label split: 90% cat, 9% dog, 1% car.",
+   "t": "1:19"
+  },
+  {
+   "claim": "DeepSeek claimed about $5.6M of GPU rental for the base model. SemiAnalysis estimated all-in spend above $500M. Nvidia shed close to $600B in market cap in one session (speaker's figure).",
+   "t": "2:43"
+  },
+  {
+   "claim": "R1-distilled Qwen 32B: 72.6 on AIME 2024 and 94.3 on MATH-500, versus o1-mini at 63.6 and 90.0 (per DeepSeek's paper, as cited).",
+   "t": "4:01"
+  },
+  {
+   "claim": "7B distilled model clears 55% on AIME 2024 per model card, about 1/20 the teacher's size.",
+   "t": "5:12"
+  },
+  {
+   "claim": "VRAM needs: 14B distilled about 8.5 GB; 32B at Q4 about 17.5 GB (RTX 4090). Speaker names a 12 GB RTX 4070 for the 14B.",
+   "t": "5:12"
+  },
+  {
+   "claim": "Sky-T1 training run under $450. S1 matched cutting-edge reasoning benchmarks for under $50.",
+   "t": "5:12"
+  },
+  {
+   "claim": "S1 data: about 1,000 questions answered by Gemini; under 30 minutes of training on 16 GPUs; reproduction compute about $20 at current cloud prices (lead researcher).",
+   "t": "6:13"
+  },
+  {
+   "claim": "Dario Amodei said models cost on the order of $1B each now, with $10B runs a couple of years away (speaker's citation).",
+   "t": "6:13"
+  },
+  {
+   "claim": "AIME 2024: full R1 teacher 79.8 versus 32B student 72.6, a 7.2-point gap.",
+   "t": "7:36"
+  },
+  {
+   "claim": "A June 2025 study cited via a secondary analysis: distilled R1 scored 14.7% lower than the Qwen base on medical tasks.",
+   "t": "7:36"
+  },
+  {
+   "claim": "Distilled models can drop 6 to 14 percentage points in accuracy when problem phrasing changes slightly.",
+   "t": "7:36"
+  },
+  {
+   "claim": "Anthropic reported three Chinese labs (DeepSeek, Moonshot AI, MiniMax) ran extraction campaigns: over 16 million conversations through about 24,000 fake accounts; one proxy reportedly steered about 20,000 accounts.",
+   "t": "7:36"
+  }
+ ],
+ "hot_takes": [
+  "The paid API is the copy surface: any endpoint that returns reasoning text is a distillation source, and the speaker argues that product value and liability are the same door.",
+  "Cost headlines need the full denominator: the speaker's own contrast of DeepSeek's $5.6M rental claim with a $500M+ all-in estimate shows how misleading the cheap-model number can be.",
+  "Several figures are second-hand and unverified in the talk: the medical-task drop (via a secondary analysis), the Nvidia single-day loss, the Amodei cost estimate, and the Anthropic campaign counts. Treat them as reported claims.",
+  "The thesis that distillation gives you a copy of the teacher's ceiling is stated strongly but supported by one cited study plus benchmark gaps. The 7:36 caveat section is the most useful part of the video.",
+  "Framing ('steal a billion-dollar AI', 'most disruptive idea in AI', 'fits on a coffee receipt') oversells a 10-minute explainer. The substance is the recipe and gap sections, not the title."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Relevant to the L2B local-serving work on one RTX 5090 and to the cheap-model pipeline interest. The talk gives concrete sizing for distilled 7B to 32B students and a robustness failure mode that an eval plan should test for.",
+   "action": "Pick one narrow agent task, collect teacher traces (about 1k examples), fine-tune a 7B or 14B student, then measure accuracy on a paraphrased copy of the eval set before using the student in any pipeline."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No direct bearing on the Claude Code harness, checkpointing, or approvals.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

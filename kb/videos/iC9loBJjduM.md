@@ -1,0 +1,48 @@
+# This Exceeded Every Expectation I Had
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `iC9loBJjduM` · [watch](https://youtu.be/iC9loBJjduM) · **date:** 2026-02-02 · **length:** 11:05 · **format:** tutorial · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Unnamed host (AI LABS channel) · **orgs:** Cursor, Anthropic, ZenRose (sponsor)
+- **topics:** context-engineering, claude-code, mcp-and-tools, token-cost-efficiency · **tags:** dynamic-context-discovery, CLAUDE.md, MCP, context-compaction, terminal-logs, agent-skills, progressive-disclosure, Cursor, grep
+
+> Applies Cursor's dynamic context discovery ideas to Claude Code via CLAUDE.md: offload big tool output and chat history to files, lazy-load MCP tools, and grep logs instead of re-running them.
+
+## Summary
+The host walks through Cursor's article on dynamic context discovery, whose core claim is that agents perform better when the context window holds only what the current step needs. Cursor's proposals are to write long tool responses to files instead of truncating them, to keep chat history as a file the agent can search after compaction, to expose skills and MCP tools as names plus lazy lookups, and to move terminal output into files that are grepped. The host then reproduces each idea in Claude Code with CLAUDE.md rules that write MCP responses over 50 lines, per-session history, and timestamped terminal logs into a .context folder. He also points to Claude Code's experimental MCP CLI flag, which removes MCP tool schemas from the upfront context and routes calls through a bash layer. The evidence is one personal project plus Cursor's own reported test, so treat the results as a practitioner anecdote rather than a benchmark.
+
+## Key ideas
+- **Keep the context window small and relevant** — Cursor's core principle is dynamic context discovery: less information per step means less confusion and better focus, so information not needed now should live outside the window. ([0:00](https://youtu.be/iC9loBJjduM?t=0))
+- **Write long tool responses to files instead of truncating them** — Most coding tools truncate long MCP responses, losing data. Saving the full response to a file lets the agent re-read it as needed without repeating the tool call. The host saw this help with a Chrome-extension ReadPage-style tool. ([1:09](https://youtu.be/iC9loBJjduM?t=69))
+- **Compaction summaries lose detail; keep the full history as a file** — Repeated summarization drops details the model's summary missed. Cursor saves chat history as a file the agent can search when a summary lacks the answer. The host reproduces this with a per-session history file the agent updates after each task. ([3:18](https://youtu.be/iC9loBJjduM?t=198))
+- **Skills expose only name and description until used** — Claude skills keep only their name and description in static context, however many scripts they bundle, which keeps context bloat low. The host reports five configured skills used about 0.2% of the total context. Skills can also be invoked manually as slash commands. ([5:48](https://youtu.be/iC9loBJjduM?t=348))
+- **MCP tool schemas are the main context bloat, and the agent should fix it** — Cursor argues that agents, not MCP servers, should solve context bloat. Its approach puts each MCP's tools in a folder and lets the agent list names and look up schemas on demand. A side benefit is that the agent can tell the user when a server needs re-authentication. ([6:47](https://youtu.be/iC9loBJjduM?t=407))
+- **Claude Code's experimental MCP CLI flag hides tool schemas behind a bash layer** — With the flag set, MCP tool schemas leave the upfront context. Servers stay connected, and Claude searches, inspects and invokes tools through an MCP CLI layer. The host saw the flag as the only in-product way to get this in Claude Code, since Anthropic's advanced tool search is described as developer-platform only. ([7:48](https://youtu.be/iC9loBJjduM?t=468))
+- **Log terminal output to files and grep the tail instead of pasting errors** — Terminal errors reach an agent poorly in Cursor. Logging stdout and stderr to timestamped files lets the agent grep for a pattern and read the last 20 lines. The host used this to debug a dev server crash without pasting logs. ([9:03](https://youtu.be/iC9loBJjduM?t=543))
+- **Reuse saved logs instead of re-running slow tests** — Pointing the agent at existing test logs avoided re-running a 2-minute test suite just to reproduce an error the host had already seen. ([10:30](https://youtu.be/iC9loBJjduM?t=630))
+
+## Techniques
+- **Offload large MCP responses to files** — Add a CLAUDE.md rule: any MCP tool response over 50 lines goes into a folder under .context (an MCP subfolder), written with a terminal echo command. Later steps read the file instead of calling the tool again. The exact echo command is not shown in the captions. *When:* Browser or page-reading MCP tools (e.g. Claude's Chrome extension ReadPage) that fill the window in a few prompts, or any tool whose output is long but only partly needed.
+- **Per-session history file as compaction insurance** — Add a CLAUDE.md rule to append key decisions and steps to a history file per session, stored in a history folder under .context and named after the session. The agent updates it at the end of each task execution. *When:* Long-running sessions that go through repeated compaction, so the agent can grep for details a summary dropped.
+- **Timestamped terminal logs with grep-and-tail retrieval** — Add a CLAUDE.md rule so that commands such as npm runs are wrapped to log both output streams to timestamped files in a terminal folder under .context. The host describes stream 1 as stdout and stream 2 as stderr. To read them, grep for a pattern and load the last 20 lines. *When:* Dev servers, builds and test runs whose output is long and noisy. Use it to diagnose failures without re-running the command.
+- **Progressive-disclosure skills** — Keep skills small in context: only name and description load up front, and the body and scripts load on use. Trigger a skill through its slash command when auto-loading fails. *When:* When you have many skills, or when skills are not being loaded on demand reliably.
+- **Lazy MCP tool loading with the experimental MCP CLI flag** — Enable Claude Code's experimental MCP CLI flag. The host does not spell out the flag name in the captions, so check the current Claude Code docs for it. With it on, MCP tool schemas leave the upfront context and Claude uses an MCP CLI bash layer to search, inspect and invoke tools. Servers stay connected. *When:* Sessions with many connected MCP servers whose schemas crowd out working context. The host reports this as the only in-product option he found.
+
+## Numbers
+- Dynamic MCP tool discovery reduced usage by 46.9% in Cursor's own testing (vendor-reported, not independently checked) ([6:47](https://youtu.be/iC9loBJjduM?t=407))
+- Five configured Claude skills used about 0.2% of total context ([5:48](https://youtu.be/iC9loBJjduM?t=348))
+- Threshold for saving MCP responses to files: more than 50 lines ([2:13](https://youtu.be/iC9loBJjduM?t=133))
+- Terminal log retrieval loads the last 20 lines after grep ([9:03](https://youtu.be/iC9loBJjduM?t=543))
+- Avoided re-running a 2-minute test suite by reading existing logs ([10:30](https://youtu.be/iC9loBJjduM?t=630))
+
+## Hot takes
+- The title oversells: the video is mostly a summary of Cursor's article, with one personal project as evidence and no before/after accuracy measurement.
+- The 46.9% usage reduction comes from Cursor's own testing and is repeated here without verification.
+- The MCP CLI flag is described only by its general name in the captions, and the host says servers stay connected while the flag is on. Confirm the flag and its behavior in current Claude Code docs before relying on it.
+- Every technique depends on the model following CLAUDE.md rules each turn, which is not guaranteed.
+- Sponsored read for ZenRose at about 2:30 to 3:50. It is a short segment, and the rest of the video has substance, so quality is not capped.
+
+## Tools mentioned
+Claude Code, Cursor, Antigravity, Codex, Gemini CLI, Claude Chrome extension, CLAUDE.md, MCP (Model Context Protocol), MCP CLI (experimental Claude Code flag), Claude advanced tool search (developer platform), Cursor semantic search, grep, npm, ZenRose (sponsor, web data extraction)
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness wraps the Claude Code CLI and supports checkpoint/resume. A per-session history file and timestamped terminal logs in .context/ could serve as the resume artifact and failure record without relying on compaction summaries. → *Prototype a per-run .context/history file and timestamped stdout/stderr logs in ProsHarness, then check whether a resumed run recovers the decisions and failures that compaction dropped.*
+- **agentos** (1/3): Oversized tool outputs passing through the proxy and memory layers are a context-cost problem, and the file-offload pattern is a cheap idea to test there. The video offers no measurements.

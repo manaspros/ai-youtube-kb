@@ -1,0 +1,50 @@
+# How AI is changing Software Engineering: A Conversation with Gergely Orosz, @The Pragmatic Engineer
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `CS5Cmz5FssI` · [watch](https://youtu.be/CS5Cmz5FssI) · **date:** 2026-05-18 · **length:** 26:42 · **format:** interview · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Gergely Orosz (The Pragmatic Engineer), unnamed AI Engineer host · **orgs:** The Pragmatic Engineer, Meta, Microsoft, Salesforce, Coinbase, Uber, Shopify, GitHub, Anthropic, John Deere, Airbnb, Intercom, Block, AI Engineer
+- **topics:** enterprise-adoption, coding-agents, governance-compliance, infra-cost-scaling · **tags:** token-maxing, goodharts-law, developer-productivity, ai-adoption, engineering-roles, mcp-gateway, internal-platforms, big-tech
+
+> Gergely Orosz (Pragmatic Engineer) on "token maxing": how usage leaderboards get gamed, why individual gains do not yet show up as team gains, and why big companies build their own agent infrastructure.
+
+## Summary
+Gergely Orosz, who writes The Pragmatic Engineer, talks with the AI Engineer host about "token maxing", where engineers inflate AI token usage because companies track it on leaderboards or spend dashboards. He says managers treat token counts as one weak data point in performance reviews, and that people game it the way lines of code were gamed before. He traces the pressure to leadership wanting adoption before engineers see value, and gives Coinbase's one-week AI mandate as an example. On productivity, he says individuals may feel faster without being faster, and that enabling non-engineers to code with agents may matter more for teams than per-engineer speed. He argues AI skill comes from sustained practice rather than theory, and that the software engineer role is absorbing testing, DevOps and product work. Large companies such as Uber, Airbnb and Meta are building their own agent platforms, including background agents, MCP gateways and risk-based code review, for reasons of low-risk learning, huge codebases and easier funding. Most of this is anecdote and second-hand reporting, not measured data.
+
+## Key ideas
+- **Token usage is measured at big companies and used as a performance data point, which creates pressure to inflate it.** — Some firms run leaderboards or let people look up each other's AI spend. Managers use it as one input next to diffs, impact and code review, so engineers worry about the bottom of the list. ([1:10](https://youtu.be/CS5Cmz5FssI?t=70))
+- **Any metric gets gamed, and token counts are no exception.** — Speaker reports engineers asking agents to summarize docs instead of reading them, and running agents on junk work to raise numbers. Meta reportedly dropped its leaderboard after press coverage, but people kept token maxing. ([2:25](https://youtu.be/CS5Cmz5FssI?t=145))
+- **The token push comes from leadership wanting adoption before engineers see value.** — Speaker recounts a CTO dinner where skeptical engineers on existing codebases saw little use from AI tools. Leaders then copied the idea that heavy AI use correlates with company success. He calls the measurement crude but says it beat no use. ([6:08](https://youtu.be/CS5Cmz5FssI?t=368))
+- **Coinbase's one-week AI mandate is cited as the extreme case of pushing adoption.** — Second-hand account: the CEO told engineers to adopt AI tools within a week or face a conversation, and an engineer was let go a week later. Speaker uses this to show how high the stakes feel. ([7:34](https://youtu.be/CS5Cmz5FssI?t=454))
+- **Individual and team productivity diverge, and the team gain may come from enabling non-engineers.** — Speaker cites a small study (about 30 developers) where people felt about 20% faster but measured about 20% slower, with one big outlier. He argues letting non-technical teammates build with coding agents removes engineers as a bottleneck, which is a different gain from pull-request speed. ([9:46](https://youtu.be/CS5Cmz5FssI?t=586))
+- **AI skill builds with sustained practice, and understanding the theory does not make you better at using the tools.** — Speaker recalls Simon Willison saying two years in he was still changing his workflow. Teams that get value are low-ego, open to learning and willing to drop prior habits. ([11:10](https://youtu.be/CS5Cmz5FssI?t=670))
+- **Engineering roles are merging: testers and DevOps have folded into engineers, and product work is next.** — Startups front-run this pattern because they run small teams and expect engineers to own deployment. Early-career expectations are rising, with more planning and business context expected. Speaker cites a 200-year-old manufacturer whose two-pizza teams became one-pizza teams. ([13:47](https://youtu.be/CS5Cmz5FssI?t=827))
+- **Orchestrating agents is closer to a tech lead role than to management.** — Speaker says the people-management burden is absent, but orchestration still needs mentoring-style judgment. Feedback loops are much shorter than with human teams. Speaker notes many engineers run one or two agents, and his guest's usual setup is a single background agent. ([16:02](https://youtu.be/CS5Cmz5FssI?t=962))
+- **Big companies are building their own internal agent infrastructure, for three reasons.** — Examples given: background agents in the monorepo, an MCP gateway tied to service discovery, on-call tooling and risk-categorized code review at Uber. Speaker's reasons: it is a low-risk way to get hands-on with AI, huge codebases do not fit a context window so custom tooling can beat vendors, and anything with AI in it gets funded. ([18:44](https://youtu.be/CS5Cmz5FssI?t=1124))
+
+## Techniques
+- **Enable non-engineers to build with coding agents** — Give product, design or analytics staff coding agents so they can ship small changes without queuing for an engineer, and measure team throughput rather than per-engineer PR counts. *When:* When engineers are the bottleneck for small changes and team speed matters more than individual output.
+- **Keep agent count small and treat orchestration like tech lead mentoring** — Run one or two background agents, review their output closely and correct them the way a senior engineer mentors a junior, because feedback arrives in minutes rather than months. *When:* When you are managing agent work day to day and want fast feedback without overloading attention.
+- **Single MCP gateway tied to service discovery** — Expose internal tools through one MCP gateway that is wired into the company's service discovery, so agents find services the same way other systems do. *When:* When a large company has many internal services and wants agents to reach them consistently. Speaker describes this second-hand from Uber and others.
+- **Risk-tiered code review for agent-written changes** — Classify incoming changes by risk and route them to different review paths, instead of one review queue for everything. *When:* When agent-generated changes are numerous and some touch critical systems. Speaker describes Uber doing this.
+- **Trade early access for structured feedback** — Offer a vendor large-scale rollout and detailed feedback in return for beta access before public release, and accept the churn and cost as a lead over competitors. *When:* When your company can absorb rough tooling and cost, and being early is worth more than polish. Speaker cites Shopify and early Copilot access.
+
+## Numbers
+- Salesforce reportedly has a monthly minimum AI spend target, which speaker recalls as about $175 (he says 'I think'). ([3:37](https://youtu.be/CS5Cmz5FssI?t=217))
+- Coinbase engineers' base salaries cited as roughly $300K to $400K, with a one-week deadline to adopt AI tools before a firing (second-hand). ([7:34](https://youtu.be/CS5Cmz5FssI?t=454))
+- Small study of about 30 developers: they felt about 20% more productive but measured about 20% less productive, with one large outlier (speaker's recollection). ([9:46](https://youtu.be/CS5Cmz5FssI?t=586))
+- A 200-year-old manufacturer reportedly went from two-pizza engineering teams to one-pizza teams. ([13:47](https://youtu.be/CS5Cmz5FssI?t=827))
+- Pragmatic Engineer reportedly had 100 upfront annual subscribers at $100 in its first week, before publishing anything, and about 1,000 paying subscribers within six weeks. ([23:42](https://youtu.be/CS5Cmz5FssI?t=1422))
+- The newsletter reportedly became the number one paid tech newsletter about four months after launch and held that spot for about three years. ([25:51](https://youtu.be/CS5Cmz5FssI?t=1551))
+
+## Hot takes
+- Token counts as a performance signal are being weaponized in the same way lines of code were before.
+- Big-tech spending on internal agent platforms is rational mainly because AI projects are easy to fund and staff, not only because of the technical gains.
+- Running many agents is not the goal; one or two can be enough, and the job looks more like tech lead work than management.
+- Individual AI productivity gains do not automatically become team gains; the team gain may come from unblocking non-engineers.
+
+## Tools mentioned
+Claude Code, Cursor, GitHub Copilot, MCP gateway
+
+## Relevance to our work
+- **general** (2/3): Relevant to the recurring interest in agents and multi-agent orchestration, with a practitioner view on how orchestration differs from management and on the tradeoff of internal platforms against vendor tools. → *Read the talk's section on internal platforms versus vendor tools (18:44) before deciding whether to build or buy agent gateway components.*
+- **agentos** (1/3): Budgets and spend tracking in AgentOS could be misused as per-user rankings, which the talk shows gets gamed. → *When AgentOS reports per-user token spend (L1 budgets), keep it as a diagnostic and do not expose it as a ranking; log it in the audit trail so gaming is visible.*
+- **prosharness** (1/3): Speaker's observation that one or two background agents may be enough is a useful default for ProsHarness loop concurrency. → *Test whether ProsHarness loops and schedules stay useful with a concurrency cap of one or two background runs, and record feedback time per run.*

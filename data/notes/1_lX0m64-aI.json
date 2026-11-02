@@ -1,0 +1,152 @@
+{
+ "one_line": "Oracle's Richmond Alake argues agents need an \"intelligence plane\" (knowledge, memory, access governance, continual learning) beyond the control plane, illustrated with Oracle product demos.",
+ "summary": "Richmond Alake (Oracle) walks through agent memory (retain, reuse, recall, refine) and the control plane, then proposes an \"intelligence plane\" that sits across the agent stack and covers knowledge, memory, data-access governance and continual learning. He argues that everyone has the same models and information, so the differentiator is how data is structured and interpreted. Two live-comparison demos (shown as recordings) compare a \"governed\" analyst agent built on ontology and semantic layers against a naive one, claiming about 99% correct answers using roughly 32k tokens versus about 200k. He then covers Oracle features: an agent memory Python package, Deep Data Security that propagates user identity into the data layer, a private inference container for on-prem embeddings, LLMs and rerankers, and a second open-source demo where a fine-tuned small model routes memories to the right store. The talk closes with advice to treat memory as data, own your memory traces, and fine-tune small models for routing, embeddings and reranking. Nearly all of the product content is vendor-specific and the numbers are unbenchmarked speaker claims.",
+ "speakers": [
+  "Richmond Alake"
+ ],
+ "orgs": [
+  "Oracle"
+ ],
+ "format": "talk",
+ "topics": [
+  "memory",
+  "agent-architecture",
+  "rag-retrieval",
+  "security-guardrails"
+ ],
+ "tags": [
+  "intelligence plane",
+  "control plane",
+  "agent memory",
+  "memory routing",
+  "ontology",
+  "semantic layer",
+  "knowledge graph",
+  "decision model",
+  "fine-tuning",
+  "continual learning",
+  "identity propagation",
+  "deep data security",
+  "private inference",
+  "token cost",
+  "vendor talk"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent memory is the four R's: retain, reuse, recall, refine.",
+   "detail": "The speaker frames agent memory as the mechanism an agent uses to keep, reuse, retrieve and improve information, and separates short-term from long-term memory. Cognitive types named are semantic, episodic, procedural and working memory.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Information does not equal intelligence.",
+   "detail": "Using the WWII Midway codebreaking story, the speaker argues that a team with the same fragmented data can outperform a better-resourced centralized team because of how it stores and interprets that data. His point is that everyone has access to the same models, so differentiation comes from the system around them.",
+   "t": "5:28"
+  },
+  {
+   "idea": "The intelligence plane is a layer that cuts across the agent stack, alongside the control plane.",
+   "detail": "The control plane covers identity, policy and guardrails, orchestration, permissions and auditing. The intelligence plane adds knowledge (what the agent should know), memory (what it should remember), governance over what it may see (data access) and continual learning (how it improves). The speaker says the idea is not new and draws a parallel with the networking knowledge plane.",
+   "t": "7:53"
+  },
+  {
+   "idea": "Ontology and semantic layers improve accuracy over keyword retrieval.",
+   "detail": "In the demo, the ontology-backed agent resolved 'counterparty' correctly where keyword search and the naive agent did not. A semantic-layer question about what 'concentration' means was answered wrongly by the naive agent. The speaker says the margin is about 5% and matters in finance-grade workloads.",
+   "t": "14:46"
+  },
+  {
+   "idea": "Treat memory as data and own your memory traces.",
+   "detail": "The speaker's advice for teams: define entities and their definitions, push entitlements into the data layer, and capture agent traces. Those traces are what you later use to fine-tune. He presents memory ownership as the basis for continual learning.",
+   "t": "16:09"
+  },
+  {
+   "idea": "Propagate the end user's identity and data entitlements into the data layer.",
+   "detail": "Oracle's Deep Data Security (transcribed as 'DIP data security') makes security a first-class database feature. The agent inherits the acting user's identity from the identity provider and can only access data that user is allowed to see. The speaker says this covers agent identity in a single place.",
+   "t": "18:55"
+  },
+  {
+   "idea": "Small fine-tuned decision models can handle memory routing, embeddings and reranking cheaply.",
+   "detail": "In the open-source 'Memories' demo, a Qwen model was fine-tuned as a decision model. Training data came from the agent's own conversations, labeled by memory type. It routes each memory to a conversation store or a workflow store, which the speaker says is cheaper and simpler than hand-written routing code. He calls memory routing, embeddings and reranking the lowest-hanging fruit for fine-tuning.",
+   "t": "21:14"
+  },
+  {
+   "idea": "Continual learning can happen in token, weight or latent space, and needs captured traces.",
+   "detail": "The speaker lists these three spaces briefly, and the closing message is that developers need to own memory, engineer trace capture, and build a system where continual learning is possible.",
+   "t": "24:00"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Memory routing with a small fine-tuned decision model",
+   "how": "Collect conversation memories and label each with its memory type. Fine-tune a small open model (the speaker used Qwen) as a classifier. Use it to route each new memory from the context layer or LLM output to the right store (for example conversation memory vs workflow memory). The speaker gave no training configuration, dataset size or eval numbers.",
+   "when": "When you have several memory types and routing is becoming complex or costly in code, and you can capture labeled traces from your own agent."
+  },
+  {
+   "name": "Capture memory traces as fine-tuning data",
+   "how": "Log every memory write, retrieval and routing decision as a trace. Format the traces, then use them to retrain embedding, reranker and decision models. The speaker says this gives quality gains and sometimes lower latency.",
+   "when": "When you want agent memory to improve over time, and you can own the data, rather than relying only on a hosted memory service."
+  },
+  {
+   "name": "Ontology and semantic layer in front of retrieval",
+   "how": "Define business entities and their relationships (ontology) and the meaning of domain terms (semantic layer), then give the agent access to them so it can resolve terms like 'counterparty' or 'concentration' before retrieving. The speaker compares this against plain keyword search on the same questions.",
+   "when": "For domain-heavy workloads (finance, for example) where keyword matching returns the wrong entity or where terms have precise definitions."
+  },
+  {
+   "name": "Propagate user identity into data access",
+   "how": "Get the end user's identity and entitlements from the identity provider and pass them into the data layer, so the agent executes queries with the same access as the user. The speaker describes this as Oracle Deep Data Security.",
+   "when": "When an agent acts on behalf of a user and must not see more data than that user is allowed to see."
+  },
+  {
+   "name": "Private inference container for on-prem embeddings, LLM and rerankers",
+   "how": "Run the self-hosted Oracle Private AI Services Container for embeddings, LLM inference and reranking inside your own infrastructure, including air-gapped setups. Use cloud-hosted models where on-prem is not required.",
+   "when": "For regulated environments, such as finance, that cannot send data to external inference APIs."
+  }
+ ],
+ "tools": [
+  "Oracle AI Database",
+  "Oracle agent memory Python package (generates context cards)",
+  "Oracle Deep Data Security",
+  "Oracle Private AI Services Container",
+  "Oracle Cloud (hosted Grok and OpenAI models)",
+  "Private Agent Factory (no-code agent builder on Oracle AI Database)",
+  "Memories (open-source agent memory tool built by the speaker)",
+  "Qwen (fine-tuned as memory-routing decision model)"
+ ],
+ "numbers": [
+  {
+   "claim": "The ontology/semantic agent is said to be right 99% of the time and to use about 32,000 tokens per run, against about 200,000 tokens for the naive agent. The speaker gives no benchmark or methodology.",
+   "t": "14:46"
+  },
+  {
+   "claim": "Margin of error on the semantic-layer question is said to be about 5% for the intelligence-plane agent.",
+   "t": "16:09"
+  },
+  {
+   "claim": "Speaker's example of stakes: a mission-critical accuracy difference could mean a 100 million fine or fraud detection being right or wrong. Illustrative only, not measured.",
+   "t": "24:00"
+  }
+ ],
+ "hot_takes": [
+  "Mostly a vendor pitch. Almost every component maps to an Oracle product (AI Database, Deep Data Security, Private AI container, Private Agent Factory), and the main demos were not run live, with the code offered via QR code.",
+  "The numbers (99% accuracy, 32k vs 200k tokens, 5% margin) come from a live-comparison demo with no published eval set, method or variance. Treat them as anecdote.",
+  "The 'intelligence plane' is a relabel of existing ideas (the speaker himself links it to the networking knowledge plane), and the framing ('six months ahead of most people') is hype.",
+  "Still useful: information is not intelligence; ontology and semantic layers beat keyword retrieval for domain terms; own your memory traces; route memory with small fine-tuned models. Those are the transferable parts.",
+  "Quality capped at 2 because of the vendor-pitch framing and thin verifiable substance."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already has tiered cross-session memory and provenance. The talk adds memory routing to stores via a small fine-tuned classifier, and trace capture as training data. SkillForge also depends on telemetry captured as traces.",
+   "action": "Prototype a small classifier (or cheap model) that routes MemoryMesh writes to tiers, trained on logged memory traces. Benchmark it against the current rule-based routing on accuracy, latency and token cost before adopting."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Nothing in the talk touches checkpointing, plan/critique loops, scheduling, skill ranking, approvals or credential handling.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

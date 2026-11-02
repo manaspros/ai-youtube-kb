@@ -1,0 +1,41 @@
+# Before You CHOOSE, Watch This Cursor vs Windsurf Face-Off!
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `0Ttn6dqnuQk` · [watch](https://youtu.be/0Ttn6dqnuQk) · **date:** 2025-11-02 · **length:** 8:41 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** Unnamed host (AI LABS channel) · **orgs:** Cursor, Windsurf, ElevenLabs
+- **topics:** coding-agents, vibe-coding-app-building, token-cost-efficiency · **tags:** cursor, windsurf, cascade, composer, ide-agents, head-to-head, pricing, full-stack-prompt, image-upload, settings-import
+
+> A short, single-run head-to-head of Cursor and Windsurf on a CLI task app, a web music player and pricing, with a verdict favoring Windsurf.
+
+## Summary
+The host compares Cursor and Windsurf after both shipped recent updates. Cursor moved its Composer UI from a separate window into the sidebar panel and added an early agent. Windsurf added image upload to Cascade, an explain-and-fix-problems feature, and a settings/instructions import from Cursor. The host runs two tests, each with one attempt per tool: a CLI task manager (add, list, delete tasks, tasks.json created) which both pass, and a web music player where Windsurf produces a simple HTML/JS/CSS page that plays an uploaded ElevenLabs voiceover while Cursor builds a larger app with a database that does not work until fixed. The host prefers Windsurf's scoping, then points to price: Windsurf Pro at $10 per month versus Cursor Pro at $20, plus a more generous free trial. The evidence is one anecdotal run per test with no repeats or metrics, and the pricing figures are as stated at recording time.
+
+## Key ideas
+- **Cursor moved its Composer from a separate window into the sidebar panel, and added an early agent mode.** — The host reads Cursor's changelog and guesses the sidebar move may be a response to Windsurf's Cascade sidebar. The rest of the changelog is described as smaller performance and fix items. ([0:00](https://youtu.be/0Ttn6dqnuQk?t=0))
+- **Windsurf's Cascade gained image upload, so a sketch can be turned into a UI.** — The Windsurf team demo takes a napkin sketch of an 'Airbnb for dogs' landing page and generates it from a prompt. The host calls it a billion-dollar demo, which is marketing framing rather than evidence. ([0:00](https://youtu.be/0Ttn6dqnuQk?t=0))
+- **Windsurf added a one-step import of Cursor settings and instructions.** — The host reads this as an explicit push to move Cursor users to Windsurf. He also notes Windsurf is weeks old, so the progress is impressive for its age. ([1:30](https://youtu.be/0Ttn6dqnuQk?t=90))
+- **Test 1, a CLI task manager with explicit pass criteria, passes in both tools.** — The prompt asks for a task CLI and a pass means: it runs without errors, tasks can be added, and tasks.json is created. The host checks add, list and delete in each, and judges the test as measuring basic file read/write handling. ([2:41](https://youtu.be/0Ttn6dqnuQk?t=161))
+- **Test 2, a full-stack web music player, separates the two tools.** — Windsurf builds a static HTML/JS/CSS player that plays an uploaded voiceover and has working volume control. Cursor builds a larger app with a database that does not play the song, and after a fix attempt the front end is still badly formatted. The host credits Windsurf for starting with a basic front end. ([5:18](https://youtu.be/0Ttn6dqnuQk?t=318))
+- **On price, the host argues Windsurf is the better buy even if performance is equal.** — Both have a two-week trial. Cursor's trial allows 2,000 completions and 50 slow premium requests. Windsurf's free plan has unlimited auto-completions in the editor. The paid tiers are $10 for Windsurf and $20 for Cursor per month. ([6:46](https://youtu.be/0Ttn6dqnuQk?t=406))
+
+## Techniques
+- **Same-prompt bake-off with explicit pass criteria** — Send one identical prompt to each agent. Define the success check up front (runs without errors, feature X works, named output file exists). Run the result yourself and tick off each criterion. The host's CLI prompt covers add, list, delete, and checks tasks.json creation. *When:* Comparing coding agents or IDE agents on a small greenfield task before choosing one. Use it as a cheap smoke test, since it exercises file read and write without needing a large setup.
+- **Scope check with a deliberately simple app** — Ask for a small web app with no obvious need for a database, such as a music player with an audio upload. Then check whether the agent picks a minimal stack or adds backend pieces that were not requested. Ask it how to start the app, then run it. *When:* Measuring whether an agent over-engineers. In this video the Cursor run added a database that was not needed and then broke.
+- **Trial and plan comparison before buying** — Compare the free trial allowance (completions, premium/slow requests) and the paid monthly price side by side for each tool, and check whether the free tier alone covers the workload. *When:* Choosing between paid AI IDEs for a team or personal use. Check current pricing directly, since the video's figures may have changed.
+
+## Numbers
+- Video length 8:41. ([0:00](https://youtu.be/0Ttn6dqnuQk?t=0))
+- Cursor free trial: 2,000 completions and 50 slow premium requests, two weeks. ([6:46](https://youtu.be/0Ttn6dqnuQk?t=406))
+- Windsurf free plan has unlimited auto-completions in the editor. Both tools offer a two-week free trial. ([6:46](https://youtu.be/0Ttn6dqnuQk?t=406))
+- Pro plan prices: Windsurf $10 per month, Cursor $20 per month (the host calls Windsurf half the price). ([8:11](https://youtu.be/0Ttn6dqnuQk?t=491))
+
+## Hot takes
+- The host calls Windsurf's agent superior because it skipped a database for a simple music player. This rests on one run per tool, with no repeats.
+- Windsurf is 'significantly cheaper' and 'half the price' overall. This is pricing as stated at recording time, not checked against current plans.
+- The Windsurf sketch-to-landing-page demo is vendor material; the 'billion dollar business' line is a joke about the demo, not a result.
+- Hype title ('Before You CHOOSE') over a two-test, single-attempt comparison. The verdict is not supported by the sample size.
+
+## Tools mentioned
+Cursor (Composer, agent panel), Windsurf (Cascade, image upload, explain-and-fix), ElevenLabs (voiceover audio used in the music-player test), tasks.json (file created by the CLI test)
+
+## Relevance to our work
+- **prosharness** (1/3): ProsHarness wraps the Claude Code CLI, and this video only shows two single-run coding-agent smoke tests. Their pass criteria are a cheap check worth borrowing. → *Reuse the CLI-task pass criteria (runs, add/list/delete work, output file created) as a quick acceptance check when comparing coding-agent runs.*

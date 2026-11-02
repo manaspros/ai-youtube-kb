@@ -1,0 +1,151 @@
+{
+ "one_line": "Datadog's Marina Petzel argues LLM apps need cost, safety and quality monitoring on top of the golden signals, since a 200 OK can still hide a wrong answer; gives tagging and metric recommendations.",
+ "summary": "The speaker says the golden signals (latency, errors, traffic, saturation) are still necessary but not sufficient for generative AI apps. Three reasons: outputs are non-deterministic so regression tests are not enough, cost is variable with tokens and model choice, and there are new security risks like prompt injection and PII leakage. She proposes a layered monitoring model covering cost, safety and quality. Cost tracking uses mandatory tags at four levels (feature, user, model, endpoint) and watches for token creep, model drift and redundant calls. Safety metrics are prompt injection rate, PII detection rate (target 0%), content moderation score and jailbreak attempts. Quality metrics are hallucination rate, relevance, user satisfaction, answer completeness and RAG retrieval quality. The talk is a practitioner overview with a short product pitch for Datadog agent observability at the end. Most numbers are cited as the speaker's own targets or internal research, and she gives no methodology for them.",
+ "speakers": [
+  "Marina Petzel"
+ ],
+ "orgs": [
+  "Datadog"
+ ],
+ "format": "talk",
+ "topics": [
+  "observability",
+  "governance-compliance",
+  "evals",
+  "security-guardrails"
+ ],
+ "tags": [
+  "golden signals",
+  "LLM cost monitoring",
+  "token creep",
+  "model drift",
+  "cost attribution tagging",
+  "prompt injection",
+  "PII detection",
+  "jailbreak detection",
+  "hallucination rate",
+  "LLM-as-judge",
+  "RAG retrieval metrics",
+  "NDCG",
+  "user satisfaction",
+  "agent observability",
+  "Datadog"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Golden signals are necessary but not enough for GenAI apps",
+   "detail": "Latency, errors, traffic and saturation still matter, but a 200 OK does not show that the answer was correct or helpful. Quality has to be evaluated continuously in production, because the same prompt can produce different outputs.",
+   "t": "0:13"
+  },
+  {
+   "idea": "LLM cost is variable and needs granular tracking",
+   "detail": "Cost depends on token count, model choice and context window size, unlike compute that scales linearly with load. Three cost risks are named: token creep as context grows quietly, model drift when a team moves to a pricier model, and missing caching, which the speaker says can make up to about 70% of spend redundant.",
+   "t": "4:24"
+  },
+  {
+   "idea": "Tag every LLM call at four levels",
+   "detail": "Tag by feature (chat, summarization), user or org (for chargeback and abuse detection), model or provider (for comparing real cost per model), and endpoint or environment (region, prod vs staging). The feature tag also shows which features are budget hogs for the roadmap.",
+   "t": "7:15"
+  },
+  {
+   "idea": "Safety needs its own metrics, with zero-tolerance targets for some",
+   "detail": "Track prompt injection rate, PII detection rate in outputs (target 0% in production), toxicity or moderation score, and jailbreak attempts. Prompt injection and jailbreak detection use pattern matching or classifiers, with aggressive thresholds.",
+   "t": "9:55"
+  },
+  {
+   "idea": "Five quality metrics to track in production",
+   "detail": "Hallucination rate (claims not supported by grounded data), relevance (embedding or BERT similarity to the question), user satisfaction (thumbs, stars, NPS with a target of 80-85% positive), answer completeness (LLM-as-judge), and RAG retrieval quality (top-k accuracy or NDCG).",
+   "t": "12:41"
+  },
+  {
+   "idea": "Monitoring is a layer on top of traditional metrics",
+   "detail": "The speaker's framing is that teams keep the traditional signals and add cost, safety and quality dimensions. This is a monitoring checklist, not a new evaluation method.",
+   "t": "15:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Mandatory four-level cost tagging",
+   "how": "Attach tags for feature, user or org, model or provider, and endpoint or environment to every LLM call, so spend can be attributed and charged back.",
+   "when": "Before cost reviews or chargeback, once several features or teams share one LLM spend pool."
+  },
+  {
+   "name": "Track token creep and model drift as separate alerts",
+   "how": "Watch average context size and the model mix over time, and alert when either rises without a financial review.",
+   "when": "When prompts or models change often and monthly spend jumps without explanation."
+  },
+  {
+   "name": "Caching layer to remove redundant completions",
+   "how": "Cache identical or near-identical LLM requests so the same expensive completion is not paid for repeatedly. The speaker cites internal research that a large share of spend is redundant.",
+   "when": "When traffic has many repeated or templated queries."
+  },
+  {
+   "name": "Guardrail metrics as blocking thresholds",
+   "how": "Scan inputs for injection with pattern matching or a classifier, scan outputs for PII with NER, run outputs through a toxicity classifier, and block known jailbreak patterns that overwrite the system prompt.",
+   "when": "For any user-facing app that handles untrusted input or personal data."
+  },
+  {
+   "name": "LLM-as-judge for completeness, embeddings for relevance",
+   "how": "Use a judge model to score whether the answer fully addresses the intent, and embedding similarity to score relevance to the question.",
+   "when": "For continuous quality scoring in production, where human review does not scale."
+  },
+  {
+   "name": "Score RAG retrieval separately",
+   "how": "Measure whether the retrieved documents are relevant, using top-k accuracy or NDCG, separate from answer quality.",
+   "when": "When retrieval context grows and it gets harder to pick the right chunks."
+  }
+ ],
+ "tools": [
+  "Datadog agent observability"
+ ],
+ "numbers": [
+  {
+   "claim": "Token creep can raise cost up to 8x as the context window grows (for example 4k to 32k tokens), potentially thousands of dollars per month",
+   "t": "4:24"
+  },
+  {
+   "claim": "Opus-class model cost can be up to 15x higher per request than a cheaper model such as Haiku 4.5",
+   "t": "5:50"
+  },
+  {
+   "claim": "Datadog internal research: about 70% of LLM spend is sometimes redundant from repeated identical completions",
+   "t": "5:50"
+  },
+  {
+   "claim": "PII detection target: 0% of production outputs",
+   "t": "9:55"
+  },
+  {
+   "claim": "User satisfaction target: more than 80-85% positive feedback",
+   "t": "14:02"
+  }
+ ],
+ "hot_takes": [
+  "A 200 OK from the server is not evidence that an LLM answer is correct.",
+  "PII leakage in production outputs should have zero tolerance."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already plans budgets, PII scanning and prompt-injection scanning at the proxy, and an L4 observability layer. This talk gives the metric set and tagging scheme for that layer.",
+   "action": "Add feature, user, model and endpoint tags to the Govrix proxy's spend records, and track token creep and cache hit rate as metrics in the Prometheus/Grafana stack."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code runs, so per-run cost and model-drift tracking is relevant. The talk is about production monitoring, though, not agent harness design.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The four-level tagging scheme and the cost, safety and quality checklist are a reusable monitoring baseline for any LLM app.",
+   "action": "Read the Datadog agent observability docs for how their tag and metric schema is defined before writing an internal LLM monitoring spec."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

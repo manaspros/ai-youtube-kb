@@ -1,0 +1,152 @@
+{
+ "one_line": "A five-minute tutorial on defining Grafana dashboards in Jsonnet with the Grafonnet library, so they can be version-controlled, generated and reused instead of hand-built in the UI.",
+ "summary": "The presenter argues that dashboards built in the Grafana UI cannot be version-controlled, wired into CI/CD, or generated per data source, and proposes writing them as Jsonnet, a JSON superset with functions, variables, imports, loops and a standard library. Setup is a Jsonnet binary (C++ or the faster Go build), the jsonnet-bundler package manager, and optionally the VS Code language server. The demo then installs Grafonnet, Grafana's Jsonnet library, and builds a dashboard with two time-series panels (CPU and memory) backed by Prometheus, scraped from node exporter. Repeated panel code is pulled into a lib/ directory of .libsonnet files that expose only the constructor functions. The compiled JSON is pasted into Grafana's import dialog. The closing position is that the UI suits prototyping and Jsonnet suits managing many dashboards at scale, with Grafana Tanker mentioned for Kubernetes manifests. The video contains a short sponsored Better Stack segment and no benchmarks or real-scale evidence.",
+ "speakers": [],
+ "orgs": [
+  "Google",
+  "Grafana Labs",
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "observability",
+  "dev-tools"
+ ],
+ "tags": [
+  "jsonnet",
+  "grafana",
+  "grafonnet",
+  "dashboards-as-code",
+  "prometheus",
+  "promql",
+  "jsonnet-bundler",
+  "node-exporter",
+  "infrastructure-as-code"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Grafana UI dashboards cannot be version-controlled, put through CI/CD, or generated dynamically per data source, so define them as code.",
+   "detail": "The presenter's core motivation. Jsonnet is described as a JSON superset that compiles to JSON or YAML, with functions, variables, imports, loops, conditionals and a standard library.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Jsonnet tooling is a compiler plus a package manager plus an editor server.",
+   "detail": "Install the C++ jsonnet or the Go implementation (the speaker says Go is orders of magnitude faster in some cases), the jsonnet-bundler (jb) package manager, and optionally the VS Code language server.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Grafana dashboards are plain JSON, so Jsonnet output can be imported directly.",
+   "detail": "Dashboards can be exported and imported as JSON, which makes a generated JSON file a valid import. Grafonnet is Grafana's library for building dashboards from Jsonnet.",
+   "t": "1:18"
+  },
+  {
+   "idea": "A panel is an object built by a function, and objects are merged with +.",
+   "detail": "The presenter's helper methods return JSON objects, and the + operator merges them into one object. Panels are time-series with a title, targets (datasource ID plus PromQL), gridPos-style width and height, and a unit.",
+   "t": "1:18"
+  },
+  {
+   "idea": "Parameterize query targets with a function to avoid copy-paste across modes.",
+   "detail": "A function takes the CPU mode as an argument, injects it into the PromQL, and builds the legend from it. A Prometheus datasource variable is then added to the dashboard.",
+   "t": "2:27"
+  },
+  {
+   "idea": "Shared panel code goes in a lib directory of .libsonnet files that export only chosen functions.",
+   "detail": "The lib/ directory is added to the jpath so the main file can import panel constructors. The presenter says .libsonnet is the preferred extension, though .json still works.",
+   "t": "3:32"
+  },
+  {
+   "idea": "The presenter's split: UI for prototyping, code for managing many dashboards.",
+   "detail": "The argument rests on the hypothetical of changing alert thresholds across tens or hundreds of dashboards after new SLOs. No measurement or real-scale example is shown.",
+   "t": "4:39"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Install the Jsonnet toolchain",
+   "how": "Install the Go jsonnet binary (or the C++ build), then install jsonnet-bundler (jb) as the package manager. Optionally add the Jsonnet language server to VS Code. The speaker shows no exact install commands on screen, so use the upstream docs for those.",
+   "when": "Before starting any Jsonnet-based config project."
+  },
+  {
+   "name": "Compile Jsonnet to JSON with a jpath flag",
+   "how": "Create a .jsonnet file, then run jsonnet on it, passing the vendor directory (and later lib/) through the jpath flag (-J) so imports resolve. Pipe or redirect the output to a .json file for Grafana import.",
+   "when": "Each time a dashboard is regenerated from its source file."
+  },
+  {
+   "name": "Bootstrap Grafonnet with jb",
+   "how": "Run jb init to create the project's jsonnetfile.json, then run the jb install command for Grafonnet. This creates a vendor/ directory, a jsonnetfile.lock.json, and an entry in jsonnetfile.json. Import it as a variable (the speaker uses grafana) and build with its dashboard and panel helpers.",
+   "when": "Starting a new dashboard-as-code project that uses Grafana's helper library."
+  },
+  {
+   "name": "Build a time-series panel with Grafonnet helpers",
+   "how": "Create a dashboard with a description and time settings, then add a timeseries panel with a title, a target that carries the Prometheus datasource UID and a PromQL expression, plus width, height and unit. Merge helper outputs with the + operator.",
+   "when": "Defining each panel in code rather than in the UI."
+  },
+  {
+   "name": "Generate repeated targets with a function",
+   "how": "Write a function that takes a parameter (the speaker uses CPU mode), inserts it into the PromQL string, and uses it as the legend. Call the function once per variant, and expose a Prometheus datasource variable for the dashboard.",
+   "when": "Multiple series differ only by a label value, such as CPU modes."
+  },
+  {
+   "name": "Factor panels into a lib/*.libsonnet module",
+   "how": "Move reusable panel constructors into lib/<name>.libsonnet, expose only the functions to be used, import the module in the main file, and add the lib directory to the jpath when compiling. Keep the main file as a short composition of panels.",
+   "when": "The same panel code appears in more than one place or dashboard."
+  },
+  {
+   "name": "Use the $ and self references in Jsonnet objects",
+   "how": "Inside an object, self refers to the current object's fields, and $ refers to the top-level object. The last expression in a file is the output, so no return keyword is needed. Local variables and functions are declared with local.",
+   "when": "Writing reusable Jsonnet objects that reference shared values or nested fields."
+  }
+ ],
+ "tools": [
+  "Jsonnet",
+  "Go jsonnet",
+  "C++ jsonnet",
+  "jsonnet-bundler (jb)",
+  "Jsonnet language server (VS Code)",
+  "Grafana",
+  "Grafonnet",
+  "Prometheus",
+  "PromQL",
+  "Node Exporter",
+  "Grafana Tanker",
+  "Better Stack",
+  "VS Code"
+ ],
+ "numbers": [
+  {
+   "claim": "The Go Jsonnet implementation is described as orders of magnitude faster than the C++ one in some use cases. No measurement is shown.",
+   "t": "0:00"
+  },
+  {
+   "claim": "The demo produces two dashboard panels, CPU usage and memory usage, with the memory panel querying total RAM and used RAM.",
+   "t": "3:32"
+  },
+  {
+   "claim": "Full video runs 5:02 and the sponsored Better Stack segment is at about 2:27 to 2:50.",
+   "t": "2:27"
+  }
+ ],
+ "hot_takes": [
+  "The Grafana UI cannot be version-controlled or wired into CI/CD (speaker's framing, not demonstrated against any alternative).",
+  "Managing dashboards at scale is faster in code. This is asserted with a hypothetical of threshold changes across hundreds of dashboards, with no timing data.",
+  "Sponsored segment for Better Stack (around 2:27) pitches hosted Grafana-style dashboards, status pages and incidents. Quality is capped at 2 for that reason, and the video is thin, at about 5 minutes with no real-world caveats."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "L4 observability uses Prometheus and Grafana. Dashboards-as-code could manage them, but this is a short, basic intro.",
+   "action": "If AgentOS Grafana dashboards get large, prototype one panel set in Jsonnet and check it into the repo. Compare with a plain JSON export first."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No observability or dashboard component in ProsHarness's profile.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

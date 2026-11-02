@@ -1,0 +1,148 @@
+{
+ "one_line": "Anthropic forward-deployed engineer Karan Sampath argues enterprises should put one gateway in front of all MCP servers for auth, access control, observability and credentials, so teams build only business logic.",
+ "summary": "The speaker, a forward-deployed engineer at Anthropic, says enterprises struggle with MCP on three fronts: observability (who uses which tool, which tools fail), access control (who can call or change which servers), and security (verifying servers and letting untrusted clients reach private data). He argues a public registry is useful but not enough for an enterprise, because auth, access control, observability and credential management are missing. His core recommendation is for security teams to bless one platform as the root of trust, with a gateway sitting between any MCP client and the MCP servers behind it. The gateway handles auth, roles, routing, secure tunnels, an internal sub-registry and a CLI, so a team that builds a server only writes its business logic and an agent can scaffold the rest. He lists follow-on benefits: a new client surface plugs in once, connections are more secured, teams iterate without repeated security reviews, enterprise standards get encoded, credentials are swappable, and scale is handled in one place. He ends by saying the agent harness should be separated from the data layer so the in-house vs hosted agent choice stays reversible. The talk has no benchmarks; the scale figures are illustrative.",
+ "speakers": [
+  "Karan Sampath"
+ ],
+ "orgs": [
+  "Anthropic"
+ ],
+ "format": "talk",
+ "topics": [
+  "mcp-and-tools",
+  "security-guardrails",
+  "governance-compliance",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "MCP gateway",
+  "enterprise MCP",
+  "access control",
+  "observability",
+  "root of trust",
+  "pluggable credentials",
+  "agent harness separation",
+  "MCP registry",
+  "Claude managed agents"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Enterprises get stuck with a handful of MCP tools because observability, access control and security are missing.",
+   "detail": "Registries help discovery but do not cover auth, role-based access, observability or credential management. Teams can build MCP servers quickly, but security teams cannot see or approve them, so deployment stalls.",
+   "t": "1:07"
+  },
+  {
+   "idea": "The key move is to bless one platform as the root of trust.",
+   "detail": "Security teams should allow decentralized MCP building by standardising on one platform. The speaker says this is the one slide to remember. Each MCP server then has knock-on value for all agents in the company.",
+   "t": "5:12"
+  },
+  {
+   "idea": "A gateway is a middle layer between any MCP client and many MCP servers.",
+   "detail": "Clients see only the gateway. Servers trust only the gateway. The gateway covers auth, roles, routing, a secure tunnel, an internal sub-registry and a CLI for creating servers.",
+   "t": "7:33"
+  },
+  {
+   "idea": "Teams that build servers should only write business logic.",
+   "detail": "Example: a legal team writes a contract-review server by encoding its own red-line and escalation rules. It does not handle who can access it, how often, or scaling. An agent can use the gateway CLI to scaffold a new server.",
+   "t": "8:27"
+  },
+  {
+   "idea": "Once a gateway exists, several benefits come almost free.",
+   "detail": "New surfaces (claude.ai, Claude Code and others) plug in once. Connections are encrypted with a root of trust over data sent out. Teams iterate without new security reviews. Standard primitives encode company procedures. Credentials are swappable (user, team, service account). Scaling is handled in one place.",
+   "t": "11:27"
+  },
+  {
+   "idea": "Keep the agent harness separate from where the data and MCP servers live.",
+   "detail": "Agents should not be tightly coupled to data structure. Whether an agent runs in-house or hosted becomes a choice the gateway does not depend on. The speaker points to a recent release connecting a gateway to managed agents and the Claude Agent SDK.",
+   "t": "14:53"
+  },
+  {
+   "idea": "Summary: invest in shared infra, build root of trust, separate harness from data.",
+   "detail": "Do not roll your own MCP gateway. Let teams build their own MCP servers on top of it. Gateways make the root of trust explicit. Observability should also cover how each tool is defined, so the load-bearing tools can be improved.",
+   "t": "16:13"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Single gateway in front of all MCP servers",
+   "how": "Clients connect only to the gateway. Each MCP server treats the gateway as its only trusted endpoint. The gateway handles auth, role-based access, routing, encrypted tunnels and a sub-registry of internal servers.",
+   "when": "An enterprise has many teams building MCP servers, and security needs one place to verify and control access."
+  },
+  {
+   "name": "Gateway CLI as a scaffold for new MCP servers",
+   "how": "A gateway CLI generates a new server already wired to auth, access control, observability and deployment. A coding agent can run it, so the team only writes tool logic.",
+   "when": "Teams should build their own MCP servers without waiting on a central platform team."
+  },
+  {
+   "name": "Encode enterprise standards as gateway policy",
+   "how": "The gateway enforces which primitives, tools and patterns are allowed or forbidden, so each new server follows company rules without a manual review.",
+   "when": "Agents must meet company operating procedures and security rules."
+  },
+  {
+   "name": "Pluggable credentials at the gateway",
+   "how": "The gateway swaps credential types (per user, per team, service account) for each server, so servers do not each need to support every auth method.",
+   "when": "Different servers or use cases need different kinds of user or service identity."
+  },
+  {
+   "name": "Observability on tool definitions, not only call counts",
+   "how": "Track which tools are used most, and how each tool is defined, so the load-bearing tools can be found and revised as the protocol changes.",
+   "when": "The MCP spec and tool definitions change quickly and need ongoing tuning for many agents."
+  },
+  {
+   "name": "Separate agent harness from data layer",
+   "how": "Put the data and MCP servers behind the gateway, and let agents (in-house or hosted) connect to the gateway as clients. Changing or swapping an agent then does not change the gateway.",
+   "when": "Enterprises run many agent types and expect the agent choice to change over time."
+  }
+ ],
+ "tools": [
+  "MCP",
+  "Claude Code",
+  "Claude Agent SDK",
+  "claude.ai",
+  "Claude managed agents"
+ ],
+ "numbers": [
+  {
+   "claim": "The official MCP registry lists over thousands of servers, and growth was rapid over the prior year.",
+   "t": "1:07"
+  },
+  {
+   "claim": "Illustrative example: 40 separate MCP servers, each configured for only some clients, versus one gateway that all clients share. This is a hypothetical, not a measurement.",
+   "t": "11:27"
+  },
+  {
+   "claim": "Illustrative scale target: from tens to hundreds of thousands of agents on one gateway. This is a goal the speaker describes, not a benchmark.",
+   "t": "14:53"
+  }
+ ],
+ "hot_takes": [
+  "Enterprises should not roll their own MCP gateway. They should adopt common infra.",
+  "A registry is not enough for enterprises. Auth, access control, observability and credentials are the gap.",
+  "Every good MCP server helps all the agents in a company, so a central gateway multiplies its value.",
+  "Security teams should bless one platform and let teams build MCP servers themselves, so legal teams can build their own servers without going back to engineering."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "",
+   "action": "Compare Govrix Scout's scope with the talk's five gateway components. Note which are missing for MCP traffic (RBAC per server, per-tool metrics, a scaffold CLI). Add the missing ones to the L1 backlog."
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code and handles credentials and approvals itself. The talk's point about pluggable credentials and keeping the harness separate from data is a light, indirect fit.",
+   "action": "Low priority: note whether ProsHarness credential handling should delegate to a gateway for MCP calls instead of living in the harness."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

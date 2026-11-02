@@ -1,0 +1,153 @@
+{
+ "one_line": "NYT engineers on running small agents on-device inside mobile games, under per-frame time, memory and battery budgets, with live accessibility tuning through graded dials instead of fixed menus.",
+ "summary": "Two New York Times speakers present experimental work on local, on-device agents for games, stressing that NYT puzzles themselves contain no AI. They contrast reinforcement learning, which changes model weights, with agents that reason over game state in context and act through tool calls. A demo Space Invaders agent runs a perceive, predict, decide, act loop, and a constraint-satisfaction agent solves mini crosswords by backtracking. The main on-device limits are memory, a 16 ms frame budget at 60 Hz, and battery, handled with a constraint graph that penalizes time overruns more softly than memory overruns. The second half argues for adaptive accessibility: grounded in WCAG 2.2, the agent tunes graded dials (input tolerance, step granularity) from live signals such as gaze, shaky taps and focus loops, and can inject exit routes or resize tiny targets. The closing open problems are sub-frame planning, predicting layout changes before applying them, per-user long-term memory, a shared game-state language, and honest benchmarks. Overall this is a conceptual showcase with little measured data.",
+ "speakers": [
+  "Shafik Quoraishee",
+  "Joanne Song"
+ ],
+ "orgs": [
+  "The New York Times"
+ ],
+ "format": "talk",
+ "topics": [
+  "local-ai",
+  "agent-architecture",
+  "product-ux",
+  "inference-serving"
+ ],
+ "tags": [
+  "on-device-ai",
+  "mobile-games",
+  "accessibility",
+  "wcag",
+  "constraint-graph",
+  "constraint-satisfaction",
+  "agent-loop",
+  "edge-inference",
+  "gaze-estimation",
+  "crossword-solver"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Run agents on-device instead of in the cloud",
+   "detail": "Cloud inference adds round-trip latency and cost. On-device inference keeps data private, still works offline (for example in a subway), and makes personalization easier.",
+   "t": "2:22"
+  },
+  {
+   "idea": "Agentic play differs from RL",
+   "detail": "RL changes model weights through many training cycles. An agent instead uses a language model with in-context reasoning over the game state and tool calls on the device, so it adapts to new situations without retraining.",
+   "t": "5:43"
+  },
+  {
+   "idea": "Per-frame perceive, predict, decide, act loop",
+   "detail": "The demo Space Invaders agent perceives the scene, predicts the next enemy move, decides, acts, and then loops. The speaker calls this a simple agent running on a small on-device model.",
+   "t": "7:48"
+  },
+  {
+   "idea": "Three budgets constrain on-device agents: space, time and energy",
+   "detail": "Space covers model weights, state history and planning artifacts, plus render headroom. Time means fitting planning into a 16 ms frame. Energy means battery life, since phones are not yet tuned for agent workloads even with NPUs.",
+   "t": "8:51"
+  },
+  {
+   "idea": "Soft versus hard penalties in a constraint graph",
+   "detail": "The team penalizes over-focus on one budget, applies soft constraints where small overruns are acceptable (memory), and penalizes time overruns more firmly because they disrupt the user experience.",
+   "t": "9:55"
+  },
+  {
+   "idea": "Constraint satisfaction with backtracking for crosswords",
+   "detail": "A mini-crossword agent places words under a constraint graph. When constraints get too crowded or wrong, it backtracks efficiently and uses natural language from the graph to find a correct layout.",
+   "t": "11:18"
+  },
+  {
+   "idea": "Accessibility as graded dials, not a checkbox",
+   "detail": "Building on WCAG 2.2's perceivable, operable, understandable and robust pillars, the speakers propose tuning graded dials per player. WCAG 3.0 (draft) moves to bronze, silver and gold scoring, and they argue games should follow the same shift.",
+   "t": "12:59"
+  },
+  {
+   "idea": "Live adaptation through focus monitoring and layout auditing",
+   "detail": "The agent watches the focus path to detect keyboard traps and injects an exit route. It also measures the interface and resizes tiny targets on the fly, so the layout adapts to the player.",
+   "t": "15:28"
+  },
+  {
+   "idea": "Open problems for local game agents",
+   "detail": "Plans must fit a 16 ms frame. Models should predict the effect of a layout change before applying it. Long-term per-user memory, a shared game-state language across titles, faster chips and honest benchmarks are still needed.",
+   "t": "16:32"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Per-frame perceive-predict-decide-act agent loop",
+   "how": "Split the agent into a few explicit states, each a small on-device model call, and run the loop within the frame budget.",
+   "when": "Real-time game or UI agents that must respond within a fixed frame time."
+  },
+  {
+   "name": "Constraint graph over space, time and energy",
+   "how": "Model each resource as a constraint node. Use hard or soft penalties depending on how much an overrun harms the user experience, and avoid over-focusing on one resource.",
+   "when": "Resource-limited on-device agents with several competing budgets."
+  },
+  {
+   "name": "Constraint satisfaction with backtracking",
+   "how": "Represent placements as a constraint graph, detect when constraints become too crowded or incorrect, backtrack, and use natural-language explanations from the graph to guide the retry.",
+   "when": "Puzzle or layout problems with many interdependent choices, such as crosswords."
+  },
+  {
+   "name": "Graded accessibility dials driven by live signals",
+   "how": "Define continuous controls such as input tolerance and step granularity. Set them from live cues (gaze, shaky taps, focus loops, handwriting) and move them together.",
+   "when": "Adapting an interface to a user's needs in real time instead of offering a fixed easy mode."
+  },
+  {
+   "name": "Live focus-path monitoring and layout auditing",
+   "how": "Track the focus or tab order to flag loops, inject an exit route, and measure controls at runtime to resize targets that are too small.",
+   "when": "Interfaces where keyboard, switch or fine-motor users can get trapped or miss small targets."
+  }
+ ],
+ "tools": [
+  "Efficient Zero V2 (sample-efficient RL, mentioned as state of the art up to 2024)",
+  "WCAG 2.2 and WCAG 3.0 draft",
+  "Gaze estimation CNN",
+  "Google SIMA (transcript reads 'SEMA'; generalist agent framework mentioned briefly)"
+ ],
+ "numbers": [
+  {
+   "claim": "Frame budget of about 16 ms per frame at a 60 Hz refresh rate for fitting agent planning",
+   "t": "8:51"
+  },
+  {
+   "claim": "WCAG 2.2 has four pillars (perceivable, operable, understandable, robust); WCAG 3.0 draft moves from pass/fail to bronze, silver, gold",
+   "t": "12:59"
+  },
+  {
+   "claim": "Efficient Zero and Efficient Zero V2 are described as sample-efficient RL models that learn from much less data than traditional RL. No figures given.",
+   "t": "5:43"
+  }
+ ],
+ "hot_takes": [
+  "Accessibility and challenge should be two ends of one continuously tuned dial, not separate features.",
+  "Games should move from fixed easy modes and toggles to graded, live-adjusted accessibility, as WCAG 3.0 does for web accessibility.",
+  "The future of AI is many small local models, each shaped by one person, rather than one centralized brain."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Per-resource budgets with soft versus hard penalties parallel budget enforcement in the L1 proxy. The talk gives no measured results.",
+   "action": "Consider modelling Govrix budget limits as soft versus hard constraints, where a small overrun is penalized less than a latency or cost overrun."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "A per-state perceive, decide, act loop with explicit state transitions resembles checkpointable phases in a long-running harness.",
+   "action": "Compare the perceive-predict-decide-act state split with ProsHarness checkpoint boundaries to see whether each state is a natural resume point."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The talk covers small on-device models under strict budgets, which relates to cheap-model pipeline design. It is conceptual and has no benchmarks.",
+   "action": "Optional read: the graded-dial idea (tune a continuous control from live signals) may transfer to adjusting model or pipeline effort levels."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,156 @@
+{
+ "one_line": "AI LABS walks through a community \"ADHD\" skill that makes a coding agent ideate by fanning out isolated sub-agents, each seeded with a different frame, then scoring and merging the results; shown for test planning and pre-ship UX/churn review.",
+ "summary": "The host argues that coding agents split execution work into sub-agents but do not diversify ideation: brainstormed variations share one context window and collapse into the same safe answer. The featured skill (name not given in the video; a single SKILL.md, installed from a GitHub repo) fans a problem out as a \"tree of thought\": several sub-agents work in isolation, each picking a different frame from a built-in frame library, so the ideas cannot contaminate each other. A critic agent, prompted to act as a skeptical senior engineer, grades every idea on novelty, viability and fit, drops weak ones, and the skill shortlists the strongest and attaches a trap list. A pre-check decides whether auto-invocation should run at all (open-ended problem, high stakes, not asking for a quick answer), while an explicit slash-command call skips it. The two worked examples are planning a TDD test strategy before building (the skill plans tests but does not write them; five agents, top three explored) and a pre-launch UX and churn review of a live community site (about 30 ideas, top three explored, surfacing PRD features that were never built). In both, the skill recommends fixes but the user hands the chosen directions back to the agent to implement. The video is roughly 40% product walkthrough and includes a sponsored segment for Top View, an AI video skill; the claims about the skill's effectiveness rest on the host's own anecdotes with no benchmark.",
+ "speakers": [],
+ "orgs": [
+  "AI LABS",
+  "Top View"
+ ],
+ "format": "review",
+ "topics": [
+  "multi-agent",
+  "coding-agents",
+  "testing-verification",
+  "skills-self-improvement"
+ ],
+ "tags": [
+  "ideation",
+  "tree-of-thought",
+  "frames",
+  "critic-agent",
+  "subagents",
+  "context-isolation",
+  "tdd",
+  "test-planning",
+  "ux-review",
+  "churn",
+  "claude-md",
+  "slash-command",
+  "skill-install",
+  "sponsored"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Sub-agents are used for splitting execution work but not for ideation, so brainstorming in one context yields reworded versions of one idea.",
+   "detail": "The host says agents reach for the most common pattern in training data, and that when every possibility is worked through in the same context window, ideas bleed together and the context fills with noise, so the model cannot evaluate them clearly.",
+   "t": "0:59"
+  },
+  {
+   "idea": "The skill fans ideation out as a tree of thought: isolated sub-agents each take a different frame of the same problem, then results are merged.",
+   "detail": "Each sub-agent gets the frames prompt, the system prompt and the problem. The frame library holds the different directions an agent can take, and each agent picks one.",
+   "t": "2:27"
+  },
+  {
+   "idea": "The isolation exists to keep ideas from influencing each other, not to divide the work.",
+   "detail": "Sub-agents share zero context with one another so that each idea is developed on its own merits.",
+   "t": "2:27"
+  },
+  {
+   "idea": "A separate critic agent scores every returned idea on novelty and viability and fit, and decides which ideas survive.",
+   "detail": "The critic runs a prompt that makes it act as a skeptical senior engineer. Surviving ideas are shortlisted and given a trap list of problems each would cause if chosen.",
+   "t": "3:26"
+  },
+  {
+   "idea": "Auto-invocation is gated by a three-question pre-check, so the token-heavy fan-out only runs when it is worth it.",
+   "detail": "Questions: is the problem open-ended with several good answers, are the stakes high if the obvious answer is wrong, and did the user ask for something quick or standard. An explicit slash-command or direct request fires the skill immediately.",
+   "t": "6:04"
+  },
+  {
+   "idea": "For test planning, the skill produces a test strategy with three explored branches rather than the tests themselves; you then choose which branch to implement.",
+   "detail": "The host ran it with five agents, kept the top three by score, and got a report of testing directions with scores, sketches, risks and first steps. The agent then implements the chosen direction, or all three if performance matters, one at a time.",
+   "t": "8:23"
+  },
+  {
+   "idea": "Pre-ship, the same fan-out works as a UX and churn audit of a live app, and it surfaced gaps between the PRD and what was built.",
+   "detail": "The host ran it on a community site before a feature launch. It first read through the app for context, produced about 30 ideas, explored the top three, and graded every finding. Each finding came with a suggested fix and traps. The skill does not apply fixes itself.",
+   "t": "11:09"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Frame-diversified tree-of-thought fan-out",
+   "how": "Spawn several isolated sub-agents, each given the system prompt, the problem, and one frame from a frame library (a different lens on the problem). Each sub-agent works in its own context so ideas cannot contaminate each other. Then pass all outputs to a critic agent prompted as a skeptical senior engineer that scores each idea on novelty, viability and fit, drops low scorers, shortlists the best (the host's run used the top three), expands those, and attaches a trap list for each.",
+   "when": "Ideation or planning where the obvious answer is the common one and you need several genuinely different directions, such as test strategy or feature critique, not for routine single-answer tasks."
+  },
+  {
+   "name": "Three-question gate before auto-invoking an expensive fan-out",
+   "how": "Before running the multi-agent pass on an implicit request, check: (1) is the problem open-ended, with more than one good answer; (2) would being wrong about the obvious answer be costly; (3) did the user ask for something quick or standard. Run only if the first two are yes and the third is no. Explicit invocation skips the gate.",
+   "when": "Any auto-triggered skill that spawns many sub-agents, to avoid burning tokens on questions that have one right answer."
+  },
+  {
+   "name": "Install an agent skill from a repo and fix the config folder for Claude Code",
+   "how": "Copy the install command from the skill's GitHub repo and run it in a terminal inside the project. Choose the target agent (the tool supports 45+ agents), then choose project scope (only this project) or global. The installer writes the skill into a .agents folder; for Claude Code, rename that folder to .claude, since Claude Code only recognizes .claude by default. The skill is one SKILL.md file with no references or dependencies. Invoke it with its slash command or by asking for it directly.",
+   "when": "Adding a single-file skill to Claude Code when the installer targets a different agent's config folder."
+  },
+  {
+   "name": "TDD test-strategy planning with PRD and tech spec linked in CLAUDE.md",
+   "how": "Write a PRD (problem, goals, target users) and a technical spec (locked-in tools and stack). Link both from CLAUDE.md so the agent loads them at session start. Invoke the skill with its slash command, describe the app, and ask for test cases using a TDD approach. Review the returned directions and their scores, then tell the agent which direction to implement; the agent writes the tests and code afterward.",
+   "when": "Before building a feature, when you want edge-case and performance coverage beyond the happy path that agents usually write."
+  },
+  {
+   "name": "Pre-launch UX and churn review by fan-out",
+   "how": "Run the skill on the app or feature about to ship with a prompt asking where users might get stuck and where they might churn. The skill reads the app for context first. Review the graded findings (novelty, viability, fit), noting fixes and traps, then hand the chosen findings back to the agent to implement. Use it to find PRD promises that were never built.",
+   "when": "Right before shipping to a live user base, especially when a change could break the experience for existing users."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "Cursor",
+  "CLAUDE.md",
+  ".agents folder (installer target)",
+  "SKILL.md",
+  "Top View (sponsor; AI video skill)",
+  "Kling",
+  "Sea Dance",
+  "Nano Banana"
+ ],
+ "numbers": [
+  {
+   "claim": "The skill's installer supports more than 45 AI coding agents.",
+   "t": "4:36"
+  },
+  {
+   "claim": "Explicit invocation spawned five agents; the top three ideas were explored in depth.",
+   "t": "8:23"
+  },
+  {
+   "claim": "The pre-ship UX/churn run surfaced around 30 ideas, of which the top three were explored.",
+   "t": "11:09"
+  },
+  {
+   "claim": "Score shorthand: N = novelty, V = viability, F = fit, on a 0-10 scale (examples N9, V8, F10).",
+   "t": "9:51"
+  },
+  {
+   "claim": "Sponsor claim: one prompt produced 10 finished 15-second TikTok-style ad variations via Top View (unverified; sponsored).",
+   "t": "7:17"
+  }
+ ],
+ "hot_takes": [
+  "Sponsored segment for Top View (about 7:17) is an ad read; the 10-ads claim is the sponsor's, not tested by the host in any measurable way.",
+  "The core claim that agents cannot produce novel ideas is asserted from training-data reasoning, with no evaluation, baseline or comparison against a plain multi-sample prompt.",
+  "The skill's effectiveness rests on the host's anecdotes (a community site, unspecified test-quality improvement); no before/after metrics are shown.",
+  "The 'ADHD' framing is marketing; the mechanism is parallel sampling with diverse system prompts plus LLM-as-judge scoring, which is a standard pattern.",
+  "The skill's name, repo and frame library contents are not shown, so the reader cannot reproduce the exact setup from the video alone.",
+  "Claims that the skill 'picked up a lot of stars' are unverified popularity signals."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Multi-agent ideation with isolated sub-agents and a critic rubric is adjacent to SkillForge's open question on skill-worthiness scoring, but the video offers no evaluation method.",
+   "action": "Read the novelty/viability/fit critic-rubric idea as a starting point for SkillForge's skill-worthiness scoring, and measure it against telemetry-based success signals before adopting it."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness already runs plan, critique (Codex) and debate; the frame-diversified fan-out with a skeptical critic is a variant of its planning stage.",
+   "action": "Prototype a frame-seeded planner fan-out (several isolated planners, each with a different framing, then a critic scoring novelty and viability) as an optional step before ProsHarness's plan-critique loop, and compare its plans against a single planner on the same task."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

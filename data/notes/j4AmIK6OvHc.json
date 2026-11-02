@@ -1,0 +1,179 @@
+{
+ "one_line": "LiveKit's Jesse Hall argues voice-agent latency is a budget to spend on human-like behavior, not raw speed, and shares audio-based turn detection, perceived-latency metrics, async tool handling and an outcome-scored simulated-caller benchmark.",
+ "summary": "The talk starts from the claim that voice agents should feel human, so latency should be treated as a fixed budget rather than something to minimize. Voice agents are usually a cascade of speech-to-text, LLM and text-to-speech, and leaderboard scores measured on clean audio miss the errors that flow between stages (for example, a wrong date from STT leads to a confidently wrong booking). The speaker says the metrics most teams track are misleading: TTS time-to-first-byte can hide hundreds of milliseconds, up to about 0.75s, of silence, and LLM time-to-first-token ignores that TTS needs a full first sentence. Tool calls of 2 to 40 seconds need to be handled asynchronously, with the agent speaking while the tool runs, as a receptionist would. For turn-taking, LiveKit built an audio-based end-of-turn detector and reports lower interruption rates than the best alternative at the same latency. The pipeline overlaps work by running the LLM on a provisional transcript and starting TTS on the first complete sentence. The benchmark runs a real hotel-booking agent against hundreds of simulated callers who interrupt and change their minds, scoring real database outcomes and penalizing gameable completions. The talk ends with a vendor launch of a tuned Gemma 4 31B model on LiveKit Inference.",
+ "speakers": [
+  "Jesse Hall (LiveKit)"
+ ],
+ "orgs": [
+  "LiveKit",
+  "OpenAI"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "evals",
+  "agent-architecture"
+ ],
+ "tags": [
+  "voice-agents",
+  "latency",
+  "turn-detection",
+  "perceived-latency",
+  "async-tools",
+  "simulated-callers",
+  "outcome-evals",
+  "livekit",
+  "model-selection",
+  "cascade-pipeline"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Latency is a budget; the goal is human-like behavior, not speed alone",
+   "detail": "Speed by itself does not make a voice agent feel human. The speaker frames the goal as an agent that listens while it talks, tells a finished thought from a pause, and handles mid-sentence changes. Model choice and pipeline configuration matter more than shaving milliseconds.",
+   "t": "1:10"
+  },
+  {
+   "idea": "Leaderboards score components, but you ship a cascade (the leaderboard trap)",
+   "detail": "STT, LLM and TTS are scored on clean audio. In production an STT error (Tuesday the 3rd heard as the 30th) propagates downstream, and the layers below cannot detect it. The real question is which stack to ship, not which model is best.",
+   "t": "3:52"
+  },
+  {
+   "idea": "Measure perceived latency (time to first audible audio), not TTFB or TTFT",
+   "detail": "Some TTS providers emit hundreds of milliseconds, up to about 0.75s, of silence before audio starts. Time to first token is a text metric, and TTS needs a full first sentence, so the fastest-streaming model is not necessarily the one that finishes its first sentence soonest.",
+   "t": "4:52"
+  },
+  {
+   "idea": "Tools need async handling so the agent keeps the conversation going",
+   "detail": "A tool can take 2 to 40+ seconds. The speaker's pattern: a normal tool whose first status update hands the turn back to the agent while the work continues in the background. The conversation and the tool stop sharing one thread. The demo agent handled interruptions and a mid-booking date change without awkward pauses.",
+   "t": "7:43"
+  },
+  {
+   "idea": "Turn-taking should use the audio signal, not only the transcript",
+   "detail": "Humans negotiate turns in a few hundred milliseconds using tone and intonation. LiveKit's turn detector reads the audio itself. At the same latency budget the best alternative cut users off 9.9% of the time, versus 4.5% for theirs. The eval harness is open source.",
+   "t": "10:17"
+  },
+  {
+   "idea": "Overlap the pipeline: speculative LLM on a provisional transcript, TTS on the first sentence",
+   "detail": "End-of-turn fires from audio before the final transcript lands. The LLM starts on a provisional transcript and is kept if the final words match, which saves about half a second. TTS starts on the first complete sentence, so the first audible byte arrives when the human stops waiting.",
+   "t": "10:17"
+  },
+  {
+   "idea": "Treat about 1.5s end to end as the ceiling and about 600ms as the target",
+   "detail": "Within roughly 1.5 seconds the conversation still holds, but that is the edge. Near 600ms it starts to feel human. The design question becomes what is the most human-like agent that fits inside the window.",
+   "t": "11:40"
+  },
+  {
+   "idea": "Benchmark with simulated callers and score outcomes against a human bar",
+   "detail": "Hundreds of simulated callers interrupt, mumble and change their minds. Scoring covers whether the correct reservation was written, whether the caller was cut off, whether names and dates are right, and whether there were invented tool calls or leaked personal data. Completion alone is gameable, so unnecessary questions and extra steps are penalized.",
+   "t": "11:40"
+  },
+  {
+   "idea": "Swap components while holding the scenario inputs identical",
+   "detail": "The same agent and the same scenarios run with different models, and every model sees byte-for-byte identical input. Benchmarks are per agent, so teams are invited to run their own agent through the same method and set of eval sets.",
+   "t": "13:00"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Perceived-latency metric",
+   "how": "Instrument the time from the end of the caller's speech to the first audible audio sample at the caller, not the provider's TTFB or the LLM's TTFT. Track per TTS provider, since some emit leading silence. Set the budget on this number.",
+   "when": "Any real-time voice or streaming UI where a provider dashboard looks fast but users report lag."
+  },
+  {
+   "name": "Async tool with early turn release",
+   "how": "Write the tool as a normal tool, but have its first update return control to the agent so it speaks (for example, 'give me a sec, I'm looking up your account') while the tool keeps running. Keep the conversation thread and the tool's work separate.",
+   "when": "Tools that may take seconds or tens of seconds (booking, lookups, long jobs) inside a conversational agent."
+  },
+  {
+   "name": "Audio-based end-of-turn detection",
+   "how": "Run a turn detector on the raw audio (prosody, pitch, intonation) to decide when the caller has finished, instead of waiting for the final transcript. Evaluate it against a baseline at the same latency budget on the rate of users cut off mid-thought.",
+   "when": "Voice agents where interruptions and premature cut-offs damage the experience."
+  },
+  {
+   "name": "Speculative LLM on provisional transcript, TTS on first sentence",
+   "how": "Start the LLM when end-of-turn fires on the provisional transcript. Keep the response if the final transcript matches the provisional one, otherwise regenerate. Send text to TTS at the first complete sentence rather than waiting for the full response.",
+   "when": "Cascaded STT-LLM-TTS voice pipelines where latency is dominated by waiting for full transcripts and full responses."
+  },
+  {
+   "name": "Outcome-scored simulated-user benchmark",
+   "how": "Build a simulator that interrupts, mumbles and changes its mind. Score end-state outcomes (correct DB write, no truncation, correct entities, no invented tool calls, no leaked PII) against a human-equivalent bar. Add penalties for unnecessary questions and redundant steps so that a guessed completion scores lower. Feed byte-identical inputs to each model under comparison.",
+   "when": "Choosing STT, LLM or TTS models for a specific agent; regression testing an agent after a model or prompt change."
+  },
+  {
+   "name": "Stack-level model selection",
+   "how": "Do not pick components by leaderboard rank. Swap one component at a time (or a whole stack) inside a complete working agent, run the simulator, and choose the stack that wins on outcomes and perceived latency within the budget.",
+   "when": "Before shipping a voice agent, and whenever a new model appears."
+  },
+  {
+   "name": "Checklist for voice agents",
+   "how": "In order: set the latency budget first; measure perceived latency; spend remaining budget on model quality, not on speed that does not matter; move anything over about 1 second to async handling so the conversation never stops; test the whole conversation, not each component; keep testing in production.",
+   "when": "Planning or reviewing any real-time voice agent."
+  }
+ ],
+ "tools": [
+  "LiveKit (open-source real-time agent framework and infrastructure)",
+  "LiveKit Inference (hosted model inference)",
+  "LiveKit turn detector (audio-based end-of-turn model)",
+  "Gemma 4 31B (tuned for voice on LiveKit Inference; auto-captions render it as 'Gemini 4 31B' at one point)",
+  "ChatGPT advanced voice mode (cited as an example of a LiveKit-powered product)",
+  "LiveKit voice eval harness and hotel-booking benchmark (open source)"
+ ],
+ "numbers": [
+  {
+   "claim": "Some TTS providers emit hundreds of ms of leading silence; worst case about 0.75s before the first audio.",
+   "t": "4:52"
+  },
+  {
+   "claim": "Tool calls in voice agents take roughly 2 to 40+ seconds.",
+   "t": "6:21"
+  },
+  {
+   "claim": "Human turn-taking happens in a couple hundred milliseconds.",
+   "t": "10:17"
+  },
+  {
+   "claim": "At the same latency budget: best alternative turn detector cuts users off 9.9% of the time; LiveKit's audio-based detector 4.5%.",
+   "t": "10:17"
+  },
+  {
+   "claim": "Speculative LLM on a provisional transcript saves about half a second when the final words match.",
+   "t": "10:17"
+  },
+  {
+   "claim": "End-to-end window: about 1.5s is the edge where the conversation still holds; about 600ms feels human.",
+   "t": "11:40"
+  },
+  {
+   "claim": "Benchmark runs hundreds of simulated callers per agent and model configuration.",
+   "t": "11:40"
+  },
+  {
+   "claim": "Gemma 4 31B tuned for production voice: 88% pass rate on voice evals, first speech in about 380ms, claimed over 2x faster than the next model (vendor-reported).",
+   "t": "14:25"
+  }
+ ],
+ "hot_takes": [
+  "Vendor talk: LiveKit presents its own turn detector, benchmark and model launch. The numbers are self-reported, though the speaker says the harness and eval sets are open source.",
+  "The speaker says LiveKit has no horse in the race because it does not make STT, LLM or TTS models, then previews its own tuned Gemma 4 31B on LiveKit Inference.",
+  "Core framing, that latency is a budget to spend on naturalness and that TTFB and TTFT mislead for voice, is practical and useful regardless of vendor.",
+  "Speaker says 'Gemini 4 31B' on the slide at 14:25 but 'Gemma 4 31B' in the same passage; treated as Gemma 4 31B."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The outcome-scored simulated-user benchmark, with penalties for unnecessary steps, and identical inputs across model swaps, is a direct eval method for AgentOS agent and model comparisons beyond completion metrics.",
+   "action": "Adapt the simulated-user eval pattern for AgentOS: run byte-identical scenario inputs across model/KV-strategy configs, score end-state DB outcomes, invented tool calls and leaked PII, and penalize redundant steps rather than only completion."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The async-tool pattern (return control early with a status update while long work continues, with state kept separate from the conversation) is relevant to long-running Claude Code runs with checkpoint/resume.",
+   "action": "Consider an early-acknowledgment pattern in ProsHarness for long tool steps: surface progress to the user while the step runs, and keep checkpoint state separate from the conversation thread."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

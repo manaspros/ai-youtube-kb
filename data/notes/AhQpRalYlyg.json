@@ -1,0 +1,139 @@
+{
+ "one_line": "Google DeepMind product lead on shopping agents for fuzzy intent: build a working state, ask the highest-value clarifying question, elicit preferences visually, adapt the answer format, and grade every step with autoraters.",
+ "summary": "The speaker argues that most shopping agents act as wrappers around a search bar and fail when users arrive with a vague feeling rather than keywords. She describes a three-phase loop: discovery (build a working state from history, references and personal context, then find the intent gap), research (choose how to elicit each preference, often with visual boards, while the agent does the comparison work in the background), and response (pick a list, comparison table or visual gallery to fit the query). Each phase has its own autorater checks, such as fact retention, counterfactual sensitivity, over-asking, turn efficiency, format accuracy and data fidelity. The talk is grounded in commerce but presented as applicable to other consumer verticals. On the merchant side, the agent maps user constraints to the merchant's ontology through a common protocol, and the agent, not the merchant, decides the response format. In Q&A she says user studies show shoppers want to drive upper-funnel discovery themselves, and agent-to-agent interaction is not yet in use. No benchmark or adoption figures are given.",
+ "speakers": [
+  "Nidhi Kaushik Vyas"
+ ],
+ "orgs": [
+  "Google DeepMind"
+ ],
+ "format": "talk",
+ "topics": [
+  "product-ux",
+  "evals",
+  "context-engineering"
+ ],
+ "tags": [
+  "multimodal",
+  "commerce",
+  "clarifying-questions",
+  "elicitation",
+  "fuzzy-intent",
+  "working-state",
+  "autorater",
+  "information-gain",
+  "adaptive-response",
+  "ontology",
+  "mcp",
+  "google-deepmind"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Fuzzy intent is the default, not the exception",
+   "detail": "Shoppers arrive with a vibe, not the right keywords. The agent has to hand-hold: learn preferences, show possibilities, then narrow to recommendations. Agents that only wrap a search bar miss this.",
+   "t": "1:21"
+  },
+  {
+   "idea": "Three-phase loop: discovery, research, adaptive response",
+   "detail": "Discovery builds context and plans what to ask. Research picks the best elicitation channel and does background comparison work. Response chooses the presentation format. Each phase gets its own evaluation.",
+   "t": "2:41"
+  },
+  {
+   "idea": "Keep a working state with confidence scores and live variables",
+   "detail": "The state holds session history, user context, hard constraints and soft signals pulled from reference images, each with a confidence score. Volatile values such as inventory are refreshed in real time because stale results make the answer useless.",
+   "t": "5:07"
+  },
+  {
+   "idea": "Ask the question that most reduces uncertainty",
+   "detail": "Find the unknowns, compare the possible next moves, and ask the one with the highest information gain. The example is room width, because a product that does not fit ends the conversation.",
+   "t": "7:39"
+  },
+  {
+   "idea": "Use visual anchors when the preference is subjective",
+   "detail": "For fuzzy style preferences, text questions fail. The agent shows a preference board of similar styles and reads hover and click signals to update its confidence. Text is for facts the user can state.",
+   "t": "10:07"
+  },
+  {
+   "idea": "Adapt the answer format to the question type",
+   "detail": "Use bullets or a summary for policy and review questions, a trade-off table for comparisons, and visual inspiration photos for style questions. Text-heavy answers are the common failure.",
+   "t": "14:00"
+  },
+  {
+   "idea": "Merchant ontology is the bridge; the agent owns the format",
+   "detail": "Constraints are mapped to merchant metadata through a common protocol (UCP, recently launched). The team keeps decisions in the agent so the experience is consistent across merchants, and the merchant does not choose the format.",
+   "t": "18:41"
+  },
+  {
+   "idea": "Shoppers want to drive discovery; agent-to-agent is not here yet",
+   "detail": "User studies show people prefer to explore upper-funnel with their own system. Agents are expected to take over lower-funnel tasks like price comparison. MCP is the expected interface, but the team has not built agent-to-agent flows.",
+   "t": "19:53"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Working state with confidence and live refresh",
+   "how": "Keep a structured state per session: history, user context, hard constraints, soft signals from multimodal inputs with a confidence score, and a list of volatile variables (for example inventory) refreshed at read time. Map each known constraint to the product ontology in real time.",
+   "when": "Users give vague or multimodal input and the answer depends on constraints that must stay accurate across turns."
+  },
+  {
+   "name": "Counterfactual sensitivity test for constraint extraction",
+   "how": "Flip part of a query and check that only the constraints tied to the changed part update. Measure sensitivity in both directions: relevant constraints should change and irrelevant ones should stay put.",
+   "when": "Testing whether a state or extraction step actually responds to input changes instead of ignoring them."
+  },
+  {
+   "name": "Information-gain question selection",
+   "how": "List the unknown variables, score each candidate next question by how much it would change the outcome, and ask only the top one. Do not try to resolve all unknowns up front.",
+   "when": "A clarifying agent needs to gather the minimum information before it can recommend something."
+  },
+  {
+   "name": "Elicitation-channel choice by preference type",
+   "how": "Decide per constraint whether text or a visual board will get the answer faster. Text for stated facts, visual anchors for subjective preferences. Log hover and click events as a signal to update the confidence model.",
+   "when": "The user cannot put a preference into words, for example taste, style or layout."
+  },
+  {
+   "name": "Per-step autoraters with user simulator",
+   "how": "Give each phase its own grader: fact retention, confidence error bound, hidden-preference discovery rate, turn efficiency, over-asking, question utility, format accuracy, data fidelity and actionability. Use a user simulator seeded with hidden constraints to test the loop. Expand the autorater set as the system changes.",
+   "when": "Evaluating a multi-turn clarifying agent end to end and at each stage."
+  },
+  {
+   "name": "Response format chosen by query intent",
+   "how": "Classify the question (fact lookup, comparison, inspiration) and pick the presentation to match: summary or bullets, comparison table, or visual gallery. Grade whether the key information is easy to find.",
+   "when": "The same underlying answer could be shown as text, a table or images, and the format changes how easily the user acts on it."
+  }
+ ],
+ "tools": [
+  "MCP (expected interface between agents and merchants)",
+  "UCP (merchant common-language protocol, named in the talk without detail)"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Search-bar wrapper agents fail because they assume users already know the right keywords.",
+  "Show and ask with visuals rather than asking in text; visuals reveal preferences much faster.",
+  "The agent, not the merchant, should decide response format so the experience stays consistent across merchants.",
+  "Upper-funnel discovery is something users want to do with their own system, not with an agent acting for them."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The per-stage autorater set and over-asking metric apply to any clarifying agent, but this is a commerce product talk and there is no infra content.",
+   "action": "Add an over-asking and turn-efficiency metric to the AgentOS eval suite if an interactive clarification flow is ever built on it."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The working-state idea with confidence scores and counterfactual flip tests could apply to checking whether ProsHarness plan constraints actually change when the plan changes.",
+   "action": "Read the counterfactual sensitivity idea and consider a flip test for ProsHarness plan-constraint extraction."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Gives a concrete eval breakdown for multi-turn clarifying agents: information gain for question choice, over-asking flags, format accuracy and simulator-based hidden-preference discovery. The recurring interest in agent evals makes this useful.",
+   "action": "Borrow the information-gain question selector and the over-asking/turn-efficiency autoraters as a pattern for any agent that asks clarifying questions."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

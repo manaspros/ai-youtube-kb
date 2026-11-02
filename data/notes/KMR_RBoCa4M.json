@@ -1,0 +1,185 @@
+{
+ "one_line": "Nubank and Snowglobe claim simulated personas with mocked tools produce agent eval data on demand, cutting release cycles from weeks to hours, provided the sim-to-real gap is measured.",
+ "summary": "Aman Gupta (principal ML engineer at Nubank) and Shreya Rajpal (CEO of Snowglobe) argue that agent evals are bottlenecked by eval data rather than metrics. Multi-turn agent trajectories with stateful tool calls are expensive to author by hand, and production traces test live customers and block parallel experiments. They propose generating eval data in simulation: wrap the agent, mock its tools, drive it with personas and use cases, and run LLM judges per turn on thousands of conversations. Nubank reports that this shortened its loop from weeks to hours or minutes for changes to harness, prompts or tools. They say simulated and production eval scores correlate highly and that 80% of domain-expert labels found the sims usable. Simulation also caught a regression before launch, let teams screen variants so fewer A/B tests run, and let them sweep open-source models through the same harness. The talk's three takeaways are to generate eval data in simulation, close the sim-to-real gap with offline, online and human metrics, and treat data plus metrics as the core of any self-improving agent loop. The speakers are promoting Snowglobe, and the 20x headline has no stated baseline.",
+ "speakers": [
+  "Aman Gupta",
+  "Shreya Rajpal"
+ ],
+ "orgs": [
+  "Nubank",
+  "Snowglobe"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "enterprise-adoption",
+  "data-engineering"
+ ],
+ "tags": [
+  "simulation",
+  "synthetic-users",
+  "agent-evals",
+  "a-b-testing",
+  "customer-support-agents",
+  "llm-as-judge",
+  "sim-to-real-gap",
+  "prompt-optimization",
+  "eval-data",
+  "model-swap"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Eval data, not metrics, is the real bottleneck for agents",
+   "detail": "Metrics can be built with LLM judges aligned to human labels. Data is harder: each multi-turn trajectory with stateful tool calls is costly to generate and annotate, and scaling a sample set is harder still.",
+   "t": "3:33"
+  },
+  {
+   "idea": "Both usual sources of eval data hurt",
+   "detail": "Hand-authoring trajectories with consistent state is slow. Production traces are cheap but test on live users, which makes many parallel experiments hard.",
+   "t": "4:50"
+  },
+  {
+   "idea": "Simulation compresses the release loop",
+   "detail": "The speakers claim a change plus offline eval that took weeks, or days with hand-curated data, can take hours. A/B tests that took forever for sparse, noisy feedback can give a direction in hours.",
+   "t": "6:13"
+  },
+  {
+   "idea": "How a simulation works",
+   "detail": "The SDK wraps the agent with no code changes. You identify which tools to mock, then supply personas and use cases. The output is thousands of multi-turn conversations with mocked tools, and per-turn judges feed the eval pipeline on demand.",
+   "t": "7:24"
+  },
+  {
+   "idea": "Synthetic users need persistent grounding state",
+   "detail": "Each persona has a profile, tone and voice, plus grounding data such as an address, card and account. The same data is reused across the run, so the agent's tool lookups can be verified.",
+   "t": "9:28"
+  },
+  {
+   "idea": "A closed loop of ship, observe, eval, simulate, optimize",
+   "detail": "Robust evals come from automated prompt optimization (captioned 'JEPA' in the transcript, likely GEPA). Simulation and real data are both piped through the evals, the harness is optimized on that signal, and the change ships once verified.",
+   "t": "10:50"
+  },
+  {
+   "idea": "Sim-to-real gap has to be measured",
+   "detail": "Sim and production eval scores show a 'pretty high' correlation, with no figure given. Domain experts confirmed sim data was usable in 80% of labels. The speakers want offline, online and human-review metrics to decide when to trust sims.",
+   "t": "10:50"
+  },
+  {
+   "idea": "Sims catch regressions and pre-screen A/B tests",
+   "detail": "One regression was caught before production. Teams run many variants through sim and launch only the best as an A/B test, which skips the weaker ones. Self-service rate did not drop, and one case improved by 4%.",
+   "t": "12:16"
+  },
+  {
+   "idea": "Sims as a model-swap harness",
+   "detail": "Open-source models are run through the same agent harness, eval and sim setup, and the best ones are compared. The speakers say this saved multiple weeks, and A/B tests were running on the result.",
+   "t": "13:40"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Simulated-user eval set generation",
+   "how": "Wrap the agent with an SDK and no code changes. Mock the tools it calls. Define personas and use cases. Run thousands of multi-turn conversations, then score each turn with LLM judges.",
+   "when": "When you need many agent eval trajectories quickly and production data is slow, sparse or risky to test on."
+  },
+  {
+   "name": "Persona-consistent grounding state",
+   "how": "Generate one fixed profile per persona (identity, address, card, account data). Reuse it across the whole run and in the mocked tool responses, so the agent's lookups can be checked.",
+   "when": "When the agent calls stateful tools and the eval must check that outputs match the user's real state."
+  },
+  {
+   "name": "Sim pre-screening before A/B tests",
+   "how": "Run many candidate harness, prompt or tool variants through sim evals. Launch a live A/B test only for the top candidate.",
+   "when": "When A/B tests are expensive or slow to reach significance, and you run many variants per quarter."
+  },
+  {
+   "name": "Sim-to-real calibration",
+   "how": "Compare sim eval scores with production scores, and sample domain-expert review to check that sim conversations are usable. Track offline, online and human metrics together.",
+   "when": "Before trusting sim results for ship decisions, and when adding a new agent."
+  },
+  {
+   "name": "Same-harness model sweep",
+   "how": "Swap candidate models, including open-source ones, into an unchanged harness, eval and sim setup. Compare them on the same metrics.",
+   "when": "When a new model is released and you want to know whether it can replace a frontier model for one workflow."
+  }
+ ],
+ "tools": [
+  "Snowglobe SDK",
+  "LLM-as-judge",
+  "Automated prompt optimization (captioned 'JEPA', likely GEPA)"
+ ],
+ "numbers": [
+  {
+   "claim": "Nubank serves 135 million customers in Brazil, Mexico and Colombia, with a US launch coming; quarterly revenue passed $5B in Q1 2026",
+   "t": "0:08"
+  },
+  {
+   "claim": "Headline claim: agents ship about 20x faster when eval data comes from simulation (no baseline stated)",
+   "t": "1:08"
+  },
+  {
+   "claim": "Five AI agents in production were shown with TNPS improving over months of work",
+   "t": "1:08"
+  },
+  {
+   "claim": "Hand-curated offline evals take a few days, and harness changes take a few hours",
+   "t": "4:50"
+  },
+  {
+   "claim": "Simulation shortens the change-and-eval cycle from weeks to under a day, sometimes hours or minutes",
+   "t": "6:13"
+  },
+  {
+   "claim": "Each simulation run produces thousands of multi-turn conversations",
+   "t": "7:24"
+  },
+  {
+   "claim": "Sim vs production eval correlation described as 'pretty high' (no figure given)",
+   "t": "10:50"
+  },
+  {
+   "claim": "80% of domain-expert labels confirmed simulated data is usable",
+   "t": "10:50"
+  },
+  {
+   "claim": "One agent's TNPS doubled (2x) with simulation, robust evals and principled optimization",
+   "t": "12:16"
+  },
+  {
+   "claim": "Self-service rate improved by 4% in one particular case, and was not sacrificed overall",
+   "t": "12:16"
+  },
+  {
+   "claim": "Open-source model testing via sim saved multiple weeks of effort",
+   "t": "13:40"
+  }
+ ],
+ "hot_takes": [
+  "If you generate eval data in simulation instead of waiting on production data, you can ship agents 20x faster.",
+  "Production traces are almost free, but testing on live users makes parallel experiments very hard.",
+  "In an enterprise setting, building an agent comes down to two things: data and metrics.",
+  "You can short-circuit most A/B tests by running variants through sim first and launching only the best one."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS already sits as an OpenAI-compatible proxy, which is the no-code-change wrap the speakers describe. Persona-driven sim evals could regression-test agent changes behind that proxy, but nothing here is specific to our architecture.",
+   "action": "Try a small persona-driven sim suite pointed at the AgentOS proxy, with a few mocked tools, to see whether it catches a regression that RAGAS evals miss."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness changes its plan, critique and debate prompts and loops. Sim-based pre-screening could compare those variants before real runs, but the talk does not cover checkpoint/resume or approvals.",
+   "action": "Build a few scripted persona runs of the ProsHarness plan step to compare two prompt variants before a live run."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Agent evals and simulated data are a recurring interest. The talk gives a concrete loop: personas, mocked tools, per-turn judges, and a check of sim against real scores. The grounding-state idea could also apply to ER test sets.",
+   "action": "Build one sim-driven eval set for a single agent workflow, with grounded personas and per-turn judges, and check its correlation with real outcomes before using it for decisions."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

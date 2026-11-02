@@ -1,0 +1,199 @@
+{
+ "one_line": "Weekly Kai Explains roundup of late-July 2026 open-model releases: Mistral Leanstral 1.5 (Lean 4 prover), Tencent HY3, InternScience Agents A1, CeFi Image, ByteDance Depth Anything 3 and GenRecon. Mostly release-announcement content with a few concrete numbers.",
+ "summary": "A 20-minute news roundup from Kai Explains covering six open-weight or open-source AI releases from the week of the video (dated 2026-08-02). The main item is Mistral's Leanstral 1.5, a 119B-total / 6B-active Lean 4 formal reasoning model that the speaker says saturates miniF2F and solves 587 of 672 Putnam problems, with test-time-scaling data and a claimed cost of about $4 per problem. Tencent's HY3 (295B total / 21B active, 256K context) is covered with SWE-Bench Verified and production latency figures from a preview deployment. InternScience's Agents A1 (35B MoE) and CeFi Image (1B/2B/5B text-to-image with a semantic-first diffusion design) get benchmark summaries. ByteDance's Depth Anything 3 and the TU Munich GenRecon (8-photo room reconstruction to PBR meshes) round out the list. The speaker mostly reports vendor-published benchmark claims without independent verification, and the content is a quick news pass rather than hands-on testing.",
+ "speakers": [
+  "Kai (host, Kai Explains)"
+ ],
+ "orgs": [
+  "Mistral",
+  "Tencent",
+  "InternScience",
+  "ByteDance",
+  "TU Munich",
+  "ETH Zurich",
+  "Hugging Face",
+  "OpenRouter",
+  "Apache"
+ ],
+ "format": "news",
+ "topics": [
+  "models-research",
+  "training-finetuning-rl",
+  "local-ai",
+  "inference-serving"
+ ],
+ "tags": [
+  "lean4",
+  "formal-verification",
+  "theorem-proving",
+  "open-weights",
+  "moe",
+  "hunyuan-hy3",
+  "agentic-search",
+  "text-to-image",
+  "semantic-diffusion",
+  "3d-reconstruction",
+  "depth-estimation",
+  "gaussian-splatting",
+  "news-roundup",
+  "apache-2.0",
+  "consumer-gpu"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Mistral Leanstral 1.5 (Lean 4 formal reasoning) reports 100% on miniF2F and 587/672 on PutnamBench, with test-time compute scaling reported as steady from 25K to 4M tokens per attempt.",
+   "detail": "Speaker says Leanstral 1.5 is 119B total / 6B active, trained in three stages (formal math/code mid-training, SFT, RL with a custom CISPO algorithm) across a multi-turn prover env and a code-agent env with the Lean language server. Claimed cost about $4 per solved problem versus $300+ for SeedProver 1.5 high setting. Apache 2.0 weights on Hugging Face plus a free API via Mistral Vibe.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Leanstral was also run on real Rust repos: the pipeline generated correctness properties and tried to prove them, flagging 47 violated properties across 57 repos, 11 of which were genuine bugs and 5 previously unreported.",
+   "detail": "Example given: an integer overflow in a sine function of a zigzag decoding library that would crash in debug builds and silently corrupt data in release builds.",
+   "t": "3:27"
+  },
+  {
+   "idea": "Tencent HY3 official release: 295B total / 21B active MoE, 256K context, three reasoning modes (no-think, low, high) selectable per request.",
+   "detail": "Speaker reports 74.4% on SWE-Bench Verified, behind Claude Opus 4.6 (80.8%) and GPT-5.4 (78.6%) as cited in the video. Production numbers from the preview in CodeBuddy and WorkBuddy: TTFT down 54%, end-to-end latency down 47%, success rate over 99%. Tencent Cloud pricing is 1 yuan/M input and 4 yuan/M output tokens.",
+   "t": "6:55"
+  },
+  {
+   "idea": "Agents A1 (InternScience) is a 35B MoE aimed at long-horizon agent tasks. Its training uses a domain-grounded knowledge-action graph to turn agent traces into training targets, followed by multi-teacher on-policy distillation.",
+   "detail": "Reported SOTA on Seal-0 (56.36), Frontier Science Research (40.0) and IFBench (80.61). BrowseComp 75.51 is claimed as best among ~35B-class models. Serves via vLLM or SGLang with a 256K context.",
+   "t": "9:40"
+  },
+  {
+   "idea": "CeFi Image is a text-to-image model that splits denoising into a semantic stream and a texture stream, with the semantic stream running a small time-step offset ahead.",
+   "detail": "Speaker explains standard diffusion denoises structure and texture jointly. Released in 1B, 2B and 5B sizes. The 5B model was trained on 125,000 A800 GPU-hours. The 5B needs roughly 10-16 GB VRAM depending on quantization, so the smaller sizes are described as consumer-GPU runnable.",
+   "t": "11:51"
+  },
+  {
+   "idea": "Depth Anything 3 (ByteDance Seed) predicts spatially consistent geometry from any number of views, with or without known poses, using a plain DINOv2 encoder and a single depth-ray target.",
+   "detail": "Claims +35.7% camera-pose accuracy and +23.6% geometric accuracy over VGGT on a new visual-geometry benchmark. Accepted as an ICLR 2026 oral. Community integrations for Blender, ComfyUI and ROS2 are mentioned. Trained only on public academic datasets.",
+   "t": "14:33"
+  },
+  {
+   "idea": "GenRecon (TU Munich with ETH Zurich) reconstructs a full room from 8 photos by treating reconstruction as conditional 3D generation, with Trellis.2 scaled to scene level and PBR materials on output.",
+   "detail": "The scene is split into overlapping 3D chunks that are generated jointly in a shared latent space. Claims +16% geometric accuracy over baselines. Code and checkpoints released on GitHub on June 29.",
+   "t": "17:01"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Test-time compute scaling for formal provers",
+   "how": "Raise the per-attempt token budget (reported points: 25K, 50K, 200K, 1M, 4M tokens) and measure solved-problem count. Leanstral 1.5 is reported to climb steadily (44 -> 244 -> 493 -> 587 Putnam problems).",
+   "when": "When evaluating whether a reasoning model benefits from more inference budget, and for planning cost per solved item instead of per attempt."
+  },
+  {
+   "name": "Property-generation plus formal proof as a bug finder",
+   "how": "The model generates correctness properties from Rust source, attempts formal proofs in Lean, and reports violated properties. The reported 47 violations yielded 11 real bugs.",
+   "when": "As a verification layer over real repos to catch overflow and edge cases that tests and fuzzing usually miss."
+  },
+  {
+   "name": "Semantic-first two-stream diffusion",
+   "how": "Run a semantic stream for layout and composition and a texture stream for detail, with the semantic stream denoising a small time-step offset ahead so the texture stream has a structural anchor.",
+   "when": "For image generation pipelines where structure and texture fight each other during denoising."
+  }
+ ],
+ "tools": [
+  "Leanstral 1.5",
+  "Lean 4",
+  "Lean language server",
+  "CISPO",
+  "Mistral Vibe",
+  "Hugging Face",
+  "Tencent HY3",
+  "Hunyuan 3",
+  "CodeBuddy",
+  "WorkBuddy",
+  "Tencent Cloud",
+  "OpenRouter",
+  "vLLM",
+  "SGLang",
+  "Agents A1",
+  "CeFi Image",
+  "Depth Anything 3",
+  "DINOv2",
+  "VGGT",
+  "Colmap",
+  "ComfyUI",
+  "Blender",
+  "ROS2",
+  "GenRecon",
+  "Trellis.2",
+  "Flux 2 Klein 9b",
+  "Z-Image",
+  "Qwen Image",
+  "Claude Opus 4.6",
+  "GPT-5.4",
+  "SeedProver 1.5"
+ ],
+ "numbers": [
+  {
+   "claim": "Leanstral 1.5 scores 100% on miniF2F (validation and test); 587/672 on PutnamBench; 87% on FATE-H; 34% on FATE-X (speaker-reported SOTA claims).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Leanstral 1.5 cost roughly $4 per solved problem versus about $300+ for SeedProver 1.5 high setting, which the speaker describes as about 75x cheaper.",
+   "t": "2:12"
+  },
+  {
+   "claim": "Test-time scaling for Leanstral 1.5 on PutnamBench: 44 solved at 50K tokens, 244 at 200K, 493 at 1M, 587 at 4M.",
+   "t": "3:27"
+  },
+  {
+   "claim": "Leanstral 1.5 architecture: 119B total parameters, 6B active.",
+   "t": "4:47"
+  },
+  {
+   "claim": "HY3: 295B total / 21B active parameters, 256K context, 3.8B multi-token prediction layer; SWE-Bench Verified 74.4% (vs Opus 4.6 80.8%, GPT-5.4 78.6% as cited).",
+   "t": "6:55"
+  },
+  {
+   "claim": "HY3 preview in production (CodeBuddy/WorkBuddy): TTFT -54%, end-to-end latency -47%, success rate >99%.",
+   "t": "6:55"
+  },
+  {
+   "claim": "HY3 pricing: 1 yuan/M input and 4 yuan/M output on Tencent Cloud (about $0.14 and $0.55); as low as $0.63/M input via OpenRouter third-party providers.",
+   "t": "8:14"
+  },
+  {
+   "claim": "Agents A1: Seal-0 56.36 (SOTA), BrowseComp 75.51, SciCode 44.33, Frontier Science Research 40.0 (SOTA), IFBench 80.61 (SOTA).",
+   "t": "9:40"
+  },
+  {
+   "claim": "CeFi Image 5B: GenEval 0.88 (vs Flux 2 Klein 9B 0.85, Z-Image 0.84, Qwen Image 0.87); LongText-Bench 0.978; DPG-Bench 87.27; trained with 125,000 A800 GPU-hours.",
+   "t": "11:51"
+  },
+  {
+   "claim": "Depth Anything 3: +35.7% camera-pose accuracy and +23.6% geometric accuracy over VGGT on the new visual geometry benchmark.",
+   "t": "14:33"
+  },
+  {
+   "claim": "GenRecon: +16% geometric accuracy over cutting-edge reconstruction baselines; input is 8 photos of a room.",
+   "t": "17:01"
+  }
+ ],
+ "hot_takes": [
+  "Leanstral's cost comparison (about $4 vs $300+ per problem) is a self-reported figure with an estimate behind it, and the speaker repeats it without checking.",
+  "Speaker calls HY3's SWE-Bench Verified score 'genuinely competitive' while also noting it trails the closed models cited; the comparison uses model numbers from the video, not independent runs.",
+  "Speaker says 'the awesome thing is' about each release. Most items are vendor-reported benchmarks with links to project pages, not hands-on tests.",
+  "Consumer-GPU claims are hedged: the speaker says a 119B model is for server hardware, and HY3 is not single-consumer-card runnable."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Leanstral's Lean-based proof-of-bugs approach and CISPO RL are interesting for verification, but no part of AgentOS uses formal proof. Open-weight models with 256K context and vLLM/SGLang serving sit in the InferCraft space.",
+   "action": "Note Hy3 and Agents A1 as candidate open-weight models to benchmark in InferCraft (vLLM, EAGLE-3 spec decoding) if the 5090 budget allows; skip the image and 3D items."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Agents A1's long-horizon agent training (knowledge-action graph from traces, multi-teacher distillation) is loosely related to ProsHarness's long-run checkpoints and skill ranking, but this is a news item, not a harness technique.",
+   "action": "Skim the Agents A1 paper if working on long-horizon agent evals or skill-from-trace ideas."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

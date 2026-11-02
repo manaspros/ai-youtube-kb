@@ -1,0 +1,198 @@
+{
+ "one_line": "Better Stack walkthrough of Pino, the fast JSON logger for Node.js: log levels, formatters, child loggers, error logging, worker-thread transports, redaction, Fastify integration, and shipping logs to Better Stack.",
+ "summary": "A hands-on tutorial building up a Node.js logging setup with Pino in a small index.js, then adding Fastify. It covers default JSON output and log levels (including a custom level), piping to pino-pretty for human-readable output, the env-var log level pattern, formatters to change the level label, and child loggers to bind context once. It shows passing Error objects so stack traces are serialized, and uses pino.transport to write to a file, to stdout, and to multiple targets in a worker thread. It finishes with the redact option (mask or remove sensitive paths), Fastify's built-in logger with request.log, and a Better Stack (Logtail) transport with a source token, ending with search examples in the Better Stack UI. The code is simple and reproducible; the last several minutes promote the presenter's own log platform.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "observability",
+  "dev-tools"
+ ],
+ "tags": [
+  "pino",
+  "logging",
+  "node.js",
+  "structured-logging",
+  "json-logs",
+  "transports",
+  "redaction",
+  "pino-pretty",
+  "fastify",
+  "better-stack",
+  "logtail",
+  "child-loggers",
+  "log-levels"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Pino emits JSON by default, which is the structured format you need for searching and extraction later.",
+   "detail": "Each line has numeric level (info=30, error=50), time, pid, hostname and msg. The speaker calls it a super-fast all-JSON logger with about 12.4k GitHub stars at the time of recording.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Levels are numeric and ordered (fatal, error, warn, info, debug, trace), so the default threshold filters output.",
+   "detail": "Setting the level to warn hides info (30) and keeps warn (40) and above. Custom levels can be added with a numeric value, for example catastrophe at 70, which sits above error.",
+   "t": "6:24"
+  },
+  {
+   "idea": "Attach per-request or per-user context with a child logger instead of repeating an object on every call.",
+   "detail": "logger.child({ username }) returns a logger that stamps that field on every line. Changing the context then only needs editing in one place.",
+   "t": "17:02"
+  },
+  {
+   "idea": "Pass the Error object as the first argument to get a serialized error with a stack trace.",
+   "detail": "The speaker wraps divide(5, 0) in try/catch, where the function throws on b === 0. Passing the error as the first arg to logger.error(err, msg) puts the full error object, including the stack, in the JSON.",
+   "t": "20:55"
+  },
+  {
+   "idea": "Transports run log shipping off the main thread, so file or network I/O does not delay API responses.",
+   "detail": "From Pino 7, pino.transport runs the transport in a worker thread. A transport is a module whose default export returns a writable stream. The built-in pino/file target writes to disk, and remote services have npm transports.",
+   "t": "22:19"
+  },
+  {
+   "idea": "Multiple destinations use targets in pino.transport, and a formatter that changes the level breaks with multiple transports.",
+   "detail": "The speaker sends one pino-pretty target to a file and another to stdout. The docs say the level cannot be customised with multiple transports, so the formatters block has to be removed in that setup.",
+   "t": "27:29"
+  },
+  {
+   "idea": "Redact sensitive fields at the logger instead of relying on downstream cleanup.",
+   "detail": "The redact option takes a list of paths (email, password, address) that are masked. Switching to an object with remove: true drops those keys entirely. The speaker says to assume logs can be read by anyone, including attackers.",
+   "t": "29:45"
+  },
+  {
+   "idea": "Fastify's logger: true uses Pino by default, and request.log gives a per-request logger.",
+   "detail": "The same customisation applies inside Fastify handlers. The speaker says Express and NestJS can also be configured to use Pino.",
+   "t": "32:12"
+  },
+  {
+   "idea": "A Better Stack source token in a Logtail Pino transport ships the logs to a hosted platform for live tail, search and dashboards.",
+   "detail": "The token is pasted into the script for the demo, with a note that it should come from an environment variable in real apps. Search examples use log = error and message contains employee.",
+   "t": "35:55"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Minimal Pino setup and pretty output",
+   "how": "npm init -y; npm install pino; npm install pino-pretty (local, not -g). Then const pino = require('pino'); const logger = pino(); logger.info('hello'). Run with: node index.js | npx pino-pretty.",
+   "when": "Starting any Node.js service that needs structured logs. Use the pretty output for local development and raw JSON when shipping logs."
+  },
+  {
+   "name": "Log level from environment",
+   "how": "pino({ level: process.env.PINO_LOG_LEVEL || 'info' }). Set the env var before running (PowerShell: $env:PINO_LOG_LEVEL='warn'; Unix: PINO_LOG_LEVEL=warn node index.js, or export it for the session).",
+   "when": "Any deployed service, so verbosity can change without a code change (12-factor config)."
+  },
+  {
+   "name": "Custom log level",
+   "how": "pino({ customLevels: { catastrophe: 70 } }), then call logger.catastrophe('...'). The speaker calls the option 'custom levels'.",
+   "when": "When a severity sits between or above the built-in levels and needs its own method."
+  },
+  {
+   "name": "Uppercase level label via formatter",
+   "how": "pino({ formatters: { level(label) { return { level: label.toUpperCase() }; } } }). The formatter must return a JSON-serialisable object.",
+   "when": "When log consumers expect text levels such as ERROR instead of numbers. Not compatible with multiple transports."
+  },
+  {
+   "name": "Child logger for fixed context",
+   "how": "const userLogger = logger.child({ username: 'John Doe' }); then userLogger.info('...') with no extra object argument. In the video the username is hard-coded, but the speaker suggests reading it from request.user in an Express handler.",
+   "when": "When the same fields (user, request id, tenant) should appear on every line in a scope."
+  },
+  {
+   "name": "Logging errors with stack traces",
+   "how": "try { const r = divide(5, 0); } catch (err) { logger.error(err, 'An error occurred during the division'); } where divide throws new Error('cannot divide by zero') when b === 0.",
+   "when": "Any catch block. Put the error first so Pino serialises it, including the stack."
+  },
+  {
+   "name": "File transport with pino.transport",
+   "how": "const transport = pino.transport({ target: 'pino/file', options: { destination: './logs/output.log', mkdir: true } }); const logger = pino({ level: 'info' }, transport);",
+   "when": "When logs should go to disk without blocking the request path. mkdir: true creates the directory."
+  },
+  {
+   "name": "pino-pretty to a file without colour",
+   "how": "Set target: 'pino-pretty' with options: { destination: './logs/output.log', colorize: false }.",
+   "when": "Human-readable log files. Keep plain JSON if a log collector will parse them."
+  },
+  {
+   "name": "Multiple log destinations",
+   "how": "pino.transport({ targets: [ { target: 'pino-pretty', options: { destination: './logs/output.log', colorize: false } }, { target: 'pino-pretty', options: { destination: process.stdout.fd } } ] }). Remove any formatters block, because level customisation is not allowed with multiple transports.",
+   "when": "Fanning out to a local file and the console at once, or adding a remote shipper as a third target."
+  },
+  {
+   "name": "Redacting sensitive fields",
+   "how": "pino({ redact: ['email', 'password', 'address'] }) masks the values. For removal: pino({ redact: { paths: ['email', 'password', 'address'], remove: true } }).",
+   "when": "Any object that holds PII or secrets (employee or user records, tokens). Apply it in the logger config, not in each call site."
+  },
+  {
+   "name": "Fastify with Pino",
+   "how": "const fastify = require('fastify')({ logger: true }); fastify.get('/', (request, reply) => { request.log.info(request, 'request to server'); reply.send({ hello: 'world' }); }); fastify.listen to port 3000 (the video calls fastify.listen with port 3000).",
+   "when": "Fastify services. Use request.log so each request's log lines carry request context."
+  },
+  {
+   "name": "Shipping logs to Better Stack",
+   "how": "npm install @logtail/pino. Add a third target: { target: '@logtail/pino', options: { sourceToken: token } }, where token comes from creating a Node.js source in the Better Stack Logs UI. Search there with log = error or message contains employee.",
+   "when": "When logs must be centralised and searched or charted. Keep the token in an environment variable, not in source code."
+  }
+ ],
+ "tools": [
+  "Pino",
+  "pino-pretty",
+  "npm",
+  "Node.js",
+  "npx",
+  "VS Code",
+  "Fastify",
+  "Better Stack Logs",
+  "@logtail/pino (Logtail Pino transport)",
+  "Express (mentioned)",
+  "NestJS (mentioned)",
+  "Winston (mentioned)",
+  "PowerShell",
+  "Unix shell"
+ ],
+ "numbers": [
+  {
+   "claim": "Pino GitHub repo had about 12,400 stars when recorded.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Default log level values: info=30, error=50. Custom catastrophe level set to 70.",
+   "t": "3:53"
+  },
+  {
+   "claim": "Default level set to warn (40) hides info (30) output.",
+   "t": "9:09"
+  },
+  {
+   "claim": "Transports in worker threads from Pino version 7 onward.",
+   "t": "22:19"
+  },
+  {
+   "claim": "Fastify GitHub repo had about 29,000 stars.",
+   "t": "32:12"
+  }
+ ],
+ "hot_takes": [
+  "Quality is capped at 3 because the last ~6 minutes (about 35:00 to 41:00) are a product pitch for the presenter's own platform, Better Stack. The first 35 minutes are a generic, accurate Pino walkthrough.",
+  "Redaction should be configured in the logger, not left to downstream tools, and logs should be treated as readable by anyone (stated by the speaker).",
+  "The speaker treats the 12-factor pattern of setting log level by environment variable as the normal way to configure logging."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS has an L4 observability layer (Prometheus, Grafana, OTel) and a PII scan in the Govrix proxy. Pino's structured logs and redact paths are a cheap, low-level way to keep PII out of Node-side logs, but the video does not cover tracing or metrics.",
+   "action": "Check whether any Node-side service in AgentOS logs request bodies, headers or user fields. Add Pino redact paths (with remove: true) as a regression test that the fields never appear in output."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI. The video is Node.js logging and does not touch agent loops, checkpoints or approvals.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

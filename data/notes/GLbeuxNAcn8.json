@@ -1,0 +1,169 @@
+{
+ "one_line": "Intro tutorial on PHP logging with Monolog (channels, handlers, formatters, exceptions) that ends by shipping logs to Better Stack; useful basics, mostly vendor-tied at the end.",
+ "summary": "A Better Stack tutorial on the Monolog logging package for PHP, run on PHP 8.2 under WSL/Ubuntu with Composer. It walks through creating a named logger (channel) per domain such as \"orders\", attaching a StreamHandler with a minimum level, and calling level methods with structured context arrays. It then covers formatters, switching from the default line output to JSON and to a custom LineFormatter with its own date and output format, and logging exceptions either by message or by passing the exception object in context. The video closes by creating a Better Stack source, reading its token into a LogtailHandler, and filtering live logs by level and channel. The content is accurate for a beginner but shallow: it spends the last few minutes on a vendor product, and it advises against production use of the rotating file handler.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "observability",
+  "dev-tools"
+ ],
+ "tags": [
+  "php",
+  "monolog",
+  "logging",
+  "structured-logging",
+  "json-logs",
+  "log-handlers",
+  "log-formatters",
+  "exceptions",
+  "composer",
+  "better-stack",
+  "logtail",
+  "laravel",
+  "symfony"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Monolog is a PHP logging package widely used under frameworks such as Laravel and Symfony; its core concepts are log levels, logger objects (channels), handlers and formatters.",
+   "detail": "The video presents Monolog's GitHub page as the reference, noting it has about 20,000 stars and can send logs to files, sockets, inboxes, databases and web services.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Create one named logger (channel) per domain or subsystem rather than one global logger.",
+   "detail": "Examples given are a channel for database connections, one for routing or caching, and an e-commerce 'orders' channel. Channels can later be filtered on in the log backend.",
+   "t": "4:52"
+  },
+  {
+   "idea": "Handlers decide where log entries go, and a logger can have several handlers attached through pushHandler; each handler can have its own minimum level.",
+   "detail": "A StreamHandler set to info only processes info and above. The same entries can go to a file and to standard output at the same time.",
+   "t": "6:04"
+  },
+  {
+   "idea": "Contextual data is passed as an associative array as the second argument to a level method, and it appears under a context key in the output.",
+   "detail": "The speaker logs 'order placed' with an order_id from a unique-id generator. Entries without context show an empty array.",
+   "t": "8:26"
+  },
+  {
+   "idea": "Formatters belong to handlers, not to loggers: setFormatter on the handler changes how that destination renders entries.",
+   "detail": "Switching the stdout handler to JsonFormatter emits JSON with the context nested under a key. A LineFormatter takes an output format template plus a date format; the template covers datetime, level name, message, context and extra.",
+   "t": "12:27"
+  },
+  {
+   "idea": "Log exceptions in two ways: the message only, or the whole exception object in the context array.",
+   "detail": "Passing the exception under an 'exception' key in context adds class, location and trace data to the JSON output, which is the more useful one for debugging.",
+   "t": "16:10"
+  },
+  {
+   "idea": "Production logs should go to a central service rather than only to files and the terminal, and the service token should come from an environment file, not from source that gets committed.",
+   "detail": "The speaker creates a Better Stack source of platform PHP, copies its token, and adds a LogtailHandler. Logtail's PHP client needs the curl extension (php8.2-curl on Ubuntu for PHP 8.2).",
+   "t": "18:38"
+  },
+  {
+   "idea": "The rotating file handler (one file per day) is described as not production-ready; the speaker recommends logrotate on a real system.",
+   "detail": "Other handler families listed are email/SendGrid alerts, AMQP, Amazon SQS, and Redis, MongoDB and CouchDB database handlers.",
+   "t": "11:06"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Install Monolog with Composer",
+   "how": "Install PHP 8.2 and Composer on Ubuntu/WSL (the install commands are on linked pages and were not read out), then run the composer require command from the Monolog GitHub README. Composer creates composer.json, composer.lock, vendor/ and vendor/autoload.php; commit the lock file so every developer gets the same versions.",
+   "when": "Starting any new PHP project that needs structured logging."
+  },
+  {
+   "name": "Bootstrap the autoloader and import aliases",
+   "how": "At the top of the entry file, require_once the vendor/autoload.php file that Composer generated. Add `use` statements for Logger, StreamHandler and the formatter classes so they can be referenced by short names.",
+   "when": "Any PHP entry point that uses Composer packages."
+  },
+  {
+   "name": "One logger per channel with a level-filtered file handler",
+   "how": "Create `new Logger('orders')`. Create a StreamHandler with a file path in the current directory (orders.log) and pass the info level as its second argument. Attach it with `$logger->pushHandler($handler)`. Then call `$logger->info('order placed', [...context])` and `$logger->error(...)`.",
+   "when": "Separating logs by subsystem (orders, database, routing) and filtering noisy levels per destination."
+  },
+  {
+   "name": "Fan out to multiple destinations",
+   "how": "Create a second StreamHandler that writes to standard output, using the stream syntax shown in the Monolog docs, and push it onto the same logger. Entries then reach both the file and the terminal. Remove the file handler once it is no longer needed.",
+   "when": "Development: see logs in the terminal while keeping a file copy."
+  },
+  {
+   "name": "Switch output format with a formatter",
+   "how": "Import JsonFormatter and call `$handler->setFormatter(new JsonFormatter())` on the stdout handler. For a custom single-line format, define a date-format string and an output template with the datetime, level name, message, context and extra placeholders, then pass both to LineFormatter and call setFormatter with it. The LineFormatter import must be added explicitly.",
+   "when": "Machine-readable logs (JSON) for a log pipeline, or a fixed human-readable line format."
+  },
+  {
+   "name": "Log exceptions with context",
+   "how": "Wrap the risky code in try/catch. In catch, call `$logger->error($e->getMessage())` for a message-only entry, or `$logger->error('...', ['exception' => $e])` to put the exception object under an exception key, which captures location and trace data in the JSON output.",
+   "when": "Input validation or any failure path where you need debuggable error entries."
+  },
+  {
+   "name": "Ship logs to Better Stack (Logtail)",
+   "how": "In Better Stack, open Logs & metrics > Sources, create a source with platform PHP, and copy its source token. Store the token in an environment file (the speaker says not to hard-code it). Install the Better Stack PHP client via the composer require statement from Better Stack's PHP docs; this needs the curl extension (php8.2-curl on Ubuntu). Import the LogtailHandler, instantiate it with the token, and push it onto the logger. Use Live tail and click a level or channel value to filter.",
+   "when": "Production centralization, search, dashboards and alerting over logs from several services."
+  }
+ ],
+ "tools": [
+  "Monolog (PHP logging package)",
+  "PHP 8.2",
+  "Composer",
+  "Ubuntu",
+  "Windows Subsystem for Linux (WSL)",
+  "VS Code",
+  "Better Stack Logs (Live tail, sources)",
+  "Better Stack PHP client (Logtail handler, installed via Composer)",
+  "php8.2-curl",
+  "Laravel",
+  "Symfony",
+  "Elasticsearch / MongoDB / FluentD formatters (listed, not used)",
+  "logrotate (recommended for production rotation)",
+  "SendGrid, AMQP, Amazon SQS, Redis, MongoDB, CouchDB handlers (listed, not used)"
+ ],
+ "numbers": [
+  {
+   "claim": "Monolog GitHub repo has about 20,000 stars (shown on screen as a popularity signal).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Demo environment is PHP 8.2 on Ubuntu under WSL.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Default rotating file handler creates one log file per day.",
+   "t": "11:06"
+  },
+  {
+   "claim": "Demo pin-entry check requires exactly 4 characters.",
+   "t": "16:10"
+  },
+  {
+   "claim": "Video runtime is 24:37.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Intro-level content: nothing about performance, sampling, log volume or cost; it stays on configuration.",
+  "The final ~5 minutes are a demo of the Better Stack product (sources, live tail, filtering) and the video is published on Better Stack's channel, so treat the product-specific parts as vendor content.",
+  "It explicitly advises against the rotating file handler in production and recommends logrotate, which is a useful caveat that beginners often miss.",
+  "Advice to read the Better Stack token from an environment file is correct, but the code samples in the video hard-code it into app.php for the demo."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Per-channel loggers with JSON context and fan-out handlers are a basic pattern for structured logs; AgentOS's L4 observability uses OTel, and this video does not cover tracing.",
+   "action": "Check that gateway and proxy logs use one named channel per pillar (budgets, PII scan, audit) with JSON context keys like request_id, rather than free-text messages."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness is a Claude Code harness in a different language stack; PHP logging does not change its design.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

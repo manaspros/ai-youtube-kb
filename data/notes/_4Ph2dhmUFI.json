@@ -1,0 +1,142 @@
+{
+ "one_line": "Coinbase's Evan Kormos on deciding when an agent can run unsupervised: keep the process deterministic on the outside, model it as a graph with policy boundaries, and earn autonomy per node through measured evals.",
+ "summary": "Evan Kormos (Coinbase) frames agent autonomy as a policy and process problem rather than a model problem. Policy is treated as the institutional system prompt, written with must/may/should language, and kept separate from the running system. Workflows are mapped as DAGs, with independent reviews run in parallel while required gates stay in place, and a code-review step is shown as a cyclic graph (DCG) that loops until the work passes its check. He argues that as agents speed up one stage, bottlenecks move downstream, so process-level metrics matter more than the workflow authoring tool. The core claim is that a loop is only as trustworthy as its check, and that agent outputs need statistical evals over repeated runs on representative datasets, not exact-match comparisons. For each node he asks whether the check can be run against policy, the loop is bounded, the step can be traced, and there is a human fallback; decision nodes stay human-driven. Autonomy is rolled out in stages: supervised, then sampled review once measured confidence hits a policy threshold, then humans handle only exceptions. The talk is conceptual with no benchmark numbers.",
+ "speakers": [
+  "Evan Kormos"
+ ],
+ "orgs": [
+  "Coinbase"
+ ],
+ "format": "talk",
+ "topics": [
+  "governance-compliance",
+  "evals",
+  "agent-architecture",
+  "multi-agent"
+ ],
+ "tags": [
+  "policy-driven workflows",
+  "DAG",
+  "DCG",
+  "human-in-the-loop",
+  "graduated autonomy",
+  "statistical evals",
+  "exception flows",
+  "process visibility",
+  "trust in agent output",
+  "enterprise risk and compliance"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Treat policy as the original system prompt, written with must/may/should, and keep it separate from the running system.",
+   "detail": "Policy sets rules for risk and compliance and changes at build time, while the running system evolves constantly and is only expected to stay roughly bound by policy.",
+   "t": "0:12"
+  },
+  {
+   "idea": "Model the process as a DAG and look for steps that can run in parallel.",
+   "detail": "Agents make it cheap to run independent reviews side by side, merge the results, and keep required checks in place. Airflow-style DAGs are the example representation.",
+   "t": "3:48"
+  },
+  {
+   "idea": "A review step is a cyclic graph (DCG), not a DAG.",
+   "detail": "Work passes through a check, feedback loops it back until the check passes, and LangGraph-style state management is suggested for these loops.",
+   "t": "6:13"
+  },
+  {
+   "idea": "Exception flows and process-wide metrics matter more once agents speed up one stage.",
+   "detail": "Faster code review shifts the bottleneck to design or security scanning, so visibility across the whole flow is more important than the tool used to author the workflow.",
+   "t": "7:27"
+  },
+  {
+   "idea": "The check is the hard part; a loop is only as trustworthy as its check.",
+   "detail": "More passes do not mean better results unless good is defined and can be evaluated reliably. Injecting the DAG state into the agent's context helps it see where it fits.",
+   "t": "9:42"
+  },
+  {
+   "idea": "Agent outputs need statistical evals, not exact-output comparison.",
+   "detail": "Build representative datasets, define what good looks like, run evals in repeated series and analyze outputs in volume, then combine with runtime traces.",
+   "t": "11:54"
+  },
+  {
+   "idea": "Ask a fixed set of questions per node before giving it to an agent.",
+   "detail": "Can it be checked against policy easily, can it run in a bounded loop, can it be traced, and can it fall back to a human? Decision nodes such as a lending decision stay human-driven.",
+   "t": "13:27"
+  },
+  {
+   "idea": "Earn autonomy in stages: supervised, then sampling, then exceptions only.",
+   "detail": "Day one humans verify all output with domain experts. Once measured confidence reaches a policy threshold, humans sample a slice while traces cover the rest. Eventually humans handle exceptions and keep refining the datasets.",
+   "t": "14:58"
+  },
+  {
+   "idea": "Keep the outside deterministic and the inside adaptive.",
+   "detail": "The summary recipe: the policy boundary and graph structure are fixed, while the agent's work inside each node adapts. Quality comes from an evaluation mechanism, not a feeling about the model.",
+   "t": "16:04"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Policy-bounded DAG process map",
+   "how": "Write the workflow as a DAG with explicit dependencies and gates. Run independent reviews in parallel, merge their results, and keep required checks as edges. Use an orchestrator such as Airflow to represent it in code.",
+   "when": "Multi-step regulated processes where agents can speed up parts of the flow, such as lending, listings or software delivery."
+  },
+  {
+   "name": "Cyclic review node with a bounded loop",
+   "how": "Model each node that needs iteration as a cycle: do the work, run the check, feed the feedback back in, and loop until the check passes. Use a graph-state framework such as LangGraph for the state. Put a bound on the number of loops and an escalation path.",
+   "when": "Steps like code review or document review, where output is refined until it meets a standard."
+  },
+  {
+   "name": "Per-node automation checklist",
+   "how": "For each node, answer: can the output be checked against policy easily, can the loop be bounded, can the step be traced, and can it fall back to a human? Give the node to an agent only when all answers are yes. Keep decision nodes human-driven.",
+   "when": "Deciding where to introduce agents into an existing human process."
+  },
+  {
+   "name": "Graduated autonomy rollout",
+   "how": "Start supervised, with domain experts checking all output and defining what good looks like. Move to sampling once measured confidence reaches a policy threshold, and keep trace-based evaluation of the unsampled output. Finally, let humans handle exceptions only, while they keep refining the datasets.",
+   "when": "Promoting any agent step from assistant to autonomous, with a measurable confidence bar."
+  },
+  {
+   "name": "DAG state injected into agent context",
+   "how": "Pass the agent its position in the overall graph (the upstream and downstream state) so it knows where its output fits in the larger process.",
+   "when": "Long-horizon agent tasks that run inside a larger workflow and need to see the bigger picture to produce useful output."
+  },
+  {
+   "name": "Statistical evaluation over repeated runs",
+   "how": "Build a representative dataset, define acceptance criteria, run the agent repeatedly on the same inputs, and assess the distribution of outputs in aggregate. Combine these offline evals with production runtime logs.",
+   "when": "Validating non-deterministic agent outputs where more than one answer may be acceptable."
+  },
+  {
+   "name": "Exception-flow and volume monitoring",
+   "how": "Monitor cancelled or failed work, such as code that is cancelled or fails a security standard, and track volume and throughput at each stage to find new bottlenecks as parallelism increases.",
+   "when": "After adding agents or parallelism to a process, to catch shifting bottlenecks early."
+  }
+ ],
+ "tools": [
+  "Apache Airflow",
+  "LangGraph (transcript says LangChain Langraph)"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "The policy document is the system prompt of the institution, so agent governance should begin there rather than with the model.",
+  "Process visibility and metrics are more important than the workflow authoring tool.",
+  "The loop is only as trustworthy as its check, so the eval design is the real bottleneck to autonomy.",
+  "Decision nodes should stay human-driven even when the rest of the flow is automated."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already has policy-style controls (budgets, guardrails, exec-gate, Merkle audit). The talk's per-node autonomy checklist and staged rollout gated on eval confidence map onto how those controls could promote agent steps.",
+   "action": "Define an autonomy ladder for AgentOS agent steps (supervised, then sampled, then exception-only) that is gated on measured eval confidence and recorded in the audit log, and add a per-node check of policy, bounded loop, traceability and human fallback to the manifest."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs plan, critique and debate loops with checkpoints. The talk's bounded-loop design, explicit pass criteria and human fallback at each node are the missing piece for knowing when a loop may end.",
+   "action": "Give each ProsHarness plan/critique/debate step an explicit pass check, a loop bound and a human-escalation path, and classify steps as agent-driven or human-driven before enabling unattended schedules."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

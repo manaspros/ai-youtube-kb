@@ -1,0 +1,209 @@
+{
+ "one_line": "Walkthrough of GoLive, an early agent skill plus Node CLI that takes a repo live (Vercel, Supabase, Resend, Stripe) via plan, approve, apply, verify gates, with candid caveats about consent and credential storage.",
+ "summary": "The Better Stack host demos GoLive, a skill-plus-Node-CLI that deploys an app built with Claude Code to hosting, a database, email and Stripe test-mode webhooks. It runs in stages: detect what the app needs, write a plan with an ID, the user approves that exact plan, the changes are applied, and then the webhook is verified with an unsigned request (must be rejected) and a signed test event (must pass). Auth is borrowed from the user's existing CLI logins, with Stripe as the exception. Destructive, DNS and live-production steps sit behind separate confirm flags, and actions that cost money are refused outright. The host argues these confirm flags are agent-supplied arguments, so nothing records a human consent, and an agent logged into a provider can bypass GoLive entirely. Other caveats include a plaintext Stripe key file, unsigned releases, incomplete teardown (databases are left behind), and only two hosts and two databases supported. The project is single-author and very new, and the host cannot verify its star count. The closing framing is that agent tools should be judged on what they are allowed to do and whether their actions can be proven and reversed.",
+ "speakers": [
+  "Better Stack host (unnamed in transcript)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Vercel",
+  "Netlify",
+  "Supabase",
+  "Neon",
+  "Resend",
+  "Stripe",
+  "Terraform",
+  "SST",
+  "Lovable",
+  "Bolt",
+  "v0",
+  "Tofu"
+ ],
+ "format": "review",
+ "topics": [
+  "claude-code",
+  "dev-tools",
+  "security-guardrails"
+ ],
+ "tags": [
+  "golive",
+  "agent-skill",
+  "deployment",
+  "plan-approve-apply-verify",
+  "stripe-webhooks",
+  "confirm-flags",
+  "credential-handling",
+  "teardown",
+  "vercel",
+  "supabase",
+  "resend",
+  "claude-code-skills",
+  "codex"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Taking an app live is many coupled pieces (hosting, database, DNS, verified email domain, Stripe webhook with its own signing secret), and a mistake in one is often silent until a customer hits it, such as a payment with no receipt.",
+   "detail": "The host's own pattern is getting five of six right and missing one, discovered only after deploy.",
+   "t": "0:00"
+  },
+  {
+   "idea": "GoLive treats deployment as a pre-flight checklist rather than autopilot: detect needs, write a plan, the user approves that exact plan, apply it, then verify the result.",
+   "detail": "The approval is bound to the plan itself (the plan gets an ID), so approval covers the exact plan shown.",
+   "t": "1:02"
+  },
+  {
+   "idea": "The first run only produces a plan: Vercel for hosting, Supabase for the database, Resend for email, and Stripe in test mode, with a plan ID. Nothing deploys until the plan is approved.",
+   "detail": "Demo invoked as the /go live slash command in Claude Code with the prompt to use test resources and watch first (command spelling as spoken in the video).",
+   "t": "2:19"
+  },
+  {
+   "idea": "Post-apply verification is concrete: an unsigned webhook request must be rejected, a properly signed test event must get through, and an end-to-end test-card payment must clear before the run is considered good.",
+   "detail": "The final output is a live URL plus a written report of what was created, with no secrets in the report.",
+   "t": "2:19"
+  },
+  {
+   "idea": "Architecture is a skill file (the agent's instruction manual) plus a small Node CLI that does the work. It is not an MCP server, and the author says it is verified only on Claude Code and Codex.",
+   "detail": "It borrows the logins the user already has for providers rather than creating new credentials; Stripe is the stated exception.",
+   "t": "3:28"
+  },
+  {
+   "idea": "Gating is layered: plan ID required before apply, separate confirm flags for destroy, DNS changes and anything live on production, and paid actions (buying a domain, upgrading a plan, signing up for accounts) are refused outright, not just warned about.",
+   "detail": "Teardown deletes only resources that can prove GoLive created them.",
+   "t": "3:28"
+  },
+  {
+   "idea": "Positioning: narrower coverage than Vercel/Netlify integrations, Terraform or SST, or AI app builders, but it works on any repo with your own accounts, one conversation, and a written report of changes.",
+   "detail": "The host frames the value as automating the boring part without assuming every action should be automated.",
+   "t": "4:25"
+  },
+  {
+   "idea": "The confirm flags are not a hard lock. They are arguments the agent passes on the user's behalf, nothing records that a human actually said yes, and an agent already logged into a provider can write there without going through GoLive.",
+   "detail": "The host cites the maintainer's own trust document for this point.",
+   "t": "4:25"
+  },
+  {
+   "idea": "Security and reliability caveats: the Stripe key sits in a plaintext file in the home config folder (user-locked, not in a keychain, not encrypted); releases are not cryptographically signed; Stripe preview defaults to test mode and production defaults to live mode; teardown leaves Supabase/Neon databases behind; and email from a new subdomain may land in spam.",
+   "detail": "Only two hosts (Vercel, Netlify) and two databases (Supabase, Neon) have real adapters.",
+   "t": "5:39"
+  },
+  {
+   "idea": "Project maturity: one author, about 63-65 commits, over 1,000 stars in a few days, and a commercial product (Tofu, as transcribed) linked from the homepage while the README says there is no GoLive account. The host could not confirm whether the star count is organic or how the two are connected.",
+   "detail": "Host's verdict: very early, treat it that way.",
+   "t": "6:55"
+  },
+  {
+   "idea": "Framing for agent tooling: the question has moved from 'can the agent do it' to 'what should the agent be allowed to do, and can you prove what happened afterwards'. Actions should be understandable, limited and reversible.",
+   "detail": "The closing question to viewers asks whether they would let an agent touch their Stripe account.",
+   "t": "6:55"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Plan-then-approve-then-apply with a plan ID",
+   "how": "Have the agent detect infrastructure needs and write an explicit plan with an ID. Apply only when that plan ID is passed, so the approval is bound to the exact plan shown. Show the plan with no changes made first (GoLive's first run only produced a plan).",
+   "when": "Any agent-driven change to hosting, DNS, databases or payment config, where a silent mismatch between the plan and the applied change would be costly."
+  },
+  {
+   "name": "Verify webhooks both negatively and positively after deploy",
+   "how": "Send an unsigned request to the webhook endpoint and assert it is rejected. Send a correctly signed test event and assert it is accepted. Then run an end-to-end test-mode payment (test card 4242 4242 4242 4242 in the demo) and confirm it clears.",
+   "when": "Any deploy that depends on signed webhooks such as Stripe, where a wrong signing secret otherwise only shows up when a real customer pays."
+  },
+  {
+   "name": "Separate confirm flags for destructive, DNS and production-live actions",
+   "how": "Require an explicit flag for each high-risk class: confirm destroy for deletes, confirm dns for DNS changes, confirm live for anything on production. Note the flags are agent-supplied arguments, so they are a speed bump, not proof of human consent. Pair them with a real human-approval step if consent matters.",
+   "when": "Designing agent tool surfaces for infrastructure, where the goal is to make risky steps deliberate rather than to prevent a determined agent."
+  },
+  {
+   "name": "Refuse-list for paid or account-creating actions",
+   "how": "Do not implement paid steps at all: buying a domain, upgrading a plan, signing up for a new account. The user brings those and the tool stops at that boundary.",
+   "when": "Agent tools with access to billing or account creation, where a warning is not enough and the cost is real."
+  },
+  {
+   "name": "Ownership-tagged teardown",
+   "how": "Tag each resource at creation and, on teardown, delete only resources that carry the tool's tag. The video says GoLive removes the host project, webhooks, email keys and tagged DNS records, but not databases.",
+   "when": "Any tool that creates cloud resources and later needs to clean up without deleting things the user owns."
+  },
+  {
+   "name": "Borrow existing CLI logins instead of minting credentials",
+   "how": "Use credentials the user already has for each provider's CLI, so the agent does not create new keys. Stripe was the stated exception, and the storage of its key in a plaintext file is a caveat to avoid copying.",
+   "when": "Local agent tooling where minimizing new long-lived secrets matters more than a central credential vault."
+  },
+  {
+   "name": "Post-run written report with no secrets",
+   "how": "After applying, write a report listing what was created and the live URLs, with secret values excluded.",
+   "when": "Any agent-driven provisioning, so a human can audit what changed later."
+  },
+  {
+   "name": "Skill file plus a small CLI, not an MCP server",
+   "how": "Ship the agent's instructions as a skill file and put the deterministic work in a small Node CLI that the skill invokes. Verify only on the agents you have tested (the author says Claude Code and Codex).",
+   "when": "When you want a portable, scriptable tool whose behavior is deterministic and does not depend on an MCP server running."
+  }
+ ],
+ "tools": [
+  "GoLive (agent skill plus Node CLI; repo name not shown in the transcript)",
+  "Claude Code",
+  "Codex",
+  "Vercel",
+  "Netlify",
+  "Supabase",
+  "Neon",
+  "Resend",
+  "Stripe (test and live modes)",
+  "Terraform",
+  "SST",
+  "Lovable",
+  "Bolt",
+  "v0",
+  "Tofu (commercial deploy product, as transcribed)"
+ ],
+ "numbers": [
+  {
+   "claim": "Demo plan covers four services: Vercel hosting, Supabase database, Resend email, Stripe in test mode.",
+   "t": "2:19"
+  },
+  {
+   "claim": "Test-card payment (4242 4242 4242 4242) cleared after the webhook was verified.",
+   "t": "2:19"
+  },
+  {
+   "claim": "Only two hosts (Vercel, Netlify) and two databases (Supabase, Neon) have real adapters.",
+   "t": "5:39"
+  },
+  {
+   "claim": "Single author with about 63-65 commits; repo reportedly over 1,000 stars within a few days (host could not verify this).",
+   "t": "5:39"
+  },
+  {
+   "claim": "Preview defaults to Stripe test mode; production defaults to live mode.",
+   "t": "5:39"
+  },
+  {
+   "claim": "Video length 7:41.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The confirm flags (confirm destroy, confirm dns, confirm live) are not a hard lock: they are arguments the agent passes itself, nothing records human consent, and an agent logged into a provider can bypass GoLive.",
+  "Stripe keys sitting in a plaintext home-config file (user-locked, not keychain, not encrypted) with unsigned releases is a poor fit for handling payment secrets.",
+  "The 1,000-star count in a few days from a one-author repo is suspicious and unverified; the host says to treat it as very early.",
+  "The most useful framing: judge agent tools on what they are allowed to do and whether actions can be proven and reversed, not just whether they can do the task."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and has phone-driven approvals and zero-token credential handling. GoLive is a direct example of plan-ID-bound approval and of the credential-storage pitfall (a plaintext key file).",
+   "action": "Bind ProsHarness approvals to a hash or ID of the exact plan, so approving one plan cannot authorize a different one. Also audit where ProsHarness stores provider tokens, since this video faults plaintext config files versus OS keychain storage."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS is self-hosted infra with manifest-driven pillars. GoLive's gating and tagged teardown show a pattern for managing reversible infra changes, though it is not a core AgentOS concern.",
+   "action": "Search GitHub for the GoLive repo (name not shown in the transcript) and compare its teardown-by-tag and confirm-flag model with AgentOS's manifest-driven toggles."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

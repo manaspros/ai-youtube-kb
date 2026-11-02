@@ -1,0 +1,150 @@
+{
+ "one_line": "Parth Asawa (UC Berkeley) argues that standard LLM benchmarks test models with memory wiped each time, and proposes measuring continual learning through sequential tasks, gain over a stateless baseline, and Pareto reporting.",
+ "summary": "Asawa argues that today's LLM leaderboards score each benchmark instance independently, which implicitly assumes the model forgets everything between tasks, so they cannot show whether a system learns. He defines continual learning as sample-efficient online learning that stays stable over long horizons, and lists the usual routes: in-context learning, external memory, and parametric weight updates. He says chaining existing benchmarks fails because their instances share no structure. His proposed design criteria are headroom, shared latent structure across tasks, and a learning signal such as reward, errors, or text feedback. His Continual Learning Bench 1.0 covers six domains and reports reward, gain (stateful minus stateless reward on the same instance), and cost as Pareto frontiers. In the initial results, vanilla in-context learning beat the more expensive context-management systems, and the failures split into stability problems (forgetting earlier feedback) and plasticity problems (not updating from new schema information). He ends by arguing that training stacks are built around frozen checkpoints out of sunk-cost thinking, and that continual learning should be a first-class training phase.",
+ "speakers": [
+  "Parth Asawa"
+ ],
+ "orgs": [
+  "UC Berkeley",
+  "Snorkel AI",
+  "UW-Madison",
+  "LOD Institute"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "memory",
+  "models-research",
+  "training-finetuning-rl"
+ ],
+ "tags": [
+  "continual-learning",
+  "benchmarks",
+  "stability-plasticity",
+  "concept-drift",
+  "in-context-learning",
+  "stateless-baseline",
+  "pareto-frontier",
+  "catastrophic-forgetting",
+  "sql-agents",
+  "berkeley"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Standard LLM benchmarks treat every instance as independent, which implicitly assumes the model forgets everything between tasks, so they cannot measure learning.",
+   "detail": "Aggregating independent scores into leaderboards says nothing about whether prior experience helps. Chaining existing benchmarks does not fix this because the instances share no structure.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Continual learning should be measured with three design criteria: headroom, shared latent structure, and a learning mechanism.",
+   "detail": "Headroom means the task cannot be solved just by offline training. Shared structure means later tasks can benefit from earlier ones. A learning mechanism means the environment gives signal such as scalar reward, errors, or textual feedback.",
+   "t": "5:37"
+  },
+  {
+   "idea": "Cumulative reward confounds learning with base model strength, so the benchmark uses gain: stateful reward minus stateless reward on the same instance.",
+   "detail": "A stronger base model can win on total reward without learning anything. Running each system twice, once with state kept and once reset per instance, isolates the benefit of prior experience.",
+   "t": "8:05"
+  },
+  {
+   "idea": "Reward, gain, and cost should be reported together on Pareto frontiers, not collapsed into one number.",
+   "detail": "The speaker says there is no single metric that defines continual learning, because base strength, learning ability, and spend all still matter.",
+   "t": "9:22"
+  },
+  {
+   "idea": "Concept drift, such as a database migration that drops and renames columns, tests whether a system can forget stale experience while still learning new facts.",
+   "detail": "In the database exploration task, efficiency (fewer SQL queries over time) is the learning signal. Mid-sequence schema changes test the stability-plasticity trade-off.",
+   "t": "10:39"
+  },
+  {
+   "idea": "In initial results, vanilla in-context learning topped the aggregate reward leaderboard and the Pareto frontiers, beating the more expensive context-management systems.",
+   "detail": "The speaker calls these medium-horizon tasks that may not push in-context systems far enough, and lists longer horizons as roadmap work. He says the result was still surprising.",
+   "t": "13:06"
+  },
+  {
+   "idea": "Most continual-learning failures fall on one side of the stability-plasticity trade-off, and transcripts show which side.",
+   "detail": "A stability failure is a model that over-predicts, then under-predicts, then jumps back to the first error without keeping the middle. A plasticity failure is a notepad-based system that ignores a new study schema that applies to the task.",
+   "t": "14:19"
+  },
+  {
+   "idea": "The speaker argues the field is stuck on a sunk-cost assumption: training is designed around frozen checkpoints, so continual learning is bolted on after the fact.",
+   "detail": "His alternative is continual learning as a first-order training phase, with weight updates during deployment after that phase. He says this is an opinion and his group's focus, not a settled result.",
+   "t": "16:57"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Paired stateful vs stateless runs (gain metric)",
+   "how": "Run the same system on a task sequence twice: once with its memory, notes, or context kept, and once reset before every instance. Score per-instance gain as the difference in reward.",
+   "when": "Use it to check whether an agent's memory or learning helps, separately from how capable the base model is."
+  },
+  {
+   "name": "Benchmark design checklist for continual learning",
+   "how": "Before building a sequence benchmark, confirm headroom (offline training cannot already solve it), shared latent structure across instances, and a concrete learning signal such as reward, errors, or text feedback.",
+   "when": "Use it when designing evals for memory or agent-learning features, so a benchmark does not reward a stateless system by accident."
+  },
+  {
+   "name": "Multi-axis Pareto reporting",
+   "how": "Report reward, gain, and cost together as Pareto frontiers instead of one aggregate number.",
+   "when": "Use it when comparing memory or context-management systems with very different costs."
+  },
+  {
+   "name": "Mid-sequence concept drift injection",
+   "how": "Change the environment partway through a sequence, for example a schema migration that drops or renames columns, and check whether the system discards stale knowledge and adopts the new rules.",
+   "when": "Use it to test whether a memory layer can handle changing facts without a full reset."
+  },
+  {
+   "name": "Stability vs plasticity failure triage",
+   "how": "Read transcripts of failed runs and label each failure as forgetting prior feedback (stability) or ignoring relevant new information (plasticity).",
+   "when": "Use it when a memory or learning system fails and you need to know which component to fix."
+  }
+ ],
+ "tools": [],
+ "numbers": [
+  {
+   "claim": "Continual Learning Bench 1.0 covers six task domains: blind spectrum monitoring, codebase adaptation, cohort studies in epidemiology, exploitable poker, database exploration, and sales prediction.",
+   "t": "13:06"
+  },
+  {
+   "claim": "The sales prediction task runs over a five-year forecast, and the feedback loop shows the model over-predicting, then under-predicting.",
+   "t": "14:19"
+  },
+  {
+   "claim": "The database task measures learning by SQL query count, which should drop by around the 10th instance of a task as the agent learns the schemas.",
+   "t": "10:39"
+  },
+  {
+   "claim": "Vanilla in-context learning ranked first on aggregate reward and on the reward-vs-cost and gain-vs-cost Pareto frontiers in the initial release. No exact scores were given in the talk.",
+   "t": "13:06"
+  }
+ ],
+ "hot_takes": [
+  "Vanilla in-context learning beat the more expensive context-management systems on these real learning tasks.",
+  "Current LLM benchmarks measure point capabilities and cannot show continual learning, because they are built on the assumption that memory is wiped between tasks.",
+  "The field is operating under a sunk-cost fallacy by bolting continual learning onto frozen checkpoints; it should be a first-order training phase.",
+  "Chaining existing benchmarks together cannot measure continual learning, because the instances share no structure."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh has tiered cross-session memory and conflict resolution, and the talk gives a direct way to test whether that memory helps.",
+   "action": "Add a paired eval to MemoryMesh: run a fixed task sequence with memory on and with memory reset per instance, and report the per-instance gain alongside cost."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness has checkpoint/resume and skill ranking, which could carry learning across runs. The talk gives a way to check whether that carry-over helps.",
+   "action": "When testing skill ranking, compare a run that reuses prior skill outcomes against a reset-per-task run to see whether the ranking improves over time."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Agent evals are a recurring interest, and the talk gives a concrete checklist (headroom, shared structure, learning signal) plus stability/plasticity triage for memory evals.",
+   "action": "Read the Continual Learning Bench paper and reuse its three design criteria as a checklist before adding any multi-step agent eval."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

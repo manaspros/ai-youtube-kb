@@ -1,0 +1,168 @@
+{
+ "one_line": "Steve Yegge argues AI-generated code multiplies security defects and new attack types (slopsquatting, prompt injection, agent credentials), and urges security scanning at generation time and as a separate pass.",
+ "summary": "Steve Yegge gives a short, opinion-heavy talk on agentic security, saying that if AI makes teams ship code several times faster at the same vulnerability rate, the defect surface grows in proportion. He says security bugs have no \"half-life\" like other bugs, so they must be surfaced while the developer or the LLM is still writing the code, not at code review. He reports that a security scanner found 241 issues in his own long-running game after an AI hardening pass, and he recommends multiple review passes, with one concern per pass (security separate from correctness). He names slopsquatting (LLM-hallucinated package names that attackers register) and prompt injection as new risks, and suggests supply-chain tools and scoped credentials for agents. For always-on agents he suggests adversarial supervisor agents that watch queue-processing agents. Most of the talk is warnings and predictions rather than measured data, and the closing Q&A is informal.",
+ "speakers": [
+  "Steve Yegge"
+ ],
+ "orgs": [
+  "Gas Town",
+  "Sneak (Snyk)",
+  "Chainguard",
+  "Google",
+  "Five Eyes"
+ ],
+ "format": "talk",
+ "topics": [
+  "security-guardrails",
+  "pr-code-review",
+  "multi-agent"
+ ],
+ "tags": [
+  "agentic security",
+  "slopsquatting",
+  "supply chain",
+  "prompt injection",
+  "rule of five",
+  "security as a pass",
+  "shift-left",
+  "service account permissions",
+  "adversarial supervisor agents",
+  "Beads",
+  "Gas Town"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Security defects scale with AI output volume",
+   "detail": "If code ships 10x faster and the vulnerability rate per line stays the same, the total defect surface grows 10x. Yegge says the defect rate will likely get worse, not stay flat, once AI writes most code.",
+   "t": "1:12"
+  },
+  {
+   "idea": "New attack types, not only old bugs",
+   "detail": "Beyond XSS and similar old bugs, he names slopsquatting: an LLM invents a package name, attackers publish a malicious package under that name, and the code builds and passes tests while pulling in the backdoor.",
+   "t": "3:35"
+  },
+  {
+   "idea": "Security bugs have no half-life",
+   "detail": "At Google, bug reporting was moved into the editor because bugs get fixed while they are fresh. Yegge says this works for most bug classes but not security, because a vulnerability keeps compounding risk over time. Security should be surfaced at the point of writing, for the developer or for the LLM.",
+   "t": "4:59"
+  },
+  {
+   "idea": "Expect multiple review passes, one concern per pass",
+   "detail": "He cites a 'rule of five': LLM work often needs four or five review passes before it is ready to ship. Security and correctness should be separate passes, because asking for both at once gets a weak job on each.",
+   "t": "7:23"
+  },
+  {
+   "idea": "Scanner found 241 issues in a hardened codebase",
+   "detail": "After an AI hardening pass on his own 30-year-old game that looked clean to him, a security scanner reported 241 vulnerabilities that the AI had not looked for. Later he said his code had no issues beyond public CVEs.",
+   "t": "7:23"
+  },
+  {
+   "idea": "Make tools the default step for lazy LLMs",
+   "detail": "He says LLMs prefer to use tools that save tokens. He suggests adding a security scanner as the final step in the agent prompt, and running several scanners, letting agents check each other's results.",
+   "t": "9:35"
+  },
+  {
+   "idea": "Security is the first and last pass",
+   "detail": "He says performance, elegance, and company coding standards are also separate passes. Security should be both the first pass and the last.",
+   "t": "13:13"
+  },
+  {
+   "idea": "Supervise always-on agents adversarially and limit credentials",
+   "detail": "For agents that run 24/7 on queues or events, he suggests adversarial supervisor agents, since one agent will eventually make a mistake. He also says to check service-account credentials and limit each agent to the permissions one action needs.",
+   "t": "19:47"
+  },
+  {
+   "idea": "Prompt injection is mainly an education and process gap",
+   "detail": "Yegge says he has no full fix for prompt injection in training or inference. He calls it an education problem and expects dedicated agentic security roles inside companies.",
+   "t": "20:46"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Surface security findings at generation time",
+   "how": "Run a security scanner while the code is being written, not only at review or CI time. In an agent setup, add the scanner as a final step in the task prompt so the agent checks its own output before it stops.",
+   "when": "When agents write most of the code and reviewers cannot keep up, and security issues would otherwise be dropped once a review is delayed."
+  },
+  {
+   "name": "Separate security and correctness into different passes",
+   "how": "Do not ask one agent pass to handle security and correctness together. Run a dedicated security pass and a dedicated correctness pass, and repeat review passes (he cites about four or five) until the output is stable.",
+   "when": "For agent-written code before shipping, especially for security-sensitive or long-running projects."
+  },
+  {
+   "name": "Run several scanners and have agents cross-check",
+   "how": "Use multiple tools (open-source scanners, commercial scanners, and supply-chain checks), then have agents review each other's findings.",
+   "when": "When one scanner might miss issues, or when you want an extra check on agent-generated changes."
+  },
+  {
+   "name": "Supply-chain vetting of dependencies and base images",
+   "how": "Use a vetted image or package source for base inputs and scan dependencies, including checking that packages an LLM suggests really exist and are the intended ones.",
+   "when": "When an LLM may add dependencies or container images that it guessed or hallucinated."
+  },
+  {
+   "name": "Adversarial supervisor agents for queue-driven agents",
+   "how": "Run a separate group of agents whose job is to check the work of the agents that process a queue or respond to events, with the aim of catching the first agent's errors.",
+   "when": "When agents run continuously (24/7), process events or queues, or run for long periods without a human reviewing each step."
+  },
+  {
+   "name": "Least-privilege credentials per agent action",
+   "how": "Audit service accounts used by agents, and split broad credentials so each action has only the permissions it needs.",
+   "when": "When engineers or non-engineers start agents that could reach many systems with broad permissions."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Beads",
+  "Gas Town",
+  "Snyk (called Sneak in captions)",
+  "Chainguard"
+ ],
+ "numbers": [
+  {
+   "claim": "Hypothetical example: if output is 10x faster and the vulnerability rate per unit stays the same, the defect surface grows about 10x (from a bank security architect's question, not a measured result).",
+   "t": "1:12"
+  },
+  {
+   "claim": "A security scanner reported 241 vulnerabilities in the speaker's own game codebase after an AI hardening pass that looked clean.",
+   "t": "7:23"
+  },
+  {
+   "claim": "Speaker's rule of five: LLM work often needs about four or five review passes before it is ready to ship.",
+   "t": "7:23"
+  },
+  {
+   "claim": "Speaker's estimate: about seven months, now maybe about six, until open-source models catch up to the model he calls Mythos. An audience poll guessed around December.",
+   "t": "12:15"
+  }
+ ],
+ "hot_takes": [
+  "Security bugs have no half-life, unlike other bugs, so they must be caught at the moment of writing.",
+  "Security should be the first and last review pass on agent-written code.",
+  "Agents running 24/7 need adversarial supervisor agents, because one agent will eventually make a mistake.",
+  "Families should set up offline code words now to guard against AI voice and video scams, which he expects within months.",
+  "Prompt injection is mainly an education problem, and companies will need dedicated agentic security roles."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L1 already has a PII and prompt-injection scanner and L2C has exec-gate guardrails. The talk's point that security should run at generation time and as a separate pass maps to that design, and the slopsquatting risk applies to any agent-installed dependency.",
+   "action": "Add a check to the exec-gate or the agent tool layer that confirms any package an agent proposes to install exists and matches the expected publisher before installing, and test it against a deliberately hallucinated package name."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs plan, critique (Codex), and debate stages. The talk's advice to split security and correctness into separate passes, and to repeat review passes, applies directly to the critique stage.",
+   "action": "Add a security-only critique pass as a separate stage after plan and before implementation (and again before merge), instead of folding security into the general critique prompt, then compare findings against the current single critique on one past run."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The talk gives a simple practice for any agent workflow: put a scanner as the last step in the prompt, and run security as its own pass. This is cheap to try in any coding-agent setup.",
+   "action": "Add a final security-scan step to one agent workflow (for example a Claude Code task prompt with a scanner command), and measure how many issues it finds on a sample of recent agent-written PRs."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,228 @@
+{
+ "one_line": "AI LABS walks through Claude Code creator Boris Cherny's setup advice: strip your Claude Code setup to a baseline with each new model, keep only what Claude can't infer, and gate work with evals that can fail. Includes a sponsored segment.",
+ "summary": "The host presents tips from an interview with Boris Cherny, the creator of Claude Code, as relayed secondhand. The core advice is to delete your Claude Code setup (CLAUDE.md, skills, hooks, plugins) whenever a new model ships, because that setup is injected into context every session and was often written to correct older models. You then measure a baseline in safe mode, run the context and usage commands, and add back only what Claude cannot work out itself. A recurring \"doctor\" command is suggested for auditing the setup. The second half covers evals: each task needs a fixed pass/fail check written before building, and such checks expire after two or three model generations. Prompting advice is to describe the outcome, the limits and the definition of done rather than prescribing steps, and to describe style in words instead of pasting an inspiration image. The video ends with a four-level escalation ladder for model mistakes, guidance on CLAUDE.md versus skills versus MCP, and a warning that large multi-agent workflows are expensive and risky, with recurring cloud routines recommended for day-to-day cleanup work. A sponsored segment for Buzzy Canvas sits in the middle.",
+ "speakers": [
+  "Boris Cherny (transcribed as 'Boris Czerny'; creator of Claude Code, interviewed in the source)",
+  "AI LABS host (unnamed)"
+ ],
+ "orgs": [
+  "Anthropic",
+  "AI LABS",
+  "Vercel (transcribed as 'Versal')",
+  "OpenAI (mentioned only)",
+  "Buzzy Canvas (sponsor)"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "context-engineering",
+  "evals",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "claude-code",
+  "CLAUDE.md",
+  "skills",
+  "safe mode",
+  "doctor command",
+  "usage command",
+  "context command",
+  "evals",
+  "eval-driven development",
+  "prompting by outcome",
+  "escalation ladder",
+  "MCP",
+  "sub-agents",
+  "dynamic workflow",
+  "routines",
+  "headless Chrome",
+  "screenshot verification",
+  "parity testing",
+  "model release hygiene",
+  "prompt injection",
+  "context window baseline",
+  "token budget"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Delete your Claude Code setup when a new model ships. Anthropic reportedly removed about 80 lines (unit not clear in captions) of Claude Code's system prompt after Opus 5 shipped.",
+   "detail": "Everything you add (CLAUDE.md, skills, hooks, plugins) is injected into the context window at launch and stays there for the whole session. Much of it exists only to correct an older model's mistakes, so it becomes dead weight when a new model arrives. A project that is more than a few months old is likely tuned for a model two generations back.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Measure what the setup costs before keeping it. The usage command shows the share of the five-hour window burned and breaks it down by skill and habit.",
+   "detail": "The speaker's team found the main drains were workflows that spawn sub-agents, several sessions at once, and sessions left running without compaction. In an empty session the context command already shows about 3% of the 1M-token window used by Claude's own system prompt and built-in tools, which the user cannot remove.",
+   "t": "1:26"
+  },
+  {
+   "idea": "Use a safe-mode baseline to decide what earns its place. Run the normal tasks with all user-added clutter switched off and check whether results are still fine. Cut anything not needed.",
+   "detail": "The keep rule is 'would Claude have worked this out on its own?' If yes, delete the line. Examples given: a dev-server start command Claude now infers, versus a non-default browser tool or a service that must be running first, which still belongs in CLAUDE.md. Anthropic's doctor command applies the same rule. It returns a health report with a verdict on each piece and proposed changes, and nothing changes until you accept each one. The speaker recommends running it after each model release.",
+   "t": "2:54"
+  },
+  {
+   "idea": "An eval is a fixed check that can come back as a no. Write it before building, because 'see if it looks better' is guessing.",
+   "detail": "Examples: a page fits a phone screen, a wrong password is rejected, text contains no em dashes. Anthropic's own rewrites used three kinds of check. One was a full test suite, one was eight reviewer agents each looking for a single problem class, and one was a parity check that runs each command through old and new versions and compares answers. The speaker's Swift desktop-app rewrite compared screenshots pixel by pixel against the original running in a virtual Mac, and ran for over two weeks because the check kept it going.",
+   "t": "4:21"
+  },
+  {
+   "idea": "Evals expire. The speaker says checks last about two or three model generations, after which everything passes and the set must be replaced with checks aimed at where the agent now struggles.",
+   "detail": "Treat the check set as versioned alongside the model, the same as the setup itself.",
+   "t": "7:07"
+  },
+  {
+   "idea": "Describe the outcome, the limits and what 'done' means, not the steps. Long, step-by-step prompts were a workaround for older models that went off the rails when given gaps.",
+   "detail": "The speaker says experienced engineers are the worst at this because they try to make the model do the task the way they would. Aiming a bit beyond what you think the model can handle is also advised, since heavy detail usually signals an outdated assumption about its limits.",
+   "t": "8:34"
+  },
+  {
+   "idea": "Do not hand the model an inspiration image or a single good example and ask for 'more like it'. It returns near-copies. Describe the style and look in words so it has to work out the approach itself.",
+   "detail": "The speaker's rule: concrete artifacts you supply are treated as things to copy, not things to learn from.",
+   "t": "9:36"
+  },
+  {
+   "idea": "When the model keeps getting something wrong, pick the cheapest fix that works: first make the instruction or product clearer, then a CLAUDE.md line for things needed every session, then a skill for things you explain repeatedly, then an MCP server only when the information is genuinely out of reach.",
+   "detail": "CLAUDE.md is loaded at every session start, so it should stay short and hold only always-true facts. Skills load only when Claude needs them, so long or occasional material goes there, split across files so only the needed part loads.",
+   "t": "9:36"
+  },
+  {
+   "idea": "Dynamic multi-agent workflows that fan out hundreds of agents are costly and hard to recover from. The speaker's example, a BUN rewrite of about a million lines in under two weeks, reportedly cost about $165,000 at API pricing and left 19 breakages that existing checks missed. The speaker recommends routines instead.",
+   "detail": "Routines are recurring cloud jobs that run after the laptop is closed. Anthropic reportedly runs 20 to 30 a day, each defined by a single-sentence prompt. Example prompts: remove dead code and leftovers from removed features; write tests for untested parts; merge places where the same thing was built twice.",
+   "t": "12:31"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Baseline-then-add-back setup audit",
+   "how": "Launch Claude Code with all user additions turned off (the speaker calls this 'safe mode'; the flag name is not stated in the video, so check the Claude Code docs). In an empty session, run the context command to see the baseline (about 3% of 1M tokens per the speaker). Run your normal tasks and judge the output. Re-add only the CLAUDE.md lines, skills and plugins that change the result.",
+   "when": "After each new model release, or when a project has been untouched for months and was tuned for an older model."
+  },
+  {
+   "name": "Usage triage",
+   "how": "Run the usage command to see what share of the five-hour window is used, broken down by skill and by habit. Look for sub-agent fan-out, several parallel sessions, and sessions left uncompacted.",
+   "when": "When limits run out faster than expected, before changing the setup."
+  },
+  {
+   "name": "Keep-rule for CLAUDE.md",
+   "how": "For each line in CLAUDE.md, ask whether Claude would work it out from the project. Delete the ones it would. Keep lines where your setup differs from the default: non-default tools, required services that must be running, and areas where the model made mistakes.",
+   "when": "Each time you audit CLAUDE.md, especially after a model upgrade."
+  },
+  {
+   "name": "Doctor audit",
+   "how": "Run Anthropic's doctor command on the setup (the speaker names it but does not show the invocation). Review the per-item verdicts and proposed changes. Accept or reject each one individually. Nothing is applied automatically.",
+   "when": "Periodically, and after a new model release."
+  },
+  {
+   "name": "Fail-able acceptance checks written first",
+   "how": "Before building, write a binary check that can return no. Examples from the video: the page fits a phone-width viewport; a wrong password is rejected; the text contains no em dashes. For rewrites, run each command through old and new implementations and compare outputs (parity). For UI, screenshot the reference and the new version and compare pixel by pixel.",
+   "when": "At the start of any agent task that must reach a defined finish state, especially long runs that would otherwise stall."
+  },
+  {
+   "name": "Built-in headless browser verification",
+   "how": "Per the speaker, Claude Code now launches headless Chrome by default when building UI. It takes screenshots of regions to check for overlap and reviews code against project rules. Only failures that are visible on screen get caught, so add task-specific checks for silent failures.",
+   "when": "When building or changing a web UI and you want visual self-checks without writing a prompt line for them."
+  },
+  {
+   "name": "Outcome-first prompting",
+   "how": "State the goal, the constraints the agent must stay inside, and what finished looks like. Do not script the steps. For design work, describe the style in words instead of attaching a reference image. For ideation, do not paste one good example and ask for more like it.",
+   "when": "For any task with a model that is recent enough to plan its own route."
+  },
+  {
+   "name": "Escalation ladder for model mistakes",
+   "how": "Work through the four levels in order: (1) clarify the instruction or change the product so the task is clearer; (2) add a short CLAUDE.md line for facts needed every session; (3) write a skill for something you keep explaining, split across files if long; (4) add an MCP server only when the information cannot be reached any other way.",
+   "when": "When the model repeatedly gets something wrong and you are deciding where to put the fix."
+  },
+  {
+   "name": "Recurring cloud routines for maintenance",
+   "how": "Create recurring jobs that run in the cloud after the laptop is closed, each defined by a single-sentence prompt. The speaker's examples: remove dead code and leftovers from deleted features; write tests for parts with none; merge duplicated implementations.",
+   "when": "For ongoing cleanup and test coverage on a large project, instead of large one-off multi-agent workflows."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "CLAUDE.md",
+  "Claude Code skills",
+  "MCP server",
+  "Claude Code hooks",
+  "Claude Code plugins",
+  "context command (Claude Code)",
+  "usage command (Claude Code)",
+  "doctor command (Anthropic)",
+  "safe mode (Claude Code)",
+  "headless Chrome",
+  "sub-agents",
+  "dynamic workflow (Claude Code)",
+  "routines (Claude Code, cloud)",
+  "Opus 5",
+  "Fable 5",
+  "Sonnet 3.5",
+  "Bun",
+  "Swift",
+  "Vercel agent browser (transcribed as 'Versal')",
+  "BMAD (framework mentioned)",
+  "GSD (framework mentioned)",
+  "Buzzy Canvas (sponsor)",
+  "Seedance 2.5 (sponsor)"
+ ],
+ "numbers": [
+  {
+   "claim": "Anthropic removed about 80 lines (unit not stated) of Claude Code's system prompt when Opus 5 shipped.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Empty session context command shows about 3% of the 1M-token window used by Claude's own system prompt and built-in tools.",
+   "t": "1:26"
+  },
+  {
+   "claim": "Usage is measured against a five-hour window.",
+   "t": "1:26"
+  },
+  {
+   "claim": "Anthropic runs about 20 to 30 routines a day across its apps.",
+   "t": "12:31"
+  },
+  {
+   "claim": "BUN rewrite: about a million lines rebuilt in under two weeks from a single prompt, reportedly about $165,000 at API pricing.",
+   "t": "12:31"
+  },
+  {
+   "claim": "The same BUN rewrite left 19 breakages that existing checks had not caught.",
+   "t": "12:31"
+  },
+  {
+   "claim": "Anthropic's BUN rewrite used eight reviewer agents, each looking for one class of problem.",
+   "t": "5:39"
+  },
+  {
+   "claim": "Speaker's Swift desktop-app rewrite ran for over two weeks, guided by pixel-by-pixel screenshot comparison.",
+   "t": "5:39"
+  },
+  {
+   "claim": "Eval checks reportedly last two or three model generations before everything passes.",
+   "t": "7:07"
+  }
+ ],
+ "hot_takes": [
+  "Deleting your whole setup on each model release is a strong recommendation drawn from one interview and relayed secondhand. The keep-rule ('would Claude work it out on its own') is the most transferable part.",
+  "The claim that prompt injections from third-party skills can no longer get through is a vendor-side assertion, supported in the video only by one anecdote of a skill that asked to send data to a URL and was skipped. Treat it as unverified.",
+  "The $165,000 and 19-breakages figures are the most useful caution in the video. The speaker recommends against swarm-style workflows for shipping, which conflicts with the 'aim higher' advice.",
+  "The sponsored segment (Buzzy Canvas, around 7:07 to 8:34) is inserted in the middle of the tips and is not related to the advice. Per the scoring rules it caps quality at 2 even though the non-sponsored content is practitioner-grade (about 3)."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and already runs loops, schedules and checkpointed long runs. The video's baseline audit, fail-able checks that expire, and recurring routines map directly onto those features.",
+   "action": "Add a 'strip-to-baseline' run mode that disables CLAUDE.md, skills and plugins, reruns a fixed task set, and logs context and usage numbers so each setup line has to earn its place after a model change."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The eval-first and parity-check ideas apply to AgentOS pillars such as the Crucible sandbox and the Merkle audit log, but the video is about Claude Code setup rather than infrastructure.",
+   "action": "Write pass/fail acceptance checks (including a parity check old vs new) before the next AgentOS pillar change, and version them with the model they were tuned for."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

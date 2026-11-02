@@ -1,0 +1,167 @@
+{
+ "one_line": "Walks through why \"smaller\" AI models are not cheaper to run locally: active parameters cut compute but not memory, KV cache grows per token, and reasoning-effort defaults inflate cost; benchmarks also mix setups.",
+ "summary": "The speaker starts from a viral claim that a 27B Alibaba model beats Claude Opus and fits in a 17 GB file, then shows why that headline misleads for a single local user. Mixture-of-experts models cut active parameters per token, but all experts must sit in memory, so the memory footprint stays large. For Qwen3.6-27B-style models with 262K context, the KV cache for the 16 full-attention layers adds about 16 GB per long conversation, roughly a second copy of the weights. The benchmark comparison also mixes harnesses: the Qwen score used Anthropic's harness at custom settings, while Opus was taken from a public number. Reasoning-effort presets matter a lot: low and medium land within a couple of points of high on most benchmarks while using 7-9x fewer thinking tokens. In one Go-repo test, GPT-5.5 Codex at extra-high cost 2.5x more than high and passed fewer tests. The speaker concludes that the right questions are bytes needed before the first token, bytes added per token of context, and thinking tokens burned per task. The talk says the architecture pays off in data centers serving many users, not on a single desk.",
+ "speakers": [
+  "Kai (Kai Explains host)"
+ ],
+ "orgs": [
+  "Alibaba",
+  "Anthropic",
+  "DeepMind",
+  "DeepSeek",
+  "Microsoft",
+  "OpenAI"
+ ],
+ "format": "news",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "token-cost-efficiency",
+  "models-research"
+ ],
+ "tags": [
+  "mixture-of-experts",
+  "active-parameters",
+  "kv-cache",
+  "context-window",
+  "reasoning-effort",
+  "benchmarks",
+  "qwen",
+  "local-inference",
+  "memory-bottleneck",
+  "vram"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Active parameter count is a compute number, not a memory number. MoE models must keep every expert in memory even though only a few run per token.",
+   "detail": "Speaker's restaurant analogy: the active count is the dishes on the stove, and the pantry size (all experts) is what you pay rent on. Qwen3.6-27B-style example: 384 experts stored to use 6 per token.",
+   "t": "2:42"
+  },
+  {
+   "idea": "The context window is a memory cost that grows with every token. KV cache is the bottleneck for long sessions on one machine.",
+   "detail": "Only 16 of 64 layers use full attention with a growing cache. At about 64 KB per token across those layers, 262K tokens is about 16 GB, nearly the size of the 17 GB weights.",
+   "t": "3:44"
+  },
+  {
+   "idea": "Hybrid attention was the architecture change that made long context affordable. Without it, the context alone would have been about 64 GB.",
+   "detail": "The other 48 layers use a fixed-size memory whose cost does not depend on conversation length.",
+   "t": "5:03"
+  },
+  {
+   "idea": "Headline benchmark wins can come from mismatched setups. Read the footnote on harness and settings before comparing rows.",
+   "detail": "The Qwen SWE-Bench Pro score (61.7) was run with Anthropic's harness at Qwen's chosen settings, while the Opus number was taken from a public report. The same table shows Opus ahead on Terminal Bench 2.1 (78.2 vs 73.0) and GPQA Diamond (91.3 vs 89.2).",
+   "t": "5:03"
+  },
+  {
+   "idea": "A 6B-active MoE model can still need more memory than a typical desktop. The speaker reports a 180B-total model needing 111 GB quantized, with a 24 GB card plus 110 GB of system RAM.",
+   "detail": "The speaker says MoE is a large model that is cheap to run, not a small model, and that the bottleneck moves from math to memory.",
+   "t": "7:56"
+  },
+  {
+   "idea": "Reasoning-effort presets are the largest cost lever. Low or medium gives nearly the same benchmark score at a fraction of the thinking tokens.",
+   "detail": "Community data from about 2,000 posts: low and medium are within a couple of points of the headline on most intelligence benchmarks, while cutting thinking tokens 7-9x and wall-clock time 6-7x.",
+   "t": "9:08"
+  },
+  {
+   "idea": "More reasoning does not always mean better results. In one 26-task Go test, the highest setting cost the most and passed fewer tests than high.",
+   "detail": "GPT-5.5 Codex: low $2.65/task, 21/26 passed; high $4.49, 25/26; extra-high $9.77, 24/26. The speaker cites a Microsoft paper saying reasoning mode can use 3-6x more output tokens, often re-deriving earlier work.",
+   "t": "9:08"
+  },
+  {
+   "idea": "The right questions for local use are three numbers: bytes before the first token, bytes added per context token, and thinking tokens per finished task.",
+   "detail": "The first two come from the config file; the third is the reasoning-effort setting. The speaker says the 17 GB file is fine for work inside about 8K tokens of context.",
+   "t": "11:42"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Estimate KV cache memory from config before loading a long-context model",
+   "how": "bytes/token = (number of full-attention layers) x (KV heads x head dim x 2 for K and V) x bytes per element. Multiply by the target context length. Qwen example: 16 layers, about 2048 numbers per token per layer at 2 bytes (about 64 KB/token), so 262K tokens is about 16 GB. Check the number of layers using traditional attention, not the total layer count.",
+   "when": "Before choosing a model and context size for a single machine, where weights plus KV cache must fit in VRAM and RAM together."
+  },
+  {
+   "name": "Lower the reasoning-effort preset to cut thinking tokens",
+   "how": "Set the reasoning effort toggle (low, medium, high, extra high) to low or medium as the default, and raise it only for tasks that need it. Measure task pass rate and cost at each level on your own tasks before choosing a default.",
+   "when": "When the default is at maximum and the work is routine coding or a simple task, where the speaker found low or medium within about 2 points of high at 7-9x fewer thinking tokens."
+  },
+  {
+   "name": "Read benchmark footnotes for harness and settings before comparing",
+   "how": "Check whether both rows came from the same harness, reasoning setting, and sampling config. Treat a single benchmark as one task type on one setup, not a general verdict.",
+   "when": "When evaluating a headline claim such as beats model X on benchmark Y."
+  },
+  {
+   "name": "Separate active and total parameters when sizing MoE models",
+   "how": "Use total parameters (all experts plus any embedding or prediction modules) to estimate memory, and active parameters only to estimate compute and per-token speed. For offloaded setups, add system RAM to the VRAM budget.",
+   "when": "When planning a local MoE deployment on a single GPU with system RAM offload."
+  }
+ ],
+ "tools": [
+  "Qwen3.6-27B (Alibaba, 27B dense-active MoE claim, 262K context)",
+  "Qwen Flash Next (180B total, 6B active)",
+  "DeepSeek (budget model, 284B to 552B backbone)",
+  "Claude Opus",
+  "GPT-5.5 Codex",
+  "Terminal Bench 2.1",
+  "SWE-Bench Pro",
+  "GPQA Diamond"
+ ],
+ "numbers": [
+  {
+   "claim": "Alibaba 27B model: 17 GB download, 262K context, 64 layers of which 16 use full attention; KV cache about 64 KB/token and about 16 GB at 262K tokens",
+   "t": "3:44-5:03"
+  },
+  {
+   "claim": "SWE-Bench Pro 61.7 (Qwen, Anthropic harness at Qwen settings) vs Opus public number; Terminal Bench 2.1 Opus 78.2 vs 73.0; GPQA Diamond Opus 91.3 vs 89.2",
+   "t": "5:03-6:30"
+  },
+  {
+   "claim": "Qwen Flash Next: 180B total (125B main + 51B embedding + 4B prediction), 6B active, 111 GB quantized in 4 shards; ran on a 24 GB card with 110 GB system RAM",
+   "t": "6:30-7:56"
+  },
+  {
+   "claim": "DeepSeek budget model: 284B total to 552B backbone plus about 200B more memory",
+   "t": "7:56"
+  },
+  {
+   "claim": "Community reasoning test (about 2,000 posts): low and medium cut thinking tokens 7-9x and wall-clock time 6-7x, within a couple of points of the headline",
+   "t": "9:08"
+  },
+  {
+   "claim": "GPT-5.5 Codex on 26 tasks from a Go repo: low $2.65/task, 21/26; high $4.49, 25/26; extra-high $9.77, 24/26",
+   "t": "9:08"
+  },
+  {
+   "claim": "Microsoft paper cited: reasoning mode uses 3-6x more output tokens",
+   "t": "10:16"
+  },
+  {
+   "claim": "GPT-3 175B vs Chinchilla 70B trained on 4x data; active parameters drop from 175B to about 5-6B (about 30x less compute per token) over about five years",
+   "t": "1:22-2:42"
+  }
+ ],
+ "hot_takes": [
+  "Active parameter count is the number that gets marketed, but total parameters and KV cache determine what fits on a desk; the speaker says the true story is not the headline.",
+  "Extra-high reasoning settings are often a default nobody questioned; the speaker says the top setting cost 2.5x more and passed fewer tests than high in one test.",
+  "MoE is a data-center architecture; for a single user with long context, the bottleneck moves from compute to memory and the architecture gives little benefit.",
+  "Benchmarks like the Qwen SWE-Bench Pro result compare rows from different machines and settings, so headline wins are not a verdict on general intelligence.",
+  "Chinchilla-style scaling and hybrid attention (16 of 64 layers with full cache) are real progress, so models are smarter per unit of compute even though the file size did not shrink."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft runs vLLM with KV-cache strategies on one RTX 5090, and this video quantifies KV cache growth per token for a hybrid-attention model. It sets a concrete check (per-token KV bytes times context length) for the planned KV offload and quantization work.",
+   "action": "Add a KV-cache sizing calculator to InferCraft that reads the model config (full-attention layer count, KV heads, head dim, dtype) and reports GB at target context lengths before the 5090 deployment."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs Claude Code and plans with critique; reasoning effort is a per-step cost lever. The video's test of low/medium/high/extra-high on pass rate per dollar is a pattern a harness can apply per step.",
+   "action": "Add a per-step reasoning-effort setting to the ProsHarness planner and critique stages, and measure pass rate and cost per effort level on a small fixed task set before choosing defaults."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,157 @@
+{
+ "one_line": "Two YouTube Ads team members on building evals for agents: tools first, intuition before scale, human rater rubrics, reading traces, and pattern-level launch gates.",
+ "summary": "Preetika Bhateja and Daniel Bump from the YouTube Ads team (image and video models) describe how their agent evals evolved. They argue the agent's reliability depends on its capabilities, guardrails and evals, and that LLM outputs are non-deterministic, so evals must measure behavior at scale. They recommend optimizing the LLM-friendly toolset first, adding an independent critique agent with a remediation loop, and then building evals. Early on, manual, intuition-based review of outputs is more useful than a comprehensive eval, because scaled raters too early cause large swings while the agent is still changing. When they scale up, they stress clear rubrics with examples, explanations alongside every pass/fail rating, and testing negatives as well as positives. For LLM judges, they track disagreement against sampled human ratings and spot-check the judge's reasoning. A trace example showed the agent detecting a legally required disclaimer and removing it anyway, which a pass rate alone would not reveal. They close with pattern-level analysis over single runs, a test set refreshed with production data, regression analysis to separate acceptable trade-offs from critical failures, and launch gates defined early. The talk gives no quantitative benchmarks; the Q&A says they cannot share details of their judge benchmarking.",
+ "speakers": [
+  "Preetika Bhateja",
+  "Daniel Bump"
+ ],
+ "orgs": [
+  "YouTube Ads"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "observability",
+  "context-engineering"
+ ],
+ "tags": [
+  "evals",
+  "llm-as-judge",
+  "human-raters",
+  "rubrics",
+  "golden-set",
+  "trace-review",
+  "hill-climbing",
+  "launch-readiness",
+  "regression-analysis",
+  "negative-testing",
+  "youtube-ads"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent reliability is a function of capabilities, guardrails and evals, and LLM outputs are non-deterministic, so evals must measure behavior at scale.",
+   "detail": "They frame evals as the way to define what good output looks like and to prove that a change helped, through ablations.",
+   "t": "2:20"
+  },
+  {
+   "idea": "Optimize the tool layer before building agent evals, then add an independent critique agent with a remediation loop.",
+   "detail": "A focused set of LLM-friendly tools is the foundation. A critique agent that loops back for fixes covers gaps the base toolset cannot.",
+   "t": "1:02"
+  },
+  {
+   "idea": "Start with intuition-based, non-scalable review of outputs before building a comprehensive eval.",
+   "detail": "Early on, manual review quickly shows failure patterns, and prompt tweaks or radical architecture changes can give large gains. Scaled raters introduced too early cause big swings while the eval is still being calibrated.",
+   "t": "3:17"
+  },
+  {
+   "idea": "Test negatives as well as positives: checking that the model avoided a bad action is as critical as checking that it did the task.",
+   "detail": "Start small with a few core tasks and grow the golden set over time. Writing the eval is quick; agreeing on the rubric is the slow part.",
+   "t": "6:11"
+  },
+  {
+   "idea": "Rater rubrics need clear examples and rater explanations, not just pass/fail.",
+   "detail": "Human-human agreement inside the team should be high before scaling. Explanations show why the agent fails, which matters most for multi-output evals such as accuracy, brand safety and fit.",
+   "t": "7:24"
+  },
+  {
+   "idea": "For LLM judges, monitor disagreement with sampled human or expert ratings and spot-check the judge's reasoning.",
+   "detail": "A sampling pipeline shows whether agreement stays in the expected range over time. The golden set must be broad and have high human agreement to serve as ground truth.",
+   "t": "9:43"
+  },
+  {
+   "idea": "Read agent reasoning traces, because pass rates can hide the cause of a failure.",
+   "detail": "An example showed the agent detecting a mandatory disclaimer in an ad and removing it anyway after being told not to. A categorical pass rate could not show this; the trace did.",
+   "t": "11:01"
+  },
+  {
+   "idea": "Judge on patterns across many runs, not single runs, and refresh the test set with production data.",
+   "detail": "Non-determinism makes one failing run misleading. Keep the test set small, use it sparingly, and add online evals and sampling so the data matches real traffic.",
+   "t": "14:47"
+  },
+  {
+   "idea": "Define launch gates and regression criteria before launch.",
+   "detail": "Iterate on the model, run AB diffs or ablations, decide which regressions are acceptable trade-offs and which are critical, and agree early on the metric that gates launch, which may differ for model evals.",
+   "t": "17:24"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Tools-first, then critique agent with remediation loop",
+   "how": "Make the base tool set LLM-friendly and robust first. Add an independent critique agent that flags problems and sends the agent back to fix them, covering gaps the tools leave.",
+   "when": "Before building a formal agent eval, when the agent has a tool surface with known gaps or needs self-correction."
+  },
+  {
+   "name": "Intuition-first review before scaled evals",
+   "how": "Manually read outputs for a small set of core tasks to find failure patterns. Iterate quickly with prompt or architecture changes, and delay scaled raters until the agent is stable.",
+   "when": "Early-stage agent development, when the agent and its failure modes are still changing quickly."
+  },
+  {
+   "name": "Rubric with examples plus mandatory rater explanations",
+   "how": "Write a rubric with worked examples, including edge cases. Require raters to explain each rating, and use side-by-side comparisons when comparing two models.",
+   "when": "When scaling human or scaled-rater evals, especially for multi-dimensional outputs where one pass/fail score hides the reason for failure."
+  },
+  {
+   "name": "Negative test cases in the golden set",
+   "how": "For each core task, include cases where the agent must not take a harmful action, such as removing a required disclaimer, alongside the success cases.",
+   "when": "Any eval where a bad action matters as much as completing the task."
+  },
+  {
+   "name": "Judge calibration by sampled agreement monitoring",
+   "how": "Run a sampling pipeline where experts rate some items and an LLM judge rates the same items. Track the agreement rate over time and spot-check the judge's reasoning on disagreements.",
+   "when": "Once an LLM-as-judge replaces part of human rating, to confirm the judge still tracks expert judgment."
+  },
+  {
+   "name": "Trace-based failure diagnosis",
+   "how": "Review the agent's reasoning traces for failing cases to find where it reasons incorrectly, rather than relying on aggregate pass rates.",
+   "when": "When a pass rate reports a problem but not its cause, or when a rule the agent was given is being violated despite prompt reinforcement."
+  },
+  {
+   "name": "Pattern-level metrics with a refreshed test set and online evals",
+   "how": "Group golden-set cases by failure pattern and measure how often each pattern fails across runs. Keep a small test set, use it sparingly, refresh it with production data, and add online evals.",
+   "when": "For non-deterministic agents, to avoid overfitting prompts to single failing runs."
+  },
+  {
+   "name": "Launch gate defined up front with regression triage",
+   "how": "Set the gating metric before iterating. Run AB diffs or ablations, and classify each regression as an acceptable trade-off or a critical failure.",
+   "when": "Before a production launch or a major model or agent change."
+  }
+ ],
+ "tools": [],
+ "numbers": [],
+ "hot_takes": [
+  "Vibing (intuition-first review without a formal eval) is a good early practice, and scaled raters introduced too early slow iteration.",
+  "Negative tests (the agent did not do something harmful) are as important as positive tests.",
+  "Pass rates alone can hide the real failure; reading the reasoning trace is needed to find it.",
+  "Do not tune the prompt to a single failing run, because non-deterministic agents need pattern-level measurement."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS has RAGAS evals and exec-gate guardrails. The talk's point that pass rates hide causes, and its judge-agreement sampling, apply directly to evaluating those components.",
+   "action": "Add a sampled human-vs-judge agreement check and a trace review step for failing RAGAS cases in MemoryMesh, and track the agreement rate over time."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Negative test cases are relevant to guardrail testing in AgentOS, but this talk is about agent evals in general, not infra.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The talk recommends an independent critique agent with a remediation loop. ProsHarness already has a plan, critique (Codex) and debate flow, and the talk's examples of ignored instructions apply to it.",
+   "action": "Build a small golden set of plans that include must-not cases (for example, a forbidden step) and measure whether the Codex critique step catches them, pattern by pattern."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The talk covers LLM-as-judge calibration, a stated recurring interest. This applies to the entity-resolution LLM work, where judge agreement with human labels needs monitoring.",
+   "action": "For the entity-resolution LLM judge, sample pairs each week for expert labels and track agreement against the judge, with disagreements reviewed."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,48 @@
+# Hermes Agent Skills That Make It 10x More Powerful
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `WJgxX0Eib6k` · [watch](https://youtu.be/WJgxX0Eib6k) · **date:** 2026-09-02 · **length:** 11:54 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Google, Plural, AI Labs
+- **topics:** context-engineering, skills-self-improvement, token-cost-efficiency, multi-agent · **tags:** hermes-agent, agent-skills, planning-with-files, hooks, rtk, delegation, security-review, cron, skill-retrieval, context-bloat
+
+> Walkthrough of third-party skills for the Hermes agent (planning-with-files hook, Delegate Setup, RTK, Mantis security reviews, Agent Reach, Skill Retriever), most of which work with any coding agent; thin on exact commands and partly sponsored.
+
+## Summary
+The video is a tour of community and Google-built skills for the Hermes agent, and the speaker argues most of them work with any coding agent. The first skill, planning-with-files, splits a task into taskplan.md, findings.md and progress.md in the project folder and uses a hook to insert them into context each turn, which the speaker says keeps the agent from drifting; he notes Hermes is one of the few agents that supports hooks. Delegate Setup is an orchestrator skill that detects installed coding agents (Claude Code, Codex, Cursor and others), maps tasks to them with model and effort levels, runs them without permission prompts, and merges their reports. RTK filters terminal output before it reaches the context window, keeping only failing tests for example. Google's Mantis is a set of security-review skills (including Mantis Plan and Mantis Reflect) that the speaker suggests scheduling as Hermes cron jobs against a hosted app, with Slack alerts. Agent Reach gives access to restricted sites like Reddit and GitHub using free methods. Skill Retriever addresses context bloat from skill names and descriptions sent with every message, claiming a drop from about 11,000 to 2.3k tokens per turn. Roughly a fifth of the runtime is a sponsor read and community plugs, and the commands are shown only on screen, not spoken, so the notes are thin on reproducible detail.
+
+## Key ideas
+- **Most of the listed skills are portable to any coding agent, not Hermes-specific.** — The speaker frames the skills as packaged solutions for problems the base agent can't handle, and says most work with any AI coding agent. ([0:00](https://youtu.be/WJgxX0Eib6k?t=0))
+- **Long sessions drift because the plan sits in chat history; moving it to files injected by a hook is the differentiator.** — planning-with-files writes taskplan.md, findings.md and progress.md to the project folder. A hook forcibly inserts them into context, so the model cannot choose to ignore them. The speaker says Hermes is one of the few agents with hooks and cites the vendor's own testing showing less drift. ([1:20](https://youtu.be/WJgxX0Eib6k?t=80))
+- **Delegate Setup routes each task to whichever installed coding agent suits it.** — It detects installed tools (choosing from 18 options at install), presents a plan of which agent handles which area with model and effort level, runs the delegated agents in a no-permission-prompt mode, and returns one collective report. Dedicated delegation skills exist for Claude Code, Codex and Cursor. ([2:48](https://youtu.be/WJgxX0Eib6k?t=168))
+- **Skills that only fire when asked are unreliable; the fix is to package the rule as a skill with a reference, not a prompt.** — The speaker says Hermes won't use Claude Code or Codex delegation skills unless told which tasks to route, and agents forget instructions, so the RTK routing rule was packaged as a skill with per-command references. ([2:48](https://youtu.be/WJgxX0Eib6k?t=168))
+- **Filter command output before it enters the context window.** — RTK sits between the agent and the shell and keeps only the needed part of output, using a database of common commands. For tests it keeps failures only. The speaker claims around 90% of terminal output is unneeded (his estimate, not measured). ([4:10](https://youtu.be/WJgxX0Eib6k?t=250))
+- **Recurring security review fits an always-on agent with scheduled jobs.** — Google's Mantis skill set (Mantis Plan, Mantis Reflect and others) can run against a hosted app on a Hermes cron schedule, with Slack alerts. Speaker says he runs the same set on his own project. ([7:01](https://youtu.be/WJgxX0Eib6k?t=421))
+- **Skill names and descriptions are a per-message context tax that grows with skill count.** — Only names and descriptions are sent every message, which the speaker says becomes a large share of context with 100+ skills. Skill Retriever runs a retrieval step before the model call, scores skills against the message, and sends only the top matches. ([9:14](https://youtu.be/WJgxX0Eib6k?t=554))
+
+## Techniques
+- **File-backed plan injected by a hook** — Install the planning-with-files skill from the repo's install command; the skill installs its hooks automatically. Run the skill with a task prompt. It creates taskplan.md (subtasks, done one at a time), findings.md (problems and fixes, to avoid repeats) and progress.md (current position) in the project folder, and the hook inserts all three into context on each turn. *When:* Long, multi-step agent sessions where the model drifts from the assigned task or forgets early instructions; needs an agent that supports hooks.
+- **Orchestrate several installed coding agents from one agent** — Install Delegate Setup with the repo's install command and select the coding tools present on the machine. Invoke it via the slash command with a prompt. Review the proposed task-to-agent map (agent, model, effort level), approve it, and collect one merged report. Delegated agents run without per-command approval. *When:* Mixed-tool setups where you want one entry point and want the orchestrator to pick the agent per task. Running without approvals means the scope should be trusted.
+- **Route shell commands through RTK via a skill** — Install RTK as a CLI, then add the RTK skill, which tells the agent to run commands through rtk and includes a per-command reference. The filtering uses a built-in database of common commands; test runs return only failing tests by default. *When:* Agents spending context on verbose command output such as test suites, builds or logs.
+- **Scheduled security review with alerts** — Install the Mantis skill set (the speaker recommends installing all of them, since each covers a separate part of the review). Create a Hermes cron job that runs the full set against the hosted app or repo, and connect Slack for alerts. The speaker says the agent also applies fixes to his project, which he presents as a feature. *When:* Hosted apps needing repeated security checks without someone remembering to run them.
+- **Retrieval-filtered skill list** — Install the plugin that contains Skill Retriever, then enable Skill Retriever in the plugins area. It matches the user message against chunked skill descriptions before the model call and sends only the top-scoring skills. *When:* Agents with over 100 skills where the skill list dominates context and irrelevant skills distract the model.
+
+## Numbers
+- Planning-with-files uses three files: taskplan.md, findings.md, progress.md. ([1:20](https://youtu.be/WJgxX0Eib6k?t=80))
+- Delegate Setup installer offers a choice of 18 skills. ([4:10](https://youtu.be/WJgxX0Eib6k?t=250))
+- Speaker estimates about 90% of terminal command output is not needed by the agent (no measurement shown). ([4:10](https://youtu.be/WJgxX0Eib6k?t=250))
+- Agent Reach covers more than 15 platforms, including Instagram, Facebook, Twitter and Reddit. ([9:14](https://youtu.be/WJgxX0Eib6k?t=554))
+- Hermes ships with more than 90 built-in skills. ([9:14](https://youtu.be/WJgxX0Eib6k?t=554))
+- Vendor figures: with the full skill list about 11,000 tokens per turn; with Skill Retriever about 2.3k; claimed saving over 9,000 tokens every turn (vendor claim, unverified in the video). ([10:39](https://youtu.be/WJgxX0Eib6k?t=639))
+
+## Hot takes
+- The hook-based 'agent cannot ignore the plan' claim is the most substantive point, but the only evidence is the vendor's own testing.
+- The Skill Retriever savings (11k to 2.3k tokens per turn) come from the vendor's docs, not from anything the speaker measured.
+- The video is a sponsor-and-plug mix: a Plural sponsor read and an AI Labs Pro community plug (the RTK skill is paywalled there), which caps quality.
+- Install commands and config are referenced in the repo links, not spoken, so the video alone does not give a reproducible setup.
+- The claim that Opus models forget faster in long Hermes sessions is anecdotal.
+
+## Tools mentioned
+Hermes Agent, Claude Code, Codex, Cursor, planning-with-files, Delegate Setup, RTK, Mantis (Google), Agent Reach, Skill Retriever, Plural Workbench, Opus
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness wraps the Claude Code CLI with checkpoint/resume and skill ranking; file-backed plan state injected by a hook is close to its checkpoint design, and Delegate Setup mirrors its plan-critique-debate routing across agents. → *Compare ProsHarness checkpoint/resume with a hook-injected taskplan/findings/progress file set; test whether injecting state every turn reduces drift on a long Claude Code run.*
+- **agentos** (1/3): Skill Retriever's per-turn top-k skill filter is a context-budget idea that could apply to SkillForge, but the video's token figures are vendor-claimed. → *Read the Skill Retriever docs and measure how many skill-description tokens a turn spends at 100+ skills before proposing a retrieval filter in SkillForge.*

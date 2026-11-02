@@ -1,0 +1,183 @@
+{
+ "one_line": "Breakdown of the eMudra CA incident: eight intermediate CA private keys were trivially guessable (one was just 4). Browsers blocked them, but non-browser TLS clients that trust on-disk CA bundles stayed exposed.",
+ "summary": "On October 17, 2026, a researcher reported that the private keys of eight eMudra intermediate CAs were compromised. Six were TLS issuing CAs and two were code-signing CAs, all created in April 2025 and cross-signed by Sectigo. The keys are P-384 EC keys that were 47 zero bytes followed by one byte, so each could be found by computing k*G for small k until it matched the public key. The speaker reproduced this with a short Python script; all eight were recovered in under a second. The cause, per eMudra's incident report, was a key-ceremony test that created a second key pair on the HSM with a similar name, and the wrong one was used to issue the certificates. Warning signs existed from June 2025, when Sectigo reported invalid signatures on eMudra's revocation lists and eMudra re-signed them with the weak keys instead of investigating. Browsers are protected because none of these certificates appeared in Certificate Transparency logs and browsers require CT logging. Non-browser tools (curl, Python, Node, Go, Git) trust whatever CA bundle is on disk and generally do not check CT or revocation, so a forged api.stripe.com certificate was reportedly accepted on the Linux and macOS machines a researcher tested. Remediation so far: Chrome, Firefox and Safari blocked the intermediates within hours, Apple and Microsoft followed within three days, Cloudflare shipped client updates with no signs of exploitation, Go shipped an emergency release that blocks the intermediates, and Mozilla is removing the eMudra root (Chrome follows on October 27). About 30,000 certificates must move before sites break. The speaker's main lesson is that cryptography cannot detect missing randomness, so a process must verify that the key in a certificate is the one intended.",
+ "speakers": [
+  "Andrus (Better Stack host)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "eMudra",
+  "Sectigo",
+  "Apple",
+  "Google",
+  "Microsoft",
+  "Mozilla",
+  "Cloudflare"
+ ],
+ "format": "news",
+ "topics": [
+  "security-guardrails",
+  "dev-tools"
+ ],
+ "tags": [
+  "certificate-authority",
+  "tls",
+  "pki",
+  "elliptic-curve",
+  "p-384",
+  "hsm",
+  "key-ceremony",
+  "certificate-transparency",
+  "revocation",
+  "ca-bundle",
+  "supply-chain-security",
+  "ci-security"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The compromised eMudra keys were not brute-forceable in theory but were trivial in practice.",
+   "detail": "A random P-384 private key has roughly 10^115 possibilities, but these keys were 47 zero bytes plus one byte, so only 256 values existed. Recovery means computing 1*G, 2*G, 3*G and so on until the public key matches.",
+   "t": "1:09"
+  },
+  {
+   "idea": "The eight recovered keys were 4, 56, 66, 115, 155, 156, 230 and 237.",
+   "detail": "A key of 4 is still a valid point on the curve and passes structural checks, so the certificates look normal. Certificate validation alone does not reveal the problem.",
+   "t": "2:12"
+  },
+  {
+   "idea": "The root cause was a key-ceremony mistake on the HSM, not a cryptographic weakness.",
+   "detail": "Per eMudra's incident report on Mozilla's bug tracker, a ceremony changed to test key export created a second key pair with a similar name, and the wrong one was used when generating the certificate.",
+   "t": "2:12"
+  },
+  {
+   "idea": "Warning signs were ignored for about 16 months.",
+   "detail": "In June 2025 Sectigo reported invalid signatures on eMudra's revocation lists, because they were signed with strong keys that did not match the weak keys in the certificates. eMudra re-signed the lists with the weak keys instead of investigating.",
+   "t": "2:12"
+  },
+  {
+   "idea": "Browsers were protected by Certificate Transparency, but the rest of the software ecosystem was not.",
+   "detail": "None of these intermediates appeared in CT logs, and Chrome, Firefox and Safari reject unlogged certificates. Curl, Python, Node, Go and Git trust whatever CA bundle is on disk and do not check CT or revocation. A researcher reportedly forged an api.stripe.com certificate that these tools accepted on Linux and macOS.",
+   "t": "3:40"
+  },
+  {
+   "idea": "Devices that never receive updates stay exposed until the certificates expire.",
+   "detail": "Smart TVs, routers and similar devices may trust these intermediates until July 2039, since they cannot be patched.",
+   "t": "3:40"
+  },
+  {
+   "idea": "The lesson is process verification, not better cryptography.",
+   "detail": "Cryptography cannot warn you when randomness is missing. The real protection is a process that confirms the key in a certificate is the one that was meant to be generated, and mismatched signatures should be treated as an emergency.",
+   "t": "6:18"
+  },
+  {
+   "idea": "Remediation has been broad but uneven.",
+   "detail": "Cloudflare shipped updates to WARP, the 1.1.1.1 app and Tunnel on October 20 and found no signs of exploitation. Go pushed an emergency release that blocks the intermediates in its standard library. Mozilla is removing the eMudra root, and Chrome follows on October 27. About 30,000 certificates need to move within about a week.",
+   "t": "5:07"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Check EC public keys for small private keys",
+   "how": "For an EC public key Q on a known curve, compute k*G for k = 1, 2, 3, ... and compare each result to Q. A match within a small range means the private key is trivially recoverable. The speaker used a short Python script on the certificates from Mozilla's announcement and recovered all eight keys in under a second.",
+   "when": "Auditing any CA, certificate or EC key you did not generate yourself, or screening intermediates after a suspected key-generation incident."
+  },
+  {
+   "name": "Upgrade on-disk CA bundles and the Go toolchain, then rebuild",
+   "how": "Bump the Python certifi package to 2026.10.19 (the captions read 'certified'; verify the package name), upgrade Go to 1.27.3, and rebuild container images so the fixed trust store is baked in.",
+   "when": "CI runners, build containers and servers where tools like curl, Python, Node, Go and Git rely on the system or bundled CA store, since these clients do not get browser-side CT or revocation protection."
+  },
+  {
+   "name": "Verify client trust against a known-bad test host",
+   "how": "Run curl against the test host under g3bemudra.wehaveaproblem.com (the auto-captions garble the exact hostname, so confirm it from the video description or Mozilla's report). A certificate error means the client now rejects the bad chain, and the speaker says that means the client is safe.",
+   "when": "After patching machines, containers or CI images, to confirm that outbound TLS clients reject the compromised intermediates."
+  },
+  {
+   "name": "Verify key provenance during CA and HSM key ceremonies",
+   "how": "Before signing, confirm that the key pair on the HSM used for issuance is the one intended for that certificate, by checking identity and public key, not just name. Compare the certificate's public key with the expected key from the ceremony record.",
+   "when": "Running or auditing a CA, or any HSM-backed signing process where similarly named key pairs can exist."
+  },
+  {
+   "name": "Treat signature mismatches on revocation lists as incidents",
+   "how": "If a CRL or similar list fails to verify against the issuing key, halt and investigate the key mismatch. Do not re-sign the list with whatever key is available.",
+   "when": "Monitoring CA-published revocation data, or operating any signing system that publishes trust artifacts."
+  }
+ ],
+ "tools": [
+  "Certificate Transparency logs",
+  "Python",
+  "curl",
+  "Node.js",
+  "Go 1.27.3",
+  "Git",
+  "certifi 2026.10.19",
+  "Cloudflare WARP client",
+  "Cloudflare 1.1.1.1 app",
+  "Cloudflare Tunnel",
+  "Chrome",
+  "Firefox",
+  "Safari",
+  "Hacker News"
+ ],
+ "numbers": [
+  {
+   "claim": "Eight eMudra intermediate CA keys were compromised: six TLS issuing CAs and two code-signing CAs, all created April 2025.",
+   "t": "0:00"
+  },
+  {
+   "claim": "The incident went unnoticed for about 17 months (the speaker also says the problem could have been caught about 16 months earlier, in June 2025).",
+   "t": "0:00"
+  },
+  {
+   "claim": "A random P-384 key has about 10^115 possibilities; these keys had only 256 (47 zero bytes plus one byte).",
+   "t": "1:09"
+  },
+  {
+   "claim": "Chrome and Firefox blocked the intermediates within hours; Apple and Microsoft followed over the next three days.",
+   "t": "1:09"
+  },
+  {
+   "claim": "All eight recovered private key values were 4, 56, 66, 115, 155, 156, 230 and 237, found in under one second.",
+   "t": "2:12"
+  },
+  {
+   "claim": "Cloudflare client updates shipped October 20; Chrome's removal of the eMudra root is scheduled for October 27.",
+   "t": "5:07"
+  },
+  {
+   "claim": "About 30,000 certificates must move to another hierarchy within roughly a week.",
+   "t": "5:07"
+  },
+  {
+   "claim": "Devices that never update may trust the intermediates until July 2039.",
+   "t": "3:40"
+  },
+  {
+   "claim": "Certifi 2026.10.19 and Go 1.27.3 are the recommended fixed versions.",
+   "t": "6:18"
+  }
+ ],
+ "hot_takes": [
+  "Browsers are fine because of CT and revocation, but almost everything else (curl, Python, Node, Go, Git, CI runners holding cloud credentials) trusts on-disk CA bundles without those checks.",
+  "Re-signing revocation lists with the weak keys after a verification failure is described as the line between an honest mistake and gross negligence (a Hacker News quote the speaker partly endorses).",
+  "Cryptography cannot detect missing randomness, so the real protection is a process that confirms the certificate's key is the intended one.",
+  "The title is attention-grabbing but the factual content is substantive and specific. The video includes repeated subscribe requests (around 5:07 and 7:28) and a stat about viewers not subscribing, but it is not sponsored."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS routes agent traffic through a proxy and runs sandboxed execution. Any outbound client that trusts an on-disk CA bundle, and any sandbox image built from one, inherits this exposure. The video does not discuss agents directly.",
+   "action": "Audit which CA bundles the Govrix proxy, the InferCraft model clients and the Crucible/celld sandbox images trust, and confirm they reject the eMudra intermediates and that images are rebuilt with patched certifi and Go."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs Claude Code in CI-like environments that hold credentials. The video's warning about install scripts piped to bash and CI runners with cloud credentials applies to how it fetches tooling.",
+   "action": "Pin and verify the TLS trust store used by ProsHarness's installers and CI runners, and add a key-provenance or certificate-match check before trusting any newly issued signing key."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

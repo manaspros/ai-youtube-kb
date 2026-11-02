@@ -1,0 +1,49 @@
+# WTF Is the Context Layer? The Missing Infrastructure for Production Agents — Prukalpa Sankar
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `8G_1-3IO4ZQ` · [watch](https://youtu.be/8G_1-3IO4ZQ) · **date:** 2026-07-18 · **length:** 20:54 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Prukalpa Sankar · **orgs:** Atlan, GitLab, Zoom, Discord, Affirm, Mastercard, General Motors, American Express, Amazon, Salesforce, HubSpot, Relevance, Google, Glean, Qualified, Artisan
+- **topics:** context-engineering, memory, skills-self-improvement, enterprise-adoption · **tags:** context layer, company brain, semantic layer, metrics definitions, skill governance, agent sprawl, context drift, trace-driven learning, reverse engineering data stack, agent registry, context as IP
+
+> Atlan's founder argues production agents fail on missing business context, not model intelligence, and proposes a shared, versioned "context layer" (a company brain) that agents draw from.
+
+## Summary
+Prukalpa Sankar, founder of Atlan, argues that models keep getting smarter while production AI value lags because agents lack situated business context. She uses a data-analyst persona to show how humans learn context on the job through definitions, playbooks, norms and feedback. Atlan's first era bootstrapped many single-purpose agents per team, which hit problems: context engineering took far longer than building the agent, agents drifted apart and were hard to trace, and each tool migration trapped context. The team then moved to a shared context layer that holds semantics, metrics, a data graph, and a skill library, with about 300 skills and 40 agents built up over six months. Managing that layer exposed dependency drift, unclear ownership, and security problems, so they proposed treating context like code with versioning, approvers, and quality checks. Traces feed a human-approved loop that improves skills, and the first version of the company brain can be reverse-constructed from connected business systems. The talk is partly a vendor pitch, but the operational lessons are concrete.
+
+## Key ideas
+- **Performance is intelligence plus context, and context is what has barely improved** — She says benchmarks measure cognitive horsepower, while situated knowledge of the business (definitions, playbooks, norms) is scattered across dashboards, Slack and people's heads. Her claim is that this is the real bottleneck for agents. ([2:49](https://youtu.be/8G_1-3IO4ZQ?t=169))
+- **Model the agent on how a human analyst learns the job** — A good analyst needs three things: facts (what a metric means, what a week is), expertise (diagnostic playbooks such as checking seasonality or a recent launch), and norms (who is asking and how to answer). The talk uses this framing to define what the agent must be given. ([3:50](https://youtu.be/8G_1-3IO4ZQ?t=230))
+- **Per-team single-purpose agents become islands** — Building an agent took minutes, but getting its business context right took far longer. Agents also could not receive updates from each other (marketing changed positioning, the sales agent kept the old one), and it was hard to tell whether a failure came from the model, the agent or the context. ([7:56](https://youtu.be/8G_1-3IO4ZQ?t=476))
+- **Shared context across a team of agents, not separate memories** — Each agent learned separately, so there was no single version of truth. The fix she proposes is one shared company brain that all agents retrieve from, with shared language, metrics, playbooks and decision rights. ([11:34](https://youtu.be/8G_1-3IO4ZQ?t=694))
+- **Once you have hundreds of skills, manage context like code** — At about 300 skills and 40 agents, skills that depended on each other drifted and broke downstream when one changed. Ownership was unclear, and secrets sat in .env files while people downloaded public skill repos. She argues for versioning, dependency tracking, approver and maintainer roles, and security posture. ([14:15](https://youtu.be/8G_1-3IO4ZQ?t=855))
+- **Traces are the raw material for a compounding learning loop** — A harness reads agent traces and proposes context or skill changes, and a human approves or rejects each one. Separately, connecting Salesforce, HubSpot and the warehouse lets you reverse-construct how systems relate, which is a faster way to a first version of the company brain. ([16:42](https://youtu.be/8G_1-3IO4ZQ?t=1002))
+- **Hard-coded context does not scale and carries risk** — Today most agents have context hard-coded into them. She warns that as autonomous systems multiply, conflicting definitions (her example: sales and finance reporting different revenue numbers) will spread into agent behavior. She closes by calling context a company's IP. ([18:07](https://youtu.be/8G_1-3IO4ZQ?t=1087))
+
+## Techniques
+- **Jobs-to-be-done scaling factor for agent selection** — Map a team's daily tasks, then score each task on how well AI could do it (for example, documentation and meeting prep score high, relationship management scores low). Build agents for the high-scoring tasks. *When:* Choosing where to start with agents in a team that has no existing AI roadmap.
+- **Shared context layer as a company brain** — Put semantics (metric definitions such as ARR or qualified lead), a data graph (which table to pull from), org structure and entities, and a skill library in one shared repo. Agents retrieve from it through MCP, SQL, vector search or hybrid assembly, instead of hard-coding context per agent. *When:* Several agents or teams need to agree on the same definitions and playbooks.
+- **Context lifecycle management like software** — Give each skill a version, owner, maintainer and approver, and record which other skills depend on it. When one skill changes, flag its downstream dependents. Add security checks for secrets and for third-party skill sources. *When:* The number of skills or agents has grown and changes are breaking other agents.
+- **Trace-driven maintainer loop** — Run a harness over agent traces to propose skill or context edits. A human approves or rejects each proposal, and the approved edits feed the next version. *When:* Agents keep making the same mistakes and you want corrections to compound without manual rewrites.
+- **Reverse-construct the data stack to bootstrap context** — Connect the CRM, the marketing tools and the warehouse, then have AI infer how their objects and fields relate. Use the result as the first draft of the company brain and correct it from there. *When:* Business context is spread across many systems and you need a starting point fast.
+
+## Numbers
+- About 1 in 5 AI use cases make it to production (speaker's figure, no source given) ([1:25](https://youtu.be/8G_1-3IO4ZQ?t=85))
+- 56% of CEOs report zero financial benefit from AI so far (speaker's figure, no source given) ([1:25](https://youtu.be/8G_1-3IO4ZQ?t=85))
+- IQ explains only about 10% of job performance variance (speaker's figure) ([2:49](https://youtu.be/8G_1-3IO4ZQ?t=169))
+- Model intelligence has grown about 1000x in the last decade and about 2x in the last six months (speaker's rough figures) ([2:49](https://youtu.be/8G_1-3IO4ZQ?t=169))
+- Building an agent took about five minutes, but giving it accurate business context took much longer ([7:56](https://youtu.be/8G_1-3IO4ZQ?t=476))
+- About 300 skills and 40 agents built in the shared team context over six months ([14:15](https://youtu.be/8G_1-3IO4ZQ?t=855))
+- Agent platform churn in 12 months: Relevance, then Google ADK, then Glean, then Claude Code at about 50-50 with Codex ([10:24](https://youtu.be/8G_1-3IO4ZQ?t=624))
+- Business systems can number around 60, which is the starting point for reverse-constructing the company brain ([16:42](https://youtu.be/8G_1-3IO4ZQ?t=1002))
+
+## Hot takes
+- Context, not model intelligence, is the main reason production agents disappoint, and context is king for the agentic era.
+- Hard-coding business context into each agent is a risk that will get worse as autonomous systems multiply.
+- Context is IP: two companies on the same models differ by the context they encode.
+- Agents should share one company brain rather than keep separate memories.
+
+## Tools mentioned
+Claude Code, Codex, Claude Cowork, Google ADK, Glean, Relevance AI, MCP, Qualified, Artisan
+
+## Relevance to our work
+- **agentos** (2/3): The talk's shared context layer and conflicting-definitions problem maps onto MemoryMesh (L2A) conflict resolution and provenance, and its skill-mining loop maps onto SkillForge (L2D). → *Add a canonical-definitions store to MemoryMesh (metric and entity meanings) that agents must read before answering, and check its conflict resolution against the sales-vs-finance revenue example.*
+- **prosharness** (1/3): The trace-driven approve/reject loop could sit alongside ProsHarness checkpoints and skill ranking, but the talk does not cover harness internals. → *Read the trace-to-skill approval loop idea later and decide if ProsHarness should surface proposed skill edits from run traces for approval from the phone.*

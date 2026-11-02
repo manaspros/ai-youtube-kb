@@ -1,0 +1,149 @@
+{
+ "one_line": "Better Stack walks through the headline features of the upcoming Postgres 19 (beta 2): atomic insert-or-select, SQL property graphs over existing tables, REPACK CONCURRENTLY, plan pinning, and smaller changes.",
+ "summary": "Warren from Better Stack previews Postgres 19, currently in beta 2 (landed July), with final release expected around September or October. The first feature is ON CONFLICT DO SELECT, which lets a single statement insert a row or return the existing one atomically, replacing a two-query insert-then-select pattern. The main feature is native graph queries: you define a property graph over existing tables (customers, orders, products as vertices; two join tables as edges), which works like a view and leaves the schema unchanged. The speaker demonstrates a \"what has Alice ordered\" query that drops from four join statements to a single path traversal, and says the result is the same. He is explicit that this is not a Neo4j replacement, since a dedicated graph database is still better for traversal performance. The REPACK feature rewrites a table into a fresh file to return disk space to the OS, and CONCURRENTLY keeps the table readable and writable during the rewrite, unlike VACUUM FULL; it needs free space for a second copy of the table and its indexes. The quick-fire round covers pg_plan_advice (capture and pin a fast query plan), JIT now off by default because its cost estimates were unreliable, parallel index vacuuming (opt-in), and COPY exporting directly to JSON.",
+ "speakers": [
+  "Warren"
+ ],
+ "orgs": [
+  "Better Stack",
+  "PostgreSQL"
+ ],
+ "format": "news",
+ "topics": [
+  "dev-tools",
+  "data-engineering"
+ ],
+ "tags": [
+  "postgres",
+  "postgres-19",
+  "property-graph",
+  "graph-queries",
+  "on-conflict",
+  "upsert",
+  "repack",
+  "vacuum",
+  "pg_plan_advice",
+  "jit",
+  "copy-json",
+  "pg_durable",
+  "neo4j"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Postgres 19 (beta 2) headline: native graph queries layered over ordinary relational tables.",
+   "detail": "The speaker frames the release as making the 'just use Postgres for everything' advice stronger, and says he will cover the headline features and graph queries in depth.",
+   "t": "0:00"
+  },
+  {
+   "idea": "ON CONFLICT DO SELECT makes get-or-create atomic in one statement.",
+   "detail": "Previously an insert with ON CONFLICT DO NOTHING followed by a separate SELECT was not atomic. With PG19, insert with ON CONFLICT on the unique column DO SELECT RETURNING returns the row either way; adding FOR UPDATE also locks it for in-statement modification.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Graph queries replace long join chains with a path syntax.",
+   "detail": "Finding everything Alice ordered took four join statements across five tables. The same result comes from following the path customers -> customer orders -> orders -> order items -> products, and the speaker says the path is far easier to read.",
+   "t": "1:56"
+  },
+  {
+   "idea": "A property graph is a view-like declaration; no new tables are created.",
+   "detail": "CREATE PROPERTY GRAPH names the vertex tables (the three entity tables) and edge tables (the two join tables, each with a source and destination). The existing schema stays unchanged and the graph adds functionality on top.",
+   "t": "3:16"
+  },
+  {
+   "idea": "Speaker's caveat: this is not a Neo4j replacement.",
+   "detail": "If the need is graph storage and deep traversal performance, a dedicated graph database is still the better choice. The feature is pitched at removing painful multi-table SQL joins, not at graph workloads in general.",
+   "t": "4:32"
+  },
+  {
+   "idea": "REPACK CONCURRENTLY returns disk space to the OS without a long table lock.",
+   "detail": "Postgres never updates rows in place, so dead versions stay on disk after VACUUM. REPACK rewrites the table into a fresh file; VACUUM FULL does the same but locks the table for the whole rewrite, and pg_repack was the usual extension workaround. The CONCURRENTLY keyword keeps the table readable and writable, at the cost of temporary space for a second copy of the table and its indexes.",
+   "t": "4:32"
+  },
+  {
+   "idea": "Plan pinning and smaller PG19 changes.",
+   "detail": "Query plans can regress with no code change; pg_plan_advice lets you capture a plan while it is fast and pin it. JIT is off by default because the planner's cost estimate that triggered it was unreliable. Index vacuuming can use parallel workers, but the user must enable it. COPY can export straight to JSON.",
+   "t": "5:37"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Atomic get-or-create with ON CONFLICT DO SELECT",
+   "how": "Insert into the table with the values and ON CONFLICT on the unique column (e.g. email) DO SELECT RETURNING the columns you need, in one statement. For a row you also intend to modify, use DO SELECT FOR UPDATE RETURNING id, name. Spoken form in the video: 'insert into users ... on conflict email do select returning star'. Exact SQL was shown on screen, not dictated in full.",
+   "when": "Idempotent upserts or get-or-create on a unique key under concurrency, where the old insert-then-select sequence can race."
+  },
+  {
+   "name": "Declare a property graph over existing tables",
+   "how": "CREATE PROPERTY GRAPH my_shop with vertex tables (customers, orders, products) that hold data, and edge tables (customer_orders: source customers, destination orders; order_items: source orders, destination products). No new tables are created; the graph is a view-like layer over the existing schema.",
+   "when": "Queries that chain many joins across entity and join tables, where you want to keep the schema and still express the relationships as a path."
+  },
+  {
+   "name": "Path-style graph query with explicit columns",
+   "how": "Write the path as a sequence of hops (customers -> customer orders -> orders -> order items -> products) matching the graph definition, then list the output columns after the path. The speaker's example returns the same rows as the four-join SQL.",
+   "when": "Multi-hop relationship queries that are hard to read as nested joins. Not a substitute for a dedicated graph database when traversal performance is the requirement."
+  },
+  {
+   "name": "REPACK CONCURRENTLY to reclaim disk space on large tables",
+   "how": "Run the REPACK command on the table with the CONCURRENTLY keyword, as shown in the video. Before running, make sure there is free disk space for a second copy of the table plus all its indexes, because the space is only returned to the OS once the rewrite finishes.",
+   "when": "Large, bloated tables where VACUUM alone does not shrink disk usage and VACUUM FULL's exclusive lock is unacceptable. Use pg_repack-style tooling instead only if the extension behaviour is needed."
+  },
+  {
+   "name": "Pin a known-good query plan with pg_plan_advice",
+   "how": "Enable the pg_plan_advice module, capture the plan while the query is still fast, and pin it so the planner keeps using it. The speaker did not show the configuration keys.",
+   "when": "A query that gets slow after a planner change or statistics drift with no application code change."
+  },
+  {
+   "name": "Parallel index vacuum (opt-in)",
+   "how": "Vacuuming indexes can now use several workers in parallel, but it must be turned on explicitly. The setting name was not shown in the transcript.",
+   "when": "Vacuuming very large tables where index cleanup dominates the time."
+  }
+ ],
+ "tools": [
+  "PostgreSQL 19 (beta 2)",
+  "pg_plan_advice (spoken as 'pg plan advice')",
+  "PG Repack / pg_repack (extension, referenced as a previous workaround)",
+  "VACUUM FULL",
+  "Neo4j",
+  "pg_durable (spoken as 'pg durable', linked for further reading)"
+ ],
+ "numbers": [
+  {
+   "claim": "Alice's order lookup needed four separate join statements across five tables; the graph query replaces them with one path.",
+   "t": "1:56"
+  },
+  {
+   "claim": "The graph is defined with three vertex tables (customers, orders, products) and two edge tables (customer_orders, order_items).",
+   "t": "3:16"
+  },
+  {
+   "claim": "REPACK CONCURRENTLY needs free disk space for a second copy of the table and all of its indexes.",
+   "t": "5:37"
+  },
+  {
+   "claim": "Postgres 19 beta 2 landed in July; final release expected around September or October.",
+   "t": "7:02"
+  }
+ ],
+ "hot_takes": [
+  "Title says 'Crazy Powerful', but most of the 7:45 is a roundup of small features; the graph syntax is the only one with real design weight, and it is a view-like layer, not new storage.",
+  "The speaker explicitly says property graphs are not a Neo4j replacement for graph storage and deep traversal; the value he claims is for avoiding long SQL join chains.",
+  "He presents REPACK CONCURRENTLY as covering pg_repack for normal tables, while noting the extra disk-space requirement and that it is not an exact replacement."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L3 uses Postgres/pgvector for storage and Neo4j for GraphRAG (MemoryMesh). Postgres property graphs could cover shallow entity/relation hops in GraphRAG, while the speaker says deep traversal still belongs in a dedicated graph database.",
+   "action": "When PG19 is GA, prototype a CREATE PROPERTY GRAPH over MemoryMesh's entity and relation tables and measure shallow-hop GraphRAG queries against the current Neo4j path before adding more Neo4j surface."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness needs checkpoint/resume for long agent runs. The video only names pg_durable (durable workflows inside Postgres) and links a breakdown, without details.",
+   "action": "Read the pg_durable breakdown the video links and check whether a Postgres-backed durable-workflow store could hold ProsHarness checkpoints."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

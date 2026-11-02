@@ -1,0 +1,119 @@
+{
+ "one_line": "A short Better Stack tutorial on turning Nginx access logs in Docker into structured JSON with Vector, using its VRL nginx parser, and printing the result as JSON.",
+ "summary": "The presenter runs a demo stack in Docker Compose: a Bun API on port 3000 behind Nginx on port 80. Bruno's runner sends three requests, which produce unstructured log lines. Vector is added as a Compose service that mounts a local config file and the Docker socket, so it can read container logs. The first config uses a docker_logs source filtered to the Nginx container and a console sink with the JSON codec. That still leaves the Nginx line as a raw string. A remap transform then calls the built-in parse_nginx_log function with the \"combined\" format, using the \"!\" parser form because the input is unstructured. It writes the result to a new formatted_message field, then deletes the original message and the noisy label field. The output now splits into agent, client, referrer, request and size fields. The presenter says the next step is pointing the sink at an analysis platform for search, dashboards and alerts, but does not show that step.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "observability",
+  "dev-tools"
+ ],
+ "tags": [
+  "structured-logging",
+  "vector",
+  "vrl",
+  "nginx",
+  "docker-compose",
+  "json-logs",
+  "log-parsing",
+  "jq"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Structured JSON logs are the goal for production, because unstructured log lines are hard to read, search, filter and chart",
+   "detail": "The presenter's motivation: in a raw Nginx line, status code and byte size are not labelled, and analysis and dashboards are hard. Unstructured logs are acceptable in development.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Vector can read Docker container logs directly, given the Docker socket and the config file mounted into its container",
+   "detail": "The Vector service in Docker Compose needs two volumes: the local Vector config mounted over the one inside the container, and access to Docker logs through the Docker socket. The initial source is docker_logs, filtered to the Nginx container.",
+   "t": "2:26"
+  },
+  {
+   "idea": "Shipping raw logs is not enough: a remap transform has to name the part of the log that should be parsed",
+   "detail": "The first run still prints raw Nginx lines, because nothing told Vector which field to parse. The fix is a transform of type remap that reads the Docker log stream.",
+   "t": "3:48"
+  },
+  {
+   "idea": "VRL's parse_nginx_log function turns a combined-format access line into named fields",
+   "detail": "The function is called with the old message field and the second argument \"combined\". The output includes agent, client, referrer, request and size. The presenter says to use the VRL function reference to find the parser and its input examples.",
+   "t": "3:48"
+  },
+  {
+   "idea": "The exclamation mark in parse_nginx_log! marks a parser that takes unstructured text, unlike a normal VRL function that takes structured data",
+   "detail": "The presenter explains the ! suffix as a parser marker. Its input is the raw string, and the second argument names the log format.",
+   "t": "5:10"
+  },
+  {
+   "idea": "Delete the raw message and noisy metadata in the transform, so only the structured fields reach the sink",
+   "detail": "After parsing, the transform deletes the original message field and the label field, which holds container name, host and image. The presenter notes that more fields such as the image or source type could be removed the same way.",
+   "t": "5:10"
+  },
+  {
+   "idea": "The next step is to point the sink at an analysis backend. The video stops at a console JSON sink and does not demonstrate a backend",
+   "detail": "The presenter says the sinks can then send messages to other platforms for search, filtering, dashboards and alerts on server errors. None of those integrations are shown.",
+   "t": "6:23"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run Vector as a Compose sidecar that tails Docker logs",
+   "how": "Add a vector service to docker-compose. Mount the local Vector config file over the config path inside the container. Mount the Docker socket so Vector can read container logs. Keep the config's source as docker_logs, filtered to the Nginx container, and the sink as console with the json codec. The config path inside the container is not stated in the transcript.",
+   "when": "When containers write logs to stdout and you want structured output without changing the application code."
+  },
+  {
+   "name": "Parse Nginx access logs with a VRL remap transform",
+   "how": "Add a transforms section with type: remap and inputs set to the Docker logs source. In the source, set a new field, e.g. .formatted_message = parse_nginx_log!(.message, \"combined\"). Then delete the raw .message and the .label field with del().",
+   "when": "When access logs are in Nginx's combined format and you want named fields such as client, request, status and size for search, filtering or charts."
+  },
+  {
+   "name": "Debug the pipeline by formatting the last log line with jq",
+   "how": "Send a request, then read the last log line from the Vector console output and pipe it through jq to see the field tree. Check whether the parser ran, and which fields to delete.",
+   "when": "When you are checking that a transform ran and deciding which fields to drop as noise."
+  },
+  {
+   "name": "Use Bruno's collection runner to generate repeatable test traffic",
+   "how": "Keep pre-built GET, POST and DELETE requests in Bruno, and run them as a collection with the runner so each run produces the same set of log lines.",
+   "when": "When you need repeatable traffic to check a log pipeline or a parser change."
+  }
+ ],
+ "tools": [
+  "Vector (vector.dev), with the VRL remap language and its parse_nginx_log parser",
+  "Docker and Docker Compose",
+  "Nginx",
+  "Bun (demo API on port 3000)",
+  "Bruno (API client and collection runner)",
+  "jq"
+ ],
+ "numbers": [
+  {
+   "claim": "The demo sends three requests (GET, POST, DELETE) from Bruno, and each produces one unstructured log line that the presenter wants to fix",
+   "t": "1:10"
+  }
+ ],
+ "hot_takes": [
+  "Unstructured logs are fine for development but should not be used in production; the presenter presents structured logs as an obvious requirement.",
+  "The tutorial stops at a console sink. It does not show the analysis backend that the title and intro imply, so the production value depends on the viewer's own sink setup.",
+  "The presenter says the Docker networks setting is optional but volumes are required. Nothing shown checks this claim."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS has an L4 observability layer (Prometheus, Grafana, OTel). A VRL-style parse of proxy access logs into named fields before they reach storage is a small, relevant idea for the Govrix Scout proxy, but the video itself covers only Nginx.",
+   "action": "Check whether the Govrix Scout proxy writes access logs as structured JSON. If not, prototype a Vector remap step that parses them before ClickHouse or the OTel pipeline."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The video is about HTTP access-log parsing, and ProsHarness does not depend on it.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

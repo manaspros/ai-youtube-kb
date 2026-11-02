@@ -1,0 +1,170 @@
+{
+ "one_line": "Aditya Bhargava (Etsy) argues the agent harness, not the model, drives results, especially for weaker models, and walks through building a coding-agent harness step by step in his language Agency.",
+ "summary": "The speaker argues against the idea that strong models mean the harness can stay simple, and says a good harness can lift weaker or local open models. He cites HarnessBench (106 tasks), where the same model scored between 52.4% and 76.2% depending only on the harness. He says existing frameworks did not give him what he needed, so he built a six-month-old language called Agency aimed at harness primitives. He then builds a median-fixing coding agent over seven steps: plain tools, human interrupts, handlers, partial function application for locked arguments, a ReAct test-feedback loop, subagents as tools, and measured prompt self-optimization. The safety and pause/resume features are the most reusable ideas. Most claims about Agency are unverified by the talk itself, and the talk is partly a pitch for the language.",
+ "speakers": [
+  "Aditya Bhargava"
+ ],
+ "orgs": [
+  "Etsy",
+  "Agency (agencylang.com)"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "security-guardrails",
+  "multi-agent",
+  "evals"
+ ],
+ "tags": [
+  "harness",
+  "agent-loop",
+  "human-in-the-loop",
+  "interrupts",
+  "partial-function-application",
+  "react",
+  "subagents",
+  "self-optimization",
+  "pause-resume",
+  "tool-schema",
+  "agency-language",
+  "harnessbench"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The harness may matter more than the model",
+   "detail": "The speaker says the common belief that strong models let you keep the harness minimal pushes people toward proprietary models. He argues that a better harness can make weaker, locally runnable models perform closer to frontier ones.",
+   "t": "1:02"
+  },
+  {
+   "idea": "Harness choice alone moves benchmark scores a lot",
+   "detail": "Citing HarnessBench (106 tasks), he says the same model under the same evaluation scored 52.4% to 76.2% when only the harness changed. He says the harness effect is larger for weaker models.",
+   "t": "2:31"
+  },
+  {
+   "idea": "He argues a good harness needs language-level support",
+   "detail": "He says existing tools and frameworks did not fit what he wanted, so he built Agency, a TypeScript-like language for agents. The stated design goal is that simple things stay simple and complex things stay possible.",
+   "t": "3:28"
+  },
+  {
+   "idea": "Any function can be a tool",
+   "detail": "In Agency, a plain function is automatically exposed to the model as a tool. Its docstring becomes the tool description and a JSON schema is generated from its signature. The speaker presents this as the minimum harness step.",
+   "t": "9:33"
+  },
+  {
+   "idea": "Safety comes from interrupts, not from trust in the model",
+   "detail": "Destructive or sensitive built-in functions raise an interrupt by default. Without a handler the run stops, and a handler can ask a human to approve. He calls this the step that turns an unsafe tool-using agent into a safe one.",
+   "t": "11:42"
+  },
+  {
+   "idea": "Partial application keeps the agent autonomous and still bounded",
+   "detail": "Binding an argument such as the directory in advance hides it from the model, so the agent only sees the remaining parameter. This removes the need for approvals while limiting where it can read and write.",
+   "t": "15:58"
+  },
+  {
+   "idea": "A reason-act-observe loop is what makes the agent verify its work",
+   "detail": "The coding agent reads the files, runs the tests, reads the failure, edits, and reruns until the tests pass. He presents this ReAct loop as the change that moved the agent from proposing a fix to confirming one.",
+   "t": "17:57"
+  },
+  {
+   "idea": "Subagents are ordinary tools that reduce context bloat and tool confusion",
+   "detail": "A subagent is just a function with its own system prompt and tool set. He argues that splitting tools across subagents keeps the top-level agent's context and tool choice cleaner, and that parallel subagent calls worked in his demo.",
+   "t": "22:32"
+  },
+  {
+   "idea": "Prompt self-optimization replaces guess-and-check with a measured objective",
+   "detail": "The speaker marks prompt variables for optimization and sets an objective. The optimizer runs the agent for a baseline (0.2 in his example) and iterates. He presents this as the step from trial and error to systematic improvement. The talk names the optimizer 'JEPA', which may be a caption error.",
+   "t": "25:00"
+  },
+  {
+   "idea": "Interrupts can pause and resume execution anywhere, even deep in loops or subagents",
+   "detail": "He says a pending interrupt inside a for loop, tool call, or subagent pauses the whole run and returns control. Execution can be serialized and resumed later at the same point without changing the code. He says few languages or frameworks support this.",
+   "t": "29:08"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Tools as plain functions with docstrings",
+   "how": "Write ordinary functions, and let the framework derive the JSON tool schema from signature and docstring. The speaker says this removes the separate tool-registration step.",
+   "when": "Early in building any agent harness, when moving from a bare model call to tool use."
+  },
+  {
+   "name": "Interrupt plus handler for approvals",
+   "how": "Make destructive or sensitive operations raise an interrupt by default. Attach a handler that prompts a human for approval. A tool with no handler fails loudly instead of acting.",
+   "when": "When an agent can read sensitive data or mutate files, and you need a safe default before you automate it."
+  },
+  {
+   "name": "Partial function application for capability scoping",
+   "how": "Pre-bind arguments such as a directory or workspace on a tool before passing it to the model. The model sees only the remaining arguments and cannot change the bound ones.",
+   "when": "When you want autonomous tool use without approvals, but the tool must stay inside a fixed boundary."
+  },
+  {
+   "name": "ReAct test-feedback loop",
+   "how": "Let the agent read files, run the test suite, observe failures, edit, and rerun until the tests pass. Keep the loop inside the agent rather than having a human re-prompt each step.",
+   "when": "For coding tasks with an automatable check, such as a failing test."
+  },
+  {
+   "name": "Subagents as tools with grouped tool sets",
+   "how": "Wrap each specialist as a function that makes its own LLM call with its own system prompt and tools. Let the top-level agent choose among subagents, not raw tools. Parallel calls are supported.",
+   "when": "When one agent has many unrelated tools, or when context is bloating and the agent picks the wrong tool."
+  },
+  {
+   "name": "Objective-driven prompt optimization",
+   "how": "Mark prompt variables as optimizable, define an objective such as test pass rate, record a baseline run, and let the optimizer rewrite the prompts while it measures improvement.",
+   "when": "When a prompt is hand-tuned by trial and error and you have a scorable outcome."
+  },
+  {
+   "name": "Serializable pause and resume at interrupts",
+   "how": "Raise an interrupt from anywhere in the run, including inside loops or subagents. Serialize the paused state, return control to a human, then resume at the same point later.",
+   "when": "For human approvals that may take hours or days, such as phone-driven approvals or long checkpointed runs."
+  }
+ ],
+ "tools": [
+  "Agency (agencylang.com, TypeScript-like agent language, installed via pnpm)",
+  "HarnessBench (harness benchmark, 106 tasks)",
+  "Claude Code (cited as an example agent: Opus model plus harness)",
+  "Built-in Agency log viewer",
+  "Built-in Agency standard library (includes Wikipedia search tool)"
+ ],
+ "numbers": [
+  {
+   "claim": "HarnessBench: 106 tasks; same model and eval, scores range 52.4% to 76.2% depending only on harness (speaker says more than a 20-point gap)",
+   "t": "2:31"
+  },
+  {
+   "claim": "Speaker's language project Agency is about six months old at the time of the talk",
+   "t": "3:28"
+  },
+  {
+   "claim": "Seven progressive harness examples on one median-fixing coding task; the baseline objective for the self-optimization step is 0.2",
+   "t": "25:00"
+  },
+  {
+   "claim": "Talk length 32:04; date 2026-07-18",
+   "t": "0:01"
+  }
+ ],
+ "hot_takes": [
+  "Keeping the harness simple because models are good is 'moving in the wrong direction', because it makes us depend on proprietary models.",
+  "Building a good harness requires language-level support, not just frameworks or libraries.",
+  "For weaker models, the harness matters more than the model.",
+  "Agent safety and agent capability go hand in hand, and the harness is where that balance is set."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Partial function application (locking arguments so the model cannot change them) and interrupts with approval handlers map onto guardrails and exec-gate design in Crucible. The optimizer baseline-then-measure loop also maps onto EvolveCraft. The talk gives no benchmarks that transfer to AgentOS.",
+   "action": "Prototype locked-argument tool binding in Crucible: the sandbox workspace path is pre-bound server-side, so the model never sees or can change it. Measure whether the exec-gate still blocks writes outside the workspace."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Serializable pause and resume at interrupts is close to the checkpoint/resume and phone-driven approval features in ProsHarness. The talk offers a design reference, though its implementation is in a different language.",
+   "action": "Read the Agency interrupt and resume design and compare it with ProsHarness checkpoint and approval flow. Check whether an approval can pause a Claude Code run mid-tool-call and resume from the same point."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

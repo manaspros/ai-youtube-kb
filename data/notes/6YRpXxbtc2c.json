@@ -1,0 +1,191 @@
+{
+ "one_line": "Better Stack's hands-on review of Nub, a single Rust binary on top of stock Node.js that bundles a TypeScript runner, Node version manager and pnpm-compatible package manager; the speed claims hold up only partly in the host's own tests.",
+ "summary": "Better Stack reviews Nub, a single Rust binary that runs on top of stock Node.js and bundles a TypeScript file runner, a Node version manager, a package manager with pnpm-compatible commands, and package and script runners. The host demos each piece: TypeScript enums, namespaces and parameter properties run under nub where plain Node fails, .env loading with variable expansion works, and a Node version is installed automatically from a version file. For installs, nub adopts existing bun or pnpm lockfiles instead of writing its own, and it is fastest in the vendor benchmark and in the host's 14-dependency test. The vendor's nubx and nub run speed claims (19x and 24x) shrink to much smaller margins in the host's own runs, and plain Node was actually fastest when running a file. Security defaults include a 24-hour minimum release age and build scripts that do not run unless approved. The host says he would use it mainly for throwaway VMs and would keep Bun and pnpm for daily work.",
+ "speakers": [
+  "Better Stack host (unnamed in transcript)"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "nub",
+  "node.js",
+  "bun",
+  "pnpm",
+  "typescript",
+  "tsx",
+  "package-manager",
+  "node-version-manager",
+  "env-files",
+  "supply-chain-security",
+  "benchmarks",
+  "throwaway-vms"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Nub is one Rust binary that works on top of Node rather than replacing it, and covers five roles: file runner, script runner, package runner, package manager and Node version manager.",
+   "detail": "Positioned as Bun's best features on stock Node. The author is described as Colin, creator of Zod, who also made a TRPC proof of concept and worked on Bun. Runs on Mac, Windows and Linux.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The file runner handles TypeScript beyond Node's type stripping: enums, namespaces and parameter properties run under nub, where Node errors with unsupported TypeScript syntax.",
+   "detail": "It also covers tsconfig paths, decorators, JSX (transpiled per tsconfig), the `using` keyword, JSON/YAML/TOML/text imports, and polyfills for newer web APIs on older Node versions.",
+   "t": "1:02"
+  },
+  {
+   "idea": "Built-in .env handling loads .env, .env.local and Node's environment-specific files, with variable expansion and .env.local taking precedence.",
+   "detail": "Replaces dotenv-style loading in the host's demo: a variable built from DB_USER and DB_HOST resolves automatically, and the API key from .env.local overrides the one in .env.",
+   "t": "1:02"
+  },
+  {
+   "idea": "Because nub forwards Node flags, a script that uses only Node-supported features runs the same under nub as under Node. The host's benchmark still found plain Node fastest, nub slightly behind, and TSX slowest.",
+   "detail": "Vendor docs claim nub matches Node's run time; the host admits it cannot beat Bun, which is a native runtime. The host's benchmark used a single Mac with no sample size given.",
+   "t": "2:15"
+  },
+  {
+   "idea": "The Node version manager installs the version named in a version file, .nvmrc or package.json on run, and covers install, list, uninstall and pinning.",
+   "detail": "The demo changes the pinned version from Node 26 to 24 and reruns; nub fetches 24 from Node.js automatically. Pinning writes the version file.",
+   "t": "3:10"
+  },
+  {
+   "idea": "The package manager adopts existing lockfiles (bun, pnpm) and updates them in place instead of creating its own, so switching tools in a project is easy.",
+   "detail": "Every package-management command matches pnpm's flags, including workspace catalogs. Picks up npm, Bun and Yarn configuration. Uses OBE under the hood, a package manager library by JDX (creator of mise) that Colin worked with to embed in nub; the name is garbled in captions.",
+   "t": "4:26"
+  },
+  {
+   "idea": "Install-time security defaults: a 24-hour minimum release age for new package versions, and no build scripts run unless explicitly approved.",
+   "detail": "The host frames this as protection against supply-chain attacks, which he says pnpm also took from its own security defaults.",
+   "t": "5:28"
+  },
+  {
+   "idea": "nubx and nub run speed claims shrink in the host's own runs. nubx executes the binary from node_modules directly from Rust with no Node wrapper process; nub run uses its binary with no package-manager startup.",
+   "detail": "Vendor claims are 19x faster than npx and 24x faster than pnpm run. The host's own runs were smaller: nubx 169 ms against pnpm exec 423 ms on an ES build; nub run was fastest but by a smaller margin than the docs suggest.",
+   "t": "5:28"
+  },
+  {
+   "idea": "The host's verdict is cautious: he would use nub for throwaway VMs and simple file running, but not as a daily replacement for Bun and pnpm, and he has never found pnpm too slow.",
+   "detail": "He says he is a heavy Bun user with no compatibility issues so far, and may only switch if Bun's Rust port changes things. Also covers a drop-in GitHub Action that replaces setup-node, which is not demoed.",
+   "t": "6:30"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run TypeScript files directly with nub instead of tsx or ts-node",
+   "how": "Run `nub <file.ts>` (e.g. `nub index.tsx`). Handles enums, namespaces, parameter properties, decorators and JSX without a separate transpile step. The author says nub is flag-for-flag compatible with node, so scripts using only Node-supported features can switch between `node` and `nub` with identical results.",
+   "when": "Quick scripts, tests and throwaway environments where you want TypeScript features beyond Node's type stripping and do not want to install tsx."
+  },
+  {
+   "name": "Let the env loader handle .env files",
+   "how": "Put values in `.env`, `.env.local` and Node's environment-specific files and run through nub. Variables can reference other variables (e.g. a health check URL built from DB_USER and DB_HOST). `.env.local` overrides `.env`. The demo shows values resolved with no dotenv import.",
+   "when": "Projects that currently load env files through dotenv or a similar package and want variable expansion without extra code."
+  },
+  {
+   "name": "Pin the Node version in a version file",
+   "how": "Add a node version file, an `.nvmrc`, or a `node` entry in `package.json`, then run through nub. nub installs the named version from Node.js on first run. Use nub's install, list, uninstall and pin commands; pin writes the version file for you.",
+   "when": "Machines or CI runners where Node versions vary by project and you want to drop nvm or fnm."
+  },
+  {
+   "name": "Adopt an existing lockfile in place",
+   "how": "In a project with a bun or pnpm lockfile, run `nub install`. It updates the existing lockfile rather than creating a new one, so the project can move between package managers. pnpm-style flags, including workspace catalogs, are supported.",
+   "when": "Trying nub on an existing pnpm or Bun project without a lockfile migration, or switching back and forth."
+  },
+  {
+   "name": "Run package binaries with nubx instead of npx or pnpm exec",
+   "how": "Use `nubx <bin>` in place of `npx` or `pnpm exec`. It resolves to the binary in node_modules/.bin and runs it straight from Rust with no Node wrapper. It is flag-compatible with pnpm exec, including dlx.",
+   "when": "Frequent one-off CLI invocations where startup overhead matters, such as build or lint tools in scripts."
+  },
+  {
+   "name": "Use nub run for scripts with lifecycle hooks",
+   "how": "Use `nub run <script>` instead of `pnpm run`. It supports pre/post lifecycle hooks, npm environment variables, argument forwarding and pnpm's monorepo features.",
+   "when": "Replacing pnpm run in monorepos where script startup time matters."
+  },
+  {
+   "name": "Harden installs with defaults nub ships with",
+   "how": "nub uses a minimum release age of 24 hours for new package versions and skips build scripts unless they are approved. The host presents this as a defence against supply-chain attacks. The exact settings are not shown.",
+   "when": "Projects that want a guard against freshly published malicious package versions and install scripts."
+  }
+ ],
+ "tools": [
+  "Nub",
+  "Node.js (Node 26, Node 24 shown)",
+  "Bun",
+  "pnpm",
+  "npm",
+  "Yarn",
+  "TSX",
+  "ts-node",
+  "nvm",
+  "fnm",
+  "mise (transcribed as 'Mies')",
+  "OBE (package manager library by JDX; name garbled in captions)",
+  "npx (transcribed as 'MPX')",
+  "dotenv-style .env files",
+  "tsconfig.json paths",
+  "GitHub Action (drop-in for actions/setup-node, not demoed)",
+  "Zod (author's prior project, per the host)",
+  "TRPC (author's prior project, per the host)"
+ ],
+ "numbers": [
+  {
+   "claim": "Vendor claim: package manager about 5x faster than pnpm.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Vendor benchmark: warm frozen install of 1168 packages in 346 ms.",
+   "t": "4:26"
+  },
+  {
+   "claim": "Host's test, 14 direct dependencies resolving to 212 unique packages: nub 136 ms, Bun 239 ms, pnpm and npm each over 1 s.",
+   "t": "4:26"
+  },
+  {
+   "claim": "Vendor claim: nubx about 19x faster than npx.",
+   "t": "5:28"
+  },
+  {
+   "claim": "Host's Mac benchmark: nubx 169 ms vs pnpm exec 423 ms on an ES build.",
+   "t": "5:28"
+  },
+  {
+   "claim": "Vendor claim: nub run about 24x faster than pnpm run. Host's own run showed a smaller margin, with no figure given.",
+   "t": "5:28"
+  },
+  {
+   "claim": "Host's Mac run-time benchmark: plain Node fastest, nub slightly behind, TSX slowest. No figures given.",
+   "t": "3:10"
+  },
+  {
+   "claim": "Default minimum release age for new package versions: 24 hours.",
+   "t": "5:28"
+  }
+ ],
+ "hot_takes": [
+  "The host says nub is 'Bun spelled backwards' and calls it Bun's best features on stock Node, which is marketing framing rather than tested comparison.",
+  "Speed claims rest mainly on vendor docs. The host's own tests were single-machine runs with no stated sample size, and they contradicted the vendor's margins for nub run and nubx.",
+  "The host expects nub to be fastest at install and says it is ahead of Bun, but he does not expect to use it daily because he has not found pnpm too slow.",
+  "No compatibility testing beyond the host's own projects was shown, and the GitHub Action and Node version manager were not demonstrated.",
+  "The author's credentials (Zod, TRPC, Bun) are offered as a reason to trust the project, not as evidence of performance."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "A Node/TypeScript tooling review with no agent, model or LLM content. Nothing here changes AgentOS's Python-side infra or sandbox design.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI and touches Node tooling. The install-time guards it describes (24-hour minimum release age, build scripts blocked unless approved) are a supply-chain idea worth borrowing, though the video does not show how they are configured.",
+   "action": "Check which install-time guards ProsHarness uses for its Node dependencies (minimum release age and approval-gated install scripts), and copy nub's defaults if they are missing."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

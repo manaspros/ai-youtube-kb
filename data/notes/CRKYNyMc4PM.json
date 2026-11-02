@@ -1,0 +1,135 @@
+{
+ "one_line": "Demo of MCP tool poisoning, tool shadowing, rug-pull mutation and command injection in MCP servers. Main takeaway: treat tool descriptions and server code as untrusted input.",
+ "summary": "The Better Stack host builds a malicious MCP server and shows how it can affect an agent in Cursor, including a tool call from a popular, non-malicious WhatsApp MCP server that ends up sending chat history to an attacker. The attack chain is a rug pull or sleeper: a server presents a benign tool definition at install, then changes it after a condition is met, such as a file appearing or a restart. The speaker then shows tool poisoning, where instructions hidden in a tool description are visible to the model but easy for a user to miss in the UI. He extends this to tool shadowing, where one server's description steers how the model uses a different, trusted server's tool, because all descriptions share one LLM context. Last, he shows that a server with unsanitized input passed to a subprocess is vulnerable to command injection, which can be exercised directly over the MCP protocol without an LLM. He cites Equixly research on command injection rates in tested MCP implementations and credits Invariant Labs for naming the attack classes. The video is a short awareness demo, not a mitigation guide, but its defensive takeaways are clear.",
+ "speakers": [],
+ "orgs": [
+  "Invariant Labs",
+  "Equixly",
+  "Cursor"
+ ],
+ "format": "demo",
+ "topics": [
+  "security-guardrails",
+  "mcp-and-tools",
+  "coding-agents"
+ ],
+ "tags": [
+  "mcp-security",
+  "tool-poisoning",
+  "tool-shadowing",
+  "rug-pull",
+  "sleeper-attack",
+  "command-injection",
+  "prompt-injection",
+  "cursor",
+  "agent-security"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A non-malicious MCP server can be used to exfiltrate data when a malicious instruction source steers its tool call. The demo leaks recent chats and contacts through a legitimate WhatsApp MCP server.",
+   "detail": "The malicious part is in the model's context, not in the trusted server's code. The user only sees the approval step for a tool call that looks normal.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Rug pull or sleeper attack: a server mutates its tool definition after install. It presents a benign tool first, then switches to a malicious description once a condition is met, such as a file existing or a restart.",
+   "detail": "Trust is set once at install or first approval. The client does not re-check the definition on later starts, so the change goes unnoticed.",
+   "t": "1:20"
+  },
+  {
+   "idea": "Tool poisoning: tool descriptions go to the LLM as context and can contain instructions the model follows. Those instructions can be hidden from the user, for example past the visible width of the UI.",
+   "detail": "The model cannot reliably tell a tool description from an instruction. Users see a short summary and the speaker's point is that they cannot see the full text.",
+   "t": "2:41"
+  },
+  {
+   "idea": "Tool shadowing: a malicious server's description can change how a different, trusted server's tool gets used. All descriptions share one context, so one server can influence calls to another.",
+   "detail": "The speaker calls this a shadow attack because the trusted server's code never changes. Its tool call is simply steered by text from elsewhere.",
+   "t": "5:13"
+  },
+  {
+   "idea": "Command injection in MCP servers is a classic bug: input passed unsanitized into a subprocess. The speaker shows it with a pop-up tool, and the MCP protocol lets anyone call server tools directly without an LLM.",
+   "detail": "Listing the tools and sending wrong parameters returns the required argument names, which makes probing easy. Some AI assistants refused some payloads, which the speaker does not treat as a real control.",
+   "t": "6:27"
+  },
+  {
+   "idea": "Equixly research: 43% of tested MCP implementations had command injection flaws. Of those, 30% acknowledged the issue and shipped fixes, while 45% called the risk theoretical or acceptable.",
+   "detail": "The speaker cites these as secondhand figures and argues that MCP is used by non-developers who will not review server code.",
+   "t": "6:27"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Pin and diff tool definitions",
+   "how": "When a user approves an MCP server, store a hash of each tool's name, description and input schema. On every later connect, recompute the hash and block or alert on any drift. This is the direct defense against rug pulls and sleeper servers.",
+   "when": "Any MCP client or gateway that reconnects to servers across sessions, including coding agents and shared agent registries."
+  },
+  {
+   "name": "Review full tool descriptions and arguments before approval",
+   "how": "Do not rely on the UI's truncated view. Read the full description text, including content past the visible width, and expand each tool call's full arguments before approving a call, especially for outbound messages and file, network or exec tools.",
+   "when": "Before approving tool calls in an interactive coding agent, and for any tool that sends data out."
+  },
+  {
+   "name": "Treat tool descriptions as untrusted input",
+   "how": "Scan tool descriptions for instruction-like content, such as directives to read files, to call other tools, or to hide actions from the user. Flag or strip matches before they reach the model. This heuristic is incomplete, so combine it with pinning and least privilege.",
+   "when": "In a gateway or proxy that sits between agents and MCP servers, where content can be checked centrally."
+  },
+  {
+   "name": "Avoid shell interpolation in MCP tool handlers",
+   "how": "Call subprocesses with argument arrays and no shell, validate each parameter's type and allowed values, and reject unexpected characters. Do not build command strings from tool input.",
+   "when": "Writing or reviewing any MCP server that wraps a CLI, script or OS function."
+  },
+  {
+   "name": "Probe your own MCP servers directly",
+   "how": "Use an MCP client library to connect to a server you own or are authorized to test, list its tools, and send malformed or unexpected parameters in an isolated environment. Check for unsanitized input before exposing the server to agents.",
+   "when": "Before publishing or adopting an MCP server, and as part of a regression test suite for tool handlers."
+  },
+  {
+   "name": "Limit what a server can reach",
+   "how": "Keep secrets such as .env files outside paths readable by agent-run servers and avoid passing environment variables into tool handlers that do not need them. Run servers with least privilege and network egress limits.",
+   "when": "Any local MCP server launched by a coding agent on a developer machine."
+  }
+ ],
+ "tools": [
+  "Cursor",
+  "MCP (Model Context Protocol)",
+  "WhatsApp MCP server (community project, named as legitimate)",
+  "MCP client libraries (used to call server tools directly)"
+ ],
+ "numbers": [
+  {
+   "claim": "Video length is 8:10. The demo runs from attack setup to a final call to action.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Equixly: 43% of tested MCP implementations contained command injection flaws.",
+   "t": "6:27"
+  },
+  {
+   "claim": "Equixly: of the affected implementations, 30% acknowledged the issue and released fixes, and 45% said the risks were theoretical or acceptable.",
+   "t": "6:27"
+  }
+ ],
+ "hot_takes": [
+  "Tool shadowing, where one server's description steers another trusted server's tool, is a bigger risk than any single malicious tool.",
+  "Calling the 45% of implementations that said the risk was theoretical or acceptable a red flag is the speaker's opinion. He argues MCP is also used by non-developers who will not review server code.",
+  "Relying on an AI assistant refusing a malicious payload is not a real control, even though some assistants did refuse during the demo.",
+  "Evidence is a single short demo plus secondhand Equixly statistics. The video does not give Invariant Labs' details or a reproducible test setup."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already has a proxy with prompt-injection scanning and an exec-gate for Crucible. MCP tool descriptions and tool-call arguments are a direct input the proxy can inspect and pin.",
+   "action": "Add tool-definition pinning to the Govrix Scout proxy: hash each MCP tool's name, description and schema on first approval, block or flag drift on reconnect, and run the existing prompt-injection scanner over tool descriptions."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code, which loads MCP servers from configuration. Pinning the server list and reviewing changed tool descriptions is useful, but it is a narrow addition.",
+   "action": "When ProsHarness starts Claude Code, compare the configured MCP servers and their tool descriptions with a stored snapshot and route any change through the phone-approval flow before the run continues."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

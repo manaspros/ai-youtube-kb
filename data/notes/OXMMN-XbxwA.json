@@ -1,0 +1,162 @@
+{
+ "one_line": "Higharc's labs team on moving ML research prototypes into production via three levers: a design-doc-style \"research prototype taxonomy,\" a decoupled Python microservice monorepo, and stacked-PR decomposition for review.",
+ "summary": "Vaidas Razgaitis, a senior research engineer on Higharc's labs team, describes how his R&D group moves frontier ML work (computer vision on sketched floor plans, reasoning agents, custom transformers, diffusion) into a production home-building product. He frames the core problem as a handoff gap: ML researchers can prototype novel ideas but lack production API experience, while platform and backend engineers know production practice but not the ML methods. He treats this as a systems and process problem and offers three levers. First, a \"research prototype taxonomy\" document, essentially an RFC/technical design doc with ML-specific sections: domain context, business goal, type contracts, persistence, system architecture, and decomposition plan. Second, a monorepo of cleanly isolated Python microservices, roughly one per researcher, behind a gateway, each built as a layered FastAPI app with its own Dockerfile and lock file. Third, decomposing large prototypes into stacked PRs (Graphite) so domain experts can review slices asynchronously. He closes with diagnostic questions to find which lever is weak. The talk is process-level and light on hard numbers or code, so its value is mainly as a template for handoff docs and repo layout.",
+ "speakers": [
+  "Vaidas Razgaitis"
+ ],
+ "orgs": [
+  "Higharc",
+  "Graphite"
+ ],
+ "format": "talk",
+ "topics": [
+  "enterprise-adoption",
+  "pr-code-review",
+  "context-engineering",
+  "agent-architecture"
+ ],
+ "tags": [
+  "research-to-production",
+  "design-docs",
+  "monorepo",
+  "microservices",
+  "stacked-prs",
+  "ml-engineering-handoff",
+  "fastapi"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Research-to-production is a handoff and process problem, not just a modeling problem",
+   "detail": "Researchers can prototype but lack production API experience; SWE/platform engineers know production code but not the ML methods. The speaker attacks the gap with three process levers rather than individual skill.",
+   "t": "1:02"
+  },
+  {
+   "idea": "A 'research prototype taxonomy' doc acts as the handoff contract",
+   "detail": "Modeled on engineering RFCs/design docs (he cites a Pragmatic Engineer piece on pre-build specs for aligning growing teams). It is required for every prototype and written in Notion.",
+   "t": "3:19"
+  },
+  {
+   "idea": "Domain context section is written for an outsider engineer",
+   "detail": "The doc starts with domain vocabulary and data representations (e.g., party diagrams, circulation graphs, embeddings or latent spaces). The test is whether a newly hired engineer from a non-ML background could get up to speed from it.",
+   "t": "4:29"
+  },
+  {
+   "idea": "Type contracts between the product repo and the ML repo are set up front",
+   "detail": "The doc specifies what types cross the boundary and how they are shared and kept in sync. This is a standard TDD-style concern carried into the research doc.",
+   "t": "4:29"
+  },
+  {
+   "idea": "Keep researchers out of the persistence layer",
+   "detail": "The doc only maps how far the persistence design got. Engineers take over the database work, which the speaker sees as the natural first entry point for software engineering help.",
+   "t": "5:51"
+  },
+  {
+   "idea": "One researcher maps to one decoupled microservice behind a gateway",
+   "detail": "All services sit in one Python monorepo on a shared Docker bridge network. Clients call a gateway that routes to the right service, so each research line can iterate without affecting others.",
+   "t": "7:12"
+  },
+  {
+   "idea": "Uniform layered skeleton for every microservice",
+   "detail": "Services layer holds business logic (LLM calls, model weights pulled in CI/CD), wrapped by controllers, then API routers in FastAPI. Each service is standalone, with metadata, a Dockerfile, dependencies, and a poetry or uv lock file. The repeated skeleton makes the codebase easy to audit and easy for agents to navigate.",
+   "t": "8:39"
+  },
+  {
+   "idea": "Decompose monolithic prototypes into stacked PRs, sliced by a dependency graph",
+   "detail": "The team studies which axes to slice a large platform-wide agent feature along, maps the dependency graph, then uses Graphite stacked diffs. Stacking lets an author keep building while a domain specialist reviews an earlier slice asynchronously.",
+   "t": "11:26"
+  },
+  {
+   "idea": "The taxonomy doc should drive the decomposition plan",
+   "detail": "Once layers, architecture, persistence, and types are mapped, the decomposition and merge order mostly follows from the doc. Weak decomposition is read as a symptom of upstream handoff or codebase problems.",
+   "t": "12:25"
+  },
+  {
+   "idea": "Diagnostic questions for each lever",
+   "detail": "Is it clear what researchers should do and what engineers should pick up? Are there templates to copy in the repo, or has it outgrown its abstractions? Can timelines and SME reviewers be estimated consistently? Failures in the third point usually trace back to the first two.",
+   "t": "13:24"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Research prototype taxonomy (RPT) doc",
+   "how": "Write a design doc with fixed sections: domain context and vocabulary, business goal, type contract with the product repo, persistence sketch, system architecture (workflows, external LLM calls), and decomposition/merge plan. Keep it in a shared doc tool such as Notion.",
+   "when": "Before any research prototype is handed to engineers for productionization, especially when researchers and engineers are on different teams."
+  },
+  {
+   "name": "One researcher, one decoupled microservice in a shared monorepo",
+   "how": "Each research initiative gets its own FastAPI service with a standard layout (services, controllers, routers) and its own Dockerfile and lock file. A gateway routes client calls, and all services share CI, lint, type checks, and tests.",
+   "when": "When several research tracks must iterate independently but ship through one codebase and one deploy pipeline."
+  },
+  {
+   "name": "Slice by dependency graph, then stack PRs",
+   "how": "Map the prototype's components and their dependencies, choose slicing axes, and split the work into a stack of small PRs using Graphite. Route each slice to the relevant domain expert.",
+   "when": "When a large monolithic prototype must be reviewed by several subject-matter experts without blocking the author."
+  },
+  {
+   "name": "Use the design doc to plan the merge",
+   "how": "Derive the PR decomposition and the order of merges from the architecture and type-contract sections of the design doc rather than planning from scratch.",
+   "when": "When estimating timelines for moving a prototype into the main repo."
+  },
+  {
+   "name": "Notebooks on Modal for GPU experiments",
+   "how": "Run Jupyter notebooks on Modal for GPU compute during research studies, separate from the production microservices.",
+   "when": "When researchers need on-demand GPU for experiments that are not yet productionized."
+  }
+ ],
+ "tools": [
+  "Notion",
+  "Graphite",
+  "GitHub Actions",
+  "Modal",
+  "Docker",
+  "FastAPI",
+  "Poetry",
+  "uv",
+  "Jupyter"
+ ],
+ "numbers": [
+  {
+   "claim": "Roughly a one-to-one ratio of ML researchers to microservices in the monorepo",
+   "t": "7:12"
+  },
+  {
+   "claim": "Three microservices in production, all sharing one skeleton",
+   "t": "9:00"
+  },
+  {
+   "claim": "Each research prototype requires a taxonomy doc before code moves to the monorepo",
+   "t": "3:19"
+  }
+ ],
+ "hot_takes": [
+  "Research prototypes should get a design doc with type contracts and a persistence sketch before any production code is written, the same way SWE teams write RFCs.",
+  "Researchers should not spend much time on the persistence layer; engineers should take over the database design.",
+  "Stacked PRs with asynchronous domain-expert review are the right way to bring a large research prototype into production.",
+  "If decomposition estimates are unreliable, the root cause is usually the handoff doc or the codebase, not the review process."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk is about process and repo layout for ML teams, not infra or pillars. Its gateway-routes-to-isolated-services pattern is loosely analogous to the one-proxy design, but nothing here changes how AgentOS pillars are built.",
+   "action": "Consider adding a short research-prototype-style design template (domain context, type contract, persistence, architecture, merge plan) for new AgentOS pillars like InferCraft or SkillForge."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The stacked-PR review workflow and slicing a large feature by its dependency graph could structure ProsHarness PRs, but the talk does not address agent-run checkpointing or CLI harnesses.",
+   "action": "If ProsHarness changes get large, try Graphite-style stacked PRs and review each slice as its own unit."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Concrete handoff artifacts (design doc with fixed sections, one-service-per-researcher monorepo, diagnostic questions for each lever) apply directly to any team bringing ML or agent prototypes into production.",
+   "action": "Adapt the RPT section list into a team template and use the three diagnostic questions as a retro checklist after the next prototype handoff."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku",
+ "_usd": 0.0042144,
+ "_at": "2026-10-18T17:35:51"
+}

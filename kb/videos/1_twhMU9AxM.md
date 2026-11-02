@@ -1,0 +1,46 @@
+# Bash Apps Are INSANE… A New Way To Use Claude Code
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `1_twhMU9AxM` · [watch](https://youtu.be/1_twhMU9AxM) · **date:** 2025-11-02 · **length:** 11:17 · **format:** tutorial · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** ? · **orgs:** AI LABS, ScaleKit
+- **topics:** claude-code, coding-agents, context-engineering · **tags:** cli-as-agent-tools, claude-md, gitingest, repo-ingestion, click, prd-driven-build, sponsored-segment
+
+> Wrap any terminal CLI as a Claude Code agent via CLAUDE.md; builds a Git Agent on GitIngest and Click that stores repo context in the repo. Practical pattern, light on code.
+
+## Summary
+AI LABS shows how to turn any terminal CLI into a dedicated Claude Code agent: the tool's usage examples, command descriptions and a system prompt go into CLAUDE.md, and the agent runs the commands from plain-language requests. GalleryDL and aria2 are the simple delegation examples. The main build is Git Agent, a wrapper around GitIngest that converts a GitHub repo to LLM-readable text, checks its token size against a 200k limit, and falls back to README and docs for larger repos. Outputs are stored inside the repo (a data/ folder for extractions, an analyze/ folder for analyses) rather than pasted into Claude Desktop. The wrapper is a Click command group (git agent) that calls the GitIngest CLI and adds file saving and flags. The speaker says the build took about 2 hours, most of it spent on workflow design and CLAUDE.md prompt tuning with manual tests, because Claude could not fully test the workflow itself. A known gap is that the fallback path can overshoot the token limit. The closing advice is to pick a daily-use CLI, write a PRD, and have Claude Code build the wrapper.
+
+## Key ideas
+- **The Bash tool lets agents run any terminal command, so agents can control individual tools or the whole system.** — The speaker frames Bash as the key tool that moves agents from snippet generation to real task execution. ([0:00](https://youtu.be/1_twhMU9AxM?t=0))
+- **Any CLI can become a dedicated agent by documenting it in CLAUDE.md.** — Usage examples, command descriptions and a system prompt let Claude Code pick the right flags, so the user only supplies a link or a goal. CLI commands are presented as the agent's tools. ([1:06](https://youtu.be/1_twhMU9AxM?t=66))
+- **Pure delegation is the simple case; the tool can also be used inside the reasoning loop.** — The speaker says the GalleryDL and aria2 examples only delegate work and do not use the model's thinking, and says that can also be done without showing how. ([2:10](https://youtu.be/1_twhMU9AxM?t=130))
+- **Repo ingestion is the first real use case: GitIngest turns a repo into LLM-readable text.** — The speaker used GitIngest to feed repo docs into Claude Desktop manually before automating it. The GitIngest CLI can take a GitHub URL directly. ([3:20](https://youtu.be/1_twhMU9AxM?t=200))
+- **Size-gated extraction: whole repo under 200k tokens, README and docs above that.** — The speaker checks token count first. Under the limit, the whole repo is extracted. Over it, only the README and documentation folders are extracted and the repo tree is saved. ([4:04](https://youtu.be/1_twhMU9AxM?t=244))
+- **Store context as files in the repo instead of chat.** — Git Agent keeps raw extractions in a data/ folder and per-request analyses (install report, workflow guide) in an analyze/ folder. One-off simple queries are not stored. Claude Code then fetches only the docs or code files the request needs. ([5:10](https://youtu.be/1_twhMU9AxM?t=310))
+- **The workflow logic lives in CLAUDE.md, so a GitHub link triggers the whole pipeline automatically.** — The steps are: extract the URL, run the extraction, count tokens, pick an analysis template based on the tree, and hand the content to the model. The speaker says the fallback can still overshoot the token limit and was fixed through prompt changes. ([6:20](https://youtu.be/1_twhMU9AxM?t=380))
+- **Build the wrapper as a Click command group on top of the existing CLI.** — A parent git agent command groups subcommands. They call the GitIngest CLI and add custom file saving and flags. The auto-captions say Qlik, but the speaker means the Click framework. ([8:56](https://youtu.be/1_twhMU9AxM?t=536))
+- **Effort goes into CLAUDE.md tuning and manual testing, not the code.** — The speaker built the tool in about 2 hours. Claude Code wrote the code, tests and command checks from a PRD, but breakpoints only showed up in manual end-to-end runs. ([10:02](https://youtu.be/1_twhMU9AxM?t=602))
+
+## Techniques
+- **Document a CLI as an agent tool in CLAUDE.md** — Put the command name, a few usage examples, a description of each command, and a system prompt on how to use them in CLAUDE.md in the project folder. Claude Code reads it automatically, so a plain request like 'download this link' maps to the right command and flags. The speaker demos this with GalleryDL and aria2 but does not show the file text. *When:* For any terminal tool you use often, especially one with flags you do not want to memorize.
+- **Token-size gate before repo extraction** — Count the repo's tokens before extracting. Under 200k tokens, extract the whole repo with GitIngest. Over 200k, extract only the README and docs folders, save the repo tree for reference, and ask which analysis the user wants. Re-check the combined size after the fallback, since the speaker reports it can overshoot. *When:* Feeding GitHub repos into a Claude Code session that has a model context limit.
+- **Persist extractions and analyses as repo files** — Keep raw repo extractions in data/ and each analysis output (install report, workflow guide) in analyze/. Skip storage for simple one-off queries. Claude Code reads only the specific docs or code files a request needs. *When:* Revisiting the same repos or reusing analyses across sessions instead of pasting content into chat.
+- **Wrap an existing CLI in a Click command group** — Use Click (the Python CLI framework) to define a parent command, git agent, with subcommands. Each subcommand calls the underlying GitIngest CLI and adds file saving and extra flags. Document the subcommands in CLAUDE.md so Claude Code runs 'git agent ...' at the right step. The transcript does not show the exact code, file names or flags. *When:* The existing CLI needs custom flags, output handling or a fixed workflow around it.
+- **PRD-first build loop with Claude Code** — Write a PRD of the requirements, state that Click is the framework, and have Claude Code implement the commands, write tests and run the commands in sequence to validate. Then run the workflow by hand end to end, find where Claude does not follow the CLAUDE.md steps, and tighten the prompts. Repeat until the flow holds. *When:* Building a personal CLI-based agent in an afternoon, where manual testing is needed to catch workflow breakpoints.
+
+## Numbers
+- 200k-token threshold: whole-repo extraction below it, README and docs only above it. The speaker sets this limit for Claude Code model restrictions. ([4:04](https://youtu.be/1_twhMU9AxM?t=244))
+- Git Agent workflow built in about 2 hours, mostly spent on workflow design and waiting for Claude Code to test its commands. ([8:56](https://youtu.be/1_twhMU9AxM?t=536))
+- ScaleKit sponsor claim: built-in tools for 100+ apps and OAuth 2 user-scoped tokens. Vendor claim, not verified here. ([2:10](https://youtu.be/1_twhMU9AxM?t=130))
+
+## Hot takes
+- The title says 'INSANE', but the core idea (a CLI documented in CLAUDE.md becomes an agent tool) is a simple pattern. The transcript shows no code, file contents or exact flags.
+- The speaker says the real effort is prompt tuning and manual testing, not writing the code. That is useful, but it rests on one anecdote of about 2 hours.
+- The ScaleKit sponsor segment (about 2:10 to 3:20) is unrelated to the build.
+- The speaker says pure delegation is the simple case and that the tool can be used in the reasoning loop too, but does not show it. The transcript only states 'you can do that as well'.
+
+## Tools mentioned
+Claude Code, Claude Desktop, Cursor, GalleryDL, aria2, GitIngest (git ingest, open-source CLI with a GitHub URL mode), Git Agent (the speaker's own CLI wrapper, not released in the transcript), BMAD method (framework mentioned as a past featured video, not demoed), Click (Python CLI framework; auto-captions say Qlik), CLAUDE.md, ScaleKit (sponsor; OAuth and auth layer for AI apps)
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness wraps Claude Code and relies on CLAUDE.md-driven workflows. This talk shows a size-gated repo-ingestion pipeline with files stored in the repo and a reported overshoot bug in its fallback path. → *Compare ProsHarness's CLAUDE.md workflow with this pattern. Store extractions and analyses as repo files, and add a re-check of combined size after any fallback path.*
+- **agentos** (1/3): The CLI-as-agent-tool pattern (usage examples plus subcommands in CLAUDE.md) is relevant to how skills are documented. The transcript has no infra or gateway content. → *When writing SkillForge skill specs, try the CLAUDE.md usage-examples-plus-subcommands format for existing CLIs. No infra change indicated.*

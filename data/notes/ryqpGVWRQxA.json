@@ -1,0 +1,119 @@
+{
+ "one_line": "Shows Claude-Mem, an open-source local tool that auto-captures Claude Code session events (bug fixes, decisions, diffs) and recalls compressed context in new sessions.",
+ "summary": "Better Stack demos Claude-Mem, an open-source plugin that gives Claude Code memory across sessions. The speaker says setup is two commands run inside Claude, with no config files or API keys, and that all captured data stays on the local machine. In a toy Python Fibonacci project, Claude-Mem logs a bug fix (the reasoning and code diff) in a local web UI while the work happens. After ending the session and starting a new one, asking about the bug returns the fix without re-explanation, and a search returns a compressed summary that can be expanded to full context. The video claims up to 10x memory compression and tag-based search (bug fix, decision, file path, keywords). The walkthrough is short and the install commands are not shown on screen, and the compression claim is not measured.",
+ "speakers": [],
+ "orgs": [],
+ "format": "review",
+ "topics": [
+  "memory",
+  "claude-code",
+  "context-engineering",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "claude-mem",
+  "persistent-memory",
+  "cross-session",
+  "auto-capture",
+  "compression",
+  "local-first",
+  "open-source",
+  "session-recall"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Claude Code loses working context when a session ends, so each new session starts cold.",
+   "detail": "The speaker frames the problem as memory that exists only inside one session and positions Claude-Mem as the fix.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Setup is presented as two commands inside Claude, with no config files or API keys.",
+   "detail": "The video says both commands came from the Claude-Mem repo, but the commands themselves are not spelled out in the transcript.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Capture runs in the background and stores each change with its reasoning and code diff.",
+   "detail": "After a fix to the Fibonacci script (raising ValueError for negative n), the entry shows up in a local web UI, categorized, with the fix, reasoning and diff.",
+   "t": "1:46"
+  },
+  {
+   "idea": "Recall works across sessions: a new session can pull a past bug fix back without re-explaining it.",
+   "detail": "The test ends the session, starts a fresh one and asks about the Fibonacci bug. The fix comes back, and a search returns a compressed summary that expands to full context.",
+   "t": "1:46"
+  },
+  {
+   "idea": "The memory is automatic, unlike Claude's basic memory file, which has to be written by hand.",
+   "detail": "The speaker's argument is that capture happens without user effort, and that the store is searchable by tag, file path or keyword.",
+   "t": "3:05"
+  },
+  {
+   "idea": "Compression is positioned as the token-saving feature.",
+   "detail": "The speaker claims memories are compressed by up to 10x so context uses fewer tokens and reaches limits more slowly. No measurement is shown.",
+   "t": "3:05"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Automatic session-event capture into a local memory store",
+   "how": "A background tool logs bug fixes, decisions and file changes with their reasoning and code diff, tagged by category. Nothing is written by hand. The store stays on the local machine.",
+   "when": "Long, multi-session projects where re-explaining past fixes and decisions wastes time."
+  },
+  {
+   "name": "Compressed-summary-first recall with expand-on-demand",
+   "how": "Search returns a short compressed summary of the matching memory. The user expands it only when the full context is needed.",
+   "when": "When context-window or usage-limit budget matters and most recalls need only the gist."
+  },
+  {
+   "name": "Tag and keyword search over memories",
+   "how": "Query by category tags (bug fix, decision), file path, or free-text keywords in the memory UI, instead of scrolling a session log.",
+   "when": "Finding a past decision or fix in a larger codebase after many sessions."
+  },
+  {
+   "name": "Reproducing the demo test for a memory tool",
+   "how": "Make a change with a known bug in session one (e.g. skip negative-input handling, then fix it with a ValueError). End the session, open a new one, and ask the agent to recall the fix. Pass if it returns the fix without being re-told. Then check that a search by keyword returns the compressed entry, and that expanding it shows the full context.",
+   "when": "Evaluating any cross-session memory tool before trusting it on real work."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude-Mem (open-source Claude Code memory plugin; version not stated)"
+ ],
+ "numbers": [
+  {
+   "claim": "Claims memories are compressed by up to 10x (vendor claim, not benchmarked in the video)",
+   "t": "3:05"
+  },
+  {
+   "claim": "Setup described as two commands inside Claude (commands not shown on screen)",
+   "t": "0:08"
+  },
+  {
+   "claim": "Test project is a single recursive Fibonacci script with one bug (negative input), so the demo covers one fix",
+   "t": "0:41"
+  }
+ ],
+ "hot_takes": [
+  "The 10x compression claim is stated without a benchmark, token count or before/after comparison.",
+  "The demo covers one bug in a toy script, so it does not show how recall behaves in a large or noisy project history.",
+  "The install commands are not shown or named in the video, so a viewer has to go to the repo to reproduce setup.",
+  "Says data 'stays on your machine' but does not address what gets captured (for example secrets or credentials seen in diffs)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L2A MemoryMesh already has tiered cross-session memory with provenance. Claude-Mem's auto-capture and compressed-summary recall is a comparable pattern for coding-agent sessions.",
+   "action": "Compare Claude-Mem's auto-capture of bug fixes and decisions, and its summary-then-expand recall, against MemoryMesh's tiered cross-session memory. Note what is captured, how it is compressed, and how it is retrieved."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness does checkpoint/resume of long Claude Code runs. Session memory is related but does not replace checkpointing.",
+   "action": "Check whether auto-captured decisions and fixes could be fed into a ProsHarness resume step, or whether they belong in the checkpoint itself."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

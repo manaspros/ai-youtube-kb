@@ -1,0 +1,157 @@
+{
+ "one_line": "Steve Ruiz (tldraw) shows how agents moved from one-shot drawing on a whiteboard to multiple agents working as a team on a shared canvas, and the safety trade-offs of letting them script a desktop app.",
+ "summary": "Steve Ruiz of tldraw walks through the company's progression of AI features on its whiteboard SDK, starting with Make Real (2023), which turned a canvas sketch into a working prototype. Drawing on the canvas worked through structured text outputs (shape tool calls) rather than image generation, and he notes that vision models struggle with spatial conventions like y-axis direction. He then moved to an agent loop that produces output, reviews it, and iterates, and finally to multiple agents (\"fairies\") on the canvas that see each other's work, elect a leader, and delegate a to-do list. For more access he could not use a browser sandbox, because the agent needed the DOM and screenshots, so he wrapped the app in an Electron desktop shell with a local endpoint that executes posted JavaScript, which he openly calls a bad idea outside an offline, file-based app. The talk ends with examples of agents modifying installed desktop software and his view that such sharp tools should be handed to users with the risk made explicit. It is a demo-heavy product talk with few hard numbers, so the reusable value is the coordination and safety patterns rather than benchmarks.",
+ "speakers": [
+  "Steve Ruiz"
+ ],
+ "orgs": [
+  "tldraw",
+  "Replit",
+  "Lovable",
+  "Google Stitch",
+  "Cursor",
+  "Spotify",
+  "OpenClaw"
+ ],
+ "format": "talk",
+ "topics": [
+  "multi-agent",
+  "product-ux",
+  "sandboxing-execution",
+  "security-guardrails"
+ ],
+ "tags": [
+  "tldraw",
+  "canvas agents",
+  "whiteboard SDK",
+  "multi-agent coordination",
+  "leader-follower",
+  "shared state",
+  "structured output drawing",
+  "vision model limits",
+  "Electron",
+  "local-first",
+  "desktop agents",
+  "sandbox trade-offs",
+  "Make Real",
+  "fairies"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Drawing via text structured outputs beats image generation for canvas work.",
+   "detail": "Agents on the canvas emit tool calls that create shapes, not pixels. The speaker says this is why the output stays editable and matches what a human could draw with the same tools.",
+   "t": "4:39"
+  },
+  {
+   "idea": "Vision models handle spatial data poorly, so prompt for conventions explicitly.",
+   "detail": "Speaker says there is less vision training data than text, and the training data conflicts (for example, the y-axis points down on screens but up on graphs, and 'left' is ambiguous). Getting predictable placement took a lot of prompt engineering.",
+   "t": "6:41"
+  },
+  {
+   "idea": "A produce, review, iterate agent loop beats one-shot generation.",
+   "detail": "He moved from one-shot prompts to an agent loop that generates output, reviews it, and repeats until it judges the work done. He copied the conventions of coding agents, such as showing rejections and visible reasoning.",
+   "t": "6:41"
+  },
+  {
+   "idea": "Multiple agents on a shared canvas need shared state and an observer.",
+   "detail": "Each agent can see the others' actions and where they are working. A leader scouts the canvas, writes a to-do list, delegates it, and judges whether each piece is done. The speaker frames the hard problems as shared state, leader/follower roles, and avoiding overlap when agents are effectively blind while they work.",
+   "t": "10:43"
+  },
+  {
+   "idea": "The browser sandbox was ruled out, which pushed the design to a desktop wrapper.",
+   "detail": "The agent needed the DOM, the browser view, and screenshots to see what it was doing, so a sandboxed code runner did not work. He wrapped the app in Electron and exposed a local HTTP endpoint that runs posted JavaScript. He calls this a terrible idea for a normal app but acceptable for an offline, file-based desktop app.",
+   "t": "13:52"
+  },
+  {
+   "idea": "Letting the agent write code against the editor runtime gives behaviour the canvas lacks.",
+   "detail": "tldraw has no primitives for hover or click. Because the editor exposes a runtime API, the agent can write code against it to make a drawn UI interactive, for example a leg length or shirt colour control.",
+   "t": "15:22"
+  },
+  {
+   "idea": "Agents with local desktop access will do unexpected things, so risk has to be handed to the user explicitly.",
+   "detail": "He describes an agent that read a minified Spotify bundle to remove podcasts on request, and he says these tools have no qualms about changing files on the user's machine. He argues that maximum agency means accepting risk, and that the user should be told this plainly ('sharp tools').",
+   "t": "16:22"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Structured-output shape drawing",
+   "how": "Expose the canvas's own shape-creation operations as tools and have the model emit structured calls instead of generating an image. Results stay editable.",
+   "when": "Any agent that must produce diagrams, wireframes, or layouts in a structured editor or whiteboard."
+  },
+  {
+   "name": "Produce-review-iterate loop",
+   "how": "The agent generates output, inspects the result (for example a screenshot), and loops until it judges the work done. Show rejections and reasoning to the user.",
+   "when": "Visual or structured output where one-shot generation is not reliable enough."
+  },
+  {
+   "name": "Leader/follower multi-agent on shared state",
+   "how": "Elect one agent as leader. The leader scouts the shared workspace, writes a to-do list, delegates items to followers, and checks completion. Followers can read each other's actions to avoid overlap.",
+   "when": "Several agents working on one artifact, where overlap and missed work are the main risks."
+  },
+  {
+   "name": "Expose a runtime API for agent-written code",
+   "how": "Give the agent a documented editor/runtime API it can call from generated code, so it can add behaviour the product does not provide natively. Speaker mentions doing this via a local HTTP endpoint in a desktop wrapper.",
+   "when": "A product that is hackable or local-first and where users want agent-driven customisation."
+  },
+  {
+   "name": "Prompt for spatial and coordinate conventions",
+   "how": "State the coordinate system and layout rules in the prompt, since models confuse screen and graph conventions.",
+   "when": "Agents placing elements by position on a 2D surface."
+  }
+ ],
+ "tools": [
+  "tldraw",
+  "Electron",
+  "Claude",
+  "Cursor",
+  "Make Real"
+ ],
+ "numbers": [
+  {
+   "claim": "Three agents (Ferris, Helen, Joan) were given one canvas task; one was elected leader and delegated a to-do list to the other two.",
+   "t": "10:43"
+  },
+  {
+   "claim": "The multi-agent canvas work was being built around October/December of the prior year (about 2025), in parallel with industry agent-orchestration work.",
+   "t": "11:45"
+  },
+  {
+   "claim": "Make Real, the first canvas-to-prototype app, dates from 2023 when vision models came out.",
+   "t": "2:38"
+  },
+  {
+   "claim": "The talk is 19:54 long, and the speaker mentions a rotated API key after a live demo.",
+   "t": "3:40"
+  }
+ ],
+ "hot_takes": [
+  "Letting an agent run arbitrary JavaScript from an HTTP endpoint is a terrible idea for most apps, but acceptable for an offline, file-based desktop app.",
+  "Agents will modify installed desktop software (for example, reading a minified Spotify bundle) without hesitation, so maximum agency means handing users the risk directly.",
+  "Sandboxed code execution does not fit agents that need the DOM and screenshots; a desktop wrapper was the practical choice."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk shows a browser-style sandbox fails when the agent needs DOM access and screenshots, which bears on Crucible's sandbox design.",
+   "action": "When scoping Crucible's sandbox, decide whether UI-driving agents need DOM and screenshot access; if so, the bare code-exec sandbox will not cover them."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The leader that decomposes work, delegates a to-do list, and judges completion matches ProsHarness's plan, critique, and debate flow.",
+   "action": "Compare ProsHarness's critique step with a leader-judges-completion role: check whether a single judge pass after delegated subtasks catches missed work."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Shared canvas state and blind-agent overlap are general multi-agent coordination problems, and the speaker names them without solutions.",
+   "action": "Read the tldraw fairies write-up or demo for how shared state and leader election were handled, to compare with the subagent design."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,162 @@
+{
+ "one_line": "Talha Sheikh (Checkout.com) argues coding agents need deterministic, shareable verification hooks, not better instructions, and that the real engineering work is designing the verification harness.",
+ "summary": "The speaker describes repeatedly catching Claude Code runs that reported \"task completed\" while the output still failed, so he was acting as the enforcement layer. He built VectorV1 (also called Vector Harness), a tool that uses a Claude Code Stop hook to run a config-defined set of tests when a session ends, and feeds failures back to the agent with a retry instruction until everything passes. He frames the goal as trust: whether the agent actually did what was wanted, not whether it is capable of doing the task. He argues that more capable models and better specs, MCP servers or subagents do not replace verification. Guardrails could let cheaper models like Haiku or open-source models reach the needed output, shifting cost from the frontier model to the harness. Because every team builds bespoke enforcement, he proposes a language-agnostic contract: a task goes in, developer-defined checks run at several levels (in-conversation, before commit, between agents, async jobs, and optionally LLM-as-judge). He notes that Anthropic (executor-advisor pattern), OpenAI (harness engineering), PR review vendors and WorkOS are converging on the same idea. His conclusion is that verification design, not code output, is now where the value lies, so one should work on the harness rather than the code.",
+ "speakers": [
+  "Talha Sheikh"
+ ],
+ "orgs": [
+  "Checkout.com",
+  "Anthropic",
+  "OpenAI",
+  "Kudo (likely Qodo, auto-caption)",
+  "WorkOS",
+  "Facebook"
+ ],
+ "format": "talk",
+ "topics": [
+  "testing-verification",
+  "claude-code",
+  "coding-agents",
+  "agent-architecture"
+ ],
+ "tags": [
+  "verification",
+  "stop-hook",
+  "deterministic-checks",
+  "retry-loop",
+  "claude-code",
+  "harness-engineering",
+  "guardrails",
+  "llm-as-judge",
+  "trust",
+  "cost-reduction",
+  "executor-advisor"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents say 'done' but the output often fails when run; the human ends up as the enforcer.",
+   "detail": "Multi-agent Claude Code runs show all sub-tasks completed, yet a small thing is still missing. The speaker had to keep prompting fixes, so he was the one checking the output.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Run deterministic checks automatically when the agent session ends, using a Claude Code hook.",
+   "detail": "VectorV1 is driven by a config file listing the tests to check. A Stop hook calls it at session end. Failing tests are reported back to the agent, which is told to try again until all pass.",
+   "t": "1:58"
+  },
+  {
+   "idea": "The problem is trust, not capability.",
+   "detail": "The question is whether you can trust the agent to finish the task the way you want, not whether it can do the task at all. Instructions and specs are not the same as verification.",
+   "t": "1:58"
+  },
+  {
+   "idea": "Better models and richer context do not remove the need for verification.",
+   "detail": "Capability gains do not automatically mean reliability gains. Specs, MCP servers, subagents and context all help, but none of them checks the result.",
+   "t": "3:29"
+  },
+  {
+   "idea": "Strong guardrails can make cheaper models viable, moving cost from the model to the harness.",
+   "detail": "With good checks, a smaller model such as Haiku or an open-source model may reach the target output. Investing in the harness rather than always using a frontier model could cut cost sharply. This is argued, not measured.",
+   "t": "4:32"
+  },
+  {
+   "idea": "Bespoke enforcement cannot be shared, so the pattern needs to be a language-agnostic contract.",
+   "detail": "Each team enforces different rules, so private tools do not transfer. The proposed contract is: given a task, developers define the checks in the middle. Checks should run at conversation end, before commit, between agents in a workflow, on async agents, and optionally as non-deterministic LLM-as-judge.",
+   "t": "5:51"
+  },
+  {
+   "idea": "The same convergence is visible across vendors: verification loops, not better instructions.",
+   "detail": "He points to Anthropic's executor-advisor pattern, OpenAI's harness engineering, PR review vendors that run comprehensive reviews, and WorkOS's 'enforce, don't instruct' idea.",
+   "t": "7:13"
+  },
+  {
+   "idea": "The bottleneck is verification, so slowing down is the right call.",
+   "detail": "Agents can produce code faster than teams can verify it. The value has moved from the code itself to the verification system that a team designs. His summary: 'work on the harness and not on the code'.",
+   "t": "7:13"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Stop-hook deterministic verifier",
+   "how": "Register a Claude Code Stop hook that runs a checker script on session end. The checker reads a config listing the tests or checks for this task and returns pass/fail per check.",
+   "when": "Any agent task with a clear, checkable definition of done, especially when the agent's own 'done' claim is not trusted."
+  },
+  {
+   "name": "Fail-and-retry feedback loop",
+   "how": "When a check fails, send the specific failure output back to the agent and tell it to try again. Repeat until all checks pass. The speaker's example shows first test failing, retry, then all passing.",
+   "when": "Fix-verify cycles where the agent can self-correct from concrete test output."
+  },
+  {
+   "name": "Layered enforcement at multiple points",
+   "how": "Place checks at several levels: inside the conversation, before commit, at handoffs between agents in a multi-agent workflow, and on async agent results. Add an optional non-deterministic LLM-as-judge layer on top of the deterministic ones.",
+   "when": "Multi-agent or background-agent systems where one unchecked step can propagate errors downstream."
+  },
+  {
+   "name": "Language-agnostic check contract",
+   "how": "Define a shared contract: input is a task, output is pass/fail with evidence. The contents of the checks are supplied by each team, and any runner that can execute them deterministically can implement the contract.",
+   "when": "Several teams or repos need the same enforcement pattern without sharing one codebase."
+  },
+  {
+   "name": "Executor plus advisor loop",
+   "how": "One agent does the work. A separate advisor agent reviews the output and feeds comments back in a loop. The speaker cites Anthropic's executor-advisor pattern as an example.",
+   "when": "When a second opinion from a different agent is cheaper or more reliable than a single agent verifying itself."
+  },
+  {
+   "name": "Cheap model plus strong harness",
+   "how": "Use a smaller or open model for the work, and rely on deterministic guardrails and retries to reach the required output. Put effort into the harness rather than the model.",
+   "when": "Cost-sensitive pipelines where each task has a checkable output."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude Code hooks (Stop hook)",
+  "VectorV1 / Vector Harness",
+  "Haiku",
+  "Opus",
+  "Anthropic Glasswing / Project Mythos (named, not described)"
+ ],
+ "numbers": [
+  {
+   "claim": "No benchmark, latency, cost, or adoption figures are given. The cost reduction from cheaper models with guardrails is argued qualitatively only.",
+   "t": "4:32"
+  },
+  {
+   "claim": "Retry example: a test first fails, the agent is told to retry, then all tests pass.",
+   "t": "1:58"
+  },
+  {
+   "claim": "Talk runs 10:08 long, with about 40 seconds of Q&A time mentioned.",
+   "t": "8:29"
+  }
+ ],
+ "hot_takes": [
+  "Better models do not equal more reliable models, and instructions are not verification.",
+  "Be the one who designs the verification system; the value has moved from writing code to verifying it.",
+  "If a stronger model means fewer checks, the frontier model becomes the most expensive choice; invest in the harness and use cheaper models.",
+  "Developers should slow down, because verification is the real bottleneck, not code generation.",
+  "The speaker's own tool may be obsolete if agent makers ship built-in verification, but the verification pattern still holds."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and already has checkpoint/resume and plan->critique loops. A deterministic Stop-hook check with a retry loop fits the same harness and could gate when a checkpoint counts as done.",
+   "action": "Prototype a config-driven, deterministic check run from a Claude Code Stop hook in ProsHarness. Feed failures back into the same session until pass, then mark the checkpoint complete."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk's layered-check contract is related to exec-gate guardrails in Crucible and the post-run check idea in SkillForge, but the talk has no implementation detail for those components.",
+   "action": "Compare the layered check contract with Crucible's exec-gate design and decide whether post-run deterministic checks belong there."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Applies to any Claude Code workflow: a checkable definition of done plus a Stop hook is a small, portable pattern. The speaker's tool itself is a pitch, and his own examples are thin.",
+   "action": "Add a Stop hook to one Claude Code repo that runs a test suite and blocks the session from ending until it passes. Measure how often it catches a false 'done'."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

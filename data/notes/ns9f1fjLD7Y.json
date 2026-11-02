@@ -1,0 +1,268 @@
+{
+ "one_line": "Google DeepMind's Paige and Guillaume, with Gemma's Ian Ballantyne, demo AI Studio, Gen Media models and local Gemma 4 agents. Mostly a live product tour, with some practical prompting and cost tips.",
+ "summary": "Paige (Google DeepMind) opens with a tour of AI Studio: video analysis with Gemini 3.1 Flash-Lite, code execution for vision-checked counting, and Build, which turns a prompt into an app with Firestore and Google auth. She argues that many startup workarounds (vector DBs for small context windows, per-domain fine-tunes, agent frameworks, MCP servers) get absorbed by base models, and that skills (markdown files) are replacing MCP for many people. Guillaume then runs a Gen Media workshop that illustrates a public-domain book with Nano Banana 2, animates with Veo, scores with Lyria 3, and voices dialogue with multi-speaker TTS. He stresses per-character reference images for consistency and cheap-model prompt generation. Ian closes with Gemma 4 (E2B/E4B, 26B MoE, 31B dense) running on a phone, a Mac via LM Studio, and an OpenCode coding loop against a local OpenAI-compatible endpoint. Many live demos were slow or needed manual nudges, so the content is more \"what is possible\" than measured results.",
+ "speakers": [
+  "Paige (Google DeepMind, AI Studio/Gemini)",
+  "Guillaume (Google DeepMind, Gen Media developer advocate)",
+  "Ian Ballantyne (Google, Gemma developer relations)"
+ ],
+ "orgs": [
+  "Google DeepMind",
+  "Google",
+  "Augment Code",
+  "GitHub",
+  "Chevron",
+  "Cloudera",
+  "World Labs",
+  "Project Gutenberg",
+  "LM Studio",
+  "Ollama",
+  "OpenCode",
+  "Lovable",
+  "v0"
+ ],
+ "format": "workshop",
+ "topics": [
+  "models-research",
+  "voice-multimodal",
+  "vibe-coding-app-building",
+  "coding-agents"
+ ],
+ "tags": [
+  "AI Studio",
+  "Gemini 3.1 Pro",
+  "Gemini 3.1 Flash-Lite",
+  "code execution",
+  "Build",
+  "Firestore",
+  "Gemini Live",
+  "Nano Banana 2",
+  "Veo 3.1 Lite",
+  "Lyria 3",
+  "Lyria RealTime",
+  "Genie 3",
+  "Gemini TTS",
+  "Gemma 4",
+  "LM Studio",
+  "OpenCode",
+  "Google AI Edge Gallery",
+  "subagents",
+  "vibe coding",
+  "skills vs MCP",
+  "service tiers",
+  "local inference",
+  "multimodal"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Many agent-era workarounds may be temporary because base models absorb them",
+   "detail": "Paige's thesis: when everyone sprints to build the same thing (vector DBs for 8k-16k context windows, per-language fine-tunes, MedLM/MedPalm fine-tunes, agent frameworks), the model usually gains the capability later. Her check: if everyone is doing the same thing, it may be the wrong thing.",
+   "t": "3:32"
+  },
+  {
+   "idea": "Skills (markdown files) are replacing MCP servers for many people",
+   "detail": "She says most people have moved away from MCP servers toward skills, which she calls fancy markdown files. A longer-term idea is a background listener that writes skills from what you do.",
+   "t": "5:16"
+  },
+  {
+   "idea": "AI Studio's Get Code turns a playground run into app code",
+   "detail": "Whatever you configure in the playground (model, video URL and offset, prompt, tools like search grounding or code execution) can be exported as TypeScript or Python. The stated path is: if it works in AI Studio, you can ship it in an app with one click.",
+   "t": "16:52"
+  },
+  {
+   "idea": "Code execution gives a sandboxed Python environment as a one-line tool",
+   "detail": "With code execution on, the model writes and runs Python with preinstalled data libraries and returns results such as drawn bounding boxes. Gemini 3 Flash also checked its own boxes with a second pass, which cost more and needed more tool calls.",
+   "t": "17:54"
+  },
+  {
+   "idea": "Build produces a full app with database and auth, and the model fixes its own permission errors",
+   "detail": "From one prompt (bookshelf photo, search grounding for book details, Google login, Firestore storage), Build plans, writes Firestore rules, and when saves fail with insufficient permissions it finds the rule and the validation issue and fixes them. Its app gallery, version history and GitHub sync are also shown.",
+   "t": "22:40"
+  },
+  {
+   "idea": "Use a cheap model to write prompts for expensive generative models",
+   "detail": "Guillaume uses structured outputs and chat mode so that a model produces prompts, character lists and scene descriptions from the full book in context. Generative media training data is largely made with Gemini, so Gemini is good at writing prompts for these models.",
+   "t": "56:18"
+  },
+  {
+   "idea": "For character consistency, send only the reference images for characters in the scene",
+   "detail": "Chat history helps style consistency, but as the cast grows the model cannot track every character. Passing only the reference images for the characters in that scene is more reliable. For a real book with 40 characters, he would also make several views per character.",
+   "t": "1:01:20"
+  },
+  {
+   "idea": "Multi-speaker TTS works by giving each character a style and reusing it",
+   "detail": "Each character gets a style prompt and a voice, and repeat characters reuse their style so the voices stay consistent. The prompt must start with a read or tell verb or the model may ignore the text. Narrator and characters get different voices.",
+   "t": "1:08:18"
+  },
+  {
+   "idea": "Gemma 4 small models use per-layer embeddings that page from flash",
+   "detail": "E2B and E4B are called effective models because embeddings can stay on flash and be paged in. The core is about 2B or 4B effective parameters, but the RAM footprint is closer to 5B or 8B. The 26B MoE has 4B active parameters and the 31B is dense. Ian claims performance comparable to models about 10x larger.",
+   "t": "1:26:13"
+  },
+  {
+   "idea": "A local OpenAI-compatible endpoint lets an existing coding harness run on local Gemma",
+   "detail": "LM Studio serves the 26B model on port 1234. OpenCode is configured with only a provider name, schema, model list and base URL. The 31B model writes a spec and the local model implements it. The first run had a syntax error. Re-reading the file and editing with the built-in line-edit and rewrite tools fixed it.",
+   "t": "1:37:02"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Playground-to-code export",
+   "how": "Configure model, inputs, offsets, prompt and tools in AI Studio, then use Get Code to export working TypeScript or Python with the same settings.",
+   "when": "Prototyping a multimodal call (for example video analysis) before wiring it into an app."
+  },
+  {
+   "name": "Code execution for verified counting and drawing",
+   "how": "Turn on the sandboxed Python tool, ask for drawn boxes or masks, and let the model check its own output in a second pass.",
+   "when": "Vision tasks that need exact counts, coordinates or per-frame answers, where a few cents per run is acceptable."
+  },
+  {
+   "name": "Per-scene reference injection for character consistency",
+   "how": "Store one reference image per character, then give the image model only the references for characters in the current scene. Use chat history for style, not for every character.",
+   "when": "Generating a long series of images with recurring characters, where the cast is too large for the model to track in context."
+  },
+  {
+   "name": "Structured outputs as a prompt-writing stage",
+   "how": "Use a cheap Gemini model with a response schema to produce prompts, character lists or chapter objects, so the output parses cleanly into the next generation call.",
+   "when": "Chaining a text model into image, video or music generation at scale."
+  },
+  {
+   "name": "Prompt-level multi-voice TTS",
+   "how": "Describe each character's style in the prompt and reuse it when the character reappears. Assign voices per role (narrator vs character). Start the prompt with a read or tell verb.",
+   "when": "Producing dialogue or audio drama with more voices than the usual two-speaker setup."
+  },
+  {
+   "name": "Flex and priority service tiers",
+   "how": "Set the service tier on each request: Flex for cost-sensitive jobs that can wait minutes, priority for reliability at about twice the price.",
+   "when": "Batch-style runs where latency does not matter, or live runs that must finish in a demo."
+  },
+  {
+   "name": "Local orchestrator with parallel subagents on an OpenAI-compatible server",
+   "how": "Run a local model server, then fan out one orchestrator to several subagents, each in its own terminal, to draw or research in parallel. Turn thinking off for speed.",
+   "when": "Quick local prototyping or parallel subtasks that do not need the internet."
+  },
+  {
+   "name": "Vibe-coding guardrails: one file per feature, plus logging",
+   "how": "Ask the model to split code into one file per feature, so a change can be reviewed by file. Require logs in the code so the reason for a failure is visible without guessing.",
+   "when": "Generating apps with an AI coding tool where you need to review and debug the output."
+  }
+ ],
+ "tools": [
+  "Google AI Studio",
+  "Gemini API",
+  "Gemini Live",
+  "Google Build (AI Studio)",
+  "Firestore",
+  "Google Search grounding",
+  "Antigravity",
+  "Nano Banana 2",
+  "Veo 3.1 Lite",
+  "Lyria 3",
+  "Lyria RealTime",
+  "Genie 3 / Project Genie",
+  "Gemini TTS",
+  "Gemma 4",
+  "Google AI Edge Gallery",
+  "LM Studio",
+  "OpenCode",
+  "Cloud Run",
+  "Vertex AI",
+  "Firebase"
+ ],
+ "numbers": [
+  {
+   "claim": "Gemini 3.1 Flash-Lite is about 25 cents per million tokens analyzed, roughly an order of magnitude below Gemini 3.1 Pro",
+   "t": "12:10"
+  },
+  {
+   "claim": "A 5-minute YouTube clip sampled at about 1 frame per second came to 30,900 tokens",
+   "t": "14:12"
+  },
+  {
+   "claim": "Code-execution bounding-box verification cost more and needed more tool calls, but still cost pennies",
+   "t": "20:39"
+  },
+  {
+   "claim": "Early context windows were 8k-16k tokens, which drove a vector-DB sprint",
+   "t": "3:32"
+  },
+  {
+   "claim": "Augment Code moved its agent infrastructure to Gemini 3.1 Pro by default for performance and cost",
+   "t": "8:53"
+  },
+  {
+   "claim": "Google releases a new Gen Media model or capability about every five days; across all surfaces, two to three new things a week",
+   "t": "45:51"
+  },
+  {
+   "claim": "Veo 3.1 Lite is about five cents per output (transcript says per image), described as the cheapest video model",
+   "t": "48:44"
+  },
+  {
+   "claim": "Lyria 3 generates 30-second clips or full songs of about 3 minutes via API",
+   "t": "48:44"
+  },
+  {
+   "claim": "The full Gen Media notebook costs roughly one euro to run; the Veo notebook alone was quoted at about $20",
+   "t": "49:56"
+  },
+  {
+   "claim": "Veo notebook alone quoted at about $20 to run",
+   "t": "52:34"
+  },
+  {
+   "claim": "Flex tier is half price with minutes of latency; priority tier costs twice as much",
+   "t": "1:21:51"
+  },
+  {
+   "claim": "Genie 3 worlds are playable for 60 seconds; access is through an Ultra subscription in some regions",
+   "t": "30:26"
+  },
+  {
+   "claim": "Gemma 4 family: E2B and E4B (effective ~2B/4B, about 5B/8B in RAM), 26B MoE with 4B active, 31B dense; Apache 2 license",
+   "t": "1:26:13"
+  },
+  {
+   "claim": "Ian says the Gemma 4 models perform like models about 10x their parameter count",
+   "t": "1:27:32"
+  },
+  {
+   "claim": "The 26B Gemma 4 needs about 18 GB to load and about 22 GB RAM with context, on an M4 Mac",
+   "t": "1:33:03"
+  },
+  {
+   "claim": "Gemma 4 can be deployed to a single RTX Pro 6000 on Cloud Run",
+   "t": "1:37:02"
+  }
+ ],
+ "hot_takes": [
+  "Everybody sprinting to build the same thing is a sign it is the wrong thing, because the model will absorb it (Paige, 3:32).",
+  "Most agent frameworks and MCP-server workarounds will probably be absorbed into the model; skills (markdown files) are replacing MCP for many people (Paige, 5:16).",
+  "Open-weight image and video generation models are unlikely because safety gating is hard to enforce once weights are open (Guillaume, 1:23:27).",
+  "Gemini is good at writing prompts for Gen Media models because much of their training data was made with Gemini (Guillaume, 1:07:14)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Gemma 4 served locally via an OpenAI-compatible endpoint on one GPU or a Mac is relevant to the self-hosted, single-RTX-5090 InferCraft stack, but the talk gives no serving benchmarks.",
+   "action": "Benchmark Gemma 4 26B MoE and 31B dense on the 5090 behind the existing vLLM endpoint, measuring tokens/sec and KV-cache use against the current model before deciding."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The per-feature file split and mandatory logging advice matches what a checkpointed harness needs for review. The OpenCode-plus-local-model loop is a weak parallel to ProsHarness's Claude Code wrapper.",
+   "action": "Add a harness rule that each feature goes in its own file and new code must log key state, then check whether review and debugging of harness-generated runs get faster."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Recurring interest in cheap-model (Haiku-style) pipelines and context engineering. Flash-Lite pricing, Flex-tier half-price batching, and the 'skills replace MCP' claim are direct inputs.",
+   "action": "Test Gemini 3.1 Flash-Lite with structured outputs as a cheap extraction or prompt-writing stage against the current Haiku pipeline, and compare cost and accuracy."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

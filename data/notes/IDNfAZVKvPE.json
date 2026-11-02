@@ -1,0 +1,134 @@
+{
+ "one_line": "Midam Kim (ServiceNow) uses a linguistics framework to explain why voice agents fail and proposes diagnosing them by listen/speak channels, timing, and the user's mental model.",
+ "summary": "Midam Kim, an ML engineer at ServiceNow, opens with a voice-bot call where spelling, account-number capture and turn-taking all broke, and the bot never tried interactive clarification. He frames voice AI as a joint activity between two parties, the way human conversation is, rather than a one-way pipeline. His framework has two channels (listening and speaking) crossed with four layers: sounds, words, interaction (turn timing) and mental model (task intent). He argues these layers are interdependent and must be aligned, and that the conversation runs on a timeline where only the user's evolving mental model persists after the audio is gone. He lists engineering levers (ASR/TTS choice and pre/post-processing, vocabulary, turn detection, emotion handling, dynamic context retention) and says business metrics such as escalations and abandoned calls follow from linguistic failures. He points to ServiceNow's EvaBench as a way to diagnose a voice agent, and closes by saying speakers adapt and languages change, so systems must keep up. The talk gives a diagnostic lens but no fixes or measured results.",
+ "speakers": [
+  "Midam Kim"
+ ],
+ "orgs": [
+  "ServiceNow"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "evals",
+  "product-ux"
+ ],
+ "tags": [
+  "voice agents",
+  "linguistics",
+  "turn-taking",
+  "ASR",
+  "TTS",
+  "mental model",
+  "EvaBench",
+  "conversation design",
+  "user frustration"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Voice agent failures are linguistic failures, shown through a real call.",
+   "detail": "A bot misheard M vs N in a spelled name, applied English-centric TTS reading rules to the spelling, cut the user off during an account number, and then asked for a repeat without trying clarification. The user asked for a human.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Treat voice AI as a joint activity, not a pipeline.",
+   "detail": "Human conversation is two parties taking turns and updating shared mental models. The speaker says users expect this same mutual process from bots.",
+   "t": "3:29"
+  },
+  {
+   "idea": "Use a two-channel by four-layer grid to locate failures.",
+   "detail": "Listening and speaking channels each have sounds (recognition or pronunciation), words (understanding or word choice), interaction (turn timing), and mental model (intent or the information the user needs).",
+   "t": "6:35"
+  },
+  {
+   "idea": "The layers are interdependent and must be aligned.",
+   "detail": "Good sounds depend on word-level handling, which depends on turn-taking, which is needed for task completion. Missing any one layer makes the agent fail.",
+   "t": "7:38"
+  },
+  {
+   "idea": "Voice is silently tracked on a timeline, so only the mental model persists.",
+   "detail": "Unlike chat, spoken words leave no visible history. The user's evolving mental model is the only thing that remembers the call, so it is the thing to manage.",
+   "t": "9:09"
+  },
+  {
+   "idea": "Satisfaction levers are dynamic, not one-off settings.",
+   "detail": "The speaker lists ASR and TTS choice with pre- and post-processing, shared vocabulary, turn detection and latency, emotion handling, and context retention. All of these need to adjust during the call and fit different users, including unhappy ones.",
+   "t": "10:12"
+  },
+  {
+   "idea": "Linguistic quality links directly to business metrics.",
+   "detail": "Better handling should lower user frustration, task failures, live-agent escalations, abandoned calls, and silent failures. The speaker says business implications are linguistic implications.",
+   "t": "11:36"
+  },
+  {
+   "idea": "Speakers adapt and languages drift, so systems need to keep up.",
+   "detail": "Users adapt to the agent during a call and across calls. The speaker asks whether a system will still fit language change within months.",
+   "t": "13:50"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Linguistic diagnostic grid for voice agents",
+   "how": "Score each failure on channel (listen or speak) times layer (sounds, words, interaction, mental model) to find which layer broke, rather than blaming the whole pipeline.",
+   "when": "When debugging a voice agent or auditing a call transcript to decide whether the ASR, TTS, turn-taking or task logic is at fault."
+  },
+  {
+   "name": "Interactive clarification on recognition errors",
+   "how": "When the bot is unsure of a spelled name or an identifier, it confirms the specific uncertain item (for example, asking about M vs N) instead of repeating the whole request or silently proceeding.",
+   "when": "For spelled names, account numbers and other identifiers where ASR errors are common."
+  },
+  {
+   "name": "Locale-aware pre-processing for TTS and vocabulary",
+   "how": "Curate a shared vocabulary and pre-process text so that spelled letters, codes and names are not read with default English rules.",
+   "when": "When the agent reads back names, spelled strings or codes that the default TTS pronounces wrongly."
+  },
+  {
+   "name": "Turn-taking and barge-in control",
+   "how": "Tune turn detection and latency so the bot does not cut the user off mid-number and only speaks when it is its turn.",
+   "when": "When users read long strings such as account numbers, or pause while thinking."
+  },
+  {
+   "name": "Dynamic per-call context retention",
+   "how": "Keep track of the user's current intent and known facts across the timeline, and adapt the style for different users and emotional states during the call.",
+   "when": "For long multi-turn voice calls where users get frustrated or change plans mid-call."
+  },
+  {
+   "name": "EvaBench for diagnosing voice agents",
+   "how": "Run ServiceNow's EvaBench, a speech-to-speech benchmark, to diagnose a voice agent's status across the framework layers.",
+   "when": "When you need a structured voice-agent eval before tuning ASR, TTS or turn-taking."
+  }
+ ],
+ "tools": [
+  "EvaBench"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Voice is called the most natural interface, but it is actually hard, and a bad voice bot fails catastrophically.",
+  "Business implications of voice AI are linguistic implications, so hire linguists as well as engineers.",
+  "Only the user's mental model persists in a voice call, so context management matters more than the audio pipeline."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "No voice or speech component in the AgentOS layers listed in the profile.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No checkpoint, planning, loop or approval content relevant to the Claude Code harness.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The layer-by-channel grid could serve as a rubric for failure analysis in any conversational agent eval, including chat.",
+   "action": "Try a listen/speak x sounds/words/interaction/mental-model tagging pass on a sample of failed transcripts from an existing agent eval to see whether the grid surfaces failure modes that a flat error label misses."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

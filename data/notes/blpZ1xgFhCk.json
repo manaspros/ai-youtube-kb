@@ -1,0 +1,164 @@
+{
+ "one_line": "Hands-on review of Qwen Audio Agent, an open-source voice runtime that keeps a voice conversation alive while Claude Code does slow coding work in the background over ACP. The main lesson is that voice coding is a concurrency problem, not a transcription problem.",
+ "summary": "Josh from Better Stack demos Qwen Audio Agent, a desktop runtime with no model weights of its own. A lightweight front-end voice agent holds the conversation and answers quick questions itself, while Claude Code runs as a back-end worker over the Agent Client Protocol (ACP) and handles file edits, tool runs and tests. Long tasks are handed off as async jobs, the user can keep talking and ask for status mid-task, and the result is injected back into the live conversation when it finishes. Interruption is implemented as an explicit state machine that cancels in-flight audio and transcripts. The backend is swappable via ACP (Claude Code, Codex, OpenCode named). The speaker is candid about the caveats: the good voice path depends on a paid Alibaba DashScope key, a fully local MLX mode exists but its docs are Chinese-only, and no latency numbers are published. He closes with the claim that transcription is solved and the real problem is whether the system can keep talking while it is busy.",
+ "speakers": [
+  "Josh (Better Stack host)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Alibaba Cloud",
+  "Anthropic",
+  "OpenAI"
+ ],
+ "format": "review",
+ "topics": [
+  "voice-multimodal",
+  "agent-architecture",
+  "coding-agents",
+  "multi-agent"
+ ],
+ "tags": [
+  "voice-coding",
+  "full-duplex",
+  "acp",
+  "agent-client-protocol",
+  "interruption-handling",
+  "barge-in",
+  "claude-code",
+  "qwen",
+  "dashscope",
+  "mlx",
+  "local-voice",
+  "async-task-handoff"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Dictation-style voice coding (Whisper, then paste) only replaces typing. The useful part is full duplex, where the conversation keeps running while work happens elsewhere.",
+   "detail": "The speaker argues the real gain comes from the voice side staying responsive while the agent works, not from faster transcription.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Interruption is a state machine, not a single event.",
+   "detail": "Steps: detect user speech, mark an interruption, emit an interrupt signal, actively cancel audio and transcripts still in flight, then start the new turn. The speaker says the 'still hearing another second and a half' gap is what makes voice assistants feel broken.",
+   "t": "5:27"
+  },
+  {
+   "idea": "Two-lane architecture: a fast voice layer and a slow coding worker.",
+   "detail": "The front-end voice agent answers simple questions immediately (status, cancel, 'never mind'). The back-end coding agent, Claude Code, is connected over ACP and does file edits, tool calls and tests. Slow work becomes an async task whose result is injected back into the live conversation.",
+   "t": "4:11"
+  },
+  {
+   "idea": "Route trivial questions away from the expensive agent.",
+   "detail": "A simple arithmetic question (19 x 24) was answered by the voice agent without touching the repo or spending Claude API credits.",
+   "t": "2:14"
+  },
+  {
+   "idea": "Status queries work mid-task without blocking on the worker.",
+   "detail": "The user asked how the refactor was going and got an answer that it was editing and running tests, while a second request ran in parallel.",
+   "t": "3:32"
+  },
+  {
+   "idea": "The backend is swappable because the integration is a protocol (ACP), not a vendor-specific integration.",
+   "detail": "Claude Code, Codex, OpenCode and others are named as possible workers.",
+   "t": "5:27"
+  },
+  {
+   "idea": "The open-source claim needs qualifying. The runtime is Apache 2.0, but the best-sounding voice depends on a paid cloud API.",
+   "detail": "The default path runs through Alibaba DashScope with a paid key (free credits included). There is no self-hosted version of the high-quality audio generation. A fully local mode exists (Hugging Face speech-to-text with an MLX backend on Apple Silicon, MPS), but the tuned profile docs are Chinese-only.",
+   "t": "6:11"
+  },
+  {
+   "idea": "No published latency numbers were found on any hardware.",
+   "detail": "The speaker says he looked and found none, which matters given that the product is sold on responsiveness.",
+   "t": "7:14"
+  },
+  {
+   "idea": "Thesis: the hard problem is concurrency, not speech.",
+   "detail": "Transcription is treated as solved. Whether the system can keep talking while busy is the differentiator, and the speaker says almost nobody treats it that way.",
+   "t": "9:17"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Voice front-end + async coding back-end over ACP",
+   "how": "Run a lightweight voice agent that owns conversation, interruptions and cancel/status commands. Hand real coding work to a separate agent over the Agent Client Protocol as an async task. Inject the result back into the live conversation when the task completes. The protocol keeps the backend swappable (Claude Code, Codex, OpenCode).",
+   "when": "Any long-running agent task where the user must keep interacting, such as voice, phone, or chat front-ends over a slow coding agent."
+  },
+  {
+   "name": "Interruption as an explicit state machine",
+   "how": "On user speech: (1) detect speech, (2) mark an interruption, (3) emit an interrupt signal, (4) cancel in-flight audio and transcript output, (5) start the new turn. Do not treat barge-in as a single event.",
+   "when": "Voice UIs where barge-in must not leave stale audio or a second of trailing speech playing after the user starts talking."
+  },
+  {
+   "name": "Local fast-path for trivial questions",
+   "how": "Let the cheap voice-side model answer simple queries itself (arithmetic, status, cancel) and only escalate tasks that touch files or tools to the expensive coding agent.",
+   "when": "To cut API spend and avoid turning every quick question into a full agent task."
+  },
+  {
+   "name": "Setup (as demonstrated)",
+   "how": "Install the signed universal macOS DMG (no CUDA, Python or compile step). Create an Alibaba Cloud (DashScope) API key from the English site, enter it in the desktop UI for the front-end voice agent. Add Anthropic API credits for the back-end Claude Code worker. The speaker estimates 10-15 minutes to integrate everything. Local-only mode requires a second Python install and an MLX setup (docs in Chinese).",
+   "when": "Trying the runtime on Apple Silicon; the local-only route is the only one that avoids a cloud key."
+  }
+ ],
+ "tools": [
+  "Qwen Audio Agent (open-source voice runtime, Apache 2.0; no model weights shipped)",
+  "Claude Code (back-end coding agent)",
+  "Codex",
+  "OpenCode",
+  "ACP (Agent Client Protocol)",
+  "Alibaba DashScope (paid cloud voice API)",
+  "OpenAI Realtime API (mentioned as comparison)",
+  "PipeCat (mentioned as comparison)",
+  "LiveKit Agents (mentioned as comparison)",
+  "Whisper (dictation baseline)",
+  "Hugging Face speech-to-text pipeline",
+  "MLX (Apple Silicon local backend)",
+  "MPS (Apple Silicon GPU backend)"
+ ],
+ "numbers": [
+  {
+   "claim": "Video length 9:34. Setup estimated at 10-15 minutes (speaker's estimate).",
+   "t": "8:10"
+  },
+  {
+   "claim": "Repo stars about 2,400 (auto-caption reads '23, 2,400 stars'), versus about 4,000 monthly package downloads, so stars are running ahead of usage.",
+   "t": "8:10"
+  },
+  {
+   "claim": "On the latest release, the Mac build downloaded about 90 times versus about 502 for Windows (auto-caption is unclear on these figures, so treat them as approximate).",
+   "t": "8:10"
+  },
+  {
+   "claim": "No latency numbers published for any hardware; the speaker looked and found none.",
+   "t": "7:14"
+  },
+  {
+   "claim": "Model claims 100+ languages for recognition and a few dozen for speech (vendor claim, as relayed by the speaker).",
+   "t": "7:14"
+  }
+ ],
+ "hot_takes": [
+  "The runtime is open source but the best voice path is cloud-only and paid. The fully local path is real but undocumented in English and has no latency data.",
+  "Transcription is solved. The differentiator is whether the system can keep talking to you while it is busy.",
+  "Interruption handling (cancel in-flight audio and transcripts) matters more to perceived quality than response speed.",
+  "The project is described as Chinese-first: the wake word, the full-duplex design article and the tuned voice profile are all Chinese-only."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code with checkpoint/resume, approvals and loops. The voice runtime shows the pattern of answering status and cancel requests from a separate front-end while the worker is still running.",
+   "action": "If ProsHarness adds phone or voice approvals, treat status and cancel as a fast path that reads checkpoint state and never blocks on the worker. Skim the ACP docs to see whether ProsHarness can talk to Claude Code through the same protocol."
+  },
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "The talk covers a single-user voice-to-coding-agent desktop runtime. It has no gateway, budget, memory or telemetry relevance to AgentOS pillars.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

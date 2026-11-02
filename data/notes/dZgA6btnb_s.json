@@ -1,0 +1,183 @@
+{
+ "one_line": "Kepler's CEO explains how its finance research platform stops LLMs from inventing numbers: models cite pre-registered SEC facts, deterministic code does the math, and any unverifiable number is stripped.",
+ "summary": "Vinoo Ganesh, CEO of Kepler, presents the architecture behind a financial research tool where every number must trace to a source. The core rule is that the model cites numbers but never writes or computes them; deterministic code handles arithmetic and the citation registry. Kepler pre-processed the SEC corpus (30M+ documents) into a registry of citable facts with typed annotations (value, unit, scale, period, entity). Retrieval combines BM25 with approximate-nearest-neighbour search in a Turbopuffer namespace (the speaker says zero-entropy embeddings, 1280 dimensions), then reciprocal rank fusion, trust-weighted re-ranking and a cross-encoder. Every hit is re-authorised at document level in Postgres for tenant isolation. A post-processing filter strips any number that cannot be matched to the registry, and the speaker claims about a third of citations from unfiltered model output were numbers the model made up. He says a baseline RAG stack would have had many numbers refused in evals, though the transcript figures are garbled. The talk is a product walkthrough with a vendor-partner stage, so the architecture is concrete but the performance claims are unverified.",
+ "speakers": [
+  "Vinoo Ganesh (CEO, Kepler)"
+ ],
+ "orgs": [
+  "Kepler",
+  "Turbopuffer",
+  "Anthropic",
+  "Google",
+  "Palantir",
+  "Citadel"
+ ],
+ "format": "talk",
+ "topics": [
+  "rag-retrieval",
+  "data-engineering",
+  "security-guardrails"
+ ],
+ "tags": [
+  "hallucination-prevention",
+  "citations",
+  "deterministic-computation",
+  "finance",
+  "sec-filings",
+  "xbrl",
+  "hybrid-search",
+  "bm25",
+  "reranking",
+  "tenant-isolation",
+  "fact-registry",
+  "turbopuffer"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Models should cite numbers, never write them. Arithmetic (growth rates, margins, multiples) goes to deterministic code written by humans, and the LLM only plans and references source IDs.",
+   "detail": "The speaker's core architecture claim: LLMs are probability machines and do not reliably do math, so the platform makes arithmetic impossible for the model to produce directly.",
+   "t": "3:37"
+  },
+  {
+   "idea": "Pre-process the whole source corpus into a fact registry before answering queries.",
+   "detail": "Kepler processed 30M+ SEC documents and registered citable anchors (income statement and balance sheet facts, MD&A figures). Roughly 21,000 citations were extracted by the filter.",
+   "t": "3:37"
+  },
+  {
+   "idea": "A bare number is meaningless without typed metadata, so every fact needs value, unit, scale, currency, period and entity.",
+   "detail": "A '1' or '17' in a 10-K is ambiguous. A 2023 revenue figure in a 2025 filing has to be annotated as 2023 data. Kepler stores the stored value separately from a display value so output can be re-scaled or re-currencied while staying traceable.",
+   "t": "6:17"
+  },
+  {
+   "idea": "Use the LLM to plan and dereference pointers. Deterministic tools retrieve, compute, build tables and register each result into a citation registry.",
+   "detail": "A user question leads to a plan (retrieval steps, citation filter, computation). Filters and references go to the LLM to resolve against the registry; numbers with no registry match are stripped.",
+   "t": "4:50"
+  },
+  {
+   "idea": "Search wide, then re-rank in layers: hybrid ANN + BM25, then reciprocal rank fusion, then source-trust re-ranking, then a cross-encoder.",
+   "detail": "Recall is kept high by pulling about 60 candidates, then trusted sources (10-K over an earnings-call sentence) are preferred. Conflicting sources are kept and de-conflicted, not silently merged.",
+   "t": "10:02"
+  },
+  {
+   "idea": "Re-authorise every retrieval hit at document level and scope tokens per query, so one desk's research cannot leak to another.",
+   "detail": "Each hit is checked against Postgres permissions, every computation adds a filter, and only the auth service can mint a scoped query token. Internal sources (SharePoint, Box, OneDrive, Outlook) live in the same namespace.",
+   "t": "11:26"
+  },
+  {
+   "idea": "About a third of citations pulled from unfiltered model output were numbers the model produced from its training data, not from a source.",
+   "detail": "Historical figures are the worst case, since a 2005 revenue number cannot be traced back to the right year and scope. This is the failure the registry is designed to catch.",
+   "t": "12:54"
+  },
+  {
+   "idea": "Strip unverifiable numbers by default, with citation repair only in some cases.",
+   "detail": "Stripping makes the platform less creative (the speaker says it is the wrong tool for marketing content). Some unmatched citations go to an agentic repair step that tries to link them to a source; the speaker declines to explain that step.",
+   "t": "14:16"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Cite-don't-write with post-filter",
+   "how": "Constrain the LLM to output source IDs (not raw figures). Resolve each ID against a registry of facts. Render the display value from the deterministic store. Strip any numeric claim that has no registry match before the answer is shown.",
+   "when": "Any answer that must be numerically correct and auditable: finance, legal, reporting, internal analytics."
+  },
+  {
+   "name": "Typed fact registry",
+   "how": "Give every fact a unique ID plus value, unit, scale, currency, period, entity and source document. Store the stored value separately from display formatting so units can change without losing traceability. Use entity resolution so the same company maps to one ID.",
+   "when": "Extracting figures from filings or other documents where a number without its period or scale is ambiguous."
+  },
+  {
+   "name": "Search wide, then re-rank in stages",
+   "how": "Hybrid retrieval: ANN plus BM25 in one namespace. Pull roughly 60 candidates. Fuse with reciprocal rank fusion. Re-rank by source trust (e.g. filing over call transcript). Final pass with a cross-encoder before returning to the model. Make re-embedding cheap so the index can be refreshed as new documents arrive.",
+   "when": "Retrieval where precision matters more than latency, and where the corpus changes often."
+  },
+  {
+   "name": "Per-hit document authorisation",
+   "how": "Re-check permissions for every retrieved hit at query time, not only at index time. Mint scoped query tokens from the auth service only. Add a permission filter at each computation step so filters accumulate.",
+   "when": "Multi-tenant retrieval where users must not see each other's research or data."
+  },
+  {
+   "name": "Keep conflicting sources and de-conflict",
+   "how": "When sources disagree (an earnings-call figure vs a 10-K figure), store both as separate facts with provenance. Choose or annotate at answer time instead of merging at ingest.",
+   "when": "Financial or any data where restatements and sources of different authority coexist."
+  },
+  {
+   "name": "Measure recall and idempotency as guarantees",
+   "how": "Track recall on an eval set. Run the same query repeatedly and check for identical results. Count how many numbers the filter refuses against a baseline RAG stack.",
+   "when": "Turning a RAG prototype into something you can claim is accurate."
+  }
+ ],
+ "tools": [
+  "Kepler (finance research platform)",
+  "Turbopuffer (vector and BM25 search, namespaces)",
+  "Zero Entropy embeddings (as stated; 1280 dimensions)",
+  "Postgres (per-document authorisation)",
+  "Cross-encoder re-ranker (model not named)",
+  "XBRL (structured filings data, cited as ~10% incorrect)",
+  "SEC filings: 10-K, 10-Q, 8-K, S-1, investor presentations, earnings call transcripts",
+  "Claude and ChatGPT (used as baseline in evals)",
+  "Gemini 4 (mentioned, not evaluated)"
+ ],
+ "numbers": [
+  {
+   "claim": "30+ million SEC documents processed into the corpus",
+   "t": "3:37"
+  },
+  {
+   "claim": "About 20,000 citable MD&A-style facts plus three filing-fact classes registered as citable anchors",
+   "t": "4:50"
+  },
+  {
+   "claim": "About 21,000 citations correctly extracted by the filter",
+   "t": "4:50"
+  },
+  {
+   "claim": "Embeddings at 1280 dimensions, using Zero Entropy (speaker says 'zero embeddings')",
+   "t": "8:35"
+  },
+  {
+   "claim": "XBRL cited as incorrect roughly 10% of the time, the reason for extracting from documents",
+   "t": "8:35"
+  },
+  {
+   "claim": "Reciprocal re-ranking pulls back usually about 60 documents per query",
+   "t": "10:02"
+  },
+  {
+   "claim": "About one third of all citations in the corpus were numbers the model produced without a source",
+   "t": "12:54"
+  },
+  {
+   "claim": "Eval: the filter refused 10,981 citations on a native Claude/ChatGPT RAG setup. The speaker's figure of about 3,810 wrong numbers is garbled in the transcript and should be checked against the video",
+   "t": "16:57"
+  },
+  {
+   "claim": "Example output: Apple 2025 revenue growth computed as 6.4% with calculations shown",
+   "t": "18:14"
+  }
+ ],
+ "hot_takes": [
+  "Claims that hooking Claude or ChatGPT to a vector DB is not enough for numerical accuracy, and that many finance RAG startups that are ChatGPT wrappers cannot be trusted (vendor opinion, no independent benchmark shown).",
+  "Says Kepler is 'the most granular form of any tool on the market' in traceability, a claim the talk does not verify.",
+  "Predicts this cite-don't-write architecture 'will become the standard' for financial research tools.",
+  "Kepler is 'not a super useful tool' if you rely on hallucinations, and creative or marketing work is out of scope. The speaker is candid about the trade-off.",
+  "The talk is a vendor walkthrough on a Turbopuffer partner stage. Key numbers (eval refusals, citation counts) are garbled in captions and the citation-repair step is deliberately kept vague, so treat the architecture as a useful pattern and the metrics as unverified."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already does hybrid BM25 + pgvector retrieval with provenance. This talk adds a stronger pattern: the model emits source IDs and a post-filter strips unsourced numbers, plus per-hit re-authorisation and trust-weighted re-ranking.",
+   "action": "Add a provenance check to MemoryMesh answers. Require each fact or number in an answer to resolve to a stored source ID, strip or flag unresolved ones, and record the refusal rate as an eval metric alongside RAGAS."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The cite-don't-write rule (LLM plans, deterministic code computes and verifies) maps loosely onto the plan, critique and debate loop. It is not about checkpointing or approvals.",
+   "action": "Consider a deterministic verification step in the plan-critique loop for any numeric or factual claim the harness passes on, rather than asking the critic model to check arithmetic."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

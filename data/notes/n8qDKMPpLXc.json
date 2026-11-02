@@ -1,0 +1,148 @@
+{
+ "one_line": "Better Stack walkthrough of OpenAI's open-source Symphony, which polls Linear for issues and runs a coding agent per issue, with humans involved only at review. Covers setup, workflow file and hooks.",
+ "summary": "The video introduces OpenAI's open-source Symphony, a tool that polls an issue tracker (Linear in the demo) and launches a coding agent for each task, so humans mainly review the output. The speaker's motivation is that engineers could supervise only about three to five Codex sessions before context switching hurt productivity. The demo moves a \"Hello World\" TypeScript/Bun issue to To Do, after which Symphony creates a workspace named after the issue ID, Codex finishes the work, and the issue moves to Done with a comment. Setup has two routes: the manual one (Elixir, clone, build, run with a workflow file) and a \"spec prompt\" route where a coding agent builds its own version from a spec of more than 2,000 lines. The speaker used that route to produce a Python version with GPT-5.5 at low effort, and notes that others have built Go and Claude SDK versions. For real projects the speaker adds clone and branch hooks after workspace creation and a commit, push and PR hook after the agent run. The video closes by comparing Symphony to Multica and Conductor, which the speaker finds easier to set up. The walkthrough is short and light on internals: no architecture, failure handling, or cost data is shown.",
+ "speakers": [],
+ "orgs": [
+  "OpenAI",
+  "Linear",
+  "Charm",
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "agent-architecture",
+  "multi-agent",
+  "coding-agents",
+  "software-factory"
+ ],
+ "tags": [
+  "symphony",
+  "openai",
+  "linear",
+  "codex",
+  "issue-tracker-automation",
+  "workflow-file",
+  "lifecycle-hooks",
+  "pr-automation",
+  "multica",
+  "conductor",
+  "spec-driven",
+  "gpt-5.5"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Symphony addresses a human attention bottleneck: supervising more than about 3 to 5 concurrent Codex sessions degrades productivity through context switching.",
+   "detail": "The inversion is that humans place tasks on a board, a fresh agent is spun up per task, and humans are pulled in only when there is something to review. The speaker frames this as the fix for fast agents with slow human managers.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Symphony polls the tracker and drives status transitions: an issue moved to To Do is picked up, worked, moved to Done, and commented on.",
+   "detail": "In the demo, Symphony was not configured for Backlog, so the issue was set to To Do. A GraphQL validation error appeared in the first attempt and Codex fixed it on its own. Each issue gets a workspace directory named after its ID.",
+   "t": "1:17"
+  },
+  {
+   "idea": "Two install routes: build it manually, or give a coding agent the spec file and let it generate its own implementation.",
+   "detail": "The spec is more than 2,000 lines. The speaker used the spec route with GPT-5.5 at low effort and got a Python version. Other people built Go (Charm CLI) and Claude SDK versions. The speaker notes the maintenance risk, since every generated version differs, and the upside, since the builder then owns and fixes it.",
+   "t": "2:42"
+  },
+  {
+   "idea": "Per-repo behavior lives in a workflow file: YAML front matter for config, then a markdown prompt sent for each issue.",
+   "detail": "The front matter holds the Linear API key, the active issue states the agent may act on, the workspace routes, and the shell command that launches the coding agent (codex). The default OpenAI workflow is described as not ready for a real project.",
+   "t": "3:40"
+  },
+  {
+   "idea": "Real projects need lifecycle hooks: one after workspace creation to clone and branch, and one after the agent run to commit, push and open a PR.",
+   "detail": "The after-create hook clones the repo into the issue workspace and checks out a new branch. The after-run hook stages the files, commits, pushes, and creates a PR that links the Linear ticket. A small doc-update issue then ended with a PR that matched the request.",
+   "t": "3:40"
+  },
+  {
+   "idea": "The speaker's vision is a shared team agent with central skills, tools and workflows, where each developer sees what others are working on.",
+   "detail": "The speaker sees value in visibility across the team and in reusing one set of skills, MCP tools and plugins. He admits that the work for changes that touch shared code is hard to avoid.",
+   "t": "4:50"
+  },
+  {
+   "idea": "Multica is positioned as the easier product (agent creation and task scheduling built in). Symphony is positioned as the bare-bones option for adding exact features.",
+   "detail": "The speaker's analogy: Symphony is like the Pi harness and Multica or Conductor are like Claude Code. The comparison is opinion, with no benchmarks.",
+   "t": "5:55"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Tracker-driven agent dispatch",
+   "how": "Run Symphony as a polling service against the issue tracker (Linear in the demo). Issues in the configured active states are picked up, each gets a workspace named after its issue ID, the agent runs, and the issue is moved to Done with a comment. The transcript does not show the exact polling interval or config keys.",
+   "when": "A team already tracks work in Linear and wants agents to take backlog-style tickets with humans involved only at review."
+  },
+  {
+   "name": "Workflow file with YAML front matter plus a per-issue prompt",
+   "how": "Put the tracker API key, the active issue states, the workspace root, and the agent launch command (here a codex command) in YAML front matter. Below it, write the markdown prompt sent to the agent for each issue. The speaker reads the key from a Linear personal API key, which he created via the security and access settings. The exact key names are not shown.",
+   "when": "Configuring Symphony for a specific repo. Start from OpenAI's default workflow in their repo and then adjust it for the project."
+  },
+  {
+   "name": "Clone-and-branch after-create hook, commit-push-PR after-run hook",
+   "how": "After-create hook: clone the target repo into the new issue workspace and check out a new branch. After-run hook (fires once Codex finishes): git add the changed files, commit, push the branch, and open a PR whose body links the Linear ticket and states the requested change. The speaker suggests a richer PR description and posting the PR link back as a comment could be added. Hook config key names are not shown in the video.",
+   "when": "Making Symphony useful on a real repo, where agent output must land as a reviewable PR rather than only as files in a workspace folder."
+  },
+  {
+   "name": "Spec-driven self-implementation",
+   "how": "Give a coding agent the Symphony spec (more than 2,000 lines) and the default prompt. The speaker used GPT-5.5 at low effort and received a Python implementation. Then add the tracker API key and the workflow file to the generated version.",
+   "when": "You want a version in your own language or with your own runner, and you accept that the result is yours to maintain. Expect divergence from the upstream code."
+  }
+ ],
+ "tools": [
+  "Symphony (OpenAI, open-source orchestrator)",
+  "Linear (issue tracker)",
+  "Codex CLI (OpenAI coding agent)",
+  "GPT-5.5 (model, used at low effort for spec-generated build)",
+  "Elixir (language for the manual install route)",
+  "TypeScript and Bun (demo app)",
+  "Python (spec-generated Symphony version)",
+  "Go with Charm CLI (community Symphony version)",
+  "Claude SDK (community Symphony version)",
+  "uv (Python tool; speaker says OpenAI acquired it, not verified in video)",
+  "Multica (agent orchestration product, compared)",
+  "Conductor (agent orchestration product, compared)",
+  "Pi harness (analogy used by speaker)",
+  "Claude Code (analogy used by speaker)"
+ ],
+ "numbers": [
+  {
+   "claim": "Engineers could supervise only about 3 to 5 Codex sessions concurrently before context switching hurt productivity (speaker's stated figure).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Spec file used to build Symphony is more than 2,000 lines long.",
+   "t": "2:42"
+  },
+  {
+   "claim": "Python version generated with GPT-5.5 at low effort from the default spec prompt.",
+   "t": "2:42"
+  },
+  {
+   "claim": "Demo issue went from To Do to Done with a comment and a workspace folder named after the issue ID (SYN7); the first run hit a GraphQL validation error that Codex fixed on its own. No timing for the run is given beyond 'a few seconds' to pick up the issue.",
+   "t": "1:17"
+  }
+ ],
+ "hot_takes": [
+  "Speaker calls the spec-prompt install 'possibly the weirdest or most forward thinking way to install something'; he also notes it means no two versions of Symphony would look the same, which would be a support problem for OpenAI.",
+  "Speaker says Multica 'does a better job because it's easier to set up', while Symphony is the bare-bones option you extend with the exact features you want.",
+  "Speaker says the default OpenAI workflow is 'not fit for a real project' as shipped, and that the hooks are needed before it works on a real repo."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs loops and schedules around the Claude Code CLI. Symphony shows a tracker-driven trigger (Linear status changes) that starts an isolated run per issue, which is a different trigger source than the schedules ProsHarness uses now.",
+   "action": "Prototype a tracker-polling trigger for ProsHarness loops (e.g. an issue moving to an active state starts a run in its own checkout) and compare it with the current schedule-based trigger."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS already has multi-agent and orchestration interests, and Symphony is an example of a per-task agent with per-task workspaces and lifecycle hooks, but it is a coding-agent tool, not a distributed-systems one.",
+   "action": "Read Symphony's workflow and hooks design as a reference for per-task workspace lifecycle before designing any AgentOS multi-agent dispatch."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,191 @@
+{
+ "one_line": "A 4-minute Better Stack listicle of ten Claude Code tips: phone notifications via hooks, permission and thinking-budget settings, CLAUDE.md emphasis, session recovery, parallel sessions, and cheaper model use. Quick ideas, few exact configs.",
+ "summary": "The host presents ten Claude Code tips he says are rarely covered, centered on getting attention back to the agent and cutting cost. The first tip uses hooks on notification and stop events to play a sound and push a phone notification when Claude finishes or waits for input. Next he covers the dangerously-skip-permissions flag (aliased for convenience, with shift+tab to leave it and cycle into plan mode) and denying Claude read access to sensitive files, globally or per project. He then covers Think, Megathink and Ultrathink keywords as thinking-budget triggers, CLAUDE.md tricks (capitalized IMPORTANT, @file links, # to add memory), chained arguments and nested folders for custom slash commands, and session recovery with continue, resume and double-escape to rewind. The last section covers Claude Squad and tmux for parallel git-worktree sessions, Vibe Tunnel for browser access to a terminal, and cost savings from /clear plus routing to a cheaper model (Kimi K2). Most tips are described at a high level, with the detailed configs deferred to links in the description, and the video ends with a sponsor plug.",
+ "speakers": [
+  "Host (unnamed, Better Stack channel)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Anthropic"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "coding-agents",
+  "token-cost-efficiency",
+  "dev-tools"
+ ],
+ "tags": [
+  "hooks",
+  "notifications",
+  "permissions",
+  "dangerously-skip-permissions",
+  "plan-mode",
+  "deny-rules",
+  "thinking-budget",
+  "ultrathink",
+  "CLAUDE.md",
+  "memory",
+  "slash-commands",
+  "session-resume",
+  "rewind",
+  "git-worktrees",
+  "claude-squad",
+  "tmux",
+  "vibe-tunnel",
+  "remote-access",
+  "cost-saving",
+  "kimi-k2"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Hooks on Notification and Stop events can run arbitrary scripts, such as playing a completion sound and sending a phone notification, so you do not have to watch the terminal for waiting or finished agents.",
+   "detail": "The host sets this up as his first tip and says the link in the description explains hooks. The exact hook config is not shown on screen.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Skipping all permission prompts is presented as low-risk in practice for his workflow. He aliases the flag for quick access, and shift+tab toggles it off and cycles into plan mode, where Claude makes no codebase changes.",
+   "detail": "He notes the flag comes with a warning and says he has had few issues with it. Plan mode is reached by pressing shift+tab more times.",
+   "t": "0:52"
+  },
+  {
+   "idea": "Because skip-permissions also skips protection on sensitive files, he recommends explicit deny rules for read access to those files, applied globally or per project.",
+   "detail": "The deny-rule syntax is not shown. The point is that skip-permissions does not protect secrets by itself, so deny rules must be set up separately.",
+   "t": "0:52"
+  },
+  {
+   "idea": "Thinking budget scales with keyword: think about 4,000 tokens, megathink about 10,000, ultrathink almost 32,000. These are for deep reasoning across many files, not routine prompts.",
+   "detail": "Numbers are as stated by the host. He gives no source or measurement for them.",
+   "t": "0:52"
+  },
+  {
+   "idea": "CLAUDE.md can carry emphasis and references. Capitalized IMPORTANT draws attention, @file links a file into context, and # adds a memory entry that can be updated in the file or within Claude Code.",
+   "detail": "Claude Code reads CLAUDE.md into context automatically at the start of a conversation.",
+   "t": "2:05"
+  },
+  {
+   "idea": "Recovery is layered: --continue reopens the last conversation, --resume picks among several, and double-escape steps back through history to rewind to a point before a debugging loop.",
+   "detail": "Rewinding is framed as the fix for when Claude loops during debugging.",
+   "t": "2:05"
+  },
+  {
+   "idea": "For parallel agents, Claude Squad creates sessions on separate git worktrees automatically so each agent's work is visible, and tmux does the same manually. Vibe Tunnel proxies a terminal to a browser so sessions can be checked from a phone.",
+   "detail": "He pairs this with phone notifications and says he wanted this combination for a long time, expecting Anthropic to eventually build something similar.",
+   "t": "3:25"
+  },
+  {
+   "idea": "Cost control: run /clear when switching topics to free context, and route work to a cheaper model. He names Kimi K2 as usable inside Claude Code and claims it is about 80% cheaper than Claude.",
+   "detail": "The 80% price figure and the benchmark claim are unsourced in the video and are not checked here.",
+   "t": "3:25"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Stop/Notification hook for completion alerts and phone pings",
+   "how": "Add hooks for the Notification and Stop events in Claude Code settings, each running a script. The host's script plays an audio cue on completion and sends a push notification to his phone. The exact config is in the linked hooks guide, which the video does not show.",
+   "when": "Long agent runs where you step away or switch tasks. Also a plausible base for an approval or status channel."
+  },
+  {
+   "name": "Alias the skip-permissions flag and toggle it off with shift+tab",
+   "how": "Create a shell alias for the dangerously-skip-permissions flag so it is quick to launch. Inside a session, shift+tab turns it off; pressing it more times reaches plan mode, where Claude does not edit the codebase.",
+   "when": "Trusted local repos where prompt friction is the bottleneck. Switch to plan mode when reviewing a strategy before any edits."
+  },
+  {
+   "name": "Deny read access to sensitive files at global or project scope",
+   "how": "Add deny rules for read access to secret-bearing files (the video does not give the rule syntax), either in user-level settings for all projects or in the project's settings for one repo. Do this even if you use skip-permissions, since the skip flag also skips these prompts.",
+   "when": "Any setup that runs with skipped permissions or handles credentials, env files or keys."
+  },
+  {
+   "name": "Thinking budget by keyword in the prompt",
+   "how": "Include the word think, megathink or ultrathink in the prompt to raise the reasoning budget (about 4k, 10k and 32k tokens by the host's account).",
+   "when": "Multi-file reasoning or hard debugging. Keep it off routine edits to limit spend."
+  },
+  {
+   "name": "CLAUDE.md emphasis, file links and memory",
+   "how": "Write IMPORTANT in capitals in CLAUDE.md for rules Claude must not miss. Use @path/to/file to link a file into context. Start a line with # to append a memory note that can be edited in the file or from within Claude Code.",
+   "when": "Project rules that Claude keeps dropping, or files you always need in context."
+  },
+  {
+   "name": "Custom slash commands with chained arguments and nested folders",
+   "how": "Define a command file that takes several arguments and tells Claude what to do with each. Commands can live in subfolders and are referenced with the folder path in the command name. The exact syntax is shown on screen but not spelled out in narration.",
+   "when": "Repeatable multi-input workflows, such as a review or release routine that is run with different targets."
+  },
+  {
+   "name": "Session recovery with --continue, --resume and double-escape rewind",
+   "how": "Run --continue to reopen the last conversation and --resume to choose among several. Inside a session, press Esc twice to walk back through turns and resume from an earlier point.",
+   "when": "An accidental close, or a debugging loop where you want to restart from before the loop began."
+  },
+  {
+   "name": "Parallel agents on git worktrees with Claude Squad or tmux",
+   "how": "Use Claude Squad to start one session per git worktree automatically, so each agent has its own branch and working tree. Do the same by hand with tmux panes and worktrees.",
+   "when": "Several independent tasks at once, where you want to watch each agent's changes separately."
+  },
+  {
+   "name": "Browser access to a terminal with Vibe Tunnel",
+   "how": "Run Vibe Tunnel to proxy the terminal to a browser URL, then open it from a phone to check or nudge a Claude Code session. The host pairs this with phone notifications.",
+   "when": "Checking on long-running agents away from the desk. Consider the exposure of a remote terminal before using it."
+  },
+  {
+   "name": "/clear on topic change plus a cheaper model",
+   "how": "Run /clear when moving to an unrelated question so old context is not carried along. Route some work to a cheaper model; the host names Kimi K2 as usable inside Claude Code.",
+   "when": "Cost-sensitive sessions where the new task does not need the full context or the most capable model."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "CLAUDE.md",
+  "Claude Squad",
+  "tmux",
+  "git worktrees",
+  "Vibe Tunnel",
+  "Kimi K2",
+  "BetterStack"
+ ],
+ "numbers": [
+  {
+   "claim": "Think keyword budget about 4,000 tokens",
+   "t": "0:52"
+  },
+  {
+   "claim": "Megathink budget about 10,000 tokens",
+   "t": "0:52"
+  },
+  {
+   "claim": "Ultrathink budget almost 32,000 tokens",
+   "t": "0:52"
+  },
+  {
+   "claim": "Kimi K2 described as about 80% cheaper than Claude, with impressive benchmarks (unsourced host claim)",
+   "t": "3:25"
+  },
+  {
+   "claim": "Video length 4:38",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The sponsor plug for BetterStack at the end caps quality at 2 under the rules.",
+  "The title's 'NO ONE Shares' framing is overstated. Most tips (hooks, skip-permissions, thinking keywords, CLAUDE.md, --continue/--resume) are common in Claude Code docs and posts.",
+  "Thin on reproducibility. Hooks, deny rules, slash-command arguments and Vibe Tunnel setup are described at a high level, with details left to description links.",
+  "Recommends skipping permissions as routine and says the risk has been small in his use, with no threat analysis. Pairing it with deny rules is the only safety measure given.",
+  "The 80% cheaper claim for Kimi K2 and its benchmark strength are asserted without figures or a source."
+ ],
+ "quality": 2,
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Cheap-model routing and /clear context trimming touch the budget and routing pillar, but the video offers only one unsourced price claim.",
+   "action": "Treat the Kimi K2 80%-cheaper claim as unverified. Measure it on a Haiku-vs-alternative routing test before citing it in AgentOS budget planning."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and needs completion and approval signals, which the Stop/Notification hook pattern covers directly. Its deny-read rules also fit the zero-token credential handling goal. Session recovery and worktree-per-agent are related to its checkpoint/resume and parallel-run work.",
+   "action": "Check whether ProsHarness runs emit Stop and Notification hook events, and use them for completion alerts and phone-driven approval prompts. Also add deny rules for secret files in each harness-launched project."
+  }
+ ],
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

@@ -1,0 +1,125 @@
+{
+ "one_line": "Anthropic's long-running-agent harness: an initializer agent sets up a JSON feature list, progress file and git repo, then a coding agent implements one feature per session with browser testing and commits, so work survives compaction.",
+ "summary": "The video describes a workflow Anthropic released for long-running Claude Code tasks. The author says agents lose progress when a single big feature triggers repeated context compaction, and that Claude marks untested features as done. The fix is two roles: an initializer step that creates CLAUDE.md, a feature_list JSON with every feature set to failing, an init script, a progress file and an initial git commit, followed by a coding loop that implements one feature at a time, tests it with Puppeteer, flips its flag to true, updates progress, and commits. The presenter builds an online Python compiler in an empty Next.js project as the demo, reports that the run used 84% of context where BMAD would have compacted twice, and suggests the approach works better than BMAD in some ways, though it is still an idea rather than a full system. The video closes with a sponsored pitch for a consultancy (automata.dev) that applies these workflows to client projects. The substance is a short, practical pattern; the claims about Anthropic's release and the 84% figure are one creator's single demo.",
+ "speakers": [
+  "AI LABS presenter (unnamed)"
+ ],
+ "orgs": [
+  "Anthropic",
+  "automata.dev"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "coding-agents",
+  "context-engineering",
+  "agent-architecture",
+  "testing-verification"
+ ],
+ "tags": [
+  "long-running agents",
+  "initializer agent",
+  "feature list json",
+  "progress tracking",
+  "git commits per feature",
+  "puppeteer browser testing",
+  "compaction",
+  "claude.md",
+  "bmad comparison",
+  "nextjs demo"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Long single-shot tasks fail because context compaction loses progress: after repeated compaction the feature is half-built with no memory of its state.",
+   "detail": "Presenter's diagnosis of the limited context window; the proposed fix is to break work into small, tracked increments rather than one-shotting features.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Claude marks untested features as complete, so testing has to be forced by the structure of the workflow.",
+   "detail": "All features start marked failing in a JSON list; the agent flips them to true only after a browser test passes.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Split the work into an initializer step and an incremental coding step, modelled on how real engineering teams work.",
+   "detail": "Initializer sets up CLAUDE.md, the feature list, init script, progress file and git; the coding loop then runs once per feature.",
+   "t": "0:53"
+  },
+  {
+   "idea": "Use JSON rather than Markdown for the feature list because JSON is easier to manage in context and harder to casually rewrite.",
+   "detail": "Presenter's stated reason; the agent is told not to alter the feature list beyond marking features implemented.",
+   "t": "0:53"
+  },
+  {
+   "idea": "Commit in a mergeable state after every tested feature so git logs serve as the recovery mechanism.",
+   "detail": "Descriptive commit messages let a fresh session resume from git history and the progress file rather than from the code itself.",
+   "t": "1:40"
+  },
+  {
+   "idea": "Resuming is a one-line prompt: implement the next feature marked not done.",
+   "detail": "Because state lives in the JSON, progress file and git log, a terminated session can continue exactly where it stopped.",
+   "t": "2:18"
+  },
+  {
+   "idea": "Presenter reports this beats BMAD on context use, but says the approach is still a DIY idea rather than a complete system.",
+   "detail": "Compared with BMAD, which he says compacted twice on large stories; he suggests BMAD could borrow the git discipline.",
+   "t": "3:25"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Initializer + incremental coder harness",
+   "how": "Step 1: run /init to create CLAUDE.md at the repo root with the project overview. Ask Claude to generate a feature list JSON in the project root listing every feature with its test steps, all initially marked failing. Create an init script that starts the dev server and a progress tracking file (progress.md). Make an initial git commit. Step 2: for each feature, have Claude implement it, test it end-to-end in a browser, set its JSON field from false to true, update progress.md, and commit with a descriptive message after verifying the commit. Repeat until all features are true. Tell Claude not to modify the feature list beyond flipping those flags.",
+   "when": "Long-running, multi-feature builds where a single session would compact repeatedly and lose track of partial work."
+  },
+  {
+   "name": "Forced browser verification via Puppeteer",
+   "how": "Connect Puppeteer (MCP or similar) so the agent can launch the browser and test each feature's listed steps before marking it done, because the agent can only read code, not see the rendered interface.",
+   "when": "Front-end or full-stack apps where bugs are not visible from code alone."
+  },
+  {
+   "name": "Resume from state, not from context",
+   "how": "Keep the feature JSON, progress.md and the git log as the source of truth. A new session reads these to find the next unfinished feature, so no conversation memory is needed.",
+   "when": "Sessions that may terminate or hit compaction mid-project."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude.md",
+  "Puppeteer",
+  "Git",
+  "Next.js",
+  "BMAD"
+ ],
+ "numbers": [
+  {
+   "claim": "Presenter's demo used 84% of context after implementing many features; he says BMAD would have hit compaction twice on the same work.",
+   "t": "3:25"
+  },
+  {
+   "claim": "Tracking file is updated after each feature; the demo builds an online Python compiler in an empty Next.js project.",
+   "t": "0:53"
+  }
+ ],
+ "hot_takes": [
+  "Presenter claims Anthropic released this as a solution; the transcript describes the workflow but the attribution to Anthropic is the presenter's own framing from a single video.",
+  "Presenter says Claude's workflow is better than BMAD in some ways, based on one demo project and a single 84% context figure.",
+  "The final third is a sponsored pitch for automata.dev consulting, so the piece is a short tutorial with a sales segment at the end."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Checkpoint and resume of long agent runs via external state (feature list, progress file, git) is a lightweight form of durable execution that AgentOS's harness-style concerns overlap with.",
+   "action": "Compare this progress-file plus git-log resume pattern with ProsHarness checkpoint/resume before adding any new state store."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code for checkpoint/resume of long runs, and this video is a concrete prompt-and-file protocol for the same problem; the JSON feature list with failing-by-default flags is a reusable verification gate.",
+   "action": "Try the initializer plus per-feature JSON flag loop as a ProsHarness run mode and check whether flipping flags after Puppeteer-style verification reduces false completions."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

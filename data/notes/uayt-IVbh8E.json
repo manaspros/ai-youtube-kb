@@ -1,0 +1,157 @@
+{
+ "one_line": "Walkthrough of a Claude Code sub-agent pipeline for UI work: a UX agent drafts layout from requirements, a UI agent applies color variants, and a converter agent ports the HTML to SwiftUI.",
+ "summary": "The speaker builds a university mobile app UI with Claude Code sub-agents, split into stages: a \"mobile UX engineer\" agent turns a PRD-style requirements description into a colorless HTML layout, then a \"mobile UI implementer\" agent applies a color scheme and design style. He shows that explicitly asking for two UI agents produces two color variants, and recommends keeping HTML as the intermediate format because it is easy to edit. He splits generated HTML into separate HTML, CSS and JS files, and keeps emoji placeholders because icons convert poorly to iOS. For the last step he has Claude use the Context7 MCP to fetch current SwiftUI docs and write a conversion guide, refines it over two or three prompts, moves it into a converter agent file, and converts a design to SwiftUI, which he runs in the iOS simulator. The claims that each sub-agent gets its own 200k context and that this reduces hallucination are asserted, not measured. Evaluation is by eye, with no before/after comparison.",
+ "speakers": [],
+ "orgs": [
+  "Anthropic",
+  "Cursor"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "coding-agents",
+  "multi-agent",
+  "vibe-coding-app-building",
+  "context-engineering"
+ ],
+ "tags": [
+  "claude-code",
+  "sub-agents",
+  "ui-design",
+  "html",
+  "swiftui",
+  "ios",
+  "context7",
+  "mcp",
+  "design-workflow",
+  "color-variants"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Split UI work into separate stages, each delegated to its own sub-agent.",
+   "detail": "Stage 1 is UX structure from requirements, stage 2 is color and visual style, and stage 3 is conversion to the target platform. The speaker argues that separating concerns gives a more intuitive UX than asking for a finished app in one prompt. This is a demo, and no before/after comparison is shown.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Per-sub-agent context windows are the claimed reason the setup works better.",
+   "detail": "The speaker says each sub-agent gets its own 200k context window, so the overall limit grows and hallucination drops. He presents this as the mechanism but does not measure it.",
+   "t": "1:01"
+  },
+  {
+   "idea": "The UX agent takes a PRD-style requirements description with no technical specs.",
+   "detail": "He describes the app goal only (students check attendance, schedules, grades). The agent returns layout and UX with no colors, which is deliberate, and he has configured it to focus only on layout and UX.",
+   "t": "1:01"
+  },
+  {
+   "idea": "The sub-agent description field is what routes tasks to the right agent.",
+   "detail": "With UX engineer and UI implementer both defined, Claude picks between them from their descriptions. The speaker says more detailed descriptions give better implementations.",
+   "t": "3:09"
+  },
+  {
+   "idea": "HTML is the chosen intermediate format because it is cheap to edit.",
+   "detail": "He argues other frameworks would spend more tokens and compute for no benefit at this stage. Small changes can then be requested directly.",
+   "t": "3:09"
+  },
+  {
+   "idea": "Multiple UI variants need an explicit instruction naming the agent count.",
+   "detail": "A vaguer prompt launched only one agent. The phrasing 'can you fire up two UI agents' worked consistently, and each agent received a different color scheme. The output varied, and one variant was judged clearly better.",
+   "t": "5:43"
+  },
+  {
+   "idea": "Generated HTML should be split into separate HTML, CSS and JS files.",
+   "detail": "Single HTML files can exceed a thousand lines, which makes targeted edits hard. The speaker asked for the split and calls it a good practice.",
+   "t": "8:13"
+  },
+  {
+   "idea": "Emoji placeholders stay in the HTML stage and get swapped for real icons after conversion.",
+   "detail": "He says iOS handles icons differently, so direct conversion does not translate well. In the final SwiftUI app the icons were mostly right, but emojis still needed a follow-up prompt.",
+   "t": "8:13"
+  },
+  {
+   "idea": "Context7 MCP supplies current framework docs to the conversion step.",
+   "detail": "He describes it as RAG for documentation: it fetches only the relevant docs for the task. It was used to write a SwiftUI conversion guide, which he then iterated on two or three times before placing it in the converter agent file.",
+   "t": "8:13"
+  },
+  {
+   "idea": "The converted SwiftUI app is judged in the iOS simulator.",
+   "detail": "The overlapping-layout problem from the HTML stage was resolved in the simulator, and the bottom bar was clean. Emojis still needed a fix. All judgment is subjective, with no test or metric.",
+   "t": "9:36"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Stage-separated UI sub-agent pipeline",
+   "how": "Define one sub-agent per stage as a markdown file: (1) a UX engineer that takes a requirements description and produces layout with no colors, (2) a UI implementer that takes the HTML file reference, a color scheme, a design style (minimal, 3D, etc.) and optional image paths, and (3) a converter that maps HTML to the target platform. Write a clear 'description' for each agent, since that is what Claude uses to route tasks.",
+   "when": "Building a multi-screen app UI from requirements where layout quality matters more than visuals at first. Use it when you want to review structure before colors are applied."
+  },
+  {
+   "name": "Explicit agent count for variants",
+   "how": "Name the agent and the count in the prompt, e.g. 'can you fire up two UI agents', and give each one a different parameter such as a color scheme or design style. The speaker says a vaguer prompt launched only one agent.",
+   "when": "Comparing several visual directions from the same HTML layout in one run."
+  },
+  {
+   "name": "Split HTML output into HTML, CSS and JS files",
+   "how": "Ask for HTML, CSS and JavaScript as separate files in the implementer prompt. The speaker does not show the file names.",
+   "when": "When generated HTML is too long (around 1000 lines or more) to edit one element at a time."
+  },
+  {
+   "name": "Keep emoji placeholders, then fix icons in the target platform",
+   "how": "Leave emojis in the HTML preview. After conversion, prompt Claude to replace them with proper icons for the target platform.",
+   "when": "Converting web UI to a native app whose icon system differs from the web."
+  },
+  {
+   "name": "Doc-grounded conversion guide via Context7, then bake into the agent",
+   "how": "Ask Claude to use the Context7 MCP to pull current SwiftUI documentation and write a conversion guide from a sample HTML file. Refine the guide with follow-up prompts (he did 2-3 rounds). Put the finished guide into the converter agent file so it is reused, not regenerated.",
+   "when": "Porting UI to a framework whose APIs change often, where the model's training data may be stale."
+  }
+ ],
+ "tools": [
+  "Claude Code (sub-agents defined as markdown files)",
+  "Cursor (mentioned in the intro as an AI coding tool, not used in the walkthrough)",
+  "Context7 MCP",
+  "SwiftUI",
+  "iOS Simulator",
+  "HTML / CSS / JavaScript"
+ ],
+ "numbers": [
+  {
+   "claim": "Claimed per-agent context window of 200k tokens, versus 200k per chat previously (speaker's claim, not measured).",
+   "t": "1:01"
+  },
+  {
+   "claim": "Generated single-file HTML can run to a thousand or more lines.",
+   "t": "8:13"
+  },
+  {
+   "claim": "Two UI variants generated from one layout by two agents with different color schemes.",
+   "t": "5:43"
+  },
+  {
+   "claim": "Conversion guide refined with two or three follow-up prompts before use.",
+   "t": "8:13"
+  }
+ ],
+ "hot_takes": [
+  "The title ('INSANE', 'Ultimate') is hype, and the content is a single demo with no benchmark, no before/after comparison and no reproducible file contents on screen. Quality is capped at 2 for that reason.",
+  "The claim that per-sub-agent context raises the effective limit and reduces hallucination is asserted with no measurement.",
+  "Quality judgments ('truly exceptional UX', 'genuinely impressive') are subjective and based on looking at the output.",
+  "Promotional asides (hackathon plug, super-thanks and subscribe asks) are present but take little time."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "UI and app-design workflow with no infrastructure, gateway, budgets, memory or serving content.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Touches sub-agent delegation with description-based routing and per-agent context isolation, both relevant to the harness's multi-agent orchestration. The isolation claim is unmeasured.",
+   "action": "If ProsHarness dispatches subagents, check how it routes tasks (description-based vs explicit) and whether per-subagent context isolation holds in a measured run before relying on it."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

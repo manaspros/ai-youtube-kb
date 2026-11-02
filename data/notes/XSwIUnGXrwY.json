@@ -1,0 +1,165 @@
+{
+ "one_line": "Step-by-step Django and Python logging: stdlib loggers, handlers and formatters, a Django LOGGING dict driven by .env, named-logger propagation, then shipping logs to Better Stack.",
+ "summary": "The presenter walks through Python's stdlib logging model (loggers, handlers, formatters, with filters skipped) using a small script, then builds a Django LOGGING dictConfig in settings.py. The config uses a catch-all empty-string logger, a file handler and a console handler, with formatters going from simple to verbose. Log level and file path move into a .env file read with django-environ, so they vary per environment. The video then covers named loggers (core.views) and how child loggers propagate to parents, and how propagate=False stops that. The last part sends logs to Better Stack via its Python source and logtail-python handler, and shows live tail, severity and level filters, source filtering, and a SQL-based dashboard chart. It is a vendor-produced tutorial, so the Better Stack parts are a product walkthrough, but the Django and stdlib logging material is practical and reproducible.",
+ "speakers": [
+  "Unnamed Better Stack presenter (not named in transcript)"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "observability",
+  "dev-tools"
+ ],
+ "tags": [
+  "python-logging",
+  "django",
+  "django-settings",
+  "logging-dictconfig",
+  "django-environ",
+  "env-file-config",
+  "logger-hierarchy",
+  "log-propagation",
+  "better-stack",
+  "logtail",
+  "log-aggregation",
+  "log-filtering",
+  "severity-levels",
+  "log-dashboards",
+  "sensitive-data-in-logs"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Python logging has four parts: loggers are named entry points that carry a level, handlers decide where records go, formatters decide how they look as text, and filters (not covered) can narrow which records pass.",
+   "detail": "Loggers are the entry points and use a level (debug, info, warning, error, critical) to set the minimum severity they handle. Handlers are the output engines (console, file, HTTP endpoint). Formatters are format strings over record attributes such as name, time, level and message.",
+   "t": "2:11"
+  },
+  {
+   "idea": "One logger can have several handlers, and every record it accepts is sent to all of them.",
+   "detail": "The script attaches a stream handler to stdout and a file handler to logs.txt, so the same error shows up on the console and in the file. A formatter is set on each handler separately.",
+   "t": "5:22"
+  },
+  {
+   "idea": "Django configures logging with a LOGGING dictionary in settings.py using dictConfig, with version 1 and disable_existing_loggers set to False.",
+   "detail": "The dict has handlers, loggers and a root entry, plus named formatters. The file and console handlers reference the logging.FileHandler and logging.StreamHandler classes, each with its own level and formatter.",
+   "t": "8:51"
+  },
+  {
+   "idea": "A logger keyed by the empty string is a catch-all that receives records from every logger. A logger keyed by a specific name only receives records from that logger.",
+   "detail": "The demo uses the catch-all to send all Django and app output to general.log. It then uses a named logger to limit output to one module.",
+   "t": "12:46"
+  },
+  {
+   "idea": "Use logging.getLogger(__name__) in each module so logger names follow the module path (core.views). The names form a hierarchy, and records propagate from child to parent logger.",
+   "detail": "Logging to a parent logger named core also captures core.views records, so both files get the line. Setting propagate to False on the child keeps its records out of the parent's handlers.",
+   "t": "28:35"
+  },
+  {
+   "idea": "Keep log level and log file path out of settings.py by reading them from a .env file with django-environ.",
+   "detail": "The presenter explains that hard-coded file names and levels are poor practice, and that per-server environments need different levels, such as debug in development and warning-and-above in production. The values are read from the env object and used in the file handler, console handler and logger definitions.",
+   "t": "22:55"
+  },
+  {
+   "idea": "Assume logs can be read by anyone, and keep credentials, emails, passwords and card data out of them.",
+   "detail": "This is the only security point in the video, but it is the one that matters most for any log pipeline that ships to a third party.",
+   "t": "7:39"
+  },
+  {
+   "idea": "Ship logs to an aggregator with a per-source token and a handler class, then filter by level, severity and message text, and chart them with SQL.",
+   "detail": "The Better Stack source token goes into the env file, the logtail-python handler replaces the local file handler in the loggers, and live tail, severity filters, source filters and SQL dashboards are shown. Filters are equality and greater-than checks on the integer severity, which is between 1 and 5 for Python logs.",
+   "t": "35:42"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Module-scoped loggers",
+   "how": "In each module, `logger = logging.getLogger(__name__)`. Use the returned logger for all messages in that file, and name a logger in settings.py with the same dotted path to target that module only.",
+   "when": "Any multi-module Python app where you want to filter or route logs per module, and to read logs by source file."
+  },
+  {
+   "name": "Python stdlib setup without a framework",
+   "how": "Create a logger, then add logging.StreamHandler(sys.stdout) and logging.FileHandler('logs.txt'). Create a logging.Formatter with name, asctime, levelname and message attributes, call setFormatter on each handler, and add each handler to the logger. Call logger.error(...) inside the except block for the failure case.",
+   "when": "A standalone script that needs console output and a file at the same time, or as a base for understanding what Django's config does."
+  },
+  {
+   "name": "Django LOGGING dictConfig",
+   "how": "In settings.py, define LOGGING = {'version': 1, 'disable_existing_loggers': False, 'formatters': {...}, 'handlers': {...}, 'loggers': {...}}. Handlers use class logging.FileHandler (with filename, level, formatter) or logging.StreamHandler (with level, formatter). A loggers entry keyed '' takes level plus a handlers list to act as a catch-all. The presenter also sets a 'root' key.",
+   "when": "Any Django app that needs one shared logging config for console and file output, with different outputs per environment."
+  },
+  {
+   "name": "Formatter styles",
+   "how": "Use style '{' so format strings use str.format placeholders such as {levelname} and {message}. The 'simple' formatter carries levelname and message. The 'verbose' formatter adds asctime, name, module and lineno. Point each handler at the formatter it needs, for example verbose for the file and simple for the console.",
+   "when": "When log lines need to carry enough context (time, module, line) to trace an error in a file, but a short format suits the terminal."
+  },
+  {
+   "name": "Env-driven log config with django-environ",
+   "how": "Install django-environ and import environ. Create an env object, then call the env read-env helper against a .env file in BASE_DIR (the presenter uses the pathlib base dir form from the quick start). Replace hard-coded file names and levels in the LOGGING dict with env lookups. The captions do not state the variable names verbatim; they are described as a Django log level and a Django log file, probably DJANGO_LOG_LEVEL and DJANGO_LOG_FILE.",
+   "when": "Any settings file where the log level or log path differs between dev, test and production, or where you want one config for many servers."
+  },
+  {
+   "name": "Named-logger propagation control",
+   "how": "Define a parent logger 'core' and a child 'core.views'. Give the child its own handler, such as a FileViews file handler. By default records also propagate to the parent. Set 'propagate': False on the child to stop that.",
+   "when": "When a noisy module should write to its own file and stay out of the main log, or when one logger should not double-write to a parent."
+  },
+  {
+   "name": "Shipping logs to Better Stack",
+   "how": "Create a source in Better Stack for the Python platform and copy its source token. Store the token in the .env file (the presenter calls it the Better Stack source token; the exact variable name is not spoken). Run pip install logtail-python. Add a handler using the LogtailHandler class with the source token passed as source_token (the import path is not spoken; logtail.LogtailHandler is the likely form). Add the handler to the core and root-level loggers.",
+   "when": "When you want logs from one or more apps in a hosted search and dashboard tool, without running your own log stack."
+  }
+ ],
+ "tools": [
+  "Python logging (stdlib)",
+  "Django (LOGGING setting, dev server, manage.py migrate, SQLite)",
+  "django-environ",
+  "logtail-python (Better Stack Python package)",
+  "Better Stack (log management: sources, live tail, SQL dashboards)",
+  "VS Code"
+ ],
+ "numbers": [
+  {
+   "claim": "Python's default logging levels are debug, info, warning, error and critical.",
+   "t": "2:11"
+  },
+  {
+   "claim": "Better Stack's free-tier data retention for the new source is 30 days; longer retention needs a paid plan.",
+   "t": "34:34"
+  },
+  {
+   "claim": "Better Stack stores Python log severity as an integer from 1 to 5. The demo's info log has severity 2 and the error log is higher.",
+   "t": "37:00"
+  },
+  {
+   "claim": "Filtering the Django bar chart to error level dropped the count at one timestamp from 2 to 1, because the info log from the view was removed.",
+   "t": "40:39"
+  },
+  {
+   "claim": "The view makes one info log and one error log per request when the user with ID 1 does not exist, so each page load produces 2 logs.",
+   "t": "15:31"
+  }
+ ],
+ "hot_takes": [
+  "Vendor tutorial: the Better Stack parts are a product walkthrough and the only aggregator shown is their own SaaS. The self-hosted options are not discussed.",
+  "The only security guidance is 'don't log sensitive data and assume logs can be read by anyone'. There is no redaction or scrubbing example, even though logs are shipped off-box.",
+  "Filters (logging.Filter) are explicitly skipped, so per-record filtering is not covered.",
+  "Replacing the local file handler with the Better Stack handler in the loggers means logs go only to the remote service in the final demo. That's a choice, not a best practice."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "L4 observability is Prometheus/Grafana/OTel. This video is a stdlib-logging and SaaS-aggregation tutorial for a Django app, so it only touches logging hygiene and log routing. It does not cover traces or metrics, and it is not agent-specific.",
+   "action": "Audit log calls in AgentOS services so prompts, API keys and user PII never reach log sinks, and add a test that fails if known secret patterns show up in log output."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content connects to checkpoint/resume, plan critique, loops, skill ranking or credential handling.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

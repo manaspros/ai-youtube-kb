@@ -1,0 +1,261 @@
+{
+ "one_line": "Kimi K3's 2.8T-parameter open weights run on a 2021 M1 Max via the DeltaFin project, which streams routed experts from disk at 14.6 s/token. Covers MXFP4 quantization-aware training, hybrid attention, quant trade-offs, and the serving-hardware gap.",
+ "summary": "The video covers Moonshot AI's Kimi K3, a 2.8T-parameter mixture-of-experts model with open weights (about 1.56 TB in MXFP4) and a 1M-token context. The speaker explains the architecture: 69 of 93 layers use Kimi Delta Attention with a fixed-size recurrent state, which keeps the memory wall off the KV cache. Moonshot trained the model at 4-bit precision (quantization-aware training through SFT and RL) rather than quantizing it afterwards, and the license is custom, not MIT. Unsloth published a quant ladder from 594 GB to 8-bit, with next-token agreement numbers for each step. The DeltaFin project (MIT, two days old at recording) keeps a resident spine of about 60 GB (INT8) and fetches only the 16 routed experts per layer that each token needs, using HTTP range requests and a growing disk cache. The first version took about 40 minutes per token; the current version takes 14.6 s per token on the M1 Max, roughly 82x faster. The speaker stresses that the speed is a research artifact and a testbed, and that serving the full model properly still needs about 2.3 TB of memory on an 8-way B300 node. He also notes that Apple dropped the 512 GB Mac Studio option in March.",
+ "speakers": [
+  "Kai Explains host (not named in transcript)"
+ ],
+ "orgs": [
+  "Moonshot AI",
+  "Unsloth",
+  "Apple",
+  "SK Telecom",
+  "Hugging Face",
+  "NVIDIA",
+  "DeepSeek",
+  "GAA Media"
+ ],
+ "format": "news",
+ "topics": [
+  "models-research",
+  "local-ai",
+  "inference-serving"
+ ],
+ "tags": [
+  "kimi-k3",
+  "moe",
+  "mxfp4",
+  "quantization",
+  "quantization-aware-training",
+  "expert-streaming",
+  "local-inference",
+  "open-weights",
+  "deltafin",
+  "hybrid-attention",
+  "kv-cache",
+  "apple-silicon",
+  "greedy-decoding",
+  "speculative-decoding"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Kimi K3 is a 2.8T-parameter MoE with about 104B active per token, 93 layers, a vision encoder, and a 1M-token context. The weights are about 1.56 TB, released publicly.",
+   "detail": "Routing picks 16 of 896 experts per layer, so each token reads about 25.8 GB of expert weights. That number, not compute, sets the speed of a disk-bound local run.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Most layers use Kimi Delta Attention, a fixed-size recurrent state with per-channel forget gates, instead of a growing KV cache. The speaker's point is that the memory bottleneck moves onto the weights.",
+   "detail": "69 of 93 layers are Kimi Delta Attention; the other 24 are gated latent attention. This mix is what makes a 1M-token window plausible at this size.",
+   "t": "1:22"
+  },
+  {
+   "idea": "Moonshot trained the model at 4-bit precision (MXFP4 via quantization-aware training during SFT and RL) rather than quantizing after training. The speaker says the downloaded file matches the precision of the paid API.",
+   "detail": "Experts go to 4 bits. Routers and attention projections stay at higher precision, because rounding errors there change the answer rather than degrading it slightly. Co-founders reportedly confirmed this in an AMA.",
+   "t": "2:46"
+  },
+  {
+   "idea": "The license is custom, not MIT. Commercial inference above $20M annual revenue needs a separate arrangement with Moonshot.",
+   "detail": "The speaker tells viewers to read the license before building a company on the model.",
+   "t": "2:46"
+  },
+  {
+   "idea": "Unsloth's quant ladder shows the trade-off explicitly: each step down in bits costs next-token agreement with the full model.",
+   "detail": "1-bit S (594 GB) agrees on 78.9% of next-token picks, 2-bit XL (861 GB) on 90.4%, and the 4-bit build is effectively the original. The speaker corrected an earlier figure, 555 GB, to 594 GB.",
+   "t": "4:05"
+  },
+  {
+   "idea": "DeltaFin splits the model in two. A resident spine (attention, shared experts, projections, embeddings) is held in INT8 and read per token. The 1.45 TB of routed experts are never fully loaded; each one is fetched on demand.",
+   "detail": "Each routed expert is a range request of about 17 MB into a disk cache that grows with use. Reading 25.8 GB per token takes about 4 s from a local SSD and about 3 min over a network.",
+   "t": "5:18"
+  },
+  {
+   "idea": "The speedup came from specific engineering steps. The first working version took 24,429 s for one token; the current build reaches 14.6 s per token, about 82x faster.",
+   "detail": "Changes named: a fused kernel that dequantizes MXFP4 and does the matrix-vector product in one pass, NEON on Apple Silicon and AVX2 on x86, an INT8 spine that halves per-token IO, and a packed output head worth 17% by itself.",
+   "t": "6:38"
+  },
+  {
+   "idea": "Decoding stays exact: greedy decoding plus lossless n-gram speculation, so the same prompt gives the same tokens each run. The README lists the limits: no temperature or top-p, one request at a time, and slow long prompts.",
+   "detail": "Prefill is costlier than decode because it touches far more experts. A full local install needs about 1.7 TB of disk. A reduced-cache mode uses 215 GB and streams the rest.",
+   "t": "6:38"
+  },
+  {
+   "idea": "The author frames the project as an existence proof and a testbed for streaming inference, not a practical chat setup. The speaker argues the bottleneck has moved from parameter count to storage and read bandwidth.",
+   "detail": "He calls 14.6 s per token 'a receipt, not a product', meaning the model is now a file on disk, and the rest is engineering. Serving the full model properly needs about 2.3 TB of memory on one 8-way B300 node, and Apple stopped offering the 512 GB Mac Studio option in March.",
+   "t": "9:23"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Expert streaming from disk with a resident spine",
+   "how": "Keep attention, shared experts, latent projections, and embeddings resident (INT8, about 60 GB). Store routed experts separately. Per token, the router picks top-k experts per layer and the runtime fetches only those byte ranges (about 17 MB each, via HTTP range requests or local reads) into a growing disk cache. The speaker's arithmetic: 16 experts x 92 layers = 25.8 GB read per token.",
+   "when": "The model is far larger than RAM or VRAM, and you accept per-token IO latency. Useful for research testbeds, or for an offline fallback where a local copy is the only option."
+  },
+  {
+   "name": "Selective mixed-precision quantization for MoE",
+   "how": "Quantize the bulk expert weights to 4-bit MXFP4 (block floating point, a shared scale per block of weights). Keep routers and attention projections at higher precision, since small errors there flip routing or answers.",
+   "when": "Choosing what to quantize in an MoE model. Put precision where output errors compound, and compress where they only degrade gracefully."
+  },
+  {
+   "name": "Quantization-aware training instead of post-hoc quantization",
+   "how": "Run training (SFT and RL) with the target low-bit format in the loop so the model learns to work at 4 bits. The shipped file then matches the served precision.",
+   "when": "You control the training run and want the downloaded artifact to match production precision, with no quality gap from a later squeeze."
+  },
+  {
+   "name": "Measure a quant ladder by next-token agreement",
+   "how": "For each quant level (1-bit, 2-bit, 4-bit, 8-bit), measure how often its top next-token pick matches the full-precision model's. The speaker cites 78.9% for 1-bit S, 90.4% for 2-bit XL, and near 100% for 4-bit.",
+   "when": "Picking the smallest quant that still behaves like the full model on your workload, before committing to a benchmark suite."
+  },
+  {
+   "name": "Fused dequantize-and-matvec kernel",
+   "how": "Dequantize MXFP4 weights and run the matrix-vector product in a single pass, with per-architecture kernels: NEON on Apple Silicon and AVX2 on x86. The transcript gives no code or flags.",
+   "when": "Single-token decode is bound by memory bandwidth on quantized weights. Fusing avoids a full-precision intermediate write."
+  },
+  {
+   "name": "Deterministic decoding with lossless n-gram speculation",
+   "how": "Use greedy decoding and n-gram (prompt-lookup style) speculative drafting that does not change the output. The same prompt gives the same tokens across runs. Temperature and top-p are not supported.",
+   "when": "You need reproducible outputs for testing or verification, and speedup must not change the result."
+  },
+  {
+   "name": "Architecture-level KV cache reduction with hybrid attention",
+   "how": "Replace most attention layers with a fixed-size recurrent state (Kimi Delta Attention, with per-channel forget gates), and keep a smaller number of gated latent attention layers. The speaker reports 69 of 93 layers in the recurrent form.",
+   "when": "Designing or choosing a model for very long context where the KV cache would otherwise dominate memory."
+  }
+ ],
+ "tools": [
+  "Kimi K3 (Moonshot AI)",
+  "DeltaFin (MIT-licensed local inference project, 274 stars at recording)",
+  "Unsloth quants (UD-IQ1_S, 1-bit M, 2-bit XXS, 2-bit XL, 4-bit, 8-bit)",
+  "MXFP4 (4-bit block floating point)",
+  "Kimi Delta Attention",
+  "Apple M1 Max (64 GB)",
+  "Apple Silicon NEON",
+  "x86 AVX2",
+  "NVIDIA DGX Spark",
+  "NVIDIA B300 (8-way node)",
+  "CUDA",
+  "Hugging Face",
+  "SK Telecom A.X K2 (transcribed as AXK2)",
+  "DeepSeek V4 Pro (transcribed as DeepSeq V4 Pro)",
+  "GLM 5.2",
+  "Claude Sonnet 5 (comparison)",
+  "GPT 4.5 (comparison, as named in transcript)",
+  "Code Arena (front-end leaderboard)",
+  "GPQA Diamond",
+  "Terminal-Bench 2.1",
+  "BrowseComp",
+  "Hacker News"
+ ],
+ "numbers": [
+  {
+   "claim": "2.8T total parameters, 104B active per token, 93 layers, 1M-token context, about 1.56 TB of MXFP4 weights (BF16 would be about 5.6 TB)",
+   "t": "0:00"
+  },
+  {
+   "claim": "896 experts per layer, 16 active per layer; about 25.8 GB of expert reads per token",
+   "t": "0:00"
+  },
+  {
+   "claim": "Measured speed of 14.6 s per token on a 2021 M1 Max with 64 GB RAM",
+   "t": "0:00"
+  },
+  {
+   "claim": "Hybrid attention: 69 of 93 layers Kimi Delta Attention (fixed-size state), 24 gated latent attention layers",
+   "t": "1:22"
+  },
+  {
+   "claim": "Code Arena (front-end) Elo: K3 1,679 first, Claude Sonnet 5 1,631 second, GPT 4.5 1,618 third; K3 leads 6 of 7 categories",
+   "t": "1:22"
+  },
+  {
+   "claim": "GPQA Diamond: K3 93.5 vs GPT 4.5 94.1; Terminal-Bench 2.1: 88.3 vs 88.8; BrowseComp: K3 91.2 vs 90.4",
+   "t": "1:22"
+  },
+  {
+   "claim": "About 99,000 downloads in a month and 8,000 likes on the model page",
+   "t": "2:46"
+  },
+  {
+   "claim": "Commercial inference above $20M annual revenue needs a separate arrangement with Moonshot",
+   "t": "2:46"
+  },
+  {
+   "claim": "Unsloth quant sizes: 1-bit S 594 GB, 1-bit M 649 GB, 2-bit XXS 711 GB, 2-bit XL 861 GB, 4-bit 1.51 TB, 8-bit 1.56 TB",
+   "t": "4:05"
+  },
+  {
+   "claim": "Next-token agreement with the full model: 1-bit S 78.9%, 2-bit XL 90.4%, 4-bit effectively the original",
+   "t": "4:05"
+  },
+  {
+   "claim": "DeltaFin resident spine about 114 GB quantized, reduced to about 60 GB in INT8; routed experts about 1.45 TB across 82,432 experts; about 17 MB per expert read",
+   "t": "5:18"
+  },
+  {
+   "claim": "Per-token read of 25.8 GB: about 4 s from local SSD, about 3 min over a network",
+   "t": "5:18"
+  },
+  {
+   "claim": "First version: 24,429 s (about 40 min) for the first token; current 28 s benchmark on the same machine",
+   "t": "5:18"
+  },
+  {
+   "claim": "About 20 min per token reduced to 14.6 s per token, roughly 82x faster",
+   "t": "5:18"
+  },
+  {
+   "claim": "Full local install needs about 1.7 TB of disk, 5 to 10 hours to download; reduced-cache mode 215 GB",
+   "t": "6:38"
+  },
+  {
+   "claim": "Community run on NVIDIA DGX Spark: BF16 on CPU 865 s, Q8 on CUDA 221 s",
+   "t": "6:38"
+  },
+  {
+   "claim": "At 14.6 s per token, 1,000 output tokens take about 4 hours; the same tokens via Moonshot's API cost about 1.5 cents",
+   "t": "8:00"
+  },
+  {
+   "claim": "Serving: one 8-way B300 node has about 2.3 TB memory, enough for weights plus a 1M-token KV cache. Smallest 1-bit quant needs 610 GB RAM+VRAM, 2-bit XL needs 880 GB",
+   "t": "9:23"
+  },
+  {
+   "claim": "Apple removed the 512 GB Mac Studio option in March and raised the 256 GB upgrade price by $400",
+   "t": "9:23"
+  },
+  {
+   "claim": "SK Telecom AXK2: 688B parameters, open weights; averages 32 points above the model it replaces across 14 benchmarks",
+   "t": "9:23"
+  },
+  {
+   "claim": "Comparison sizes: DeepSeek V4 Pro 1.6T; GLM 5.2 744B with 40B active",
+   "t": "10:40"
+  }
+ ],
+ "hot_takes": [
+  "The speaker calls K3 the largest open-weight model ever shipped. This is stated as fact with no source.",
+  "The 'no GPU needed' framing holds, but only as streaming from disk at 14.6 s per token. The speaker says this is a research artifact, not a practical chat setup.",
+  "The speaker corrects his own earlier figure, 555 GB for the 1-bit build, to the published 594 GB. This is a sign of careful sourcing.",
+  "Benchmark numbers (Code Arena, GPQA, Terminal-Bench, BrowseComp) are read from a slide or post without a cited source in the transcript. Treat them as unverified.",
+  "The HN debate is summarized as a single argument repeated. The speaker's own answer, that the interface matters more than raw speed, is his opinion.",
+  "The transcript says 16 experts 'across 92 layers' but earlier says 93 layers. The per-token 25.8 GB figure may use a different layer count; treat it as approximate.",
+  "DeltaFin is two days old with 274 stars at recording. The 82x speedup is the author's own report on one machine.",
+  "Auto-caption artifacts in the transcript: 'LANs' (4-bit build, name unclear), 'SteadyDecode' (unclear), 'Neine' is likely NEON, 'B 300' is B300, 'non-gram' is n-gram, 'GPT 4.5' is kept as the transcript names it."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft runs vLLM on one RTX 5090 with pluggable KV-cache strategies and quantization. This talk covers expert streaming from disk, MXFP4 QAT, and a quant ladder measured by next-token agreement, all directly relevant to InferCraft's quant and memory choices. It does not change the plan, since the 1.56 TB model cannot run on one 5090.",
+   "action": "Build a small quant-vs-full agreement harness (top-1 next-token match on our own prompts) and run it on the RTX 5090 before choosing InferCraft's default quantization; read the DeltaFin README for its fused dequant-matvec and n-gram speculation approach."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Local inference of large open-weight models, not a Claude Code harness, checkpointing, or planning concern.",
+   "action": ""
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

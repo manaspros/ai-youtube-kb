@@ -1,0 +1,45 @@
+# This Sandbox Tool Makes Claude Code Unstoppable (Code On Incus)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `t78-JUnTK5Q` · [watch](https://youtu.be/t78-JUnTK5Q) · **date:** 2026-03-02 · **length:** 9:56 · **format:** tutorial · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Andrus (Better Stack) · **orgs:** Better Stack
+- **topics:** sandboxing-execution, coding-agents, security-guardrails · **tags:** incus, code-on-incus, colima, macos, sandbox, system-containers, uid-mapping, claude-code, multi-agent, malware-triage
+
+> Better Stack walkthrough of Code On Incus (COI): running Claude Code agents in isolated Incus system containers on a Mac via Colima, with a malware-file triage demo.
+
+## Summary
+The video argues that giving a coding agent full access to the host terminal exposes SSH keys and environment variables, and proposes Code On Incus (COI) as a sandbox. COI runs Claude Code inside Incus system containers that behave like full Linux machines, keep state across stop and start, and use UID mapping so files the agent creates are owned by the host user. The walkthrough sets this up on macOS in a nested stack: a Colima VM runs Incus, and Incus runs the COI container. The main steps are mounting a host workspace folder into Colima, working around a failing one-line installer, building COI from its repo, and fixing bridge networking with firewall trust and IPv4 forwarding. The demo launches two agents on one shared workspace, a back end and a front end, to build a Star Wars app. A second demo pushes a benign EICAR test file into a container with incus file push and has Claude analyze it, so the host never unpacks it. The video is short, shows real commands only partly, and makes no benchmarks.
+
+## Key ideas
+- **Running coding agents on the host terminal exposes SSH keys and env vars, so a sandbox is needed.** — The speaker frames autonomous agents as a security risk because they can reach credentials on the host. COI is presented as the isolation layer that keeps those out of the agent's reach. ([0:00](https://youtu.be/t78-JUnTK5Q?t=0))
+- **Incus system containers act as full Linux machines and persist state, unlike privileged Docker.** — The speaker says Incus system containers behave like full Linux machines and keep state, so sessions and conversation history survive stop and start. He presents this as the advantage over Docker's privileged mode. ([1:01](https://youtu.be/t78-JUnTK5Q?t=61))
+- **UID mapping avoids root-owned files in the shared workspace.** — Containers normally create root-owned files that need chown. The speaker claims Incus UID mapping makes everything Claude creates appear owned by the local user on the host. He did not show a file listing to verify this. ([1:01](https://youtu.be/t78-JUnTK5Q?t=61))
+- **On macOS the stack is nested: Colima VM, then Incus, then the COI container.** — The host workspace folder must be mounted into Colima when it starts, so the agent can write results back to the host folder. The speaker says the Linux setup is covered in an earlier video. ([2:17](https://youtu.be/t78-JUnTK5Q?t=137))
+- **The one-line installer failed for him, so he saved the script to install.sh and chose the build-from-source option.** — When Incus is already present, the setup script detects it and offers a choice. He picked build from source and then ran the firewall configuration that the instructions require before building COI. ([3:18](https://youtu.be/t78-JUnTK5Q?t=198))
+- **Bridge networking needs firewall and forwarding fixes, or containers have no internet access.** — Incus creates its own bridge (incusbr0), which can conflict with Linux firewall rules and Docker networking rules. The fix is to add the bridge to the trusted firewall zone and enable IPv4 forwarding. Success is confirmed when the success message appears twice. ([3:18](https://youtu.be/t78-JUnTK5Q?t=198))
+- **Two agents shared one workspace with split roles, back end and front end.** — The speaker launched one instance per slot, each with a workspace path and a network-open flag so the agent can reach the internet and APIs. The agents built a Star Wars character app that fetches data from a public API, with a blue hologram UI on the front end. ([5:54](https://youtu.be/t78-JUnTK5Q?t=354))
+- **Untrusted files can be analyzed without unpacking them on the host.** — The speaker pushes the file into the container with incus file push, then asks Claude Code to analyze it. The sample is the EICAR test file, which is harmless by design, and Claude identified it correctly. ([6:52](https://youtu.be/t78-JUnTK5Q?t=412))
+
+## Techniques
+- **Nested sandbox on macOS: Colima, then Incus, then COI** — Start Colima with the mount flag so a host workspace folder is writable from the VM. SSH into the Colima VM, install Incus and COI from the repo instructions, and run the work inside the COI container. The speaker says the one-line install command did not work for him, so he copied the script contents into install.sh and ran that. *When:* Running Claude Code on a Mac with host isolation, where the agent should write its output to a host folder but not see host credentials.
+- **Bridge networking fix for Incus** — Add the incusbr0 bridge to the trusted firewall zone and enable IPv4 forwarding on the Colima VM. Re-run the firewall configuration until the success message prints twice. The speaker did not show the exact firewall commands. *When:* Containers cannot reach the internet, or COI build fails at the network step, because host firewall or Docker rules conflict with the Incus bridge.
+- **Build COI from the cloned repo** — Clone the code-on-incus repo, cd into it, and run coi build from inside the repo, because the setup script lives there. The build takes about 1-2 minutes. *When:* Installing COI from source, where running the build command from outside the repo fails for the speaker.
+- **Launch per-role agents into slots with a shared workspace** — Launch one COI instance per slot. Pass the workspace path so Claude knows where to save files, and pass the network-open flag so the agent can download dependencies and call APIs. Give each agent a separate role, for example back end and front end, and point both at the same workspace. *When:* Splitting one project across parallel agents that share a folder, with internet access needed for dependencies and API calls.
+- **Analyze untrusted files inside the sandbox** — Start a COI instance with the folder that holds the file as its workspace. From a second terminal, run incus file push with the target container ID to copy the file in. Then ask Claude Code inside the container to analyze the contents and write a report. *When:* Inspecting a suspicious archive or sample without extracting it on the host.
+
+## Numbers
+- COI build takes about 1-2 minutes to compile. ([4:33](https://youtu.be/t78-JUnTK5Q?t=273))
+- Two agents (back end and front end) built the full Star Wars app in a few minutes, with no measured timing. ([5:54](https://youtu.be/t78-JUnTK5Q?t=354))
+- Video length is 9:56. The video has no benchmarks, costs, or token counts. ([0:00](https://youtu.be/t78-JUnTK5Q?t=0))
+
+## Hot takes
+- Sandboxing coding agents in system containers is presented as the fix for agent security risk, with the speaker saying he is a fan of Incus.
+- The malware demo uses a harmless test file, and the speaker treats Claude's verdict as proof of safety without showing independent checks.
+- The one-line installer failed for the speaker, so the setup path shown is a workaround, not the documented path.
+- The speaker says UID mapping makes all sandbox output owned by the host user, but he did not show a file listing to confirm it.
+
+## Tools mentioned
+Code On Incus (COI), Incus, Colima, Claude Code, Docker, incus file push, coi build, incusbr0 (Incus bridge), EICAR test file, SWAPI (Star Wars API; auto-caption says 'Swoppy')
+
+## Relevance to our work
+- **agentos** (2/3): AgentOS L2C Crucible plans opt-in sandboxed code execution with a self-hosted celld backend. Incus system containers with UID mapping and persistent state are a comparable backend that the video shows working for Claude Code. → *Compare Incus system containers (UID mapping, persistent state, file push) against the celld sandbox for Crucible, and benchmark container start time and file-ownership behavior before choosing a backend.*
+- **prosharness** (2/3): ProsHarness wraps the Claude Code CLI and emphasizes zero-token credential handling. The video shows a concrete way to keep SSH keys and env vars out of the agent process while still writing results to a host folder. → *Prototype running a ProsHarness-launched Claude Code run inside an Incus container with only the workspace mounted, then check that host env vars and SSH keys are not visible and that checkpoint/resume still works across container stop and start.*

@@ -1,0 +1,62 @@
+# Claude Code's Creator Does This Before Every Single Project
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `B-UXpneKw6M` · [watch](https://youtu.be/B-UXpneKw6M) · **date:** 2026-02-02 · **length:** 9:55 · **format:** tutorial · **quality:** 2/5 · **depth:** practitioner
+- **speakers:** Boris (creator of Claude Code, Anthropic), as introduced by the host · **orgs:** Anthropic, AI LABS, Automata
+- **topics:** claude-code, testing-verification, context-engineering, multi-agent · **tags:** claude-code, CLAUDE.md, plan-mode, verification, permissions, settings.json, subagents, slash-commands, background-agents, cloud-sessions, stop-hook, ralph-wiggum, linters, parallel-sessions, opus-4.5, tips
+
+> Boris, who created Claude Code at Anthropic, shares a short workflow: give the agent a way to verify its work, keep CLAUDE.md lean and team-maintained, use plan mode and scoped permissions, and run parallel or background sessions.
+
+## Summary
+A host (AI LABS) walks through tips attributed to Boris, the creator of Claude Code at Anthropic. The central idea is that the agent needs a verification loop, such as tests, a bash command, a browser check or screenshots, so it can detect and fix its own errors instead of the user doing it. The second theme is CLAUDE.md: keep it project-specific and short (about 2.5k tokens, by his count), include stack, structure, conventions and a "don't do" list, and have the whole team add to it whenever Claude makes a mistake. He avoids dangerously-skip-permissions and instead sets allow, ask and deny rules in a shared project settings.json. His workflow is to plan first in plan mode, iterate until the plan is valid, then execute in auto-accept edits mode, while running several sessions in parallel and pushing long jobs to background or cloud agents. For long runs he mentions background verification tasks, a Stop hook that triggers verification, and the Ralph Wiggum plugin. The video ends with a promotional segment for the host's agency.
+
+## Key ideas
+- **Give Claude a way to verify its work** — Tell the agent to write tests alongside code, or to use checks such as a bash command, so it gets a feedback loop. He argues this raises output quality noticeably. Humans work the same way, so expect small errors and let the loop catch them. ([0:00](https://youtu.be/B-UXpneKw6M?t=0))
+- **CLAUDE.md should state the verification plan up front** — Add an instruction that before any work, Claude must say how it will verify that work. This makes the feedback loop a standing default instead of something you have to remember each session. ([0:00](https://youtu.be/B-UXpneKw6M?t=0))
+- **Verification depends on the domain** — For code it can be tests or a shell command. For UI it can be a browser-driving extension, mobile simulator MCPs (token-heavy), or TDD with screenshots. Each domain needs its own check. ([1:27](https://youtu.be/B-UXpneKw6M?t=87))
+- **CLAUDE.md is per repo and must stay lean** — It should hold the tech stack, project layout, team code style, and especially what Claude should not do. His own file is about 2.5k tokens. Each microservice (front end, back end) can have its own CLAUDE.md. ([2:35](https://youtu.be/B-UXpneKw6M?t=155))
+- **Use permission rules instead of skipping permissions** — Set allow, ask, and deny rules for commands at the project level in .claude/settings.json and commit it so the team shares the same rules. He avoids dangerously-skip-permissions, especially in production. ([2:35](https://youtu.be/B-UXpneKw6M?t=155))
+- **Claude Code as an orchestrator over other tools** — He connects Claude Code to Slack and Notion through MCP servers and to BigQuery and Sentry through their CLIs, so one session can drive several systems. The host uses the same setup to manage video ideas in Notion. ([3:36](https://youtu.be/B-UXpneKw6M?t=216))
+- **Plan first, iterate until the plan is valid, then execute** — Most back-and-forth happens in plan mode. He starts execution only after the plan checks out, then runs in auto-accept edits mode. He treats the agent like a junior developer. ([4:50](https://youtu.be/B-UXpneKw6M?t=290))
+- **Parallel sessions, cloud sessions, and background agents** — He runs about five sessions at once and numbers the terminal tabs so notifications map to a tab. Long tasks go to cloud web sessions connected to GitHub, which push a branch for review. The teleport command pulls a cloud session back into the local terminal. ([4:50](https://youtu.be/B-UXpneKw6M?t=290))
+- **Long-running tasks: background verification, stop hooks, and loops** — Three approaches: (1) have Claude write its own verification tests and run them as background tasks that report back to the main agent; (2) use a Stop hook to trigger verification when Claude finishes a turn; (3) use a Ralph Wiggum style loop, which he says removes the human from the loop. ([6:18](https://youtu.be/B-UXpneKw6M?t=378))
+- **Linters and formatters catch the last errors before CI** — He runs language-specific linters and formatters so that code passes the GitHub CI pipeline. The point is that models already write mostly correct code, and the tools handle the remainder. ([7:31](https://youtu.be/B-UXpneKw6M?t=451))
+- **Simple built-ins cover most of the value** — Slash commands stored in .claude/commands can be committed to git and shared. Subagents with narrow instructions handle tasks like architecture checks, refactors, and build validation. The host says these built-ins give most of the productivity gain. ([7:31](https://youtu.be/B-UXpneKw6M?t=451))
+
+## Techniques
+- **Verification line in CLAUDE.md** — Add a rule to CLAUDE.md that before doing any work, Claude states how it will verify that work (tests, a command, a browser check). Repeat the rule across sessions. *When:* Any repo where you want self-checking output without re-prompting each time.
+- **Tests-first or tests alongside each feature** — Tell Claude to write tests for each thing it implements. Non-coders can ask Claude which tests to write, and it will propose a test for each implemented behavior. Use TDD: write tests first, then the implementation. *When:* Python or other code projects where a test suite can run locally or in CI.
+- **Browser or screenshot verification for UI** — Use Claude's browser extension so Claude can navigate the site and check the result. For UI, add screenshot checks in the TDD loop. Mobile simulator MCPs are an option, but he calls them token-heavy. *When:* Web UI or mobile UI work where a test alone cannot show the result.
+- **Team-maintained CLAUDE.md** — Whenever Claude does something wrong, add a rule to CLAUDE.md. Have the team contribute several times a week, assign each member a file to own, and keep the file near 2.5k tokens. Use one CLAUDE.md per microservice (front end, back end). *When:* Shared repos where the same mistakes recur across sessions and people.
+- **Mistakes from PR review go into CLAUDE.md** — Run the Claude Code GitHub action on PRs. When a reviewer finds a mistake, ask Claude to add it to CLAUDE.md. *When:* Teams using GitHub PR review who want review findings to become standing rules.
+- **Project-scoped allow/ask/deny permissions** — Write allow, ask, and deny rules for shell commands in the project's .claude/settings.json and commit the file. Use this instead of dangerously-skip-permissions. *When:* Any repo where agents run shell commands, especially production-adjacent ones.
+- **Plan mode before execution** — Switch to plan mode and describe the task. Iterate on the plan until it is valid. Then start execution in auto-accept edits mode, not in skip-permissions mode. *When:* Non-trivial features where a bad approach would be expensive to undo.
+- **Parallel sessions with numbered tabs** — Run about five Claude Code sessions in parallel, one per terminal tab. Number the tabs so each notification can be traced to its session. *When:* Several independent tasks running at once.
+- **Cloud background agents with teleport** — Connect Claude Code on the web to GitHub and point it at a repo. Put long tasks in background agents. Claude pushes a new branch for review. Use the teleport command to bring a cloud session into the local terminal. He also starts tasks from his phone. *When:* Long-running tasks you do not want to babysit, followed by review of the pushed branch.
+- **Background verification tasks** — Ask Claude to create verification tests for its own work and run them as background tasks that report to the main agent when done. *When:* Long coding runs where you want checks to run without blocking the main thread.
+- **Stop hook for verification** — Configure a stop hook that triggers the verification step whenever Claude finishes a response. *When:* Runs where verification should happen automatically at each stopping point.
+- **Loop plugin for autonomous runs** — Use the Ralph Wiggum plugin, which loops until verification passes. He says it removes the human from the loop. The host used it to check UI output during development. *When:* Autonomous runs with an objective success check, such as a UI or test pass.
+- **Per-language linters and formatters** — Run linters and formatters for each language so code passes CI. Use the model for the bulk of the code and the formatters for what remains. *When:* Repos with CI gates that fail on style or lint errors.
+- **Committed slash commands** — Store repeated workflows as slash commands in .claude/commands/ and commit them so the team shares them. He uses a GitHub slash command as an example. *When:* Workflows you run many times a day.
+- **Narrow subagents** — Create subagents that each have their own instructions for a narrow job, such as checking architecture, refactoring written code, or validating that a build works. *When:* Steps that need instructions different from the main session's.
+
+## Numbers
+- His CLAUDE.md is about 2.5k tokens. ([2:35](https://youtu.be/B-UXpneKw6M?t=155))
+- He runs about five Claude Code sessions in parallel. ([4:50](https://youtu.be/B-UXpneKw6M?t=290))
+- He uses Opus 4.5 with thinking enabled for everything. It is slower than Sonnet and Haiku, but he says it makes fewer errors, so the total steering time is lower. ([4:50](https://youtu.be/B-UXpneKw6M?t=290))
+- Formatters and linters are said to clean up the remaining 10% of code errors after the model writes the code. This is a rough rhetorical figure, not a measurement. ([7:31](https://youtu.be/B-UXpneKw6M?t=451))
+- The team adds to CLAUDE.md multiple times a week. ([2:35](https://youtu.be/B-UXpneKw6M?t=155))
+
+## Hot takes
+- Verification is the main lever: give the agent a test or check and it improves, which is why the advice is repeated across the video.
+- Skipping permissions is called dangerous, especially in production, and project-scoped allow/ask/deny rules are the recommended alternative.
+- Opus 4.5 for everything is justified only by a claim that fewer errors cuts total steering time. No measurement is shown.
+- The host calls Claude Code badly named because people use it for orchestration, not only code. This is opinion, not data.
+- The Ralph Wiggum style loop 'removes the human from the loop entirely.' This is the host's claim, and the video shows no evidence for it.
+- Quality is capped at 2 because the video ends with a promotional segment for the host's agency (Automata), which the rules treat as sponsored. The workflow tips themselves are practical and concrete.
+
+## Tools mentioned
+Claude Code, CLAUDE.md, Claude Code GitHub action, Claude Code on the web (cloud sessions), Claude browser extension, Opus 4.5, Sonnet, Haiku, Ralph Wiggum plugin, MCP servers (Slack, Notion), BigQuery CLI, Sentry CLI, GitHub, linters and formatters (language-specific, unnamed)
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness wraps Claude Code CLI and needs checkpoint/resume, loops and approvals. This video covers the same patterns: a Stop hook that triggers verification, background verification tasks, plan-before-execute, and scoped permission rules. → *Compare ProsHarness's loop and schedule design with a Stop-hook verify step: run the project's tests when a turn ends, and gate continuation on the result.*
+- **agentos** (1/3): This is a general Claude Code workflow talk. Its verify-before-work and team-maintained CLAUDE.md rules are generic and apply to the AgentOS repo. → *If the AgentOS repo has a CLAUDE.md, add a rule that Claude states its verification plan (tests or a command) before starting work.*

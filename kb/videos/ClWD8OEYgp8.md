@@ -1,0 +1,46 @@
+# Collaborative AI Engineering: One Dev, Two Dozen Agents, Zero Alignment — Maggie Appleton, GitHub
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `ClWD8OEYgp8` · [watch](https://youtu.be/ClWD8OEYgp8) · **date:** 2026-05-18 · **length:** 17:43 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Maggie Appleton · **orgs:** GitHub, GitHub Next
+- **topics:** coding-agents, multi-agent, product-ux, context-engineering · **tags:** collaboration, alignment, shared-sessions, micro-vm, plan-review, team-context, ACE, GitHub Next, multiplayer coding agent, PR review bottleneck
+
+> Maggie Appleton (GitHub Next) argues agents have shifted the bottleneck from building to agreeing on what to build, and previews ACE, a shared multiplayer environment for team-plus-agent work.
+
+## Summary
+Maggie Appleton from GitHub Next argues that single-player coding agents scale one person's output, but software is a team activity, so alignment on what to build is now the bottleneck. She says the old workflow (plan, build, review) has collapsed: agents open a PR within minutes, local plan modes are unshared, and most alignment is pushed onto the PR, which is a poor place for it. Much of the context needed to decide what to build lives in people's heads, not in the codebase. She demos ACE (Agent Collaboration Environment), a prototype where each session is a Slack-like multiplayer chat backed by a cloud micro-VM on its own git branch, so teammates can join a live session with the full prompt history, edit a shared plan, and have the agent read the whole conversation as input. She presents freed-up time as a chance for more research and craft rather than more output, and says early access to ACE is coming.
+
+## Key ideas
+- **Agreeing on what to build is the new bottleneck, not writing code** — Implementation is getting cheap and fast, so the hard question is whether to build something at all. Opportunity cost becomes the real cost. Single-player agent fleets scale one person's output, which does not fix problems that need coordination. ([1:20](https://youtu.be/ClWD8OEYgp8?t=80))
+- **Alignment checkpoints moved to the wrong end of the process** — The time from issue to agent PR is now minutes, so planning shrinks and early discussion disappears. Plans sit in unshared local plan modes. Alignment ends up on the PR after implementation, which the speaker says PRs were never designed for. ([3:46](https://youtu.be/ClWD8OEYgp8?t=226))
+- **Symptoms of misalignment: wasted work, duplicated work, merge conflicts, PR backlogs with no context** — Fast work without alignment yields features nobody asked for, late critical feedback that forces rewrites, agents touching the same files, and people finishing the same task. Planning and building should be one continuous cycle, not separate phases. ([5:04](https://youtu.be/ClWD8OEYgp8?t=304))
+- **Most alignment context is in people's heads, not in the repo** — Business context, funding, who decides, leadership vision, designer user research, and past organisational history decide what is worth building. Agents cannot discover this on their own, so the tool must get humans to share it early and without extra process. ([6:14](https://youtu.be/ClWD8OEYgp8?t=374))
+- **Session = shared cloud workspace on its own branch, with full prompt history** — In ACE each session is a multiplayer chat backed by a micro-VM on its own git branch. A teammate can join a live session in one click instead of stashing and checking out branches, and sees the whole prompting history, the preview and the terminal. Work continues when the laptop closes. ([7:37](https://youtu.be/ClWD8OEYgp8?t=457))
+- **Plans as a shared co-edited artifact before the agent builds** — The agent writes a plan that the team edits together in the session (for example, a teammate suggests a dropdown instead of a segmented control and the requirements get updated). The team then tells the agent to proceed, and it uses the agreed plan as context. ([12:35](https://youtu.be/ClWD8OEYgp8?t=755))
+- **Agents as proactive social context, not just coders** — The dashboard shows resume-where-you-left-off work, recent merges, and a summary of teammates' activity over the last few days. The speaker's idea is that if conversations are available to agents, they can notify people about decisions or pull them into related work. ([13:54](https://youtu.be/ClWD8OEYgp8?t=834))
+- **Freed time should buy rigour and craft, which means fewer, better things** — Implementation time used to crowd out user research, design detail, and architecture thinking. The speaker argues that in a world of cheap software, quality becomes the differentiator, and that craft needs time and strong alignment to get the right few things built. ([15:13](https://youtu.be/ClWD8OEYgp8?t=913))
+
+## Techniques
+- **Shared always-on agent session per task** — Give each task one cloud sandbox (micro-VM) on its own git branch, with the agent, the terminal, the live preview and the chat in the same place. Teammates join the session instead of pulling branches locally. Keep the session alive when the user disconnects. *When:* Several people, or several agents, work on related features in parallel and need to hand off or review without local setup.
+- **Whole-conversation context as prompt input** — Feed every human message in a session into the agent's prompt, so people can talk about upcoming work and then say 'do it' to the agent, which already has the discussion. *When:* A feature is designed in conversation by several people (including non-developers) before any code is written.
+- **Plan first, co-edit, then execute** — Have the agent produce a plan document that the team edits in real time. Update requirements from the review comments, then give the go-ahead in chat and let the agent act on the agreed plan. *When:* Features bigger than a single prompt, or any work where the team needs to agree on scope before the agent starts.
+- **Session summary for switching between parallel sessions** — Show a running summary of changes in each session, whether made by a person or the agent, so someone juggling many sessions can get oriented quickly. *When:* Many agent sessions run at once and people need to catch up without reading every message.
+- **Backward-compatible PRs that link back to the session** — Create the PR from the session and put a link to the originating session in the PR description. Keep the PR reviewable by people who are not in the tool. *When:* The collaborative environment has to coexist with normal GitHub review by people outside it.
+
+## Numbers
+- Time from logging an issue to an agent opening a PR is now a couple of minutes ([3:46](https://youtu.be/ClWD8OEYgp8?t=226))
+- Technical preview of ACE planned for user testing with a few thousand people ([6:14](https://youtu.be/ClWD8OEYgp8?t=374))
+- Teams are shipping about five features a day instead of half of one (anecdotal, speaker's observation) ([13:54](https://youtu.be/ClWD8OEYgp8?t=834))
+- Early access to ACE expected within a couple of months (sign-up via a GitHub-username form) ([16:40](https://youtu.be/ClWD8OEYgp8?t=1000))
+
+## Hot takes
+- PRs and issues are not the future of software development, and few people inside GitHub believe they are
+- Scaling individual productivity does not produce great software; it is 'nine women make a baby in one month' logic
+- Slack will never become a full software development tool, so it lacks the right primitives (diffs, terminal, etc.)
+- In a world of fast, cheap software, quality, not speed, is the differentiator
+
+## Tools mentioned
+GitHub ACE (Agent Collaboration Environment, research prototype), Claude Opus 4.6 (model used in the demo), Bun (bun install / bun dev in the demo project), VS Code (real-time multiplayer editing in the shared cloud machine), Slack, Jira, Linear (named as coordination tools that are not built for agentic work)
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness already runs plan -> critique -> debate and phone approvals. ACE's approach of a plan that teammates co-edit before execution, plus an always-on cloud session that survives a closed laptop, is close to what it does and could strengthen the approval flow. → *Compare ProsHarness's plan-critique step with a shared, co-editable plan view that several reviewers can comment on before a checkpointed run starts.*
+- **general** (1/3): Useful background for how a team-facing agent UI is structured, but it does not apply to any of our listed projects directly. → *Skim ACE's plan-review and shared-session ideas once the technical preview is public, if we ever build a team-facing agent UI.*

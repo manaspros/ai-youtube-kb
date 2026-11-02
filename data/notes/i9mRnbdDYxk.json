@@ -1,0 +1,260 @@
+{
+ "one_line": "Kai Explains argues a 16GB GPU fits a 27B model but can't finish real agentic coding sessions: the KV cache, bandwidth, prefill and multi-token prediction decide usable speed and context, not whether the weights load.",
+ "summary": "The host responds to a viral video claiming a 27B-class model runs at 45.6 tokens/s on a $429 RTX 5060 Ti 16GB. He ran the same setup in a long coding-agent session and saw speed fall to about 15 tokens/s after roughly 20 minutes. He explains that the viral claim is true but incomplete: a DASLab (IST Austria) quantization brings the model to 11.8 GB, yet the KV cache grows with every token and quickly eats the remaining VRAM. He walks through the budget math for a 16GB card (usable VRAM, weights, vision and MTP add-ons, KV bytes per token), then three speed limits: spilling out of VRAM, memory bandwidth as a ceiling on tokens/s, and prefill time before the first token. He covers current 16GB card prices and bandwidth, Mac unified-memory limits, laptop naming traps, a local-vs-hosted cost break-even, and when two 16GB cards with tensor split are the practical answer. His advice: buy for bandwidth, run a model that leaves room, turn off unused memory consumers, and size the model to the conversation.",
+ "speakers": [
+  "Kai (channel host, narrator; name as shown by the channel, not stated in the transcript)",
+  "Manolo Remidi (creator of the viral 16GB video, as named in the transcript)",
+  "Bart Slodicka (runs a YouTube series on 16GB local AI, as named in the transcript)",
+  "Luke (Luke's Dev Lab, as named in the transcript)"
+ ],
+ "orgs": [
+  "DASLab, Institute of Science and Technology Austria",
+  "Micro Center",
+  "OpenRouter",
+  "Nvidia",
+  "AMD",
+  "Luke's Dev Lab"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "local-llm",
+  "gpu-vram",
+  "kv-cache",
+  "context-window",
+  "quantization",
+  "memory-bandwidth",
+  "prefill",
+  "multi-token-prediction",
+  "speculative-decoding",
+  "tensor-split",
+  "llama-cpp",
+  "rtx-5060-ti",
+  "rx-9070-xt",
+  "qwen",
+  "devstral",
+  "token-economics",
+  "agentic-coding"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A model that fits is not a model that finishes. The viral video answers whether the weights load on 16GB, but never asks how much room is left for conversation once they do.",
+   "detail": "The weights are fixed, but the KV cache grows with every token sent and generated. Real agent sessions push past 100k tokens, so the remaining VRAM is the real constraint.",
+   "t": "0:00"
+  },
+  {
+   "idea": "KV cache footprint per token varies a lot by model. Qwen (27B class) is about 64 KB per token, while Devstral Small 2 is about 160 KB per token.",
+   "detail": "At 64 KB/token, 32k tokens is about 2 GB and 128k is about 8 GB. On a 16GB card with Devstral Small 2, the host estimates room for only about 11k tokens next to the weights.",
+   "t": "4:47"
+  },
+  {
+   "idea": "Budget VRAM explicitly: usable memory, minus runtime margin, minus weights and auto-loaded extras, equals tokens of cache.",
+   "detail": "A 16GB card is about 17.18 GB in model-file units. llama.cpp keeps about 1 GB back by default. Adding an 11.8 GB model, a 0.35 GB MTP head and a 0.93 GB vision file leaves about 47k tokens at 16-bit cache. Turning vision off and using an 8-bit cache raises that to about 110k tokens.",
+   "t": "6:09"
+  },
+  {
+   "idea": "Agent system prompts and tool output consume the window before the user types anything. Tool output is the main source of growth.",
+   "detail": "Claude Code's system prompt alone is said to be 30-32k tokens. Luke's Dev Lab measured a Kanban app using 87% of a 128k window and a Blender task using 96%, mainly from file reads, command output and error logs.",
+   "t": "6:09"
+  },
+  {
+   "idea": "Three separate effects explain most of the wide tokens/s spread on the same card: spilling out of VRAM, the bandwidth ceiling, and multi-token prediction.",
+   "detail": "Once any weights or cache spill into system RAM, speed collapses. A 5070 Ti hit its context limit near 8k tokens and finished 61% of a job, while a 5090 ran at 98 tokens/s on the same task. Decode speed cannot exceed memory bandwidth divided by model file size, because every token reads the full model.",
+   "t": "7:27"
+  },
+  {
+   "idea": "Prefill is the hidden latency cost. Before the first token, the whole prompt is processed, so a large agent context can mean minutes of silence.",
+   "detail": "The 5060 Ti prefills at about 738 tokens/s, so a 30k-token context means about 41 seconds before output starts. An AMD RX 9060 XT measured 149 tokens/s at 32k context, which is over three minutes. Nvidia's prefill advantage in llama.cpp is large (a 5070 Ti read a 32k prompt more than 3x faster than an RX 9070 XT).",
+   "t": "9:56"
+  },
+  {
+   "idea": "Multi-token prediction doubles speed but uses cache. Turn it off once the conversation grows, and pick between speed and context.",
+   "detail": "One user on a 5060 Ti went from 27.4 to 45.6 tokens/s with MTP. Another ran about 70 tokens/s with MTP at 32k context and turned it off beyond that because drafts need room.",
+   "t": "9:56"
+  },
+  {
+   "idea": "Buy for memory bandwidth and dollars per GB/s, not for a name or a viral video. Price shifts quickly, and the 5060 Ti's street price has risen far above its sticker.",
+   "detail": "The RX 9070 XT gives about 43% more bandwidth (640 vs 448 GB/s) at about the same price as a 5060 Ti. The 5060 Ti 16GB is now listed around $789 vs a $429 sticker, up about 84% over retail.",
+   "t": "11:18"
+  },
+  {
+   "idea": "The local-vs-hosted decision depends on which model you would run and how many tokens you would generate. Owning a card for a $2.95/M model breaks even at about 294M tokens, but for a $0.16/M model it takes years.",
+   "detail": "Hosted Qwen costs about $2.95 per million output tokens on OpenRouter. The local 5060 Ti at 35 tokens/s, 180 W and about 26 cents per million tokens of electricity saves about $2.69/M. Running around the clock, break-even is about 97 days, or about 10 months at 8 hours a day. With a $0.16/M model, break-even stretches to about 2.9 years of nonstop use.",
+   "t": "13:41"
+  },
+  {
+   "idea": "For heavy long-context agent work, two 16GB cards with tensor split are the practical answer. Split mode alone can change speed a lot.",
+   "detail": "Two 5060 Ti cards cost about $1578. One owner went from 27 to 46 tokens/s by switching from layer split to tensor split. A shared preset goes from a 3-bit model at 64k context on one card to a 6-bit model at 131k on two.",
+   "t": "14:55"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "VRAM budget before loading a model",
+   "how": "Start from usable VRAM (card size converted to model-file units, minus the runtime's default safety margin, about 1 GB in llama.cpp per the speaker). Subtract the weights, the MTP head and the vision projector file that auto-loads. Divide the remaining space by the model's KV bytes per token (about 64 KB for Qwen 27B, 160 KB for Devstral Small 2) to get the context you can hold. The speaker's example: a 16GB card with an 11.8 GB model leaves about 47k tokens at 16-bit cache.",
+   "when": "Before choosing a model and quantization for a local coding agent, and before assuming a 'it fits' demo will last a full session."
+  },
+  {
+   "name": "Reclaim memory from defaults",
+   "how": "Disable the vision file when the work is text-only coding (the speaker cites about 0.93 GB saved). Compress the KV cache to 8-bit instead of 16-bit (the speaker says this roughly doubles usable context on his example, from about 47k to about 110k tokens). Plug the monitor into integrated graphics if available, which the speaker says can recover about 0.5 GB. The exact flag names are not shown in the video.",
+   "when": "When the card is almost full at idle and you want more context without changing the model."
+  },
+  {
+   "name": "Turn multi-token prediction off past a context threshold",
+   "how": "Keep MTP on while the conversation is short, since it can nearly double tokens/s. Once the KV cache is large enough that the MTP head's cache need can't be met, disable it. The speaker's example uses about 32k as the switch point on a 16GB card.",
+   "when": "Local agent sessions where speed matters early but context growth later eats the room that MTP needs."
+  },
+  {
+   "name": "Size the model to the conversation",
+   "how": "Choose the smallest model that solves the task, and leave enough room for expected context (the speaker's test: how much context is left once the model loads and a real session has run). Avoid the biggest model that barely loads.",
+   "when": "Choosing between a bigger quantized model and a smaller model with more context, for an agent that runs for long sessions."
+  },
+  {
+   "name": "Measure prefill and decode separately",
+   "how": "Time-to-first-token is roughly prompt length divided by prefill tokens/s. Decode speed is capped at memory bandwidth divided by model file size. The speaker's check: 448 GB/s over a 10.93 GB model gives an upper bound of about 41 tokens/s, and he measured 35 (85%).",
+   "when": "Estimating whether a local setup can hold interactive latency for a long agent prompt, or whether a card's listed bandwidth explains a benchmark."
+  },
+  {
+   "name": "Local-vs-hosted break-even",
+   "how": "Break-even tokens = card price / (hosted $/M output tokens minus local electricity $/M). Local electricity $/M = watts / tokens-per-second, converted to hourly cost and per million tokens. The speaker's example: $789 / ($2.95 - $0.26) per M ≈ 294M tokens.",
+   "when": "Deciding whether to buy a local GPU for steady, high-volume generation vs renting hosted tokens for occasional use."
+  },
+  {
+   "name": "Tensor split for two cards",
+   "how": "Use tensor split (rather than layer split) across two identical GPUs to raise tokens/s (speaker: 27 to 46 tokens/s on the same setup). Pair this with a bigger quant and more context across both cards (the speaker's example: 3-bit at 64k on one card, 6-bit at 131k on two).",
+   "when": "A workload needs more than about 100k tokens of context routinely and a single 16GB card can't hold it."
+  }
+ ],
+ "tools": [
+  "llama.cpp (called 'Lama CPP' in captions; the speaker calls it the most common local AI runtime)",
+  "Qwen 27B-class model (captioned 'Quen 3.827B'; Q4 at 17.44 GB, a DASLab GSQ build at 11.8 GB)",
+  "GSQ quantization (DASLab, IST Austria)",
+  "Devstral Small 2 (captioned 'DevStraw Small 2'; 160 KB KV per token)",
+  "Claude Code (captioned 'CloudCode')",
+  "OpenRouter (hosted price benchmark)",
+  "Nvidia RTX 5060 Ti 16GB",
+  "Nvidia RTX 5070 Ti",
+  "Nvidia RTX 5090",
+  "AMD RX 9060 XT 16GB",
+  "AMD RX 9070 XT",
+  "Apple Mac mini (chip name garbled in captions)",
+  "Blender (agent task used in Luke's Dev Lab test)"
+ ],
+ "numbers": [
+  {
+   "claim": "Viral video: 585,000 views; Qwen 27B-class model at 45.6 tokens/s on RTX 5060 Ti 16GB ($429 sticker)",
+   "t": "0:00"
+  },
+  {
+   "claim": "Speaker's agent session on the same card drops to about 15 tokens/s after about 20 minutes",
+   "t": "1:13"
+  },
+  {
+   "claim": "Q4 quant is 17.44 GB, does not fit 16GB; DASLab GSQ build is 11.8 GB; both score 30/30 on an AIME-style math test; the compressed build ties on coding and misses one extra question out of 198 on a science test",
+   "t": "2:36"
+  },
+  {
+   "claim": "Context window in the viral demo: 64,000 tokens on RTX 5060 Ti vs 262,000 on RTX 5090 with the same model file",
+   "t": "3:45"
+  },
+  {
+   "claim": "KV cache is 64 KB per token (Qwen); 32k tokens ≈ 2 GB, 128k ≈ 8 GB; Devstral Small 2 is 160 KB per token, leaving room for about 11k tokens on 16GB",
+   "t": "4:47"
+  },
+  {
+   "claim": "16GB card = about 17.18 GB in model-file units; llama.cpp default margin about 1 GB; with 0.35 GB MTP head and 0.93 GB vision file, about 14 GB is used before chat, leaving about 47k tokens at full cache precision, or about 110k with vision off and 8-bit cache",
+   "t": "6:09"
+  },
+  {
+   "claim": "Agent system prompts alone are about 30-32k tokens (per Bart Slodicka); Kanban task used 87% of a 128k window, Blender task used 96% (per Luke's Dev Lab)",
+   "t": "6:09"
+  },
+  {
+   "claim": "A 4060 Ti with cache moved to RAM ran at 6-7 tokens/s on tasks over an hour",
+   "t": "7:27"
+  },
+  {
+   "claim": "Micro Center test: RTX 5070 Ti under 9 tokens/s, hit context limit near 8,000 tokens, finished 61% of the job; RTX 5090 ran at 98 tokens/s",
+   "t": "8:47"
+  },
+  {
+   "claim": "Bandwidth ceiling: RTX 5060 Ti 448 GB/s over a 10.93 GB 3-bit file caps decode at about 41 tokens/s; measured 35 tokens/s (85% of max)",
+   "t": "8:47"
+  },
+  {
+   "claim": "MTP lifts a 5060 Ti from 27.4 to 45.6 tokens/s; a custom build runs about 70 tokens/s at 32k context with MTP on, before turning it off",
+   "t": "9:56"
+  },
+  {
+   "claim": "Prefill: RTX 5060 Ti ~738 tokens/s, so a 30k-token context means about 41 seconds before first output; RX 9060 XT 16GB at 149 tokens/s at 32k context means over 3 minutes",
+   "t": "9:56"
+  },
+  {
+   "claim": "Prices: RX 9060 XT 16GB $470 at 320 GB/s; RX 9070 XT $790 at 640 GB/s (43% more bandwidth); RTX 5060 Ti 16GB $789 vs $429 sticker, up 84% over retail (8GB version up 24%)",
+   "t": "11:18"
+  },
+  {
+   "claim": "RTX 5070 Ti read a 32k prompt more than 3x faster than an RX 9070 XT while writing less than 10% faster (llama.cpp)",
+   "t": "11:18"
+  },
+  {
+   "claim": "macOS GPU gets about 12.7 GB of a 16GB Mac by default, roughly 14,000 tokens of room after an 11.8 GB model; Mac mini memory bandwidth 153 GB/s, about a third of a 5060 Ti",
+   "t": "12:42"
+  },
+  {
+   "claim": "Hosted Qwen ≈ $2.95 per million output tokens (OpenRouter weighted average); local 5060 Ti at 35 tokens/s and 180 W ≈ $0.26 per million tokens; saves about $2.69 per million; $789 card breaks even at about 294M tokens",
+   "t": "13:41"
+  },
+  {
+   "claim": "Break-even about 97 days of around-the-clock use (about 10 months at 8 hours a day); with a $0.16/M model, break-even is about 2.9 years of nonstop use",
+   "t": "13:41"
+  },
+  {
+   "claim": "Two 5060 Ti 16GB cards cost about $1578; switching from layer split to tensor split raises a user from 27 to 46 tokens/s",
+   "t": "14:55"
+  },
+  {
+   "claim": "Shared preset: 3-bit model at 64k context on one card vs 6-bit model at 131k context on two cards",
+   "t": "16:00"
+  },
+  {
+   "claim": "Monitor on integrated graphics can recover about half a GB of VRAM",
+   "t": "16:00"
+  }
+ ],
+ "hot_takes": [
+  "Fits-in-VRAM demos are misleading; the question to ask is how much room is left once a real session starts.",
+  "The biggest model that loads is the wrong target; the smallest model that solves the problem, with room to spare, is the right one.",
+  "A 16GB Mac is not a 16GB GPU because the GPU share of unified memory is smaller by default.",
+  "Laptop GPU naming is unreliable; check the memory line on the spec, since the same name can ship with 8GB or 16GB.",
+  "For heavy long-context agent work, two mid-range 16GB cards beat one card with more hype."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft (vLLM, KV-cache strategies, speculative decoding, one RTX 5090) is the same class of problem: the KV cache footprint per token, the VRAM budget, and MTP-vs-context tradeoffs. This talk gives concrete per-token KV numbers and a budgeting method to check the design against.",
+   "action": "Add a KV-budget calculator to InferCraft's planning docs: usable VRAM minus runtime margin minus weights and auxiliary files, divided by KV bytes per token, to get the max context per model. Check it against the 64 KB/token (Qwen) and 160 KB/token (Devstral Small 2) figures from this talk before picking a KV strategy."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The talk's point that system prompts and tool output fill most of the context in long coding sessions matters for checkpoint/resume: a resumed run needs a token budget, not just a saved state.",
+   "action": "When ProsHarness checkpoints a long Claude Code run, record the context token count and the share taken by tool output, and trigger a checkpoint or compaction before the window is near full, rather than waiting for a slowdown."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "A practical reference for anyone running local coding models. It corrects the common 'does it fit' framing with per-token KV math, prefill and bandwidth limits, and break-even economics that are reusable for planning local vs hosted token spend.",
+   "action": "Read the speaker's budget and break-even method before the next local-model purchase or model-choice decision. Verify the prices and bandwidth figures, since the talk is dated 2026-10-12 and prices are volatile."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

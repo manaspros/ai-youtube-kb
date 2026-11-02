@@ -1,0 +1,177 @@
+{
+ "one_line": "Walkthrough of six Hermes Agent use cases: cron jobs gated by a wake flag or a no-agent flag, a Slack team second brain, Gmail lead webhooks, PRD-as-skill competitor tracking, and human-reviewed social posting.",
+ "summary": "The video presents Hermes Agent as a more capable alternative to OpenClaw, mainly through built-in profiles, skills and memory, and a desktop app that wraps the same configuration as the terminal UI. Its central technical content is two cron-job flags: a wake-agent flag that lets a script decide whether the LLM is called at all, and a no-agent flag that runs a scheduled job with no model, for example health checks posted to Slack. The other use cases are a Slack-connected \"second brain\" that accumulates company context into a skill, a Gmail webhook that drafts replies to potential leads, a PRD kept as a skill with a weekly competitor-analysis cron job, and an X/LinkedIn drafting skill that writes posts to a folder for human review before publishing. Setup details are mostly skipped: Gmail needs a Google Cloud project with credentials plus a callback token, and the X posting skill is named XURL, but no commands, config keys or prompts are shown. Most claims (cost savings, OpenClaw's file bloat, the second-brain effect) are asserted by demo rather than measured. The roughly 10-minute episode ends with a sponsor segment for Brilliant.",
+ "speakers": [],
+ "orgs": [
+  "Google (Gmail, Google Cloud, Google Play API, Gemini API)",
+  "Stripe",
+  "AWS",
+  "Slack",
+  "X",
+  "LinkedIn",
+  "Brilliant (sponsor)"
+ ],
+ "format": "review",
+ "topics": [
+  "token-cost-efficiency",
+  "agent-architecture",
+  "skills-self-improvement",
+  "memory"
+ ],
+ "tags": [
+  "hermes-agent",
+  "openclaw",
+  "cron",
+  "wake-agent-flag",
+  "no-agent-flag",
+  "pre-llm-gating",
+  "slack",
+  "gmail",
+  "webhooks",
+  "skills",
+  "prd",
+  "competitor-analysis",
+  "second-brain",
+  "human-in-the-loop",
+  "xurl",
+  "profiles",
+  "desktop-app",
+  "sponsored"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Hermes profiles isolate personas, each with its own memory and skills, and the desktop app can run several profiles in parallel and delegate to each.",
+   "detail": "A profile is described as an individual agent with separate memory and skills. The desktop app reuses the configs from the earlier TUI setup and adds a skills panel and a memory cap setting. The speaker presents this as the biggest difference from the terminal workflow, but the transcript does not show profile commands.",
+   "t": "0:00"
+  },
+  {
+   "idea": "A wake-agent flag in the cron script lets the job decide at runtime whether the LLM should run at all.",
+   "detail": "When the flag is false, the model is not called for that event, so the agent fires only on a real change. The speaker contrasts this with OpenClaw, which he says ran the agent on every cron job. Example: AWS cost monitoring plus the Gemini API, reporting to a channel on a cost spike, with optional Stripe MCP actions.",
+   "t": "1:18"
+  },
+  {
+   "idea": "The same wake gate applies to Google Play review handling, where the agent replies to one-star reviews and reports them to Slack.",
+   "detail": "The job needs the Google Play API for the app's reviews and a matching cron job. The speaker says the agent helps identify recurring user issues, not only replies.",
+   "t": "2:25"
+  },
+  {
+   "idea": "A no-agent flag runs a cron job that never invokes a model, but it still runs inside Hermes and can be created from a prompt.",
+   "detail": "Examples are TLS certificate checks, Stripe app health and application metrics, posted to a Slack channel. Hermes pulls in the skills it needs and builds the job. The speaker says these jobs are practically free because no agent is involved. To act on an alert, the user tags the bot in chat, which keeps the existing context.",
+   "t": "2:25"
+  },
+  {
+   "idea": "A Slack-connected Hermes bot is pitched as a company second brain, built from evolving memory and skills that turn observed work into reusable workflows.",
+   "detail": "Team members invoke the bot directly. Over time it creates a skill describing the company, its tasks and progress, and it can help a project manager track goals and assign or update tasks. The speaker claims OpenClaw cannot sustain this because its single soul file bloats and must be reset.",
+   "t": "4:54"
+  },
+  {
+   "idea": "Gmail is connected through a Google Cloud project's credentials and a callback token, and a Hermes webhook drafts replies to potential leads.",
+   "detail": "The webhook watches incoming email, flags likely prospects, writes replies from company context, and can schedule a meeting against open calendar slots. The speaker does not discuss human review for these outbound replies, unlike the social posting flow.",
+   "t": "6:22"
+  },
+  {
+   "idea": "A PRD saved as a skill loads only when needed and stays in the fresh part of the context window; a weekly cron job uses it to track competitors.",
+   "detail": "The speaker argues a plain document is worse for this because it is not loaded selectively. The cron job maintains a competitor list, writes competitive analysis files and updates the PRD with candidate features. The weekly cadence is justified by how often competitors ship.",
+   "t": "7:32"
+  },
+  {
+   "idea": "Social posting uses a drafts-then-publish split: a skill turns a video script into X and LinkedIn drafts in a folder, and publishing happens only after human review.",
+   "detail": "The X post is checked against the character limit. The skill is loaded with a slash command and the skill name, then given the script. A second step, after review, asks Hermes to publish through the XURL skill.",
+   "t": "9:58"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Pre-LLM gating with a wake-agent flag",
+   "how": "In a cron job script, add a check that decides at runtime whether to call the LLM. If the check is false, skip the model call. The speaker's examples are cost-spike detection and new one-star Google Play reviews. The exact flag syntax and config are not shown in the transcript.",
+   "when": "Scheduled monitoring where most runs find nothing actionable, so you pay for a model only when a change is detected."
+  },
+  {
+   "name": "No-agent cron jobs for deterministic checks",
+   "how": "Create a cron job with the no-agent flag set to true. It runs a plain scheduled check (TLS validity, Stripe app health, service metrics) and posts results to a Slack channel. To act on an alert, tag the Hermes bot in chat and describe the action.",
+   "when": "Deterministic health checks that need no reasoning, where you still want the agent's context and setup convenience."
+  },
+  {
+   "name": "Ask the agent to build the automation from a prompt",
+   "how": "Describe the job to Hermes in chat. It pulls in the skills it needs and writes the cron job or webhook itself. The speaker shows this for no-agent cron jobs, webhooks and competitor tracking.",
+   "when": "Setting up recurring or event-driven jobs quickly when you would rather not hand-write the scripts."
+  },
+  {
+   "name": "Draft-then-publish content skill with human review",
+   "how": "Create a skill that takes a video script and writes X and LinkedIn drafts into a specific folder, enforcing the X character limit. A person reviews and edits the drafts. Then ask the agent to publish the approved posts; it invokes the XURL skill to post them.",
+   "when": "Repurposing long-form content into social posts where errors or off-brand wording must be caught before publishing."
+  },
+  {
+   "name": "PRD as a skill plus scheduled research",
+   "how": "Store the PRD as a skill rather than a plain document, so it loads on demand and stays near the top of the context window. A weekly cron job reads competitor sources, writes per-competitor analysis files, and updates the PRD with suggested features.",
+   "when": "A long-lived product spec that must stay current with competitor activity without manual checking."
+  },
+  {
+   "name": "Gmail lead-triage webhook",
+   "how": "Create a Google Cloud project and get its credentials, then add them to Hermes together with the callback token to connect Gmail. Ask Hermes to build a webhook that scans incoming email for likely leads, drafts replies from company context, and can schedule meetings against calendar openings. The transcript does not show the webhook config.",
+   "when": "Inbound lead handling where you accept automated replies. The transcript includes no approval step for these outbound emails."
+  },
+  {
+   "name": "Profiles for isolated personas",
+   "how": "Create separate profiles, each with its own memory and skills, and run several in parallel from the desktop app, delegating tasks to each. The transcript does not show the profile commands.",
+   "when": "Keeping distinct roles or clients apart so one persona's memory and skills do not leak into another's."
+  }
+ ],
+ "tools": [
+  "Hermes Agent (desktop app and TUI)",
+  "OpenClaw",
+  "Claude Code (transcribed as \"clawed code\")",
+  "cron",
+  "Slack",
+  "Stripe",
+  "Stripe MCP",
+  "AWS",
+  "Gemini API",
+  "Google Play API",
+  "Gmail",
+  "Google Cloud",
+  "Google Workspace skills",
+  "webhooks",
+  "XURL skill (X posting)",
+  "Brilliant (sponsor)"
+ ],
+ "numbers": [
+  {
+   "claim": "Full video length is 11:48. The competitor-analysis cron job runs weekly.",
+   "t": "8:43"
+  },
+  {
+   "claim": "Sponsor offer: 20% off the annual plan for viewers.",
+   "t": "9:58"
+  },
+  {
+   "claim": "No benchmarks, token counts or cost savings figures are given. The cost-savings claims (for example, the no-agent jobs are practically free) are qualitative.",
+   "t": "2:25"
+  }
+ ],
+ "hot_takes": [
+  "Hermes is presented as clearly superior to OpenClaw, but the comparison rests on the speaker's assertion and the demo, with no measurements.",
+  "OpenClaw's single-file memory is said to bloat and force resets, which is asserted and not demonstrated.",
+  "The second-brain claim that Hermes knows you better than your mom is hyperbole.",
+  "Auto-replying to potential leads by email is shown with no human review step, while the social posting flow explicitly adds one.",
+  "The sponsor segment (Brilliant) sits in the middle of the content and is unrelated to Hermes."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness covers loops and schedules around the Claude Code CLI, and this video shows a pattern for scheduled agent runs where a cheap deterministic check decides whether to invoke the model.",
+   "action": "Prototype a pre-check step for scheduled ProsHarness runs that skips the Claude Code invocation when there is no new input, and log the skip rate to measure token savings."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The wake-flag and no-agent patterns relate to budget control and cost gating, but AgentOS handles this at the proxy layer, and the video offers no measurements.",
+   "action": "Consider whether the Govrix budget layer should support a pre-invocation gate for scheduled agent jobs, or leave gating to the caller."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

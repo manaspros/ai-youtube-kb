@@ -1,0 +1,144 @@
+{
+ "one_line": "Spotify's AI Foundation tech lead explains how it personalizes recommendations with user embeddings, semantic IDs for catalog items, and soft user tokens fed into a fine-tuned open-weight LLM.",
+ "summary": "Shivam Verma, tech lead of the user representations team at Spotify's AI Foundation org, describes how Spotify is moving from siloed multi-stage recommenders to a single generative recommender built on an LLM backbone. He covers three parts: user modeling (sequence-based user embeddings generated daily for over a billion users), catalog understanding (semantic IDs that compress item vectors into about four to six hierarchical tokens), and steerability (a user's editable text profile fed back into the model). The key technique is projecting a user's embedding into the LLM's input space as a soft token, so one shared model can personalize per user without training on every user's data. He says the next-episode recommendation work is in production with positive internal metrics, but gives no lift numbers. The Taste Profile product is live in a few markets. This is a practitioner overview with little method detail, and parts of it are company promotion.",
+ "speakers": [
+  "Shivam Verma"
+ ],
+ "orgs": [
+  "Spotify"
+ ],
+ "format": "talk",
+ "topics": [
+  "training-finetuning-rl",
+  "context-engineering",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "semantic-ids",
+  "recommender-systems",
+  "user-embeddings",
+  "soft-tokens",
+  "generative-recommendation",
+  "domain-adaptation",
+  "taste-profile",
+  "catastrophic-forgetting",
+  "open-weight-llms"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Spotify is moving from many per-product recommenders to one unified generative model",
+   "detail": "Traditional recsys ran candidate generation (millions to a few hundred items) followed by one or more rankers, with each product team owning its own model. The direction is a single model with an LLM-like backbone that users can steer in natural language.",
+   "t": "5:56"
+  },
+  {
+   "idea": "User embeddings are now a sequential model over interaction history, not a generic compressor",
+   "detail": "The earlier approach was an autoencoder that compressed user features into a small vector. The newer approach uses a transformer where the user's interaction history sits in the prompt as context, together with the request context, query, product surface and candidate item.",
+   "t": "7:19"
+  },
+  {
+   "idea": "Semantic IDs let an LLM generate catalog items one token at a time",
+   "detail": "A roughly 1,000-dimensional item vector is quantized into about four to six hierarchical tokens. Related items share leading tokens (the speaker's example: two pop artists share their first two tokens), and the tail tokens encode finer niches. The LLM then autoregressively predicts the next track or episode.",
+   "t": "13:28"
+  },
+  {
+   "idea": "Domain adaptation is continued pretraining or SFT on tokenized listening histories",
+   "detail": "The open-weight LLM is trained on sequences where items appear as semantic IDs. The prompt holds a user's tokenized listening history plus the current item, converted from a Spotify URI to its semantic ID, and the target is the next item.",
+   "t": "14:41"
+  },
+  {
+   "idea": "A soft user token gives per-user personalization without training on every user",
+   "detail": "The user representation is projected into the LLM's embedding space and inserted into the prompt as a soft token. The token changes with each user, so one shared model can personalize its response. The speaker says this is needed because training data cannot cover 750M+ users.",
+   "t": "17:22"
+  },
+  {
+   "idea": "Fine-tuned LLMs bring world knowledge, explainability and steerability, with a forgetting cost",
+   "detail": "Combining Spotify's interaction knowledge with open-weight LLM world knowledge gives steerability and explanations. The trade-off is catastrophic forgetting, which the speaker says has been manageable in practice.",
+   "t": "12:08"
+  },
+  {
+   "idea": "An editable taste profile feeds user corrections back into the generative model",
+   "detail": "The Taste Profile product shows users a text description of who they are. Users can chat to add or remove taste, and those edits flow back into the model. This is the steerability piece of the design.",
+   "t": "18:43"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Semantic ID tokenization of item embeddings",
+   "how": "Quantize each item's embedding into about 4-6 hierarchical discrete tokens, so similar items share prefixes. Use those tokens as the vocabulary when training the LLM.",
+   "when": "When an LLM must autoregressively generate items from a large catalog and raw IDs or long vectors do not fit the token-prediction setup."
+  },
+  {
+   "name": "Soft user token injection",
+   "how": "Project a user representation vector into the LLM's input embedding space and insert it into the prompt as one soft token, recomputed for each user.",
+   "when": "When you want personalization inside a shared LLM without fine-tuning per user or training on every user's data."
+  },
+  {
+   "name": "Tokenized listening-history prompting for domain adaptation",
+   "how": "Format the user's history and the target item as semantic-ID tokens, then train the LLM to predict the next item.",
+   "when": "When adapting an open-weight LLM to a proprietary behavioural catalog for next-item recommendation."
+  },
+  {
+   "name": "Daily batch user-embedding generation",
+   "how": "Recompute user embeddings for the full active base every day as a large pipeline, then feed them to downstream models.",
+   "when": "When many downstream recommenders need a shared, up-to-date user representation at a scale of a billion users."
+  },
+  {
+   "name": "User-editable text profile as a steering signal",
+   "how": "Show users a text summary of their taste, let them edit it by chat or message, and feed the edits into the generative model.",
+   "when": "When you want users to control personalization directly and the model needs corrections without retraining."
+  }
+ ],
+ "tools": [
+  "Llama",
+  "Qwen"
+ ],
+ "numbers": [
+  {
+   "claim": "About 750 million monthly active users",
+   "t": "2:26"
+  },
+  {
+   "claim": "Catalog of over 100 million tracks, millions of podcasts, roughly 400,000 audiobooks, and growing video episodes",
+   "t": "2:26"
+  },
+  {
+   "claim": "Available in about 184 markets",
+   "t": "3:21"
+  },
+  {
+   "claim": "User embeddings generated every day for over a billion users, including inactive users",
+   "t": "7:19"
+  },
+  {
+   "claim": "Semantic IDs compress a roughly 1,000-dimensional item vector into about 4-6 tokens",
+   "t": "13:28"
+  },
+  {
+   "claim": "Discover Weekly has been around since about 2015",
+   "t": "3:21"
+  }
+ ],
+ "hot_takes": [
+  "The speaker says recommenders are moving away from siloed per-product models toward a single generative model with an LLM backbone.",
+  "The speaker says that using an LLM for recommendations gives explainability and steerability almost for free, with catastrophic forgetting as the main cost.",
+  "The speaker claims a soft user token can personalize a shared LLM better than the usual approach, and says the next-episode model is already in production."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk is about per-user state that is compressed into a vector and inserted into a shared model. That relates loosely to MemoryMesh's cross-session memory, but the domain is recommendation, not agent memory.",
+   "action": "Read the soft-token idea as a possible alternative to replaying full history in MemoryMesh: compare a learned per-user vector injected as one prompt token against raw retrieval for cross-session personalization."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content on checkpointing, harness design, planning, or Claude Code workflows.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

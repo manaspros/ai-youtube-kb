@@ -1,0 +1,43 @@
+# The Small Model Infrastructure Nobody Built (So We Did) — Filip Makraduli, Superlinked
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `qdh_x-uRs9g` · [watch](https://youtu.be/qdh_x-uRs9g) · **date:** 2026-05-18 · **length:** 18:30 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Filip Makraduli · **orgs:** Superlinked
+- **topics:** inference-serving, rag-retrieval, infra-cost-scaling · **tags:** small-models, inference-engine, hot-swap, lru-eviction, varlen-flash-attention, padding-waste, encoders, rerankers, colbert, ner, gliner, context-rot, autoscaling, prometheus, terraform, helm, spot-instances, superlinked, open-source-launch
+
+> Superlinked's Filip Makraduli on why small models (embeddings, rerankers, NER) need their own inference layer, and the open-source SIE engine built to serve them on shared GPUs.
+
+## Summary
+The speaker, an ML engineer who said he had a blind spot around production inference, joined Superlinked's infra team to build a serving layer for small models used in AI search and document processing. He argues that agents suffer from context rot, so preprocessing data with small models (filtering, NER, classification, tool calls) keeps agent context smaller and makes grep and file-system workflows better. He says small models each use only a few GB, so one GPU per model wastes capacity, and describes hot-swapping several models on one GPU with least-recently-used eviction. He says no open-source tool then took teams from model inference to production (routing, autoscaling, queuing, Prometheus monitoring) at scale, and that Superlinked's answer covers both model support and cluster provisioning. On the model side he explains that BERT, Qwen, ModernBERT and ColBERT-style models differ in normalization, QKV fusion and positional embeddings, so they re-implemented the forward pass with variable-length flash attention to avoid padding waste. On the infra side he describes three API primitives (encode, score, extract), a router and queue over GPU pools that use spot and larger instances, autoscaling on Prometheus metrics, and models defined as config applied with Terraform and Helm. The talk ends with the open-sourcing of the engine (SIE) and the repo; it is partly a launch pitch.
+
+## Key ideas
+- **Context rot is the reason to put small models in front of agents** — Quality drops as context grows, so the speaker suggests small models should preprocess and filter data before the agent sees it. Using a small model as a tool to retrieve or classify is another option. He says this also improves grep and file-system workflows, not just vector search. ([3:45](https://youtu.be/qdh_x-uRs9g?t=225))
+- **Small models should share GPUs instead of each getting one** — Embedding models, rerankers and NER models (e.g., GLiNER) each use only a few GB. One GPU per model leaves most of it idle. Hot-swapping several models on one GPU, with least-recently-used eviction, raises utilization and lowers cost, and lets a tool switch between models quickly. ([7:35](https://youtu.be/qdh_x-uRs9g?t=455))
+- **Model inference alone does not get you to production** — Engines such as vLLM or TEI cover the server, but routing, autoscaling, queuing, GPU provisioning and Prometheus/Grafana monitoring are left to the team. The speaker says no open-source project spanned model inference through production at this scale, and that gap is what the talk's project targets. ([8:57](https://youtu.be/qdh_x-uRs9g?t=537))
+- **Open-source small models beat managed services on narrow tasks** — He says on narrow benchmark tasks (he cites MTEB-style evals) open models beat managed APIs, and that small Gemma models score above much larger models on ELO. Because of that, the infra must support a wide range of open models, not just a few. He says there are millions of open models on Hugging Face (about three million, per a March count). ([9:59](https://youtu.be/qdh_x-uRs9g?t=599))
+- **Architectures differ enough that one engine does not fit all** — BERT, Qwen and ModernBERT differ in normalization, flash-attention implementation and positional embeddings (absolute vs rotary). ColBERT-style late-interaction models output multiple vectors, and cross-encoders output only a score. Supporting these means re-implementing the forward pass per family rather than using one generic path. ([11:25](https://youtu.be/qdh_x-uRs9g?t=685))
+- **Variable-length flash attention removes padding waste in token batching** — With token-based batching, a short request padded to the longest one in the batch wastes compute on empty tokens. The speaker says variable-length flash attention, with fused QKV where the architecture allows it, is a key differentiator for his approach. ([12:43](https://youtu.be/qdh_x-uRs9g?t=763))
+- **The infra layer is three primitives plus a router, a queue and GPU pools** — The API exposes encode, score and extract. Behind it sit a router, a queue, and pools of GPUs (spot instances plus larger GPUs) that autoscale on Prometheus metrics. Models are plain config, applied with Terraform, and Helm charts and Docker images are published. ([14:06](https://youtu.be/qdh_x-uRs9g?t=846))
+
+## Techniques
+- **Hot-swap many small models on one GPU with LRU eviction** — Keep several small models (embedder, reranker, NER) loaded on one GPU. When memory is full, evict the least recently used model and load the requested one. *When:* Many small models, each only a few GB, with uneven or bursty use. Avoids one idle GPU per model.
+- **Re-implement the forward pass per model family** — For each architecture, adjust attention, normalization, positional embeddings and QKV fusion. Add variable-length flash attention with padding-free token batching. Handle late-interaction and score-only heads as separate output types. *When:* A single serving engine must support many encoder and reranker families (BERT, ModernBERT, Qwen, ColBERT, cross-encoders) efficiently.
+- **Small-model preprocessing in front of the agent** — Use small models to filter, classify (e.g., taxonomy), extract entities into an ontology or knowledge graph, or act as retrieval tools, so the agent gets less and cleaner context. The speaker also notes this helps grep-based workflows. *When:* Agent context is growing and quality is dropping (context rot), or the workflow needs cheap structured extraction before a large-model call.
+- **Models as config, cluster as code** — Define each model as a config entry, apply with Terraform, and deploy with Helm. Autoscale GPU pools on Prometheus metrics, with a router and queue in front of encode, score and extract endpoints. *When:* Running a changing set of small models in production and needing reproducible provisioning with metric-based scaling.
+
+## Numbers
+- Small models such as embedders, rerankers and GLiNER NER models each occupy only a few GB of GPU memory ([7:35](https://youtu.be/qdh_x-uRs9g?t=455))
+- Speaker says there are millions of models on Hugging Face (about 3 million as of a March count) and that the engine supports hundreds of models ([9:59](https://youtu.be/qdh_x-uRs9g?t=599))
+- Speaker says small Gemma models have ELO scores above much larger models ([9:59](https://youtu.be/qdh_x-uRs9g?t=599))
+- Speaker says open-source models beat managed services on narrow benchmark tasks such as MTEB-style evals (no figures given) ([9:59](https://youtu.be/qdh_x-uRs9g?t=599))
+- Engine tested with partners including Chroma, Qdrant, Weaviate and LanceDB ([2:24](https://youtu.be/qdh_x-uRs9g?t=144))
+
+## Hot takes
+- There is no open-source solution that goes from model inference to production at scale for small models, so one had to be built.
+- Using open-source small models is no longer a sacrifice: on narrow tasks they beat managed services.
+- Grep and file-system agents work better when the data has been preprocessed by small models first.
+
+## Tools mentioned
+vLLM, Prometheus, Grafana, Terraform, Helm, Docker, Hugging Face, FlashAttention, Chroma, Qdrant, Weaviate (transcribed as VV8), LanceDB (transcribed as LensDB), GLiNER, ColBERT, Gemma, Qwen, ModernBERT, SIE (Superlinked Inference Engine, open-sourced at this talk)
+
+## Relevance to our work
+- **agentos** (2/3): InferCraft runs vLLM and Ray Serve on one RTX 5090 with a priority scheduler. The talk's LRU hot-swap of small encoder, reranker and NER models on one GPU bears on the same single-GPU constraint, and MemoryMesh's retrieval depends on such models. → *Benchmark LRU hot-swapping of the embedder, reranker and NER models for MemoryMesh on the single RTX 5090 against one-model-resident serving, measuring GPU utilization and swap latency.*

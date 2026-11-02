@@ -1,0 +1,165 @@
+{
+ "one_line": "Driving the n8n MCP from Claude Code works better with a phased, file-based workflow: plan, research, build and validate in separate sessions, delete-and-recreate on update, and OAuth instead of API keys.",
+ "summary": "The host shows how to build n8n automation workflows by prompting Claude Code connected to the n8n MCP server, instead of dragging nodes by hand. He argues Claude Code beats Claude Desktop for this because each step can run in a fresh context, which limits hallucination and error buildup in multi-step workflows. Before building, check that the n8n instance version matches what the MCP assumes, since mismatched nodes were a main failure. His main method splits the work into phases that each write a file: planning writes usecase.md, research writes node research notes, build writes workflow.json, and a separate validation session checks the result. He clears the context between phases because MCP responses are large. He also reports two rules from failures: rebuild workflows by deleting and recreating them because the ApplyDiff update tool kept failing for him, and use n8n's OAuth login for Google services instead of asking for API keys. For a node that misbehaves, he isolates it in a single-node test workflow, fixes it there, then moves the fix back. The example is a Gmail meeting scheduler. He reports lower error rates after the rebuild but gives no figures, and the video includes a sponsor segment for Gamma.",
+ "speakers": [
+  "Unnamed AI LABS host"
+ ],
+ "orgs": [
+  "n8n",
+  "Anthropic",
+  "OpenAI",
+  "Google",
+  "Gamma"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "coding-agents",
+  "claude-code",
+  "context-engineering",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "n8n",
+  "n8n-mcp",
+  "claude-code",
+  "workflow-automation",
+  "phased-workflow",
+  "context-window",
+  "oauth",
+  "delete-recreate",
+  "node-isolation-debugging",
+  "claude-md"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The n8n MCP server does two jobs: it pulls current node documentation and writes a workflow JSON file locally, and it pushes that workflow to the n8n instance.",
+   "detail": "Node docs come from the MCP, so the prompt does not need to include node or API details. The MCP is registered per folder in Claude Code, so it only works in the folder where the command was run.",
+   "t": "2:15"
+  },
+  {
+   "idea": "Claude Code is argued to beat Claude Desktop for multi-step workflows because each step can run in a fresh context.",
+   "detail": "The host says a single long context leads to hallucinated fields and accumulated errors, which limits Desktop to simple workflows. Splitting work into agent steps with fresh contexts is his proposed fix. No measurements are given.",
+   "t": "3:20"
+  },
+  {
+   "idea": "Check the n8n instance version before building, because the MCP assumes the latest version and mismatched nodes follow.",
+   "detail": "He updated n8n first, ran the MCP health check, then ran a built-in diagnostic that returned true. Outdated nodes in the MCP docs were largely fixed by the time of the video.",
+   "t": "4:35"
+  },
+  {
+   "idea": "Use delete-and-recreate for workflow updates, because the MCP's ApplyDiff update tool failed every time for him.",
+   "detail": "The rule is to delete the old workflow, then create and push a fresh one. He admits this causes side effects that he deals with later in the video.",
+   "t": "6:48"
+  },
+  {
+   "idea": "Adopt an OAuth-first policy for Google services.",
+   "detail": "The generated workflows first asked for Google Cloud API keys for Calendar and Gmail. n8n's OAuth login connects these with a Google account login and no manual key handling.",
+   "t": "7:20"
+  },
+  {
+   "idea": "Split the work into phases. Each phase writes a file, and the next phase reads that file in a fresh session.",
+   "detail": "Planning writes usecase.md. Research reads it and writes node research notes. Build reads both and writes workflow.json, fetching only the nodes found in research. A separate validation session checks every node's config against the docs. The host says MCP responses are large enough to overflow the context window if the phases are merged.",
+   "t": "8:02"
+  },
+  {
+   "idea": "Ask the model to verify node fields against the official docs, because it invents parameters even when the docs are available.",
+   "detail": "When asked to check against the documentation, it fixed the invented fields. This is why he added a separate validation phase, since the MCP's own validator checks differently and misses some issues.",
+   "t": "9:23"
+  },
+  {
+   "idea": "Debug a misbehaving node by isolating it in a new workflow that contains only that node, then port the fix back.",
+   "detail": "His example is a calendar availability check that returned unexpected output. Debugging the single node in isolation was faster than repeated fixes inside the full workflow.",
+   "t": "11:50"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Phased file-based workflow pipeline",
+   "how": "Phase 1 (plan): give the initial prompt without naming services or nodes; the model brainstorms the tools needed and saves usecase.md. Phase 2 (research): new session, read usecase.md, query node docs through the MCP, save node research notes (named node research.md in the video; likely noderesearch.md). Phase 3 (build): new session, read usecase.md and the research file, fetch only the nodes found in research, write workflow.json and push it. Phase 4 (validate): new session, read workflow.json, use the tools to confirm each node's config and that no fields mismatch.",
+   "when": "Multi-step n8n or other workflows where MCP documentation output would overflow one context window, or where a single session hallucinates node fields."
+  },
+  {
+   "name": "Clear context between phases",
+   "how": "Run /clear after each phase is saved to a file, so the next phase starts with a fresh window. All state carries over through the files, not the chat.",
+   "when": "Any multi-phase agent run where earlier phases produced large tool output that is no longer needed."
+  },
+  {
+   "name": "Put standing rules in CLAUDE.md",
+   "how": "Place the workflow rules (delete-and-recreate, OAuth-first, phase file names) and instructions about which files to read at startup in CLAUDE.md, so they load when the session starts.",
+   "when": "Rules that must hold in every session of a project."
+  },
+  {
+   "name": "Pre-build version and health check",
+   "how": "Before building, confirm the n8n instance version is current. Run the MCP health check (it reports a success status) and then the built-in compatibility diagnostic. Continue only when both are true.",
+   "when": "Before any build against a self-hosted or lagging n8n instance, to avoid node mismatches."
+  },
+  {
+   "name": "Delete-and-recreate instead of in-place update",
+   "how": "When changing a workflow, delete the previous workflow in n8n first, then create a fresh one and push it. Do not rely on the MCP ApplyDiff tool, which failed every time for him.",
+   "when": "Workflow updates through the n8n MCP when the diff tool is unreliable. Plan for the side effects of recreating the workflow."
+  },
+  {
+   "name": "OAuth-first credentials",
+   "how": "For Google Calendar, Gmail and similar services, open the credential section in n8n and sign in with the Google account via OAuth. Do not ask the agent for Google Cloud API keys.",
+   "when": "Any n8n workflow that needs Google services. Applies the OAuth-first policy from the video."
+  },
+  {
+   "name": "Single-node isolation debugging",
+   "how": "When one node misbehaves even though the docs look right, ask the model for a new workflow that contains only that node and its config. Test and fix it there, then copy the corrected configuration back into the main workflow.",
+   "when": "A node that fails only inside a complex workflow, often because it depends on an external platform's behavior that the docs do not show."
+  },
+  {
+   "name": "Documentation re-check prompt",
+   "how": "When the generated workflow has invented or wrong node parameters, prompt the model to verify each field against the official documentation. He reports this fixed the errors.",
+   "when": "After a build or validation pass shows nonexistent or misconfigured node fields."
+  }
+ ],
+ "tools": [
+  "n8n",
+  "n8n MCP server",
+  "Claude Code",
+  "Claude Desktop",
+  "Claude.md (CLAUDE.md)",
+  "OpenAI node in n8n",
+  "Google Calendar node",
+  "Gmail",
+  "Google Cloud Platform",
+  "Brave Search (from the previous video)",
+  "Gamma (sponsor segment)"
+ ],
+ "numbers": [
+  {
+   "claim": "Video length is 12:46; the host reports no benchmark or error-rate figures. He says error rates 'dropped significantly' after rebuilding the Gmail meeting scheduler with the phased method, with no numbers given.",
+   "t": "10:46"
+  },
+  {
+   "claim": "The validated workflow uses four separate sessions: plan, research, build and validate, with a clear between each. The rebuilt workflow is a Gmail-to-calendar meeting scheduler: classify the email with the OpenAI node, check availability, then send a confirmation or a no-availability email.",
+   "t": "8:02"
+  }
+ ],
+ "hot_takes": [
+  "Quality is capped at 2 because the video has a sponsored segment for Gamma (about 0:45 to 1:50). The workflow content itself is practitioner-level.",
+  "The title says the viewer has been using the n8n MCP wrong, but the 'correct workflow' rests on the host's own experience. There are no measurements, and the claim that error rates dropped is unquantified.",
+  "The ApplyDiff failure and the Claude Code versus Claude Desktop accuracy argument are one person's observations. The video does not test either claim against a baseline.",
+  "Calling Claude Code 'the best agent out there' is an opinion, not supported in the video.",
+  "The phased file handoff is the most reusable idea. It maps closely to plan, critique and checkpoint flows in a harness like ProsHarness, and it is the strongest actionable point here."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Its plan → critique → debate loop and checkpoint/resume goals match the file-per-phase handoff with a fresh session per phase. The video shows that pattern working for a multi-step build.",
+   "action": "Compare the usecase.md → research → workflow.json → validate handoff with ProsHarness's plan/critique loop. Check whether each phase can checkpoint to a file and resume in a clean session."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Context-window management for large tool output is a real design issue. The video's rule is to write MCP output to files and clear context, rather than keep it in the window.",
+   "action": "When designing tool-result handling for agents, test writing large MCP or tool responses to a file and passing only the path into the next step."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

@@ -1,0 +1,179 @@
+{
+ "one_line": "Jared Joselowitz (Ufonia) on shipping a clinical voice agent to patients without A/B tests or rollback, using simulated patients, a calibrated LLM judge, and prompt optimization gated by hazard-linked evidence.",
+ "summary": "Jared Joselowitz, a research engineer at Ufonia, explains how his team proves Dora, a voice AI agent that phones patients for post-op and pre-op clinical calls, is safe before patients hear it. Normal software practices fail here because patients cannot be A/B tested, a spoken call cannot be rolled back, and benchmark numbers are no defense in a regulatory review. The team starts from a list of harms and builds Matrix, a simulation framework where an LLM plays the patient (PatBot) and a second LLM judge (BevJudge) grades each conversation against hazards written with clinicians. The judge was checked against 10 clinicians on a 240-example corpus and reached an F1 of 0.96 with near-perfect sensitivity, which the speaker says was on par with or slightly better than the experts. Prompts are then tuned with GEPA, a reflective prompt optimizer, using a cost-weighted metric that penalizes missed red flags more than false alarms. Releases move through staged gates (simulation, user testing, supervised clinical evaluation, monitored deployment), with autonomy expanded only as evidence accumulates. The speaker closes by saying the same framework extends to voice, where back-channeling and interruptions break text-only evals.",
+ "speakers": [
+  "Jared Joselowitz"
+ ],
+ "orgs": [
+  "Ufonia"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "testing-verification",
+  "voice-multimodal",
+  "product-ux"
+ ],
+ "tags": [
+  "healthcare",
+  "safety-case",
+  "simulation",
+  "llm-as-judge",
+  "prompt-optimization",
+  "GEPA",
+  "DSPy",
+  "hazard-analysis",
+  "staged-rollout",
+  "voice-agent",
+  "regulation",
+  "cost-matrix-metric"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Three constraints remove the normal safety nets for a patient-facing model.",
+   "detail": "No A/B testing on patients (randomizing people into a worse variant is unethical and often illegal), no rollback once a call has happened, and a model card or vendor benchmark score is no defense in post-market review.",
+   "t": "1:11"
+  },
+  {
+   "idea": "Start from the harm, not the feature.",
+   "detail": "The team lists concrete ways a patient could be hurt (missing a red flag such as sudden vision loss, hallucinating a medical answer, ignoring distress) and counts 20 to 40 documented hazards. Every test is tied back to one of them.",
+   "t": "3:41"
+  },
+  {
+   "idea": "Simulation replaces the reactive ship-watch-rollback loop.",
+   "detail": "Self-driving cars trained on millions of simulated miles before touching roads. The team argues the same logic applies: hazards cannot be run on real people as a first pass, so simulation is the inner loop and real patients are the outer loop.",
+   "t": "5:10"
+  },
+  {
+   "idea": "The simulated patient must be realistic enough to be a valid test, and that is checked two ways.",
+   "detail": "A script-adherence check filters out models that ignore scenario instructions. A patient-and-public-involvement study then showed real patients pairs of real and simulated conversations; in 3 of 4 sets, most people judged the simulated patient to be more realistic. The speaker says there is no single realistic patient, so personas must be varied.",
+   "t": "6:39"
+  },
+  {
+   "idea": "An LLM judge can replace human review only after it is validated against expert labels, and sensitivity matters most.",
+   "detail": "BevJudge was checked on 240 conversations labelled by 10 clinicians from 10 specialties. The top judge model (Gemini 2.5 Pro at the time of the paper) reached F1 0.96 and near-perfect sensitivity. The judge returns pass or fail with a reason and the list of hazards triggered. The speaker prefers over-calling hazards to under-calling them.",
+   "t": "9:09"
+  },
+  {
+   "idea": "Hand-tuning prompts is too brittle and slow, so an optimizer runs the loop instead.",
+   "detail": "Formatting changes alone swung one benchmark by 76 points, and reordering few-shot examples moved a model from about 50% to near state of the art. GEPA (genetic-Pareto, from the DSPy authors) runs the metric over the data, has a strong LLM reflect on failures, rewrites the prompt, and keeps a Pareto frontier of prompts until the budget runs out. The speaker reports a run takes 30 to 60 minutes instead of hours to days, and the process is reproducible.",
+   "t": "10:30"
+  },
+  {
+   "idea": "The optimization objective should be a cost matrix written with clinicians, not flat accuracy.",
+   "detail": "Catching a real red flag gets a high reward, missing one is catastrophic, and a false alarm only costs a few extra questions. Changing the priority means changing the metric and re-running the optimizer, not hand-editing the prompt.",
+   "t": "13:04"
+  },
+  {
+   "idea": "Releases move through staged gates, and autonomy grows with evidence.",
+   "detail": "The path is simulation, then user testing, then supervised clinical evaluation with clinicians in the loop at each step, then monitored deployment. Every call, dataset, pinned prompt and judge verdict traces back to the hazard it addresses. The speaker says the deliverable is the evidence, not the model.",
+   "t": "15:49"
+  },
+  {
+   "idea": "The same framework carries over to voice, where text evals miss failures.",
+   "detail": "Back-channeling and interruptions can make an agent drop a safety instruction mid-sentence (for example, avoid bright lights) and wait for the next question. The method is unchanged: write the new hazards, simulate them, and judge them. Voice becomes a new module in the same safety case.",
+   "t": "17:12"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Hazard-first safety case",
+   "how": "Write down concrete patient-harm scenarios with clinicians, then map every scenario, test, prompt version and judge verdict to one of them so evidence is traceable.",
+   "when": "Any product where a bad output can cause real harm and a rollback is not possible, or where regulators ask what could go wrong."
+  },
+  {
+   "name": "Scenario-conditioned simulated user",
+   "how": "An LLM plays the user, with each run conditioned on a scenario that states what the user should try (for example, asking whether the agent is human). Check script adherence first, then check realism with real users in a side-by-side study.",
+   "when": "Testing conversational agents before real users, when hiring actors is too slow to iterate."
+  },
+  {
+   "name": "Calibrated LLM judge",
+   "how": "Build a labelled corpus with several domain experts, measure the judge's F1 and sensitivity against their labels, and have it return pass or fail with a reason and the triggered hazards.",
+   "when": "Grading thousands of transcripts where human review does not scale, and the judge must be trusted for a high-stakes decision."
+  },
+  {
+   "name": "Reflective prompt optimization (GEPA) with a cost-weighted metric",
+   "how": "Define the metric as a cost matrix agreed with domain experts. Run the optimizer over labelled data, let a strong model reflect on failures and rewrite the prompt, and keep the Pareto frontier within a budget. To change the priority, change the metric and re-run.",
+   "when": "Replacing manual prompt tuning when prompts are brittle, the team needs a reproducible process, and the objective is asymmetric (missed positives cost more than false alarms)."
+  },
+  {
+   "name": "Synthetic edge-case generation",
+   "how": "Add synthetic cases for rare symptoms, transcription errors and similar, because the real call data will not contain enough of them.",
+   "when": "Building the optimization dataset for rare but dangerous inputs."
+  },
+  {
+   "name": "Staged gated rollout with evidence-based autonomy",
+   "how": "Move through simulation, user testing, supervised evaluation, then monitored deployment. Expand the system's independence only when the evidence for the current stage supports it.",
+   "when": "Shipping autonomous agents into settings where a regulator or safety review must sign off."
+  },
+  {
+   "name": "Pin prompt versions and keep full traces",
+   "how": "Version every prompt used in production and store the traces and judge verdicts that tie each deployed change to its tests.",
+   "when": "Auditing any agent whose behavior changes with prompt edits or model updates."
+  }
+ ],
+ "tools": [
+  "Matrix (internal simulation framework)",
+  "PatBot (internal LLM patient)",
+  "BevJudge (internal LLM judge)",
+  "GEPA (genetic-Pareto prompt optimizer)",
+  "DSPy (mentioned as the origin of GEPA)",
+  "Gemini 2.5 Pro (judge model at the time of the paper)"
+ ],
+ "numbers": [
+  {
+   "claim": "Dora has done about 200,000 real clinical calls in the UK across 20 hospitals, with a contract to scale to 1 million patients within two years. In the US it is live in 2 clinics, with 6 more signed across 4 states.",
+   "t": "1:11"
+  },
+  {
+   "claim": "Judge (Gemini 2.5 Pro at the time of the paper) reached F1 0.96 with near-perfect sensitivity on a 240-example corpus labelled by 10 clinicians across 10 specialties.",
+   "t": "9:09"
+  },
+  {
+   "claim": "In a patient study with 4 conversation sets, most participants judged the simulated patient more realistic in 3 of the 4.",
+   "t": "8:10"
+  },
+  {
+   "claim": "Formatting changes alone have swung a benchmark by up to 76 percentage points, and reordering few-shot examples moved one model from near 50% to near state of the art.",
+   "t": "10:30"
+  },
+  {
+   "claim": "GEPA optimization produces an optimized prompt in roughly 30 to 60 minutes, versus hours to days of manual prompt engineering.",
+   "t": "11:49"
+  },
+  {
+   "claim": "Documented hazards for this kind of agent number roughly 20 to 40.",
+   "t": "3:41"
+  }
+ ],
+ "hot_takes": [
+  "The model card and vendor benchmark scores do not help in a safety review; the evidence trail for each hazard is the deliverable.",
+  "Over-calling hazards is preferable to under-calling them in clinical settings, so sensitivity is the metric to optimize for.",
+  "Prompt tuning by hand is not reproducible, so prompts should be optimized with a metric instead.",
+  "Once a call is made it cannot be rolled back, so the reactive ship-watch-rollback loop does not work for patient-facing agents."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS already plans RAGAS evals; the talk's point about validating an LLM judge against a small expert-labelled set, and reporting sensitivity, applies to AgentOS evals but is not a direct change.",
+   "action": "When adding LLM-judge metrics to AgentOS evals, label about 200 examples by hand first and report F1 and sensitivity against those labels before trusting the judge."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Staged, evidence-gated autonomy and pinned prompt versions with traces map onto ProsHarness checkpoint/resume and approvals, but the talk does not describe a harness design.",
+   "action": "Record the prompt or skill version used for each checkpointed step so a resumed or failed run can be traced to the exact prompt that produced it."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Recurring interest in evals for agents: the talk gives a concrete method of writing hazards first, deriving scenarios from them, and judging against expert labels, plus asymmetric cost metrics for optimization.",
+   "action": "Read the Matrix paper on arXiv (linked by the speaker) for the scenario-to-judge pipeline and the GEPA setup used for prompt optimization."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

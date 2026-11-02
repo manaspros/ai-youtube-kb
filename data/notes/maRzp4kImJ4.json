@@ -1,0 +1,170 @@
+{
+ "one_line": "Nan Jiang (Modal) argues RL rollouts can run on scattered, elastic GPUs across regions if the trainer syncs only a bit-exact sparse diff of serving-precision weights instead of full checkpoints.",
+ "summary": "Nan Jiang from Modal explains why RL post-training is hard to scale: the default loop ties rollout generation to the trainer's single RDMA cluster, so rollout inherits the scarcest capacity constraint. He proposes splitting the loop so only backprop stays in the tightly coupled trainer while rollout \"islands\" run anywhere, with the trainer publishing policy versions and islands returning trajectories and metadata. The hard part is weight sync: shipping a ~500 GB full checkpoint each step is too slow. His central claim is that in BF16 serving precision, under 1% of rollout-visible weights change per step, because Adam's bounded updates are smaller than the BF16 rounding floor for most weights, so the change can be sent as a lossless index-and-value patch. He reports about 99% of weights are bit-identical between steps across model families, and about 0.05% change per step for one FP8 model once training stabilises. He describes Stitch, his framework-agnostic, async-first implementation with versioned requests, a sidecar that proxies, catches up, or returns not-ready, and a shared bulletin board of weight versions. He closes with open questions on Muon, fully async RL at scale, and generalising beyond RL.",
+ "speakers": [
+  "Nan Jiang"
+ ],
+ "orgs": [
+  "Modal"
+ ],
+ "format": "talk",
+ "topics": [
+  "training-finetuning-rl",
+  "inference-serving",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "reinforcement-learning",
+  "rollout",
+  "weight-sync",
+  "bf16",
+  "fp8",
+  "nvfp4",
+  "elastic-compute",
+  "multi-region",
+  "sparse-updates",
+  "adam",
+  "grpo",
+  "ppo",
+  "stitch"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The default RL loop couples rollout to the trainer cluster, so rollout inherits the trainer's hardest constraint: enough same-region GPUs with fast fabric, available now.",
+   "detail": "Trainer and rollout share one RDMA cluster, which makes weight sync fast but locks rollout capacity to a fixed trainer size. Usable GPUs are scattered across providers and regions, and training capacity cannot grow mid-run just because rollout needs more nodes.",
+   "t": "1:32"
+  },
+  {
+   "idea": "Only backprop needs the tight cluster; rollout serving islands can leave it.",
+   "detail": "Training steps have collectives and need one fast fabric. Rollout jobs have no global reduce between them, so the speaker's movable unit is an independent serving island per policy version, with a light interface: policy version in, trajectory and metadata out.",
+   "t": "3:00"
+  },
+  {
+   "idea": "The full checkpoint is the wrong unit of synchronization across regions.",
+   "detail": "A Kimi-scale checkpoint is about 500 GB and takes minutes to around two hours over commodity links. Async RL still needs weight updates in seconds, so the speaker asks whether a much smaller object can produce the same served version.",
+   "t": "4:58"
+  },
+  {
+   "idea": "Adam's bounded step plus BF16 rounding means most master-weight updates never reach the served weights.",
+   "detail": "BF16 spacing near a value theta is about theta/128, so a change must exceed about theta/256 to flip a stored value. Adam's per-parameter step is roughly the learning rate, which for typical RL settings is far below that floor for most weights. The master weights still move, but the rollout view stays the same that step.",
+   "t": "6:20"
+  },
+  {
+   "idea": "Ship a lossless bit-level patch (changed index plus replacement value, or XOR) rather than an additive delta.",
+   "detail": "Cast weights to the rollout dtype, diff consecutive versions bitwise, and send only changed positions. Because it is bit-level, applying the patch reproduces the exact served checkpoint with no floating-point drift.",
+   "t": "10:32"
+  },
+  {
+   "idea": "Sparsity comes from different sources in full-parameter RL and LoRA.",
+   "detail": "In full-parameter RL, the diff is small by absorption: gradients are dense (about 99% of parameters get non-zero gradients), but most updates are below the rounding floor. In LoRA, the base is frozen and the adapter is small by construction. The speaker says gradient sparsity is not the mechanism.",
+   "t": "11:59"
+  },
+  {
+   "idea": "Lower-precision serving makes the served view change even less per step.",
+   "detail": "Coarser formats such as FP8 and NVFP4 have larger rounding floors, so fewer weights flip each step. The speaker sketches the floor for FP8 and NVFP4 and notes group-scale formats like int4 behave differently.",
+   "t": "12:59"
+  },
+  {
+   "idea": "Stitch makes rollout engines version-aware with a sidecar, so a replica can serve, catch up, or refuse.",
+   "detail": "Requests name the policy version they send and accept, and responses return the version with tokens, logprobs, and router-replay metadata. The sidecar proxies if the engine is at an acceptable version, applies missing diffs if it is behind but can catch up, and returns not-ready otherwise. Weights are materialised locally in a standard checkpoint layout that SGLang and vLLM can load.",
+   "t": "14:57"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Decoupled rollout islands",
+   "how": "Keep backprop and collectives in one RDMA-connected trainer. Run rollout as independent serving islands (one engine or a local group) that consume a policy version and return trajectories plus metadata, with no global all-reduce across islands.",
+   "when": "When rollout capacity is the bottleneck, or when usable GPUs are spread across regions or providers and cannot be pulled into the trainer's cluster."
+  },
+  {
+   "name": "Bit-exact sparse weight diff",
+   "how": "Cast both consecutive trainer checkpoints to the serving dtype, compare them bitwise, and send only (index, replacement value) or an XOR patch. Verify that applying the patch reproduces the served checkpoint exactly.",
+   "when": "When the serving dtype is much coarser than the optimizer master weights and you need low-latency weight sync over slow links."
+  },
+  {
+   "name": "Versioned request contract",
+   "how": "Each rollout request states the policy version it will send and accept. Responses return the version plus logprobs and router-replay data so training can use results from remote engines as if they were in-cluster.",
+   "when": "When training consumes off-policy or async rollouts from heterogeneous, moving engines and must know exactly which weights produced each sample."
+  },
+  {
+   "name": "Sidecar version gate",
+   "how": "Put a sidecar in front of each engine. Proxy if the engine's version is current, apply missing diffs if it is behind but within reach, and otherwise return not-ready so the router sends the request elsewhere.",
+   "when": "When serving replicas can lag the latest weights and stale responses are unacceptable, and replicas need to join or leave elastically."
+  },
+  {
+   "name": "Floor-based update-visibility check",
+   "how": "Estimate the fraction of weights that change in the served dtype by comparing the typical optimizer step size with the rounding half-spacing of that dtype. Confirm empirically by counting bit-identical weights between consecutive versions.",
+   "when": "Before designing a weight-sync path, to decide whether sending diffs is worth it for a given learning rate and serving precision."
+  }
+ ],
+ "tools": [
+  "Modal",
+  "SGLang",
+  "vLLM",
+  "Adam",
+  "BF16",
+  "FP8",
+  "NVFP4",
+  "RDMA",
+  "Stitch"
+ ],
+ "numbers": [
+  {
+   "claim": "Kimi-scale full checkpoint is about 500 GB; full weight sync takes minutes to around two hours over the network.",
+   "t": "4:58"
+  },
+  {
+   "claim": "Target patch size is around 500 MB (hundreds of MB), against 500 GB for the full checkpoint.",
+   "t": "17:56"
+  },
+  {
+   "claim": "Typical RL step takes about 3 minutes; the Adam update at post-training learning rates is more than 1000x smaller than the BF16 rounding boundary (speaker's example: weight 1, boundary about 0.0039).",
+   "t": "9:04"
+  },
+  {
+   "claim": "Speaker gives BF16 spacing at weight 1 as about 0.078 and the half-spacing as 0.0039. Theta/128 gives about 0.0078 spacing, so the 0.078 figure looks like a slip or caption error.",
+   "t": "7:40"
+  },
+  {
+   "claim": "Across model families, about 99% of weights are bit-identical between consecutive steps in the served dtype; the result holds under the stated stillness condition.",
+   "t": "11:59"
+  },
+  {
+   "claim": "About 99% of parameters receive non-zero gradients (dense gradients), so the sparsity is in the served bits, not the gradients.",
+   "t": "11:59"
+  },
+  {
+   "claim": "For an FP8-served model (captioned as 'JRM 4.7 Air', likely GLM-4.7 Air), about 0.15% of weights change in the first step, falling to about 0.05% per step once training stabilises.",
+   "t": "13:58"
+  }
+ ],
+ "hot_takes": [
+  "The full checkpoint is the wrong unit of synchronization for RL; sync should ship what the rollout engine actually serves.",
+  "Full-parameter RL updates look dense in the optimizer but are sparse in the served bits, because most steps fall below the rounding floor of the serving dtype.",
+  "Rollout inference capacity scattered across providers can become one elastic RL resource if weight sync and versioning are handled correctly."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "InferCraft runs vLLM on one local GPU and has no multi-replica RL weight sync. The bit-exact diff idea only matters if InferCraft later hot-swaps LoRA or policy versions across replicas.",
+   "action": "If InferCraft ever hot-swaps adapters or model versions, measure how many served bits actually change between versions before adding a full-reload path. No change needed now."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No overlap with the harness around Claude Code CLI, checkpoint and resume, plan critique, or skill ranking.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Useful background for anyone building RL post-training infra. The rounding-floor argument is a reusable check for when a sync path can be sparse.",
+   "action": "Read the BF16-floor argument before designing any weight-sync or hot-swap path for RL or fine-tuned models."
+  }
+ ],
+ "quality": 4,
+ "depth": "deep",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

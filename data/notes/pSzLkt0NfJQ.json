@@ -1,0 +1,132 @@
+{
+ "one_line": "Better Stack walkthrough of IBM's Bob IDE, which separates ask/code/plan modes and runs a security Review mode with a findings panel and one-click fixes; tested on the ZBank COBOL repo, with a short sponsored-style pitch for the free trial.",
+ "summary": "Better Stack tests IBM's Bob, a Granite-powered IDE pitched as architectural governance rather than vibe coding. The host opens Bob's mode picker (ask, code, plan, custom modes) and shows a /review command that scans for hard-coded secrets, injection risks and OWASP issues, surfacing findings in a triage panel. He asks Bob to modernize the ZBank COBOL repo into a Streamlit Python app, which takes about three minutes and runs functionally, though the UI shows weak design judgment. Each finding has a light-bulb auto-fix that also offers a unit test; the race-condition fix was a one-line SQLite BEGIN IMMEDIATE change. Reviewing the original COBOL found eight issues, but Bob added no tests because there is no COBOL test tooling in the repo. The host closes by preferring IDEs to CLIs for visibility, and mentions a free trial with 40 Bob coins, where the run cost about four coins (roughly 50 cents per coin). The evidence is one demo on one repo, with no benchmarks.",
+ "speakers": [
+  "Andrus"
+ ],
+ "orgs": [
+  "IBM",
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "pr-code-review",
+  "dev-tools"
+ ],
+ "tags": [
+  "ibm-bob",
+  "review-mode",
+  "cobol",
+  "legacy-modernization",
+  "security-scan",
+  "auto-fix",
+  "ide",
+  "granite",
+  "modes",
+  "auto-approval",
+  "streamlit",
+  "sqlite"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Bob separates planning from execution with explicit modes (ask, code, plan, custom) rather than one chat window.",
+   "detail": "The host frames Bob as built for architectural governance, contrasting it with vibe coding, and points to the mode picker at the bottom of the chat.",
+   "t": "1:11"
+  },
+  {
+   "idea": "A slash review command runs a security audit in the IDE and gives a findings panel for triage.",
+   "detail": "Built-in guardrails look for hard-coded secrets, injection risks and weak OWASP practices. A CLI version, Bob Shell, is also available.",
+   "t": "1:11"
+  },
+  {
+   "idea": "Auto-approval can be scoped to a sandbox rather than clicked through.",
+   "detail": "Before the agent acts, a modal lets you pick which actions it may take without asking. The host allowed read and write on the repo only. He admits most people just hit approve.",
+   "t": "3:24"
+  },
+  {
+   "idea": "Each review finding can be auto-fixed, and the fix can be followed by a generated unit test.",
+   "detail": "The light-bulb button fixes an issue, then Bob asks whether to add a test for it and runs the test. A diff view shows the changes.",
+   "t": "4:46"
+  },
+  {
+   "idea": "The COBOL review found eight issues, but the fix flow produced no tests.",
+   "detail": "Bob did not add tests because the legacy mainframe repo has no test framework in it. The host reads this as a sign that the stack was tested manually.",
+   "t": "5:45"
+  },
+  {
+   "idea": "The host prefers IDE panels for approvals and findings over CLI agents, because he cannot see what a CLI agent is doing.",
+   "detail": "This is a stated personal preference, not a measured result.",
+   "t": "6:47"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Mode-separated agent workflow",
+   "how": "Use ask mode for questions, code mode for implementation and plan mode for planning. Define custom modes for other phases. The mode picker is at the bottom of the chat panel.",
+   "when": "When you want planning, coding and review kept as separate phases with different permissions."
+  },
+  {
+   "name": "Scoped auto-approval",
+   "how": "Use the auto-approval modal before the agent starts to pick exactly which actions it may take unattended, such as read and write limited to the repo.",
+   "when": "When you would otherwise approve everything and need a defined sandbox for an autonomous run."
+  },
+  {
+   "name": "Review-then-fix-then-test loop",
+   "how": "Run the slash review command for a security audit. Open a finding, click the light-bulb auto-fix, review the diff, then accept the offer to add a unit test that confirms the fix.",
+   "when": "For triaging security and bug findings in a legacy or unfamiliar codebase where you want each fix verified by a test."
+  },
+  {
+   "name": "Atomic SQLite write for a race condition",
+   "how": "The reported fix for a race condition was to change the SQLite transaction to BEGIN IMMEDIATE so that the write lock is taken up front.",
+   "when": "When a read-then-write sequence on SQLite can race between concurrent writers."
+  }
+ ],
+ "tools": [
+  "IBM Bob",
+  "Bob Shell",
+  "IBM Granite",
+  "ZBank (open-source COBOL repo)",
+  "Streamlit",
+  "SQLite",
+  "COBOL",
+  "VS Code"
+ ],
+ "numbers": [
+  {
+   "claim": "Modernizing the ZBank COBOL repo into a Streamlit Python app took about 3 minutes.",
+   "t": "3:24"
+  },
+  {
+   "claim": "The review on the original COBOL code reported eight issues.",
+   "t": "5:45"
+  },
+  {
+   "claim": "The free trial includes 40 Bob coins. The test run cost about 4 coins, and 1 coin is about 50 cents USD.",
+   "t": "6:47"
+  }
+ ],
+ "hot_takes": [
+  "Bob is built for architectural governance rather than vibe coding.",
+  "IDE panels for approvals and findings give a more structured view than CLI agents, which the host says he cannot follow.",
+  "Most people just hit auto-approval all the time, so scoped sandboxes are rarely used in practice."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "IBM Bob is a closed IDE product. Nothing in the video touches the proxy, memory, inference or observability work in AgentOS.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Scoped auto-approval and the findings-triage loop are close to ProsHarness's approval and review ideas, though the video shows them only in an IDE.",
+   "action": "Compare Bob's scoped auto-approval modal with ProsHarness's phone-driven approvals to see if a per-action permission scope is worth adding."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

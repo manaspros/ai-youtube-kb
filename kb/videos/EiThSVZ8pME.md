@@ -1,0 +1,47 @@
+# Claude Code Mods Can Do Basically Anything...
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `EiThSVZ8pME` · [watch](https://youtu.be/EiThSVZ8pME) · **date:** 2026-10-05 · **length:** 7:37 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Unnamed Better Stack presenter · **orgs:** Anthropic, Better Stack
+- **topics:** claude-code, agent-architecture, dev-tools · **tags:** claude-code-mods, status-line, hooks-vs-mods, hot-reload, plugins, typescript, claude-haiku, usage-limits, slash-commands
+
+> Better Stack demos Claude Code "mods," in-process TypeScript plugins that can draw panes, status lines and rewrite events, by building a subscription-usage HUD and a Haiku-powered fake chat.
+
+## Summary
+The video introduces Claude Code mods, an official feature where a small TypeScript plugin runs inside the Claude Code process on both the CLI and the desktop app. The presenter contrasts mods with hooks: hooks run outside Claude Code and cannot rewrite events, draw UI or replace features, while mods can observe, rewrite or skip events (tool calls, prompt sends, turn finalization) and draw panes, bands, buttons, inputs or a custom spinner. He has Claude Code build a Minecraft-style status line that maps 7-day usage to health, 5-hour usage to saturation, the per-model "Fable" usage to armor and context-window usage to the XP bar, and reports it took about five minutes to build with hot reloading. To get the Fable figure, the mod read the undocumented endpoint behind the /usage command and called it with the logged-in credentials, since the mod API only exposed the 5-hour and 7-day numbers. A second, silly mod streams a fake Twitch chat whose messages come from Claude Haiku reacting to each tool step, using the subscription so no API key is needed. The video closes by noting that mods can rewrite or append to prompts, so installs should be checked.
+
+## Key ideas
+- **Mods are an official Claude Code feature: a small TypeScript file packaged as a plugin that runs inside Claude Code on both the CLI and the desktop app.** — Intended for extra info in a pane or status line, git/PR info, or any custom UI. The presenter says you can describe the mod to Claude Code and let it write the code. ([0:00](https://youtu.be/EiThSVZ8pME?t=0))
+- **Mods are distinct from hooks: hooks run outside Claude Code, mods run inside the process.** — Hooks cannot rewrite events, draw UI or replace features; mods can do all three. Built-in features such as the diff pane and AGENTS.md support are themselves mods. ([1:03](https://youtu.be/EiThSVZ8pME?t=63))
+- **Mods work through an event stream and can observe, rewrite or skip each event.** — Events fire on tool calls, prompt sends and turn finalization. Drawing options include a pane beside the conversation, a band above the prompt, buttons, inputs, and replacing the spinner. ([1:03](https://youtu.be/EiThSVZ8pME?t=63))
+- **Hot reloading lets a mod be rebuilt and refreshed inside the running session without restarting Claude Code.** — Claude Code asks to enable hot reloading for the session. The mod then loads when the current turn ends. The status-line mod took about five minutes to build and then worked with one follow-up fix for a white background. ([2:14](https://youtu.be/EiThSVZ8pME?t=134))
+- **When the mod API lacks a data point, a mod can call undocumented endpoints as the logged-in user.** — The mod API exposed only 5-hour and 7-day usage. The generated mod read the /usage command, found the endpoint it hits, and parsed the response. The presenter's takeaway is that a mod can do roughly anything Claude Code can, using the user's auth. ([3:10](https://youtu.be/EiThSVZ8pME?t=190))
+- **A mod can call Claude Haiku through the user's subscription, so no API key is required.** — The fake-chat mod sends a summary of each file read, bash command and step to Haiku and renders the generated messages in a side pane. The presenter says this is just how it works and needs no separate credentials. ([4:27](https://youtu.be/EiThSVZ8pME?t=267))
+- **Mods are built in a temporary folder that is cleaned up periodically, so the folder must be copied out to keep it.** — Installing into other sessions is done by copying the mod folder into the mods folder. The video does not show the exact paths or the command used. ([3:10](https://youtu.be/EiThSVZ8pME?t=190))
+- **Mods can rewrite or add to prompts, so installs need review before use.** — The presenter's final warning is to check what a mod does before installing it, since it can change prompts entirely. ([6:44](https://youtu.be/EiThSVZ8pME?t=404))
+
+## Techniques
+- **Build a status-line HUD mod by prompting** — Ask Claude Code, for example 'Can you build me a status line mod?', give a visual reference and allow it to download sprites. Accept the hot-reload prompt for the session, then send follow-up fixes such as removing a white background. The mod loads when the current turn ends. *When:* When you want a custom, glanceable display of session or subscription state without writing the code yourself.
+- **Map usage meters to status-bar stats** — Use 7-day usage as one bar, 5-hour usage as another, per-model usage as a third, and context-window percentage as a fourth. The screenshot at 2:14 shows roughly 22% context and 10% of the 7-day allowance. *When:* When you need at-a-glance subscription and context budget tracking while a long agent run is in progress.
+- **Read undocumented usage data from the /usage endpoint** — When the mod API omits a figure, have the mod find the endpoint the /usage slash command calls, then call it with the logged-in credentials and parse the response. *When:* When you need a metric the public mod API does not expose. Expect it to break if the endpoint changes, since it is undocumented.
+- **Reactive commentary from Haiku** — Have the mod forward each tool call, file read and bash command to Claude Haiku via the subscription and render short generated messages in a pane beside the conversation. *When:* For cheap live narration or monitoring of a long-running agent, with no API key setup.
+- **Terminal image fallback** — Render images as text when the terminal cannot show them, using two characters per pixel. The presenter notes this scales poorly when the font size is increased. *When:* When a mod must show images in a terminal that lacks inline image support, and small text output is acceptable.
+- **Reopen a closed mod pane with a slash command** — Run /backseat to bring back the fake-chat pane after closing it. *When:* After closing a pane mod and needing it back.
+- **Persist a mod across sessions** — Copy the mod folder out of the temporary build directory to a permanent location, then copy it into the mods folder of each other session, or ask Claude Code to do this. *When:* Before temp cleanup deletes a mod you want to keep or share.
+
+## Numbers
+- Status-line mod took about five minutes to build (video length 7:37). ([2:14](https://youtu.be/EiThSVZ8pME?t=134))
+- In the screenshot, context window usage is about 22% and 7-day usage is about 10%. ([2:14](https://youtu.be/EiThSVZ8pME?t=134))
+- Mod API exposes only the 5-hour and 7-day usage figures; the per-model figure needed the undocumented /usage endpoint. ([3:10](https://youtu.be/EiThSVZ8pME?t=190))
+- Fallback image rendering uses two characters per pixel. ([3:10](https://youtu.be/EiThSVZ8pME?t=190))
+
+## Hot takes
+- Mods are powerful because they run in-process with the user's login, which also means they can call undocumented endpoints and rewrite prompts. Check what a mod does before installing it.
+- The title 'can do basically anything' overstates the demo. The shown builds are a status-line HUD and a side-pane chat.
+- The hooks-versus-mods distinction (out-of-process observation vs in-process rewriting, drawing and replacing) is the most useful framing in the video.
+
+## Tools mentioned
+Claude Code, Claude Code mods, Claude Code hooks (comparison), TypeScript, Claude Haiku, Claude desktop app, /usage slash command, /backseat slash command, AGENTS.md support, diff pane
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness wraps the Claude Code CLI and needs checkpoints, phone-driven approvals and status display. Mods can observe, rewrite or skip tool-call and turn events in-process, which may be a better hook point than external hooks. → *Prototype a ProsHarness mod that gates tool calls for phone approval and shows checkpoint/run status in a pane, then compare it with the existing hook-based approach.*
+- **agentos** (1/3): Mods observe the same event stream (tool calls, prompt sends, turn end) that SkillForge's agent telemetry mining would need, but only inside a single Claude Code session. → *Compare the mod event stream with the telemetry SkillForge needs to mine for skill candidates; test whether tool-call and turn-end events carry enough signal.*

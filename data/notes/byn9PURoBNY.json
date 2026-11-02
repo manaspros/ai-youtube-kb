@@ -1,0 +1,164 @@
+{
+ "one_line": "Krea's infra engineer on training the from-scratch Krea 2 diffusion transformer at scale: which metrics matter, why to let crashing runs restart, frequent checkpoints, and bursting training and inference across clusters and rented GPUs.",
+ "summary": "Gabriel Menezes from Krea.ai describes the infrastructure used to train Krea 2, a diffusion transformer built from scratch and released as an open-source model with a raw pre-train checkpoint and a fast turbo post-trained version. At scale (128 to 512+ GPUs), runs failed often and often silently, and his team found it cheaper to let jobs crash and restart on the same machines than to swap nodes. The main lesson is to invest heavily in metrics: he recommends removing any GPU above about 78°C, not trusting GPU utilization, and exporting InfiniBand and NVLink error counters, since most failures were cross-node. Checkpointing every 20 to 30 minutes to a fast paid file system (Weka, rather than Ceph) kept checkpoint writes from stalling training. Scheduling uses a queue with two priority tiers in front of Kubernetes, so training can preempt inference on the shared cluster. When the cluster is full of training, Virtual Kubelet creates a fake node that forwards overflow pods to external GPU providers, with taints and a descheduler moving pods back gradually. The talk is an experience report from one company with no benchmarks against alternatives, and it ends with a hiring pitch.",
+ "speakers": [
+  "Gabriel Jorge Menezes"
+ ],
+ "orgs": [
+  "Krea.ai"
+ ],
+ "format": "talk",
+ "topics": [
+  "infra-cost-scaling",
+  "training-finetuning-rl",
+  "inference-serving"
+ ],
+ "tags": [
+  "diffusion-transformer",
+  "pre-training",
+  "gpu-cluster",
+  "kubernetes",
+  "checkpointing",
+  "infiniband",
+  "gang-scheduling",
+  "virtual-kubelet",
+  "preemption",
+  "gpu-bursting",
+  "open-source-model",
+  "krea"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Krea 2 was trained from scratch and released open source",
+   "detail": "Built for creative exploration rather than the usual polished AI look. Two checkpoints are public: a raw pre-train for others to post-train, and a turbo post-trained version that makes an image in under a second.",
+   "t": "0:14"
+  },
+  {
+   "idea": "At scale, failures are frequent and often silent; let crashing runs restart",
+   "detail": "Small experiments ran for days, but at 128 to 512+ GPUs runs crashed every 1 to 24 hours, often with healthy-looking metrics. The team stopped swapping nodes and let the same job restart on the same machines and data.",
+   "t": "3:02"
+  },
+  {
+   "idea": "Metrics are the foundation, and some default ones mislead",
+   "detail": "GPU utilization reads 100% even when the GPU is badly underused, so he tracks tensor core utilization instead. Any GPU above about 78°C is removed immediately, without trying to fix it.",
+   "t": "4:22"
+  },
+  {
+   "idea": "Cross-node network metrics matter most",
+   "detail": "Most failures were cross-node communication problems. DCGM does not export InfiniBand metrics by default, so the team built its own collection for fabric wait time, error types and packet counts. NVLink errors were also collected for single-node faults.",
+   "t": "5:45"
+  },
+  {
+   "idea": "Frequent cheap checkpoints are the main recovery tool",
+   "detail": "The team moved from Ceph, which they did not trust, to a paid high-throughput file system. It can write about a terabyte in under 30 seconds, so checkpointing every 20 to 30 minutes does not stall training.",
+   "t": "8:11"
+  },
+  {
+   "idea": "Training is queued and can preempt inference on one shared cluster",
+   "detail": "Researchers submit jobs without thinking about GPUs. A queue with two priority tiers sits in front of Kubernetes, and admitted training pods can evict inference pods. Queue quotas are set by hand and can drift as nodes come and go, which can break gang scheduling.",
+   "t": "8:11"
+  },
+  {
+   "idea": "Virtual Kubelet bursts overflow pods to external GPU providers",
+   "detail": "A fake Kubernetes node receives pod specs, picks a provider using a cost-based algorithm, translates the spec, deploys, and reconciles state on both sides. Failed remote pods are simply marked failed so Kubernetes creates a replacement.",
+   "t": "10:52"
+  },
+  {
+   "idea": "Taints plus a slow descheduler move inference back safely",
+   "detail": "A taint is added when the cluster has free GPUs and removed when training takes them. The descheduler migrates pods back gradually. A NoExecute taint would evict everything at once and take production down.",
+   "t": "15:02"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Let crashing jobs restart instead of debugging each crash",
+   "how": "Mark the pod failed and let Kubernetes create a replacement. Do not try to recover the failed node in place. Keep checkpoints frequent so each restart loses little work.",
+   "when": "Large multi-node training where crashes are frequent and the same hardware can often run again after a restart."
+  },
+  {
+   "name": "Hard GPU health gate on temperature",
+   "how": "Set a fixed temperature threshold (about 78°C) and remove any GPU above it right away. Ask the provider to replace it.",
+   "when": "Dense GPU clusters where one hot GPU slows the whole job or makes training unstable."
+  },
+  {
+   "name": "Checkpoint every 20 to 30 minutes to a high-throughput file system",
+   "how": "Write full checkpoints to a fast parallel file system so the write does not block training. Measure how long a full checkpoint takes.",
+   "when": "Long pre-training runs where losing progress after a crash is expensive."
+  },
+  {
+   "name": "Two-tier priority queue in front of Kubernetes",
+   "how": "A queue with explicit workload priority sits before the scheduler. Training is admitted first, and training pods can preempt inference pods on the shared cluster. Set queue quotas to match the real node pool.",
+   "when": "One cluster serving both production inference and large training jobs, where training should take priority on idle GPUs."
+  },
+  {
+   "name": "Overflow to external GPUs with a virtual node",
+   "how": "Use Virtual Kubelet to expose an external provider as a fake Kubernetes node. Translate the pod spec for the provider, deploy, reconcile status, and create a replacement when a remote pod fails. Add or remove taints based on free local GPUs, and use a descheduler to move pods back gradually.",
+   "when": "When local GPUs are often full and external rentals are cheaper or are needed as burst capacity."
+  }
+ ],
+ "tools": [
+  "Kubernetes",
+  "Virtual Kubelet",
+  "Kubernetes descheduler",
+  "Kubernetes taints and tolerations",
+  "Queue system (captioned as 'Q') for gang scheduling",
+  "Prometheus",
+  "NVIDIA DCGM",
+  "Weka (parallel file system)",
+  "Ceph",
+  "InfiniBand",
+  "NVLink",
+  "Hugging Face",
+  "vLLM / Ray Serve (not mentioned)"
+ ],
+ "numbers": [
+  {
+   "claim": "Krea 2 turbo returns an image in under a second",
+   "t": "1:38"
+  },
+  {
+   "claim": "Runs crashed after roughly 1 hour to 12 to 24 hours; the team saw shorter runs than an external paper's failure estimate, and runs were under 8 hours",
+   "t": "3:02"
+  },
+  {
+   "claim": "GPU removal threshold: any GPU above about 78°C is pulled",
+   "t": "4:22"
+  },
+  {
+   "claim": "Checkpoints about 1 TB every 20 to 30 minutes, written in under 30 seconds on the paid file system (captioned as 'almost a terabyte of writes' with garbled units; roughly 1.2 TB/s read)",
+   "t": "8:11"
+  },
+  {
+   "claim": "Training scaled through 128, 256 and 512 GPUs, one cluster on InfiniBand",
+   "t": "1:38"
+  },
+  {
+   "claim": "Tensor core utilization rises as image resolution scales from 128 to 1024 px across pre-training, mid-training and post-training",
+   "t": "5:45"
+  }
+ ],
+ "hot_takes": [
+  "GPU utilization is a lie; track tensor core utilization instead.",
+  "If you run large pre-training without InfiniBand metrics, you are doing something wrong.",
+  "Don't swap nodes on every crash; let it crash, restart on the same set, and checkpoint often.",
+  "Silent failures are the real cost; invest in metrics or you will go blind."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "InferCraft runs vLLM and Ray Serve on one 5090 with a 4-class priority scheduler and preemption. The talk's two-tier priority with training preempting inference is a close pattern, but the talk is about multi-node pre-training at much larger scale.",
+   "action": "Compare InferCraft's 4-class priority scheduler and preemption rules with the talk's queue-then-preempt model. Confirm that preempted inference requests are re-queued, not dropped."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The talk's main recovery approach is cheap, frequent checkpoints and treating failure as normal. This matches ProsHarness's checkpoint/resume for long Claude Code runs and suggests making resume the default path.",
+   "action": "Set ProsHarness to write a checkpoint on each plan step and on a fixed short interval, and log crash-to-resume time as a metric to track the cost of failures."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

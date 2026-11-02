@@ -1,0 +1,179 @@
+{
+ "one_line": "Beginner Docker tutorial for a Node.js app: write a Dockerfile and .dockerignore, run on a custom network with a Postgres container, bind 0.0.0.0, orchestrate with Docker Compose and healthchecks, then ship logs to Better Stack.",
+ "summary": "A Better Stack tutorial that containerizes a small Fastify/Express URL-shortener app with Postgres. It starts from a working local run, then writes a Dockerfile (Node 20.16 Alpine base, layer-cached dependency install, production-only deps, exec-form CMD) and a .dockerignore that keeps .env, node_modules and .git out of the image. The presenter then walks through the usual first-run failures: secrets missing because .env was excluded, the database unreachable from a container because localhost points at the container itself, and the app unreachable from the host because it listens on 127.0.0.1. Fixes are a user-defined Docker network with the DB container name as host, and binding to 0.0.0.0. The second half moves the multi-container setup into docker-compose.yml with a Postgres healthcheck and depends_on: service_healthy, then covers docker logs and docker stats. The final ~3 minutes are a Better Stack promo for shipping container logs through Vector. The Docker material is standard and correct for beginners; there is little on production hardening.",
+ "speakers": [
+  "Unnamed Better Stack presenter (not named in transcript)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Docker",
+  "Docker Hub"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools",
+  "observability",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "docker",
+  "dockerfile",
+  "dockerignore",
+  "docker-compose",
+  "docker-networking",
+  "healthcheck",
+  "node.js",
+  "fastify",
+  "express",
+  "postgres",
+  "alpine",
+  "container-logs",
+  "vector",
+  "log-shipping",
+  "better-stack"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Order Dockerfile steps so dependency install is cached",
+   "detail": "Copy only package.json and the lockfile, run the install, then copy the rest of the source. Docker reuses the cached install layer unless dependency files change, so code-only edits rebuild fast.",
+   "t": "5:05"
+  },
+  {
+   "idea": "Keep secrets and junk out of the build context with .dockerignore",
+   "detail": "Exclude .env files, node_modules and .git. This stops secrets being baked into an image that might be published, and keeps the image small. Env values are supplied at run time instead.",
+   "t": "7:49"
+  },
+  {
+   "idea": "Use the Alpine Node base image and production-only deps",
+   "detail": "Pin a Node LTS Alpine tag for a small image. Install with dev dependencies excluded and clear the npm cache in the same step to shrink the image. The video gives no size measurements.",
+   "t": "2:16"
+  },
+  {
+   "idea": "Run node directly as the container command, not npm run start",
+   "detail": "Running node as the CMD avoids an extra npm process. Signals such as SIGTERM and SIGINT then reach the Node process directly instead of being swallowed by npm.",
+   "t": "6:27"
+  },
+  {
+   "idea": "Use a user-defined network and container names for service-to-service calls",
+   "detail": "Inside a container, localhost is the container itself. On a user-defined Docker network, the app reaches Postgres at the database container's name, so the DB host in .env changes from localhost to that name.",
+   "t": "11:40"
+  },
+  {
+   "idea": "Bind the server to 0.0.0.0 or it is unreachable from the host",
+   "detail": "Fastify defaults to 127.0.0.1, which only accepts connections from inside the container even with the port published. Listening on 0.0.0.0 fixes this, and the image must be rebuilt after the change.",
+   "t": "12:54"
+  },
+  {
+   "idea": "Gate app startup on database health in Compose",
+   "detail": "A Postgres healthcheck (run on a fixed interval with timeout and retries) is paired with depends_on using the service_healthy condition, so the app waits until the database actually answers rather than merely starting.",
+   "t": "15:29"
+  },
+  {
+   "idea": "Compose file as a versioned record of how the stack runs",
+   "detail": "Committing docker-compose.yml to git makes the full multi-container setup reproducible and reviewable. docker compose up --build rebuilds the image, and -d runs detached.",
+   "t": "16:52"
+  },
+  {
+   "idea": "Centralize container logs with Vector and Better Stack (promo segment)",
+   "detail": "Create a Better Stack source with Vector as the platform, run the generated install script on the host running Docker, then view logs in live tail and a Docker dashboard template. Presented as a roughly two-minute setup. This is a product walkthrough for the channel's sponsor/owner platform.",
+   "t": "19:33"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Dockerfile skeleton for a Node app",
+   "how": "FROM node:20.16-alpine3.19; WORKDIR /build; COPY package*.json ./; RUN npm ci --omit=dev && npm cache clean --force; EXPOSE 5000; COPY . .; CMD [\"node\", \"src/server.js\"]. Transcript says 'emit equals dev' (the npm flag is --omit=dev) and 'source/server.js' (read as src/server.js). The COPY line is spoken as 'copy package* .'; the exact spelling is inferred. The EXPOSE port should match the app's port.",
+   "when": "Any Node service that will be built into an image. Keep the dependency layer separate from source so code changes do not reinstall packages."
+  },
+  {
+   "name": ".dockerignore for Node projects",
+   "how": "Add these lines to .dockerignore at the project root: **/*.env (spoken as '*.env' with a glob prefix), **/node_modules, and .git/. Build context then excludes them.",
+   "when": "Before the first docker build, and whenever the project holds local secrets or a host-installed node_modules folder."
+  },
+  {
+   "name": "Build and run with a tag, env file and network",
+   "how": "docker build -t url-shortener . ; docker network create url-shortener ; docker run --rm --name url-shortener-app -p 5000:5000 --env-file ./.env --network url-shortener url-shortener. --name names the container. --env-file injects runtime config. Container names are used as hostnames on the user-defined network.",
+   "when": "Single-container dev runs. Use the Compose version (below) once there is a second service."
+  },
+  {
+   "name": "Point the DB host at the container name",
+   "how": "In .env, change the Postgres host from localhost to the database container's name (url-shortener-db in the video), then start the DB container with the same --network flag.",
+   "when": "Any app container that needs another container on the same Docker network."
+  },
+  {
+   "name": "Bind the HTTP server to 0.0.0.0 (Fastify)",
+   "how": "Add host: '0.0.0.0' to the listen options object in server.js next to the port, then rebuild the image. Express needs the same host argument in listen. The exact listen call is not shown in the transcript.",
+   "when": "Any server that must be reachable through a published container port."
+  },
+  {
+   "name": "docker-compose.yml with healthcheck gating",
+   "how": "services.app: build: context '.' ; container_name; ports (5000:5000); environment and env_file; depends_on: postgres: condition: service_healthy; networks. services.postgres: image: a Postgres Alpine image from Docker Hub (tag not stated); env_file; healthcheck with interval 10s, timeout 5s, retries 5 (the test command is not spoken); volumes for data; networks. Top-level networks: url-shortener. Start with: docker compose up --build (add -d for detached).",
+   "when": "Multi-container apps (app + DB) where start order matters and the setup must be committed to git."
+  },
+  {
+   "name": "Container log and resource inspection",
+   "how": "docker logs <container-name> (add -f to follow); docker stats for live CPU and memory per container; docker ps to list running containers; docker stop $(docker ps -aq) to stop everything before a fresh compose up.",
+   "when": "Debugging a container that runs but misbehaves, or checking resource use before deploying."
+  },
+  {
+   "name": "Vector log shipping to Better Stack",
+   "how": "In Better Stack: Sources > Connect source, name it, set platform to Vector, copy the source token. On the platform page, choose the host OS (Mac OS shown; production shown as Ubuntu), insert the token into the generated command, and run it. The script installs Vector, backs up existing config, downloads the Better Stack Vector config and restarts the service. Then view logs in Live tail under that source, or add the Docker dashboard template. The transcript shows the command, not its contents.",
+   "when": "When you need searchable, hosted logs from containers on a host without writing a logging pipeline."
+  }
+ ],
+ "tools": [
+  "Docker",
+  "Docker Compose",
+  "Docker Hub",
+  "Node.js (20.16 LTS base image, node:20.16-alpine3.19)",
+  "npm",
+  "Alpine Linux",
+  "Fastify",
+  "Express",
+  "PostgreSQL",
+  "Vector",
+  "Better Stack"
+ ],
+ "numbers": [
+  {
+   "claim": "Base image Node 20.16 (described as the current LTS) on Alpine 3.19",
+   "t": "2:16"
+  },
+  {
+   "claim": "Postgres healthcheck: test every 10s, 5s timeout, 5 retries before reporting unhealthy",
+   "t": "16:52"
+  },
+  {
+   "claim": "Demo app port: 5000 (mapped 5000:5000); presenter says the port should match the app",
+   "t": "6:27"
+  },
+  {
+   "claim": "Better Stack log-shipping setup stated as around two minutes",
+   "t": "19:33"
+  }
+ ],
+ "hot_takes": [
+  "The first ~19 minutes are standard beginner Docker practice and mostly correct, but the video covers no production hardening (non-root user, multi-stage builds, image size measurements, secret management beyond .env exclusion).",
+  "The final section (about 19:33-22:46) is a walkthrough of the channel's own Better Stack log platform, so treat it as a product pitch rather than neutral guidance.",
+  "Recommending `node` over `npm run start` as CMD is sound for signal handling but gives up npm script logic (pre/post hooks, env loading) in the container.",
+  "The DB host edit in .env (localhost to container name) is a manual per-environment change; the video does not show a way to keep dev and container configs separate."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Compose-level pattern for gating app containers on Postgres health (depends_on service_healthy with a healthcheck) is relevant to a multi-service self-hosted stack, but the video is generic and beginner-level.",
+   "action": "Check whether AgentOS's compose setup gates app containers on Postgres/Redis health checks rather than start order alone; add healthchecks where missing."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No material on agent runs, checkpointing, approvals or credentials; only generic container build and run steps.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

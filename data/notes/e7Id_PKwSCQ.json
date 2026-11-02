@@ -1,0 +1,155 @@
+{
+ "one_line": "Better Stack walks through the TypeScript 7 release candidate, a Go port of the compiler: a Playwright type-check drops from about 6s to 0.87s, new checkers and builders flags add parallelism, and the speaker reports no breaking changes from TS 6.",
+ "summary": "TypeScript has published a release candidate for version 7, which is a line-by-line port of the TypeScript compiler from TypeScript to Go. The speaker says the stable release is about a month away, with a stable programmatic API landing in 7.1. On the Playwright repo (about 1,400 files and 500k lines), a type check took about 6 seconds on TS 6 and 0.87 seconds on the TS 7 RC, with identical errors. Single-threaded TS 7 still ran about 3x faster than TS 6 (around 2 seconds). TS 7 adds a checkers flag (default 4) for parallel type-checker workers and a builders flag for parallel project-reference builds, both at the cost of memory. Watch mode needed the Parcel file watcher ported from C++ to Go, because Go's standard library has no file watching. The speaker says there are no breaking changes going from 6 to 7, but upgrading from 5 means moving to 6 first, since TS 6 removed the ES5 target and baseUrl, deprecated AMD/UMD/SystemJS modules, and made strict the default. The only language change is that template literal types now split on Unicode code points instead of UTF-16 units. A compatibility package allows TS 6 and 7 to run side by side.",
+ "speakers": [],
+ "orgs": [
+  "Microsoft"
+ ],
+ "format": "news",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "typescript",
+  "typescript-7",
+  "go-port",
+  "type-checking",
+  "build-performance",
+  "parallelism",
+  "tsc",
+  "playwright",
+  "upgrade-path",
+  "parcel-watcher",
+  "compatibility"
+ ],
+ "key_ideas": [
+  {
+   "idea": "TypeScript 7 RC is a port of the TypeScript compiler from TypeScript to Go; the port was done largely line by line, so behavior is intended to match TS 6, and the release is claimed to be about 10x faster.",
+   "detail": "The speaker says the team began the port about a year ago, reasoning that JavaScript is poorly suited to CPU-bound type checking. The 10x figure is the release claim; the speaker's own measurement is covered in the next item.",
+   "t": "0:00"
+  },
+  {
+   "idea": "On the Playwright repo, the TS 7 RC type-checks much faster with identical results.",
+   "detail": "TS 6 took about 6s and TS 7 RC about 0.87s across roughly 1,400 files and 500k lines. The error count and error set matched, and the same files were checked.",
+   "t": "0:56"
+  },
+  {
+   "idea": "Speedup has two sources: native Go code, and shared-memory parallelism across cores, which the single-threaded JS compiler could not use.",
+   "detail": "A single-threaded mode is available via a flag for debugging or constrained machines. In that mode, the same Playwright check took about 2s, still roughly 3x faster than TS 6.",
+   "t": "0:56"
+  },
+  {
+   "idea": "New tuning knobs: a checkers flag (default 4) and a builders flag for project references, which multiply.",
+   "detail": "Setting checkers to 8 on Playwright cut another roughly third off the time. The speaker warns that builders times checkers can mean up to 16 concurrent type checkers at four each, and that more workers cost more memory.",
+   "t": "0:56"
+  },
+  {
+   "idea": "Watch mode was the hard part of the port because Go's standard library has no file-watching API and third-party options were unstable or not cross-platform.",
+   "detail": "The team ported the parts they needed of the Parcel file watcher (C++, used by VS Code) to Go. The speaker says it works smoothly.",
+   "t": "2:13"
+  },
+  {
+   "idea": "The speaker reports no breaking changes from 6 to 7, but says that upgrading from 5 should go through 6 first.",
+   "detail": "TS 6 removed the ES5 target and baseUrl, deprecated the AMD, UMD and SystemJS module systems, and made strict true the default. Module now defaults to ESNext, and target to the current stable ECMAScript version before ESNext.",
+   "t": "2:13"
+  },
+  {
+   "idea": "The one language-level change in the 7 release notes is that template literal types split on whole Unicode code points rather than UTF-16 code units.",
+   "detail": "Before, an emoji could be split in half when used with template literal type inference, producing broken head and tail types. The speaker presents this as a minor fix that few people will have hit.",
+   "t": "3:27"
+  },
+  {
+   "idea": "Release timing and compatibility: stable is expected in about a month, a stable programmatic API arrives in 7.1, and a compatibility package lets TS 6 and 7 coexist.",
+   "detail": "The programmatic API is what tooling authors build on, so tools that depend on it may wait for 7.1. Side-by-side install avoids conflicts during migration.",
+   "t": "3:27"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Benchmark a type check across TS versions on your own repo",
+   "how": "Run the same type-check command with the TS 6 and TS 7 RC compilers without changing anything else, and compare wall-clock time and the error output. The speaker verified that the error set and file count matched before trusting the timing. The exact command is not shown in the video.",
+   "when": "Before upgrading a large codebase, or when deciding whether a CI type-check step is worth tuning."
+  },
+  {
+   "name": "Single-thread TS 7 for debugging or constrained machines",
+   "how": "Use the TS 7 single-threaded flag. The exact flag name is not stated in the video; check the TS 7 docs for it.",
+   "when": "Debugging type-checker behavior, or on a machine with few cores or limited memory. Still about 3x faster than TS 6 on the Playwright repo."
+  },
+  {
+   "name": "Tune checkers and builders for parallel type checking",
+   "how": "Set the checkers option (default 4) to raise the number of parallel type-checker workers, and the builders option to set how many project-reference projects build in parallel. Their product is the peak number of concurrent type checkers. Watch memory use when raising either.",
+   "when": "Large monorepos with many CPU cores and spare memory. The speaker saw about a third more speedup going from 4 to 8 checkers on Playwright."
+  },
+  {
+   "name": "Upgrade path from TS 5 to TS 7",
+   "how": "Go to TS 6 first and fix the breaking changes there: ES5 target removed, baseUrl removed, AMD/UMD/SystemJS module output deprecated, strict now on by default, module now defaults to ESNext. Then bump to TS 7.",
+   "when": "Migrating a legacy project from TS 5 to TS 7."
+  },
+  {
+   "name": "Run TS 6 and TS 7 side by side",
+   "how": "Install the TS 7 compatibility package so both compilers can coexist in one project or workspace during migration.",
+   "when": "Migrating a monorepo gradually, or when some tooling still depends on the TS 6 programmatic API before 7.1 ships a stable one."
+  }
+ ],
+ "tools": [
+  "TypeScript 7 (RC)",
+  "TypeScript 6",
+  "TypeScript 5",
+  "Go",
+  "Playwright",
+  "Parcel file watcher",
+  "VS Code",
+  "Claude",
+  "Bun"
+ ],
+ "numbers": [
+  {
+   "claim": "Release claim: TypeScript 7 is about 10x faster than TS 6 (not measured by the speaker).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Playwright repo: TS 6 type check about 6s vs TS 7 RC 0.87s, about 1,400 files and about 500k lines, identical error set.",
+   "t": "0:56"
+  },
+  {
+   "claim": "Playwright repo, TS 7 single-threaded: about 2s, roughly 3x faster than TS 6.",
+   "t": "0:56"
+  },
+  {
+   "claim": "checkers default is 4; setting it to 8 cut roughly another third off the Playwright type check.",
+   "t": "0:56"
+  },
+  {
+   "claim": "With builders and checkers at 4 each, up to 16 type checkers can run concurrently; more workers increase memory use.",
+   "t": "2:13"
+  },
+  {
+   "claim": "Stable TS 7 release expected in about a month; stable programmatic API in 7.1.",
+   "t": "3:27"
+  }
+ ],
+ "hot_takes": [
+  "Title says TypeScript 7 is HERE, but the video covers a release candidate, and the speaker says stable is about a month away.",
+  "The 10x figure is the release's claim. The only measurement in the video is one repo, one run, with no method given: about 7x wall-clock on Playwright (6s to 0.87s), and about 3x single-threaded.",
+  "The claim of no breaking changes from 6 to 7 comes from reading the release blog, not from testing a migration.",
+  "The speaker calls the template-literal Unicode fix something few people will ever hit; the speaker's own framing suggests it is low-impact."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "A TypeScript compiler speedup has no direct tie to AgentOS's Python, Rust and infra stack as described in the profile.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Only relevant if ProsHarness runs tsc inside agent verification loops, which the profile does not say. No direct change to what we build.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

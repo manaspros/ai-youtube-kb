@@ -1,0 +1,152 @@
+{
+ "one_line": "PostHog's Sarah Sanders on securing the PostHog wizard, an agentic CLI with shell access: deterministic enforcement, scanning every content source, and an LLM used only as an advisor.",
+ "summary": "Sarah Sanders, a context engineer at PostHog, explains how the team secured the PostHog wizard, a CLI agent that installs the SDK, instruments events and builds dashboards for a user's codebase. She walks through the agent's anatomy (models, prompts, tools, an in-house context engine) and the threat model that follows from it. The team moved from prompt-only steering, to an allowlist, to a sandboxed deny-by-default setup with a vault for secrets. A security audit found that two innocent-looking changes could combine into a hole. The main new piece is the Warlock, a standalone YARA-based scanner that detects threats but never acts on them. An LLM triage layer is added only as an advisor that removes false positives and fails closed. The talk closes with three lessons: prompts are not security, scan the whole supply chain of content, and attacks compose while code review does not.",
+ "speakers": [
+  "Sarah Sanders"
+ ],
+ "orgs": [
+  "PostHog"
+ ],
+ "format": "talk",
+ "topics": [
+  "security-guardrails",
+  "sandboxing-execution",
+  "coding-agents"
+ ],
+ "tags": [
+  "prompt-injection",
+  "yara",
+  "deterministic-enforcement",
+  "llm-as-advisor",
+  "fail-closed",
+  "supply-chain-security",
+  "context-poisoning",
+  "allowlist",
+  "vault-secrets",
+  "pii",
+  "subagents",
+  "posthog-wizard",
+  "warlock",
+  "defense-in-depth"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Threat models come from the agent's anatomy",
+   "detail": "An agent that can run commands has models, prompts, tools and a context engine. Each part is an attack surface. The speaker says any agent with shell access looks like a malware starter pack.",
+   "t": "2:44"
+  },
+  {
+   "idea": "Prompts are not security",
+   "detail": "The first layer was only prompts steering the agent. A tight allowlist came next: bash denied by default, only vetted packages, build, typecheck and lint allowed, no env vars, .env blocked, and secrets pulled from a vault.",
+   "t": "5:20"
+  },
+  {
+   "idea": "Attacks compose, code review does not",
+   "detail": "The security audit found no single obviously evil change. Each gap was two innocent things that combined to open a hole. Reviewers read diffs one at a time, while attackers look at the whole system.",
+   "t": "6:43"
+  },
+  {
+   "idea": "Context is an attack surface too",
+   "detail": "The context engine injects docs, handwritten prompts and example apps into the agent at runtime. A poisoned markdown file or code comment in a public repo could reach thousands of machines through that pipeline.",
+   "t": "8:33"
+  },
+  {
+   "idea": "Scan content at the source and at the point of use",
+   "detail": "Skill bundles are scanned when built and released, then scanned again when the wizard loads them. The method is to catch it at the source, assume the source failed, and catch it again where it is used.",
+   "t": "9:34"
+  },
+  {
+   "idea": "Separate detecting a problem from deciding what to do",
+   "detail": "The Warlock takes a string and returns findings with a category, severity and recommended action. It never blocks anything itself. Rules run on YARA, which is deterministic, so the same input always gives the same output.",
+   "t": "11:02"
+  },
+  {
+   "idea": "Use the LLM as an advisor, not a bouncer",
+   "detail": "When a deterministic rule matches, the session is killed before any model is asked. The LLM triage layer only runs afterwards, to silence false positives. It is designed to remove noise, not to let things through, and it fails closed if the model misbehaves.",
+   "t": "13:36"
+  },
+  {
+   "idea": "Write each rule with positive and negative tests and judge severity by real impact",
+   "detail": "A rule has metadata, strings, a condition and a direction (input into the agent or output from it). Matching the verb 'ignore' alone is too broad, so the rule pairs it with an instruction-like noun. Negative tests are the first defence against false positives. rm -rf is scary, but it is routine in builds.",
+   "t": "16:23"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Deterministic gate ahead of LLM judgment",
+   "how": "Run rule matches first and block mechanically when one fires, with no model on that path. Call the LLM only for unblocked input, to suppress false positives. Fail closed if the model errors.",
+   "when": "Any agent with enforcement decisions that must be reliable, such as command gating or exfiltration blocking."
+  },
+  {
+   "name": "Detector separated from actor",
+   "how": "The scanner returns findings with category, severity and a recommended action, and never enforces. A separate policy layer decides what to do with each finding.",
+   "when": "Building a reusable security scanner that several products or layers can share."
+  },
+  {
+   "name": "Scan both ends of the content pipe",
+   "how": "Scan content when it is built or released, and scan again when the agent loads it. Treat your own content as untrusted input.",
+   "when": "Agents that load skills, docs, prompts or context from your own repos or a shared registry."
+  },
+  {
+   "name": "Rule anatomy with paired tests",
+   "how": "Each rule has metadata (description, severity, category, action, direction), string patterns, and a condition. Combine a verb with an instruction-like noun, and ship positive and negative test cases with every rule.",
+   "when": "Writing prompt-injection or exfiltration rules that must stay quiet on normal code and docs."
+  },
+  {
+   "name": "Deny-by-default command allowlist with a vault",
+   "how": "Deny shell by default. Allow only pre-approved commands (build, typecheck, lint, trusted package installs). Block env and .env access, and keep secrets in a vault so they never reach the model.",
+   "when": "Agent tools that can run commands in a user's environment."
+  },
+  {
+   "name": "Audit for composed attacks",
+   "how": "Run a security review against the whole system, not diff by diff, to find gaps where individually harmless changes combine.",
+   "when": "Before shipping an agent with broad tool access, and after adding new tools or context sources."
+  }
+ ],
+ "tools": [
+  "YARA",
+  "Ink",
+  "MCP",
+  "PostHog wizard",
+  "Warlock",
+  "Cursor"
+ ],
+ "numbers": [
+  {
+   "claim": "Setup that used to take an hour or two now takes about five to six minutes via the wizard.",
+   "t": "0:16"
+  },
+  {
+   "claim": "The wizard hit 8,000 people running it per week.",
+   "t": "4:04"
+  },
+  {
+   "claim": "YARA has been used by malware researchers for 15-plus years.",
+   "t": "12:22"
+  }
+ ],
+ "hot_takes": [
+  "Prompts are not security rules. If something is not enforced deterministically, it is not enforced.",
+  "Attacks compose; code review does not. Most real gaps are two innocent changes that combine.",
+  "An LLM should never be the bouncer for security enforcement. Use it only to reduce false positives.",
+  "Scan your own supply chain, because the most dangerous prompt injection may come from your own content."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Govrix Scout has PII and prompt-injection scanning, and Crucible has exec-gate guardrails. The talk's split of deterministic enforcement, a detector that only reports, and an advisory LLM layer maps directly onto those components.",
+   "action": "Restructure the Crucible exec-gate so rule matches block mechanically before any model call, and add an LLM triage step that only suppresses false positives and fails closed. Give every new rule paired positive and negative tests."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI, which gives the agent Bash and sub-agent access. The talk's deny-by-default allowlist, vault-backed secrets and sub-agent guardrail bypass are the risks it has to handle.",
+   "action": "Audit ProsHarness's Bash allowlist and sub-agent permissions, and confirm that .env and credential paths are blocked and that sub-agents inherit the same guardrails. Then add a deterministic deny gate that runs before any Codex critique step."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

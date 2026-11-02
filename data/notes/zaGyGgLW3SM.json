@@ -1,0 +1,164 @@
+{
+ "one_line": "Docker's Tushar Jain argues agent safety, not intelligence, is the blocker, and demos a sandbox runtime with stub credentials, scoped per-task sandboxes, and an unbuilt intent-based access prototype.",
+ "summary": "Tushar Jain of Docker argues that the next blocker for agents is safe access, not intelligence. He uses an overnight reporting agent that unexpectedly posted a PR, and a latency-investigation agent that keeps widening its own access, to show that runtime permission needs change and cannot be fixed by a fixed permission list. His answer is a runtime that works across models and harnesses and rests on three pillars: containment (run the agent in a VM sandbox and enforce controls outside it), scoped access (just-in-time tools that narrow existing MCP tools), and intent-based access (a control layer that grants, denies, or escalates new capabilities based on the task). The live demo, a prototype called \"SPX\" (name as spoken), injects stub credentials, splits a PR-review task and a Notion-writing task into separate sandboxes, runs the same policies in the cloud, and fans out six parallel sandboxes and a 10-PR orchestration. The intent-based part is shown only as an internal prototype the speaker says is not built yet. The talk is a product pitch, but the framing of containment, scoped capabilities, and escalation is concrete enough to compare against our own designs.",
+ "speakers": [
+  "Tushar Jain"
+ ],
+ "orgs": [
+  "Docker"
+ ],
+ "format": "talk",
+ "topics": [
+  "security-guardrails",
+  "sandboxing-execution",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "agent-safety",
+  "sandboxing",
+  "microvm",
+  "scoped-access",
+  "intent-based-access",
+  "credential-injection",
+  "stub-credentials",
+  "policy-plane",
+  "mcp",
+  "agent-runtime",
+  "orchestration",
+  "portability"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Safety, not intelligence, is now the main blocker to giving agents the access and autonomy they need.",
+   "detail": "The speaker frames the next two years as making agents safe to run with broad access, rather than making them smarter.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Agents drift from their assigned goal even when nothing has changed, so you cannot assume a read-only task stays read-only.",
+   "detail": "A nightly reporting agent that had run for weeks suddenly posted its report as a PR. The speaker says it should never have had GitHub write access, but notes that confusion, mistakes, or prompt injection can push any agent beyond its brief.",
+   "t": "1:17"
+  },
+  {
+   "idea": "Scope creep happens one reasonable step at a time, and access needs change at runtime, unlike deterministic software permissions.",
+   "detail": "A latency investigation keeps asking for logs, GitHub, and Slack access. Each step looks reasonable, but the cumulative trust boundary keeps expanding, so the blast radius grows.",
+   "t": "2:31"
+  },
+  {
+   "idea": "Do not rely on the model being good. Use several models and harnesses, and constrain the environment around them.",
+   "detail": "The speaker expects multiple frontier labs, open models (he names GLM 5.2), and many harnesses. So the safety layer has to be independent of any one model or harness.",
+   "t": "3:51"
+  },
+  {
+   "idea": "The proposed design has three pillars: containment, scoped access, and intent-based access.",
+   "detail": "Containment runs the agent inside an untrusted VM boundary with controls outside it. Scoped access swaps broad tools for just-in-time tools that compose over existing MCP tools. Intent-based access uses task context to decide what access to grant, deny, or escalate to a human.",
+   "t": "5:17"
+  },
+  {
+   "idea": "Scoped access means narrowing an existing tool to the resource that matters, not just choosing read or write.",
+   "detail": "Read-only Slack is still too broad if the incident is in one channel among many. The runtime should generate a tool that only exposes conversations about the incident, which runs in its own scoped sandbox.",
+   "t": "6:46"
+  },
+  {
+   "idea": "The demo splits one monolithic agent into per-task sandboxes, each with only the credentials and network access it needs.",
+   "detail": "A PR-summary sandbox gets GitHub and Anthropic only. A Notion-writing sandbox gets only the Notion MCP. Agent credentials are stubs, and real ones are injected outside the sandbox.",
+   "t": "12:13"
+  },
+  {
+   "idea": "Intent-based escalation is shown only as an internal prototype. A sandboxed agent asks the runtime for an action, which spawns a scoped sub-sandbox if the intent fits and is rejected if it does not.",
+   "detail": "The speaker says this is not built yet. The example is reviewing a PR (granted GitHub access), while a later instruction to export data to an external domain would be rejected at the runtime layer.",
+   "t": "20:06"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run the agent inside an untrusted VM boundary, with policy enforced outside it",
+   "how": "Put each agent in a sandbox that holds only what the task needs, and run network, credential, and tool controls on the host side of the VM boundary so the agent cannot change them.",
+   "when": "Any agent that runs tools, shell commands, or network calls on your behalf, where a compromised or confused agent must not be able to widen its own access."
+  },
+  {
+   "name": "Split a monolithic agent into per-task sandboxes",
+   "how": "Break a workflow such as PR review followed by writing to Notion into separate tasks. Give each sandbox only its own MCP tools and network allowlist (for example GitHub plus Anthropic for review, Notion MCP only for writing), and chain the outputs between them.",
+   "when": "Multi-step workflows that cross trust boundaries, where one step needs write access to an external system and another only reads."
+  },
+  {
+   "name": "Inject stub credentials, with real secrets added outside the sandbox",
+   "how": "The sandboxed agent sees stub values. The runtime substitutes real GitHub and model-provider credentials at the network or proxy layer, so the secrets never enter the agent's environment. The demo asks the agent to report whether its credentials are real or stubs.",
+   "when": "Any agent that calls authenticated APIs, where a leaked prompt or log should not expose real tokens."
+  },
+  {
+   "name": "Just-in-time narrowed tools over existing MCP servers",
+   "how": "Instead of exposing a vendor's full MCP tool set, generate a tool that wraps it and enforces a resource filter (for example, only messages about one incident in Slack). Run it in a sandbox scoped to that single task.",
+   "when": "When an existing MCP server is too broad for the task, and you need resource-level rather than tool-level permissions."
+  },
+  {
+   "name": "Capability escalation through an intent tool",
+   "how": "Let the sandboxed agent call an intent tool to request an action. The runtime checks the request against the original user intent and task context, then either spawns a scoped sub-sandbox with the new capability, denies it, or asks a human for approval. The decision is made by a control layer that is independent of the model.",
+   "when": "When an agent needs a capability that the task did not originally include, such as an extra API or an outbound destination."
+  },
+  {
+   "name": "Same policy locally and in the cloud",
+   "how": "Define the sandbox and policy once. Run it locally, then run the same definition in the cloud with a flag (the speaker says dash dash cloud), so the policy plane stays the same across environments.",
+   "when": "Agents that start on a laptop and then need to run in cloud or VPC environments without weakening controls."
+  },
+  {
+   "name": "Parallel fan-out of scoped sandboxes",
+   "how": "A script creates one sandbox per work item (six PRs in the demo) and runs them concurrently, each with the same narrow policy. An orchestrator then schedules them and chains results.",
+   "when": "Batch work such as reviewing many PRs, where each item should be isolated and have only the access it needs."
+  }
+ ],
+ "tools": [
+  "SPX (Docker runtime; name as spoken, install via brew)",
+  "Docker",
+  "Codex (OpenAI coding agent)",
+  "Claude / Anthropic models",
+  "GitHub",
+  "Slack",
+  "Notion MCP",
+  "MCP",
+  "OpenClaw (spoken as open claw)",
+  "OpenCode (spoken as open code)",
+  "GLM 5.2 (open model)"
+ ],
+ "numbers": [
+  {
+   "claim": "Six PR-review sandboxes run in parallel using the same policy.",
+   "t": "17:03"
+  },
+  {
+   "claim": "Orchestrated run finds 10 random PRs, reviews each in its own scoped sandbox, and writes summaries to Notion.",
+   "t": "18:35"
+  },
+  {
+   "claim": "The nightly reporting agent ran for weeks without issue before unexpectedly posting a PR.",
+   "t": "1:17"
+  },
+  {
+   "claim": "The runtime is built on three pillars: containment, scoped access, and intent-based access.",
+   "t": "5:17"
+  }
+ ],
+ "hot_takes": [
+  "Vendor pitch. Docker presents its own unreleased runtime, and the speaker tells the audience to trust parts of the demo rather than showing them.",
+  "The intent-based access piece, which the speaker calls the hardest part, is only an internal prototype the speaker says is not built yet, so the talk's core safety claim is unproven.",
+  "The problem framing is solid: scope creep one step at a time, and runtime-changing access needs, are a real gap in static permission models.",
+  "The talk never says how the control layer decides what intent is, or how an exfiltration attempt is detected beyond the single example."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Crucible (L2C) is opt-in sandboxed code execution with exec-gate guardrails, and L1 is a policy proxy with budgets and PII scanning. The talk's containment with controls outside the VM and per-task scoped capabilities are the same design space.",
+   "action": "Check whether Crucible's exec-gate and the L1 proxy enforce policy outside the sandbox boundary, and whether capabilities can be scoped per task rather than shared across one sandbox (talk at 5:17 and 12:13)."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already does zero-token credential handling and phone-driven approvals. The talk injects stub credentials outside the sandbox and escalates new capability requests to a control layer or a human.",
+   "action": "Compare ProsHarness's credential path with stub-credential injection (agent sees stubs only, real tokens added outside the sandbox), and route any out-of-scope capability request to the phone approval flow (talk at 14:48 and 20:06)."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

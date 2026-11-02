@@ -1,0 +1,168 @@
+{
+ "one_line": "CoreWeave's inference platform talk: how serverless, dedicated and batch consumption models share one stack, with KV-cache-aware routing, cache offload and quantization/speculative decoding as the main performance levers.",
+ "summary": "Sitanshu Gupta, who leads inference at CoreWeave, describes the platform built to serve everything from small to very large models. There are two consumption models: serverless (pay per token, with an optional provisioned-throughput carve-out to avoid noisy neighbours) and dedicated (private gateway, billed per GPU-hour). Both sit on one stack of control plane, router, and engines (vLLM, SGLang, TensorRT-LLM) spread across several NVIDIA GPU generations. The router prefers KV-cache locality and falls back to the least-loaded deployment, because agentic traffic often shares 80 to 90 percent of its input across requests. Long multi-turn chats are handled by offloading KV cache to high-bandwidth storage (LMCache and Mooncake were named) and reloading it on the next turn rather than re-running prefill. Batch work runs on the same dedicated capacity overnight, after the daytime real-time load. The speaker's performance levers are NVFP4 quantization and speculative decoding, with speculators trained asynchronously on customer data. He says the team's model deployment speed is close to Fireworks Fast, and he argues public benchmarks should be checked against real user traffic (OpenRouter) as well as Artificial Analysis.",
+ "speakers": [
+  "Sitanshu Gupta"
+ ],
+ "orgs": [
+  "CoreWeave",
+  "AWS Annapurna Labs",
+  "SambaNova",
+  "Artificial Analysis",
+  "OpenRouter",
+  "Fireworks"
+ ],
+ "format": "talk",
+ "topics": [
+  "inference-serving",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "kv-cache",
+  "kv-cache-aware-routing",
+  "prefill-decode-disaggregation",
+  "provisioned-throughput",
+  "serverless",
+  "dedicated-gpu",
+  "batch-scheduling",
+  "speculative-decoding",
+  "nvfp4-quantization",
+  "noisy-neighbor",
+  "zero-data-retention",
+  "coreweave"
+ ],
+ "tools": [
+  "vLLM",
+  "SGLang",
+  "TensorRT-LLM",
+  "LMCache",
+  "Mooncake",
+  "NVFP4",
+  "Artificial Analysis",
+  "OpenRouter"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Two consumption models on one platform: serverless (pay per token) and dedicated (private gateway, billed per GPU-hour), both built on a shared stack so the platform does not need rebuilding.",
+   "detail": "The speaker frames the platform design around these two models. Dedicated customers pick their hardware, engine (vLLM, SGLang or TensorRT-LLM) and deployment layout, and the platform supplies the knobs.",
+   "t": "1:25"
+  },
+  {
+   "idea": "Serverless has a noisy-neighbour problem. Provisioned throughput carves out capacity for a customer who shares their traffic profile, while still billing per token.",
+   "detail": "Without a reservation, requests to a popular model can time out depending on how much capacity is behind it. The customer does not need to know the exact hardware as long as their throughput and SLAs hold.",
+   "t": "2:46"
+  },
+  {
+   "idea": "Workload shapes differ sharply. Agentic and chat workloads have very long inputs and short outputs, and agentic multi-turn calls need low latency. Voice and video are steady-stream and latency-critical. Batch has SLAs from seconds to hours.",
+   "detail": "The speaker says the mix is shifting and agentic traffic is growing fastest. Those differences drive KV-cache management and scheduling decisions in the stack.",
+   "t": "3:52"
+  },
+  {
+   "idea": "The router is KV-cache aware. It prefers the deployment that already holds a matching prefix and falls back to least-loaded. Agentic inputs are about 80 to 90 percent shared across requests, and cached input is priced far below fresh input.",
+   "detail": "Prefill is compute-bound and expensive, so reusing it is the main cost lever. The router also balances load across heterogeneous capacity in different zones and regions, which the speaker calls hard.",
+   "t": "7:23"
+  },
+  {
+   "idea": "Prefill/decode disaggregation is optional. The speaker says it is not cheap enough to be worth it for every workload, so the platform supports both options.",
+   "detail": "Customers choose whether to split prefill and decode onto separate hardware, depending on their workload.",
+   "t": "7:23"
+  },
+  {
+   "idea": "For multi-turn chat, the KV cache is offloaded to high-bandwidth storage and reloaded into HBM on the next turn, instead of evicting it and paying for prefill again.",
+   "detail": "The gaps between a user's turns are long, so a fully evicted conversation would be slow on the next question. LMCache and Mooncake were mentioned as external references.",
+   "t": "11:25"
+  },
+  {
+   "idea": "Batch and real-time traffic share the same dedicated GPUs on a schedule. The customer's real-time load runs during the US day and batch runs overnight, with an API to scale up and down.",
+   "detail": "This is time-based bin packing of reserved capacity across workload types.",
+   "t": "10:06"
+  },
+  {
+   "idea": "Speed levers are NVFP4 quantization and speculative decoding. For customers, speculators are trained asynchronously on their own data to raise acceptance rates, then deployed to their deployment.",
+   "detail": "The speaker shows leaderboard screenshots from the last month of team work (Kimi 2.6 and 2.7 on Artificial Analysis) and GLM results from OpenRouter. He argues real user traffic is a better check than synthetic benchmark workloads.",
+   "t": "12:50"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "KV-cache-aware request routing",
+   "how": "Route each request to the replica that already holds the longest matching prefix in its KV cache. Fall back to the least-loaded replica only when no good cache match exists. Works across heterogeneous GPU pools and across zones and regions.",
+   "when": "Agentic or multi-turn traffic where most of the input is a shared prefix (system prompt, tool definitions, history)."
+  },
+  {
+   "name": "KV-cache offload to high-bandwidth storage",
+   "how": "When a conversation goes idle, move its KV cache out of HBM into a larger storage tier (LMCache, Mooncake named). Load it back into HBM when the next turn arrives, rather than recomputing prefill.",
+   "when": "Chat-style conversations with long gaps between turns, where full eviction makes the next turn slow and costly."
+  },
+  {
+   "name": "Provisioned throughput on a shared serverless tier",
+   "how": "Ask the customer for their traffic profile, reserve a slice of capacity for them behind the scenes, and keep per-token billing. Their SLA holds even though the hardware is shared.",
+   "when": "A customer with predictable volume who is hurt by noisy-neighbour latency on a shared model endpoint."
+  },
+  {
+   "name": "Time-scheduled reuse of reserved GPUs for batch",
+   "how": "Expose an API that lets the customer set scale-up and scale-down times. Real-time serving runs in the day, and the same reserved capacity processes batch overnight.",
+   "when": "Reserved dedicated capacity that sits idle outside peak hours, and batch jobs with loose deadlines."
+  },
+  {
+   "name": "Async speculator training on customer data",
+   "how": "Collect the customer's data asynchronously, train a speculative-decoding draft model on it, then deploy the speculator into that customer's deployment to raise token acceptance and output throughput.",
+   "when": "A dedicated customer with a stable, domain-specific workload where a generic draft model accepts too few tokens."
+  },
+  {
+   "name": "Metering without retaining content",
+   "how": "Under zero-data-retention, the serverless path records only token usage counts for billing and monitoring, not the request or response content.",
+   "when": "Multi-tenant serving where customers require no retention of their prompts or outputs but usage must still be billed and tracked."
+  }
+ ],
+ "numbers": [
+  {
+   "claim": "Agentic and chat inputs are very long, and 80 to 90 percent of the input is the same across requests (varies by company and customer). That shared prefix is what makes KV-cache reuse pay off.",
+   "t": "7:23"
+  },
+  {
+   "claim": "Batch SLAs run from seconds and minutes up to hours. Some customers ask for a 10 to 12 hour batch window.",
+   "t": "3:52"
+  },
+  {
+   "claim": "Dedicated customers are billed per GPU-hour, not per token. Serverless is billed per token, with cached input tokens priced much lower than fresh input tokens (no exact figures given).",
+   "t": "8:41"
+  },
+  {
+   "claim": "The team's deployment speed is said to be close to Fireworks Fast. No measured figures were given. Kimi 2.6 and 2.7 reached the top of the Artificial Analysis leaderboard within the last month (no speed numbers given).",
+   "t": "14:11"
+  },
+  {
+   "claim": "The speaker joined CoreWeave about four months before the talk, and previously worked on training at AWS Annapurna Labs and on inference and training at SambaNova.",
+   "t": "0:12"
+  }
+ ],
+ "hot_takes": [
+  "Benchmarks like Artificial Analysis run specific workloads, so real user traffic on OpenRouter is a more trustworthy check on speed.",
+  "Prefill/decode disaggregation is not cheap, so it should be offered as a per-workload choice, not a default."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft (vLLM plus Ray Serve, KV-cache strategies, 4-class scheduler on one 5090) overlaps directly with this talk's KV-cache-aware routing and offload to storage tiers.",
+   "action": "Add a prefix-match-first routing rule to InferCraft's scheduler, falling back to least-loaded. Replay agentic-style traces and measure cache-hit rate and time-to-first-token against the current scheduler."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The talk says agentic workloads reuse 80 to 90 percent of their input prefix, so keeping that prefix stable across turns is what drives cache hits. ProsHarness runs long Claude Code sessions, though the talk does not address that harness directly.",
+   "action": "Check that the Claude Code harness keeps the system prompt and tool definitions byte-stable across turns in long runs, and log cache-read versus fresh input tokens per checkpoint."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Useful as a map of how serverless, dedicated and batch consumption models are structured at inference providers. It is one talk and gives no numbers beyond those above.",
+   "action": "Read the CoreWeave inference docs or talk slides for the router and offload design if the KV-cache work in AgentOS needs prior art."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

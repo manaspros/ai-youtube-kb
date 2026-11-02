@@ -1,0 +1,201 @@
+{
+ "one_line": "Simran Arora (Together AI) on why multi-GPU communication is now the kernel bottleneck, the transfer and overlap trade-offs behind her Parallel Kittens primitives, and a benchmark showing frontier models still struggle to write fast multi-GPU kernels.",
+ "summary": "The speaker argues that GPU bottlenecks have shifted from single-GPU memory access to multi-GPU communication, while communication hardware has improved far more slowly than compute. She says common baselines (PyTorch with NCCL) often reach under half of the communication-aware roofline, and that existing libraries and DSLs are either inflexible for fine-grained work or slow to port across hardware. Her team's Parallel Kittens is a small set of primitives and templates that adds roughly a dozen lines on top of a single-GPU kernel, and she frames the design space as a few trade-offs: copy engine vs device-initiated transfers (TMA, register-level instructions), and intra-SM vs inter-SM overlap. The benchmark, Parallel Kernel Bench (87 problems drawn from real repos and libraries), asks models to rewrite a PyTorch+NCCL reference into a fast CUDA kernel for a given topology. Frontier models solve only a minority zero-shot, and their successes cluster on familiar patterns; sampling more helps correctness but speed plateaus near 31%. A simple bash-agent harness with Gemini 3 Pro raised solves from 24 to 35 of 87, but performance plateaued as more time was given. Her conclusion is that few patterns matter, but models do not yet reason through the trade-offs even when they are given in context.",
+ "speakers": [
+  "Simran Arora"
+ ],
+ "orgs": [
+  "Together AI",
+  "Stanford",
+  "Caltech",
+  "NVIDIA",
+  "AMD",
+  "Cursor"
+ ],
+ "format": "talk",
+ "topics": [
+  "inference-serving",
+  "evals",
+  "models-research"
+ ],
+ "tags": [
+  "multi-gpu",
+  "cuda-kernels",
+  "nvlink",
+  "nvswitch",
+  "tma",
+  "nccl",
+  "parallel-kittens",
+  "parallel-kernel-bench",
+  "kernel-generation",
+  "pass-at-k",
+  "fast-1-at-k",
+  "benchmark-design",
+  "bash-agent-harness",
+  "inter-sm-overlap",
+  "intra-sm-overlap"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The bottleneck has moved from single-GPU kernels to multi-GPU communication. Compute has improved much faster than interconnects: from A100 (2020) to B200 (2024), BF16 tensor core speed rose 7.2x while intra-node and inter-node communication rose only 3x and 2x.",
+   "detail": "She ties this to disaggregated inference (KV cache across GPU, CPU, disk and remote machines; prefill and decode on different hardware) and to larger scale-up domains.",
+   "t": "8:59"
+  },
+  {
+   "idea": "Naive baselines are far from the hardware limit. Stacking PyTorch with NCCL leaves most problems in the benchmark below 50% of their communication-aware roofline, and NCCL is tuned for bulk contiguous transfers, so it breaks down for fine-grained or fused collectives.",
+   "detail": "Triton Distributed (tuned on H800) did not adapt well to H100, and hand-tuned operators can take months to port to a new precision.",
+   "t": "11:41"
+  },
+  {
+   "idea": "Her team first hand-built a small set of primitives (Parallel Kittens) to learn the trade-offs themselves before trying to get models to write kernels. The point is to understand the patterns manually instead of throwing an LLM at the problem.",
+   "detail": "The primitives are used to write a range of peak-performance kernels across parallelism schemes. The speaker says she uses them as a teaching vehicle.",
+   "t": "14:22"
+  },
+  {
+   "idea": "Transfer mechanism is a real trade-off. Copy-engine (host-initiated) transfers are best for large messages and leave registers and SMs free. Device-initiated transfers (TMA, or LD/ST/RED/multimem instructions) saturate NVLink with small messages, which suits fine-grained overlap. TMA cannot use NVSwitch in-network compute; register-level instructions can.",
+   "detail": "The choice depends on message size, whether the register file is needed for compute, and whether in-network reductions are wanted.",
+   "t": "16:17"
+  },
+  {
+   "idea": "Overlap schedule is a second trade-off. Intra-SM overlap uses warp specialization inside one processor, but only works when the communication and computation use the same data. Inter-SM overlap dedicates whole SMs to compute and to communication, which helps when the data layouts don't match or NVLink is hard to saturate.",
+   "detail": "In her examples, intra-SM wins for GEMM + reduce-scatter, and inter-SM wins for GEMM + all-reduce because it uses NVSwitch in-network reduction.",
+   "t": "19:06"
+  },
+  {
+   "idea": "Success on the benchmark concentrates in familiar patterns (collectives, tensor-parallel GEMMs, Ulysses-style context parallelism). The speaker reads this as models reproducing patterns from the internet rather than reasoning through trade-offs. Models often do not use register transfer instructions or TMA.",
+   "detail": "Compile errors are not the main problem; the problem is reasoning about collective ordering, data partitioning and scheduling choices.",
+   "t": "25:26"
+  },
+  {
+   "idea": "Scaling test-time compute does not fix the speed problem. Best-of-k sampling raised correct solves (28 zero-shot to 36 at multiple samples), but the fast_1 rate plateaued near 31%. Once correctness is reached, speedups come mostly from removing NCCL staging overhead in favour of direct NVLink loads and stores.",
+   "detail": "A bash-agent harness (mini-SWE-agent style, Gemini 3 Pro) moved solves from 24 to 35 of 87, with 26 above 1x, but also plateaued as time was scaled.",
+   "t": "26:48"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Copy-engine vs device-initiated transfer choice",
+   "how": "Use copy-engine (host-initiated) transfers for large bulk messages to get peak bandwidth and save registers and SMs. Use TMA or register-level device-initiated transfers (LD/ST/RED/multimem) for fine-grained communication with small messages. Use register-level instructions when you need NVSwitch in-network reductions, since TMA cannot do them.",
+   "when": "Designing communication inside a fused multi-GPU kernel, where message size and register pressure decide the transfer mechanism."
+  },
+  {
+   "name": "Intra-SM vs inter-SM communication overlap",
+   "how": "Within one SM, use warp specialization so some warps compute and some communicate on the same data. Across SMs, dedicate some SMs to communication and others to compute when data layouts do not line up or NVLink is hard to saturate. Pick by operator: intra-SM for GEMM + reduce-scatter, inter-SM for GEMM + all-reduce with NVSwitch in-network reduction.",
+   "when": "When the communication and compute pattern in a fused kernel is misaligned, or when you want to saturate NVLink with fine-grained transfers."
+  },
+  {
+   "name": "Thin primitive layer over a single-GPU kernel",
+   "how": "Keep the single-GPU kernel and insert a small set of multi-GPU primitives and templates, which the speaker says takes about a dozen added lines. Leave buffering and sender-receiver synchronisation under the developer's control.",
+   "when": "Converting an existing single-GPU kernel to multi-GPU without rewriting it in full, or building a library of such kernels."
+  },
+  {
+   "name": "Benchmark built from a parallelism taxonomy plus real-workload problems",
+   "how": "Lay out the parallelism dimensions (data, sequence, tensor, context, layer, pipeline, expert), map each composition to its communication pattern, and pick representative problems from real GitHub repos and optimised libraries. Give each task an unoptimised PyTorch+NCCL reference and a topology spec (ranks, intra-node config).",
+   "when": "Building an eval for kernel-writing or systems agents where the tasks need to be non-artificial and cover the design space."
+  },
+  {
+   "name": "Report correctness (pass@k) and speed-gated correctness (fast_1@k) separately",
+   "how": "pass@k counts correct kernels after k attempts. fast_1@k counts correct kernels that also beat the reference baseline (at least 1x). Track both, because the two can diverge as sampling increases.",
+   "when": "Evaluating code-generation for performance work, where correct but slow output is not useful."
+  },
+  {
+   "name": "Agent harness: multi-turn bash agent for kernel tasks",
+   "how": "Run a minimal multi-turn agent loop (the speaker used mini-SWE-agent) with a local bash environment, similar to a Claude Code-style setup, and a strong model. Give it the reference and topology and let it compile, run and iterate.",
+   "when": "Getting a quick, cheap baseline for an agent on a hard, verifiable coding task. Expect a plateau with more time, so extra techniques are needed to keep improving."
+  }
+ ],
+ "tools": [
+  "CUDA",
+  "PyTorch",
+  "torch.distributed",
+  "NCCL",
+  "RCCL",
+  "Triton",
+  "Triton Distributed",
+  "TileLink",
+  "ThunderKittens",
+  "Parallel Kittens",
+  "Parallel Kernel Bench",
+  "mini-SWE-agent",
+  "NVLink",
+  "NVSwitch",
+  "TMA",
+  "XGMI",
+  "Megatron-LM",
+  "FlexFlow",
+  "NanoFlow",
+  "Cutlass"
+ ],
+ "numbers": [
+  {
+   "claim": "H100 register file bandwidth about 130 TB/s, but registers are very small in capacity",
+   "t": "4:03"
+  },
+  {
+   "claim": "NVLink gives up to 900 GB/s unidirectional bandwidth between any two GPUs",
+   "t": "7:47"
+  },
+  {
+   "claim": "Scale-up domains: 72 GPUs in coming chips; NVIDIA planning a single system with 576 GPUs in 2027",
+   "t": "8:59"
+  },
+  {
+   "claim": "A100 (2020) to B200 (2024): BF16 tensor core 7.2x, intra-node communication 3x, inter-node communication 2x",
+   "t": "10:28"
+  },
+  {
+   "claim": "Most naive PyTorch+NCCL baselines in the benchmark run below 50% of their communication-aware roofline",
+   "t": "11:41"
+  },
+  {
+   "claim": "Parallel Kernel Bench has 87 problems drawn from GitHub repos and optimised libraries and DSLs",
+   "t": "22:58"
+  },
+  {
+   "claim": "Best frontier model, zero-shot: 28 of 87 correct and 22 faster than the PyTorch+NCCL baseline",
+   "t": "23:58"
+  },
+  {
+   "claim": "With multiple samples: 36 of 87 correct, but fast_1 plateaus around 31%",
+   "t": "23:58"
+  },
+  {
+   "claim": "Parallel Kittens kernels need roughly a dozen added lines on top of a single-GPU kernel",
+   "t": "20:29"
+  },
+  {
+   "claim": "mini-SWE-agent with Gemini 3 Pro on a local bash environment: 24 to 35 of 87 solved, 26 above 1x speedup, plateaus with more time",
+   "t": "26:48"
+  }
+ ],
+ "hot_takes": [
+  "Frontier models do not understand the multi-GPU trade-offs, even when they are given in context, and they mostly reproduce common patterns from the internet.",
+  "Most naive PyTorch+NCCL baselines run below half of the communication-aware roofline, so there is a lot of room in multi-GPU communication.",
+  "Communication hardware has improved much more slowly than compute, so networking is now the main bottleneck for AI workloads.",
+  "Speedups come mostly from removing NCCL staging overhead in favour of direct NVLink loads and stores once correctness is achieved."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk is about multi-GPU kernels, which the single RTX 5090 InferCraft setup does not need, but the benchmark method (correctness plus speed-gated metrics, taxonomy-based tasks from real repos) is reusable for evals of InferCraft kernel or serving-strategy work.",
+   "action": "When designing InferCraft benchmarks, report pass@k alongside a speed-gated metric (fast_1@k style: correct and at least 1x the baseline), and build the task set from a taxonomy of real workloads instead of hand-picked toy cases."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The talk reports that a bash-agent harness on a strong model solves more hard tasks but plateaus as time increases, which is relevant to long-running Claude Code runs that ProsHarness checkpoints and resumes.",
+   "action": "Read Parallel Kernel Bench results on plateaus over long agent runs and check whether ProsHarness checkpoint and resume policies need a stopping or escalation rule when extra time stops improving results."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Relevant to the recurring interest in evals for agents: a concrete example of a hard, verifiable code-generation benchmark with a pass@k and speed-gated metric and reported plateaus.",
+   "action": "Read the Parallel Kernel Bench paper for its taxonomy and task-construction method when designing agent eval sets."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

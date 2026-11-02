@@ -1,0 +1,173 @@
+{
+ "one_line": "Ironclad's VP of AI Engineering on controlling AI token spend: measure cost against value, treat usage dashboards as smoke detectors, and fix the review and CI bottlenecks that code generation creates.",
+ "summary": "Mingsheng Hong, VP of Engineering focused on AI at Ironclad (a legal contracting AI company), argues that teams past the adoption phase should manage AI token spend as an ROI problem, not a cost-cutting one. He proposes a metric called \"trusted throughput\": merged code that internal reviewers, leadership and customers all trust. Per-team and per-person usage dashboards should work as smoke detectors for adoption gaps and sudden spikes, not as leaderboards, the same way lines of code is a poor productivity target. He describes how Ironclad's merged-PR count evolved into a complexity-weighted count, with an LLM assigning T-shirt sizes to PRs. Because AI makes PR creation abundant, the bottleneck moves to code review and CI; he recommends AI as a first-pass reviewer, investing in flaky-test removal and CI speed, and tracking ready-to-submit time and retry counts. The framework has three parts: guardrails (budgets, quotas, anomaly alerts), regular human review feeding a learning loop, and shared best practices such as step limits on agent loops, prompt-cache-friendly prompt ordering, context pruning, and an internal prompt playbook. The talk is conceptual and short on hard numbers.",
+ "speakers": [
+  "Mingsheng Hong"
+ ],
+ "orgs": [
+  "Ironclad"
+ ],
+ "format": "talk",
+ "topics": [
+  "token-cost-efficiency",
+  "governance-compliance",
+  "pr-code-review"
+ ],
+ "tags": [
+  "token-spend",
+  "cost-roi",
+  "trusted-throughput",
+  "usage-dashboards",
+  "anomaly-alerts",
+  "pr-complexity-scoring",
+  "ai-code-review",
+  "ci-flakiness",
+  "prompt-caching",
+  "context-pruning",
+  "agent-loop-limits",
+  "build-vs-buy",
+  "developer-experience",
+  "legal-tech"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Usage dashboards should be smoke detectors, not leaderboards",
+   "detail": "Per-team and per-person token and cost dashboards are useful for spotting adoption gaps and surprise bursts. Ranking people by usage creates an incentive to maximize tokens itself, so usage should be compared with team context.",
+   "t": "0:50"
+  },
+  {
+   "idea": "Measure value before cutting cost",
+   "detail": "Cutting spend once you can see it is premature. The goal is better ROI (value per token), not austerity. Cost and value must both be measured first.",
+   "t": "12:00"
+  },
+  {
+   "idea": "Trusted throughput as the ROI proxy",
+   "detail": "Count only output that is trusted by internal engineers, leadership and customers. It rests on three buckets: objective checks (tests, security, canary rollouts), subjective human review (quality, architecture fit), and customer signals (rollbacks, tickets).",
+   "t": "5:28"
+  },
+  {
+   "idea": "Output metrics move from PR count to weighted merged PRs",
+   "detail": "Open PR count was replaced by merged PR count, which was then weighted by a complexity score. A 10-line concurrency fix can outweigh a 1,000-line boilerplate PR. The speaker presents the scoring as still being refined.",
+   "t": "10:37"
+  },
+  {
+   "idea": "AI code generation moves the bottleneck to review and CI",
+   "detail": "When code is abundant, the constraint shifts to human review, merging and CI. Making large PRs to avoid slow CI is an anti-pattern because it spreads reviewer attention thin.",
+   "t": "14:22"
+  },
+  {
+   "idea": "AI as the first line of review, humans as final judges",
+   "detail": "AI review catches style issues and missing tests so authors fix them before a human reviewer is assigned. Humans keep judgment on architecture, security design and final accountability.",
+   "t": "14:22"
+  },
+  {
+   "idea": "Guardrails, learning loop and playbooks as the framework",
+   "detail": "The framework has three parts: budgets, quotas and anomaly alerts; a review loop that feeds institutional knowledge; and shared best practices. Shared practices include step limits on agent loops, prompt-cache-friendly ordering and context pruning.",
+   "t": "18:38"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Cross-tool cost aggregation",
+   "how": "Use AI to build small pipelines that pull usage data from each vendor's dashboard (Claude Code, Codex, etc.). Join the data and break cost down by team and individual.",
+   "when": "When engineers use several coding tools, so no single vendor dashboard shows the full picture."
+  },
+  {
+   "name": "Usage as an anomaly signal",
+   "how": "Review dashboards to find teams with no adoption, or sudden bursts. Then check whether each burst is legitimate and compare each team with its own context, such as platform work versus UI work.",
+   "when": "After the initial adoption push, when leaders need to find problems without creating a leaderboard."
+  },
+  {
+   "name": "LLM T-shirt sizing of merged PRs",
+   "how": "Send each merged PR to one or two LLMs with a fixed prompt that asks for a T-shirt size. Use the size as a weight when counting merged PRs.",
+   "when": "When raw PR count or lines of code are misleading measures of value. The speaker says there is no standard definition, so treat the result as a rough proxy."
+  },
+  {
+   "name": "Three-bucket trusted-throughput check",
+   "how": "Combine objective gates (test coverage, security checks, canary), human review of quality and architecture, and post-release customer signals (rollbacks, tickets).",
+   "when": "To define what counts as valuable output, rather than volume."
+  },
+  {
+   "name": "AI-first review gate",
+   "how": "Require the author to pass the AI review (style, test coverage) before the PR is routed to a human reviewer.",
+   "when": "When review is the bottleneck and human reviewers should spend attention on judgment calls."
+  },
+  {
+   "name": "Bounded agent fix loops",
+   "how": "When an agent generates a PR, loop it through tests and auto-fix, but cap the number of loop steps so token use cannot run away.",
+   "when": "For any agent that retries or self-corrects, to bound token spend."
+  },
+  {
+   "name": "Prompt-cache-friendly prompt layout",
+   "how": "Put the fixed system prompt at the top and the varying content at the bottom, so the shared prefix can be cached by the vendor.",
+   "when": "When building prompts or harnesses that reuse a long common prefix."
+  },
+  {
+   "name": "Context pruning and summarizing in long sessions",
+   "how": "Train users to summarize or compact the context during long chat sessions. Coding tools that auto-compact can help, and the speaker says this also improves output quality.",
+   "when": "In long agent or chat sessions where the context grows and token use climbs."
+  },
+  {
+   "name": "Buy non-differentiating tools, build a prompt playbook",
+   "how": "Buy generic infrastructure such as the IDE and CI. Build internally the company-specific prompts for tasks like small bug fixes or refactors, and share and refine them across teams.",
+   "when": "When deciding between building and buying AI developer tooling."
+  },
+  {
+   "name": "Developer-experience metrics for CI",
+   "how": "Track the time from ready-to-submit to submitted, and how often a PR is retried to get past tests. Invest in removing flaky tests and speeding up CI.",
+   "when": "When engineers are spending time babysitting PRs, which is also a token cost when an AI agent does the babysitting."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "Cursor",
+  "vendor usage dashboards",
+  "LLMs for PR complexity scoring",
+  "CI/CD pipeline"
+ ],
+ "numbers": [
+  {
+   "claim": "Media anecdote: a company spent about $500 million on cloud within a month. This is cited as a story from the media, not Ironclad's data.",
+   "t": "0:50"
+  },
+  {
+   "claim": "About half of the audience said their teams had passed the initial AI adoption phase.",
+   "t": "3:06"
+  },
+  {
+   "claim": "Illustrative CI red flag: if a typical CI run takes one hour, a typical PR submission taking two to three hours is a warning sign. This is an example, not reported data.",
+   "t": "17:11"
+  }
+ ],
+ "hot_takes": [
+  "Lines of code, and open or merged PR counts, are poor productivity targets for AI-era work. Removing code can be better than adding it.",
+  "Usage dashboards must never become leaderboards, because they create an incentive to maximize token spend.",
+  "Splitting PRs into large batches to dodge slow CI is risky and a clear anti-pattern.",
+  "Measuring cost and cutting it right away is premature. Measure value and ROI first."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L1 has budgets and an audit log. The talk's point that usage tracking should flag anomalies, not rank people, and its bounded-loop rule, both map onto budget counters.",
+   "action": "Add per-tenant or per-agent token-burst anomaly alerts on the budget counters, and add a max-step cap on any self-correcting agent loop in AgentOS."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code in long, checkpointed runs. Loop step limits, prompt-prefix ordering for caching, and context pruning apply directly to its runs.",
+   "action": "Cap the retry or plan-critique loop steps in ProsHarness, and move the stable instructions to the top of its prompts so prefix caching works."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The bottleneck shift to review and CI is a general lesson for any team that uses agents to write code.",
+   "action": ""
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

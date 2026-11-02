@@ -1,0 +1,159 @@
+{
+ "one_line": "Isadora Martin-Dye on layering a brand-voice AI agent into four stages: non-overridable identity rules, situational context, voice examples, and a deterministic post-generation veto, with fail-loud multi-tenant identity.",
+ "summary": "The speaker runs an AI agent for a wedding venue and says a single system prompt cannot do four jobs at once: stay inviolable, adapt to the situation, express the brand voice, and check its own output. Her fix is a fixed four-layer stack that every surface composes through one assembly function, so the prompt order is always the same. Layer 1 holds rules the brand can never break, such as disclosing AI status in the first reply and never claiming a physical presence. Layer 2 adjusts routing to the audience and to the person's life context, which comes from soft notes used for tone and never quoted. Layer 3 is the example-based voice guide, which she says is the only layer most teams build and which cannot give guarantees. Layer 4 is a cheap veto that reads the actual output: soft flags for things like not answering the question, and hard rejects for invented dates or numbers, which was added after the bot offered dates that were already booked. For multi-tenant use she argues identity must never have a default, because a missing brand config once made every venue ship under one venue's name and domain. She is candid that the veto should be a shared gate rather than wired per surface, and that deterministic pattern rules miss edge cases a classifier might catch.",
+ "speakers": [
+  "Isadora Martin-Dye"
+ ],
+ "orgs": [
+  "Isadora & Co",
+  "Bloom (her wedding venue)"
+ ],
+ "format": "talk",
+ "topics": [
+  "context-engineering",
+  "security-guardrails",
+  "product-ux"
+ ],
+ "tags": [
+  "prompt-layering",
+  "system-prompt",
+  "brand-voice",
+  "post-generation-validation",
+  "guardrails",
+  "hallucination",
+  "multi-tenant",
+  "fail-loud",
+  "customer-facing-agents",
+  "soft-context"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Treat the agent as a managed intern, not a programmed robot",
+   "detail": "Her framing: write structure and check work before it leaves, rather than writing rules and walking away. This changes what you build.",
+   "t": "0:00"
+  },
+  {
+   "idea": "A single system prompt fails on the edge cases, not the happy path",
+   "detail": "Examples cover anticipated questions. The failure appears around turn 21, where the model gives a technically correct answer the brand would never give. One prompt is asked to do four different jobs, which one layer handles poorly.",
+   "t": "1:24"
+  },
+  {
+   "idea": "Four ordered layers: identity, situation, voice, veto",
+   "detail": "Layer 1 is immutable identity, layer 2 is situational mode, layer 3 is example-anchored voice, layer 4 is a post-generation veto. Order is load-bearing: hard rules first, tasks last. All surfaces compose through one entry point, replacing 24 ad hoc system prompts.",
+   "t": "2:50"
+  },
+  {
+   "idea": "Identity rules sit above config and user input",
+   "detail": "Examples: the bot discloses it is AI in its first response, not only when asked, which she calls a product decision. It is always forbidden to claim a physical presence. Warm first-person voice otherwise produces a lie that makes trust invert once discovered.",
+   "t": "5:39"
+  },
+  {
+   "idea": "The same layer-1 rules can carry much higher stakes",
+   "detail": "In a missing-persons tool, layer 1 bans words like confirmed, matched, identified and solved. The model reaches for 'matched' because it is statistically natural, and the point is that brand-safe words must live in a layer the voice cannot touch.",
+   "t": "7:01"
+  },
+  {
+   "idea": "Layer 2 routes by audience and by the person's life context",
+   "detail": "The same identity answers staff and couples differently, like a colleague briefing staff but a warm host for couples. Soft context notes shape tone and timing (gentleness for grief, patience for a sick parent) and must never be quoted back verbatim.",
+   "t": "8:25"
+  },
+  {
+   "idea": "Render qualitative context before numeric constraints",
+   "detail": "Context blocks are assembled so the human-tone note comes before the numbers guard. Her reasoning: if numbers come first, the model commits to a numeric framing and the prose fills in mechanically.",
+   "t": "9:51"
+  },
+  {
+   "idea": "Layer 4 veto is the only layer that reads the output",
+   "detail": "Soft flags catch softer slips (e.g., failing to answer, hedging). Hard rejects block invented facts such as a date that is not on the real calendar. Its false-positive and false-negative costs are asymmetric, and the veto is the only deterministic layer, so it is the cheapest to build and the one that can say no.",
+   "t": "12:09"
+  },
+  {
+   "idea": "Multi-tenant identity must fail loud, not fall back",
+   "detail": "A missing brand identity field defaulted silently, so every venue shipped under one venue's name and domain. Her principle: identity never gets a default, and a missing config is a crash. Instructions are probabilistic and permission is deterministic.",
+   "t": "15:57"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Four-layer ordered prompt stack via single assembly",
+   "how": "One function composes every system prompt in a fixed order: immutable identity rules, then per-user situational context, then the example-based voice guide, then a post-generation check. No surface assembles its own prompt, which replaced 24 scattered prompts.",
+   "when": "A product with several agent surfaces that must share one brand identity and safety rules but differ in audience or context."
+  },
+  {
+   "name": "Non-overridable identity layer",
+   "how": "Hard rules such as AI disclosure in the first message, no claimed physical presence, and banned high-stakes words are placed above venue config, voice profiles and user instructions, so no lower layer can overwrite them.",
+   "when": "Any claim the model must never make, where a single wrong claim could mislead or harm a user."
+  },
+  {
+   "name": "Soft context as tone guidance, never quoted",
+   "how": "Store per-user situational notes and inject them as tone and timing guidance; instruct the model not to repeat them verbatim. Render these notes before numeric constraints so the prose is not forced into a numeric frame.",
+   "when": "Personalizing customer-facing messages with sensitive life details, or mixing qualitative context with numeric data in one prompt."
+  },
+  {
+   "name": "Deterministic post-generation veto with soft flags and hard rejects",
+   "how": "After generation, check the actual output. Soft flags catch softer rail slips (not answering the question). Hard rejects block specifics such as dates, prices or policies that are not in an allowlist of real data. Rules are pattern-based, fast and deterministic, accepting that they miss edge cases.",
+   "when": "The model could confidently invent a specific fact that a person will act on, such as a booking date, price or policy."
+  },
+  {
+   "name": "Fail-loud multi-tenant identity",
+   "how": "Do not default brand identity fields. If the tenant's identity config is missing, raise an error instead of falling back to another tenant's values.",
+   "when": "Serving many white-label tenants from one codebase where a silent default could leak one tenant's identity to another."
+  },
+  {
+   "name": "Shared veto gate by default",
+   "how": "Make the output check a shared gate that every response passes through by default, instead of wiring it into each surface, so a new surface cannot skip it by accident.",
+   "when": "Multiple surfaces or services generate customer-facing output."
+  },
+  {
+   "name": "Trainable voice dial from staff edits",
+   "how": "Tune the voice by having coordinators rate real AI responses and edit them, then train the voice from those edits instead of relying only on a hand-written phrase list.",
+   "when": "The brand voice is hard to specify fully in writing and staff already edit outputs by hand."
+  }
+ ],
+ "tools": [
+  "Threadline (her own missing-persons tool, not a third-party product)"
+ ],
+ "numbers": [
+  {
+   "claim": "Before consolidation, the codebase had 24 different system prompts scattered across it, with several surfaces naming the assistant differently; now every surface composes its prompt through one assembly.",
+   "t": "2:50"
+  },
+  {
+   "claim": "Edge-case failures begin around turn 21 of a conversation, where the happy-path examples no longer cover the user's question.",
+   "t": "1:24"
+  },
+  {
+   "claim": "Example scenario: a couple's engagement drop is narrated differently when the system knows the client has a mother in chemo for three weeks.",
+   "t": "11:11"
+  },
+  {
+   "claim": "Example failure: the model offered a Saturday in October that was already booked, because it was never given the calendar and only the confident-sounding phrasing was produced.",
+   "t": "13:34"
+  }
+ ],
+ "hot_takes": [
+  "The first three layers are instructions and the fourth is permission: instructions are probabilistic, a deterministic veto is what decides whether output leaves the business.",
+  "A warm, confident voice offering something that is not real is worse than a cold one, because the user acts on it.",
+  "In a multi-tenant system, identity must never have a default. A missing brand identity should be a crash, not a fallback.",
+  "Examples are the wrong tool for guarantees. Relying on a voice guide to enforce rules is a category error.",
+  "Disclosing that the bot is AI in its very first message is a product decision that builds trust, not a legal checkbox."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Govrix Scout already does PII and prompt-injection scanning in the proxy. The talk's deterministic post-generation veto, with soft flags for slips and hard rejects against a real-data allowlist, maps directly onto the proxy's output side and is a pattern for a shared gate.",
+   "action": "Prototype an output-side veto stage in the Govrix proxy with two tiers: a soft-flag pattern set and a hard-reject check that blocks dates, IDs or figures not present in the tool's real data, enforced as a default gate rather than wired per route."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The harness drives Claude Code and runs plan, critique and debate stages with subagents. The talk's single assembly function with a fixed prompt order could keep those stage prompts consistent, but the talk's use case is customer-facing voice.",
+   "action": "Read the talk's point on one assembly entry point and check whether ProsHarness builds its plan, critique and debate prompts in separate places that could be unified with a fixed order."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

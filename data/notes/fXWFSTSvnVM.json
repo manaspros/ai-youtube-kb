@@ -1,0 +1,173 @@
+{
+ "one_line": "Back-of-envelope memory and concurrency math on what it would take to self-host a frontier-scale open model (Kimi K3 as a stand-in for Claude Fable 5): a Mac Studio or 4xH100 cannot hold it, and serving 100 people is a data-center sizing problem.",
+ "summary": "The host asks what hardware would be needed to run a model in the class of Claude Fable 5 locally. Because Anthropic does not publish Fable 5's size or weights, the video uses Kimi K3 (2.8T parameters, 1M-token context, full weights promised by July 27, 2026) as a published-size stand-in and states plainly that it is not a Fable replacement. Raw 4-bit weights come to about 1.4 TB, which rules out the largest Mac Studio (512 GB) and four H100s (320 GB). An 8xB200 node reaches the weight floor with almost no headroom, while an 8xB300 node leaves room for runtime and KV cache. Kimi recommends 64 or more accelerators for efficient inference, so the realistic answer is at least eight servers. For \"100 users,\" the host argues the right unit is concurrent in-flight requests, not headcount, and that agent workloads push that number up. The video closes with a hybrid pattern (small private model for routine work, cloud frontier model for the hardest tasks) and advises renting hardware for a couple of weeks to test with real users before buying.",
+ "speakers": [
+  "Unnamed host of the Kai Explains channel (not named in transcript)"
+ ],
+ "orgs": [
+  "Anthropic",
+  "Kimi",
+  "NVIDIA",
+  "Apple"
+ ],
+ "format": "other",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "memory-floor",
+  "mixture-of-experts",
+  "gpu-sizing",
+  "concurrency",
+  "local-vs-cloud",
+  "hybrid-routing",
+  "dgx-b200",
+  "dgx-b300",
+  "mac-studio",
+  "kimi-k3",
+  "claude-fable-5",
+  "mxfp4"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Fable 5 cannot be sized directly because its parameter count, architecture and weights are unpublished; Kimi K3 is used as a frontier-scale stand-in with a published size, explicitly not as an equivalent.",
+   "detail": "Kimi K3 is cited as 2.8T parameters with a 1M-token context. The host notes Kimi's own blog says K3 still trails the strongest proprietary models, and warns that benchmark scores do not reflect real work.",
+   "t": "1:11"
+  },
+  {
+   "idea": "Mixture-of-experts reduces per-token compute, not memory: all 896 experts must stay resident because routing can pick different experts for each token.",
+   "detail": "Only 16 experts are active per token, but the serving system must hold all of them since the next token may use a different set.",
+   "t": "2:19"
+  },
+  {
+   "idea": "The memory floor is parameters times bytes per parameter. At 4 bits (MXFP4), 2.8T parameters give about 1.4 TB of raw weights, before format overhead, runtime, active sessions and safety margin.",
+   "detail": "The host calls this the floor, not the real total. Even a hypothetical 2-bit version would need about 700 GB of weights.",
+   "t": "2:19"
+  },
+  {
+   "idea": "Single-box options fail on memory: the largest Mac Studio (512 GB unified memory) and four H100s (320 GB total) cannot hold the weights.",
+   "detail": "The host concludes that a Mac Studio can run useful local models but not this one.",
+   "t": "2:19"
+  },
+  {
+   "idea": "One 8xB200 server (1.44 TB) reaches the weight floor with roughly 40 GB left, which is not practical. An 8xB300 server (about 2.3 TB) leaves about 900 GB of headroom but still falls short of Kimi's recommended 64+ accelerators for efficient inference, meaning at least eight servers.",
+   "detail": "Kimi says 64 or more accelerators is the recommended setup for efficient inference, not the minimum to load the model. The host treats that recommendation as the practical answer.",
+   "t": "3:43"
+  },
+  {
+   "idea": "\"100 users\" is the wrong unit. Load is concurrent in-flight requests, which depends on request rate, how long each request keeps the system busy, prompt length and agent fan-out.",
+   "detail": "Example: 100 employees each sending one request every 10 minutes, with 30 seconds of work per request, averages about 5 active requests. Agents can run several jobs at once, and long context adds runtime memory.",
+   "t": "5:03"
+  },
+  {
+   "idea": "Operating cost goes beyond compute: power, cooling, networking, storage and staff. The host's pattern from people who already run local setups is local models for private or repetitive work and cloud models for the hardest tasks.",
+   "detail": "Eight B300 nodes are cited at about 116 kW before cooling. Compute rental for 8 B200 nodes is estimated around $313k to $577k per month, described as rough scale math, not a quote.",
+   "t": "6:26"
+  },
+  {
+   "idea": "The practical test is to rent the hardware for a few weeks and see whether real users find the results good enough, fast enough, and easy to keep running.",
+   "detail": "The host cites an LLM-service operator's view that a model that is good enough and can scale beats a stronger model that serves only a couple of people.",
+   "t": "6:26"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Weight memory floor estimate",
+   "how": "Weight bytes = parameter count x bits per parameter / 8 (2.8T x 4 bits = about 1.4 TB). Treat this as a lower bound. Add format overhead, KV cache, runtime, serving software and a safety margin, then compare the total against each candidate's total GPU or unified memory. Remember that MoE routing keeps all experts resident.",
+   "when": "Before evaluating whether a given open-weight model can be self-hosted on a given box, or before believing a 'run it on X' claim."
+  },
+  {
+   "name": "Concurrency sizing from arrival rate and service time",
+   "how": "Average active requests = requests per second x average seconds each request occupies the system (for example 100 users x 1 request per 600 s x 30 s = about 5). Size for the busiest moment, not the average or the headcount, and multiply for agent fan-out and long prompts (up to the context limit).",
+   "when": "When sizing capacity for an internal LLM service, a gateway or a load test profile, and when a team quotes users instead of concurrency."
+  },
+  {
+   "name": "Hybrid local and cloud routing",
+   "how": "Send private, repetitive or extraction-style work (document search, classification, extraction, routine coding) to a small self-hosted model. Send the hardest reasoning tasks to a frontier cloud model.",
+   "when": "When designing a model-routing policy that balances privacy, cost and quality."
+  },
+  {
+   "name": "Rent-before-buy pilot",
+   "how": "Rent the candidate hardware for one to two weeks, run real user traffic through it, and measure output quality, latency and the operational effort required to keep it running. Compare against a benchmark chart only as a secondary input.",
+   "when": "When deciding whether to buy or reserve GPU hardware for a self-hosted model."
+  }
+ ],
+ "tools": [
+  "Claude Fable 5 (Anthropic model; weights not public, used only as the question)",
+  "Kimi K3 (open-weight model, 2.8T parameters, MXFP4 weights as stated; used as the sizing example)",
+  "NVIDIA DGX B200 (8x B200 GPUs, 1.44 TB GPU memory)",
+  "NVIDIA DGX B300 (8x B300 GPUs, about 2.3 TB GPU memory)",
+  "NVIDIA H100 (80 GB each, 4 units discussed)",
+  "Apple Mac Studio (up to 512 GB unified memory)",
+  "MXFP4 (4-bit weight format, called MXFFP4 in the auto-captions)"
+ ],
+ "numbers": [
+  {
+   "claim": "Kimi K3 total parameters: 2.8 trillion; context window: 1 million tokens; full weights promised by July 27, 2026 (per Kimi)",
+   "t": "1:11"
+  },
+  {
+   "claim": "Mixture-of-experts: 896 experts total, 16 active per token",
+   "t": "2:19"
+  },
+  {
+   "claim": "4-bit raw weights: about 1.4 TB (2.8T x 0.5 byte), excluding overhead; 2-bit would still be about 700 GB",
+   "t": "2:19"
+  },
+  {
+   "claim": "Largest Mac Studio unified memory: 512 GB. Four H100 (80 GB each): 320 GB",
+   "t": "2:19"
+  },
+  {
+   "claim": "DGX B200: 8 GPUs, 1.44 TB GPU memory, leaving about 40 GB above the 4-bit weight floor",
+   "t": "3:43"
+  },
+  {
+   "claim": "DGX B300: 8 GPUs, about 2.3 TB GPU memory, leaving about 900 GB above the weight floor",
+   "t": "3:43"
+  },
+  {
+   "claim": "Kimi's recommended setup for efficient inference: 64 or more accelerators (at least eight servers)",
+   "t": "3:43"
+  },
+  {
+   "claim": "Concurrency example: 100 employees x 1 request per 10 min x 30 s each = about 5 average active requests",
+   "t": "5:03"
+  },
+  {
+   "claim": "Power: one DGX B300 is 14.5 kW per NVIDIA; eight run about 116 kW before cooling",
+   "t": "5:03"
+  },
+  {
+   "claim": "Rough rental cost: 8 nodes of public 8xB200 pricing = about $313,000 to $577,000 per month for compute alone (not a quote)",
+   "t": "6:26"
+  }
+ ],
+ "hot_takes": [
+  "The video is candid about limits: it cannot size Fable 5 because the weights are unpublished, and Kimi K3 is not presented as an equivalent. That keeps the claims honest despite the title's framing.",
+  "The 100-user answer is arithmetic from a stated example, not a measured throughput benchmark. The host says so and also says benchmark charts are not a reliable guide to real work.",
+  "Cost figures are rough order-of-magnitude estimates from public node prices, not vendor quotes.",
+  "Much of the framing comes from anecdotes on X and a Reddit thread, which are not verified in the video.",
+  "The claim that Kimi K3 full weights land by July 27, 2026 is quoted from Kimi and is not checked in the video. The video is dated 2026-08-02."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft (L2B) targets vLLM and KV-cache work on a single RTX 5090. This video gives a concrete method for deciding which model classes a single box can host, and supports the thesis that frontier-scale local serving is out of reach for one GPU. Its local-for-routine, cloud-for-hardest pattern maps to AgentOS strategy routing in L1.",
+   "action": "Before publishing any InferCraft or AgentOS claim about local model capacity, run the weights-plus-overhead floor calculation for each candidate model and record it in the benchmark doc. Use the same check to decide which open models to target, and reflect the hybrid local-versus-cloud routing pattern in the L1 strategy-routing design."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs Claude Code loops and schedules. The video's routing pattern (cheap private model for routine steps, frontier cloud for the hardest) could apply to step-level model selection, but nothing here is specific to harness design.",
+   "action": "Consider a per-step model-routing rule in long loops: a small local model for routine, private steps and a frontier model for hard steps. Test it on a few real runs before adopting it."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

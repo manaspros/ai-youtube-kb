@@ -1,0 +1,143 @@
+{
+ "one_line": "Melanie Warrick (Temporal) shows durable execution for multi-agent systems: a human approval is a wait condition plus a signal on a parked workflow, so the rest of the system keeps running and survives restarts. It is a vendor-led talk with a live ice-cream delivery demo.",
+ "summary": "Melanie Warrick from Temporal demos a delivery system with fleet, customer and dispatch agents built on Google ADK and LangGraph, with Temporal providing durable state. She argues that a human approval should not be a blocking function call. Instead, the workflow pauses on a wait condition and resumes when an external signal delivers the human's answer, so only that one order is paused. In the live demo she kills the worker, sends an approval while it is offline, and restarts it, and the event log replays to the current step rather than re-running earlier work. She explains the three primitives (worker, workflow, activity) and says model and tool calls go in activities, while steps in the loop go in deterministic workflows. For deciding when a human should be in the loop, she advises weighing the cost of being wrong against alert fatigue. The talk is partly a Temporal pitch, but the wait-plus-signal pattern and the replay demo are concrete.",
+ "speakers": [
+  "Melanie Warrick"
+ ],
+ "orgs": [
+  "Temporal",
+  "Google",
+  "LangChain"
+ ],
+ "format": "demo",
+ "topics": [
+  "agent-architecture",
+  "multi-agent",
+  "governance-compliance"
+ ],
+ "tags": [
+  "durable-execution",
+  "human-in-the-loop",
+  "temporal",
+  "wait-condition",
+  "signal",
+  "langgraph",
+  "google-adk",
+  "workflows",
+  "activities",
+  "replay",
+  "approvals"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Treat the human as an async API, not a blocking call",
+   "detail": "A function that waits for a human can block or be lost if the service goes down. The speaker's fix is to pause only that one workflow with a wait condition and let an external signal deliver the human's answer, while other workflows keep running.",
+   "t": "7:10"
+  },
+  {
+   "idea": "Approval state survives crashes through event-log replay",
+   "detail": "In the demo the worker is killed, an approval is sent while it is offline, and the worker is restarted. The event log is replayed up to the paused point, not re-executed, and the queued approval is applied so the order is assigned and delivered.",
+   "t": "15:35"
+  },
+  {
+   "idea": "Split the system into worker, workflow and activity",
+   "detail": "The worker runs the code. The workflow holds the step-by-step state and must be deterministic. Model calls and tool calls, which touch external systems, go in activities, which may be non-deterministic.",
+   "t": "10:03"
+  },
+  {
+   "idea": "Wrap framework components instead of rewriting the agent",
+   "detail": "For Google ADK, the model is wrapped in a Temporal model class and tools are wrapped as activities, and the worker is given the ADK plugin. For LangGraph, nodes call LangGraph's interrupt, and the loop waits on a signal for the answer.",
+   "t": "10:03"
+  },
+  {
+   "idea": "One child workflow per entity limits the blast radius of a pause",
+   "detail": "Each order gets its own child workflow per framework. A high-value order that needs approval pauses only its own child, so the other orders keep being assessed and filled.",
+   "t": "12:43"
+  },
+  {
+   "idea": "Decide human-in-the-loop by the cost of being wrong",
+   "detail": "The speaker says this is a case-by-case call. The main factor is the cost of an error, and especially the security impact, balanced against alert fatigue from users who click yes on everything.",
+   "t": "16:54"
+  },
+  {
+   "idea": "Use timeouts on waits",
+   "detail": "A wait condition can carry a timeout so a workflow does not wait forever for a human who never answers.",
+   "t": "8:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Human approval as wait condition plus signal",
+   "how": "Pause the workflow at the approval point with a wait condition, store that state in the durable layer, and resume when an external signal carries the human's decision. Add a timeout for how long the wait lasts.",
+   "when": "Any multi-step agent run where a human decision may take minutes, days or weeks, and the run must survive restarts."
+  },
+  {
+   "name": "Wrap every model and tool call as an activity",
+   "how": "Keep the agent loop and step sequence in a deterministic workflow, and run every model call and external tool call as an activity so their results are recorded and not re-run on replay.",
+   "when": "When an agent loop must resume after a crash without repeating side effects."
+  },
+  {
+   "name": "LangGraph interrupt bridged to a durable wait",
+   "how": "Inside a graph node, call interrupt to ask the question. In the workflow, wait on the interrupt-signal and resume the graph with the human's response.",
+   "when": "LangGraph-based agents that need a human answer in the middle of a graph."
+  },
+  {
+   "name": "Child workflow per entity",
+   "how": "Start one child workflow per order or item, so a paused item stops only its own child while siblings keep running.",
+   "when": "Batch or multi-entity agent systems where one item needing review should not stall the rest."
+  },
+  {
+   "name": "Cost-of-being-wrong gate for human review",
+   "how": "Score each action by the cost of an error, especially security impact, and route only high-cost actions to a human to limit alert fatigue.",
+   "when": "Deciding which agent actions need approval before they run."
+  }
+ ],
+ "tools": [
+  "Temporal",
+  "Google ADK",
+  "LangGraph",
+  "Google Maps API",
+  "Google Search",
+  "Python",
+  "TypeScript",
+  "Rust"
+ ],
+ "numbers": [
+  {
+   "claim": "Claims a single system can keep millions of workflows parked waiting on humans (no benchmark given).",
+   "t": "8:34"
+  },
+  {
+   "claim": "Approval queued while the worker was offline was applied after restart, and the order was delivered (single demo run, no latency figures).",
+   "t": "15:35"
+  }
+ ],
+ "hot_takes": [
+  "A human approval should be a signal to a parked workflow, not a blocking function call.",
+  "Human-in-the-loop should be decided by the cost of being wrong, not by default, because alert fatigue makes constant yes-clicking the outcome."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Durable wait-plus-signal is relevant to a gated pause, but AgentOS has no human approval flow yet.",
+   "action": "Read Temporal's wait-condition and signal docs before designing any human-approval pause in the Crucible exec-gate, rather than writing a blocking call."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already has checkpoint/resume and phone-driven approvals; this talk gives a concrete wait-plus-signal model for them.",
+   "action": "Store each pending approval as a persisted checkpoint state that resumes on a phone-approval signal, with a timeout that falls back to a safe default."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Any multi-step agent run that waits for a human benefits from the pause-and-resume pattern, though the talk is partly a Temporal pitch.",
+   "action": "Note the cost-of-being-wrong rule for choosing which agent actions need a human."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

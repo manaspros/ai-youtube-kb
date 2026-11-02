@@ -1,0 +1,164 @@
+{
+ "one_line": "Review of Worktrunk (wt), a Rust CLI on top of git worktrees that adds per-branch switching, a multi-agent status view, one-command merge, copy-on-write cloning of ignored files, and per-worktree dev ports for parallel coding agents.",
+ "summary": "Josh from Better Stack reviews Worktrunk, a terminal tool that wraps git worktrees for running several coding agents in parallel. He argues Claude Code's built-in worktrees create isolated checkouts but lack a merge command and a single status view, which Worktrunk adds. The demo runs three agents on three branches, with wt list showing each branch's commits ahead of main, diff size, and whether the agent is working or waiting. The distinctive feature is wt step copy-ignore, which clones git-ignored files (dependencies, build caches, env files) with copy-on-write, so new worktrees skip a cold install and build. He also covers per-worktree dev server ports and a one-command wt merge that squashes, rebases onto main, fast-forwards, and deletes the worktree. His caveats are substantial: the project is pre-1.0 (v0.81) with frequent breaking changes, merge conflicts still land on the user, copy-on-write only helps on certain filesystems, and project hooks run shell commands. He says native worktrees are enough if you run one agent at a time. Most performance numbers are the author's and are not verified in the video.",
+ "speakers": [
+  "Josh"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "multi-agent",
+  "dev-tools"
+ ],
+ "tags": [
+  "git-worktree",
+  "worktrunk",
+  "wt",
+  "parallel-agents",
+  "claude-code",
+  "copy-on-write",
+  "apfs",
+  "merge-workflow",
+  "dev-server-ports",
+  "rust-cli",
+  "pre-1.0"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Built-in Claude Code worktrees isolate agents but leave two gaps: no command to merge work back and no single view of what all agents are doing.",
+   "detail": "Worktrunk is pitched as filling exactly those gaps, not replacing worktrees. Git worktrees give each agent its own folder and branch on the same repo, so agents stop writing to the same working tree.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Plain git worktrees are multi-step: creating one needs the branch name repeated, cleanup takes several commands, and git worktree list shows only folder paths.",
+   "detail": "The speaker's point is ergonomics: the tool lets you think in branches instead of folder paths.",
+   "t": "0:42"
+  },
+  {
+   "idea": "wt list is the status view for parallel agents: one screen showing each worktree's branch, commits ahead of main, and diff size, plus an indicator for working versus waiting-for-input.",
+   "detail": "A robot icon means the agent is running and a speech bubble means it is waiting on the user. wt switch <branch> jumps into a worktree without remembering paths.",
+   "t": "2:03"
+  },
+  {
+   "idea": "A program cannot change the parent shell's directory, so Worktrunk installs a small shell function. Skipping that setup makes everything look fine except the cd never happens.",
+   "detail": "The setup step is wt config shell install. The Claude Code plugin hooks into Claude's own worktree creation, so worktrees Claude makes itself also go through Worktrunk. Plugins also exist for Codex, OpenCode, Gemini CLI and others.",
+   "t": "3:24"
+  },
+  {
+   "idea": "wt step copy-ignore clones git-ignored files into a new worktree using copy-on-write, avoiding a cold install and cold build for every agent.",
+   "detail": "On APFS (macOS) the new folder shares disk blocks with the original until something changes, so the copy is near-instant and uses almost no space. The speaker notes that running five agents otherwise pays the cold-start cost five times.",
+   "t": "4:09"
+  },
+  {
+   "idea": "A hash-based port filter gives each worktree its own dev server port, so parallel agents do not collide on port 3000.",
+   "detail": "The speaker shows three worktrees running three dev servers. The exact filter name in the caption is unclear, so check the docs.",
+   "t": "5:00"
+  },
+  {
+   "idea": "wt merge replaces a six-command git sequence: commit, squash, rebase onto main, fast-forward, and delete the worktree.",
+   "detail": "The speaker presents this as the main gap in native worktrees. It still stops and hands the user any merge conflict when two agents edit the same file.",
+   "t": "3:24"
+  },
+  {
+   "idea": "Caveats: Worktrunk is pre-1.0 and churns, the copy-on-write speedup depends on the filesystem, and project hooks run shell commands.",
+   "detail": "The changelog has over 80 mentions of breaking changes, with about eight in the latest release. On ext4 Linux the copy is a full copy and native modules need rebuilding. Hooks ask for approval before the first run, and the speaker advises reading what you approve.",
+   "t": "6:19"
+  },
+  {
+   "idea": "Verdict: for one agent at a time, native worktrees are enough. Worktrunk is for three to five or more agents running at once.",
+   "detail": "The closing line is that parallel agents are no longer limited by the model, so workflow tooling is the new bottleneck.",
+   "t": "6:19"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Worktree per parallel agent",
+   "how": "Give each coding agent its own branch and folder with wt switch, which creates or enters the worktree and launches the agent there. The transcript does not clearly show the exact flags, so check wt --help. The Claude Code plugin makes Claude's own worktree creation go through the same path.",
+   "when": "Running two or more coding agents on the same repo at once, where one agent's uncommitted edits would break another's tests."
+  },
+  {
+   "name": "One-screen status across agents",
+   "how": "Run wt list to see every worktree with branch, commits ahead of main, diff size, and whether each agent is working or waiting for input.",
+   "when": "Supervising several parallel agents and deciding which one needs attention."
+  },
+  {
+   "name": "Shell integration before first use",
+   "how": "Run wt config shell install once so wt can change the directory of your shell. Without it, wt switch appears to work but never cd's.",
+   "when": "Immediately after installing Worktrunk, on any machine or shell where you use it."
+  },
+  {
+   "name": "Cheap clone of ignored dependencies and caches",
+   "how": "Run wt step copy-ignore in a new worktree to copy git-ignored files (dependency folders, build caches, env files) using copy-on-write. Author's numbers: a 14 GB Rust build folder goes from about 2m14s and 14 GB with a normal copy to about 20s and near-zero extra space, and a first Rust build drops from about 68s to 3-4s. These are the author's figures and were not verified in the video.",
+   "when": "Multiple worktrees of a large project where a cold install or build per agent is the main cost, and the filesystem supports copy-on-write (APFS on macOS; the speaker says ext4 gets full copies)."
+  },
+  {
+   "name": "Per-worktree dev server ports",
+   "how": "Use Worktrunk's hash-based port template filter so each worktree gets a deterministic port. The exact filter name in the captions is unclear, so check the docs.",
+   "when": "Running several dev servers from parallel worktrees at once."
+  },
+  {
+   "name": "Single-command merge back",
+   "how": "From a finished worktree, run wt merge. It commits, squashes, rebases onto main, fast-forwards main, and deletes the worktree. Conflicts stop the rebase and must be resolved by hand.",
+   "when": "An agent's branch is done and you want it on main without the manual git sequence, accepting that conflicts still need manual work."
+  }
+ ],
+ "tools": [
+  "Worktrunk (wt, Rust CLI, MIT/Apache dual license, v0.81 as stated)",
+  "Claude Code (native worktrees and its worktree-creation hook)",
+  "Codex",
+  "OpenCode",
+  "Gemini CLI",
+  "git",
+  "Vibe Kanban (mentioned as a Kanban-board alternative)",
+  "APFS (macOS copy-on-write filesystem)",
+  "ext4 (Linux filesystem, full copies)"
+ ],
+ "numbers": [
+  {
+   "claim": "Worktrunk is at version 0.81 and ships about three releases a week (author's framing: pre-1.0).",
+   "t": "0:00"
+  },
+  {
+   "claim": "The changelog mentions 'breaking' over 80 times, with about 8 in the latest release alone.",
+   "t": "6:19"
+  },
+  {
+   "claim": "Copy-on-write clone of a 14 GB Rust build folder: about 20s and near-zero extra space, versus 2m14s and 14 GB with a normal copy (author's figures).",
+   "t": "4:09"
+  },
+  {
+   "claim": "First Rust build drops from about 68s to roughly 3-4s with copy-ignore (author's figures; the speaker says to test it yourself).",
+   "t": "5:00"
+  },
+  {
+   "claim": "Merge flow collapses six git commands into one (wt merge).",
+   "t": "5:00"
+  }
+ ],
+ "hot_takes": [
+  "Native Claude Code worktrees are honestly enough if you run only one agent at a time; the speaker says skip Worktrunk in that case.",
+  "Parallel agents are no longer limited by the model, so the bottleneck is the surrounding tooling for folders, installs, and merges.",
+  "The title 'best git worktree tool I've used' is stronger than the video's own evidence, which is a short demo with the author's unverified numbers and explicit pre-1.0 caveats."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and runs long agent loops with checkpoint/resume and schedules. Running several Claude Code runs in parallel needs isolated checkouts, a status view, and a clean merge path, which is exactly the gap this tool targets.",
+   "action": "Prototype one git worktree per ProsHarness run (or per plan-critique-debate branch) and compare it against Worktrunk's wt list, wt merge, and copy-ignore flow before adding any worktree logic to ProsHarness."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS has opt-in sandboxed code execution (Crucible) and needs fast per-agent workspaces. The copy-on-write clone of ignored files is a workspace-setup idea, but this is a dev-tool workflow, not AgentOS infrastructure.",
+   "action": "Note copy-on-write cloning of dependencies and build caches as a candidate technique for Crucible workspace setup in the sandbox design."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

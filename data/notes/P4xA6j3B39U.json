@@ -1,0 +1,139 @@
+{
+ "one_line": "Hands-on review of Google's browser-based Project IDX: the host builds a Flutter task-manager app with its Gemini chat, and reports that fixes needed repeated prompting and manual insertion.",
+ "summary": "The host tests Google's browser IDE Project IDX by building a Flutter task-manager app from a single prompt. They tour the VS Code-like interface, built-in terminal, VS Code extension support, in-browser Android emulator, and the upgraded Gemini chat, which can run terminal commands after permission and make multi-file edits. Generated code works after one revision, but a UI change breaks it. The host's fixes require pasting the whole file, and the \"insert code\" button places snippets at the cursor rather than the correct location, so they ask the model to write the full file and paste it in by hand. The model identifies bugs but sometimes does not edit files itself, and the animation feature takes several rounds. The verdict is that the tool is useful for browser-based app work, but it is not a full replacement for a normal setup on complex projects. The evidence is one anecdotal run with no benchmarks.",
+ "speakers": [
+  "Unnamed host"
+ ],
+ "orgs": [
+  "Google"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "vibe-coding-app-building"
+ ],
+ "tags": [
+  "project-idx",
+  "gemini",
+  "flutter",
+  "browser-ide",
+  "cloud-ide",
+  "vibe-coding",
+  "apply-code-changes",
+  "android-emulator"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Project IDX runs a full dev environment in the browser: VS Code-like UI, built-in terminal, VS Code extensions, and an in-browser Android emulator, so no local emulator setup is needed.",
+   "detail": "The host says this removes system requirements and emulator setup (for example Expo) for Flutter work.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The Gemini chat is an agentic upgrade over the basic chat: it can propose terminal commands for permission, run them, and make multi-file edits.",
+   "detail": "Terminal commands need user approval before running. The host shows it listing directory contents after a command runs, and says it makes installing packages easier.",
+   "t": "2:01"
+  },
+  {
+   "idea": "A single generated prompt can produce a working app, and the chat shows a diff review before the change is applied.",
+   "detail": "The first prompt for a task-manager app worked after the review-and-update step. The UI-change prompt that followed produced visible issues on review.",
+   "t": "3:26"
+  },
+  {
+   "idea": "Applying a fix is the weak point. The insert button places code at the cursor rather than in the right place, so the host pastes the full file manually.",
+   "detail": "The host compares this unfavorably with Cursor. The fix that finally worked was asking the chat to write the whole file.",
+   "t": "4:32"
+  },
+  {
+   "idea": "Explicit insert requests worked where the button did not, but the host says this should be built in.",
+   "detail": "After asking the model to insert the code directly into the file, the insertion placed it correctly. The host notes they should not have to ask for this.",
+   "t": "5:38"
+  },
+  {
+   "idea": "Multi-step fixes take many rounds, and the model sometimes diagnoses without editing.",
+   "detail": "For the animation request, the model identified the issue but did not change the code. The host had to name the file to update, and the fix took several attempts.",
+   "t": "7:00"
+  },
+  {
+   "idea": "Verdict: useful for browser-based app building, but not yet a replacement for a normal setup on more complex projects.",
+   "detail": "The host calls it an exciting step forward, notes it took several attempts to get the animation working, and says it is worth trying for experimentation.",
+   "t": "8:09"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Full-file repair loop",
+   "how": "When the chat's snippet fix does not apply cleanly, paste the entire current file into the chat, describe the symptom, and ask for the complete updated file back. Then copy the whole file over. The host reports this worked after the snippet insert failed.",
+   "when": "The AI-suggested snippet insert places code incorrectly, or when a fix spans several parts of one file."
+  },
+  {
+   "name": "Explicit insert prompt",
+   "how": "Ask the chat in plain words to insert the code directly into the named file, instead of using the Insert button, then review the result.",
+   "when": "The editor's insert button misplaces code at the cursor."
+  },
+  {
+   "name": "Observable-symptom prompt",
+   "how": "Describe what is visible or missing on screen, for example that tasks are not visible, not the code path. The host reports this produced a usable fix where earlier generic error prompts did not.",
+   "when": "The app runs but a feature fails in the UI and the model is not converging."
+  },
+  {
+   "name": "Review diff before applying",
+   "how": "Open the chat's review view for proposed changes before updating the file, and check for visible issues first.",
+   "when": "Any time the chat proposes a multi-file or UI-heavy change."
+  },
+  {
+   "name": "Setup steps for the browser IDE",
+   "how": "Accept the terms, enable the AI features when prompted, choose a template (Next.js, Flutter, Python, Go or Node.js) or import a GitHub repo, name the app, then wait for the environment to load before prompting.",
+   "when": "Starting a new prototype in the browser without a local toolchain."
+  }
+ ],
+ "tools": [
+  "Project IDX",
+  "Gemini",
+  "Flutter",
+  "VS Code",
+  "Cursor",
+  "Windsurf",
+  "Expo",
+  "Next.js",
+  "Python",
+  "Go",
+  "Node.js"
+ ],
+ "numbers": [
+  {
+   "claim": "Video runtime is 8:37.",
+   "t": "0:00"
+  },
+  {
+   "claim": "The task-manager build took about seven prompt rounds: the app prompt, a UI-change prompt, an error prompt, a request to insert the fix, a visible-symptom prompt, an animation prompt, and an animation retry (count is from the transcript).",
+   "t": "2:01-8:09"
+  },
+  {
+   "claim": "No benchmarks, latency, cost, or adoption figures are given.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Google's in-browser IDE is convenient for Flutter prototyping, but its AI apply/insert step is less reliable than Cursor's, and the host says it should be built in.",
+  "Gemini integration is a real step forward (terminal commands, multi-file edits), but the model often diagnoses without editing and needs manual steering.",
+  "Single anecdotal run on one Flutter app; the host gives no measurements, so treat the verdict as a first impression rather than evidence."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "A browser IDE product review with no relevance to the proxy, memory, inference, sandbox or observability pillars.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Gives one anecdote on the apply-change step: the AI's suggestions needed manual insertion, and fixes took several rounds. Useful as a case for ProsHarness's review and approval flow, not a feature to adopt.",
+   "action": "When designing ProsHarness's approve-and-apply step for agent edits, make the proposed change show exactly where it will land and offer a full-file rewrite as a fallback, so an insert misplacement cannot silently break the file."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

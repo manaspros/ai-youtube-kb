@@ -1,0 +1,57 @@
+# The State of AI in Software Development: Data from 400+ Orgs — Justin Reock, DX
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `Se8jHLliLXE` · [watch](https://youtu.be/Se8jHLliLXE) · **date:** 2026-10-04 · **length:** 19:09 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Justin Reock · **orgs:** DX, Morgan Stanley, Zapier, Spotify, METR
+- **topics:** enterprise-adoption, observability, pr-code-review · **tags:** developer productivity, DORA metrics, change failure rate, PR size, AI measurement framework, agent readiness, theory of constraints, value stream, code review agents, SRE agent
+
+> DX's deputy CTO shares 2025-26 data from 400+ orgs: AI lifts delivery speed only modestly, quality volatility grows, and PR size and falling change confidence are the warning signs.
+
+## Summary
+Justin Reock (deputy CTO at DX) previews organisational trends from DX's quarterly AI impact research. Deployment frequency keeps rising, but perceived delivery speed rose only about 4.5%. Change failure rate is very volatile across companies, and the speaker argues the pattern existed before AI while its amplitude has grown. Maintainability perception went up about 4% while change confidence fell about 6%, and average PR size grew from about 44 to 72 lines. Junior engineers use AI the most and spend more tokens, while senior engineers save about the same time with fewer tokens. The talk proposes measuring AI by utilization, impact and cost, comparing user cohorts on foundational metrics, and treating agent readiness as the same thing as good developer experience. The main point is that code generation is only a small part of the value stream, so the bottleneck has to be found and fixed. Case studies from Morgan Stanley, Zapier and Spotify illustrate this.
+
+## Key ideas
+- **AI speeds up delivery only modestly at the org level** — Deployment frequency keeps rising, but this is a proxy metric that says nothing about reverts, defects or change failure. Perceived delivery speed rose only about 4.5% over a year. Median velocity gain was about 7.7%, and even top performers were around 70%, with none reaching 2x. ([1:31](https://youtu.be/Se8jHLliLXE?t=91))
+- **Quality volatility grows; the pattern existed before AI** — Change failure rate is very volatile across companies. The speaker says the same pattern existed before AI, but AI has widened the swings. He ties the spread to release pipelines and automated testing. ([4:14](https://youtu.be/Se8jHLliLXE?t=254))
+- **Maintainability looks better but change confidence drops** — Perceived maintainability rose about 4% across roughly 200,000 engineers, yet change confidence fell about 6%. The speaker reads this as engineers trusting AI output less and fearing breakage more. ([5:24](https://youtu.be/Se8jHLliLXE?t=324))
+- **Larger PRs are an early warning sign** — Average PR size went from about 44 to 72 lines in a year. The speaker gives reasons: generated code is average, and long CI pipelines push people to batch changes into one PR. He says each extra line adds review, bug and vulnerability risk, and incremental-delivery sentiment fell about 10%. ([6:40](https://youtu.be/Se8jHLliLXE?t=400))
+- **Measure AI through cohorts against foundational metrics** — Do not drop existing productivity metrics. Split users into cohorts using tool and API telemetry, then compare those cohorts on PR cycle time, PR size and review pushback. Work through three dimensions in order (utilization, impact, cost), matching a maturity curve. ([10:22](https://youtu.be/Se8jHLliLXE?t=622))
+- **Agent readiness is developer experience that matters more now** — Clear documentation, straightforward data relations, modular code, reliable local CI and non-flaky tests help agents as much as humans. The speaker also collects feedback from agents about steering, context and feedback loops. ([13:30](https://youtu.be/Se8jHLliLXE?t=810))
+- **Code generation is not the bottleneck; time saved off the bottleneck is worthless** — Even perfect code generation touches only about 14 to 16% of the value stream. Citing theory of constraints, the speaker says an hour saved away from the bottleneck is worth nothing, so find the bottleneck first. ([14:55](https://youtu.be/Se8jHLliLXE?t=895))
+- **Real examples: agents on legacy code, stand-ups, reviews and incidents** — Morgan Stanley's agent turns legacy COBOL/mainframe code into PRDs. Zapier cut stand-ups and onboarding time and automates about 3,000 PR reviews a week, keeping agent comments in the PR record for human reviewers. Spotify built an SRE agent that gathers runbook steps during incidents. ([16:09](https://youtu.be/Se8jHLliLXE?t=969))
+
+## Techniques
+- **Cohort-vs-foundational-metric comparison** — Group users by AI utilization using tool and API telemetry. Compare the cohorts on existing productivity metrics such as PR cycle time, PR size and review pushback, rather than on new AI-only metrics. *When:* When you want to know whether AI tool use is changing outcomes, not just how often people use the tools.
+- **Utilization, impact, cost framing** — Track three dimensions in order: who uses what (DAU/WAU and use cases), which business metric should move as use rises, and what it costs. Start with utilization and move toward impact. *When:* When building an internal AI measurement programme or reporting on AI spend.
+- **Agent feedback as telemetry** — Ask agents to report qualitative feedback at the end of work. Cover where they needed steering, what context was missing and how many feedback loops they went through. Break the results down by use case. *When:* When you want to find which workflows give good token return and which need better context.
+- **Agent-readiness audit** — Check documentation quality, data-structure clarity, module size, local CI reliability and test flakiness before scaling agents. Treat failures in these areas as the first fix. *When:* Before running long or autonomous agent loops on a codebase.
+- **Agent first-pass PR review kept in the PR thread** — Run an agent on each PR for superficial checks and leave its comments in the PR. Humans then review with the agent's findings visible in the same place. *When:* When review volume is high and you want to reduce human review time without removing humans.
+- **Bottleneck-first AI adoption** — Map the full value stream (meetings, context switching, pipelines, handoffs) and target the constraint, not code generation alone. *When:* When AI coding gains are not showing up in delivery outcomes.
+
+## Numbers
+- Perceived rate of delivery rose about 4.5% over a year ([2:56](https://youtu.be/Se8jHLliLXE?t=176))
+- METR follow-up study: 16 engineers, about 19% lower measured productivity but about 20% higher perceived productivity (speaker calls the study small and flawed) ([4:14](https://youtu.be/Se8jHLliLXE?t=254))
+- Change failure rate: some companies rose by up to 2 points against an industry benchmark of about 4%; the speaker says this could mean about 50% more defects ([4:14](https://youtu.be/Se8jHLliLXE?t=254))
+- Perceived code maintainability up about 4%, change confidence down about 6%, across about 200,000 engineers ([5:24](https://youtu.be/Se8jHLliLXE?t=324))
+- Average PR size rose from about 44 to 72 lines over about one year ([6:40](https://youtu.be/Se8jHLliLXE?t=400))
+- Incremental-delivery developer experience driver fell about 10% ([7:50](https://youtu.be/Se8jHLliLXE?t=470))
+- Median velocity gain about 7.7% from Nov 2024 to Feb 2025 (mean 13%); top performers around 70%; none reached 2x ([14:55](https://youtu.be/Se8jHLliLXE?t=895))
+- Code generation touches only about 14 to 16% of the overall value stream ([14:55](https://youtu.be/Se8jHLliLXE?t=895))
+- Morgan Stanley's legacy-code agent saves about 300,000 hours per year ([16:09](https://youtu.be/Se8jHLliLXE?t=969))
+- Zapier: stand-ups cut from five to two a week; engineer onboarding in about two weeks against an industry benchmark of over a month; about 15% added value per engineer ([16:09](https://youtu.be/Se8jHLliLXE?t=969))
+- Zapier automates about 3,000 code reviews a week, triggered from pull requests ([17:13](https://youtu.be/Se8jHLliLXE?t=1033))
+
+## Hot takes
+- An hour saved on something that is not the bottleneck is worthless.
+- Code generation was never the bottleneck in the first place.
+- The change failure pattern exists without AI; AI changes the amplitude, not the shape.
+- Engineers trust AI-written code less even as they find it easier to read and modify.
+- What is good for humans is also good for agents; teams are finally making the developer-experience investments they skipped for decades.
+- Zapier's story is a throughput story, not a headcount-replacement story.
+
+## Tools mentioned
+DORA metrics, DX platform
+
+## Relevance to our work
+- **agentos** (1/3): The utilization, impact and cost cohort framing applies to agent telemetry that AgentOS would collect, but the talk gives no architecture or implementation detail. → *Add a cohort view to AgentOS telemetry that compares agent-using and non-using sessions on PR size and review pushback.*
+- **prosharness** (1/3): ProsHarness runs long Claude Code loops, so PR size and agent feedback telemetry are useful checks on its output. → *Record PR size and the number of feedback loops per ProsHarness run, and flag runs whose PRs grow past a set threshold.*
+- **general** (1/3): The agent-readiness checklist (documentation, modular code, reliable local CI, non-flaky tests) is a concrete pre-flight check for agent work. → *Add an agent-readiness check (docs, module size, local CI pass, flaky-test count) to the start of long agent runs.*

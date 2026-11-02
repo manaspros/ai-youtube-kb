@@ -1,0 +1,175 @@
+{
+ "one_line": "Google DeepMind and Kaggle staff tour their open eval platforms (hackathons, agent exams, Game Arena, community benchmarks) and the problems they hit: saturation, cost, harness variance, and hidden configs.",
+ "summary": "Nicholas Kang and Michael Aaron from Google DeepMind (Kaggle) argue that AI evals are scattered, go stale quickly, and are often not transparent or reproducible. They cite a case where a rival lab reran a published benchmark with API-side compaction and got much higher scores, which shows that configuration can change results. They present Kaggle's open efforts: hackathons for crowd-built benchmarks, one-line \"agent exams\" that score an agent against a leaderboard, Game Arena (PvP games with Bradley-Terry ratings), and a community benchmarks platform built from assertions and LLM judges. The Game Arena section covers how games are chosen and checked against random play, how the Kaggle simulation platform and an LLM proxy run the games, and why poker needed about 400,000 hands for significance. The closing section argues that the agent harness can move coding-benchmark scores as much as the model does, citing a third-party post they had not verified. The talk is mostly a product overview, with the cost, harness and config points as the useful parts.",
+ "speakers": [
+  "Nicholas Kang",
+  "Michael Aaron"
+ ],
+ "orgs": [
+  "Google DeepMind",
+  "Kaggle"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "testing-verification",
+  "models-research"
+ ],
+ "tags": [
+  "kaggle",
+  "game-arena",
+  "agent-exams",
+  "community-benchmarks",
+  "pvp-evals",
+  "bradley-terry",
+  "harness-variance",
+  "benchmark-saturation",
+  "eval-transparency",
+  "hackathons",
+  "openspiel"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Evals are scattered, decentralized, and go stale fast.",
+   "detail": "Speaker says 10+ new benchmarks appear daily, and leaderboards in papers stop being maintained once the authors move on. Finding what matters means reading papers by hand.",
+   "t": "2:05"
+  },
+  {
+   "idea": "Published eval numbers are often not reproducible because the configuration is hidden.",
+   "detail": "Model settings and how the benchmark is orchestrated are rarely disclosed. An anecdote: a rival lab reran a Kaggle-published benchmark using API-side compaction and got much higher scores, while Kaggle ran all models without it.",
+   "t": "3:16"
+  },
+  {
+   "idea": "Very few people build evals, so model capability is jagged.",
+   "detail": "Speaker contrasts a small number of AI researchers with a much larger pool of engineers and data scientists. Anything not benchmarked cannot be hill-climbed, which leads to uneven model skill. He argues for open, community-built evals.",
+   "t": "3:16"
+  },
+  {
+   "idea": "Domain experts hold benchmark data that labs will not build.",
+   "detail": "A wastewater plant engineer in Turkey built a private benchmark from 20 years of experience about safety protocols. Speaker says this data would never be produced by labs because it is not economically productive for them.",
+   "t": "4:39"
+  },
+  {
+   "idea": "Hackathons are used to crowdsource benchmark creation, but they need tooling and human judging.",
+   "detail": "DeepMind is running a hackathon on five of the ten cognitive faculties from a recent paper. Challenges include giving participants compute and API access, writing up results, and judging creativity, which speaker says still needs human experts who may not agree.",
+   "t": "7:03"
+  },
+  {
+   "idea": "Game Arena uses PvP games to avoid benchmark saturation.",
+   "detail": "Models play each other, so there is always a winner and loser and the ELO-style rating never runs out of headroom. Games were picked to test different skills: Werewolf for deception, poker for randomness and risk, chess as a classic.",
+   "t": "12:19"
+  },
+  {
+   "idea": "Poker needed about 400,000 hands for significance, so run cost is the main limit.",
+   "detail": "Speaker says the statistics needed huge run counts. He asks for ways to reach significance with fewer games. Bradley-Terry pairwise scheduling is used to reduce the number of matches.",
+   "t": "14:37"
+  },
+  {
+   "idea": "The agent harness can change coding-benchmark results more than the model does.",
+   "detail": "Speaker cites a third-party post, which he has not checked, saying frontier models on SWE-Bench Pro land within a few points of each other, while the harness changed scores by about 22%. He says it is hard to know whether a test measures the harness or the model.",
+   "t": "18:22"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "PvP game benchmark with pairwise rating",
+   "how": "Choose games that test one capability each. Check that models can play at all, and that they beat random play. Tune prompts so they are fair. Run games through a shared LLM proxy on a simulation platform (OpenSpiel-based). Rate models with Bradley-Terry pairwise scheduling, and publish conversation logs as a dataset.",
+   "when": "When static benchmarks saturate and you need a rating that stays open to improvement over time."
+  },
+  {
+   "name": "Task-of-assertions plus LLM-judge benchmark structure",
+   "how": "Write each task as a set of deterministic assertions (for example, the output has the right text, or the file parses) plus LLM-judge checks. Group tasks into a benchmark, run it across a chosen model set, and compare results side by side. Example: an SVG-reproduction task.",
+   "when": "When you want a shareable, community-built eval that is closer to production eval style but open."
+  },
+  {
+   "name": "One-line agent exam",
+   "how": "Give the user a single prompt to paste into their agent. The agent runs the exam and a score is posted to a leaderboard. Tune difficulty so the exam is hard enough to give signal but short enough that agents finish.",
+   "when": "For a fast baseline of consumer or personal agents before they are deployed."
+  },
+  {
+   "name": "Lock down the harness and config when comparing models",
+   "how": "Run every model with identical settings. Do not allow model-side features such as API compaction to differ across runs. Report the harness and config alongside the score.",
+   "when": "Any time you publish or compare agent or model eval numbers."
+  }
+ ],
+ "tools": [
+  "Kaggle Benchmarks",
+  "Kaggle Game Arena",
+  "OpenSpiel",
+  "Kaggle simulation platform",
+  "LLM model proxy (also available on Colab)",
+  "Bradley-Terry pairwise rating",
+  "Moltbook (transcribed as Motebook)",
+  "SWE-Bench Pro (cited)"
+ ],
+ "numbers": [
+  {
+   "claim": "10+ new AI benchmarks released per day (speaker's estimate)",
+   "t": "2:05"
+  },
+  {
+   "claim": "Kaggle community of 30+ million users",
+   "t": "0:56"
+  },
+  {
+   "claim": "Roughly 30,000 AI researchers versus about 30 million software engineers and data scientists (speaker's rough figure from a search)",
+   "t": "3:16"
+  },
+  {
+   "claim": "About 400,000 poker hands needed for statistical significance in Game Arena",
+   "t": "14:37"
+  },
+  {
+   "claim": "Over 500 agents evaluated on the agent exam within about a week of launch, without much promotion",
+   "t": "11:02"
+  },
+  {
+   "claim": "Harness choice changes SWE-Bench Pro scores by about 22%, per a third-party post the speaker has not verified",
+   "t": "18:22"
+  },
+  {
+   "claim": "Six frontier models within a couple of percentage points of each other on SWE-Bench Pro, per the same third-party post (unverified)",
+   "t": "18:22"
+  },
+  {
+   "claim": "Hackathon covers 5 of the 10 cognitive faculties from the DeepMind paper",
+   "t": "7:03"
+  }
+ ],
+ "hot_takes": [
+  "Published model benchmark numbers may not reflect the model. Config choices such as API-side compaction can move scores a lot, as the rival-lab rerun showed.",
+  "Agent benchmark results often measure the harness as much as the model, so comparisons between models need the harness held fixed.",
+  "Saturation-proof ratings come from PvP games, since one model always has to win and lose.",
+  "Consumer agents are being sent out without any testing, so a short standard exam should be a baseline before they run tasks like email or purchases."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Speaker's point that config (for example, API compaction) and harness choices can shift eval numbers applies to any AgentOS eval claims, such as RAGAS or benchmark runs.",
+   "action": "When publishing AgentOS eval numbers, record the exact proxy and harness config and run every compared model under the same settings."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Pairwise Bradley-Terry scheduling is a way to rank models with fewer matches, which may help when comparing many routing or model options.",
+   "action": "Read the Kaggle Game Arena scheduling approach before adding a pairwise ranking step to AgentOS model-routing evals."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The talk's main warning is that harness choice can change agent results more than the model. ProsHarness wraps Claude Code, so any ProsHarness eval has to control for that wrapper.",
+   "action": "Run the same task set through bare Claude Code and through ProsHarness, and report the harness as a separate variable before claiming gains from checkpoints or plan-critique loops."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Haiku-based pipelines could use pairwise, Bradley-Terry-style ranking of outputs as a cheaper judging method than scoring each output alone.",
+   "action": "Try pairwise comparison with a cheap model on a small sample and check whether the ranking agrees with absolute scores."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

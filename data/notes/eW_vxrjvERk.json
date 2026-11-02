@@ -1,0 +1,151 @@
+{
+ "one_line": "Neo4j DevRel lead argues agents need a knowledge graph that stores short-term, long-term and reasoning memory together, so decisions can be explained and reused. Mostly a product pitch with one finance demo.",
+ "summary": "Stephen Chin of Neo4j frames the problem as enterprise knowledge being scattered across Slack, tickets, CRMs and other silos, so agents make decisions without the context behind them. He proposes a \"context graph\" that holds three kinds of memory in one structure: short-term state of the current pipeline, long-term entity and process history, and reasoning traces that record why a decision was made. He contrasts a plain LLM answer, a vector-RAG answer and a graph-grounded answer on a healthcare example, where the graph version recovers patient history that similarity search dropped. The main demo is a financial-services loan approval agent that pulls from a support system, a CRM and an internal system through about 10 MCP tools, writes entities and decisions into Neo4j, and shows the Cypher queries it ran as an audit trail. The talk is mostly a vendor pitch for Neo4j's open-source agent memory package and free Aura and Graph Academy resources. It gives no benchmarks, so the value is the architecture pattern rather than measured results.",
+ "speakers": [
+  "Stephen Chin"
+ ],
+ "orgs": [
+  "Neo4j",
+  "Gartner",
+  "Foundation Capital"
+ ],
+ "format": "talk",
+ "topics": [
+  "memory",
+  "rag-retrieval",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "context graph",
+  "knowledge graph",
+  "Neo4j",
+  "Cypher",
+  "GraphRAG",
+  "decision traces",
+  "reasoning memory",
+  "explainability",
+  "audit",
+  "MCP",
+  "vector search",
+  "FastRP",
+  "Leiden"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Plain audit logs record what happened but not why; a context graph captures decision traces as entities and relationships.",
+   "detail": "The speaker says an audit log misses the reasoning, while a graph stores the policies applied, risk factors, previous decisions and approvals, so later agents can look them up. Presented as the core difference between context graphs and logs.",
+   "t": "11:41"
+  },
+  {
+   "idea": "Split agent memory into three stores that live in one graph: short-term state, long-term history, and reasoning traces.",
+   "detail": "Short-term memory is the current pipeline state. Long-term memory needs a domain model of entities and processes so it stays organized across tasks and customers. Reasoning memory keeps decision provenance that can be reused and used for compliance and debugging.",
+   "t": "6:33"
+  },
+  {
+   "idea": "Vector similarity search alone drops background facts that matter for the answer.",
+   "detail": "In the healthcare example, the vector-RAG answer gave generic breathing and coughing advice. The graph-grounded answer added smoking-cessation counselling and pulmonary rehab based on the patient's history and prior operation. The speaker presents this as the reason to add graph retrieval.",
+   "t": "5:15"
+  },
+  {
+   "idea": "Use vector lookup only to find an entry node, then traverse the graph for multi-hop context.",
+   "detail": "The speaker describes FastRP graph embeddings and vector lookups as the way into the graph, followed by traversal and Leiden community detection. He says this gives explainable results and handles multi-hop questions better than joining tables.",
+   "t": "8:58"
+  },
+  {
+   "idea": "Write each agent decision back into the graph so later queries can read it.",
+   "detail": "The loop is: retrieve through graph, vector and data-science tools, run the agent, then store the output and its reasoning as new graph data that later queries draw on. This makes the graph grow with use.",
+   "t": "11:41"
+  },
+  {
+   "idea": "Expose the Cypher queries and traversed subgraph to the user to make the agent's answer auditable.",
+   "detail": "In the loan demo, the UI shows the Cypher the model generated and the graph it walked, including a previous rejection and fraud-pattern hits. The speaker argues this lets a human justify the decision to the organization.",
+   "t": "14:27"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Three-tier memory in one graph",
+   "how": "Store short-term pipeline state, long-term entity and process history, and reasoning traces as connected nodes and relationships in one graph store, with a domain model for entities.",
+   "when": "Agents need to recall prior sessions and explain why earlier decisions were made, not just what was retrieved."
+  },
+  {
+   "name": "Vector entry point then graph traversal",
+   "how": "Embed nodes, use vector lookup to find a starting node, then traverse relationships with graph algorithms such as FastRP embeddings and Leiden community grouping.",
+   "when": "Similarity search returns relevant chunks but misses linked background facts, such as patient history or account relationships."
+  },
+  {
+   "name": "Decision write-back to the graph",
+   "how": "After each agent run, store the recommendation, its reasoning and its sources as new nodes linked to the entities involved, so later queries retrieve them as precedent.",
+   "when": "Decisions repeat across cases and the organization needs decision precedent, provenance or compliance trails."
+  },
+  {
+   "name": "LLM-generated Cypher with visible query trace",
+   "how": "Let the model write Cypher against the graph and show the generated queries and traversed subgraph in the UI next to the answer.",
+   "when": "A human must sign off on an agent's recommendation and needs to see the evidence used."
+  },
+  {
+   "name": "Multi-source ingestion through MCP tools into a graph",
+   "how": "Expose each source system (support tickets, CRM, internal business data) as MCP tools, then use an LLM to extract entities and create OpenAI embeddings that populate the graph.",
+   "when": "Context lives in several enterprise systems and needs to be joined into one queryable structure."
+  }
+ ],
+ "tools": [
+  "Neo4j",
+  "Neo4j Agent Memory package (open source)",
+  "Cypher",
+  "OpenAI embeddings",
+  "FastRP",
+  "Leiden algorithm",
+  "MCP",
+  "Next.js",
+  "Neo4j Aura (free tier)",
+  "Graph Academy"
+ ],
+ "numbers": [
+  {
+   "claim": "The loan demo agent uses 10 MCP tools to reach the support ticket system, CRM and internal business data system.",
+   "t": "16:00"
+  },
+  {
+   "claim": "Foundation Capital's post, cited by the speaker, calls context graphs a $3 trillion startup opportunity. This is a third-party claim the speaker repeats, not verified here.",
+   "t": "2:33"
+  },
+  {
+   "claim": "Gartner has added context graphs to the AI hype cycle, according to the speaker. No figures given.",
+   "t": "2:33"
+  },
+  {
+   "claim": "The talk gives no benchmark, latency, cost or accuracy figures for the graph-grounded approach. The healthcare comparison is qualitative.",
+   "t": "5:15"
+  }
+ ],
+ "hot_takes": [
+  "An audit log is not enough for agents: it records outcomes but not the why, and the why is what the graph should keep.",
+  "Vector-only RAG loses background facts that a graph would keep, so agents built on similarity search alone give generic answers.",
+  "Enterprise context is stuck in Slack threads, tickets and siloed systems, and agents cannot make good business decisions until it is joined into one structure."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already has tiered cross-session memory, provenance and GraphRAG, and Neo4j is already in the L3 storage plan. The talk's idea of storing reasoning traces as graph nodes maps onto MemoryMesh's provenance layer.",
+   "action": "Prototype one MemoryMesh path that stores each agent decision and its cited sources as linked nodes, then benchmark multi-hop precedent lookup against the current BM25 plus pgvector retrieval on a small decision set."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The plan, critique and debate steps create decision records that a later checkpointed run could reuse. The talk's reasoning-trace idea applies, but only as a storage pattern.",
+   "action": "Consider saving plan, critique and debate outcomes as structured records with links to the checkpoint they came from, so resumed runs can query earlier decisions."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The three-tier memory split (short-term, long-term, reasoning traces) is a clear framing for agent memory design. The talk gives no measurements to support it.",
+   "action": "Read the Neo4j agent memory package README to see how it separates short-term, long-term and reasoning memory, and compare it with our current memory design."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

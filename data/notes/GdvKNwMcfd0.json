@@ -1,0 +1,159 @@
+{
+ "one_line": "Microsoft's Chris Noring on moving from writing code to running agents: start in the CLI, use AGENTS.md, skills and custom agents as guardrails, and delegate background work that comes back as draft PRs for human review.",
+ "summary": "Chris Noring (Microsoft) argues that developers now act more as system designers than line-by-line coders, with agents doing the building. He proposes starting work from the CLI (Copilot CLI or Claude Code), keeping the editor as a control panel for fine adjustments, and treating prompts as the main way code gets written. The talk stresses guardrails before scale: an AGENTS.md file for repo-wide intent and constraints, skills as repeatable, strictly scoped recipes, and custom agents with a persona and an explicit tool list for work that needs orchestration. For scale he demos delegating tasks to cloud agents, either from the CLI or by assigning a GitHub issue, which run in sandboxes and return a draft PR for a human to review and merge. The message is that agents are unreliable \"toddlers\" that need a harness, and that unguarded output means 20x more slop. The talk is a demo-led practitioner overview with few measured results, and the 20x figure is a rhetorical claim, not a measurement.",
+ "speakers": [
+  "Chris Noring"
+ ],
+ "orgs": [
+  "Microsoft",
+  "GitHub",
+  "Anthropic"
+ ],
+ "format": "talk",
+ "topics": [
+  "coding-agents",
+  "context-engineering",
+  "software-factory",
+  "multi-agent"
+ ],
+ "tags": [
+  "AGENTS.md",
+  "skills",
+  "custom agents",
+  "GitHub Copilot CLI",
+  "Claude Code",
+  "delegation",
+  "draft PR",
+  "human in the loop",
+  "guardrails",
+  "CLI-first workflow"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Start agent work from the CLI, not the editor.",
+   "detail": "The speaker's proposed workflow: open a CLI first to manage issues, PRs and status checks, then move to the editor for fine-tuning. The editor becomes a control board that watches agent streams.",
+   "t": "3:45"
+  },
+  {
+   "idea": "Developer value has shifted from typing code to bounding agents.",
+   "detail": "Teams now bring working demos instead of slide decks. Engineers still write some code but spend their time on what agents should build and within which limits.",
+   "t": "1:02"
+  },
+  {
+   "idea": "AGENTS.md is the minimum guardrail.",
+   "detail": "A high-level file in each repo stating intent, architecture, constraints, and do's and don'ts, such as never changing architecture unless told to. It can be copied between projects to bring older codebases in line.",
+   "t": "7:32"
+  },
+  {
+   "idea": "Skills are contracts for repeatable tasks.",
+   "detail": "A skill is a folder with a SKILL.md file (name, description, then a long instruction body) that the agent invokes. It is self-contained and intentionally constrained so the agent follows a fixed order and does not improvise. The speaker asks the agent itself to help write better skill instructions.",
+   "t": "9:59"
+  },
+  {
+   "idea": "Custom agents add a persona, tools and orchestration on top of skills.",
+   "detail": "A skill cannot coordinate with other agents. A custom agent has a role (security expert, backend, frontend), can use several skills and MCP servers, and has an explicit tools list that limits what it may do. The example researcher agent has web access but cannot edit files.",
+   "t": "12:52"
+  },
+  {
+   "idea": "Agents are unpredictable, so they need a harness and human approval gates.",
+   "detail": "The speaker describes agents as toddlers that swing between genius and failure. Scaling is only safe with a harness, and the human stays in the loop by reviewing draft PRs and merging.",
+   "t": "16:42"
+  },
+  {
+   "idea": "Delegate background work to cloud agents from the CLI or from GitHub issues.",
+   "detail": "A delegate command from the CLI pushes the session to a GitHub repo, which starts a job in a sandbox and opens a draft PR. The same can be done by assigning a GitHub issue to an agent. The agent uses MCP servers such as Playwright and the GitHub MCP server, and the work runs in the background.",
+   "t": "18:02"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Layered repo guardrails (AGENTS.md, skills, custom agents)",
+   "how": "Put repo intent and do's and don'ts in AGENTS.md. Put repeatable multi-step tasks in skill folders with SKILL.md front matter. Put role-specific work in custom agents with a persona and an explicit tools allowlist.",
+   "when": "Before letting agents run unattended, or when agents keep producing the same wrong output for repeatable tasks."
+  },
+  {
+   "name": "Tools allowlist to constrain an agent",
+   "how": "Declare in the agent's front matter which tools it may use (for example read and web search, but not file edits). The allowlist limits what the agent can do.",
+   "when": "For specialist agents such as a researcher that should read but not write."
+  },
+  {
+   "name": "Delegate to a background cloud agent that returns a draft PR",
+   "how": "From the CLI, run the delegate command on a session that already lives in a GitHub repo. Or create a GitHub issue and assign it to the agent. The agent works in a sandbox and returns a draft PR for review.",
+   "when": "For self-contained tasks such as a new feature or a bug fix that can run while you work on something else."
+  },
+  {
+   "name": "Parallel terminals as a scaling model",
+   "how": "Run several agent sessions in separate terminals, each assigned a task such as a feature, an MCP change or a fix, and track them from the CLI or GitHub issues.",
+   "when": "When the backlog is larger than one person can build sequentially."
+  },
+  {
+   "name": "Ask the agent to write its own skill or instructions",
+   "how": "Ask the agent how to write a better instruction for a given goal, then use its draft as the starting skill file.",
+   "when": "When you are not confident in how to write a skill or agent instruction."
+  }
+ ],
+ "tools": [
+  "GitHub Copilot CLI",
+  "Claude Code",
+  "Claude Desktop",
+  "VS Code",
+  "GitHub Copilot cloud agent",
+  "GitHub MCP server",
+  "Playwright MCP",
+  "AGENTS.md",
+  "SKILL.md skills",
+  "custom agents (.github/agents)"
+ ],
+ "numbers": [
+  {
+   "claim": "Closing 15 GitHub issues from the CLI without opening a UI",
+   "t": "5:07"
+  },
+  {
+   "claim": "Some developers run 15 to 20 agents at once",
+   "t": "6:31"
+  },
+  {
+   "claim": "Six or more terminals with agents running in parallel",
+   "t": "22:04"
+  },
+  {
+   "claim": "Speaker's rhetorical claim: developers become '20 times the developer' with agents, but only with guardrails. This is not a measurement.",
+   "t": "22:04"
+  },
+  {
+   "claim": "Speaker has spent about 19.5 of 20 years in an editor",
+   "t": "3:45"
+  }
+ ],
+ "hot_takes": [
+  "The CLI, not the editor, should be the first entry point for developers working with agents.",
+  "Engineers should bring working demos to the business instead of PowerPoint decks.",
+  "Agents are like toddlers who swing between genius and failure, so a harness is required.",
+  "Without guardrails, 20x more agent output means 20x more slop."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "The talk covers developer workflow with coding agents, not the infrastructure pillars of AgentOS.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code in a harness with checkpoints and approval gates. The talk describes the same layering of guardrails, skills, custom agents and human approval over CLI agents.",
+   "action": "Compare ProsHarness's permission and loop design with the AGENTS.md, skill, custom-agent and tools-allowlist layering, and consider a per-agent tools allowlist in the harness."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Covers context engineering for coding agents (AGENTS.md, skills, custom agents) and the delegation-to-draft-PR workflow, which match recurring interests.",
+   "action": "Read the GitHub docs on custom agent front matter and cloud-agent delegation for the exact schema the talk shows."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

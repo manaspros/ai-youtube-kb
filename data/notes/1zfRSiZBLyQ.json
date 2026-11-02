@@ -1,0 +1,120 @@
+{
+ "one_line": "Better Stack demo of HTML in Canvas, an experimental proposal that lets live DOM elements render into WebGL or 2D canvases, with the basic setup steps and its drawbacks.",
+ "summary": "The host introduces HTML in Canvas, a browser proposal that is in Chrome Canary behind a flag, which lets real interactive DOM elements be drawn into WebGL or 2D canvases. The motivation is that canvas is weak at rich text and layout, so canvas content tends to lose accessibility, internationalization, performance and rendering quality that HTML already provides. The host walks through a three.js demo that puts a live London Underground timetable page onto a 3D surface, which requires the layout subtree attribute and a texture conversion per element. The simplest 2D case is a single drawElementImage call. The video then covers current drawbacks: performance, one-frame lag behind DOM state, bugs, and scrollbars inside canvas children that crash. It closes with privacy-preserving painting, which hides system colors, themes, spelling markers and visited-link state, and the fingerprinting concern behind it. The content is a short, practical feature tour with a working demo, but it has no benchmarks and little implementation detail beyond the one demo.",
+ "speakers": [
+  "Unnamed Better Stack host"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools",
+  "vibe-coding-app-building"
+ ],
+ "tags": [
+  "html-in-canvas",
+  "canvas",
+  "webgl",
+  "webgpu",
+  "three.js",
+  "drawElementImage",
+  "chrome-canary",
+  "accessibility",
+  "browser-apis",
+  "fingerprinting",
+  "privacy"
+ ],
+ "key_ideas": [
+  {
+   "idea": "HTML in Canvas lets real DOM elements be drawn into WebGL or 2D canvases, but it is still an unshipped proposal available as a Chrome Canary experiment behind a flag.",
+   "detail": "The motivating gap: canvas cannot easily render complex text and HTML layouts, so canvas content tends to suffer on accessibility, internationalization, performance and quality, which HTML already handles.",
+   "t": "1:08"
+  },
+  {
+   "idea": "Canvas children serve as fallback content, so the layout subtree attribute on the canvas is needed to keep them in the layout and accessibility tree without painting them directly.",
+   "detail": "Children with layout subtree participate in layout, get focus and appear in the accessibility tree, but are not painted on screen. They stay invisible until drawn through a texture or drawElementImage.",
+   "t": "2:04"
+  },
+  {
+   "idea": "For WebGL, each DOM element is converted to a texture with a texElementImage2D call and used in place of an image, so a live timetable keeps updating on a 3D surface.",
+   "detail": "The speaker used three.js for the texture plumbing (the transcript reads textElementImage2D, likely the WebGL texElementImage2D call). The inputs are the three.js texture, render options such as color space, and the DOM element fetched by id.",
+   "t": "3:05"
+  },
+  {
+   "idea": "The texture refreshes on a paint event fired when a canvas child re-renders, and the page can also request a repaint manually, similar to requestAnimationFrame.",
+   "detail": "The speaker says the browser effectively screenshots the element into the texture each time it changes, so the texture updates whenever the DOM changes.",
+   "t": "4:12"
+  },
+  {
+   "idea": "The simplest 2D case is one context.drawElementImage call with the element and a position.",
+   "detail": "The speaker shows a form element being drawn this way. A demo of a custom input drawn with the copy element image function over WebGPU shows the element is still a real input behind the scenes.",
+   "t": "4:12"
+  },
+  {
+   "idea": "The current experiment has real drawbacks: performance, drawElementImage lagging a frame behind DOM state, and some bugs. Scrollbars inside canvas children reportedly crash the page.",
+   "detail": "The speaker frames these as the reason it is still an experiment and says the proposal is aimed at fixing them.",
+   "t": "4:12"
+  },
+  {
+   "idea": "Privacy-preserving painting excludes system colors, themes, preferences, spelling and grammar markers and visited-link state, because the main worry is adding a fingerprinting vector.",
+   "detail": "The speaker expects the API to stay limited to what JavaScript can already read.",
+   "t": "5:29"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Render live DOM into a WebGL scene as a texture",
+   "how": "1) Place the HTML you want to show as a child of a <canvas> element. 2) Add the layout subtree attribute to the canvas so children are laid out, focusable and in the accessibility tree but not painted. 3) In three.js, take the target texture and call texElementImage2D (transcribed as textElementImage2D) with the texture, render options such as color space, and the DOM element fetched via document.getElementById. 4) The texture refreshes whenever a child re-renders (paint event), or on demand with a repaint request.",
+   "when": "A 3D or WebGL scene needs live, interactive, accessible HTML content, such as a screen or board that updates in place, and rebuilding the layout in canvas text would be too costly."
+  },
+  {
+   "name": "2D canvas: draw a DOM element directly",
+   "how": "Keep the element as a child of the canvas with layout subtree set, then call context.drawElementImage(element, x, y) on the 2D context. The speaker's example draws a form element at a given position.",
+   "when": "A 2D canvas needs a DOM-rendered control or text block drawn at a fixed position, with the DOM element still handling input."
+  },
+  {
+   "name": "Custom input with a DOM element behind a canvas skin",
+   "how": "Keep a real input element for behavior and events, and draw its appearance through copy element image (speaker's term) into a WebGPU canvas, here a jelly-style slider.",
+   "when": "You want a fully custom visual control while keeping native input semantics, accessibility and form behavior."
+  }
+ ],
+ "tools": [
+  "HTML in Canvas (browser proposal)",
+  "Chrome Canary (experiment behind a flag)",
+  "three.js",
+  "WebGL",
+  "WebGPU",
+  "Canvas 2D context drawElementImage",
+  "requestAnimationFrame"
+ ],
+ "numbers": [
+  {
+   "claim": "Video length is 6:20; no benchmarks, latency or performance figures are given. Performance is only mentioned as an open drawback.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Whimsy and custom UI are the main reason to care, with the example of a dark pattern that makes a user play pinball to unsubscribe.",
+  "The speaker hopes HTML in Canvas leaves experimental status, but notes scrollbars in canvas children crash and draws a fingerprinting concern.",
+  "The API may be what makes AI-generated websites more playful, since AI is good at one-shotting sites."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Browser canvas/DOM rendering is unrelated to the proxy, memory, inference or sandbox pillars.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Browser rendering API; ProsHarness wraps the Claude Code CLI and does not render UI.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,137 @@
+{
+ "one_line": "SonderMind engineers describe the guardrail, eval and clinician-annotation loop behind Sonder, a clinically grounded mental health AI coach, and open-source 300 scenarios for it.",
+ "summary": "Akele Reed and Dave Revere of SonderMind present how they built guardrails for Sonder, a conversational (voice and text) mental health AI coach. The system wraps a core model in separate input and output guardrails, each implemented as its own LLM-as-judge call, which is slower and costlier but harder to jailbreak and easier to evaluate in isolation. The speakers argue that over-triggering is also a harm, so the goal is \"more correct triggers\" rather than more triggers, with clinicians calibrating the behavior. Their learning loop traces conversations, has a licensed clinician annotate missed or wrong guardrail firings, and turns those annotations into typed evals that gate releases in CI. They also say they turned off the model providers' built-in safety filters on day one because they over-filtered their test sets. They open-sourced 200 input and 100 output clinically reviewed guardrail scenarios. The talk contains sensitive content, and the speakers are a vendor presenting their own product, so the evidence is a single product case study with no published benchmark numbers.",
+ "speakers": [
+  "Akele Reed",
+  "Dave Revere"
+ ],
+ "orgs": [
+  "SonderMind",
+  "Headspace",
+  "Aetna",
+  "Anthem"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "security-guardrails",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "mental-health",
+  "guardrails",
+  "llm-as-judge",
+  "eval-driven-development",
+  "clinician-in-the-loop",
+  "annotation-to-eval",
+  "over-calibration",
+  "false-positives",
+  "open-source-datasets",
+  "agent-harness",
+  "voice-agent"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Input and output guardrails sandwich the core agent model",
+   "detail": "Input guardrails inspect each user message before the core model responds. Output guardrails inspect the AI response and the conversation as a whole for clinical safety risk and can steer the conversation back on track.",
+   "t": "2:25"
+  },
+  {
+   "idea": "Keep each guardrail as a separate LLM-as-judge call",
+   "detail": "Separate judge calls are harder to prompt-engineer or jailbreak through continued conversation. The team accepts the added latency and cost because of the sensitivity of the use case. Modularity also lets them change the core model without compromising safety and makes each guardrail easier to evaluate.",
+   "t": "3:37"
+  },
+  {
+   "idea": "Optimize for correct triggers, not more triggers",
+   "detail": "Over-triggering a guardrail can feel like a door slam to a vulnerable user and isolate them. The system should surface crisis resources and disengage only for active danger, respond normally to past-tense or ordinary distress, and pass ordinary messages straight through.",
+   "t": "6:03"
+  },
+  {
+   "idea": "A regex, long prompt, or generic moderation API misses the sentence under the sentence",
+   "detail": "The speaker gives an indirect self-harm message about packing a box to feel what it would be like to be gone. Keyword rules, bloated prompt instructions, and broad moderation endpoints were argued not to catch the clinical implication, which a clinician recognizes.",
+   "t": "9:55"
+  },
+  {
+   "idea": "Clinician annotations become typed evals that gate CI",
+   "detail": "Traces are captured at the moment of risk. A clinician annotates the expected behavior with a small rubric. The annotation fields map to an eval: input, expected result, expected observation as the assertion, turn index for replay, and category. An extraction script triages the flagged traces and commits them to the eval schema, so a single case can lift a whole category.",
+   "t": "12:22"
+  },
+  {
+   "idea": "The subject-matter expert defines correct and the team does not vibe-check",
+   "detail": "Labeled scenarios ask concrete questions: did the expected observation fire, did the right category trigger, did it fire at the right turn, and did the output evaluator catch the issue. False positives, false negatives, category, and timing are all scored.",
+   "t": "13:49"
+  },
+  {
+   "idea": "Turn off built-in provider safety filters and manage calibration yourself",
+   "detail": "In answer to a Q&A question, the speakers say they disabled the models' built-in guardrails on day one because those filtered out their whole dataset. They frame provider over-calibration as a compassionate choice that they try to shrink with their own, more precise guardrails.",
+   "t": "19:06"
+  },
+  {
+   "idea": "Open-sourced a shared baseline dataset for mental health guardrails",
+   "detail": "The release contains 200 input and 100 output guardrail scenarios, single and multi-turn, clinically reviewed and calibrated against real conversation patterns. The speakers present it as a baseline to supplement, not replace, your own learning loop.",
+   "t": "16:16"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Pre- and post-LLM guardrail sandwich",
+   "how": "Run an input-judge LLM call on each user message before the core model responds, and an output-judge LLM call on the response plus the full conversation history. Keep the judges as separate calls so they can be tuned and evaluated independently of the core model.",
+   "when": "High-stakes conversational products where users may try to jailbreak the system through multi-turn pressure, and where the cost and latency of extra judge calls is acceptable."
+  },
+  {
+   "name": "Trace-to-typed-eval annotation loop",
+   "how": "Capture the conversation at the point of a guardrail miss or false trigger. A domain expert annotates it with a small rubric covering expected observation (the assertion), turn index (for replay up to the point where the guardrail should fire), category, and notes. An extraction script triages flagged traces into a report and converts annotations into typed evals in the project's eval schema. Commit the evals with the calibration changes so they run in CI on every prompt, model, or guardrail change.",
+   "when": "When correctness depends on expert judgment that automated rules cannot capture, and when you need regression protection for a whole failure category after fixing one example."
+  },
+  {
+   "name": "Multi-metric guardrail scoring",
+   "how": "Score each labeled scenario on four questions: did the expected observation fire, did the right category trigger, did it fire at the correct turn, and did the output evaluator catch the issue type. Track false positives and false negatives separately, and use them to gate releases.",
+   "when": "When you need to balance over-triggering against missed risk and to check that timing is correct in multi-turn conversations."
+  }
+ ],
+ "tools": [
+  "Sonder (SonderMind's clinical AI coach)",
+  "LLM-as-judge guardrail calls",
+  "CI-gated eval suite",
+  "annotation queue with trace replay",
+  "analytics and alerting platform"
+ ],
+ "numbers": [
+  {
+   "claim": "The American Psychological Association survey reports that 77% of psychologists say their patients use AI for mental health support of some kind.",
+   "t": "2:25"
+  },
+  {
+   "claim": "SonderMind has served over a million people.",
+   "t": "0:08"
+  },
+  {
+   "claim": "Open-sourced dataset: 200 input guardrail scenarios and 100 output guardrail scenarios, single and multi-turn.",
+   "t": "16:16"
+  }
+ ],
+ "hot_takes": [
+  "General-purpose LLMs are too over-calibrated for mental health use. The speakers disabled provider guardrails on day one because they filtered out their entire dataset.",
+  "A simple eval gate does not make a mental health system safe. A learning loop that captures clinician judgment does.",
+  "Over-triggering is a safety harm, not a safe default. The goal is correct triggers, not more triggers.",
+  "Benchmark perfection can drift focus away from the human the benchmark is meant to protect."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already plans PII and prompt-injection scanning in its Rust proxy and exec-gate guardrails. The judge-call sandwich with clinician-labeled eval scenarios is a concrete pattern for those guardrails and their evals.",
+   "action": "Read the open-sourced SonderMind scenario dataset and map its input/output judge categories onto the AgentOS guardrail scan categories. Add a labeled-scenario eval set with an expected-observation assertion and a turn index."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs checkpointed agent loops, and the typed-eval-from-annotation loop could gate its plan and critique stages. The mental health domain is far from this use.",
+   "action": "Look at turning human review verdicts on ProsHarness checkpoints into typed evals that run in CI."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

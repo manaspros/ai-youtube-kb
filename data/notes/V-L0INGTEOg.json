@@ -1,0 +1,172 @@
+{
+ "one_line": "Boris Starkov (ElevenLabs) shows how Claude Code reverse-engineered an undocumented 1990s-style VoIP phone's protocol through port probing, command brute-force, and a traffic-capture proxy, then packaged the result as a reusable skill.",
+ "summary": "The speaker from ElevenLabs describes reverse engineering a legacy Viking VoIP phone with Claude Code so it could be wired to a voice agent via Twilio SIP. The phone only had Windows XP-era vendor software, and a prior team had given up a year earlier. Claude Code probed the network to find the right port, then brute-forced two-letter command codes, and found about 80 valid ones. Settings it wrote were lost on reboot, which led to a long dead end. The breakthrough came from running the vendor software in a Windows VM and routing its traffic through a logging TCP proxy on the Mac, which exposed a command with a binary payload and a one-byte checksum. Claude inferred the checksum and confirmed it on more samples. The speaker then packaged the protocol as a skill that lets Claude program the phone directly, and open-sourced it. He is candid that the agent made the work possible for a non-security engineer, and that he acted as the agent's hands for physical steps.",
+ "speakers": [
+  "Boris Starkov"
+ ],
+ "orgs": [
+  "ElevenLabs",
+  "Twilio"
+ ],
+ "format": "talk",
+ "topics": [
+  "claude-code",
+  "coding-agents",
+  "skills-self-improvement"
+ ],
+ "tags": [
+  "reverse-engineering",
+  "hardware",
+  "protocol-discovery",
+  "brute-force",
+  "mitm-proxy",
+  "claude-code",
+  "skills",
+  "sip",
+  "twilio",
+  "elevenlabs",
+  "long-running-session"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Claude Code works as a black-box explorer on hardware with no docs",
+   "detail": "It mapped the available ports and found that the first one was an unrelated electronics tunnel, then found the real control port by iterating. It sent a sequence and read the replies to confirm an actual protocol exists.",
+   "t": "3:59"
+  },
+  {
+   "idea": "Brute-force a small command space and sort replies into errors and valid responses",
+   "detail": "The protocol used two-letter command codes. Claude tried every two-letter combination. Most returned an error string, and about 80 returned a different, valid-looking reply.",
+   "t": "5:01"
+  },
+  {
+   "idea": "A successful write can still be a dead end if it is not persistent",
+   "detail": "Credentials were accepted, but the settings vanished on reboot because they were only in temporary memory. A multi-hour search for a save command, including a sweep of three-letter commands, found nothing.",
+   "t": "7:37"
+  },
+  {
+   "idea": "Capture the vendor software's traffic with a man-in-the-middle proxy when direct access fails",
+   "detail": "The Windows VM had no internet bridge, so a TCP proxy on the Mac relayed traffic between the vendor software and the phone while logging it. That revealed a command, TS, with a binary payload that earlier probing had missed.",
+   "t": "9:40"
+  },
+  {
+   "idea": "Infer a checksum in a closed loop, then confirm it on fresh samples",
+   "detail": "Because the agent knew the inputs and outputs, it could fit the one-byte checksum rule and then test it on more values. The speaker says the encryption turned out to be a simple one-byte addition, and he calls this lucky.",
+   "t": "10:43"
+  },
+  {
+   "idea": "Package the learned protocol as a skill so the VM is no longer needed",
+   "detail": "After a factory reset, the phone can be programmed directly from the skill. The speaker open-sourced the skill so that another agent could set up the same phone without a Windows machine.",
+   "t": "12:55"
+  },
+  {
+   "idea": "The agent can direct a human to do physical steps when it cannot act itself",
+   "detail": "The speaker counted beeps, rebooted the phone, and controlled the VM at the agent's request. He says the agent was orchestrating and he was its hands, and that he could not unblock it on the protocol itself.",
+   "t": "17:37"
+  },
+  {
+   "idea": "The vendor's proprietary software is no longer required",
+   "detail": "The speaker says that a year ago a company-supplied interface was needed. With the protocol known, any home device can be reached in the same way, so the approach may extend to other hardware.",
+   "t": "16:00"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Black-box command sweep with error classification",
+   "how": "Enumerate candidate ports and commands systematically, then treat error replies as the baseline and flag any other reply as a valid command.",
+   "when": "An undocumented serial or network device whose command set is small enough to enumerate."
+  },
+  {
+   "name": "Intermediary proxy for vendor-client traffic capture",
+   "how": "Run the vendor's client in a VM that cannot reach the device directly. Route it through a host-side TCP proxy that relays packets to the device and logs both directions, then analyse the log.",
+   "when": "The vendor client only runs on an OS or network setup you cannot use directly, and you need the exact wire protocol."
+  },
+  {
+   "name": "Closed-loop hypothesis confirmation",
+   "how": "Propose a rule from observed input and output pairs, such as a checksum, then test it on new samples and iterate until it holds.",
+   "when": "A small, opaque field whose inputs and outputs you can observe."
+  },
+  {
+   "name": "Persisting a learned protocol as a skill",
+   "how": "Write the discovered commands, sequence and format into a skill that a fresh agent session can load, so it can drive the device without repeating the full investigation.",
+   "when": "Knowledge that took days to uncover and must be reused across sessions or shared with others."
+  },
+  {
+   "name": "Using the full session transcript as context to generate a deliverable",
+   "how": "Give the whole working conversation as context and ask for slides built from it.",
+   "when": "You need a write-up of a long technical session without writing it from scratch."
+  },
+  {
+   "name": "Human as actuator for physical steps",
+   "how": "The agent directs a person through physical actions it cannot take, such as listening for beeps or power-cycling a device, and feeds back the observations.",
+   "when": "Computer use is unavailable or the task needs a physical action in the loop."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Twilio (SIP trunk)",
+  "ElevenLabs conversational agents",
+  "Windows virtual machine",
+  "TCP proxy on macOS",
+  "PoE router"
+ ],
+ "numbers": [
+  {
+   "claim": "The phone was bought about a year before the talk, and a team of three senior engineers plus ChatGPT could not get it working",
+   "t": "2:29"
+  },
+  {
+   "claim": "Of all two-letter command codes tried, about 80 returned valid responses and the rest returned errors",
+   "t": "5:01"
+  },
+  {
+   "claim": "The dead end on persistence took a multi-hour search, including a sweep of all three-letter commands with no result",
+   "t": "7:37"
+  },
+  {
+   "claim": "The checksum is one byte",
+   "t": "10:43"
+  },
+  {
+   "claim": "The phone has a 256-byte memory, which was also cracked",
+   "t": "12:55"
+  },
+  {
+   "claim": "Reverse engineering the protocol took the speaker a couple of days",
+   "t": "13:56"
+  },
+  {
+   "claim": "Total token cost of the work was in the order of $10 to $100 of corporate ElevenLabs tokens",
+   "t": "16:00"
+  }
+ ],
+ "hot_takes": [
+  "Without the agent the demo would not have been possible at all, not just ten times faster, because the speaker is not a security engineer.",
+  "The old barrier was the vendor's proprietary software. Now a device can be talked to the same way as any other device on the home network.",
+  "Packaging the discovered protocol as a skill lets anyone give an agent the file and get the device set up without a Windows machine.",
+  "The speaker avoids the word hack and says reverse engineering, and he calls the one-byte checksum lucky."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "L2D SkillForge needs a success signal for skill scoring. This talk checks each step against a concrete device readback, and that gives a clear verifier to borrow.",
+   "action": "When designing the SkillForge success signal, consider whether a readback-style verifier (write, reboot, read back) can serve as one signal."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Multi-hour runs stall on dead ends. The talk shows how a repeated, failed sweep wastes time, and that a resumed run needs to know what was already tried.",
+   "action": "Record failed attempts (for example, the three-letter command sweep) in the ProsHarness checkpoint so that a resumed run does not repeat them."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Matches the context-engineering interest. The speaker feeds the full working transcript into the agent to produce the slides.",
+   "action": "Try generating a write-up from the full session transcript as context, and compare it with a summary written from memory."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

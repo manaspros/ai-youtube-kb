@@ -1,0 +1,159 @@
+{
+ "one_line": "Corey Gallon (Rexmore) presents a three-level agent review method, each level built as a skill, that catches agents overstating work, misreading facts, and reasoning errors, shown on three real cases.",
+ "summary": "Gallon says he put over 107 billion tokens through agents in 2026 and analyzed his sessions. About four in 10 sessions had an agent get something wrong that mattered, but the real question is how many of those errors reached work outputs. He groups the failures into three types: overstating what was done, getting facts wrong, and getting reasoning wrong. He matches one review level to each type and packaged all three as open-source agent skills. Level one is a deliverable contract with a check the sender runs itself. Level two is fan-out/fan-in with two independent agents and a third adjudicator checking against the source. Level three is adversarial review: self-audit with claim labels, cold persona reviewers with no context, then fresh reviewers on the final version. He applies these to a memory-leak fix in an open-source app, a year of scanned accounting statements reconciled to the penny, and a vendor demand letter where cold reviewers found an auto-renewal clause the drafting agent had missed. Each review took minutes, and the agents did the checking rather than him.",
+ "speakers": [
+  "Corey Gallon"
+ ],
+ "orgs": [
+  "Rexmore"
+ ],
+ "format": "talk",
+ "topics": [
+  "testing-verification",
+  "multi-agent",
+  "evals"
+ ],
+ "tags": [
+  "agent review",
+  "verification",
+  "fan-out fan-in",
+  "adversarial review",
+  "cold review",
+  "deliverable contract",
+  "control totals",
+  "memory leak",
+  "accounting extraction",
+  "legal review",
+  "self-audit"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent errors are common, but the costly ones are the ones that reach outputs",
+   "detail": "Across 107B tokens in 2026, about 4 in 10 sessions had an agent get something wrong that mattered. The speaker separates how often errors occur from how often they make it into deliverables, and the review method targets the second.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Agent failures fall into three kinds, and each needs its own check",
+   "detail": "Agents overstate what they did (claim done or checked when it is not), get facts wrong (misread the source), or get reasoning wrong (facts right, conclusion wrong). The three review levels map one-to-one onto these.",
+   "t": "0:31"
+  },
+  {
+   "idea": "Level one: the job defines the deliverable and the reviewer must end with artifact verified or artifact missing",
+   "detail": "The task names the file, its location and a command that checks it, and lists shortcuts agents took before. The reviewing agent must return either a fingerprint of the artifacts or a missing-artifact report with a reason. Saying done alone is not accepted, and the sending agent runs the check itself.",
+   "t": "1:07"
+  },
+  {
+   "idea": "Level two: two independent agents plus a third that settles differences against the source",
+   "detail": "When facts must be right, first find a source the answer has to match. Two agents get identical instructions and work without seeing each other. Each records where every fact came from. A third agent with the source compares them line by line and resolves each difference by checking the source. It never forces agreement.",
+   "t": "2:13"
+  },
+  {
+   "idea": "Level three: self-audit, then cold persona reviewers, then fresh reviewers on the final version",
+   "detail": "The agent first lists every claim and labels it measured, checked against source, inferred, or assumed. Reviewers with a reason to find fault, each with no history, drafts or conclusions, read the work cold, and their findings are checked against the source before any change. Once revised, brand-new reviewers check the final version.",
+   "t": "2:46"
+  },
+  {
+   "idea": "An agent's own check can agree with its own error",
+   "detail": "In the demand-letter case the drafting agent's self-check marked the claims verified, yet it had deleted a line that correctly identified the contract's renewal. Only cold reviewers working from the contract caught the auto-renewal clause.",
+   "t": "9:29"
+  },
+  {
+   "idea": "Use an external control total so the agents have something to balance against",
+   "detail": "For the accounting extraction, the printed statement balance for each month served as the control total. Agents kept re-reading the statements until every month balanced, which turned a vague 'extract the year' task into one with a checkable endpoint.",
+   "t": "7:47"
+  },
+  {
+   "idea": "Scale the review to the stakes",
+   "detail": "Routine work gets level one, important factual work gets level two, and anything with legal or financial consequences gets level three. Each level adds to the one before, and each review took minutes rather than hours, so the agents did the checking instead of the human.",
+   "t": "3:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Deliverable contract with a self-check the sender runs",
+   "how": "Before dispatching a job, state the exact output file, its path and a command that verifies it, plus known shortcuts to avoid. Require the reviewer to finish with either a fingerprint of the artifacts or a missing-artifact report with the reason. Have the dispatching agent run the check itself and never accept 'done' alone.",
+   "when": "Any delegated agent or sub-agent task that must produce a build, file, or measurement, especially where a tool may silently not run."
+  },
+  {
+   "name": "Fan-out / fan-in with independent identical agents and a source-anchored adjudicator",
+   "how": "Give two agents the same instructions and no view of each other's work. Each records the source for every fact and checks its own result. A third agent with the source open compares the two outputs line by line and resolves each difference against the source without forcing a match.",
+   "when": "Extraction or fact-heavy work where silent errors (missed, wrong-month or wrong-detail rows) are hard to see, such as scanned data or document extraction."
+  },
+  {
+   "name": "Control-total anchoring",
+   "how": "Pick an independent total that the output must reproduce, such as a printed monthly balance, and loop the agents until the totals match. Report the disagreement count between independent runs as a quality signal.",
+   "when": "Data with a known invariant, such as financial statements, reconciliations or counts."
+  },
+  {
+   "name": "Claim labeling self-audit",
+   "how": "Have the author agent list each claim and tag it as measured, checked against source, inferred, or assumed. Anything without support must be tested or flagged as a guess before review.",
+   "when": "Before sending any write-up with legal, financial or public consequences."
+  },
+  {
+   "name": "Cold persona reviewers with no context",
+   "how": "Spawn reviewers who each play a distinct reader with a reason to find fault (for example opposing counsel or an auditor). Give them only the final work and the raw sources, with no drafts or history. Check their findings against the source before changing anything.",
+   "when": "High-stakes writing such as legal letters, reports, or public bug reports, where the author's own framing may hide errors."
+  },
+  {
+   "name": "Fresh-reviewer final pass",
+   "how": "After revisions, bring in reviewers who have never seen any earlier version and have them check only the final text.",
+   "when": "The last gate before anything is sent or merged."
+  }
+ ],
+ "tools": [],
+ "numbers": [
+  {
+   "claim": "Over 107 billion tokens put through agents in 2026 so far",
+   "t": "0:00"
+  },
+  {
+   "claim": "About 4 in 10 sessions had an agent get something wrong that mattered (this is error occurrence, not error reaching output)",
+   "t": "0:00"
+  },
+  {
+   "claim": "Memory-leak case: the dictation app grew to 9 GB; the level-one sub-agent build review took 19 minutes and about 16 million tokens, and the build had 25 compiler errors",
+   "t": "3:53"
+  },
+  {
+   "claim": "Memory-leak case: the two level-three reviews took about 15 minutes each and cost about 6 million tokens together",
+   "t": "6:05"
+  },
+  {
+   "claim": "Accounting case: a year of scanned statements reconciled to the penny; the two extractions differed in 56 places (descriptions, dates, notes); the review took about 20 minutes and 7.5 million tokens",
+   "t": "8:20"
+  },
+  {
+   "claim": "Legal letter case: the three-part cold review took 15 minutes and cost 13 million tokens; the contract had auto-renewed less than three weeks before",
+   "t": "10:02"
+  }
+ ],
+ "hot_takes": [
+  "An agent saying it is done, or that its own check passed, is not evidence; only an artifact fingerprint or an independent check counts.",
+  "Forcing two agents to agree is wrong; disagreements should be settled by going back to the source.",
+  "A drafting agent's self-check can agree with its own error, so the reviewer needs cold context."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs long Claude Code work with checkpoints and plan-critique loops. A level-one deliverable contract (named artifact, check command, fingerprint or missing-reason) would make checkpoints and sub-agent results verifiable, which the talk shows is the most common failure.",
+   "action": "Add a required artifact-or-missing-reason return format and a harness-run check command to sub-agent dispatch in ProsHarness, then log how often 'done' claims fail the check."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk's review levels could be packaged as governed skills in SkillForge, a possible skill-worthiness signal, but it is a practice pattern and not infrastructure.",
+   "action": "Read the open-source review skills write-up and compare its verification steps with the SkillForge skill-worthiness question."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The fan-out/fan-in pattern with an adjudicator and control totals applies to any LLM extraction or entity resolution job, including the user's ER work.",
+   "action": "Try a two-independent-extractors plus adjudicator pass on a sample of hard entity-resolution cases and measure the disagreement rate."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T16:26:27"
+}

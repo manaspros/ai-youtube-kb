@@ -1,0 +1,170 @@
+{
+ "one_line": "Walkthrough of Anthropic's reported harness ablations: with Opus 4.5/4.6, keep a planner, a generator and a separate graded evaluator, and drop micro-level plans, context resets and sprint contracts for strong models.",
+ "summary": "The narrator summarizes an Anthropic write-up in which they removed harness components one at a time and measured the effect. The conclusion reported is that only three roles are needed (planner, generator, evaluator), and that the other scaffolding in frameworks like BMAD, GSD, SpecKit and Superpowers encodes assumptions about model weakness that Opus 4.5 and 4.6 no longer need. Planning should stay at the product level with features and user stories, because micro-level technical specs cascade errors. The agent that writes code should never be the one grading it, and the evaluator should score against an explicit rubric (design quality, originality, craft, functionality) that the author defines. Sprint contracts and context resets are described as necessary for smaller models like Sonnet and Haiku but not for Opus 4.6, which relies on compaction. The practical setup is a generator and an evaluator run as agent teams, with the evaluator testing the app through Playwright while the generator builds. The last part suggests bolting Anthropic's evaluator and rubric onto GSD. The video is second-hand reporting with no links, no ablation numbers, and a mid-video sponsor read.",
+ "speakers": [],
+ "orgs": [
+  "Anthropic",
+  "MiniMax"
+ ],
+ "format": "review",
+ "topics": [
+  "agent-architecture",
+  "testing-verification",
+  "context-engineering",
+  "claude-code"
+ ],
+ "tags": [
+  "harness",
+  "planner",
+  "generator",
+  "evaluator",
+  "self-evaluation",
+  "rubric-grading",
+  "sprint-contract",
+  "context-reset",
+  "context-anxiety",
+  "compaction",
+  "agent-teams",
+  "subagents",
+  "playwright",
+  "opus-4-6",
+  "bmad",
+  "gsd",
+  "speckit",
+  "superpowers",
+  "ralph-loop"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Harness components are assumptions about model weakness, and they go stale",
+   "detail": "Per the narrator's summary of Anthropic's ablations, every harness component encodes an assumption about what the model cannot do alone. Stripping components one by one showed most were dead weight for Opus 4.6. The reported minimum is planner, generator and evaluator. Harnesses should be re-tested as models improve.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Plan at the product level, not the implementation level",
+   "detail": "Anthropic's planner that specified micro-technical details up front let one error cascade through every level of implementation, leaving the agent unable to deviate and fix it. Plans should state deliverables and user stories per phase, and let the agent work out the path. This makes BMAD's task sharding and SpecKit-style micro-steps unnecessary; BMAD can be used only up to PRD generation.",
+   "t": "2:23"
+  },
+  {
+   "idea": "Self-evaluation is the second big failure mode",
+   "detail": "An agent grading its own output tends to be overconfident and praise mediocre work. This is manageable for quantitative checks such as whether an API works, but much worse for subjective work like UI. The evaluator must be a separate agent from the implementer.",
+   "t": "5:19"
+  },
+  {
+   "idea": "Use graded rubrics with a dedicated score per criterion",
+   "detail": "Anthropic's frontend example used four criteria for both generator and evaluator: design quality (coherent whole, not strung-together parts), originality (avoid default AI gradients), craft (typography, spacing, colour harmony) and functionality. Claude already scores well on craft and functionality, so the prompts push on the other two. The narrator suggests adding criteria for architecture, frontend and UX flows, each with its own score.",
+   "t": "10:17"
+  },
+  {
+   "idea": "Sprint contracts and context resets are model-dependent",
+   "detail": "Generator and evaluator negotiated a sprint contract for what done looks like. Removing it made Opus 4.5 less efficient because the evaluator had to catch issues, but Opus 4.6 did not need it. Context resets were needed because of context anxiety, where models wrap up early as the window fills. Opus 4.5 onward largely avoids this, and Claude's compaction is judged sufficient. Smaller models like Sonnet and Haiku still need documented task breakdowns and sprint contracts.",
+   "t": "6:37"
+  },
+  {
+   "idea": "Each framework validates differently, and none has Anthropic's graded scoring",
+   "detail": "BMAD uses code-review and QA agents that generate and run tests. GSD uses a verifier sub-agent that checks code against the plan and writes a report. Superpowers enforces TDD and blocks code written before tests. SpecKit treats specs as the source of truth. The narrator says none of them scores implementations with the same rigor. GSD's evaluator is pass/fail and relies on user acceptance testing.",
+   "t": "9:07"
+  },
+  {
+   "idea": "Agent teams, not subagents, for generator and evaluator",
+   "detail": "The narrator's reasoning is that team members can message each other directly, while subagents can only pass information by writing to a shared document, which adds overhead. In the suggested setup, one teammate implements while another tests in a browser through the Playwright MCP, waiting for generator updates and sending issues back.",
+   "t": "12:47"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Product-level planner agent",
+   "how": "Create a planner agent whose instructions ask for scope that goes big, a feature breakdown at product level, and user stories per phase, not technical implementation steps. Ask Claude to run that agent on the app and save the plan to a folder as it goes. Anthropic's example planner output was cited as a template. Claude's built-in plan mode is described as too implementation-focused for this.",
+   "when": "Starting a long build with a capable model (Opus 4.5/4.6) where a micro-step plan would lock the agent in and propagate early mistakes."
+  },
+  {
+   "name": "Separate evaluator with an adversarial stance",
+   "how": "The evaluator is a different agent from the generator. Its brief is to assume bugs exist and look for them, not to do a generic find-bugs pass. It tests the running app through Playwright by simulating user interactions, checks against criteria taken from the plan, and sends failures back to the generator. It approves only after checking everything.",
+   "when": "Any task where the output cannot be verified by a simple metric, especially UI, UX and product behaviour."
+  },
+  {
+   "name": "Weighted rubric with a score per criterion",
+   "how": "Write a rubric with several named criteria, each scored separately, and give the same criteria to both generator and evaluator. The video's frontend example uses design quality, originality, craft and functionality. Add criteria for code architecture, UX flows, and so on as needed. The evaluator is told it is scoring, so it knows which rubric applies.",
+   "when": "When you need to steer subjective quality, such as avoiding the generic default look AI produces, and want a score that shows which dimension fails."
+  },
+  {
+   "name": "Generator and evaluator as agent-team members",
+   "how": "Claude creates the tasks from the high-level plan and spawns the two agents together as team members. The generator implements feature by feature with Git for version control. The evaluator waits for the generator to report, tests with the Playwright MCP in a browser, and messages issues directly. The narrator says teammates are used rather than subagents because teammates can talk to each other.",
+   "when": "When implementer and tester need a live back-and-forth rather than a one-way handoff through documents."
+  },
+  {
+   "name": "Sprint contract for weaker models",
+   "how": "Before implementation, the generator and evaluator agree in writing on what complete looks like for each chunk of work. Break work into sprint-sized tasks. The video says this is needed for Sonnet and Haiku, and can be dropped for Opus 4.6.",
+   "when": "When the implementer is a smaller model that tends to stop early or claim completion too soon."
+  },
+  {
+   "name": "Bolt Anthropic's evaluator onto GSD",
+   "how": "Keep GSD, which already has a planner, generator and evaluator loop, but replace its pass/fail evaluator with a graded evaluator that uses a rubric. Keep GSD's plan but change the evaluator's instructions to score against the criteria.",
+   "when": "When you want an existing framework but need graded rather than binary verification."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude Opus 4.5",
+  "Claude Opus 4.6",
+  "Claude Sonnet",
+  "Claude Haiku",
+  "Anthropic agent harness",
+  "BMAD",
+  "GSD",
+  "SpecKit",
+  "Superpowers",
+  "Ralph Loop",
+  "Playwright MCP",
+  "Git",
+  "MiniMax M2.7",
+  "MaxClaw (OpenClaw)"
+ ],
+ "numbers": [
+  {
+   "claim": "Harness roles reported as sufficient: planner, generator, evaluator (three roles)",
+   "t": "1:01"
+  },
+  {
+   "claim": "Opus 4.6 context window referenced as one million tokens",
+   "t": "0:00"
+  },
+  {
+   "claim": "Generator implementation is split into four sub-phases",
+   "t": "7:39"
+  },
+  {
+   "claim": "Four grading criteria for frontend: design quality, originality, craft, functionality",
+   "t": "10:17"
+  },
+  {
+   "claim": "Sponsor claim (vendor, unverified): MiniMax M2.7 matches Claude Opus 4.6 on SWE-bench",
+   "t": "5:19"
+  }
+ ],
+ "hot_takes": [
+  "Sponsored segment (MiniMax MaxClaw) in the middle of the video, so quality is capped at 2 under the rubric. The sponsor's SWE-bench parity claim is vendor marketing.",
+  "Second-hand reporting of an Anthropic write-up. The narrator gives no links, no ablation numbers, and no quantified deltas, so the claims are hard to verify from the video alone.",
+  "The claim that no other framework has rigorous scoring is the narrator's opinion, not a measured comparison.",
+  "The claim that context resets and sprint contracts are unnecessary for Opus 4.6 is presented as settled, but it rests on one reported experiment and is not tested here.",
+  "The transcript contains no commands, config keys or file names, so the setup advice is conceptual, not reproducible as written."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 3,
+   "why": "ProsHarness is a harness around Claude Code with a plan, critique and debate loop, and this video directly argues which harness parts to keep (planner, separate evaluator, rubric) and which to drop for Opus 4.6 (micro-plans, context resets, sprint contracts).",
+   "action": "Review ProsHarness's plan, critique and debate loop against the generator/evaluator split. Make the evaluator a separate agent with a scored rubric. Run an ablation on Opus 4.6 that removes context-reset or step-by-step plan scaffolding, and keep checkpoint/resume since it covers cross-session runs, not context windows."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Evaluator independence and graded rubrics apply to judging AgentOS outputs (for example MemoryMesh answers), but the video is about coding agents, not RAG or infra evals.",
+   "action": "When an AgentOS eval judge scores non-verifiable outputs, use a different model or prompt from the producer and score several explicit criteria separately instead of one pass/fail."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,165 @@
+{
+ "one_line": "Better Stack explains how the self-replicating npm worm (Shai-Hulud) jumped to a Go module, hiding hooks in Claude Code and VS Code config so code runs on folder open, and lists five hardening steps.",
+ "summary": "The video recaps Shai-Hulud, a self-replicating worm that runs at package install, harvests secrets (npm, GitHub, cloud and SSH keys), and uses stolen npm tokens to publish poisoned versions of the victim's packages. A new wave flagged by Socket.dev in late June shipped inside a Go module's source archive instead of an npm package. Its payload sits in project-level config: a .claude/settings.json SessionStart hook and a .vscode/tasks.json folder-open task, so it fires when a folder is opened or a Claude Code session starts. The speaker argues this sidesteps --ignore-scripts and that uninstalling the package does not remove the config-resident code. The stated risk extends to CI (for example GitHub workflows) if the poisoned config is committed and run. The mitigations are: treat agent and editor config as executable, turn off VS Code automatic tasks, use short-lived least-privilege tokens (OIDC), add egress filtering on CI runners, and keep secrets out of plaintext. The episode is a short security news explainer with no benchmarks and no first-hand incident data.",
+ "speakers": [
+  "Warren (Better Stack host)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Socket.dev",
+  "Team PCP (group that open-sourced the worm, per the transcript)"
+ ],
+ "format": "news",
+ "topics": [
+  "security-guardrails",
+  "claude-code",
+  "coding-agents",
+  "dev-tools"
+ ],
+ "tags": [
+  "supply-chain-attack",
+  "npm",
+  "worm",
+  "shai-hulud",
+  "go-modules",
+  "claude-code-hooks",
+  "vs-code-tasks",
+  "ci-security",
+  "egress-filtering",
+  "oidc",
+  "least-privilege-tokens",
+  "credential-theft"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The worm is self-propagating: a poisoned package runs on install, harvests tokens, and publishes poisoned versions of the victim's own packages, so no attacker is needed in the loop.",
+   "detail": "Install-time script scans for npm, GitHub, AWS, GCP and Azure credentials and SSH keys; it also runs TruffleHog to find exposed keys for itself. Stolen npm tokens are used to republish infected packages.",
+   "t": "1:06"
+  },
+  {
+   "idea": "The new wave crosses ecosystems. Nothing in Go tooling runs it; a Go module's source archive carries JavaScript and editor/agent config files.",
+   "detail": "The Go module is named 'Varana Blockchain Project' in the auto-captions. Socket.dev flagged the wave at the end of June 2026.",
+   "t": "1:06"
+  },
+  {
+   "idea": "The payload lives in project config that auto-runs: a Claude Code SessionStart hook and a VS Code folder-open task.",
+   "detail": ".claude/settings.json registers a SessionStart hook and .vscode/tasks.json runs node on a setup script, so code executes on folder open or session start, before any build or install step.",
+   "t": "2:10"
+  },
+  {
+   "idea": "Standard defenses are bypassed: --ignore-scripts does not cover this path, and uninstalling the package does not remove code that lives in project config.",
+   "detail": "The speaker says the threat has moved from app dependencies to the dev environment itself, and that poisoned config can be committed and reach production or CI.",
+   "t": "2:10"
+  },
+  {
+   "idea": "Before opening a cloned repo or a dependency's source, read the agent and editor config files as you would executable code.",
+   "detail": "Check .claude/ hooks, settings and .vscode/tasks.json before the editor or agent opens the folder.",
+   "t": "3:13"
+  },
+  {
+   "idea": "Make stolen credentials worthless: short-lived, least-privilege tokens via OIDC in CI, and egress allowlists on runners.",
+   "detail": "If a token cannot be reused, the worm cannot replicate through the developer. Default-deny outbound traffic on CI runners stops exfiltration even when malicious code runs.",
+   "t": "3:13"
+  },
+  {
+   "idea": "The payload also checks for endpoint security products (CrowdStrike, Defender, SentinelOne) before it acts.",
+   "detail": "The speaker says the malware checks for these tools before staging its payload, but gives no detail on what it does when one is found.",
+   "t": "2:10"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Audit agent and editor config before opening untrusted code",
+   "how": "Before opening a freshly cloned repo or an unpacked dependency source, read .claude/settings.json (look for SessionStart or other hooks) and .vscode/tasks.json (look for tasks with runOn folderOpen running node or shell scripts). Remove or refuse anything unexpected before the agent or editor starts.",
+   "when": "Any time you clone a repo, pull a dependency's source archive, or open a project from an unknown author."
+  },
+  {
+   "name": "Turn off VS Code automatic tasks",
+   "how": "Run the 'Tasks: Manage Automatic Tasks' command (named as in the speaker's wording) and keep automatic tasks disabled, so a folder-open task only runs after you approve it.",
+   "when": "On every developer machine, as a default setting."
+  },
+  {
+   "name": "Treat .claude/ and .vscode/ as executable code in review",
+   "how": "In code review and dependency intake, put hooks in .claude/settings.json and task definitions in .vscode/tasks.json on the same review list as install scripts. Don't assume ignore-scripts covers them.",
+   "when": "PR review and when vetting third-party repos or archives."
+  },
+  {
+   "name": "Short-lived, least-privilege CI credentials via OIDC",
+   "how": "Replace long-lived tokens stored in CI environments with OIDC-issued short-lived credentials scoped to the minimum needed. Keep npm publish tokens and cloud keys out of long-lived environment variables.",
+   "when": "All CI pipelines that publish packages or touch cloud resources."
+  },
+  {
+   "name": "Egress filtering on CI runners",
+   "how": "Set the runner's outbound network to deny by default and allow only the hosts the build needs. The speaker's example is a GitHub-hosted CI runner with an allowlist of permitted destinations.",
+   "when": "Any CI runner that executes third-party dependency code."
+  },
+  {
+   "name": "Minimum release age for packages",
+   "how": "The speaker recommends setting a minimum release age in .npmrc. The video does not give the exact key name or explain the mechanism, so check the npm docs before relying on it.",
+   "when": "When installing from npm and you want a delay before picking up brand-new versions."
+  },
+  {
+   "name": "Keep secrets out of plaintext on dev machines",
+   "how": "Store sensitive tokens in a password manager instead of plain files or environment variables that malware can read.",
+   "when": "Developer workstations that hold npm, GitHub or cloud credentials."
+  }
+ ],
+ "tools": [
+  "npm",
+  "Go modules",
+  "Claude Code (called 'clawed code' in the auto-captions)",
+  "VS Code (tasks.json, folder-open tasks)",
+  "Bun (runtime the payload uses to stage its code)",
+  "Node.js (runs the setup script)",
+  "TruffleHog (secret scanner the worm reuses)",
+  "GitHub Actions (CI workflows named as the risk surface)",
+  "Socket.dev (security firm that flagged the wave)",
+  "CrowdStrike, Microsoft Defender, SentinelOne (endpoint products the malware checks for)",
+  "OIDC (short-lived CI credentials)",
+  ".npmrc (minimum release age setting)",
+  "Burp Suite (named only as a plug for a free alternative covered in another video)"
+ ],
+ "numbers": [
+  {
+   "claim": "Shai-Hulud first hit in September 2025 and returned bigger in November 2025.",
+   "t": "1:06"
+  },
+  {
+   "claim": "In 2026 the group Team PCP open-sourced the worm and ran a contest for the biggest attack, producing copycat waves.",
+   "t": "1:06"
+  },
+  {
+   "claim": "The new wave was flagged by Socket.dev at the end of June 2026.",
+   "t": "1:06"
+  },
+  {
+   "claim": "The video gives no counts of infected packages, victims or dollar losses. The title's 'largest supply chain attack ever' is not quantified in the video.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The title's 'largest supply chain attack ever' is not backed by any scale data in the video.",
+  "The strongest point is that project-level agent and editor config (Claude Code hooks, VS Code tasks) is an execution surface that an install-script allowlist does not cover.",
+  "The 'npm uninstall no longer works' claim is asserted, not demonstrated. The transcript never shows removal being tested.",
+  "The transcript reads '.m file' where .npmrc is probably meant (auto-caption error, not verified).",
+  "The episode ends with a plug for a Burp Suite alternative video, but it is not a sponsored segment."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Crucible's exec-gate guardrails and sandboxed execution have to treat project-level agent config (.claude/settings.json hooks) as executable, not as passive data. This talk is a concrete threat case for that.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and may launch it in repos it has not vetted. The video's hook-based attack lands at session start, which is exactly where a harness starts the agent.",
+   "action": "Before ProsHarness starts Claude Code in a repo, read .claude/settings.json and .vscode/tasks.json and refuse to run if they contain unexpected SessionStart hooks or folder-open tasks. Keep its zero-token credential handling so no tokens reach the hook environment."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

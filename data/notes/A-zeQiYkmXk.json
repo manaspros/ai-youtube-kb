@@ -1,0 +1,159 @@
+{
+ "one_line": "Stripe engineer builds an agentic-commerce agent to buy headphones, covering the Universal Commerce Protocol, merchant manifests, shared payment tokens, persona effects on behavior, and a guardrail checklist.",
+ "summary": "Anna Spysz from Stripe demos an agent she built to buy recording headphones from a local Portland shop, using the Universal Commerce Protocol (UCP) to talk to merchants. She shows that most merchant sites are not agent-ready, so she publishes a capabilities manifest at /.well-known and a structured JSON catalog that includes policies. The demo's agent first behaves like an aggressive salesman because of its system prompt. Switching to a \"patient recording gear mentor\" persona fixes the behavior, which she presents as proof that the prompt shapes the customer experience. She explains the shared payment token: the agent and merchant only handle a token, and the payment provider enforces limits. She closes with a guardrail checklist (disclose AI, disclose fees, respect stop/cancel, cap at the user's max amount, avoid dark patterns, log decisions). The talk is mostly a walkthrough of Stripe's agentic-commerce stack, so the technical content is thin in places.",
+ "speakers": [
+  "Anna Spysz"
+ ],
+ "orgs": [
+  "Stripe",
+  "Google",
+  "OpenAI"
+ ],
+ "format": "demo",
+ "topics": [
+  "security-guardrails",
+  "mcp-and-tools",
+  "governance-compliance",
+  "product-ux"
+ ],
+ "tags": [
+  "agentic-commerce",
+  "universal-commerce-protocol",
+  "shared-payment-token",
+  "merchant-manifest",
+  "system-prompt",
+  "guardrails",
+  "persona",
+  "payments",
+  "audit-logging"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents discover and choose products differently from humans, so merchants must expose structured data and protocols agents understand.",
+   "detail": "The speaker says agents read structured data and technical signals, not visual design. Merchants therefore need a shared protocol (UCP) that covers initiating, updating, completing and cancelling a purchase.",
+   "t": "3:44"
+  },
+  {
+   "idea": "A merchant capabilities manifest is a public JSON file at /.well-known that declares capabilities, payment methods and API endpoints.",
+   "detail": "Agents are told to look in this well-known location. It lets an agent learn what a store can do without parsing a full HTML site, which the speaker says burns many tokens.",
+   "t": "6:14"
+  },
+  {
+   "idea": "The catalog and policies (shipping, returns) must be structured JSON, because agents filter, rank and justify with them.",
+   "detail": "If shipping or return information is hard to reach, the agent may hallucinate or say it does not know. The speaker also says matched attributes should be logged so the merchant can account for how a recommendation was made.",
+   "t": "7:41"
+  },
+  {
+   "idea": "The system prompt (persona) can change a shopping agent from pushy to trustworthy, even with the same tools and model.",
+   "detail": "The first persona was 'an aggressive audio gear salesman' and the agent pushed expensive items and became rude when told to think it over. Switching to a 'patient recording gear mentor' persona produced a sensible reply to the same question.",
+   "t": "9:09"
+  },
+  {
+   "idea": "The agent's loop has three parts: the model as decision-maker, tools as hands, and instructions that run in a loop until a condition is met, with the system prompt as persona and ethics policy.",
+   "detail": "The speaker uses this simple picture to explain why an agent behaves a certain way. Tools here are commerce actions such as complete checkout or request payment method.",
+   "t": "10:37"
+  },
+  {
+   "idea": "Shared payment tokens keep raw card data away from the agent and the merchant.",
+   "detail": "The agent asks the payment provider (Stripe in the demo) for a payment method and receives a token. The merchant unwraps it to get the credential and fraud signals, then sends it to the provider. The provider enforces limits, so an expired token or bad currency is rejected.",
+   "t": "15:32"
+  },
+  {
+   "idea": "The payment provider, not the agent or merchant, enforces spend limits.",
+   "detail": "The speaker's point is that a violated guardrail results in a rejected charge, so the agent cannot override a limit. This depends on the provider as the trusted enforcement point.",
+   "t": "16:57"
+  },
+  {
+   "idea": "Practical guardrail checklist for commerce agents: disclose AI, disclose fees, respect stop/cancel, cap at the user max, avoid urgency or dark patterns, and log decisions.",
+   "detail": "The speaker calls it non-exhaustive. Logging all agent decisions for auditability is listed as the most important item.",
+   "t": "11:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Merchant capabilities manifest at /.well-known",
+   "how": "Publish a public JSON file at the site root that declares capabilities, supported payment methods and API endpoints, so agents know where to look.",
+   "when": "When a service should be usable by agents without them scraping HTML pages."
+  },
+  {
+   "name": "Structured catalog and policy JSON",
+   "how": "Store product attributes and policies (shipping, returns) as compact structured JSON with only the fields an agent needs.",
+   "when": "When an agent must filter, rank or justify choices, or answer policy questions without hallucinating."
+  },
+  {
+   "name": "Attribute-match decision logging",
+   "how": "Record which structured attributes the agent matched when it recommends an item, and keep these records for accountability.",
+   "when": "When outcomes must be explained or audited later."
+  },
+  {
+   "name": "Persona-driven behavior control and A/B testing of system prompts",
+   "how": "Keep the same tools and model but swap the persona prompt, then rerun the same multi-turn scenario (for example asking whether to think it over) to compare behavior.",
+   "when": "When an agent's tone or sales behavior is wrong and the cause may be the system prompt."
+  },
+  {
+   "name": "Scoped payment token instead of raw credentials",
+   "how": "The agent requests a payment method from the provider, receives a token, and passes it to the merchant, who passes it to the provider. Fraud signals travel with the token.",
+   "when": "When an agent must complete a payment without ever holding card numbers."
+  },
+  {
+   "name": "Provider-enforced transaction limits",
+   "how": "Keep spend limits and validity checks (expiry, currency, amount) at the payment provider so violations cause rejection regardless of the agent.",
+   "when": "When an agent must not be able to exceed user-set spend caps."
+  },
+  {
+   "name": "Agent commerce guardrail checklist",
+   "how": "Disclose AI identity, show fees up front, honour stop or cancel at any time, check total against the user's max, avoid urgency language or dark patterns, and log every decision.",
+   "when": "Before shipping any agent that talks to a customer or spends money."
+  }
+ ],
+ "tools": [
+  "Universal Commerce Protocol (UCP)",
+  "Stripe payments",
+  "Google Pay",
+  "Apple Pay",
+  "shared payment token"
+ ],
+ "numbers": [
+  {
+   "claim": "Speaker cites that about one in four people already use AI to research purchases before buying.",
+   "t": "1:14"
+  },
+  {
+   "claim": "The user's self-imposed budget cap for the headphones was $500, and the agent kept results under it after the change.",
+   "t": "13:04"
+  },
+  {
+   "claim": "Express shipping delivered the headphones the next day, as shown in the demo.",
+   "t": "17:56"
+  }
+ ],
+ "hot_takes": [
+  "Most merchants are not ready for agentic commerce, and an agent cannot read a nice website efficiently.",
+  "The system prompt shapes the customer experience as much as any model choice.",
+  "Agents should never see raw card numbers; the payment provider should be the one enforcing limits."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "L1 Govrix Scout already has budgets and a Merkle audit log, and the talk's max-amount cap and log-every-decision checklist maps onto that, but the talk is about commerce, not infra.",
+   "action": "Check whether L1 budgets can enforce a per-action max amount supplied by the end user and whether every tool-call decision is written to the audit log."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Shared payment tokens are the same idea as zero-token credential handling: the agent works with a scoped handle and the trusted party holds the secret.",
+   "action": "Compare the shared-payment-token flow with ProsHarness credential handling to see whether any part of the token boundary is missing there."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Shows that persona or system prompt changes alone flipped an agent from pushy to honest. This is a context-engineering point and fits the recurring interest in agent behavior tuning.",
+   "action": "Run a small A/B test of two system prompts on the same multi-turn scenario and log behavior differences, as a template for evals of persona prompts."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,174 @@
+{
+ "one_line": "Better Stack walks through Thinking Machines' open-weight \"Inkling\" model: a MoE that takes raw audio and image patches, positioned as a base for fine-tuning on Tinker rather than a general frontier model.",
+ "summary": "The host introduces Inkling, the first open-weight model from Thinking Machines, released under Apache 2.0 with weights on Hugging Face. The model is explicitly not meant to compete with frontier generalists; its intended use is fine-tuning on the Tinker platform. Benchmarks cited show it ahead on instruction following but well behind on Terminal Bench, which tests agents doing multi-step work. Architecturally it is a mixture-of-experts model (975B total, about 41B active per token) that accepts text, images and raw audio in one token space, rather than routing audio and images through a transcriber or captioner first. The video then gives a rule of thumb for when fine-tuning beats retrieval (behavior, format, distillation of narrow tasks) and when it does not (knowledge gaps, reasoning). A Harvey legal citation-extraction case study and a Tinker demo, where the model fine-tunes itself with LoRA after being told to avoid the letter E, illustrate the workflow. The host's bottom line is that Inkling is worth trying mainly for narrow, high-volume jobs with labeled data and especially when audio input matters.",
+ "speakers": [
+  "Warren"
+ ],
+ "orgs": [
+  "Thinking Machines",
+  "Better Stack",
+  "Harvey",
+  "Hugging Face"
+ ],
+ "format": "review",
+ "topics": [
+  "models-research",
+  "training-finetuning-rl",
+  "voice-multimodal"
+ ],
+ "tags": [
+  "open-weight",
+  "fine-tuning",
+  "tinker",
+  "mixture-of-experts",
+  "multimodal",
+  "raw-audio",
+  "lora",
+  "distillation",
+  "fine-tune-vs-rag",
+  "thinking-effort"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Inkling is positioned as a fine-tuning base, not a general model",
+   "detail": "The host says the lab is upfront that Inkling is weaker than general frontier models, and its real goal is to be fine-tuned on the Tinker platform. Apache 2.0 weights are on Hugging Face.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Benchmarks show a clear split between instruction following and agentic work",
+   "detail": "Inkling beats GLM 5.2 on instruction following (79.8 vs 73.3) but loses badly on Terminal Bench (63.8 vs 82.7). The host reads this as good at following orders, much weaker at working things out on its own.",
+   "t": "0:52"
+  },
+  {
+   "idea": "Mixture-of-experts with sparse activation",
+   "detail": "975B total parameters, 256 unique experts per layer, and each token is routed to 6 experts, so about 41B parameters do work per token.",
+   "t": "0:52"
+  },
+  {
+   "idea": "Raw audio and image patches go straight into the language model",
+   "detail": "Most multimodal models put a speech model or vision captioner in front of the LLM, which loses information. Inkling feeds audio as a spectrogram (frequency bands in buckets) and images as 40x40 pixel patches, into the same space as text tokens, so nothing is compressed into a text description first.",
+   "t": "2:03"
+  },
+  {
+   "idea": "Fine-tune to change how a model answers, use retrieval for what it knows",
+   "detail": "Rule of thumb: fine-tuning teaches tone, rigid structured output and narrow behavior, especially where thousands of in-context examples would be impractical in cost or latency. If the model lacks knowledge, don't fine-tune. Fine-tuning can also degrade chain-of-thought, and smaller models suffer most.",
+   "t": "2:54"
+  },
+  {
+   "idea": "Narrow-task fine-tuning of a small model can beat a large general model",
+   "detail": "Harvey trained a small model to extract citations from legal documents. F1 rose from 0.56 to 0.68. Against GPT-4.0 head to head, the small model won or tied 93% of the time and ran faster.",
+   "t": "3:40"
+  },
+  {
+   "idea": "Self-driven fine-tuning via Tinker",
+   "detail": "In a demo, Inkling was told to never use the letter E. It then built its own training dataset and ran the fine-tune through Tinker. The result was a model that avoids E while still producing coherent answers. Training uses LoRA, which freezes base weights and trains small low-rank matrices.",
+   "t": "4:15"
+  },
+  {
+   "idea": "Two differentiators: raw audio and a continuous thinking-effort slider",
+   "detail": "Among Tinker-supported models, Inkling is the only one that takes raw audio; others handle images (Kimi, most Qwen) but not sound. Thinking effort is a 0-to-1 slider where most models offer 2-3 discrete levels (gpt-oss offers low/medium/high).",
+   "t": "5:17"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Decide fine-tune vs retrieval by failure type",
+   "how": "If the model lacks facts, add retrieval. If it needs a consistent tone, rigid structured output, or behavior that would take thousands of in-prompt examples, fine-tune. Check whether reasoning degrades after tuning.",
+   "when": "Before choosing between RAG and fine-tuning for a narrow, high-volume task with labeled data and a way to grade output."
+  },
+  {
+   "name": "Distill a narrow task from a general model into a small fine-tuned model",
+   "how": "Collect labeled examples for one task, fine-tune a small open model on them, then compare head to head against the large general model on F1 or win rate, with latency as a second metric.",
+   "when": "When a general model is too expensive or slow for a repeated narrow job (the Harvey citation-extraction example)."
+  },
+  {
+   "name": "Let the model generate its own fine-tuning dataset via Tinker",
+   "how": "Describe the target behavior in natural language (the demo used no letter E); the model builds the training set and runs the full fine-tune on Tinker. The video shows the prompt only, not the exact commands or config.",
+   "when": "For quick behavior-shaping experiments where hand-building a dataset is slower than iterating on a description."
+  },
+  {
+   "name": "Feed raw audio directly to the model for tasks needing prosody or delivery",
+   "how": "Pass the audio clip into the multimodal model instead of a transcript so it can classify how something was said (speaking style) and not only what was said. Video cites cookbook recipes for speech recognition, speaking-style classification and dictated medical prescriptions.",
+   "when": "When tone, speaking style or pronunciation of domain terms matters and a transcript would drop that information."
+  },
+  {
+   "name": "Tune reasoning depth with the thinking-effort slider",
+   "how": "Set Inkling's thinking effort as a continuous value from 0 to 1 rather than picking one of 2-3 discrete levels.",
+   "when": "When you need finer control over the latency-versus-reasoning trade-off than discrete effort levels allow."
+  }
+ ],
+ "tools": [
+  "Inkling (Thinking Machines open-weight MoE model)",
+  "Tinker (fine-tuning platform)",
+  "LoRA",
+  "Hugging Face",
+  "GLM 5.2",
+  "GPT-OSS",
+  "GPT-4.0",
+  "Kimi K3",
+  "Qwen",
+  "DeepSeek",
+  "NVIDIA Nemotron"
+ ],
+ "numbers": [
+  {
+   "claim": "Model size: 975B total parameters, about 41B active per token, 256 experts per layer, 6 experts routed per token",
+   "t": "0:00-0:52"
+  },
+  {
+   "claim": "Instruction following: Inkling 79.8 vs GLM 5.2 73.3",
+   "t": "0:52"
+  },
+  {
+   "claim": "Terminal Bench: Inkling 63.8 vs 82.7 for the comparison model",
+   "t": "0:52"
+  },
+  {
+   "claim": "Image input uses 40x40 pixel patches",
+   "t": "2:03"
+  },
+  {
+   "claim": "Harvey citation extraction F1 rose from 0.56 to 0.68 after fine-tuning",
+   "t": "3:40"
+  },
+  {
+   "claim": "Fine-tuned small model won or tied against GPT-4.0 93% of the time in Harvey's head-to-head, and ran faster",
+   "t": "3:40"
+  },
+  {
+   "claim": "Thinking effort is a continuous 0-1 slider; gpt-oss offers 3 discrete levels",
+   "t": "5:17"
+  }
+ ],
+ "hot_takes": [
+  "Inkling is not worth using as a general model; the host says the value is fine-tuning and audio input.",
+  "Fine-tuning can make reasoning worse, and smaller models are hit hardest; the host frames this as a reason to be careful with tuning for reasoning tasks.",
+  "Only Inkling among Tinker models takes raw audio, which the host calls a standout feature.",
+  "The Harvey result is a single customer anecdote and is presented as a vendor-style success story, not independent evaluation.",
+  "The video's own benchmark data shows Inkling trailing badly on agentic (Terminal Bench) work, which the host states plainly."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "An open-weight, fine-tunable multimodal base could fit a narrow-task model path, and the fine-tune-vs-retrieval split is a useful lens for MemoryMesh, but the video gives no serving or deployment details relevant to InferCraft.",
+   "action": "Note Inkling as a candidate base for a narrow labeled task. Before adopting, verify its serving stack works with vLLM on one RTX 5090, since the video does not cover it."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content about Claude Code CLI harnessing, checkpointing, or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The fine-tune-vs-RAG rule of thumb and the distillation example (small model beating a large one on a narrow task) apply to cheap-model pipelines, which is a recurring interest.",
+   "action": "Read the Harvey case-study claims against the original source before citing them; the video is a secondhand summary."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

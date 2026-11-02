@@ -1,0 +1,165 @@
+{
+ "one_line": "Three practical ways to clone a website's design into a Next.js or HTML project using Cursor plus Gemini, the Figma MCP, or the Firecrawl MCP, with the presenter noting where each one falls short.",
+ "summary": "The video argues that screenshot-to-code fails because the model is guessing at the design, so the fix is to give it real structural data. Method 1 captures a full-page screenshot from DevTools, has Gemini (canvas on) recreate it as React, asks Cursor for a Next.js file structure, then has Gemini write a bash script that splits the generated code by markers into components. Method 2 connects the Figma MCP, whose image-download tool fetches the design's assets into the project so the AI does not have to guess at images. The git2doc tip turns a GitHub repo into docs that Cursor can index and reference when building an MVP. Method 3 uses the Firecrawl MCP to scrape a live site, including its DOM classes and image links, and produces a close clone, though animations and interactive charts are not replicated and the result was janky when built as plain HTML. The presenter notes Firecrawl's free tier (500 pages) and that copying another site's images is mainly useful for replicas used for learning or testing. It is a practical tutorial with single-example comparisons rather than measured evaluation.",
+ "speakers": [
+  "AI LABS host (unnamed)"
+ ],
+ "orgs": [
+  "Google",
+  "Anthropic",
+  "OpenAI",
+  "Figma",
+  "Firecrawl",
+  "egghead.io",
+  "Anysphere (Cursor)"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "vibe-coding-app-building",
+  "mcp-and-tools",
+  "coding-agents"
+ ],
+ "tags": [
+  "clone-website",
+  "screenshot-to-code",
+  "figma-mcp",
+  "firecrawl-mcp",
+  "cursor",
+  "gemini-canvas",
+  "nextjs",
+  "git2doc",
+  "design-to-code",
+  "devtools-full-size-screenshot"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Screenshot-to-code produces poor output because the model guesses at spacing, colors and missing elements; the presenter's fix is to feed it actual structural data instead.",
+   "detail": "Framed as the core problem. Each method below supplies more real data (full-page capture, Figma node data and assets, scraped DOM and images) rather than a single screenshot.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Full-page capture plus Gemini canvas can recreate a whole site as React in one pass, and it also pulled in the image from the screenshot.",
+   "detail": "Presenter says Gemini reproduced the Wallhaven layout, text and stats, and placed the image correctly, while Claude artifacts given the same image and prompt omitted much more. This is a single-example comparison, not a benchmark.",
+   "t": "1:04"
+  },
+  {
+   "idea": "Ask Gemini to emit a bash integration script that splits its generated code by markers, so Cursor does not have to break the code into components itself.",
+   "detail": "Gemini keeps the full context while dividing the code, which the presenter prefers over dumping one large file into Cursor. Imports across files still needed fixing, which Cursor handled.",
+   "t": "2:25"
+  },
+  {
+   "idea": "The Figma MCP's image-download tool is the feature that makes it useful, because the AI otherwise cannot recreate complex images from a pasted screenshot.",
+   "detail": "The server exposes two tools, get Figma data and download Figma images. Downloaded images were saved into folders (avatars, frames, icons) and wired into the app. Navigation between screens was not implemented automatically and had to be requested by hand.",
+   "t": "6:10"
+  },
+  {
+   "idea": "Granularity is controlled by the link you give Cursor: a whole page or a single component can be cloned from a Figma selection link.",
+   "detail": "Workflow is select a frame in Figma, use copy link to selection, and give the link to Cursor. The same approach works for a single button.",
+   "t": "7:08"
+  },
+  {
+   "idea": "git2doc converts a GitHub repository into docs that Cursor can index, which lets you learn from a repo's architecture without cloning and modifying it.",
+   "detail": "Presented as a way to build an MVP inspired by an existing app. You paste the repo link into git2doc, copy the generated docs link, add it as a documentation source in Cursor with a name, and reference it while prompting.",
+   "t": "8:24"
+  },
+  {
+   "idea": "Firecrawl MCP scrapes a live site, including DOM classes, text and image links, which yields the most accurate clone of the three methods for a landing page.",
+   "detail": "The presenter says the structure, text and images matched closely. Known gaps: some animations were not replicated and an interactive graph became static.",
+   "t": "10:17"
+  },
+  {
+   "idea": "Generated HTML clones are janky on animation and scroll; the presenter suggests Next.js as the better target for a clone.",
+   "detail": "The clone was built as plain HTML for simplicity, which caused elements to go out of frame and scroll jitter. The presenter says a framework implementation would likely avoid this, but this is asserted rather than tested.",
+   "t": "11:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Full-page screenshot capture for layout cloning",
+   "how": "Open DevTools, press Cmd+Shift+P (Ctrl+Shift+P on Windows), type 'screenshot', and choose 'Capture full-size screenshot'. The file saves to Downloads. Give the image to Gemini with canvas enabled and a prompt asking it to recreate the design exactly in React.",
+   "when": "When you need a faithful one-shot recreation of a single public page layout and do not want to stitch multiple screenshots."
+  },
+  {
+   "name": "Marker-based splitting of generated code into a Next.js app",
+   "how": "Ask the model to (1) give the file structure of the Next.js app that Cursor generated, (2) emit the code with split markers, and (3) generate a bash script that reads the markers and inserts the pieces into the source tree. Save the original as generated.tsx and the script as integrated.sh, then run chmod +x and execute it. Fix any module errors, install dependencies, and start the dev server.",
+   "when": "When a single large generated file would be hard for Cursor to split and fix on its own, and the model that generated the code should keep the full context while splitting it."
+  },
+  {
+   "name": "Figma selection link to Cursor via the Figma MCP",
+   "how": "Connect the Figma MCP server to Cursor (the presenter ran it as a local SSE server; installation is in a separate video). In Figma, select a frame or component, choose 'copy link to selection', and paste the link into Cursor with an instruction to build it. Use the download-images tool so assets land in the project folders.",
+   "when": "When you have a finished Figma design and want exact visual fidelity, including real image assets, at page or component granularity."
+  },
+  {
+   "name": "Turning a GitHub repo into indexable docs for Cursor",
+   "how": "Open git2doc in the browser, paste the repository URL, and copy the generated docs link. In Cursor, add a new doc, paste the link, and give it a name. Wait for indexing, then reference it in prompts, for example 'build an MVP based on this app, you may use the docs for reference'.",
+   "when": "When you want Cursor to reason about a repo's architecture and features as reference material while building your own version, without copying the code."
+  },
+  {
+   "name": "Scraping a live site with Firecrawl MCP for a structural clone",
+   "how": "Connect the Firecrawl MCP (8 tools; the scrape tool was used). Tell Cursor you want to clone a given URL using the Firecrawl MCP and provide the link. Cursor calls the scraper, which returns DOM classes, structure, text and image links, then downloads the assets and builds the page. Expect to hand-implement animations and interactive elements.",
+   "when": "When cloning a landing page's layout and copy quickly is the goal and you accept manual fixes for motion and interactivity. Check the page's rights before reusing images."
+  },
+  {
+   "name": "Build clones in a framework, not plain HTML",
+   "how": "Ask Cursor for a Next.js implementation instead of plain HTML from the start. The presenter says this avoids the animation and scroll problems seen in the plain-HTML clone.",
+   "when": "When the clone needs animation or should become the basis for an app, not a static mock."
+  }
+ ],
+ "tools": [
+  "Cursor",
+  "Gemini (canvas feature)",
+  "Claude artifacts",
+  "ChatGPT",
+  "Chrome DevTools (command runner, full-size screenshot)",
+  "React",
+  "Next.js",
+  "bash (integrate.sh script)",
+  "Figma MCP",
+  "git2doc",
+  "Firecrawl MCP (8 tools)",
+  "Wallhaven (example site)",
+  "Obsidian website (example site)"
+ ],
+ "numbers": [
+  {
+   "claim": "Firecrawl free tier allows scraping up to 500 pages before an upgrade to a $16/month plan.",
+   "t": "11:20"
+  },
+  {
+   "claim": "Figma MCP exposes two tools: get Figma data and download Figma images.",
+   "t": "6:10"
+  },
+  {
+   "claim": "Firecrawl MCP exposes 8 tools.",
+   "t": "10:17"
+  },
+  {
+   "claim": "Full video length is 12:36.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Gemini's output was judged better than Claude artifacts on a single Wallhaven example, which is anecdotal and not a controlled comparison.",
+  "The presenter says Gemini can pass context across split files better than dumping code into Cursor, but this is asserted without measurement.",
+  "Copying images from another site is flagged as generally not useful for a product, unless the goal is a replica for testing or learning.",
+  "The Firecrawl segment is effectively a paid-tool walkthrough with links to separate install videos. It is practical but promotional, and the free tier is the main caveat."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Front-end cloning workflow with no link to inference, memory, gateway or the distributed-system goals.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Uses Cursor and MCP servers interactively, not the Claude Code CLI harness, checkpointing, or approvals.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

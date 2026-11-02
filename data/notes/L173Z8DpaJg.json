@@ -1,0 +1,158 @@
+{
+ "one_line": "Safia Abdalla (Warp) on building the Oz cloud agent platform: hide infra complexity, allow any harness, expose everything via API, and run the open-source repo with agent-gated triage and PR review.",
+ "summary": "Safia Abdalla of Warp explains why and how the team built Oz, its cloud agent platform. The core principle is that the platform should absorb infrastructure complexity so users never see it, which leads to managed and self-hosted sandboxes, a harness-agnostic layer with shared guardrails, and an API covering agents, sub-agents, environments and artifacts. She describes multi-agent work where research, implementation and validation run as separate agents, possibly on different harnesses and models, coordinated by an orchestrator. The most concrete part is Warp's open-source repo, where agents triage new issues, draft specs, and review every PR through several iterations before any human reviewer is pinged. She argues that \"software factory\" is the wrong name and prefers a workshop framing that keeps people in the loop, with observability, event-driven automations and cost control as requirements. The talk has little hard data or implementation detail, and it closes with a booth pitch.",
+ "speakers": [
+  "Safia Abdalla"
+ ],
+ "orgs": [
+  "Warp",
+  "Microsoft",
+  "Project Jupyter"
+ ],
+ "format": "talk",
+ "topics": [
+  "software-factory",
+  "pr-code-review",
+  "multi-agent",
+  "sandboxing-execution"
+ ],
+ "tags": [
+  "warp",
+  "oz",
+  "cloud-agents",
+  "sandboxes",
+  "self-hosted",
+  "multi-harness",
+  "orchestration",
+  "agent-gated-review",
+  "issue-triage",
+  "open-source",
+  "api-first",
+  "software-factory-critique"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Platforms should absorb infrastructure complexity before it reaches the user.",
+   "detail": "The speaker's guiding rule is that a good experience should not expose the messy infrastructure underneath. Every primitive in Oz is modeled to hide that complexity, so the user only sees the work.",
+   "t": "1:20"
+  },
+  {
+   "idea": "Cloud agents need both managed and self-hosted sandboxes.",
+   "detail": "Managed sandboxes are an easy on-ramp, but serious teams have their own infra and security rules. So agent workloads must also run on infrastructure the customer brings.",
+   "t": "3:38"
+  },
+  {
+   "idea": "Support many harnesses, but enforce one platform structure around them.",
+   "detail": "Users bring Claude Code, Codex, or their own harness. Without structure, the experience fragments, so the platform standardizes conversation state, rehydration, and outputs such as PRs, issues and files for every harness.",
+   "t": "5:40"
+  },
+  {
+   "idea": "Split real engineering work across specialised agents.",
+   "detail": "One agent researches and plans, another implements, and a third validates. Each can use a different harness or model to get an adversarial check. An orchestrator agent handles delegation, messages between sub-agents, and tracking.",
+   "t": "6:44"
+  },
+  {
+   "idea": "Expose every component through an API so others can build on it.",
+   "detail": "Agents, sub-agents, environments and artifacts are all reachable by API. Non-engineering staff at Warp used the SDK to build Slack bots for social-mention triage and product Q&A.",
+   "t": "8:01"
+  },
+  {
+   "idea": "Agents triage issues and gate PRs in the open-source repo.",
+   "detail": "After open-sourcing, an agent triages each new issue by researching the codebase and asking clarifying questions, and drafts specs. Every PR passes an agent review over several iterations, and humans are pinged only after the agent approves.",
+   "t": "12:10"
+  },
+  {
+   "idea": "Structure lets non-developers ship software by turning intent into implementation.",
+   "detail": "Domain experts who are not developers can bring ideas through the agent-run intake process. The speaker argues that most software is built by developers for people who lack domain expertise, so this structure matters.",
+   "t": "13:13"
+  },
+  {
+   "idea": "The speaker prefers a workshop framing to the term software factory.",
+   "detail": "She uses a potter's workshop as the model: repeatable process, verification at each step, staff who watch and refine the process, and a loop with the people in it. A system should be observable, react to events, improve over time, and stay cheap in tokens.",
+   "t": "17:59"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Managed plus self-hosted sandboxes behind one model",
+   "how": "Run each agent in an isolated cloud sandbox. Offer a managed option for ease, and let teams plug in their own infrastructure, with the same abstraction for both.",
+   "when": "Teams with their own security, deployment, or internal-service constraints that rule out fully managed compute."
+  },
+  {
+   "name": "Harness-agnostic layer with platform guardrails",
+   "how": "Let any agent harness run, but route conversation state, rehydration, and all outputs (PRs, issues, generated files) through common platform structures so the experience stays consistent.",
+   "when": "You support several coding agents and want one review, storage, and artifact flow regardless of which one runs."
+  },
+  {
+   "name": "Orchestrator with mixed-model sub-agents",
+   "how": "A parent agent, triggered by a prompt or an API call, delegates to sub-agents for research/plan, implement, and validate. It mediates their messages and tracks progress. Each sub-agent can use a different harness or model.",
+   "when": "Non-trivial tasks where a single prompt does not fit, and you want adversarial checking between roles."
+  },
+  {
+   "name": "Agent-gated PR review before human review",
+   "how": "Every PR goes through repeated agent review rounds. Humans are notified only after the agent approves, so reviewers see only the higher-signal PRs.",
+   "when": "High PR volume on a repo where human reviewer time is the bottleneck."
+  },
+  {
+   "name": "Agent-driven issue intake",
+   "how": "On a new issue, an agent searches the codebase, asks the reporter follow-up questions if the request is vague, and drafts a spec or task before any implementation.",
+   "when": "Open-source or cross-functional repos where bug reports and feature requests arrive underspecified."
+  },
+  {
+   "name": "API-first primitives for agents, sub-agents, environments and artifacts",
+   "how": "Expose each part of the stack through an API and SDK, so teams outside engineering can build their own bots and workflows on top.",
+   "when": "A platform that must support custom internal tooling without a custom UI for each use case."
+  }
+ ],
+ "tools": [
+  "Warp",
+  "Oz",
+  "Claude Code",
+  "Codex",
+  "GitHub",
+  "Slack"
+ ],
+ "numbers": [
+  {
+   "claim": "GitHub stars on the Warp repo rose from about 20,000 to over 60,000 after the open-source release.",
+   "t": "10:47"
+  },
+  {
+   "claim": "The open-source release brought thousands of PRs and hundreds of contributors.",
+   "t": "10:47"
+  },
+  {
+   "claim": "Warp open-sourced the repo about three months before this talk.",
+   "t": "9:25"
+  }
+ ],
+ "hot_takes": [
+  "'Software factory' is a poor term because it leaves the people out. A workshop, where humans watch and refine the process, is a better model.",
+  "Platforms should absorb infrastructure complexity so users never see it.",
+  "Most software is written by developers for people with domain expertise, so agent intake that lets non-developers express intent matters more than faster coding."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Its sandbox point (managed plus bring-your-own infra behind one abstraction) is relevant to Crucible's celld and Cloudflare backends, though the talk gives no implementation detail.",
+   "action": "When designing the Crucible backend choice, support a self-hosted sandbox target alongside managed ones behind one interface, as the speaker argues teams need."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Multi-agent research, implementation and validation with different harnesses and models, plus an agent review gate before humans, closely match ProsHarness's plan, critique and debate loop.",
+   "action": "Read the orchestration and review-gate sections of this talk against the plan, critique and debate loop, and consider a stage where an agent must approve a plan or PR before the human is pinged."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Agent-driven issue triage and PR gating are a concrete, real-world case from a large open-source repo.",
+   "action": "Look at the Warp open-source repo's triage and review setup as a reference for an agent-gated intake and review workflow."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

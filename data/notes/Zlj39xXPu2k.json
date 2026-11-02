@@ -1,0 +1,153 @@
+{
+ "one_line": "Better Stack beginner walkthrough of Docker logging: docker logs flags (tail, since, until, grep), the default json-file driver, how the official nginx image symlinks logs to stdout/stderr, daemon.json log options, and four logging strategies.",
+ "summary": "The video demonstrates Docker logging with an nginx container on Windows/WSL. It shows how `docker logs` returns stdout/stderr, how to filter output with --tail, --since, --until and grep, and explains that the official nginx image symlinks access.log and error.log to /dev/stdout and /dev/stderr so Docker can capture them. It covers the log driver model (json-file default, local, none, syslog, journald, fluentd, cloud drivers) and shows configuring json-file rotation (max-size 20m, max-file 5, compress) and custom attributes via daemon.json log-opts. It closes with four strategies: host log driver, dedicated logging container, in-container shipper, and sidecar. The content is beginner-level and mostly a demo of standard Docker features, with no benchmarks or sponsorship.",
+ "speakers": [
+  "Better Stack presenter (unnamed)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Docker",
+  "NGINX",
+  "Microsoft"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools",
+  "observability"
+ ],
+ "tags": [
+  "docker",
+  "docker-logs",
+  "logging",
+  "log-drivers",
+  "json-file",
+  "daemon-json",
+  "nginx",
+  "fluentd",
+  "sidecar",
+  "containers",
+  "log-rotation"
+ ],
+ "key_ideas": [
+  {
+   "idea": "docker logs returns whatever a container writes to stdout and stderr, so the app's own logs are visible without extra setup.",
+   "detail": "Access requests from nginx show up as HTTP GET lines each time the page is refreshed.",
+   "t": "3:32"
+  },
+  {
+   "idea": "The official nginx image makes its logs visible to Docker by symlinking access.log and error.log to /dev/stdout and /dev/stderr.",
+   "detail": "Without those ln commands in the Dockerfile, the logging driver would not see nginx's log files at all. Custom images need the same trick.",
+   "t": "8:24"
+  },
+  {
+   "idea": "Filtering flags on docker logs keep output manageable on busy services.",
+   "detail": "--tail N returns the last N lines, --since takes a relative duration, --until takes a cutoff, and piping to grep searches the output.",
+   "t": "9:49"
+  },
+  {
+   "idea": "The default json-file driver writes one JSON object per line on the host, and it does not rotate logs unless told to.",
+   "detail": "Each entry has log, stream and time keys. Files live under the Docker data directory, named by container ID.",
+   "t": "13:47"
+  },
+  {
+   "idea": "Log rotation and compression are configured per daemon in daemon.json under log-driver and log-opts.",
+   "detail": "The video sets max-size 20m, max-file 5 and compress true. Changes need a Docker daemon restart, and existing containers do not pick them up.",
+   "t": "17:27"
+  },
+  {
+   "idea": "Extra fields can be added to every log entry through log-opts env, which puts a container's environment variables under an attributes key.",
+   "detail": "The video sets OS=Ubuntu and shows it in the JSON output, which helps with search and filtering.",
+   "t": "18:48"
+  },
+  {
+   "idea": "Remote log shipping is usually better done by a dedicated shipper such as Fluentd reading the local files, not by sending logs synchronously over the network from the daemon.",
+   "detail": "The speaker says network-sending drivers can add latency to containers.",
+   "t": "21:15"
+  },
+  {
+   "idea": "Four logging strategies: host log driver, dedicated logging container, in-container shipper, and sidecar. Each trades off differently.",
+   "detail": "In-container shippers break the one-process-per-container rule and can add latency. Sidecars give per-app control but cost resources and complexity, so they suit large orgs.",
+   "t": "22:19"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Read container logs with filters",
+   "how": "Run `docker ps` to get the container ID, then `docker logs <id>`. Add `--tail 5` for the last 5 lines, `--since 5m` or `--since 5h` for a time window, `--until 3m` for an upper bound, and combine them. Pipe through `grep GET` to search.",
+   "when": "Debugging a running container or inspecting recent requests without dumping the full log."
+  },
+  {
+   "name": "Make a container's file logs visible to Docker",
+   "how": "In the Dockerfile, run `ln -sf /dev/stdout /var/log/nginx/access.log` and `ln -sf /dev/stderr /var/log/nginx/error.log`, as the official nginx image does. Then anything the app writes to those files reaches `docker logs`.",
+   "when": "Packaging a service that writes logs to files inside the container, so the Docker logging pipeline can collect them."
+  },
+  {
+   "name": "Rotate and compress json-file logs globally",
+   "how": "Edit daemon.json (on Linux /etc/docker/daemon.json; on Windows/macOS ~/.docker/daemon.json, or via Docker Desktop settings). Set \"log-driver\": \"json-file\" and \"log-opts\": {\"max-size\": \"20m\", \"max-file\": \"5\", \"compress\": \"true\"}. Restart Docker, then recreate the containers.",
+   "when": "Any host where the default json-file driver would otherwise grow without bound. Usually the default choice."
+  },
+  {
+   "name": "Stamp each log entry with custom fields",
+   "how": "In daemon.json, add an \"env\" key inside log-opts with comma-separated variable names, for example \"env\": \"OS\". Set the variable with `docker run -e OS=Ubuntu`. The value appears under attributes in each JSON log line.",
+   "when": "You need service or environment metadata on every log line for later search or filtering."
+  },
+  {
+   "name": "Choose a log architecture",
+   "how": "Small or medium apps: keep the host json-file driver. Remote shipping: run a log shipper such as Fluentd that reads the json-file output. Several containers: a dedicated logging container that aggregates them. Per-app control in a large org: a sidecar container per app. Avoid putting shippers in the app container, because that adds a second process and can block the app.",
+   "when": "Deciding how logs leave Docker hosts, based on scale and how much tailoring each service needs."
+  }
+ ],
+ "tools": [
+  "Docker",
+  "Docker Desktop",
+  "docker logs",
+  "docker run",
+  "docker ps",
+  "docker exec",
+  "NGINX",
+  "Windows Subsystem for Linux",
+  "Fluentd",
+  "AWS CloudWatch",
+  "Google Cloud Logging",
+  "syslog",
+  "journald",
+  "Winston Transport",
+  "Vector (mentioned for a future video)"
+ ],
+ "numbers": [
+  {
+   "claim": "Log rotation config in the demo: max-size 20 megabytes, max-file 5, compress true.",
+   "t": "17:27"
+  },
+  {
+   "claim": "docker logs --tail 5 returns the last 5 entries.",
+   "t": "9:49"
+  },
+  {
+   "claim": "Default json-file driver does not rotate logs unless configured.",
+   "t": "14:57"
+  }
+ ],
+ "hot_takes": [
+  "Remote log drivers that ship directly to CloudWatch or GCP add latency, so a dedicated shipper is better practice. (The speaker states this as general guidance, with no measurement.)",
+  "Sidecar logging is probably overkill for small or medium apps and suits large orgs with independently tailored logging needs."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS runs infra with Prometheus/Grafana and OTel on Docker. The log-driver rotation and shipper-vs-sidecar tradeoffs are background for log handling in the L4 observability stack.",
+   "action": "Check whether the AgentOS docker-compose services set log-driver and log-opts (max-size, max-file) so the proxy and vLLM containers do not fill the disk on the RTX 5090 box."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps long-running Claude Code runs, which can produce large logs. Log rotation and the sidecar-vs-in-container tradeoff apply when checkpointing long runs in containers.",
+   "action": "If ProsHarness runs agents in Docker, set max-size and max-file in daemon.json so long checkpointed runs do not grow logs without bound."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

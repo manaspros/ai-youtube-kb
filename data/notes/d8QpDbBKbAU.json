@@ -1,0 +1,201 @@
+{
+ "one_line": "Secondhand summary of how Anthropic reviews Claude Code's own PRs: layered automated review, risk-tiered human sign-off, incident-derived reviewer evals, and round caps for agent-vs-agent loops.",
+ "summary": "Better Stack summarizes an Anthropic write-up on how it reviews code when Claude writes about 90% of Claude Code's own code. The core shift is from asking whether a human read the change to asking what could go wrong and which check, automated or human, catches it. Review is layered: the author's Claude session self-checks, automated multi-agent reviewers run on each PR and only post findings that a voting group agrees on, a security pass runs, and CI gates the merge. Human involvement depends on a classifier-assigned risk tier, with low-risk changes needing none. The reviewer itself is tuned against an eval built from real incident PRs, with noise measured by whether authors fix or dismiss comments. Agent author and reviewer loops got stuck (one PR hit 50+ rounds overnight), and the fix was escalating after three rounds and re-reviewing only new changes. The video's own caveats are that the 40% revert figure is a share, not a count, and that the approach relies on a very large token budget.",
+ "speakers": [],
+ "orgs": [
+  "Anthropic"
+ ],
+ "format": "news",
+ "topics": [
+  "pr-code-review",
+  "claude-code",
+  "evals",
+  "multi-agent"
+ ],
+ "tags": [
+  "code review",
+  "risk tiers",
+  "reviewer evals",
+  "CLAUDE.md",
+  "review.md",
+  "agent loops",
+  "monorepo",
+  "reverts",
+  "human in the loop",
+  "rollback"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Volume makes line-by-line reading unrealistic; the question becomes what could go wrong and which check catches it",
+   "detail": "Claude writes about 90% of Claude Code's code. Merges more than doubled June to September while the share of reverted PRs fell 40%. Replaces 'did a human read this' with a risk-based check question.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Less human review is only acceptable if reverts and production incidents do not rise",
+   "detail": "The stated goal is that most PRs merge with at most one human, who may be the author. Revert rate and production incidents are tracked as the guardrail.",
+   "t": "0:59"
+  },
+  {
+   "idea": "Review is a stack of imperfect layers, Swiss-cheese style, with fast rollback as the last net",
+   "detail": "Layers: the author's own Claude session self-checks and gets a fresh-context sub-agent diff review; PR-time multi-agent reviewers find bugs in parallel and a separate voting group posts only agreed findings; then a security review, then CI (tests, type checks, lint), then humans as tier requires.",
+   "t": "0:59"
+  },
+  {
+   "idea": "Recurring reviewer findings become lint rules or CLAUDE.md lines, not one-off PR fixes",
+   "detail": "If Claude keeps using a replaced helper, they add a lint rule or a CLAUDE.md line so the mistake stops at the source. Code owners' review.md files say what failure looks like in that area (docs that lie, config that misroutes e.g. prod instead of staging) and list false positives to ignore.",
+   "t": "2:22"
+  },
+  {
+   "idea": "Findings block merge until resolved, and false positives are cleared by closing the thread with a reason",
+   "detail": "A PR cannot merge while bug-review or security-review findings are open. The author either fixes the issue or closes the thread with a short reason. The PR template (how tested, how to undo) can be drafted by Claude, but the requester signs off.",
+   "t": "2:22"
+  },
+  {
+   "idea": "Human review is tiered by risk, and a classifier agent picks the tier",
+   "detail": "Low risk (docs, changes behind a feature flag) needs no human if automated checks pass and the author is trusted. Medium risk (ordinary product changes, sensitive areas like caching) needs one human. Highest risk plus a fixed list of paths needs two. A second agent double-checks whether a human is needed anyway.",
+   "t": "3:40"
+  },
+  {
+   "idea": "The reviewer is tested against an eval built from real incident PRs, and changes are kept only if the score rises",
+   "detail": "Each incident PR's bug is confirmed by the engineer who knows the code and turned into an eval case, run daily. Gaps are fixed in CLAUDE.md, a skill, or a new check. Any reviewer change is scored against all cases and dropped if the score does not go up.",
+   "t": "3:40"
+  },
+  {
+   "idea": "Flagging everything games the eval, so noise is measured by what authors do with each comment",
+   "detail": "Tracks whether comments are fixed or dismissed. Noise matters more when the author is an agent: a nitpick on a human PR gets ignored, but an agent will act on it, causing commit and review loops.",
+   "t": "4:49"
+  },
+  {
+   "idea": "Agent author and agent reviewer loops need round caps, scoped re-reviews, and whole-class fixes",
+   "detail": "One PR went through over 50 review rounds overnight. About 59% of flags were on code present since the first review. After three rounds the reviewer tells the author to rethink the approach. Later re-reviews cover only new changes, and the reviewer flags the whole bug class at once.",
+   "t": "4:49"
+  },
+  {
+   "idea": "Humans keep the work machines are bad at, and the author owns what they land",
+   "detail": "Humans decide what to build, review risky code such as billing, and own outcomes. Under the 'you land it, you own it' rule, the author usually fixes what breaks. Changes stay small and most mistakes are undone in minutes with flags and reverts.",
+   "t": "6:05"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Layered review pipeline with a voting gate",
+   "how": "Author session self-verifies (run tests, build, compare a screenshot to the design), then a fresh-context sub-agent reviews the diff. On PR open, several reviewer agents hunt for bugs in parallel; a separate group of agents votes on each finding and only agreed findings are posted. Then a security reviewer pass, then CI (tests, type checks, lint), then human review as the tier requires.",
+   "when": "High PR volume where humans cannot read every line. Use each layer as a partial filter rather than a single gate."
+  },
+  {
+   "name": "Turn repeated reviewer findings into durable rules",
+   "how": "If the reviewer flags the same mistake across several PRs, add a lint rule for mechanical issues, or a CLAUDE.md line so the agent stops writing it. Do not just fix it on each PR.",
+   "when": "Recurring agent mistakes such as using a deprecated helper function."
+  },
+  {
+   "name": "Per-directory review.md written by code owners",
+   "how": "Each code owner keeps a review.md that defines what failure looks like in that code (docs: claims that are wrong, like a stated default that is off; config: misrouting, like pointing at prod instead of staging) and lists patterns that look wrong but are fine, so the reviewer stops flagging them.",
+   "when": "A reviewer produces false positives in specific areas, or needs domain-specific failure definitions."
+  },
+  {
+   "name": "Merge gate with explicit false-positive dismissal",
+   "how": "Block merge while any bug or security finding is open. Resolution is either a fix or closing the thread with a short reason, which records the false positive.",
+   "when": "Automated reviewers should be able to block merges, but authors need a fast way to clear mistakes."
+  },
+  {
+   "name": "Incident-derived reviewer eval with a keep-or-drop rule",
+   "how": "Collect PRs that caused incidents. Have the code owner confirm each bug and convert it into an eval case. Run the reviewer against the full set daily. For any change (prompt, model, rule), score against all cases and keep it only if the score rises. For each miss, decide whether the fix belongs in CLAUDE.md, a skill, or a new check.",
+   "when": "Tuning any LLM reviewer or judge, so changes are measured against real past failures."
+  },
+  {
+   "name": "Noise metric from comment outcomes",
+   "how": "Track whether each reviewer comment is fixed or dismissed as wrong. Use this alongside the recall eval, because a reviewer that flags everything will score well on recall alone.",
+   "when": "Any automated reviewer whose output is consumed by agents or humans."
+  },
+  {
+   "name": "Round cap, scoped re-review, and whole-class flagging for agent loops",
+   "how": "After about three review rounds, have the reviewer instruct the agent author to stop and rethink the approach. After the first few passes, review only the new changes. When a bug pattern is found, flag every instance in one review so it is fixed everywhere at once.",
+   "when": "Agent author and agent reviewer loops that produce many rounds with little new signal."
+  },
+  {
+   "name": "Risk tiering with a classifier agent and a second check",
+   "how": "A classifier agent reads each PR and assigns a risk tier. A second agent verifies whether a human is required anyway. Keep a fixed list of sensitive paths that always require two humans. Tiers: low (no human if checks pass and the author is trusted), medium (one human), high or sensitive path (two humans).",
+   "when": "Mixed-risk change volume where most changes are low risk and a few need strict review."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "CLAUDE.md",
+  "review.md",
+  "PR template",
+  "lint rules",
+  "CI (tests, type checking, linting)"
+ ],
+ "numbers": [
+  {
+   "claim": "Claude writes about 90% of Claude Code's own code (per Anthropic, as relayed)",
+   "t": "0:00"
+  },
+  {
+   "claim": "Anthropic main monorepo went from about 2,500 changes/day in May to over 30,000 on the busiest day in September",
+   "t": "0:00"
+  },
+  {
+   "claim": "PRs merged more than doubled June to September; the share of PRs reverted dropped by 40% (a share, not a count; no absolute numbers given)",
+   "t": "0:00"
+  },
+  {
+   "claim": "Claude Code's creator said in March he was shipping 20 to 30 PRs a day",
+   "t": "0:00"
+  },
+  {
+   "claim": "One PR went through over 50 review rounds overnight before a human stopped it",
+   "t": "4:49"
+  },
+  {
+   "claim": "About 59% of reviewer flags were on code that had been there since the first review",
+   "t": "4:49"
+  },
+  {
+   "claim": "PRs passing after one review round rose from 65% to 78%",
+   "t": "4:49"
+  },
+  {
+   "claim": "PRs needing five or more rounds fell from 9% to 1.5%",
+   "t": "4:49"
+  },
+  {
+   "claim": "Narrator's figure: a vendor AI code review averages about $15 to $25 per review (not stated by Anthropic in the video)",
+   "t": "6:05"
+  },
+  {
+   "claim": "Narrator's arithmetic: doubling PRs with a 40% lower revert share still leaves about 20% more reverts overall",
+   "t": "6:05"
+  }
+ ],
+ "hot_takes": [
+  "The title 'Anthropic Barely Reads Claude's Code Anymore' overstates it: medium and high risk changes still get one or two humans, and humans still own outcomes.",
+  "The 40% revert drop is a share with no absolute counts. With PR volume doubling, the narrator argues total reverts still rise about 20%.",
+  "The approach depends on a very large token budget. The narrator notes Anthropic can afford it and that a reviewer at $15 to $25 per review is expensive for most teams.",
+  "This is a secondhand summary of an Anthropic post, and the video itself says some specifics are unclear. Use the mechanisms, not the headline."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and runs critique and debate loops. The round-cap and scoped re-review pattern for agent-vs-agent loops applies directly, as does the incident-derived eval for judging critique quality.",
+   "action": "Add a round cap to the plan to critique to debate loop: after about three rounds, stop and force a rethink. Re-run critique only on the diff since the last round, and track how many critique items are dismissed as wrong."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS has no code-review pillar, but its governance and exec-gate ideas map onto risk tiers and eval-driven checks. The reviewer-eval method is adjacent to the AgentOS eval focus.",
+   "action": "Before tuning any AgentOS guardrail or classifier prompt, build a small eval set from past incidents and track a noise metric (how often its flags are dismissed) alongside recall."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Practical, numbers-backed process for agent-written code at scale: layered checks, CLAUDE.md-as-regression-fix, review.md per directory, and reviewer evals. Useful for any team with a coding agent in the loop.",
+   "action": "Adopt the convert-recurring-finding-to-lint-or-CLAUDE.md rule and a per-directory review notes file, then measure whether agent-authored PRs need fewer rounds."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

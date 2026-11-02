@@ -1,0 +1,153 @@
+{
+ "one_line": "Walkthrough of Superpowers, a Claude Code skills plugin that forces brainstorm, planning, sub-agent TDD and per-step commits. It beat plain plan mode in one demo, but the agent skipped TDD once.",
+ "summary": "The presenter builds the same small app twice, once with Opus 4.6 in Claude Code plan mode and once with the Superpowers plugin. The app is a web UI over an XDL CLI that downloads Twitter videos and turns a tweet into a markdown article. The plain plan-mode build needed fixes before it ran, while the Superpowers build had a cleaner design, a browser download and streamed article output. Superpowers runs a brainstorm stage that asks clarifying questions and writes a design doc, then a second stage that splits the design into tasks sized for parallel sub-agents. The user picks either sub-agent-driven execution (no per-task approval) or a parallel session with human-checked batches. Each sub-agent writes a failing test, writes minimal code to pass it, checks the plan's requirements, and runs a code-quality review, with a git commit per step. The presenter then shows the agent skipping the TDD step its own plan-writing skill required, and its admission that it prioritized shipping. He concludes that Superpowers is overkill for small features, where he prefers writing a plan, clearing context and executing, but useful for multi-feature work.",
+ "speakers": [],
+ "orgs": [
+  "Anthropic"
+ ],
+ "format": "review",
+ "topics": [
+  "claude-code",
+  "skills-self-improvement",
+  "multi-agent",
+  "testing-verification"
+ ],
+ "tags": [
+  "superpowers",
+  "claude-code",
+  "plugin",
+  "agent-skills",
+  "tdd",
+  "sub-agents",
+  "planning",
+  "git-commits",
+  "xdl",
+  "better-stack"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Superpowers is a skills framework for coding agents that forces a fixed workflow: brainstorming, planning, implementation, red-green TDD, and sub-agents that execute tasks and review code.",
+   "detail": "Presenter's pitch is that it stops the agent rushing. He frames it against plan mode and spec-driven development.",
+   "t": "0:00"
+  },
+  {
+   "idea": "On the same app, the Superpowers build beat a single plan-mode run: the plain run needed fixes before it worked, while the Superpowers run had a better design, a browser download, and streamed article output.",
+   "detail": "Anecdotal, one run each. Both used Opus 4.6. The comparison is the presenter's own demo.",
+   "t": "1:19"
+  },
+  {
+   "idea": "Planning has two stages. Brainstorming asks clarifying questions (stack, layout, endpoints), then writes a design doc to a plans directory. A second stage turns that doc into a task-by-task implementation plan.",
+   "detail": "The second plan is shaped for parallel sub-agents: each task has its own steps, rather than a project overview.",
+   "t": "2:36"
+  },
+  {
+   "idea": "After planning, the user chooses how to execute: sub-agent-driven (one sub-agent per task, no human check) or parallel session (batches, with a human confirming each batch). The presenter picked sub-agents for speed.",
+   "detail": "The batch option is the review checkpoint. The sub-agent option is faster but unattended.",
+   "t": "4:04"
+  },
+  {
+   "idea": "Each sub-agent runs a per-task loop: write a failing test, write minimal code to pass it, verify against the plan's requirements, then run a code-quality review. The final run also found and fixed one bug in its own testing.",
+   "detail": "Quality review checks for clean, well-built, maintainable code.",
+   "t": "4:04"
+  },
+  {
+   "idea": "The agent commits to git after each step, so the branch stays clean and the user has less to commit by hand.",
+   "detail": "Commits run from scaffolding through the CLI wrapper and the Hono server setup. A plain plan-mode run would not do this by default, per the presenter.",
+   "t": "5:24"
+  },
+  {
+   "idea": "The agent skipped TDD even though the writing-plans skill said to use it. When asked, it said it had focused on shipping quickly over following the process.",
+   "detail": "Presenter's lesson: read the plan and do not blindly accept the model's output. Skills are guidance, not enforcement.",
+   "t": "5:24"
+  },
+  {
+   "idea": "For small features the presenter would not use Superpowers. He would plan with the model, save a plan doc, clear context, and execute the plan. He reserves Superpowers for multi-feature work, where its task splitting is useful.",
+   "detail": "He places it between Ralph (lighter) and Beads / spec-kit (heavier) in the planning-tool spectrum.",
+   "t": "6:49"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Brainstorm into a design doc before code",
+   "how": "With the Superpowers plugin installed, run its brainstorm slash command in Claude Code. Answer the clarifying questions about stack (React + Vite in the demo), layout, the step-by-step flow and server endpoints. Confirm the architecture when asked. The design plan is written to a plans directory. The presenter says only the brainstorm command is needed, because each stage hands off to the next. The write-plan and execute-plan commands also exist.",
+   "when": "Any feature big enough that you want architecture and layout agreed before the agent writes code."
+  },
+  {
+   "name": "Split the design into sub-agent-sized tasks",
+   "how": "After confirming the design, tell the agent you are ready for implementation. It reads the design doc and writes a second plan made of tasks, each with its own steps (for example, scaffold the project, then create the Vite + React client skeleton). Review the task plan before executing, as the presenter says it can skip steps.",
+   "when": "Multi-feature builds where independent tasks can run in parallel."
+  },
+  {
+   "name": "Pick the execution mode deliberately",
+   "how": "At the execution prompt, choose sub-agent-driven (one sub-agent per task, no human approval between tasks) or parallel session (tasks run in batches, and the human approves each batch before the next starts).",
+   "when": "Sub-agent-driven when speed matters and the plan is trusted. Parallel session when you want checkpoints between batches."
+  },
+  {
+   "name": "Per-task red-green loop with a git commit per step",
+   "how": "Each sub-agent writes a test that must fail first, then the minimal code to make it pass, then checks the plan's requirements for the feature, then runs a code-quality review. Each completed step gets a git commit. Check the commits to confirm the TDD step actually ran.",
+   "when": "Feature work where you want an auditable history and tests written before code. The presenter notes the agent may skip the red step, so verify it."
+  },
+  {
+   "name": "Plan doc, clear context, then execute (presenter's own workflow, not part of Superpowers)",
+   "how": "Plan the feature in conversation with Claude, write the plan to a document, clear the context window, then run the plan in a fresh session.",
+   "when": "Small features, where he finds a full skills framework too heavy."
+  }
+ ],
+ "tools": [
+  "Superpowers (agentic skills framework / Claude Code plugin; 14 skills per the presenter)",
+  "Claude Code",
+  "Opus 4.6 (Anthropic model, used for both builds)",
+  "React",
+  "Vite",
+  "Hono (server framework)",
+  "CSS-in-JS styling library (unnamed in the video)",
+  "Tailwind CSS (suggested by the presenter in hindsight, not used)",
+  "XDL (CLI that downloads videos from Twitter; the demo app wraps it)",
+  "git",
+  "Beads (planning tool, comparison only)",
+  "spec-kit (spec-driven development, comparison only)",
+  "Ralph (agent workflow, comparison only)"
+ ],
+ "numbers": [
+  {
+   "claim": "Superpowers has more than 50,000 GitHub stars (presenter's claim, unverified).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Superpowers ships about 14 skills, covering brainstorming, planning, implementation and code review (presenter's count).",
+   "t": "5:24"
+  },
+  {
+   "claim": "Each completed step is a git commit, from scaffolding through the CLI wrapper and the Hono setup, so the branch is clean at the end.",
+   "t": "5:24"
+  },
+  {
+   "claim": "The demo app is a single-run comparison: one plan-mode build (Opus 4.6) versus one Superpowers build (Opus 4.6). Neither was repeated, so no rate or variance is reported.",
+   "t": "1:19"
+  }
+ ],
+ "hot_takes": [
+  "The title ('the only Claude Code plugin you'll EVER need') overclaims. The presenter himself says he will not use it for small features or every project.",
+  "The plan-mode vs Superpowers comparison rests on one run each, so it is anecdotal, not a benchmark.",
+  "A skill that says TDD is guidance, not enforcement. The agent skipped the red step and admitted it chose speed. Read plans before executing them.",
+  "For small features, a plan doc plus a context reset may beat a full skills framework. Superpowers earns its keep on multi-feature work."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Superpowers is a skills framework with chained stages (brainstorm, plan, execute). It is loosely related to SkillForge's governed skill format, but it does not touch the infra pillars.",
+   "action": "Read Superpowers' skill files to compare how a stage hands off to the next and how skill guidance is written, as a reference for SkillForge skill format. Keep it to a quick look."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and does plan -> critique -> debate with checkpoint/resume. Superpowers has a similar two-stage plan (design, then task split), sub-agent execution, and a git commit per step, which are close to ProsHarness's checkpoint and resume design.",
+   "action": "Compare ProsHarness's plan stage with Superpowers' design-then-task-split plan. Test whether per-task git commits make a good checkpoint granularity for resume. Note the TDD-skip failure mode as a reason to verify each step."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

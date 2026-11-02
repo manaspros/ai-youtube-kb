@@ -1,0 +1,43 @@
+# Rsyslog - Log Processing in Linux
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `fgdXuqiyUKs` · [watch](https://youtu.be/fgdXuqiyUKs) · **date:** 2024-11-02 · **length:** 30:52 · **format:** tutorial · **quality:** 3/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Better Stack
+- **topics:** observability, dev-tools · **tags:** rsyslog, linux, syslog, log-processing, imfile, cron, fastapi, python-logging, systemd, log-routing, json-logs
+
+> Hands-on Ubuntu tutorial on rsyslog: read rules from 50-default.conf, route cron output to its own file, tail a FastAPI app's log file into the syslog file, and add JSON templates and constant fields.
+
+## Summary
+The video walks through rsyslog on Ubuntu as a log pipeline: inputs, optional transforms, and outputs. It explains the global /etc/rsyslog.conf and the drop-in directory /etc/rsyslog.d, where 50-default.conf holds facility.priority filter rules that map to destination files under /var/log. The presenter enables the commented-out cron rule, restarts the daemon, and shows cron output landing in cron.log and also in syslog. He then builds a small FastAPI app that logs request method and client IP to app.log with Python's logging module. A drop-in file (51-fastapi.conf) uses the imfile module to tail that file, tags the records, and routes them by tag into /var/log/syslog. The last section covers a JSON output template and a constant field that adds a fixed value to each record. The talk is a basic intro with no benchmarks, and it is sponsored only by its own channel and guide links.
+
+## Key ideas
+- **rsyslog is a pipeline: accept logs from inputs, optionally transform them, then send them to outputs such as files, network, or databases.** — Inputs include files, Unix sockets, TCP and UDP. Outputs include files, Postgres, Redis, MongoDB, MySQL and Elasticsearch through modules. The speaker's framing is intro-level, and the 'rocket-fast' and security claims are taken from the guide without measurement. ([0:00](https://youtu.be/fgdXuqiyUKs?t=0))
+- **Default routing is a list of facility.priority filters on the left and destination actions on the right, in /etc/rsyslog.d/50-default.conf.** — Filters use facility names such as auth, cron, mail and kern, plus a priority level or a wildcard. Priority levels run from debug through info, notice, warning, error, crit, alert, emergency. Catch-all files such as /var/log/syslog and /var/log/messages collect most traffic. ([7:16](https://youtu.be/fgdXuqiyUKs?t=436))
+- **Edits to a routing rule take effect only after an rsyslog restart. Enabling the commented-out cron rule creates cron.log and also copies the output into syslog.** — The speaker uncomments the cron line in 50-default.conf, runs sudo systemctl restart rsyslog, then adds an every-minute crontab entry that echoes hello world. The output appears in /var/log/cron.log and in /var/log/syslog. ([14:01](https://youtu.be/fgdXuqiyUKs?t=841))
+- **An application can write its own log file and let rsyslog tail it, with no change to the app's code beyond a standard file handler.** — The FastAPI service uses logging.getLogger(__name__), a FileHandler writing app.log, a Formatter with asctime and levelname, and logger.info calls that include request.method and request.client.host. rsyslog then reads that file, so the app does not need to talk to rsyslog directly. ([20:04](https://youtu.be/fgdXuqiyUKs?t=1204))
+- **Each app gets its own drop-in file in /etc/rsyslog.d, containing an imfile input, a tag, and a conditional action on that tag.** — The speaker creates 51-fastapi.conf, which sets a working directory for state files, loads imfile, and defines an input for the app.log path with a tag. A conditional on the tag sends matching records to /var/log/syslog. State files are how rsyslog remembers how far it has read. ([23:40](https://youtu.be/fgdXuqiyUKs?t=1420))
+- **Logs can be reshaped on the way out: a template can emit JSON, and a constant field can add fixed metadata such as an environment name.** — The example template writes JSON, and a constant statement inserts a fixed key-value pair (environment set to dev) into every record. The speaker shows the pattern but does not walk through the full template syntax. ([28:24](https://youtu.be/fgdXuqiyUKs?t=1704))
+
+## Techniques
+- **Install and verify rsyslog** — Install with `sudo apt install rsyslog` (or `yum` on RPM-based systems), then check it with `systemctl status rsyslog`. It should be active. Ubuntu usually ships it preinstalled. *When:* Setting up or auditing a Linux host where logs need to be centralized or routed.
+- **Map the config layout** — /etc/rsyslog.conf holds global directives, module loads (imuxsock for /dev/log, commented-out imudp and imtcp), the workDirectory for state files, file ownership and permission settings, and an include of /etc/rsyslog.d/*.conf. Per-service rules go in /etc/rsyslog.d/. Default rules are in 50-default.conf, which pairs facility.priority filters with destination files. *When:* Before editing any routing, to know which file owns which rule.
+- **Route a service's output to its own file** — Uncomment the rule for the facility (the video uses cron) in /etc/rsyslog.d/50-default.conf, run `sudo systemctl restart rsyslog`, then generate traffic (the video uses a crontab entry `* * * * * echo hello world` via `crontab -e`) and check /var/log/cron.log and /var/log/syslog. *When:* When you need a dedicated file for one subsystem and also want it in the catch-all syslog.
+- **Application log file tailed by rsyslog** — In Python: create logger = logging.getLogger(__name__), add logging.FileHandler('app.log'), set a Formatter with %(asctime)s, %(levelname)s, %(message)s, add the handler, and set level INFO. In the FastAPI route, inject `request: Request`, then log method=request.method and client=request.client.host with logger.info(..., extra=...). Then add /etc/rsyslog.d/51-fastapi.conf containing a global workDirectory, `module(load=imfile)`, an input pointing at the absolute path of app.log with a tag (the video uses 'file-logs'), and an `if $syslogtag == 'file-logs' then` action to /var/log/syslog. Restart rsyslog and run `tail -n 50 /var/log/syslog` to confirm. *When:* A service writes logs to a file and you want them in the central syslog without changing it to use the syslog API.
+- **Add JSON output and constant fields** — Define a template in the rsyslog config that emits JSON from the message properties, then add a constant statement with outname set to the field name and value set to a fixed string (the video uses dev). Use the template in the action that writes the destination. *When:* Downstream tools need structured, machine-parseable logs, or each record needs an environment or service label.
+
+## Numbers
+- Cron entry runs every minute (`* * * * *`) for the cron.log demo. ([14:01](https://youtu.be/fgdXuqiyUKs?t=841))
+- The service started about 8 seconds after the restart command, shown as a status check after rsyslog restart. ([14:01](https://youtu.be/fgdXuqiyUKs?t=841))
+- The syslog check shows the last 50 lines (tail -n 50) after the FastAPI requests. ([26:25](https://youtu.be/fgdXuqiyUKs?t=1585))
+- The FastAPI demo serves on localhost:8000. ([17:13](https://youtu.be/fgdXuqiyUKs?t=1033))
+
+## Hot takes
+- The 'rocket-fast' and high-performance claims about rsyslog are repeated from the docs, not measured in the video.
+- Tailing an app log file with imfile is a practical bridge for legacy apps, but the video does not compare it with sending syslog directly over TCP or UDP, or with an OpenTelemetry collector.
+- The state-file and workDirectory setup is shown only briefly, so a reader who copies the pattern without the guide may miss how rsyslog resumes after a restart.
+
+## Tools mentioned
+rsyslog, systemd / systemctl, apt, yum, cron / crontab, nano, Python logging, Python venv, FastAPI, Uvicorn, VS Code, Ubuntu, Better Stack rsyslog guide
+
+## Relevance to our work
+- **agentos** (1/3): L4 observability on the same box: the speaker shows a Python app's file logs being tailed into central syslog, a low-friction collection path to compare against the planned OTel and Prometheus stack. → *Test rsyslog imfile on one InferCraft or gateway service log file as a low-cost collector, then compare its tagging and JSON output with the OTel path before choosing.*
+- **general** (1/3): Reference material for Linux host logging and file tailing, useful when a service writes its own log files. → *Keep the imfile input, tag-conditional, and JSON template pattern from the Better Stack guide as a reusable recipe for Linux hosts.*

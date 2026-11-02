@@ -1,0 +1,168 @@
+{
+ "one_line": "Phil Hetzel (Braintrust) lays out four maturity stages of agent evals, from documented vibe checks to replaying tool-using agents offline with captured system state.",
+ "summary": "Phil Hetzel, solutions engineering lead at Braintrust, gives an 18-minute talk on how teams mature in running evals for agents. He argues evals are not unit tests: start from high-level failure modes, accept directional results from non-deterministic judges, and avoid trying to enumerate every failure. The four stages are vibe checks with documented human annotation, scaling human judgment into LLM-as-judge scorers, evaluating whole traces once agents call external tools, and advanced replay that restores external system state. The core loop is a production flywheel: capture traces, triage failures by hand or with tooling, then replay them offline through evals. For tool-using agents, he suggests embedding system state inside large traces, using mocked APIs, and running time-versioned queries such as vector DB as-of-time lookups. He presents the stages as a continuum rather than fixed steps, and says the last two techniques are still emerging. The talk is conceptual, with little product detail and no benchmarks.",
+ "speakers": [
+  "Phil Hetzel"
+ ],
+ "orgs": [
+  "Braintrust",
+  "KPMG",
+  "Slalom Consulting"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "observability",
+  "testing-verification"
+ ],
+ "tags": [
+  "eval-maturity",
+  "llm-as-judge",
+  "human-annotation",
+  "failure-modes",
+  "production-traces",
+  "flywheel",
+  "trace-evals",
+  "state-replay",
+  "vibe-checks"
+ ],
+ "tools": [
+  "Braintrust",
+  "Cursor",
+  "Claude Code",
+  "Codex"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Evals are not unit tests",
+   "detail": "Start from the high-level failure modes of the agent, as a subject matter expert would describe them. Exhaustive enumeration of everything that could go wrong is infinite and blocks shipping.",
+   "t": "3:47"
+  },
+  {
+   "idea": "Directional eval results are acceptable",
+   "detail": "Eval results need not be perfect, especially with non-deterministic LLM judges. A consistent upward trend is what matters. An eval is three parts: the task under test, a dataset of inputs, and scoring functions.",
+   "t": "5:07"
+  },
+  {
+   "idea": "Vibe checks are a fine start if documented",
+   "detail": "Run about 10 example inputs and have a human (ideally a subject matter expert) give a thumbs up or down plus a written justification. The justification captures domain knowledge that can later be scaled.",
+   "t": "6:28"
+  },
+  {
+   "idea": "Derive failure modes from the justifications",
+   "detail": "Feed thumbs-down justifications into a coding agent to cluster them into the agent's actual failure modes. This makes the failures explicit enough to score automatically.",
+   "t": "9:31"
+  },
+  {
+   "idea": "LLM judges need their own validation, and code can judge too",
+   "detail": "Do not trust an LLM judge just because it is an LLM; check its agreement with humans. Objective failures such as too many tool calls or tokens can be scored with plain code instead.",
+   "t": "10:31"
+  },
+  {
+   "idea": "Production traces feed back into the eval set (the flywheel)",
+   "detail": "Capture production traces, understand what went wrong (by human or tooling), bring those examples offline, rerun them through evals, and use the results to decide what to improve. Evals are framed as re-running production, not as tests.",
+   "t": "11:44"
+  },
+  {
+   "idea": "Agents with tools need whole-trace evals",
+   "detail": "Once an agent calls external systems, scoring the final output is not enough. Context-gathering tools and CRUD tools both affect quality, so you must inspect each step and target individual tool or MCP calls.",
+   "t": "13:10"
+  },
+  {
+   "idea": "Replaying CRUD tools offline is the hard part",
+   "detail": "Replaying needs the external system state from the time of the original run, and writes must not touch production data. Mock-level APIs can approximate this, but he says the problem is not fully solved.",
+   "t": "14:36"
+  },
+  {
+   "idea": "Store state inside arbitrarily large traces and query as of a point in time",
+   "detail": "Because agent traces can be very large, system state can be packed into the trace and injected into the eval task. Where systems support it, timestamp or version queries (for example, a vector DB queried as of the original run) recreate the old state.",
+   "t": "15:50"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Documented human annotation (thumbs plus justification)",
+   "how": "For each trace, a human gives a binary verdict and a written reason. Build the annotation view to match how users expect agent traces to look, rather than using a generic annotation UI.",
+   "when": "Very early, before any automation, when you have no labels and a few dozen inputs."
+  },
+  {
+   "name": "Failure-mode extraction from justifications",
+   "how": "Pass the thumbs-down justifications to a coding agent (Cursor, Claude Code, or Codex) and cluster them into named failure modes. Use those modes as the basis for scoring rules.",
+   "when": "After you have enough annotated failures and need to scale judgment beyond a few experts."
+  },
+  {
+   "name": "LLM-as-judge with binary outputs and human-aligned ground truth",
+   "how": "Use an LLM judge scorer with discrete (yes/no) outputs so a ground-truth dataset is easy to build. Check the judge against human labels before trusting it.",
+   "when": "When human review is the bottleneck and failures can be stated as clear criteria."
+  },
+  {
+   "name": "Deterministic code scorers for objective failures",
+   "how": "Write code checks for measurable failures, such as tool-call count or token budget, and fail the eval directly.",
+   "when": "When a failure can be measured without judgment, which is cheaper and more reliable than an LLM judge."
+  },
+  {
+   "name": "Production trace flywheel",
+   "how": "Capture production or UAT traces into the eval dataset, triage them, and replay them through offline evals to guide changes.",
+   "when": "Once the agent is live or near launch, to keep evals tied to real usage."
+  },
+  {
+   "name": "Whole-trace evaluation with per-step targeting",
+   "how": "Capture full traces with every tool and MCP call. Set evals on individual steps as well as on the final output.",
+   "when": "When the agent calls external tools or systems and final-output checks miss errors."
+  },
+  {
+   "name": "Embedding system state in traces and time-versioned queries",
+   "how": "Store the external state the agent saw inside the trace and inject it on replay. Use mock APIs for writes. Where supported, query stores such as vector DBs as of the original timestamp.",
+   "when": "When an eval must replay tool-using tasks offline without touching production data."
+  }
+ ],
+ "numbers": [
+  {
+   "claim": "Talk length of 18 minutes (18:34 recording) with about 2 minutes reserved for questions.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Starting point suggested: about 10 example inputs run through the agent for vibe checking before annotation.",
+   "t": "6:28"
+  },
+  {
+   "claim": "Speaker has 12 years of consulting and systems implementation experience (4 at KPMG, 8 at Slalom), and about 1 year at Braintrust at recording time.",
+   "t": "1:00"
+  },
+  {
+   "claim": "Four maturity stages: just getting started, measuring to manage, accounting for complexity, advanced eval techniques. He describes them as a continuum rather than discrete steps.",
+   "t": "6:28"
+  }
+ ],
+ "hot_takes": [
+  "Evals are not unit tests, and trying to enumerate every failure is infinite and blocks shipping.",
+  "Vibe checking is fine as a start, as long as it is documented with justifications.",
+  "Generic annotation tools are a mistake. Build annotation views specific to each user's traces.",
+  "An LLM judge is not more trustworthy just because it is an LLM. Judges need their own evals.",
+  "Agent traces can be arbitrarily large, so system state can be packed into the trace to replay offline."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already plans RAGAS evals and L4 observability. The talk's trace-capture and replay ideas map to evaluating Crucible and MemoryMesh tool calls offline.",
+   "action": "Add per-step tool-call capture in the proxy traces, and record external-state snapshots so that a stored task can be replayed in an eval without touching live systems."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs plan, critique, and debate loops. Human thumbs plus justification on plan critiques could give the labels needed to derive failure modes.",
+   "action": "Log a verdict and a one-line reason for each plan critique, then cluster the reasons to find the recurring plan failures."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Entity resolution and data-quality work benefits from the same pattern: deterministic checks first, LLM judge only where needed, with the judge calibrated against human labels.",
+   "action": "For entity-resolution eval sets, store a reason with each match label, and calibrate any LLM judge against those labels before using it to score rules."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

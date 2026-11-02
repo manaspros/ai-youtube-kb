@@ -1,0 +1,171 @@
+{
+ "one_line": "JPMorgan payments lead on modeling each API request as a short-lived execution DAG, then using per-segment baselines and drift categories to detect anomalies with fewer false alarms.",
+ "summary": "Ritvik Pandya, who leads payments at JPMorgan Chase, argues that a request's path through gateways, auth, orchestration and parallel downstream services should be modeled as a short-lived DAG built from telemetry, not stored in a persistent graph database. With that DAG he builds a baseline, detects deviation, and localizes the slow node before deciding whether to alert or act. He separates anomalies (one-off deviations) from drift (slow change over time) and classifies drift as structural, load-driven, covariate (input mix shift) or same-request behavior change, each needing a different response. Baselines should be per client, per segment and per endpoint, with a cold-start baseline for new endpoints, to cut alert noise. The pipeline runs asynchronously: OpenTelemetry feeds Kafka and stream processing, with a fast hot path and a slower, more accurate reconciliation path, so the payment request path is not slowed. He flags telemetry lag from one node as a false structural-change risk, and suggests rolling automated fixes out to 5-10% of machines before 100%. The talk is conceptual, with few hard numbers, and the statistical methods are named only briefly.",
+ "speakers": [
+  "Ritvik Pandya"
+ ],
+ "orgs": [
+  "JPMorgan Chase"
+ ],
+ "format": "talk",
+ "topics": [
+  "observability",
+  "infra-cost-scaling",
+  "data-engineering"
+ ],
+ "tags": [
+  "execution-graph",
+  "DAG",
+  "anomaly-detection",
+  "drift-detection",
+  "OpenTelemetry",
+  "baselines",
+  "payments",
+  "latency",
+  "kafka",
+  "stream-processing",
+  "root-cause-analysis",
+  "non-LLM"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Model each request's processing as a short-lived DAG built from telemetry",
+   "detail": "Nodes are services or steps (edge, gateway, auth, orchestration, parallel calls). Ordering and per-node context come from the graph. Retries and loops are tracked as separate nodes. The graph is ephemeral, unlike a persistent property graph in Neo4j.",
+   "t": "1:14"
+  },
+  {
+   "idea": "Use a cheap end-to-end check first and only go deeper on a breach",
+   "detail": "Like a boarding-pass check at the airport. If the request's end-to-end baseline looks fine, skip the expensive analysis. If latency is off, then check which node changed and whether it is past threshold.",
+   "t": "3:11"
+  },
+  {
+   "idea": "Baselines must be per segment, not global",
+   "detail": "A request from a local client and one from overseas have different normal latency, so one threshold makes noisy alerts. Baselines should be set per client, per use case (real-time payments vs wire), and per endpoint.",
+   "t": "4:37"
+  },
+  {
+   "idea": "Separate anomalies from drift, then classify the drift",
+   "detail": "An anomaly is a one-off deviation. Drift is a slow change in pattern over time, such as a commute that grows from 1 hour to 80 minutes. Drift types: structural (node added or removed), load-driven (a service can no longer handle volume), covariate (input mix changes, such as the share of foreign-currency requests), and same-request behavior change. Each type calls for a different response.",
+   "t": "7:44"
+  },
+  {
+   "idea": "Use an asynchronous telemetry pipeline with hot and reconciliation paths",
+   "detail": "OpenTelemetry data goes to Kafka, then stream processing. The hot path decides fast enough to automate a fix. The reconciliation path is slower but more accurate. Telemetry is never on the request path, so payment latency is not affected.",
+   "t": "14:14"
+  },
+  {
+   "idea": "Delayed telemetry from one node can look like a structural change",
+   "detail": "If one of seven nodes reports late, the system sees six nodes and may call it a structural change. Window and timing rules must be tuned to avoid false alarms. Tracking start and end per node suggests a tail-based approach.",
+   "t": "15:22"
+  },
+  {
+   "idea": "Confirm with a human and roll out fixes in stages",
+   "detail": "After detection and classification, a human confirms. Automate the fix only when the risk is known. Roll it out to 5-10% of machines, monitor, then go to 100%. Label data to help learning. Make the system aware of deployments so it knows when to roll back.",
+   "t": "13:12"
+  },
+  {
+   "idea": "Cold start and explainability",
+   "detail": "A new endpoint gets its own new baseline and is not forced onto a generic one. Alerts should explain their evidence, since a bare score such as 'health score 22' is not actionable.",
+   "t": "16:24"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Request-as-DAG from traces",
+   "how": "Build a short-lived graph per request from spans or telemetry. Nodes are steps, edges are call order, retries and loops are their own nodes. Use it to find the order of execution, the context passed at each node, and which node is slow.",
+   "when": "Latency or behavior issues in multi-hop API or gateway paths where you need to localize which hop changed."
+  },
+  {
+   "name": "Tiered detection",
+   "how": "Tier one checks end-to-end latency against a baseline. Only on breach, localize the node and run statistical deviation tests and thresholds. Alert or act only if the deviation is past threshold.",
+   "when": "High-volume paths where deep analysis on every request is too costly."
+  },
+  {
+   "name": "Segmented baselines",
+   "how": "Compute a separate baseline per client, region, use case or endpoint. Give new endpoints a cold-start baseline and do not reuse a generic one.",
+   "when": "Mixed traffic where normal latency differs by segment, so that global thresholds create noise."
+  },
+  {
+   "name": "Drift classification before action",
+   "how": "For each detected drift, decide whether it is structural, load-driven, covariate or behavioral. Then pick the response: update the topology and baseline, scale or make the call async, add a per-segment baseline, or roll back.",
+   "when": "After a drift alert, to choose between re-baselining, scaling and rollback instead of treating all drift the same."
+  },
+  {
+   "name": "Async telemetry to hot and recon paths",
+   "how": "Send telemetry asynchronously to a queue such as Kafka. Run a fast stream job for quick decisions and a slower, more accurate job for reconciliation.",
+   "when": "Latency-sensitive request paths where the observability pipeline must not add to request time."
+  },
+  {
+   "name": "Staged automated remediation",
+   "how": "Roll out an automated fix to a small share of machines first (5-10%), watch the metrics, then expand to all nodes.",
+   "when": "Any automated change to production routing or scaling."
+  },
+  {
+   "name": "Synthetic training data for detectors",
+   "how": "Generate about seven days of traces with a benchmark telemetry dataset, inject known anomalies, then train the detector before it goes live.",
+   "when": "Before launching a detector, when production anomalies are rare and labels are scarce."
+  }
+ ],
+ "tools": [
+  "OpenTelemetry",
+  "Kafka",
+  "Neo4j (mentioned as contrast)",
+  "KL divergence",
+  "MMD",
+  "EWMA (exponential moving average)"
+ ],
+ "numbers": [
+  {
+   "claim": "Synthetic benchmark: about 7 days of traces, millions of traces injected to train the detector before go-live (benchmark name garbled in captions)",
+   "t": "6:09"
+  },
+  {
+   "claim": "Example: overall request processing normally takes about 700 ms",
+   "t": "13:12"
+  },
+  {
+   "claim": "Example traffic mix at the start: about 60% local and 40% foreign requests, later shifting as the product grows",
+   "t": "10:15"
+  },
+  {
+   "claim": "Staged rollout of automated remediation: 5-10% of machines first, then 100%",
+   "t": "13:12"
+  },
+  {
+   "claim": "Illustrative drift: a commute that grows from 1 hour to 1 hour 20 minutes over a year",
+   "t": "7:44"
+  },
+  {
+   "claim": "Mean time to discovery reduced a lot after moving to single-window detection (no figure given)",
+   "t": "16:24"
+  }
+ ],
+ "hot_takes": [
+  "Baselines should be per client and per use case, not one global number for all requests.",
+  "Drift should be classified before any action, because structural, load and covariate drift need different fixes."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "L4 observability uses OTel and Prometheus. The talk's drift classes and per-segment baselines could extend L4, but it is about payments APIs, not agents.",
+   "action": "Read the talk's drift taxonomy (structural / load / covariate) and consider adding segment-level latency baselines to the L4 OTel dashboards."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Not about Claude Code harnesses, checkpoints, or agent runs.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Shows the same segmented-baseline and drift-classification ideas that apply to monitoring any LLM or agent traffic.",
+   "action": "When designing monitoring for agent or LLM traffic, test whether one global latency or cost baseline hides segment-level drift."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

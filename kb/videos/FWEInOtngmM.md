@@ -1,0 +1,49 @@
+# Beyond Code Coverage: Functionality Testing with Playwright MCP — Marlene Mhangami, Microsoft
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `FWEInOtngmM` · [watch](https://youtu.be/FWEInOtngmM) · **date:** 2026-05-18 · **length:** 19:45 · **format:** tutorial · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Marlene Mhangami · **orgs:** Microsoft, GitHub
+- **topics:** testing-verification, coding-agents, mcp-and-tools · **tags:** red-green-tdd, playwright, playwright-mcp, behavior-testing, copilot-cli, e2e-testing, agent-written-tests, commit-checkpoints, workiq, refactor-phase
+
+> Marlene Mhangami (Microsoft/GitHub) argues for red-green TDD with coding agents, testing user-facing behavior with Playwright instead of unit-test coverage, and shows a live Copilot CLI demo.
+
+## Summary
+The speaker opens with GitHub Octoverse-style commit growth and a Stanford study (cited from an earlier AI Engineer talk) that says AI gains depend on clean codebases, since unchecked AI output adds entropy and rework. She recommends standard practices for clean code and proposes red-green-refactor TDD as the workflow for agentic coding. She argues that coverage-driven unit tests often test implementation details, and that AI-generated tests can be self-affirming, so tests should target behavior or stable contracts. She presents Playwright as the end-to-end layer, with three ways to connect an agent (Playwright MCP server, Playwright CLI, or Playwright Agents with planner, generator and healer agent files). The live demo uses GitHub Copilot CLI with the WorkIQ skill to pull feature requests from email, then has the agent write failing Playwright tests per feature, implement, and run them. The closing tips are to commit before the agent changes code, attach test screenshots to PRs, run headless, and write one test per feature. Much of the demo is a Microsoft/GitHub product walkthrough, and the demo partly stalled on stage.
+
+## Key ideas
+- **Commit growth is accelerating, and AI co-authorship is growing** — The speaker cites about 1B commits on GitHub in 2025 and a COO post of about 275M commits per week in 2026. She extrapolates to about 14B commits by year end, which is her own unofficial estimate. Some AI-authored commits are trackable through trailers such as Claude's co-sign. ([0:00](https://youtu.be/FWEInOtngmM?t=0))
+- **AI amplifies whatever codebase it touches, clean or not** — Citing a Stanford study of about 120,000 developers (presented at an earlier AI Engineer talk), she says AI gains depend on clean codebases. In an unchecked-AI case study, PR volume rose while quality fell and rework grew, and effective output rose only about 1%. ([2:14](https://youtu.be/FWEInOtngmM?t=134))
+- **Use red-green-refactor TDD as the agent workflow** — Write a failing test for the feature first, get it green with speed as the only goal, then spend most of the time refactoring. Her point is that agents make the red and green phases fast, so the refactor phase becomes the main human work. ([4:36](https://youtu.be/FWEInOtngmM?t=276))
+- **Coverage-driven unit tests test the wrong thing** — Unit tests tied to method names or internals break on renames and refactors even when behavior is fine. AI-generated tests can pass while never validating behavior, so tests should target observable outcomes or stable exported contracts. ([5:57](https://youtu.be/FWEInOtngmM?t=357))
+- **Trigger tests per feature, not per method** — Her rule is that a new feature request, rather than a new class method, is what should trigger writing a test. Behavior-level tests then survive internal refactors. ([13:07](https://youtu.be/FWEInOtngmM?t=787))
+- **Three ways to hook a coding agent to Playwright** — The Playwright MCP server, the Playwright CLI, or Playwright Agents. Playwright Agents installs three agent.md files: planner (chooses tests), generator (writes tests) and healer (fixes failing tests). The speaker recommends the agent files for state-heavy flows. ([9:46](https://youtu.be/FWEInOtngmM?t=586))
+- **Practical rules for agent-driven Playwright work** — Commit before the agent starts fixing or changing code, so its history stays recoverable. Attach the screenshots Playwright takes to the PR. Run headless in the background. Write one test per feature. Where an API exists, test the API directly instead of the browser. ([16:28](https://youtu.be/FWEInOtngmM?t=988))
+- **Pull requirements into the terminal from M365** — In the demo, the WorkIQ skill reads a product email from M365 and turns the feature requests (search bar with text and Azure AI search, category and price sidebar) into a feature list the agent uses as its input. The demo runs inside GitHub Copilot CLI. ([12:03](https://youtu.be/FWEInOtngmM?t=723))
+
+## Techniques
+- **Red-green-refactor with a coding agent** — Give the agent the feature list and ask it to write failing Playwright tests for each feature first. Then ask it to implement only enough to make them pass. Spend most review time on the refactor pass. The speaker tells the agent not to commit during the example. *When:* Adding user-facing features to an existing app where you want an executable definition of done before code is written.
+- **Behavior-scoped tests against user-facing or stable-contract behavior** — Write tests against the final observable result (for example, the final price) or against a stable exported API or module. Avoid asserting on internal method names or implementation details. Tie each test to a feature. *When:* Refactor-heavy work where agent-written unit tests tend to be self-affirming or brittle to renames.
+- **Connect the agent to Playwright (three options)** — Use the Playwright MCP server (already installed in Copilot CLI in the demo), the Playwright CLI, or Playwright Agents. Playwright Agents is installed with a command shown on the slide, which is not captured in the transcript, and creates three agent.md files: planner, generator, healer. *When:* Browser-based E2E verification of features an agent has just written. Playwright Agents is recommended when state management is involved.
+- **Checkpoint before the healer runs** — Commit the working state before asking the agent to fix or heal failing tests or change code. The speaker's stated reason is that the agent may not remember earlier changes if nothing is committed. *When:* Any agent loop that modifies code after tests run, so that you can roll back to a known-good state.
+- **Operational hygiene for Playwright runs** — Run headless so tests run in the background. Keep the screenshots Playwright captures for each test run and attach them to the PR. Use one test per feature. *When:* Reviewing agent-generated PRs and running verification at scale.
+- **Ingest requirements from M365 with WorkIQ** — Use the WorkIQ skill to bring an email's feature request into the terminal, then pass the extracted feature list into the Copilot CLI prompt. *When:* Requirements live in email or Office documents rather than in a tracker the agent can read.
+- **Prefer direct API tests when an API exists** — If the feature has an API, test it directly instead of driving the browser. *When:* Backend-heavy features where the API is the stable contract and browser tests add flakiness.
+
+## Numbers
+- About 1 billion commits were pushed to GitHub in 2025, its most active year (Octoverse 2025 report) ([0:00](https://youtu.be/FWEInOtngmM?t=0))
+- COO reported about 275M commits per week in 2026. The speaker extrapolates about 14B commits by year end, which she describes as 14x last year's growth; she notes these figures are not yet officially released ([1:05](https://youtu.be/FWEInOtngmM?t=65))
+- Stanford study of about 120,000 developers (presented at an earlier AI Engineer talk, as cited by the speaker) ([2:14](https://youtu.be/FWEInOtngmM?t=134))
+- Unchecked-AI case study: PR count rose, but effective output increased only about 1% and the team spent more time reworking code ([3:30](https://youtu.be/FWEInOtngmM?t=210))
+
+## Hot takes
+- Product demo: Copilot CLI, WorkIQ and Playwright are all Microsoft/GitHub products, and the talk is a vendor-led walkthrough. The substance is the workflow (red-green TDD plus behavior tests), not the product comparison.
+- The speaker's 14B-commit 2026 projection is her own extrapolation from an unofficial COO tweet, not a published figure.
+- The Stanford study numbers come second-hand from a prior AI Engineer talk; the speaker does not present the study's methodology.
+- Her claim that committing before a healer step helps the agent 'remember' what happened is a practical heuristic, not a verified mechanism.
+- Demo stalled early (slide-sharing issue, long waits) and the end-to-end run is shown only partially on stage; the test results are shown but not the full generated test suite.
+
+## Tools mentioned
+GitHub Copilot CLI, Playwright, Playwright MCP server, Playwright CLI, Playwright Agents, WorkIQ, Azure AI search, Claude, Codex, Ruby on Rails, Python (Playwright binding), TypeScript (Playwright binding), C# (Playwright binding)
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness runs plan, execute and critique loops around Claude Code. The talk's red-green feature loop, checkpoint-before-heal rule and one-test-per-feature pattern map directly onto harness loops with checkpoint/resume. → *Add a per-feature failing-test gate and a git commit checkpoint before any auto-fix or healer pass in ProsHarness's Claude Code loop, so resume and rollback land on a known-good state.*
+- **agentos** (1/3): Agent-written tests are a verification gap the talk names (self-affirming tests). Only indirectly relevant to AgentOS's proxy/infra work. → *When adding an agent-written feature to AgentOS, write behavior tests against the proxy's public OpenAI-compatible endpoint rather than internal methods, and commit before any agent auto-fix step.*

@@ -1,0 +1,39 @@
+# How to Decide What Your AI Agent Should Remember - Wojciech Pluta, Oracle
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `qq2Hm4XNRgI` · [watch](https://youtu.be/qq2Hm4XNRgI) · **date:** 2026-10-31 · **length:** 19:06 · **format:** talk · **quality:** 2/5 · **depth:** intro
+- **speakers:** Wojciech Pluta · **orgs:** Oracle
+- **topics:** memory, context-engineering, agent-architecture, security-guardrails · **tags:** memory promotion, write path, read path, provenance, supersede, human-in-the-loop, shared memory, context card, token budget, end-user isolation, harness, agent memory, Oracle AI Database, vendor talk
+
+> Oracle's Wojciech Pluta argues agent memory is a write path that needs a promotion gate with provenance, scoped memory tiers, and per-turn context cards. Vendor talk with a demo.
+
+## Summary
+The speaker frames retrieval as the read path and memory as the write path, and says the real engineering problem is deciding what to promote into long-term memory. Promote nothing and the agent has no continuity; promote everything and the memory store gets poisoned. His proposed pipeline classifies a candidate, compares it with existing records, checks the evidence required for that memory type, then the harness admits, rejects, or routes it to a human. He splits memory into short-term (ends with the session), long-term (episodic, procedural, semantic), and shared memory that needs human approval before it spreads across a team or enterprise. He argues memory should be built as a discipline with typed schemas, retrieval-fit indexes, and lifecycle and authorization boundaries. A pre-recorded demo shows a stated output-format preference persisting across brand-new sessions, and a blanket "approve every application" rule being rejected by the gate. The talk is a product pitch for Oracle's agent memory package and AI Database, with no benchmarks, latency or cost figures.
+
+## Key ideas
+- **Retrieval is the read path; memory is the write path** — Retrieval alone does not decide what should survive an interaction. When the agent sees something worth keeping, it should be promoted into a record it can use later. ([3:40](https://youtu.be/qq2Hm4XNRgI?t=220))
+- **Memory promotion is a gated pipeline, not raw extraction** — Steps: classify the candidate's meaning, compare it with existing records, check the evidence required for that memory type, then the harness admits, rejects, or sends it to a human for review. ([3:40](https://youtu.be/qq2Hm4XNRgI?t=220))
+- **The harness, not the model, owns the promotion decision** — The model suggests; the harness owns runtime decisions and checks. The promotion gate sits inside the guardrails and the agent cannot bypass it. ([2:11](https://youtu.be/qq2Hm4XNRgI?t=131))
+- **Both over-promotion and under-promotion are failure modes** — Promoting nothing gives no continuity. Promoting everything risks poisoning the memory store, so records need provenance and rules for when to supersede an older memory. ([12:10](https://youtu.be/qq2Hm4XNRgI?t=730))
+- **Split memory into short-term, long-term and shared tiers** — Short-term memory ends with the session. Long-term holds episodic, procedural and semantic memory (summaries, toolboxes, knowledge bases, preferences). Shared memory across a team or enterprise should go through a human approval gate. ([13:02](https://youtu.be/qq2Hm4XNRgI?t=782))
+- **Treat agent memory as a discipline with typed schemas** — Needs schemas that distinguish record types, indexes that fit the retrieval task, and lifecycle and authorization boundaries. Building this by hand means writing summarizers, extractors, retrieval and token-budget management. ([14:26](https://youtu.be/qq2Hm4XNRgI?t=866))
+- **Assemble a per-turn context card instead of dumping history** — The card holds topics that orient the thread, summaries of where the conversation is, selected relevant records, and recent messages. The harness selects what matters for the current turn to limit context bloat. ([15:17](https://youtu.be/qq2Hm4XNRgI?t=917))
+- **Preferences persist across brand-new sessions; blanket rules get blocked by the gate** — In the demo a stated output-format preference was stored and recalled in a fresh session with no carried-over context. A request to approve every application was rejected by the promotion gate. ([10:48](https://youtu.be/qq2Hm4XNRgI?t=648))
+
+## Techniques
+- **Memory promotion gate** — For each memory candidate: (1) classify what it means (e.g. semantic preference, procedural rule, case fact), (2) compare it against existing records for duplicates or conflicts, (3) check the evidence the record type requires, (4) the harness admits, rejects, or queues it for human review. Only the harness writes to the store. *When:* Any agent that writes durable memory from conversations, especially where a bad memory would persist and affect later sessions or other users.
+- **Provenance plus supersede, not overwrite** — Store where each memory came from, and when a new fact contradicts an old one, mark the new record as superseding the old one instead of silently replacing it. *When:* When memories can conflict over time, such as preferences or case facts that change.
+- **Three-tier memory scoping** — Session-scoped short-term memory that is dropped at session end; typed long-term memory (episodic, procedural, semantic); and a shared tier that is only written after explicit human approval. *When:* When you need cross-session continuity but must stop one session's claims from becoming org-wide truth.
+- **Per-turn context card** — Each turn, assemble one compact prompt block from: topic labels for the thread, a rolling summary of the conversation state and user goal, the records selected for this turn, and the most recent messages. Keep it inside a token budget. *When:* When long-running agents accumulate context and you need memory without sending the full history every turn.
+- **Enforce user isolation in the database layer** — Let the database enforce access per end user rather than relying on application filters, so retrieval cannot cross user boundaries. *When:* Multi-tenant or multi-user agents where memory from one user must never reach another.
+
+## Hot takes
+- Vendor pitch: the demo is pre-recorded and the talk gives no benchmarks, latency, cost or accuracy figures for the gate or the retrieval.
+- The claim that a multi-model database is the most robust store for agent memory is the speaker's preference, not evidence from the talk.
+- The reusable idea is the write-path framing: decide what to promote, gate it by record type, and route shared memory to a human.
+
+## Tools mentioned
+Oracle AI Database, Oracle agent memory package (named as an early-year release; no version given)
+
+## Relevance to our work
+- **agentos** (2/3): MemoryMesh already has tiered cross-session memory, conflict resolution and provenance. This talk gives a concrete promotion-gate design (classify, compare, evidence check, admit/reject/review) that the write path could copy. → *Add an explicit admit/reject/review state machine in front of MemoryMesh writes, with a per-record-type evidence rule and a test that an injected 'approve everything' candidate is rejected.*
+- **prosharness** (2/3): ProsHarness's harness owns checkpoints and phone-driven approvals. The talk's point that the harness, not the model, gates what persists maps onto deciding what survives a checkpoint or resume. → *Route which run artifacts get persisted across checkpoint/resume through an explicit harness-side gate with a human-approval path, rather than letting the model write them directly.*

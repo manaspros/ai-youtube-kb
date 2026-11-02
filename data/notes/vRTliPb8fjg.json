@@ -1,0 +1,153 @@
+{
+ "one_line": "Short Better Stack review of Strix, an open-source multi-agent pen-testing tool that attacks a web app or API in a Docker sandbox and returns validated exploits and fix PRs, with real limits on cost, speed and complex attacks.",
+ "summary": "The host demos Strix, an open-source (Apache 2.0 per the talk) multi-agent security tool that acts like a team of hackers: one agent maps the app, others target OWASP Top 10 issues such as SQL injection, XSS and broken access control. Setup is a one-line curl install, and scans run in a Docker sandbox that is pulled on first run. The demo runs a quick-mode scan against a small FastAPI expense app, using both the code path and a live URL, with an Anthropic model; the scan took about 10 minutes. Strix's key claim is that it only reports vulnerabilities it has exploited, returning the endpoint, a working exploit, the extracted data, reproduction steps and a fix. It can chain attacks and open autofix pull requests, and it has a CLI with native GitHub Actions support that exits non-zero on findings so CI can block a merge. The host cites a 96% solve rate on the XBEN exploitation benchmark at about 19 minutes per challenge, a figure not verified in the video. The main caveats are that output quality depends on the model (weak local models give weak findings), a quick scan costs roughly $3-5 in tokens, deep scans take hours, Docker adds friction, and complex logic or long attack chains are not handled well. The host's advice is to use it for pre-merge checks, side projects and staging, as one layer alongside existing scanners and human review.",
+ "speakers": [
+  "Better Stack host (unnamed)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Anthropic",
+  "Google",
+  "Ollama",
+  "GitHub"
+ ],
+ "format": "review",
+ "topics": [
+  "security-guardrails",
+  "pr-code-review",
+  "sandboxing-execution"
+ ],
+ "tags": [
+  "pen-testing",
+  "strix",
+  "ai-security",
+  "docker",
+  "github-actions",
+  "ci-gating",
+  "owasp",
+  "validated-findings",
+  "autofix-pr",
+  "fastapi"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Strix is an open-source multi-agent pen-testing tool (about 38k GitHub stars) that behaves like a crew of hackers rather than a single model guessing",
+   "detail": "One agent does recon and maps the app; others target OWASP Top 10 classes such as SQL injection, XSS and broken access control in APIs.",
+   "t": "0:00"
+  },
+  {
+   "idea": "It reports only exploited vulnerabilities, not possible ones",
+   "detail": "Each finding comes with a working exploit, the data pulled, exact reproduction steps and a suggested fix, which the host contrasts with scanners that say 'this might be exploitable'.",
+   "t": "1:02"
+  },
+  {
+   "idea": "Setup is a one-line curl install; the run needs Docker, and the first run pulls a sandbox image",
+   "detail": "The sandbox lets agents act without affecting real systems. The host stresses testing only systems you have permission to test.",
+   "t": "1:02"
+  },
+  {
+   "idea": "Quick mode takes about 10 minutes on a small app and uses tokens; deeper modes run much longer",
+   "detail": "The host says a quick scan of their demo app took about 10 minutes, and deep mode can take hours and use far more tokens.",
+   "t": "2:21"
+  },
+  {
+   "idea": "Agents chain attacks, run sandboxed, and can open autofix pull requests",
+   "detail": "The loop closes from finding to fix PR, which is the main differentiator the host draws against manual pen tests (accurate but slow and pricey) and static scanners (fast but never run the code).",
+   "t": "3:21"
+  },
+  {
+   "idea": "CI integration exits with an error code on findings, so a bad merge can be blocked",
+   "detail": "The CLI supports GitHub Actions natively. The host frames 'validated findings' as the key feature because it removes the pile of unverified maybes.",
+   "t": "3:21"
+  },
+  {
+   "idea": "Output quality is bounded by the model you supply",
+   "detail": "Brings your own model (Claude, Gemini, or a local Ollama model). A weak local model gives weak findings, a strong one costs a lot of tokens, and a quick scan is budgeted at about $3-5.",
+   "t": "3:21"
+  },
+  {
+   "idea": "Positioning: a layer, not a replacement for a human pen test",
+   "detail": "Suggested uses are pre-merge checks, side projects and staging; complex logic and long chained attacks are still weak, so it should sit beside existing scanners and human review.",
+   "t": "4:46"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Scan code and live target together in one run",
+   "how": "Point the CLI at the running app URL and the project code path in one command, choose a scan mode (quick first; the speaker says deeper modes cost more tokens and time), and choose the model provider (Anthropic API used in the demo; Gemini or a local Ollama model also supported). Docker must be running. Exact flag names are not shown in the video.",
+   "when": "Staging or side projects where you want coverage of both source and runtime behavior before production."
+  },
+  {
+   "name": "CI merge gate on validated findings",
+   "how": "Add the Strix CLI as a GitHub Actions step on pull requests; the step exits non-zero when it finds a validated vulnerability, which fails the check and blocks the merge.",
+   "when": "Pre-merge checks on routine, repeatable changes, sitting next to existing scanners."
+  },
+  {
+   "name": "Triage on proof, not on maybes",
+   "how": "Accept only findings that include a working exploit and reproduction steps, and review the proposed autofix PR as you would any other change.",
+   "when": "Any time scanner output is noisy and you need to decide what to fix first."
+  },
+  {
+   "name": "Match model strength to scan depth and budget",
+   "how": "Use a stronger hosted model for real findings; a local Ollama model keeps data local but the speaker warns it gives weaker results. Budget roughly $3-5 for a quick scan on a small project, and expect more for larger projects.",
+   "when": "Choosing between cost, privacy and finding quality for a given scan."
+  }
+ ],
+ "tools": [
+  "Strix",
+  "Docker",
+  "Anthropic API (Claude)",
+  "Gemini",
+  "Ollama",
+  "GitHub Actions",
+  "FastAPI (demo app)",
+  "XBEN exploitation benchmark",
+  "OWASP Top 10"
+ ],
+ "numbers": [
+  {
+   "claim": "Strix has almost 38,000 GitHub stars",
+   "t": "0:00"
+  },
+  {
+   "claim": "Quick scan of the demo app took about 10 minutes",
+   "t": "2:21"
+  },
+  {
+   "claim": "Claimed 96% solve rate on the XBEN exploitation benchmark, about 19 minutes per challenge (vendor or benchmark figure, not checked in the video)",
+   "t": "3:21"
+  },
+  {
+   "claim": "Budget of about $3-5 for a quick scan, depending on project size",
+   "t": "3:21"
+  },
+  {
+   "claim": "Deep scans take hours rather than minutes",
+   "t": "3:21"
+  }
+ ],
+ "hot_takes": [
+  "Security tooling should show exploit proof; 'maybe' findings are noise. The host treats validated findings as the main reason to use Strix.",
+  "Running an AI pen tester is like renting a hacker for a few minutes: its quality depends entirely on the model you pay for.",
+  "Strix is a strong layer, not a single wall, and not a stand-in for a human pen test on critical systems.",
+  "The 96% benchmark figure is cited without verification in the video; treat it as a claim."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Strix-style exploit validation is a pattern for testing the proxy and the exec-gate guardrails, but the video is a short tool demo with no architecture detail.",
+   "action": "Consider a one-off Strix run against the AgentOS gateway proxy in a staging setup to see what it finds on the proxy's own API surface."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No overlap with checkpoint/resume, plan-critique-debate, skill ranking or credential handling.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

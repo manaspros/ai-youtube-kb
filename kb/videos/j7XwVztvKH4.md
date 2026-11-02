@@ -1,0 +1,47 @@
+# JavaScript Console Logging Essentials
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `j7XwVztvKH4` · [watch](https://youtu.be/j7XwVztvKH4) · **date:** 2024-11-02 · **length:** 16:41 · **format:** tutorial · **quality:** 2/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Better Stack, Google Chrome
+- **topics:** dev-tools, observability · **tags:** javascript, console, console.log, chrome-devtools, nodejs, debugging, logging, console.table, console.time, console.group, console.trace, winston
+
+> Beginner tutorial on the 20+ browser/Node console methods beyond console.log: format specifiers, log levels, trace, table, count, time, group and clear, with a note that Winston-style libraries are better for production.
+
+## Summary
+The presenter walks through console logging in Chrome DevTools, with the same methods working in Node.js. They start with console.log, string substitution (%s, %i), and the file/line information the console prints. Next come the level methods (info, warn, error, debug), with debug hidden until the console's level is set to Verbose. console.trace is shown as a way to see the call chain that led to a point in the code. The lesser-known methods follow: console.table for arrays of objects (with an optional column list), console.count and countReset for call counting, console.time, timeEnd and timeLog for timing (including nested timers), and console.group, groupCollapsed and groupEnd for collapsible sections. The video ends with console.clear and a caveat that these methods are mainly for development, with a logging library such as Winston suggested for production. The content is accurate but introductory, and it covers ground that the MDN and Chrome DevTools docs describe in more detail.
+
+## Key ideas
+- **The console has more than 20 methods, and console.log is only the starting point.** — The presenter frames the video as covering the essentials plus lesser-known methods that experienced developers may miss. The methods are shown in Chrome DevTools, but the speaker says they also work in Node.js. ([0:00](https://youtu.be/j7XwVztvKH4?t=0))
+- **console.log supports printf-style substitution, and %i is stricter than %s.** — %s substitutes a string and %i an integer, matched in order. The speaker says %i prints NaN for a non-numeric value, where a string would hide the problem. ([2:21](https://youtu.be/j7XwVztvKH4?t=141))
+- **The level methods carry different meaning and different console UI.** — console.log and console.info both show as normal output. info is suggested for normal-operation messages, and some people use it to mark logs to keep after debugging. warn shows a warning icon with a stack trace and signals a possible future error. error is for failures outside normal operation, including errors caught in a try/catch. debug is hidden by default and only appears when the console level is set to Verbose. ([3:28](https://youtu.be/j7XwVztvKH4?t=208))
+- **console.trace shows the call chain, which helps when control flow is hard to follow.** — The speaker uses a set of mutually calling functions and shows that the trace lists each call site, such as the line where one function invoked another. The method is recommended for complex conditions or chains of linked functions. ([5:56](https://youtu.be/j7XwVztvKH4?t=356))
+- **console.table turns arrays of objects into a readable table, and an array argument limits the columns.** — Passing an array of objects to console.table gives one row per object, with an index column. Passing an array of property names (for example name and age) restricts the table to those columns. ([8:06](https://youtu.be/j7XwVztvKH4?t=486))
+- **console.count and console.count reset track how often a labelled line runs.** — Each call prints the label with an increasing number. countReset with the same label sets the counter back to zero. Several call sites can share a label. ([9:25](https://youtu.be/j7XwVztvKH4?t=565))
+- **console.time measures elapsed time, timeLog reports the running value, and timers can be nested.** — timeEnd with the same label as time prints the duration. timeLog prints the current elapsed time for a label without stopping the timer, and the speaker uses it inside a loop with an extra index label. Nested inner timers are used for per-iteration timings. ([10:22](https://youtu.be/j7XwVztvKH4?t=622))
+- **Groups make long console output easier to read, and groupCollapsed starts collapsed.** — console.group(label) opens a collapsible section and console.groupEnd closes the innermost one. Groups can be nested. groupCollapsed starts the section collapsed, which suits stages such as initialization or API calls. ([13:32](https://youtu.be/j7XwVztvKH4?t=812))
+- **console.clear can hide noisy startup logs when initialization succeeds, and these methods are a development aid, not a production logging strategy.** — The speaker suggests wrapping an initialization stage in try/catch, clearing the console on success, and printing the logs on failure. They note that a logging library such as Winston is better once logs need a consistent format in production. ([16:01](https://youtu.be/j7XwVztvKH4?t=961))
+
+## Techniques
+- **printf-style substitution in console.log** — console.log('Hello %s', name) for strings, and console.log('Hello %i', n) for integers. The substitutions are applied in order, and %i prints NaN for a non-number instead of failing silently. A comma after a value adds a space, as in console.log('Hello', x). *When:* Quick value checks where you want the output to show the type-sensitive result, not a string concatenation.
+- **Using log levels to separate message types** — Use console.info for normal operation, console.warn for future-risk or unexpected conditions, console.error for failures, including errors caught in try/catch with console.error(err), and console.debug for deep debugging. In Chrome DevTools, debug output only appears after setting the level filter to Verbose. *When:* When you want error severity to show in the console UI, and to keep debug-only chatter out of normal runs.
+- **Using console.trace to find how code was reached** — Call console.trace('label') at the point of interest. The stack trace lists the function calls that led there, with file and line numbers. *When:* Debugging tangled call chains, or confirming which caller reached a branch.
+- **Tabular output with console.table** — console.table(arrayOfObjects) prints one row per object. console.table(arrayOfObjects, ['name', 'age']) limits the output to the listed properties. *When:* Viewing a list of records during debugging, such as users or API results.
+- **Counting calls with a label** — console.count('greet') on each call prints an increasing number for that label. console.countReset('greet') sets it back to zero. *When:* Checking how often a function or branch runs, or whether a loop reached a line the expected number of times.
+- **Timing code with labelled timers** — console.time('label') before the work and console.timeEnd('label') after it prints the elapsed time. console.timeLog('label', extra) prints the elapsed time at an intermediate point without stopping the timer. Nested labels such as 'outer' and 'inner' with index values give per-iteration timings. *When:* Finding slow sections of a loop or algorithm, or comparing variants before and after a change.
+- **Grouping related output with console.group** — console.group('user details') opens a section, and console.groupEnd() closes the innermost one. Use console.groupCollapsed('label') to start the section collapsed. *When:* Organising output by stage, such as initialization, an API call or one request, so long logs can be collapsed.
+- **Clearing the console after a successful stage** — Wrap an initialization block in try/catch. Call console.clear() on success so the output is clean, and leave the logs in place when an error is thrown. *When:* Startup sequences that are noisy when they succeed but need full logs when they fail.
+
+## Numbers
+- The console has more than 20 methods. ([0:00](https://youtu.be/j7XwVztvKH4?t=0))
+- A debugging example reports timer values of about 0.002 ms for the first iteration and about 5 ms at the next. ([12:28](https://youtu.be/j7XwVztvKH4?t=748))
+- Nested inner-loop timings in the demo are about 7 ms and 6 ms, shown before the overall total. ([11:19](https://youtu.be/j7XwVztvKH4?t=679))
+
+## Hot takes
+- console.info and console.log are the same level by default, so choosing between them is a team convention, not a technical distinction.
+- The console methods are a development aid, and the presenter says they are unlikely to suit production logging without a library such as Winston.
+- Quality is 2: beginner-level content with no sponsored segment and no hype, but no insight beyond the browser and Node docs.
+
+## Tools mentioned
+Chrome DevTools, Node.js, Winston (mentioned as a logging library for production), Hacking Scale newsletter (Better Stack plug)
+
+## Relevance to our work
+- **prosharness** (1/3): ProsHarness wraps the Claude Code CLI, and if any of its tooling is JavaScript or Node, console.table and console.group could make run-state output easier to read during debugging. → *If ProsHarness has Node/JS scripts that print run state, switch the debug dumps to console.table for lists of runs and console.group per checkpoint, and check whether they should use a structured logger instead.*

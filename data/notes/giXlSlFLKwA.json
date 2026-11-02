@@ -1,0 +1,139 @@
+{
+ "one_line": "Shows two ways to escape misconfigured Docker containers, via a mounted Docker socket and via privileged mode or CAP_SYS_ADMIN, then lists the hardening steps (proxy, drop caps, seccomp, gVisor).",
+ "summary": "The presenter demonstrates container escape locally with Docker Desktop, using a Compose stack (Bun app, Nginx, Vector) in which Vector mounts the Docker socket to read Nginx logs. From inside Vector, they install the Docker CLI and use the socket to start a privileged container that bind-mounts the host root filesystem, which exposes host files including a .env file of fake secrets. The second demo swaps Vector for cAdvisor. With default capabilities the container is limited, but once privileged is enabled it has every capability, can recursively bind-mount the host, and can reach the Docker socket. The video's point is that the socket is the daemon's API, so mounting it gives host-level control. Mitigations offered: mount log directories instead of the socket, use a Docker socket proxy, run cAdvisor on the host or use Prometheus exporters, avoid privileged mode and add only specific capabilities, apply a seccomp profile, run gVisor for stronger isolation, and run docker-bench-security. The video also notes that SYS_ADMIN and SYS_PTRACE remain dangerous even when added individually. It is a short demo with no benchmarks.",
+ "speakers": [],
+ "orgs": [
+  "Docker"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "sandboxing-execution",
+  "security-guardrails",
+  "dev-tools"
+ ],
+ "tags": [
+  "docker",
+  "container-escape",
+  "docker-socket",
+  "privileged-containers",
+  "linux-capabilities",
+  "cadvisor",
+  "vector",
+  "gvisor",
+  "seccomp",
+  "docker-bench-security",
+  "docker-socket-proxy",
+  "sandboxing"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A container with the Docker socket mounted can control the host's Docker daemon, so it is effectively root on the host.",
+   "detail": "Vector mounts the socket to read Nginx logs. From inside it, the presenter installs the Docker CLI and lists host containers with docker ps. The socket is the daemon's API endpoint.",
+   "t": "0:00"
+  },
+  {
+   "idea": "From a socket-enabled container, a privileged container can bind-mount the host root and read host files, including .env secrets.",
+   "detail": "The new container runs privileged, mounts a volume with the host filesystem, and changes root into it so the attacker gets a shell with the host's files. Privileged mode disables most Docker security.",
+   "t": "1:19"
+  },
+  {
+   "idea": "Mounting the socket is a bad default. Mount only the specific log directory, or put a socket proxy in front of the daemon.",
+   "detail": "The presenter suggests passing the Nginx log path as a volume instead of the socket. If the socket is required, use a security-hardened Docker socket proxy.",
+   "t": "1:19"
+  },
+  {
+   "idea": "Without privileged mode, cAdvisor is limited by its capability set. Privileged mode gives it all capabilities, and CAP_SYS_ADMIN is enough to bind-mount the host.",
+   "detail": "The presenter uses capsh to compare capabilities, enables privileged mode, creates a host directory, and does a recursive bind mount of the host. They can then view containers and volumes and reach the socket.",
+   "t": "2:43"
+  },
+  {
+   "idea": "Dropping privileged mode and adding specific capabilities is still not safe. SYS_ADMIN and SYS_PTRACE remain dangerous.",
+   "detail": "SYS_ADMIN allows changing kernel parameters and using mount. SYS_PTRACE allows injecting code into host processes. The presenter says a seccomp profile can restrict the allowed syscalls.",
+   "t": "4:01"
+  },
+  {
+   "idea": "For stronger isolation, run containers under gVisor, and run docker-bench-security to check common best practices. Running cAdvisor on the host or using Prometheus exporters avoids the risky container setup entirely.",
+   "detail": "gVisor mediates calls before they reach the host kernel. Docker-bench-security is a script that checks for common best practices.",
+   "t": "4:01"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Avoid mounting the Docker socket into containers",
+   "how": "Instead of mounting /var/run/docker.sock, bind-mount only the directory the tool needs, such as the Nginx log folder, and pass it to Vector as a volume. If the socket is unavoidable, put Docker socket proxy in front of the daemon to restrict which API calls get through.",
+   "when": "Any log, metrics, or monitoring agent that runs as a container, such as Vector or cAdvisor."
+  },
+  {
+   "name": "Audit a container's capabilities with capsh",
+   "how": "Open a shell in the container, install libcap tools, and run capsh to list capabilities. Missing capabilities are marked with an exclamation mark. Compare the default set against privileged mode, where every capability is granted.",
+   "when": "Checking how much a container can do before shipping it, or after a change to its run flags or Compose file."
+  },
+  {
+   "name": "Replace privileged mode with specific capabilities, then add a seccomp profile",
+   "how": "Remove the privileged flag and add only the capabilities the process needs. Then apply a seccomp profile with a JSON file that restricts syscalls. Keep in mind that SYS_ADMIN and SYS_PTRACE are still high risk.",
+   "when": "A container needs more than default privileges, but full privileged mode is not acceptable."
+  },
+  {
+   "name": "Run untrusted or agent-generated workloads under gVisor",
+   "how": "Install gVisor, which mediates system calls before they reach the host kernel. The presenter presents this as a strong isolation layer without giving configuration details.",
+   "when": "Running code you do not fully trust in containers, where a shared kernel is the main concern."
+  },
+  {
+   "name": "Check Docker hardening with docker-bench-security",
+   "how": "Run the docker-bench-security script on the host to check for common best-practice misconfigurations.",
+   "when": "Periodic review of a Docker host, or as a check after changing container configuration."
+  },
+  {
+   "name": "Move host-level metrics collection out of containers",
+   "how": "Install cAdvisor directly on the host instead of in a container, or use Prometheus with the node exporter and container exporter, so the metrics agent does not need privileged access.",
+   "when": "Collecting host and container metrics without giving a monitoring container host-level privileges."
+  }
+ ],
+ "tools": [
+  "Docker",
+  "Docker Desktop",
+  "Docker Compose",
+  "Bun",
+  "Nginx",
+  "Vector",
+  "cAdvisor",
+  "Alpine Linux",
+  "capsh",
+  "Docker socket proxy",
+  "gVisor",
+  "docker-bench-security",
+  "Prometheus",
+  "node exporter",
+  "container exporter"
+ ],
+ "numbers": [
+  {
+   "claim": "Video length is 5:01. The video gives no benchmarks, costs, latencies, or adoption stats.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Mounting the Docker socket into a container is effectively root on the host.",
+  "Privileged containers disable most Docker security.",
+  "SYS_ADMIN and SYS_PTRACE are dangerous even when added one at a time, so dropping privileged mode alone is not enough.",
+  "Stop mounting docker.sock. Mount only the log directory the tool needs."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS Crucible runs opt-in sandboxed code execution in containers (celld). Mounting the Docker socket or running privileged would give agent-generated code a route to the host. The video's escape paths apply directly to that setup.",
+   "action": "Audit the Crucible/celld container config: confirm docker.sock is never mounted, run without privileged, drop capabilities to the minimum, apply a seccomp profile, and evaluate gVisor for untrusted exec. Run docker-bench-security on the host."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI, which runs shell commands and could run in containers. If it does, the same socket and privilege escalation paths apply.",
+   "action": "If ProsHarness ever runs Claude Code inside Docker, do not mount docker.sock, drop privileged mode, and restrict capabilities. Treat agent-run shell commands as untrusted."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

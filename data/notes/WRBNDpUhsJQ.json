@@ -1,0 +1,147 @@
+{
+ "one_line": "Adrian Bertagnoli (Callosum) argues AI is moving from homogeneous scaling to heterogeneous multi-agent systems mixing models, workflows and chips, and shows a recursive-LM variant that routes sub-contexts to different models and hardware for big cost and speed gains.",
+ "summary": "The speaker frames the next paradigm as heterogeneous intelligence: different model architectures, sizes and chips working together, instead of scaling one model on identical chips. He says this is already happening in mild form (mixture of experts, multi-agent systems, prefill/decode disaggregation) and claims a formal, mathematical argument that heterogeneous systems beat homogeneous ones under reasonable constraints. The main technique is \"heterogeneous recursion\": build on recursive language models, which treat long context as an environment searched programmatically, and send each sub-context to a different model or chip. He reports a Cerebras-based version that is about 7x cheaper and 5x faster than GPT-5/5.2 on the OOLONG benchmark, with a Stamanova-based version reaching 12x cheaper and 3x faster. For visual web navigation, a mix of open and closed video-action models beats GPT-5.2 and Gemini 2.5 on VideoWebArena, with cheap models handling subtasks such as zooming. The talk is partly a company pitch (hiring, a UK grant), but it includes concrete benchmark numbers. The numbers come from the speaker's own system and are not independently verified in the talk.",
+ "speakers": [
+  "Adrian Bertagnoli"
+ ],
+ "orgs": [
+  "Callosum",
+  "ARIA (UK)",
+  "Cerebras",
+  "Stamanova"
+ ],
+ "format": "talk",
+ "topics": [
+  "multi-agent",
+  "token-cost-efficiency",
+  "inference-serving"
+ ],
+ "tags": [
+  "heterogeneous-intelligence",
+  "recursive-language-models",
+  "multi-agent",
+  "model-routing",
+  "heterogeneous-hardware",
+  "cost-latency",
+  "video-web-arena",
+  "oolong",
+  "context-rot",
+  "subagents"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Scaling is moving from homogeneous (one model on identical chips) to heterogeneous (mixed models, workflows and hardware).",
+   "detail": "Mixture-of-experts, multi-agent systems and prefill/decode disaggregation are already mild forms of heterogeneity. The next stages are different models on different chips, then co-evolution of hardware, software and models.",
+   "t": "0:59"
+  },
+  {
+   "idea": "Real problems decompose into sub-problems that need different kinds of intelligence, so one model type is inefficient.",
+   "detail": "The speaker says the heterogeneity benefit is formalised and proved mathematically, using a production-function model that spans domains such as neuroscience, economics and ecology. He claims heterogeneous systems win under any reasonable constraints. This is the speaker's claim, not checked in the talk.",
+   "t": "3:34"
+  },
+  {
+   "idea": "Recursive language models treat long context as an environment, not as prompt text.",
+   "detail": "The context is stored in a file, and an agent searches it with a Python REPL (keywords, regex). It extracts sub-contexts and passes each to a new recursive agent. Information-dense tasks degrade much earlier on long prompts than needle-in-a-haystack tasks.",
+   "t": "6:44"
+  },
+  {
+   "idea": "Heterogeneous recursion maps each recursive sub-call to a different model or chip.",
+   "detail": "Instead of one model on one chip, each sub-context is routed to the model and hardware best suited to it. The speaker claims this matches frontier-model quality at much lower cost and latency.",
+   "t": "8:03"
+  },
+  {
+   "idea": "Decompose visual web tasks into reasoning steps and route each step to the cheapest adequate model.",
+   "detail": "Zooming and other simple visual subtasks go to small models. Heavier reasoning goes to large models. The speaker says this beats single frontier models on the Pareto frontier with no quality downside.",
+   "t": "10:50"
+  },
+  {
+   "idea": "Routing is now automated: a layer detects task complexity and predicts the best model and hardware.",
+   "detail": "The team started with hand-made mappings of simple subtasks to simple models. They later built an automation layer that predicts the best model and hardware per task.",
+   "t": "13:15"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Heterogeneous recursion",
+   "how": "Use a recursive LM pattern: store context as a file, let a coding agent search it programmatically (regex, keyword search, sub-context extraction), and send each sub-context to a recursive agent. Map each recursive call to a different model and chip.",
+   "when": "Very long contexts with information-dense queries, where one model's context rot or cost is the bottleneck."
+  },
+  {
+   "name": "Subtask offloading to small models",
+   "how": "Split an agent workflow into visual, textual and control subtasks. Send simple steps such as zooming or cropping to cheap, small models and keep frontier models for hard reasoning.",
+   "when": "Multi-step agent tasks where most steps are simple and only a few need frontier reasoning."
+  },
+  {
+   "name": "Automated model and hardware routing",
+   "how": "Build a layer that estimates task complexity and predicts the best model and hardware for each step, replacing hand-written rules.",
+   "when": "When the set of task types and models grows past what hand-written mapping rules can cover."
+  },
+  {
+   "name": "Hardware-matched inference for sub-calls",
+   "how": "Run the cheap, fast sub-calls on fast-inference hardware (the speaker names Cerebras) and slower-but-cheaper models on other chips.",
+   "when": "When latency or cost per sub-call dominates total run time."
+  }
+ ],
+ "tools": [
+  "Python REPL",
+  "Cerebras",
+  "Kimi K2.5",
+  "GPT-5.2",
+  "Gemini 2.5",
+  "Qwen3-VL-8B-Instruct",
+  "Stamanova"
+ ],
+ "numbers": [
+  {
+   "claim": "Recursive LM degradation: information-dense (linear/quadratic) tasks degrade at around 60% to 30% of the context window, while constant-information tasks hold up.",
+   "t": "6:44"
+  },
+  {
+   "claim": "OOLONG benchmark: GPT-5/5.2 takes about 2,000 seconds and about $3.75 per task. The Cerebras-based system is 7x cheaper and 5x faster.",
+   "t": "9:19"
+  },
+  {
+   "claim": "Stamanova-based variant: 12x cheaper and 3x faster than the GPT-5 baseline, at some cost in latency.",
+   "t": "9:19"
+  },
+  {
+   "claim": "VideoWebArena: beats GPT-5.2 by 18% and Gemini 2.5 by 25% using a mixed set of open and closed video-action models.",
+   "t": "9:19"
+  },
+  {
+   "claim": "Qwen3-VL-8B plus Kimi K2.5 is 1.3x faster than Kimi alone and 18x cheaper than GPT-5.2 alone. Qwen3 plus GPT is 3x faster and 3.7x cheaper.",
+   "t": "10:50"
+  },
+  {
+   "claim": "Offloaded subtasks such as zooming run 11x faster and 43x cheaper than using a frontier model.",
+   "t": "12:13"
+  },
+  {
+   "claim": "A UK ARIA grant of about 3 million for a heterogeneous co-located cluster.",
+   "t": "13:15"
+  }
+ ],
+ "hot_takes": [
+  "Homogeneous scaling (one model on identical chips) is becoming less relevant, and heterogeneity is the next paradigm for AI infrastructure.",
+  "Heterogeneous systems beat homogeneous ones under any reasonable constraints; the speaker says this is proven mathematically.",
+  "The talk's own pitch: 'This is the worst our infrastructure will ever be.'"
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft already covers KV-cache and scheduling on one GPU. Routing sub-tasks to different models and hardware, plus a complexity-based router, fits the same layer.",
+   "action": "Prototype a complexity-based router in the L1 proxy that sends sub-calls to a cheap model or a larger one, and measure cost and latency on a long-context task."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Sub-agent routing with a cheap model for simple steps and a frontier model for hard ones matches the harness's multi-agent and plan/critique design. Recursive sub-context handling also fits long agent runs.",
+   "action": "Read the recursive language models paper (MIT, Oct 2025) and test whether routing ProsHarness sub-agents to cheaper models keeps plan quality."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

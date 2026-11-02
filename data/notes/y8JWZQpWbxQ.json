@@ -1,0 +1,164 @@
+{
+ "one_line": "Better Stack runs three coding tasks (todo app, Three.js solar system, tweet-screenshot feature) comparing Qwen 3.5 35B on OpenRouter against Claude Sonnet 4.5, and finds Sonnet ahead on all three; the takeaway is to run your own evals, not trust benchmarks.",
+ "summary": "The host tests Alibaba's Qwen 3.5 medium-series claims against Claude Sonnet 4.5 on coding work, since they cannot run the model locally on an M1 MacBook. Qwen 3.5 35B runs through OpenRouter inside OpenCode, while Sonnet 4.5 runs in Claude Code in clean mode with no skills, plugins or MCP servers. Three tasks of rising difficulty are used: a React and Vite todo app, an interactive Three.js solar system, and a feature added to an existing codebase that screenshots a tweet from a URL. The todo result first favoured Qwen on features, but the host found an enabled superpowers skill in the Qwen run, reran without it, and gave Sonnet the win. On the solar system, Sonnet produced a mostly working app while Qwen produced a blank page and struggled to fix a console error. On the tweet task, Sonnet needed one fix, while Qwen hit a 60-second timeout and extended the timeout instead of fixing the cause. The host concludes Sonnet wins all three, suggests benchmark post-training may explain the gap, and advises running your own evals. This is a single-run, anecdotal comparison with one confound the host caught, so it shows the failure modes more than a reliable ranking.",
+ "speakers": [],
+ "orgs": [
+  "Alibaba",
+  "Anthropic",
+  "OpenRouter",
+  "OpenCode"
+ ],
+ "format": "review",
+ "topics": [
+  "models-research",
+  "coding-agents",
+  "local-ai",
+  "evals"
+ ],
+ "tags": [
+  "qwen-3.5",
+  "claude-sonnet-4.5",
+  "claude-code",
+  "opencode",
+  "openrouter",
+  "react",
+  "vite",
+  "three.js",
+  "local-models",
+  "model-comparison",
+  "benchmarks",
+  "skills-confound"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Qwen 3.5's medium series is pitched as near-max quality and runnable on a modern MacBook, with benchmark claims against Sonnet 4.5.",
+   "detail": "The host doubts the claim. The 400B max-thinking model is said to beat Opus 4.5 on benchmarks, and the medium models are claimed to be almost as strong and runnable locally.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The test setup is a practical substitute for local running and treats the harness as part of the variable.",
+   "detail": "The host could not run Qwen locally on an M1 MacBook, so he used Qwen 3.5 35B via OpenRouter in OpenCode. Sonnet 4.5 ran in Claude Code in clean mode, with no skills, plugins or MCP tools.",
+   "t": "1:07"
+  },
+  {
+   "idea": "The todo-app win for Qwen was reversed by a hidden confound, a skill that was enabled in the Qwen run.",
+   "detail": "Qwen's todo app had more features (categories, severity, due dates), so it looked like the winner. The host found the superpowers skill enabled in OpenCode, reran Qwen without it, and gave Sonnet the win.",
+   "t": "1:07"
+  },
+  {
+   "idea": "Code-structure differences show up even when the app runs.",
+   "detail": "The host preferred Sonnet's split of todo items into a separate component and its handler naming. He disliked Qwen's JSON parsing for local storage sitting at the top of the main file, and he judged that the separate function would be better.",
+   "t": "2:26"
+  },
+  {
+   "idea": "On the Three.js solar system, Sonnet's one-shot output mostly worked and Qwen's did not.",
+   "detail": "Sonnet's version was missing some planets, but the sun and Uranus were clickable with info panels, and pan, rotate and zoom worked. Qwen produced a blank page with a console error it could not fix after repeated attempts. It also stalled and left a stray package.json and node_modules outside the real project directory.",
+   "t": "3:39"
+  },
+  {
+   "idea": "On the brownfield feature task, Qwen's fix treated a symptom and not the cause.",
+   "detail": "Both models built a tweet-screenshot UI. Sonnet needed one fix after an initial error. Qwen hit a 60-second timeout, then extended the timeout, which did not address the underlying capture problem.",
+   "t": "4:47"
+  },
+  {
+   "idea": "Benchmark strength may not carry over to real coding tasks, and benchmark contamination is a possible cause.",
+   "detail": "The host speculates that Qwen was post-trained on specific benchmark questions such as SWE-bench Verified. He argues Sonnet's broader post-training helps with nuanced tasks. He also notes Qwen 3.5 35B has roughly 3B active parameters at inference, so cross-model benchmark comparisons are unfair without context.",
+   "t": "5:54"
+  },
+  {
+   "idea": "The practical conclusion is to run your own evals on your own tasks rather than rely on published benchmarks.",
+   "detail": "The host closes by telling viewers to do their own research and run their own evals, and he notes that Qwen 3.5 was not on the OpenCode Go model list.",
+   "t": "5:54"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Three-tier hands-on model bake-off",
+   "how": "Give every model the same prompt and project. Use three difficulty levels: an easy greenfield app (React + Vite todo list), a medium app that needs a 3D library (React + Vite + Three.js solar system), and a hard change to an existing codebase (a feature that takes a URL, captures a tweet screenshot, and offers a download). Score each on features working, console errors, and how many fix rounds were needed.",
+   "when": "When you want to compare a local or cheap model with a frontier model for your own coding work, without relying on published benchmarks."
+  },
+  {
+   "name": "Pin the harness before comparing models",
+   "how": "Run each model in clean mode with no skills, plugins or MCP servers, or list the exact skill set in your notes. Before accepting a win, check the harness config (here, an enabled superpowers skill in OpenCode) and rerun the losing or winning side with the same config.",
+   "when": "Any model comparison where different agent harnesses or skill sets are in use. A missing or extra skill can flip the result, as it did in the todo test."
+  },
+  {
+   "name": "Check the project layout, not only whether the app runs",
+   "how": "After each run, list the files the model created. Look for a stray package.json or node_modules in the wrong directory, and check that the code lives in the actual project folder.",
+   "when": "Reviewing agent-generated scaffolds, where a model can create a parallel project that looks fine on the surface."
+  },
+  {
+   "name": "Check whether a fix targets the root cause",
+   "how": "When a model claims to have fixed an error, reproduce the original error and read the new code. Extending a timeout or adding retries can hide a failure without solving it.",
+   "when": "Reviewing agent debugging loops, and any time a model repeats a fix attempt after an error."
+  },
+  {
+   "name": "Code-structure review of generated components",
+   "how": "Check whether the logic is split into small functions and components (for example, one component per item in a list) and whether the naming is consistent (handleSubmit, handleUpdate, handleDelete, handleToggleCompleted). Check that storage handling is not inline at the top of the main file.",
+   "when": "Judging maintainability of agent output beyond whether it runs."
+  }
+ ],
+ "tools": [
+  "Qwen 3.5 (medium series, 35B; 400B max-thinking variant mentioned)",
+  "Claude Sonnet 4.5",
+  "Claude Opus 4.5 (benchmark comparison only)",
+  "Claude Code",
+  "Claude Cowork (mentioned)",
+  "OpenCode",
+  "OpenCode Go (model list, mentioned)",
+  "OpenRouter",
+  "superpowers skill (OpenCode)",
+  "React",
+  "Vite",
+  "Three.js",
+  "SWE-bench Verified (benchmark, mentioned as possible post-training target)",
+  "Browser local storage"
+ ],
+ "numbers": [
+  {
+   "claim": "Qwen 3.5 max-thinking model is 400B parameters and is claimed to beat Opus 4.5 on benchmarks; the medium series is claimed to be almost as strong and to run on a modern MacBook Pro.",
+   "t": "0:00"
+  },
+  {
+   "claim": "The Qwen model tested is 35B on OpenRouter, because the M1 MacBook lacked the unified memory to run it locally.",
+   "t": "1:07"
+  },
+  {
+   "claim": "Qwen 3.5 35B uses about 3B parameters during inference, despite its 35B total.",
+   "t": "5:54"
+  },
+  {
+   "claim": "Qwen's tweet-screenshot run hit a 60-second timeout that was extended rather than fixed.",
+   "t": "4:47"
+  },
+  {
+   "claim": "Sonnet 4.5 was judged the winner on all three tasks, from a single run per task.",
+   "t": "4:47"
+  }
+ ],
+ "hot_takes": [
+  "Sonnet 4.5 beats Qwen 3.5 on all three coding tasks, despite Qwen's benchmark claims.",
+  "Qwen 3.5 may have been post-trained on specific benchmark questions such as SWE-bench Verified, which would inflate its benchmark scores (speculation, not verified).",
+  "It is unfair to compare models on benchmarks alone, so run your own evals.",
+  "The Qwen todo-app win was an artifact of an enabled skill, which shows how easily harness setup can distort a comparison.",
+  "A model that can run locally is impressive, but it does not match a frontier model on coding tasks in these tests."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS runs local models on one RTX 5090 with vLLM, so a locally runnable open-weight coding model is a possible candidate. The video is a single anecdotal comparison, not a systematic eval, and it does not test serving or latency.",
+   "action": "Add Qwen 3.5 (27B/35B class) as a candidate in the InferCraft model list, and benchmark it on AgentOS-specific agent tasks before any routing decision."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI, and this video shows how an enabled skill silently changed a model comparison. That is directly relevant to ProsHarness eval design.",
+   "action": "When ProsHarness runs model comparisons, record the active skill, plugin and MCP set in every run's metadata and rerun any surprising result with the config pinned."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

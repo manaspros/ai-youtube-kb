@@ -1,0 +1,117 @@
+{
+ "one_line": "Prisma founder's LiveStore: a local-first, reactive-SQLite state manager with an immutable event log and git-style push/pull sync, shown via a to-do app on Cloudflare Durable Objects plus D1.",
+ "summary": "The video is a short tool walkthrough of LiveStore, a state management framework from the founder of Prisma. The demo is a to-do app that stays fast and persistent without optimistic-update code, syncing across a normal browser tab and an incognito window. The speaker walks through the architecture: a schema file defines SQLite tables for derived state and clientDocument for local-only state, events describe data changes, and materializers map events to table writes. Queries are built with queryDb and read through a useStore hook, while writes go through store.commit. Sync pushes new events to a sync backend and pulls remote ones, similar to git. The speaker is enthusiastic and gives little detail on sync conflict handling, scaling, or limits, so the evidence is a single demo rather than a benchmark.",
+ "speakers": [
+  "Better Stack presenter (unnamed in transcript)"
+ ],
+ "orgs": [
+  "Prisma",
+  "Cloudflare",
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools",
+  "agent-architecture"
+ ],
+ "tags": [
+  "local-first",
+  "state-management",
+  "sqlite",
+  "event-sourcing",
+  "crdt-sync",
+  "cloudflare-durable-objects",
+  "react",
+  "web-workers"
+ ],
+ "key_ideas": [
+  {
+   "idea": "LiveStore is a local-first state manager built on reactive SQLite with git-inspired sync, so UI updates are immediate without optimistic-update code.",
+   "detail": "The demo shows adds, toggles and deletes updating instantly, with data persisting across page refreshes. Sync to the server happens later in the background.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Persistence and multi-client sync are handled by the framework, so the app code does not manage the Cloudflare sockets or D1 storage directly.",
+   "detail": "The demo app uses Durable Objects for WebSockets and D1 for storage, and the speaker says he did not have to think about either.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Two kinds of state: synced tables for derived state, and clientDocument for local-only state that can optionally sync across a user's own sessions.",
+   "detail": "The input field text is a clientDocument. It survives refresh and can be kept off the server while still syncing between that user's tabs, or kept local to one client.",
+   "t": "1:01"
+  },
+  {
+   "idea": "All changes are an immutable, ordered event log, and the SQLite state is a projection of that log, which makes it reconstructable and debuggable like git commits.",
+   "detail": "Events are named and versioned (for example v1.todoCreated) and carry a schema. The speaker describes this as a debugging aid because every state change is visible in order.",
+   "t": "2:16"
+  },
+  {
+   "idea": "Materializers are the reducers that map each event to database writes, similar to a Redux action type plus reducer.",
+   "detail": "Each event name has a materializer that receives the event payload and performs SQLite writes.",
+   "t": "3:21"
+  },
+  {
+   "idea": "Reads use queryDb with a label, and writes use store.commit with type-safe event payloads.",
+   "detail": "The visible to-dos query reads a filter from UI state and filters out deleted rows. The component gets the store from a useStore hook provided by a LiveStore provider.",
+   "t": "4:33"
+  },
+  {
+   "idea": "Sync is git-like: push local events to the sync backend, then pull remote events so the client stays up to date.",
+   "detail": "The speaker compares this to pushing and pulling in git. The server applies events to its own database through the sync backend.",
+   "t": "5:45"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Schema-first LiveStore app structure",
+   "how": "Define SQLite tables with SQLite.table for synced derived state, and SQLite.clientDocument for local state (optionally synced across one user's sessions). Define named events with an argument schema, marking each as synced or local. Write a materializer per event name that performs the SQLite writes. Pass the schema to the web worker and wrap React with a LiveStore provider.",
+   "when": "Building a local-first app where the UI should update instantly and survive refresh, and changes must sync across a user's devices or tabs."
+  },
+  {
+   "name": "Event-sourced state with materialized projections",
+   "how": "Record every data change as an immutable event with a versioned name. Derive the queryable SQLite state by replaying events through materializers. Rebuild state from the log, or inspect the log to debug changes.",
+   "when": "You want an audit trail, reproducible state, or easy debugging of state transitions in a client-side app."
+  },
+  {
+   "name": "Reactive queries via queryDb and store.useQuery",
+   "how": "Create a query with queryDb that returns rows from a table, filtered by fields such as deleted_at or UI state filters. Give it a label. In the component, call store.useQuery with that query and map over the result as normal React state. Use store.commit with a typed event to update data.",
+   "when": "Components need live-updating lists driven by local SQLite, with autocomplete and type checking on event payloads."
+  }
+ ],
+ "tools": [
+  "LiveStore",
+  "SQLite",
+  "React",
+  "Cloudflare Durable Objects",
+  "Cloudflare D1",
+  "Cloudflare Workers / WebSockets"
+ ],
+ "numbers": [
+  {
+   "claim": "No benchmarks, latency figures, or scale numbers are given; the demo is qualitative.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Local-first, optimistic-update-free state with git-like sync is presented as a major simplification for apps like Notion or Linear, but the video shows only a single demo and gives no detail on conflict resolution or scaling.",
+  "Sponsored or vendor-style enthusiasm: the video is a Better Stack introduction to a third-party framework with no comparison to alternatives."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "LiveStore is a client-side state framework for local-first apps; it has no link to the agent inference, memory, or gateway pillars.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Event-sourced, replayable checkpoint state is loosely related to ProsHarness checkpoint/resume of long agent runs, but this talk is about client UI state.",
+   "action": "Optional: look at how an event-log projection could model ProsHarness run checkpoints, reading the LiveStore docs on event replay."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

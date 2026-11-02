@@ -1,0 +1,133 @@
+{
+ "one_line": "Better Stack explains the CRAP metric (complexity combined with test coverage) and the cargo crap Rust tool, arguing it is a useful second check on complex, under-tested code, especially AI-generated code.",
+ "summary": "The host introduces CRAP (Change Risk Anti-Patterns index), a metric from Alberto Savoia and Bob Evans in 2007 that flags functions that are both complex and poorly tested. It was revived by a Rust package, cargo crap, from Oleksandr Prokhoranko, who also wrote a blog post arguing it matters more now that AI agents write much of the code. The video explains cyclomatic complexity as the count of independent paths through a function, with each if, match, loop or catch adding a branch. In a demo, a function with complexity around 15 scored 13 under cargo crap with its tests in place, and commenting out the tests pushed the score past 100. The formula penalizes low coverage heavily: with full coverage the score equals complexity, while complexity 10 with zero coverage gives 110. The host suggests running the check after unit tests as a heat map for refactor risk, and notes AI agents tend to produce complex code that handles edge cases but has weak integration tests. The video is short and mostly explanatory, with a light, unmeasured claim about AI-generated code.",
+ "speakers": [
+  "Andres (Better Stack host)"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "testing-verification",
+  "coding-agents",
+  "pr-code-review"
+ ],
+ "tags": [
+  "crap-metric",
+  "cargo-crap",
+  "cyclomatic-complexity",
+  "code-coverage",
+  "rust",
+  "code-quality",
+  "ai-generated-code",
+  "technical-debt",
+  "refactoring-risk"
+ ],
+ "key_ideas": [
+  {
+   "idea": "CRAP (Change Risk Anti-Patterns index) finds functions that are highly complex but poorly tested, a metric first proposed in 2007 and revived by the cargo crap Rust package.",
+   "detail": "The speaker credits Savoia and Evans for the metric and Oleksandr Prokhoranko for the Rust tool and a blog post that brought it back as AI writes more code.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Cyclomatic complexity is the number of independent execution paths in a function; every if, match, while or catch adds a fork.",
+   "detail": "The example function has nested matches, loops and error handling, with complexity around 15, which the speaker calls hard for a human to map fully.",
+   "t": "0:58"
+  },
+  {
+   "idea": "With full unit-test coverage, the CRAP score stays near the complexity value, so well-tested complex code is treated as safe.",
+   "detail": "cargo crap reported 13 for a function the speaker estimated at 15; he guesses the tool skipped the error-handling path. Removing the tests sent the score past 100.",
+   "t": "1:57"
+  },
+  {
+   "idea": "The formula penalizes complexity multiplied by lack of coverage, so the score is driven by untested complexity.",
+   "detail": "Per the speaker, the formula combines cyclomatic complexity with coverage as a fraction. At 100% coverage the score equals complexity; complexity 10 with zero coverage gives 110. The default threshold is 30, and a team can set a stricter one such as 5.",
+   "t": "3:18"
+  },
+  {
+   "idea": "AI agents write syntactically correct, complex code that handles edge cases but usually lack integration tests unless forced, so CRAP is meant as a second check after unit tests.",
+   "detail": "The speaker says the score works as a heat map of technical debt, pointing to code most likely to break in a refactor. He also mentions agents duplicating functions across files and the value for onboarding.",
+   "t": "4:05"
+  },
+  {
+   "idea": "The same author wrote a CRAP tool for Java, and the speaker encourages porting the idea to other languages.",
+   "detail": "He says he was unaware of the metric until reading the blog post, and presents a port as a possible side project.",
+   "t": "5:25"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run a CRAP check after the unit tests",
+   "how": "Run the test suite with coverage collection first, then run cargo crap (the cargocrap Rust package) so each function gets a score from its cyclomatic complexity and test coverage. Review the highest-scoring functions as refactor or test-writing candidates. The speaker's example shows the scores are 13 with tests and above 100 with tests commented out.",
+   "when": "On a Rust codebase after an agent or a developer makes large changes, as a second gate after unit tests pass."
+  },
+  {
+   "name": "Set a complexity budget",
+   "how": "Pick a per-function cutoff (the speaker suggests 5 as a strict example; the tool's default is 30) and flag any function above it, with a CRAP threshold on top if the tool supports one. Treat flagged functions as the first places to add tests or split logic.",
+   "when": "When you want a team rule for agent-written code, such as no function above a set complexity without high coverage."
+  },
+  {
+   "name": "Check that the metric reacts to test removal",
+   "how": "Comment out the tests for one function and re-run the CRAP tool to confirm the score jumps. The speaker uses this to show the score tracks coverage, not only complexity.",
+   "when": "When adopting the metric, to confirm the coverage data is wired in correctly before trusting the thresholds."
+  }
+ ],
+ "tools": [
+  "cargo crap (cargocrap Rust package, by Oleksandr Prokhoranko)",
+  "CRAP metric (Savoia and Evans, 2007)",
+  "Rust",
+  "CRAP tool for Java (same author, mentioned, not shown)"
+ ],
+ "numbers": [
+  {
+   "claim": "The CRAP metric dates to 2007 (Savoia and Evans).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Example function has cyclomatic complexity around 15.",
+   "t": "0:58"
+  },
+  {
+   "claim": "cargo crap reports 13 for that function with tests in place (speaker's guess for the gap: the error-handling path is not counted).",
+   "t": "1:57"
+  },
+  {
+   "claim": "With tests commented out, the cargo crap score goes above 100.",
+   "t": "1:57"
+  },
+  {
+   "claim": "Worked example: complexity 10 with 0% coverage gives a CRAP score of 110; at 100% coverage the score equals complexity.",
+   "t": "3:18"
+  },
+  {
+   "claim": "cargo crap default complexity threshold is 30; the speaker suggests 5 as a strict example.",
+   "t": "3:18"
+  }
+ ],
+ "hot_takes": [
+  "The framing that AI code is 'producing CRAP' rests on an anecdote and the author's blog post; no data on AI-written code is shown.",
+  "The 15-vs-13 gap is explained by a guess (error handling not counted) that is not verified on screen.",
+  "The formula is described verbally with the cubic exponent; the exact expression is not written out in the transcript, and the 110 example is the only check on it.",
+  "The metric is old and the revival rests on one Rust tool; the video itself says it is not new.",
+  "Clickbait title with substantive but short explanatory content; no sponsor segment."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Govrix Scout and other AgentOS components are Rust, and the metric targets complex, under-tested functions in agent-written code, which fits our verification and quality-gate work.",
+   "action": "Run cargo crap after cargo test on the Rust proxy crate (Govrix Scout) and save the top-scoring functions as a baseline before changing any code."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs long Claude Code jobs and could use a complexity-vs-coverage check as one more verification gate on agent-written code.",
+   "action": "Consider adding a CRAP-style check (complexity against coverage) as an optional verification gate before a ProsHarness run is marked done, if the target project is Rust."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

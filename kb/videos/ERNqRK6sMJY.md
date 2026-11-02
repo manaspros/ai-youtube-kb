@@ -1,0 +1,45 @@
+# Claude Mods Are Insane... You Need To Try These Right Now
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `ERNqRK6sMJY` · [watch](https://youtu.be/ERNqRK6sMJY) · **date:** 2026-10-12 · **length:** 13:28 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** ? · **orgs:** Anthropic, AI LABS, Runway
+- **topics:** claude-code, context-engineering, multi-agent · **tags:** claude-mods, plugin-authoring, hot-reload, prompt-enhancer, assumption-review, design-picker, idea-shelf, session-dashboard, session-tracker, plain-language-answers, haiku-check, status-line, you-should-know, diff-command
+
+> AI LABS demos seven Claude Code "mods" they built (prompt enhancer, design picker, assumption reviewer, idea shelf, session dashboard, same-folder tracker, plain-language answers) and explains how to create and install them.
+
+## Summary
+Anthropic added mods to Claude Code: plugins that run inside the CLI and can change its interface and behavior, not only add capabilities. The presenters say mods are always running and can redraw parts of the screen, which skills and plugins cannot do. Claude Code ships two built-in mods: the diff view and an off-by-default side agent called "you should know" that surfaces details a user might miss in a long session. A mod is created by prompting Claude Code on the latest version, which loads a built-in plugin-authoring skill; hot reload applies changes after each turn. A new mod lives only in the current session until the user asks Claude to install it. The team then shows its own mods: a prompt enhancer that rewrites a rough prompt in the prompt bar without sending it, a visual design-style picker, a reviewer for Claude's silent assumptions, a per-project idea shelf, a dashboard of all running sessions, a same-folder session tracker, and a mod that rewrites final answers into plain language with next steps and a status line. The video is a product walkthrough with no measured results and few exact config details, and the refined mods are offered through their paid community.
+
+## Key ideas
+- **Mods are a separate extension layer: they run continuously, can redraw Claude Code panels and rows, and can change what Claude Code does, unlike skills or plugins that only add to it.** — The presenters contrast mods with skills and plugins. Claude Code's built-in diff view is built on the same mod framework. ([0:00](https://youtu.be/ERNqRK6sMJY?t=0))
+- **Claude Code ships two built-in mods. The diff view shows changes since the last commit. The off-by-default side agent 'you should know' watches the session and shows short notes about important details.** — The side agent must be turned on by the user. The video also mentions a community marketplace where others share mods. ([1:16](https://youtu.be/ERNqRK6sMJY?t=76))
+- **Creating a mod is a prompt. On the latest Claude Code version, the built-in plugin-authoring skill loads automatically and writes the code.** — Hot reload should be allowed so the mod reloads after each turn. Mods are saved in a temporary location and work only in the current session until the user asks Claude to install them for all sessions. ([2:44](https://youtu.be/ERNqRK6sMJY?t=164))
+- **A pre-send prompt enhancer rewrites a rough prompt in place, so the user reviews it and sends it themselves.** — The rewrite names matching installed skills, lists the big decisions Claude should ask about first, describes the finished result, and adds project context when run inside a real project. The example keys are ctrl+x then tab to select Enhance, then Enter. ([4:11](https://youtu.be/ERNqRK6sMJY?t=251))
+- **Visual previews beat verbal design-style menus. A mod opens a page that shows each style so the user can pick by sight before Claude builds.** — The presenters say a style that sounded good in words often looked bad once built. ([5:39](https://youtu.be/ERNqRK6sMJY?t=339))
+- **Claude silently makes small assumptions. An assumption reviewer shows how many were made, and pressing 0 on an empty prompt bar opens a list where each can be marked right or wrong.** — Wrong marks trigger an automatic follow-up prompt to Claude about that assumption. The user can also type a specific correction. The example run had six assumptions. ([6:39](https://youtu.be/ERNqRK6sMJY?t=399))
+- **Per-project idea shelf and session-wide visibility. Ideas are parked per project in a shelf that persists across restarts, and a dashboard shows which sessions are waiting, working, or done.** — The dashboard covers sessions in any folder and updates status automatically. It is opened with the session's command or ctrl+x then tab. ([8:07](https://youtu.be/ERNqRK6sMJY?t=487))
+- **Same-folder coordination: when two sessions share a project, each sees the other's current task and status, so two sessions do not duplicate work. Final answers can also be rewritten for a reader arriving cold.** — The second session shows the first session's task, and the first session sees what the second is doing. A plain-language mod moves interim tool-call text to the end, has Claude rewrite the final answer with next steps, and uses a Haiku-model check to enforce the rules. The video does not explain how session state is stored. ([10:22](https://youtu.be/ERNqRK6sMJY?t=622))
+
+## Techniques
+- **Build a mod from a prompt** — On the latest Claude Code, describe the behavior you want in a prompt. The built-in plugin-authoring skill loads and writes the mod. Allow hot reload to test each turn, then ask Claude to install the mod to make it available in all new sessions. *When:* You have a recurring friction point in Claude Code that a UI addition or always-on behavior would fix.
+- **Prompt enhancer before send** — Write a rough prompt and trigger the enhancer (ctrl+x then tab in their setup). The model rewrites the prompt in the prompt bar. Add the named skills, the decisions to confirm, and the expected finished state. Review and send manually. *When:* First attempts go wrong because the prompt is vague or the right skills are not named.
+- **Assumption ledger with targeted correction** — After Claude finishes a task, list the assumptions it made. Mark each right or wrong. For wrong ones, send an automatic correction prompt for only that assumption, and keep the ones marked right. *When:* Long autonomous builds where a wrong guess might not show up until later.
+- **Visual option picker before a design choice** — When Claude is about to offer design styles, show each one as a rendered preview and let the user choose by sight before the build starts. *When:* The user will choose a visual direction that is hard to describe in words.
+- **Two-pass answer rewrite with a cheap check** — Let Claude write its answer normally. Then run a rewrite pass that puts the summary at the end, removes text between tool calls, adds next steps, and includes a small Haiku-model check that the rules were followed. Also keep a status line showing the session's current task. *When:* You run several sessions at once and need answers that are readable without scrolling back.
+
+## Numbers
+- Example run flagged six assumptions for one task ([6:39](https://youtu.be/ERNqRK6sMJY?t=399))
+- Runway sponsor promo code gives 15% off a month of any plan ([8:07](https://youtu.be/ERNqRK6sMJY?t=487))
+
+## Hot takes
+- The title's 'insane' framing outruns the evidence. Every mod is shown as one team's personal setup, with no measured gains in speed, quality, or cost.
+- The video does not explain how the session dashboard, same-folder tracker, or status line store and share state, so those mods cannot be reproduced from the video alone.
+- The refined mods are gated behind the AI LABS Pro community, and the video mentions a public marketplace only in passing.
+- The sponsored Runway segment is short and separate. It does not change the substance of the rest of the video.
+- A two-pass answer rewrite adds a second model call to every answer, and the cost is not discussed.
+
+## Tools mentioned
+Claude Code, Claude mods (Claude Code feature), plugin-authoring skill, Haiku model (answer rule check), Runway, Gen-4.5 (Runway video model, sponsor segment), Stride (AI LABS' own running-coach app, sponsor segment)
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness wraps the Claude Code CLI and runs long checkpointed agent work. Mods are a supported way to extend that CLI, and the assumption reviewer and session dashboard overlap with its approval and multi-run concerns. → *Prototype a ProsHarness mod that lists the assumptions a run has made and holds the run for accept or reject before it continues, with decisions sent to the phone approval path.*
+- **agentos** (1/3): Claude Code UI extension work is not AgentOS infrastructure. The silent-assumption capture is at most a loose telemetry signal for SkillForge's skill-worthiness question. → *Optionally note the idea of capturing agent-made assumptions as a telemetry signal for SkillForge's open success-signal question. Nothing to build yet.*

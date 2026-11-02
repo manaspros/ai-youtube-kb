@@ -1,0 +1,148 @@
+{
+ "one_line": "Google DeepMind's Gemini speech-to-speech team explains why one natively multimodal, promptable model beats cascaded ASR+LLM+TTS for voice agents, with live translation, Search Live and Live API demos.",
+ "summary": "Two Gemini team members (product lead Valeria Wu Fon and engineer Tom Ouyang) argue that voice is the most natural interface and that speech-to-speech models are the right base for universal voice agents. They trace the history from multi-component ASR pipelines to end-to-end transcription models, and then to natively multimodal LLMs pretrained on interleaved audio, video and text in one token space. They describe three goals that pull against each other: conversational latency, intelligence (task completion, reasoning), and multimodal input and output. The main tension they name is that turning up thinking to improve intelligence raises latency and time to first audio. Demos cover streaming multi-speaker translation in Google Meet across 70+ languages, a shared model powering Search Live and the Live API, a proactive-audio feature for ignoring background noise, and a real-time avatar with lip sync. The talk is mostly a product showcase with little implementation detail, and it gives no benchmark numbers beyond the language count.",
+ "speakers": [
+  "Valeria Wu Fon",
+  "Tom Ouyang"
+ ],
+ "orgs": [
+  "Google DeepMind",
+  "Google"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "models-research",
+  "product-ux"
+ ],
+ "tags": [
+  "speech-to-speech",
+  "gemini",
+  "streaming-translation",
+  "native-multimodal",
+  "live-api",
+  "search-live",
+  "proactive-audio",
+  "multilingual",
+  "realtime",
+  "avatars"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Voice is the most natural interface, so speech-to-speech models are the base for robust universal voice agents.",
+   "detail": "The speakers argue that the number of voice applications will grow fast, and that speech-to-speech is the path they choose over bolting ASR and TTS onto a text model.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Older speech systems were many separate components and only transcribed speech; they could not respond, translate, or reason.",
+   "detail": "Pre-2018 ASR had feature extraction, acoustic, pronunciation and language models plus rescoring. Even end-to-end ASR only produced a transcript and needed extra systems for tone, emotion or biasing.",
+   "t": "2:05"
+  },
+  {
+   "idea": "Native multimodal pretraining on interleaved audio, video and text puts ASR, TTS and agentic tasks in one token space.",
+   "detail": "Pretraining uses interleaved examples such as summarizing a video with timestamps or captioning video with audio. Because the model already understands how modalities relate, audio features become prompting tasks.",
+   "t": "3:11"
+  },
+  {
+   "idea": "Streaming translation can match offline quality when it is a prompt to one multimodal model.",
+   "detail": "The model must switch languages, keep the source speaker's voice, handle several speakers and noise, and work in real time. Cascaded systems found this hard; the LLM approach makes it mostly a prompting task.",
+   "t": "4:39"
+  },
+  {
+   "idea": "Three goals (conversational feel, intelligence, multimodality) trade off against each other.",
+   "detail": "Raising thinking effort improves evals on intelligence but hurts latency, time to first audio, and how natural the conversation feels. The team says it tries to advance all three without sacrificing one much.",
+   "t": "6:02"
+  },
+  {
+   "idea": "Most Gemini users are non-English speakers, so every capability is tested beyond en-US.",
+   "detail": "The speakers say the majority of their users are non-English, so the focus is on making the capabilities work across the languages customers use.",
+   "t": "7:13"
+  },
+  {
+   "idea": "Proactive audio lets the model decide when not to respond to external sound.",
+   "detail": "Background speech or noise should not make the model stop or cut itself short. This matters because users talk on trains and walks, not in quiet offices.",
+   "t": "11:12"
+  },
+  {
+   "idea": "Alphanumeric accuracy, such as postcodes and registration plates, is a separate hard problem in voice agents.",
+   "detail": "In the insurance roadside demo, the agent had to look up a policy by plate and postcode, which the speakers say needs strong accuracy on codes and addresses.",
+   "t": "12:56"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Native multimodal pretraining for audio tasks",
+   "how": "Train on interleaved audio, video and text sequences in one token embedding space so ASR, TTS, captioning and agentic tasks share one model and become prompts.",
+   "when": "When you want one model to handle transcription, translation, response and tool use without a separate pipeline per task."
+  },
+  {
+   "name": "Streaming translation as a prompt",
+   "how": "Prompt the same speech model with a streaming translation task and feed it audio; it emits translated speech as the speakers talk.",
+   "when": "For live multilingual conversation where you do not know the languages in advance and need low latency."
+  },
+  {
+   "name": "Proactive audio gating",
+   "how": "Let the model itself decide, from the audio context, whether an input is meant for it, so background speech or noise does not interrupt its output.",
+   "when": "For voice agents used on the move or in noisy places."
+  },
+  {
+   "name": "Managing the latency vs intelligence knob",
+   "how": "Measure how extra thinking affects time to first audio and conversational naturalness as well as evals, and push research to improve intelligence without a large latency cost.",
+   "when": "When raising reasoning effort for a voice agent starts to hurt responsiveness."
+  },
+  {
+   "name": "One promptable model for many modes",
+   "how": "Use one speech model with different prompts and tools for translation, search-style Q&A, developer voice agents and avatars, instead of separate models per product.",
+   "when": "When many voice products need the same core model and differ mainly by prompt and tool set."
+  }
+ ],
+ "tools": [
+  "Gemini Live",
+  "Search Live",
+  "Gemini Live API",
+  "Google Meet speech translation"
+ ],
+ "numbers": [
+  {
+   "claim": "Streaming real-time translation supports 70-plus languages.",
+   "t": "8:24"
+  },
+  {
+   "claim": "Streaming translation quality is said to be about as good as offline systems that see the full utterance first (qualitative, no metric given).",
+   "t": "4:39"
+  },
+  {
+   "claim": "The majority of Gemini users are non-English speakers (qualitative).",
+   "t": "7:13"
+  }
+ ],
+ "hot_takes": [
+  "AGI will not be typed; it will be spoken.",
+  "Voice will be the main conversational frontier, and visual presence (avatars) will be needed alongside it.",
+  "Cascaded ASR+LLM+TTS pipelines cannot match the quality of a single speech-to-speech model for streaming translation."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Voice input/output is not in the AgentOS layers; only a small overlap with the proxy idea of one endpoint for many agent features.",
+   "action": "If a voice front-end is ever added to the AgentOS proxy, budget for the thinking-effort vs time-to-first-audio trade-off the speakers describe."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Talk is about speech-to-speech model research and does not touch the Claude Code harness, checkpoints, or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

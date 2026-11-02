@@ -1,0 +1,208 @@
+{
+ "one_line": "Walkthrough of Anthropic's Claude Code review system, rebuilt as skills: eval.md gates before build, a fresh-context builder/verifier/reviewer loop, risk tiers, and git rollback.",
+ "summary": "The host argues that coding agents declare work done while missing requested items, so verification is the key step. He relays Anthropic's Claude Code team process: checks run during the build, each feature gets strict eval.md pass/fail checks written from a requirements file and approved by a human before building, and a hook blocks \"done\" until evals pass. A separate reviewer agent with a fresh context checks each change, guided by a review.md rules file linked from CLAUDE.md. A builder/verifier/reviewer loop, tracked in state.md, iterates in rounds until the evals pass and the review finds nothing new. Consequence-based risk tiers set how strict the checks are, and fresh-context agents that cannot read the app's code act as first-time users. Git branches per feature provide rollback, and a fix-a-bug skill reproduces, tests a hypothesis, then fixes. The team figures are secondhand from Anthropic's article, and the host shows the process as skills he built rather than the exact prompts.",
+ "speakers": [],
+ "orgs": [
+  "Anthropic",
+  "AI Labs",
+  "Unstoppable (sponsor)"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "pr-code-review",
+  "testing-verification",
+  "multi-agent"
+ ],
+ "tags": [
+  "eval-gate",
+  "eval-md",
+  "review-loop",
+  "builder-verifier-reviewer",
+  "fresh-context-subagents",
+  "review-md",
+  "learned-rules",
+  "risk-tiers",
+  "first-time-user-agent",
+  "git-branch-rollback",
+  "fix-a-bug-skill",
+  "state-md",
+  "hooks",
+  "mockups"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents declare work done and miss requested items, so checking what was actually built is the core step.",
+   "detail": "The host relays Anthropic's claim that its setup produced more than twice as many changes while the share of changes that had to be undone fell by over 40 percent. These are secondhand figures from Anthropic's article, not data shown in the video.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Review cannot be skipped, and rushed review shifts the cost to later when fixes are more expensive.",
+   "detail": "Daily changes to review at Anthropic reportedly rose from about 2,500 to over 30,000 in four months. The team says rushed review leads to about twice the total time, counting the later bug fixes.",
+   "t": "1:27"
+  },
+  {
+   "idea": "Reframe review from did someone read the code to what could go wrong and how we would catch it, and run checks during the build.",
+   "detail": "Checks now happen while Claude is building, so a change reaches the human already checked and fixed at least once. Human attention goes to the parts most likely to break.",
+   "t": "1:27"
+  },
+  {
+   "idea": "Evals are fixed, strict pass/fail checks written before building, and a human approves them before any code is written.",
+   "detail": "Each feature gets an eval.md that is the method the agent uses to check its own work. Feature designs go into a mockup page first, which becomes the target the app is checked against. Without the human review of the evals, the agent should not build.",
+   "t": "2:41"
+  },
+  {
+   "idea": "A hook prevents the agent from marking a task done until its evals pass.",
+   "detail": "The hook enforces the gate mechanically rather than relying on the agent's own claim that it is finished. The host created it through a skill.",
+   "t": "2:41"
+  },
+  {
+   "idea": "The reviewer should be a separate agent because the builder agrees with its own decisions.",
+   "detail": "The team runs a separate reviewer on every change before a person sees it. Anthropic's lighter version is the code review command, which reads all changes and reports breaking mistakes at a chosen effort level, where low reports only high-confidence findings.",
+   "t": "5:36"
+  },
+  {
+   "idea": "Persistent review rules live in review.md, linked from CLAUDE.md so each session loads them.",
+   "detail": "review.md states what counts as a real failure, how severe each one is, how to report, and how the app should be tested. It is not read by default, so the host links it from CLAUDE.md.",
+   "t": "5:36"
+  },
+  {
+   "idea": "A loop of fresh-context subagents (builder, verifier, reviewer) is driven by an orchestrating main agent.",
+   "detail": "The builder builds from the requirements. The verifier checks each eval as pass or fail. The reviewer looks for anything the evals missed, using review.md. The loop writes state.md to track the round and what is still failing.",
+   "t": "7:04"
+  },
+  {
+   "idea": "Recurring reviewer findings become standing rules that persist across sessions.",
+   "detail": "Claude does not remember earlier mistakes, so each recurring problem becomes a one-line rule in a learned-rules section at the bottom of review.md. The loop proposes the rule at the end, and it is added only after the human approves.",
+   "t": "9:54"
+  },
+  {
+   "idea": "Scale checks by consequence: how bad is it for a customer if this breaks?",
+   "detail": "Cosmetic issues are low risk. Features that stop working but lose nothing are medium. Lost money, lockout, or another person's data is high. High-risk changes get stricter evals and the full review, and low-risk changes get a quick one.",
+   "t": "11:11"
+  },
+  {
+   "idea": "Without stop rules, builder and reviewer loops can ping-pong indefinitely, so the team added round caps and delta-only review.",
+   "detail": "The team reported one change that looped more than 50 times and found that about 59 percent of reviewer findings had been present since round one. Its three rules: stop after three rounds and have the builder rethink the approach; after round one, review only what the last fix changed; and classify each finding so the builder fixes every instance of that kind.",
+   "t": "11:11"
+  },
+  {
+   "idea": "The host's own loop runs five rounds, stops early if the same problem persists after two, and adds browser-based eval checks.",
+   "detail": "The host deliberately departs from the team's three-round cap. Each round builds the feature, checks every eval in the browser, then reviews the code.",
+   "t": "12:39"
+  },
+  {
+   "idea": "A fresh agent that is blocked from reading the app's code can act as a first-time user, and it runs on a temporary database.",
+   "detail": "The agent is prevented from reading code directly and also through terminal workarounds. The run reports every place a new user might get stuck and suggests fixes.",
+   "t": "13:47"
+  },
+  {
+   "idea": "Git branches per feature and a fix-a-bug skill make mistakes reversible.",
+   "detail": "The CLAUDE.md tells Claude to use a branch per feature and save each working version. A fix-a-bug skill reproduces the bug, checks whether its guess about the cause was right, then fixes and reports it.",
+   "t": "15:15"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Eval-first feature gating",
+   "how": "Keep specs/<feature>/ with a requirements file (transcript says rd.md, possibly a caption error). Use a skill to write eval.md for each feature, using a shared template so every eval has the same structure. If the feature has a design, build a mockup page first and use it as the visual target. Have the agent request human review of the evals and refuse to build until approved. Add a hook that blocks marking the task done until the evals pass. Set the status to draft, then in review after the agent finishes, then reviewed after approval.",
+   "when": "Before any agent builds a feature that has acceptance criteria or a visual design, especially when you will otherwise have to check the work yourself."
+  },
+  {
+   "name": "Fresh-context builder/verifier/reviewer loop",
+   "how": "Create a review-loop skill and three subagents. The main agent is the orchestrator. The builder implements from the requirements and eval.md. The verifier marks each eval pass or fail. The reviewer searches for gaps the evals missed, using review.md. The orchestrator writes state.md (round number and open failures), starts each agent with a fresh context, and repeats until all evals pass and the reviewer has nothing new. Run it by invoking the review-loop command with the feature name.",
+   "when": "When you need an independent check that does not share the builder's context, so the reviewer does not simply agree with the builder's decisions."
+  },
+  {
+   "name": "Reviewer loop stop rules",
+   "how": "Cap rounds (the team uses 3; the host uses 5). After round one, the reviewer checks only the delta from the most recent fix and does not re-report earlier findings. Require each finding to be tagged with its problem class so the builder fixes all instances, not just the one flagged. After 3 rounds, the reviewer stops listing issues and tells the builder to rethink the approach. The host also stops early if the same problem remains after 2 rounds.",
+   "when": "Whenever a builder and reviewer loop might oscillate or spend the token budget on repeated old findings."
+  },
+  {
+   "name": "review.md with a learned-rules section",
+   "how": "Write review.md in the project root with what counts as a real failure, severity levels, the reporting format, and the test methods. Link it from CLAUDE.md so it loads each session. At the bottom, keep a learned-rules section. When a bug escapes review, or a review repeatedly flags something that is not a problem, the loop proposes a one-line rule. Add it only after approval.",
+   "when": "For any repo where you run AI code review repeatedly and want the reviewer to stop repeating the same misses or false positives."
+  },
+  {
+   "name": "Consequence-based risk tiering",
+   "how": "Before building, ask one question: what happens to a customer if this breaks? Cosmetic is low. Stops a feature but loses nothing is medium. Loss of money, lockout, or exposure of another person's data is high. Save the rating through a skill. Pass the rating to the eval skill so high-risk features get stricter evals and a full review. Low-risk features get a quick review.",
+   "when": "When the review budget is limited and changes differ in how much damage a mistake could cause."
+  },
+  {
+   "name": "First-time-user agent test",
+   "how": "Create a skill that launches sub-agents forbidden from reading the app's source code. Enforce this with a hook that blocks file reads and also terminal-based reads. Point the agent at a temporary database. Ask it to walk through the feature like a new user and report each point where someone might get stuck, along with suggested fixes. Invoke it with the skills command and name the feature.",
+   "when": "After a feature passes its evals, to catch usability gaps that the builder, who knows how the feature works, would miss."
+  },
+  {
+   "name": "Git branch per feature with rollback",
+   "how": "In CLAUDE.md, instruct Claude to create a git branch for each feature and save every working version. Create a fix-a-bug skill that takes a problem description, reproduces it step by step, tests the cause hypothesis, applies the fix, and reports the result. To roll back, use git to locate the change that introduced the regression and revert to the last working version.",
+   "when": "For any agent-built change where a regression may surface later and you need to undo it quickly."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "CLAUDE.md",
+  "review.md",
+  "eval.md",
+  "state.md",
+  "Claude Code code review command",
+  "skills",
+  "subagents",
+  "hooks",
+  "git",
+  "Codex",
+  "Cursor",
+  "Unstoppable (sponsor desktop IDE)"
+ ],
+ "numbers": [
+  {
+   "claim": "Anthropic's team reportedly shipped more than 2x as many changes, and the share of changes that had to be undone dropped by over 40 percent (secondhand from Anthropic's article).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Daily changes to review across Anthropic rose from about 2,500 to over 30,000 in four months (secondhand).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Rushed review reportedly ends up costing about twice the time once later bug fixes are counted (team claim).",
+   "t": "1:27"
+  },
+  {
+   "claim": "One change went back and forth more than 50 times between builder and reviewer before someone stopped it manually.",
+   "t": "11:11"
+  },
+  {
+   "claim": "About 59 percent of reviewer findings had been present since the first round, so the reviewer mostly repeated old problems.",
+   "t": "11:11"
+  },
+  {
+   "claim": "Team rule: stop after 3 rounds. Host's loop: stop after 5 rounds, or after 2 rounds if the same problem persists.",
+   "t": "12:39"
+  }
+ ],
+ "hot_takes": [
+  "Quality is capped at 2 because the video contains a sponsored segment (Unstoppable, around 8:31) and a community plug (AI Labs Pro, around 4:09), per the rule. The body of the video is substantive and practical despite that cap.",
+  "The headline figures (2x changes, 40 percent undo drop, 2,500 to 30,000 daily reviews, 59 percent repeated findings) come from Anthropic's article as relayed by the host. No primary data is shown, and the video does not verify them.",
+  "The host says he will show the prompts, but the video describes the skills in prose and does not show their exact text. Reproducing the setup requires the original article or building the skills from these descriptions.",
+  "The host's own loop uses 5 rounds, which departs from the team's 3-round rule. He presents this as a deliberate tradeoff, but it is not justified with data.",
+  "The host acknowledges the main objection that this only works with unlimited tokens, but offers no measurement of the token cost per loop."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 3,
+   "why": "ProsHarness wraps the Claude Code CLI and already covers checkpoint/resume, loops, and plan-critique-debate. The video's builder/verifier/reviewer loop with state.md, round caps, delta-only review, and a hook that blocks completion maps directly onto those features.",
+   "action": "Add a state.md-style loop ledger with a 3-round cap and delta-only review after round one, plus a done-hook that blocks completion until eval.md passes."
+  },
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The consequence-based risk tiers (lost money, lockout, or another user's data) line up with AgentOS's exec-gate guardrails and governed skills. The fresh-context reviewer and first-time-user agent are also reusable quality gates.",
+   "action": "Use a low/medium/high risk tier derived from irreversible customer harm to set the strictness of Crucible exec-gate checks and SkillForge skill promotion."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

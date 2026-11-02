@@ -1,0 +1,50 @@
+# Google Firebase is an AI IDE now... (and its good!?)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `dAE4YloBUgI` · [watch](https://youtu.be/dAE4YloBUgI) · **date:** 2025-11-02 · **length:** 6:56 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** Better Stack presenter (not named in transcript) · **orgs:** Google, Better Stack
+- **topics:** vibe-coding-app-building, coding-agents, product-ux · **tags:** firebase-studio, gemini, vibe-coding, cloud-ide, excalidraw, firebase-app-hosting, shadcn, preview-product, project-idx
+
+> A Better Stack walkthrough of Google's Firebase Studio, a browser IDE that turns a prompt into a blueprint, a built app, and a Firebase deployment. The presenter finds the prototyping flow useful but the annotation and AI-injection behavior unreliable.
+
+## Summary
+The presenter builds a day-planning app in Firebase Studio, Google's VS Code-based cloud IDE (formerly Project IDX), starting from a single prompt. The flow generates a feature blueprint with style guidelines that the user confirms before code is written. The build runs in about 30 seconds and prompts for a Gemini API key, which can be auto-generated. The presenter notes that the AI keeps adding AI features to the app even when none were requested. Visual feedback is tested two ways: an Excalidraw annotation overlay that is sent as a screenshot, which did not apply the requested padding or checkboxes, and an inspect-element tool that scoped a small text change and worked within about 10 seconds. A public preview link with a QR code allows phone testing. Moving into the code view gives a Gemini chat in the editor, and the deploy button publishes through Firebase App Hosting, which requires linking a cloud billing account. The presenter's verdict is that it could replace V0 and Bolt for prototyping but not Cursor, since they are not ready for a cloud-based IDE, and that the product is in preview.
+
+## Key ideas
+- **Firebase Studio starts from a prompt and generates a blueprint (features plus style guidelines) that the user can confirm or extend before any code is written.** — The blueprint shows each feature, with an AI badge on AI features, and style guidance covering color, layout, iconography and animation. The style guidance is saved to a markdown file in the project. ([0:00](https://youtu.be/dAE4YloBUgI?t=0))
+- **The model over-applies AI: it adds AI features the prompt never asked for.** — The presenter's prompt asked for AI task decomposition, and the blueprint also added deadline management. The presenter says Firebase tends to insert AI into any app, which fits the Gemini integration but may not match what the user wants. ([1:16](https://youtu.be/dAE4YloBUgI?t=76))
+- **The first build is fast, but the app needs a Gemini key and the user can auto-generate one from inside the product.** — After the blueprint is confirmed, the build takes about 30 seconds and includes a type/lint check pass. The app then asks for a Gemini API key, and the auto-generate option creates one, which took about 30 seconds in the presenter's run. ([1:16](https://youtu.be/dAE4YloBUgI?t=76))
+- **Annotating the live preview with a drawing (Excalidraw overlay, sent as a screenshot) did not reliably produce the requested change.** — The presenter drew an arrow for padding and sketched checkboxes. The result had no padding and no checkboxes, but it added an unrequested estimate button. The presenter's warning is that the drawing route is unreliable. ([2:37](https://youtu.be/dAE4YloBUgI?t=157))
+- **Inspect-element is the more precise feedback path: pick a DOM element, then type a short instruction.** — The selected element is attached to the chat as context. A one-line request to add padding to a card worked in about 10 seconds, a lower-friction path than the annotation overlay. ([3:55](https://youtu.be/dAE4YloBUgI?t=235))
+- **The preview link can be made public, and a QR code lets the user check the responsive layout on a phone.** — This is presented as a developer-experience improvement for mobile testing without a separate deploy. ([3:55](https://youtu.be/dAE4YloBUgI?t=235))
+- **Switching to the code view gives a VS Code-style editor with an in-editor Gemini chat, where the model can be picked (Gemini 2.5 Pro, Flash, Pro Experimental).** — A one-line text change was made through the chat. Changes are applied with an update-file action, with no side-by-side diff view like Cursor's, and the web preview took a few seconds to refresh. ([5:21](https://youtu.be/dAE4YloBUgI?t=321))
+- **The publish button deploys through Firebase App Hosting, after linking a cloud billing account.** — The presenter says the whole flow can stay in prototype mode without reading code. The presenter also notes it is still in preview, so bugs are expected. ([5:21](https://youtu.be/dAE4YloBUgI?t=321))
+- **Verdict: a credible prototyping environment with some limits, not a Cursor replacement.** — The presenter says it could replace V0 and Bolt for prototyping but not Cursor, which is not ready for a cloud-based IDE. The point is a first-look opinion, not a measured comparison. ([6:40](https://youtu.be/dAE4YloBUgI?t=400))
+
+## Techniques
+- **Confirm the blueprint before the build** — Enter the app idea as a prompt and click Prototype with AI. Read the generated feature list and style guidelines in the chat, remove unwanted AI features, add missing ones, then confirm so the build starts from the reviewed plan. *When:* Use it at the start of any vibe-coded prototype, to catch scope creep (such as unrequested AI features) before code is written.
+- **Auto-provision the Gemini key from the build prompt** — When the built app asks for a Gemini API key, use the auto-generate option instead of creating a key by hand. The presenter says it creates a key in a Google Cloud project and writes it into the app. *When:* Use it when a generated app needs a Gemini key and you want to skip manual key setup. The presenter does not show where the key lives or how it is scoped.
+- **Scoped edit with inspect-element** — Click the inspect control in the preview, select the target element (for example a card's content area), then type a short instruction such as add padding in the chat. The element is attached to the request as context. *When:* Use it for small visual edits to one component. In the presenter's run it was faster and more accurate than free-text prompts.
+- **Annotation overlay (lower reliability)** — Open the annotate control, which overlays an Excalidraw canvas on the preview. Draw arrows and sketches, then send the drawing, which is sent as a screenshot to Gemini. *When:* Try it for layout hints, but expect to re-prompt in text. In the presenter's run, the drawn padding and checkboxes were not applied and an extra element appeared.
+- **Phone check via public preview link** — Click the link button and make the preview public. Scan the QR code shown with a phone to see the responsive layout on a real device. *When:* Use it for quick mobile checks of a generated UI without deploying.
+- **Drop into the code view for manual fixes** — Switch to the code view to open the VS Code-style editor. Use the built-in Gemini chat for targeted edits, pick the model (Gemini 2.5 Pro, Flash, or Pro Experimental), accept each change with the update-file action, and check the web preview. *When:* Use it when the AI cannot fix a bug and the change needs direct file edits. The presenter notes there is no diff view, unlike Cursor.
+- **Publish with Firebase App Hosting** — Click the publish button. It creates a Firebase project, asks you to link a cloud billing account, sets up the environment, and deploys the app with Firebase App Hosting. *When:* Use it to go from prototype to a hosted URL without manual infra setup. Billing must be linked first.
+
+## Numbers
+- Initial build of the generated app took about 30 seconds, after a step that checks for TypeScript or lint errors that ran for about 10 seconds. ([1:16](https://youtu.be/dAE4YloBUgI?t=76))
+- Auto-generating a Gemini API key and inserting it into the app took about 30 seconds. ([1:16](https://youtu.be/dAE4YloBUgI?t=76))
+- Regenerating the annotated changes took about 30 seconds, and the padding and checkbox changes were not applied. ([2:37](https://youtu.be/dAE4YloBUgI?t=157))
+- A targeted inspect-element edit (add padding to a card) took about 10 seconds to apply. ([3:55](https://youtu.be/dAE4YloBUgI?t=235))
+- Edits made in the code view appeared in the web preview after a few seconds. ([5:21](https://youtu.be/dAE4YloBUgI?t=321))
+
+## Hot takes
+- The presenter says Firebase tends to insert AI features into apps even when the prompt does not ask for them, which he finds funny.
+- The annotation overlay did not apply the requested padding or checkboxes and added an unrequested button, so the presenter treats the drawing path as unreliable.
+- The presenter says Firebase Studio could replace V0 and Bolt for prototyping, but not Cursor, because he is not ready for a cloud-based IDE.
+- The product is in preview and the presenter says bugs are expected, so the verdict is a first look rather than a measured comparison.
+- The Gemini 2.5 Pro model in use is the presenter's assumption from Google branding ('obviously ... should be using'), not something the product shows.
+
+## Tools mentioned
+Firebase Studio, Project IDX (earlier name of Firebase Studio), Gemini 2.5 Pro, Gemini Flash, Gemini 2.5 Pro Experimental, Gemini API, Google AI Studio, Excalidraw, ShadCN UI, Next.js, Astro, Firebase App Hosting, Google Cloud billing, VS Code (base of the editor), Cursor (comparison), Bolt (comparison), V0 (comparison)
+
+## Relevance to our work
+- **prosharness** (1/3): The blueprint-then-confirm gate before code generation resembles ProsHarness's plan stage, with a human checkpoint before build. It is a UX pattern to compare, not a technique to adopt. → *Compare the confirm-the-plan step in Firebase Studio's blueprint flow with ProsHarness's plan approval step, and check whether it shows unrequested features or scope in a form the user can edit before the run starts.*

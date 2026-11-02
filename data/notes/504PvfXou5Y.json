@@ -1,0 +1,162 @@
+{
+ "one_line": "Michal Cichra on keeping agents and humans aligned by storing ADRs, PRDs and executable BDD specs in the repo, then enforcing them through git hooks, CI and import-boundary lints.",
+ "summary": "The speaker argues that teams lose the reasons behind decisions, both when people leave and when an agent's context compacts, so the why must live in the repo. He covers three lightweight document types: ADRs that record a decision and how to enforce it, PRDs that capture the problem and the user journey, and BDD scenarios written in Cucumber that are both readable and executable. Design systems are treated the same way, as written rules plus component previews that agents can see. The enforcement loop is git hooks that run the same checks as CI (linting, formatting, type checks, duplication, architecture and document checks), so an agent that skips them gets rejected with a link back to the relevant doc. Architecture rules are enforced by restricting module imports, for example keeping the end-to-end suite away from the database and keeping templates from querying it, which removes whole bug classes such as N+1 queries. The loop is scoped per task type, with test selection based on changed files and coverage, and he reports that sessions with 20 to 50 context compactions still work because the important rules get re-read. The talk is conceptual and lightly promotional for his company's product, with few hard numbers.",
+ "speakers": [
+  "Michal Cichra"
+ ],
+ "orgs": [
+  "Safe Intelligence",
+  "Microsoft",
+  "Red Hat"
+ ],
+ "format": "talk",
+ "topics": [
+  "context-engineering",
+  "testing-verification",
+  "pr-code-review"
+ ],
+ "tags": [
+  "ADR",
+  "PRD",
+  "BDD",
+  "Cucumber",
+  "executable specs",
+  "design system",
+  "git hooks",
+  "architecture linting",
+  "context compaction",
+  "agent harness",
+  "spec-driven development"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Decisions get lost in both humans and LLMs, so the why must be written down in the repo.",
+   "detail": "Teams lose the founding engineers and their reasons over time. Agents lose context when it compacts. Recording reasons in docs lets both recover them.",
+   "t": "1:11"
+  },
+  {
+   "idea": "An ADR should also say how the rule is enforced and which files it covers.",
+   "detail": "The speaker's team has around 50 ADRs. The format is free text. A tool is still needed to enforce each rule, and its error message should cite the ADR and the fix so the agent can look it up.",
+   "t": "2:13"
+  },
+  {
+   "idea": "A PRD can be very light: the problem, the goal, and the user journey.",
+   "detail": "It is written for future readers, including the author six weeks later, and for agents. It does not need to be exhaustive.",
+   "t": "2:13"
+  },
+  {
+   "idea": "Executable BDD specs close the gap that spec-driven development leaves open.",
+   "detail": "Markdown specs say how a feature should work but not whether it does. Cucumber scenarios in plain language are easier to review than agent-written tests, and they link back to PRDs and critical user journeys.",
+   "t": "3:45"
+  },
+  {
+   "idea": "Design systems can be enforced like code: written rules, component previews and snapshots that agents can see.",
+   "detail": "An example rule is that only one primary button may appear on a page. Components are built from small pieces into larger ones and reviewed visually.",
+   "t": "5:44"
+  },
+  {
+   "idea": "Git hooks and CI should run the same checks, so an agent cannot skip them.",
+   "detail": "The checks cover linting, formatting, type checks, duplication, architecture and document lint. A rejected push comes with a link to the document that explains the fix.",
+   "t": "7:13"
+  },
+  {
+   "idea": "Prevent whole classes of bugs with module-import boundaries instead of finding them one by one.",
+   "detail": "The end-to-end suite cannot import database modules, so it is forced to test through the browser. Templates cannot query the database, which rules out N+1 queries. Data access returns plain shapes, not ORM objects.",
+   "t": "8:14"
+  },
+  {
+   "idea": "Scope the loop to the task, and accept many context compactions.",
+   "detail": "ADR, PRD and UI work each get their own focus. The UI loop skips some checks and iterates in the browser. Test selection is based on changed files and coverage. Goal runs log the model's decisions for later review. Sessions go through 20 to 50 compactions and still work because the important rules are looked up again.",
+   "t": "9:49"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "ADR with enforcing lint rule",
+   "how": "Write each architecture decision as a short doc that gives the rationale, the enforced rule, the files in scope, and how to fix a violation. A linter or import check fails with a message that points to the ADR.",
+   "when": "Architecture rules that agents keep breaking, such as layer boundaries or banned data-access patterns."
+  },
+  {
+   "name": "Import-boundary restriction to eliminate bug classes",
+   "how": "Use lint rules to restrict which modules may import which. Examples: the E2E suite cannot import DB modules; templates cannot import the DB layer; repositories return plain data shapes.",
+   "when": "Recurring problems such as N+1 queries or tests that bypass the UI. Prevent the class of problem, not each instance."
+  },
+  {
+   "name": "Executable BDD scenarios linked to PRDs",
+   "how": "Write Cucumber feature files in plain language that describe user journeys. Step definitions execute them. Humans review the scenarios, not the step code.",
+   "when": "Spec-driven development where you must verify that the built product matches the written behavior."
+  },
+  {
+   "name": "Shared checks in git hooks and CI",
+   "how": "Define one set of checks and run it as the pre-push or pre-commit hook and again in CI. A rejection returns the failing rule and the doc to read.",
+   "when": "Agents that open pull requests and might skip local checks."
+  },
+  {
+   "name": "Design system as enforced rules and previews",
+   "how": "Document components and their states, add rules such as one primary button per page, render previews, and make them visible to agents and reviewers. Build larger components from smaller ones.",
+   "when": "Keeping UI consistent when agents generate frontend code."
+  },
+  {
+   "name": "Scoped test selection per task",
+   "how": "Pick the tests to run from changed files and code coverage instead of running the full suite. Use a fast browser-iteration loop for UI work.",
+   "when": "Large test suites where full runs are too slow for each agent iteration."
+  }
+ ],
+ "tools": [
+  "Cucumber",
+  "git hooks",
+  "CI",
+  "linters",
+  "type checkers",
+  "architecture import lint",
+  "Markdown docs"
+ ],
+ "numbers": [
+  {
+   "claim": "About 50 ADRs describe the architecture of one product.",
+   "t": "2:13"
+  },
+  {
+   "claim": "Sessions run through 20 to 50 context compactions and still work, according to the speaker's experience over the last half year.",
+   "t": "11:15"
+  },
+  {
+   "claim": "Starting research can use up half of the context window.",
+   "t": "9:49"
+  },
+  {
+   "claim": "The speaker has about 10 years on a single product (at Microsoft and Red Hat), with no specific figures given for the enforcement results.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Code review should not be about style anymore, because style is enforced automatically, not debated.",
+  "Prevent problem classes with rules instead of hunting for each instance, for example N+1 queries.",
+  "Context compaction is acceptable if the important decisions are re-read; it is not a reason to avoid long agent sessions.",
+  "Reading AI-written tests is harder than reading AI code, so use human-readable BDD scenarios as the review layer."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS has several pillars (proxy, memory, serving, sandbox) with layer boundaries, and the talk's import-boundary rules would enforce them. The talk gives no benchmarks.",
+   "action": "Add an ADR folder with import-boundary lint rules for the L1/L2/L3 layers, and have each lint error cite the ADR that explains the fix."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs long Claude Code sessions with checkpoints. The talk's loop of logging decisions for review, plus rules that survive compaction, matches that design.",
+   "action": "Have ProsHarness save each agent decision to a reviewable log, and check whether rules in CLAUDE.md are still followed after several compactions."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The talk gives a concrete method for keeping decisions and rules in the repo so that agents and new people can recover the reasoning, which is relevant to context engineering.",
+   "action": "Write a short decision index in the repo and test whether a fresh session finds the right rule after a compaction."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

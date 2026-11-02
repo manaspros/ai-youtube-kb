@@ -1,0 +1,180 @@
+{
+ "one_line": "Spotify's engineers explain turning recommendations into a steerable LLM: semantic-ID tokens, a four-stage NEO training recipe, and LLM judges grounded in behavioral data.",
+ "summary": "Yves Raimond and Jacqueline Wood of Spotify describe moving from ranking-based recommendations to \"generative personalization,\" where users steer and query the system in natural language. They say one model, the \"large-taste model,\" handles recommendation, reasoning, explanation and generation, and that about one in four US premium subscribers use it daily. Jacqueline then explains the training method: content embeddings are quantized into discrete semantic-ID tokens that are added to an open-weight LLM's vocabulary, and a four-stage recipe (semantic foundation, frozen-backbone domain grounding, multi-task capability induction, optional RL post-training) is used. Their ablations show the frozen backbone preserves language ability that continued pretraining destroys, and that beam search beats top-piece sampling for accuracy. The second half covers evaluation: offline engagement metrics cannot judge explanation quality, so they ground LLM judges in user profiles and behavioral signals, reporting 75% alignment with humans and a 0.87 agreement with human rankings for Cranfield-style pools. Most numbers are Spotify-internal and the talk gives few implementation details beyond the linked papers.",
+ "speakers": [
+  "Yves Raimond",
+  "Jacqueline Wood"
+ ],
+ "orgs": [
+  "Spotify"
+ ],
+ "format": "talk",
+ "topics": [
+  "training-finetuning-rl",
+  "evals",
+  "product-ux"
+ ],
+ "tags": [
+  "semantic-ids",
+  "generative-recommendation",
+  "LLM-as-judge",
+  "domain-grounding",
+  "catastrophic-forgetting",
+  "constrained-decoding",
+  "beam-search",
+  "Cranfield-evaluation",
+  "Qwen",
+  "LoRA",
+  "personalization",
+  "Spotify"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Recommendation is shifting from guessing (ranked lists) to reasoning, and from black-box ranking to steerable, language-controlled personalization.",
+   "detail": "Users can steer the DJ mid-session, write prompted playlists, and edit a natural-language taste profile. The system is built to explain and generate experiences, not only rank.",
+   "t": "2:25"
+  },
+  {
+   "idea": "One unified model (the 'large-taste model') covers prediction, reasoning, steering and generation across Spotify surfaces.",
+   "detail": "The speaker says it understands every historical interaction with every item, and that about one in four US premium subscribers use it daily. Deploying it on existing surfaces (autoplay, podcast discovery, DJ messages) produced gains.",
+   "t": "6:23"
+  },
+  {
+   "idea": "Catalog items become semantic-ID tokens that are added to an open-weight LLM's vocabulary.",
+   "detail": "Existing content embeddings (e.g. podcast episode embeddings) are quantized into discrete tokens. The LLM is then fine-tuned so it reads both natural language and these catalog tokens, so one prompt can mix listening history with text.",
+   "t": "7:42"
+  },
+  {
+   "idea": "The NEO training recipe freezes the backbone at the grounding stage so the new tokens are learned without erasing language ability.",
+   "detail": "Stage 2 trains only the semantic-ID embeddings with a bidirectional text-to-ID and ID-to-text mapping. Stage 3 unfreezes everything for multi-task instruction tuning (full fine-tuning or LoRA). Stage 4 is optional RL post-training.",
+   "t": "10:01"
+  },
+  {
+   "idea": "Continued pretraining on catalog data erases the base model's natural-language and world knowledge, while frozen-backbone grounding keeps it.",
+   "detail": "Task performance barely changes with continued pretraining, but natural-language and world-knowledge ability drops to essentially zero. The effect was checked on Qwen and LLaMA, so the speaker attributes it to the training paradigm rather than one backbone.",
+   "t": "13:17"
+  },
+  {
+   "idea": "Multi-task training matched or beat single-task models, and helped cold-start content such as audiobooks.",
+   "detail": "Podcast recommendation data helped the newer audiobook recommendation task, which is the speaker's example of cross-task transfer for cold-start items.",
+   "t": "11:58"
+  },
+  {
+   "idea": "Offline engagement metrics cannot judge whether a generated recommendation or explanation makes sense, so LLM judges must be grounded in data.",
+   "detail": "Grounding means passing a textual user profile built from listening history, or similar queries and their past user interactions, to the judge. Overall alignment rose 5%, and on ambiguous queries it rose 91%.",
+   "t": "15:45"
+  },
+  {
+   "idea": "Grounded LLM judges can replace expensive human ranking stages when building relevance collections.",
+   "detail": "Candidate pools from several sources are ranked by the grounded judge instead of only by humans. The speaker reports 0.87 agreement with human system rankings.",
+   "t": "18:12"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Semantic-ID tokenization and vocabulary extension",
+   "how": "Quantize existing item embeddings into discrete tokens, add them as special tokens to an open-weight LLM's vocabulary, then fine-tune on both text and ID tokens.",
+   "when": "When an LLM must reason over a large catalog of items with IDs and natural language in the same prompt."
+  },
+  {
+   "name": "Frozen-backbone domain grounding",
+   "how": "Freeze all original LLM weights and train only the new ID embeddings with a bidirectional text-to-ID and ID-to-text objective.",
+   "when": "When adding new tokens to a pretrained LLM and you need to keep its core language and world knowledge."
+  },
+  {
+   "name": "Staged training: grounding, then multi-task instruction tuning, then optional RL",
+   "how": "Stage 2 aligns the new embeddings. Stage 3 unfreezes the model for multi-task instruction tuning with full fine-tuning or LoRA over several recommendation tasks. Stage 4 adds post-training such as RL.",
+   "when": "When one model must serve several tasks (retrieval, next-item recommendation, explanation) and the base model must stay general."
+  },
+  {
+   "name": "Beam search over constrained decoding for ID generation",
+   "how": "Decode semantic IDs with beam search. Constrained decoding can be turned on to restrict output to a subset, such as new content only. Top-piece sampling was clearly less accurate.",
+   "when": "When generated IDs must be valid catalog items and accuracy matters more than a small latency cost."
+  },
+  {
+   "name": "Grounding LLM judges with user profiles and behavioral signals",
+   "how": "Give the judge a text summary of the user's history, or the past interactions of similar queries, so it can judge fit with the user's intent instead of only the item.",
+   "when": "When offline engagement metrics miss recommendation quality or explanation accuracy, especially for ambiguous queries."
+  },
+  {
+   "name": "LLM judges for Cranfield-style relevance pools",
+   "how": "Build a candidate pool from several sources and have a grounded LLM judge rank it, replacing most human ranking work. Validate the judge against human rankings (agreement reported as 0.87).",
+   "when": "When labeled relevance sets are needed at scale and human ranking is too expensive."
+  }
+ ],
+ "tools": [
+  "Qwen",
+  "LLaMA",
+  "LoRA",
+  "NEO (Spotify's training paradigm, linked paper)",
+  "Discover Weekly",
+  "Spotify DJ"
+ ],
+ "numbers": [
+  {
+   "claim": "About 760 million monthly active users in about 184 markets",
+   "t": "0:08"
+  },
+  {
+   "claim": "Catalog of more than 100 million music tracks, plus video, podcasts and audiobooks",
+   "t": "1:17"
+  },
+  {
+   "claim": "About 10 billion playlists",
+   "t": "2:25"
+  },
+  {
+   "claim": "About one in four US premium subscribers interact with the large-taste model daily",
+   "t": "6:23"
+  },
+  {
+   "claim": "Valid semantic IDs generated 98% of the time without constrained decoding",
+   "t": "13:17"
+  },
+  {
+   "claim": "Continued pretraining drops the backbone's natural-language and world-knowledge ability to essentially zero",
+   "t": "13:17"
+  },
+  {
+   "claim": "Grounded LLM judge alignment with human preferences: 75% (textual user profile grounding)",
+   "t": "16:46"
+  },
+  {
+   "claim": "Behavioral-signal grounding raised judge alignment by 5% overall and by 91% on ambiguous queries",
+   "t": "16:46"
+  },
+  {
+   "claim": "Grounded LLM judge agreement with human system rankings: 0.87",
+   "t": "18:12"
+  }
+ ],
+ "hot_takes": [
+  "Generative personalization (steerable, language-based experiences) is the next phase, replacing ranked-list recommendation.",
+  "Offline engagement metrics are not sufficient for generative or explanatory recommendations; LLM judges need grounding in user data to be trusted.",
+  "Freezing the backbone while adding new tokens beats continued pretraining, which wipes out general language ability."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The grounded LLM-judge method (user profile and similar-query behavioral signals) could sharpen the RAGAS-style evals planned for the MemoryMesh layer, though the talk is about recommendation, not retrieval QA.",
+   "action": "Add a grounded-judge variant to the MemoryMesh RAGAS evals: give the judge a per-user memory summary and check whether its agreement with human labels improves on ambiguous queries."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content on Claude Code harnesses, checkpointing, planning, or credential handling.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Concrete, reusable evaluation practice: grounding LLM judges in per-user context, and the ablation method for freezing the backbone while adding new tokens. Relevant to the team's recurring interest in evals for agents.",
+   "action": "Read the linked NEO paper and the Spotify grounded-judge paper for the exact judge prompts and the alignment-measurement setup."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

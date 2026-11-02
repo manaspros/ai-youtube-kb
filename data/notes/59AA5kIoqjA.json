@@ -1,0 +1,174 @@
+{
+ "one_line": "Exa's CEO pitches Exa as a search engine built for AI agents rather than humans, covering its history, API features (fast endpoint, token extraction, structured output) and a data marketplace.",
+ "summary": "Will Bryk, co-founder of Exa (formerly Metaphor), argues that AI agents will soon make more web searches than humans and that they need a different kind of search than Google, which was built for humans. He tells the company story: started in 2021 betting that transformer embeddings could make semantic search work, launched a search product in 2022, and found that developers wanted an API for LLMs. He describes current product features: a roughly 200 ms search endpoint for voice agents, token extraction that returns only the most relevant tokens from search results to cut LLM cost, structured-output search for list-building, and per-customer configuration of domains, time windows and speed versus quality. He also presents Exa Connect, a marketplace where data providers license private data to agent developers. The talk is mostly vision and company promotion, with few technical details or evidence for its headline numbers.",
+ "speakers": [
+  "Will Bryk"
+ ],
+ "orgs": [
+  "Exa",
+  "Metaphor",
+  "Cursor",
+  "HubSpot",
+  "Y Combinator",
+  "Similarweb",
+  "OpenAI"
+ ],
+ "format": "talk",
+ "topics": [
+  "rag-retrieval",
+  "infra-cost-scaling",
+  "product-ux"
+ ],
+ "tags": [
+  "search-api",
+  "agentic-web",
+  "embeddings",
+  "hybrid-search",
+  "token-extraction",
+  "structured-output",
+  "voice-agents",
+  "data-marketplace",
+  "company-pitch"
+ ],
+ "key_ideas": [
+  {
+   "idea": "AI systems will soon issue more searches than humans, and the gap is expected to grow to about 1000x.",
+   "detail": "The speaker's framing: AI searches overtake human searches in 2026, then grow far faster. This is a forecast with no source shown in the talk.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Google-style search is built for humans and behaves like a recommender, so it fails on set-complete queries.",
+   "detail": "Examples: 'shirts without stripes' returns striped shirts, and 'everyone in Singapore who works on AI search' returns documents, not a full list of matches. Agents need database-like completeness.",
+   "t": "2:20"
+  },
+  {
+   "idea": "Running an LLM over every document for every query is too expensive, so the work is to pre-index documents with embeddings.",
+   "detail": "The thought experiment: an LLM judging a trillion documents per search would cost about $10M per query. Embeddings let you precompute document representations and then query them cheaply, usually combined with keyword matching.",
+   "t": "6:12"
+  },
+  {
+   "idea": "The business model came from LLM developers asking for a search API, because models cannot hold the whole web and must retrieve.",
+   "detail": "Speaker's claim: even very large models are tiny relative to the web, so they always need a retrieval layer. AI systems want near-database access, not SEO or ads.",
+   "t": "8:30"
+  },
+  {
+   "idea": "Agent-facing search needs tunable latency: a very fast endpoint for voice, and slower, deeper queries that can run for minutes.",
+   "detail": "The speaker says a voice agent can't afford search latency, so Exa offers an endpoint around 200 ms. Other customers accept minutes of search time in exchange for higher quality.",
+   "t": "11:21"
+  },
+  {
+   "idea": "Token extraction returns the most relevant passages from search results, not full snippets, to reduce downstream LLM spend.",
+   "detail": "Example: from 10 documents, return about 100 of the most important tokens. The speaker frames this as a way to address the compute and token-cost problem.",
+   "t": "11:21"
+  },
+  {
+   "idea": "Structured output lets the search return typed fields extracted from pages, such as a paper's citation count or a person's education.",
+   "detail": "Example: a recruiting agent asks for engineers who recently left a big lab, with their most-cited paper, college and graduation year, returned as structured data.",
+   "t": "12:22"
+  },
+  {
+   "idea": "There is no single perfect search. Each customer effectively gets its own configured search, with knobs for domain allow and deny lists, time windows, product-page exclusion and speed versus quality.",
+   "detail": "The speaker says Exa runs roughly one search configuration per customer, with the customer choosing the tradeoffs.",
+   "t": "12:22"
+  },
+  {
+   "idea": "Exa Connect adds licensed private or paid data providers to search results, creating a market where data owners set prices and developers pick sources.",
+   "detail": "Example shown: combining public web results with Similarweb traffic data that is not publicly available. The speaker describes this as a free market for agent-accessible data.",
+   "t": "13:23"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Hybrid embedding plus keyword retrieval",
+   "how": "Precompute embeddings for each document so a query can be matched semantically without running a model per document, and combine with keyword matching where embeddings alone fall short.",
+   "when": "Retrieval over a large corpus where queries are complex or semantic and per-document model calls are too costly."
+  },
+  {
+   "name": "Token-budget extraction before the LLM",
+   "how": "Take the top-k retrieved documents and return only the top N tokens (e.g. about 100 from 10 docs) instead of full pages or long snippets.",
+   "when": "An agent needs grounding but the LLM context and cost must stay small."
+  },
+  {
+   "name": "Schema-based structured search output",
+   "how": "Ask the search to return named fields (e.g. paper citations, education, graduation year) for each matching entity, not free-text passages.",
+   "when": "Agents that build lists or databases of people, companies or papers."
+  },
+  {
+   "name": "Per-tenant search configuration",
+   "how": "Expose knobs per customer: include or exclude domains, date windows, product-page filtering, and a speed versus quality setting.",
+   "when": "A multi-tenant search service where each customer's agent has different accuracy, latency and source needs."
+  },
+  {
+   "name": "Latency tiers by consumer type",
+   "how": "Offer a very fast search path for real-time voice agents and a slow, high-quality path for background research that may take minutes.",
+   "when": "One retrieval service serving both interactive and batch agent workloads."
+  }
+ ],
+ "tools": [
+  "Exa search API",
+  "Exa Connect",
+  "Cursor",
+  "HubSpot",
+  "Similarweb",
+  "GPT-3",
+  "ChatGPT"
+ ],
+ "numbers": [
+  {
+   "claim": "Web searches by AI systems expected to exceed human searches in 2026, then grow about 1000x over the next few years (speaker forecast, no source given).",
+   "t": "0:08"
+  },
+  {
+   "claim": "Over 5,000 companies and over 400,000 developers use Exa.",
+   "t": "1:10"
+  },
+  {
+   "claim": "The web is on the order of a trillion pages.",
+   "t": "2:20"
+  },
+  {
+   "claim": "Running a neural model over a trillion documents per query would cost about $10M per search (speaker's estimate).",
+   "t": "6:12"
+  },
+  {
+   "claim": "Company raised a couple million dollars and spent about half on a GPU cluster early on.",
+   "t": "7:28"
+  },
+  {
+   "claim": "Search endpoint latency of about 200 ms.",
+   "t": "11:21"
+  },
+  {
+   "claim": "Token extraction example: from 10 retrieved documents, return about 100 tokens.",
+   "t": "11:21"
+  },
+  {
+   "claim": "Progress in a quarter or two now equals the previous five years of progress (speaker's claim).",
+   "t": "15:31"
+  }
+ ],
+ "hot_takes": [
+  "AI systems will soon search far more than humans, roughly 1000x, and search should be built for them rather than for people.",
+  "Search for AI should not be ad-driven or SEO-driven; AI systems want an almost database-like view of the world's information.",
+  "Keyword search and recommendation-style ranking can't answer complete, set-based queries, so embedding-based search is needed.",
+  "Information access is the key unsolved problem, and better search is needed to prevent manipulation and poor collective decisions."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "MemoryMesh (L2A) does hybrid BM25 plus pgvector retrieval. The talk's token-budget extraction is one retrieval-side pattern to compare against it, but the talk gives no measurements.",
+   "action": "In the MemoryMesh retrieval path, add an optional top-N token trim on retrieved chunks, then compare LLM token cost and answer quality with and without it on the existing RAGAS eval set."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content on checkpointing, plan/critique loops, skill ranking, or credential handling.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

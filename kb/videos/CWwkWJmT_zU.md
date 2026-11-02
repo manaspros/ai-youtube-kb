@@ -1,0 +1,44 @@
+# The BEST Way To Start a Project (Better-T-Stack)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `CWwkWJmT_zU` · [watch](https://youtu.be/CWwkWJmT_zU) · **date:** 2025-11-02 · **length:** 6:59 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** Better Stack presenter (not named in the transcript) · **orgs:** Better Stack, Better-T-Stack project
+- **topics:** dev-tools, vibe-coding-app-building, coding-agents · **tags:** better-t-stack, scaffolding, monorepo, turborepo, bun, hono, orpc, tanstack-router, postgres, docker, drizzle, better-auth, ultracite, biome, claude-code, cursor, typescript
+
+> A Better Stack walkthrough of Better-T-Stack, a scaffolder that builds a full TypeScript monorepo (TanStack Router, Hono on Bun, oRPC, Postgres, Drizzle, Better Auth) from one command, with auth working on first run.
+
+## Summary
+The presenter scaffolds a full-stack TypeScript monorepo with Better-T-Stack, configuring it on the project's website Builder tab and then running the single generated command. The chosen stack is a TanStack Router web app, a Hono server on Bun, oRPC as the API layer, Postgres in local Docker with Drizzle as the ORM, Better Auth for login, Bun as the package manager, Turborepo, and the Ultracite add-on. The scaffold takes about 30 seconds, and the add-on's own setup prompts appear during the run, asking which editors to configure. The presenter starts Docker, applies the schema, runs bun dev, and confirms sign-up, sign-in, and a protected dashboard work without code changes. The project layout is apps/web (TanStack) and apps/server (Hono, Docker Compose for Postgres, Drizzle config, oRPC wiring). The presenter's conclusion is that the tool is useful for handing a working base to Claude Code or Cursor for prototyping. The video is a short, low-depth product demo, and the channel's parent company sponsored the project.
+
+## Key ideas
+- **One scaffolder replaces stitching several CLIs and init docs together** — The presenter argues that wiring a front end, back end, database, and auth layer by hand takes too long, and that AI assistants still suggest outdated setups such as Create React App. Better-T-Stack generates a project that already links these pieces. ([0:00](https://youtu.be/CWwkWJmT_zU?t=0))
+- **The builder exposes a fixed set of stack choices with working defaults** — Choices shown: web framework (TanStack Router picked), native front end (none), back end (Hono), runtime (Bun), API layer (oRPC over tRPC), database (Postgres), ORM (Drizzle over Prisma), local DB host (Docker), deploy target (none), auth (Better Auth), package manager (Bun), add-ons (Turborepo, Ultracite), and example apps (todo and AI). ([1:16](https://youtu.be/CWwkWJmT_zU?t=76))
+- **Scaffolding can also initialize git and install dependencies** — The options include creating a git repository and installing dependencies, so the generated project is ready to run after one command. The presenter notes that the same command can be reproduced later. ([2:41](https://youtu.be/CWwkWJmT_zU?t=161))
+- **Add-ons with their own CLI prompt the user during the scaffold run** — Ultracite's setup asks which editors to configure (the presenter picks VS Code, Cursor, and Claude). The scaffolder runs the add-on's interactive setup inline and then reports success. ([2:41](https://youtu.be/CWwkWJmT_zU?t=161))
+- **Project creation takes about 30 seconds, and the next steps are printed at the end** — After scaffolding, the tool prints the project directory, the bun dev command, and the database commands. The presenter says the database commands are needed because Docker was selected, and that the schema still has to be applied. ([4:01](https://youtu.be/CWwkWJmT_zU?t=241))
+- **Turborepo provides a terminal UI for running the monorepo** — bun dev runs the web app on localhost:3001 and the server together. The Turborepo sidebar lists tasks, and the arrow keys switch between per-app output, such as the server logs. ([4:01](https://youtu.be/CWwkWJmT_zU?t=241))
+- **Auth, DB, API, and front end work end-to-end on first run** — The presenter signs up, signs in, and reaches a dashboard that loads the username and some private data behind an auth route. The UI also reports that it can reach the API. The presenter describes this as the first-run check that the connections work. ([5:02](https://youtu.be/CWwkWJmT_zU?t=302))
+- **The generated repo has a clear split between apps/web and apps/server** — apps/web is a TanStack app with routes for index, login, and dashboard. apps/server is a Hono app with Docker Compose for Postgres, a Drizzle config, and oRPC set up with Hono in the source index. Biome is present because the Ultracite add-on installed it. ([5:02](https://youtu.be/CWwkWJmT_zU?t=302))
+- **Use the scaffold as a base for AI-assisted prototyping** — The presenter suggests having the scaffolder handle the integration work, then giving the working base to Claude Code or Cursor to build features. The claim rests on one run of the tool, not on a measured comparison. ([6:10](https://youtu.be/CWwkWJmT_zU?t=370))
+
+## Techniques
+- **Scaffold a full-stack TS monorepo from a builder** — Open the Better-T-Stack website Builder tab (or use its CLI). Pick the web framework, back end, runtime, API layer, database, ORM, DB host, auth, package manager, add-ons, and examples. Enable git init and dependency install. Copy the single generated command and run it in the terminal. Answer any add-on prompts (the presenter picked VS Code, Cursor, and Claude for Ultracite). The exact CLI command name is not shown on screen. *When:* Starting a new TypeScript app that needs a front end, API, database, and auth wired together, or when you want an AI assistant to start from a working base instead of an outdated template.
+- **Bring up the stack locally** — Run the Docker commands that the scaffold prints for the local Postgres. Apply the Drizzle schema with the command the scaffold lists (not shown on screen). Then run bun dev from the repo root. Open localhost:3001 for the web app, and use the Turborepo sidebar arrow keys to view server output. *When:* After scaffolding, when you need the database, server, and web app running together under one command in a monorepo.
+- **First-run smoke test of the full path** — Open the web app, sign up with test data, sign in with the same data, and check that the protected dashboard loads user data and private data. This exercises the front end, API, auth, and database together before writing any code. *When:* Right after scaffolding, to confirm the generated auth and API chain works before adding features.
+- **Hand the scaffold to a coding agent** — Keep the generated monorepo as the working base, then point Claude Code or Cursor at it to add features on top of the existing auth, routes, and oRPC setup. The video demonstrates the handoff only in words. *When:* Prototyping quickly with an AI coding tool where you do not want the agent to set up auth, ORM, and routing from scratch.
+
+## Numbers
+- Project scaffolded, dependencies installed, and ready in about 30 seconds ([4:01](https://youtu.be/CWwkWJmT_zU?t=241))
+- Starting the Docker database commands took about 20 seconds ([4:01](https://youtu.be/CWwkWJmT_zU?t=241))
+- Web app served on localhost:3001 after bun dev ([4:01](https://youtu.be/CWwkWJmT_zU?t=241))
+- Video length 6:59 ([0:00](https://youtu.be/CWwkWJmT_zU?t=0))
+
+## Hot takes
+- AI assistants still recommend Create React App for new projects, which the presenter calls bad advice.
+- The scaffold worked first time with no code changes, which the presenter calls very impressive. This is a single run, not a broad test.
+- Sponsorship disclosure: the presenter says there is no affiliation with Better Stack, but the channel's company sponsored the project. Quality is capped at 2 because this is a short promotional walkthrough with little technical depth (no internals, no comparison, no failure cases).
+
+## Tools mentioned
+Better-T-Stack (scaffolder with website Builder and CLI), TanStack Router, Hono, Bun, oRPC, tRPC (listed as an alternative API layer), PostgreSQL, Docker / Docker Compose, Drizzle ORM, Prisma (listed as an alternative ORM), Better Auth, Turborepo, Ultracite, Biome, Turso (listed as an option), Supabase (listed as an option), Cloudflare Workers (listed as an option), Claude Code, Cursor, VS Code
+
+## Relevance to our work
+- **prosharness** (1/3): ProsHarness wraps the Claude Code CLI, and the video shows scaffolding a web front end and API that a coding agent can extend. This might fit a phone-approval UI, but it is a small, low-priority fit. → *If ProsHarness ever needs a small web UI for phone-driven approvals, try scaffolding it with Better-T-Stack and handing it to Claude Code, instead of hand-wiring auth and the API.*

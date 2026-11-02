@@ -1,0 +1,146 @@
+{
+ "one_line": "Walkthrough of Tailwind CSS v4's release: JS config moves into CSS (@theme), auto content detection, OKLCH colors, and breaking renames, plus a live upgrade of a 130-component library with the official upgrade tool.",
+ "summary": "The presenter introduces Tailwind CSS v4 on its release day, framing it as a big update with some breaking changes. The main shift is that configuration moves from tailwind.config.js into the CSS file, using @theme for design tokens, @plugin, @custom-variant, @utility and @source, so tokens can also be read by JavaScript libraries as CSS variables. The content array is removed because sources are detected automatically (respecting .gitignore), and the PostCSS setup is simplified with a first-party plugin or the Vite plugin. The video covers modern CSS features now built in (cascade layers, registered custom properties, color-mix, logical properties, OKLCH default palette, container queries including max-width), new gradient and 3D transform utilities, and bracket-free arbitrary values. Breaking changes include renamed shadow/ring/backdrop utilities, parentheses instead of brackets for CSS variables, removed deprecated utilities, reversed stacked-variant order, hover applying only on hover-capable devices, and outline-none now meaning outline-style: none. The presenter then runs the official upgrade command on his own shadcn-like library with over 130 components, which changed 137 files, and walks through the resulting globals.css and a few component diffs.",
+ "speakers": [],
+ "orgs": [
+  "Tailwind Labs",
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "tailwind-css",
+  "css",
+  "css-variables",
+  "design-tokens",
+  "migration",
+  "build-tooling",
+  "postcss",
+  "vite",
+  "shadcn-ui",
+  "release-notes"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Tailwind v4 moves configuration out of JavaScript into CSS. Design tokens are defined with the @theme directive as CSS variables, which other libraries (e.g. Motion) and plain JS can read.",
+   "detail": "tailwind.config.js is replaced by CSS directives such as @theme, @plugin, @custom-variant, @utility and @source. The legacy JS file can still be loaded through @config.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The content array is gone. Tailwind detects template sources automatically and respects .gitignore, and @source adds any path it misses.",
+   "detail": "Explicit sources are declared in the CSS file with @source when automatic detection excludes a file.",
+   "t": "0:52"
+  },
+  {
+   "idea": "Build setup is much smaller. A first-party PostCSS plugin replaces postcss-import and autoprefixer, and the Tailwind Vite plugin removes PostCSS entirely for Vite projects.",
+   "detail": "The presenter says that with Vite plus no content array, Tailwind needs close to zero configuration.",
+   "t": "1:59"
+  },
+  {
+   "idea": "Several modern CSS features are now built in: cascade layers, registered custom properties (animatable gradients), color-mix for opacity on any color including CSS variables, logical properties, and container queries (with max-width support) without the separate plugin.",
+   "detail": "The default palette moves from RGB to OKLCH for a wider gamut and more vivid colors.",
+   "t": "2:xx"
+  },
+  {
+   "idea": "Breaking changes are the part to audit during an upgrade: renamed shadow, ring and backdrop utilities; CSS variable syntax changed from square brackets to parentheses; deprecated utilities removed; stacked variants now read left to right; hover only applies on devices with hover support; core plugins can no longer be disabled.",
+   "detail": "outline-none now sets outline-style: none, and the old invisible-outline behavior moves to outline-hidden. The presenter says the hover-on-tap behavior can be restored with some CSS.",
+   "t": "4:43"
+  },
+  {
+   "idea": "The official upgrade command handled most of a 130+ component migration in one run, changing 137 files.",
+   "detail": "It rewrote the JS config, templates, stylesheets and PostCSS config, and updated dependencies. The presenter then hand-checks the global stylesheet and a handful of component diffs.",
+   "t": "5:57"
+  },
+  {
+   "idea": "The presenter treats the descendant variant as a last resort, since it undermines Tailwind's locality of styling.",
+   "detail": "This is an opinion stated as advice, not a technical limitation.",
+   "t": "4:43"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run the official upgrade codemod",
+   "how": "From the project root run `npx @tailwindcss/upgrade`. It migrates the JS config, templates, stylesheets and PostCSS config, then updates dependencies. Review the diff afterwards, since the presenter checks the stylesheet and sample components rather than trusting the run blindly.",
+   "when": "Starting any v3 to v4 migration, especially projects with many components and a complex tailwind.config.js."
+  },
+  {
+   "name": "Move config into the stylesheet",
+   "how": "Replace `@tailwind base/components/utilities` with `@import \"tailwindcss\";`. Put theme extensions in `@theme { --color-border: ...; }`, add legacy plugins with `@plugin \"tailwindcss-animate\";`, add dark mode with `@custom-variant dark`, and define custom utilities with `@utility` instead of `@layer utilities`. Keep existing CSS variables; the presenter notes you can later inline values that point at other variables.",
+   "when": "Any project moving from tailwind.config.js to CSS-first configuration, including shadcn-style component libraries that use CSS-variable color tokens."
+  },
+  {
+   "name": "Simplify the PostCSS or Vite setup",
+   "how": "Drop postcss-import and autoprefixer and use the first-party `@tailwindcss/postcss` plugin. On Vite, use the Tailwind Vite plugin and remove PostCSS. Remove the content array because sources are detected automatically; add `@source` only for paths that are gitignored or otherwise missed.",
+   "when": "Projects that want near-zero Tailwind configuration, or that currently chain several PostCSS plugins only for Tailwind."
+  },
+  {
+   "name": "Rename changed utilities in templates",
+   "how": "Replace `outline-none` with `outline-hidden` where the old invisible-outline behavior was intended. Replace `bg-gradient-to-*` with `bg-linear-*` (the presenter notes the rename from background gradient to background linear). Change bracketed CSS variable syntax like `[--var]` to parentheses `(--var)`. Replace `data-[hovered=true]` with the boolean form `data-hovered`. Flip stacked variant order to left to right.",
+   "when": "Auditing templates after the codemod, or when a rename changes visible styling (outline, shadow, ring, backdrop)."
+  },
+  {
+   "name": "Use var() instead of theme() where possible",
+   "how": "Use the `var()` function for theme values. Where `theme()` must still be used in places without variable support, such as media queries, reference the CSS variable name rather than the old dot notation.",
+   "when": "Writing new CSS or migrating custom CSS that uses theme() with dot-notation keys."
+  },
+  {
+   "name": "Use native arbitrary values without brackets",
+   "how": "Utilities accept many values without configuration or bracket syntax. Examples from the video: grids of any size, boolean data attributes without brackets, and spacing values computed from the spacing variable.",
+   "when": "Replacing bracketed arbitrary values in v4 code, to reduce template noise."
+  }
+ ],
+ "tools": [
+  "Tailwind CSS v4",
+  "@tailwindcss/upgrade (run via npx)",
+  "@tailwindcss/postcss",
+  "Tailwind Vite plugin",
+  "tailwindcss-animate",
+  "PostCSS",
+  "autoprefixer",
+  "postcss-import",
+  "Motion (JS animation library, mentioned as a consumer of CSS-variable tokens)",
+  "shadcn/ui (the presenter's library is described as shadcn-like)",
+  "Tailwind container queries plugin (now built in)",
+  "tailwind.config.js (legacy, supported via @config)"
+ ],
+ "numbers": [
+  {
+   "claim": "Release-day video: Tailwind v4 was in development for over a year before release.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Presenter's own component library has over 130 Tailwind-based components used as the migration test case.",
+   "t": "5:57"
+  },
+  {
+   "claim": "The upgrade tool changed 137 files in the presenter's project, of which about 130 were component files.",
+   "t": "7:04"
+  }
+ ],
+ "hot_takes": [
+  "The descendant variant should be a last resort, because it breaks the locality that makes Tailwind code easy to reason about.",
+  "The presenter thinks the v4 changes are all in the right direction, including the outline-none rename and the reversed variant order.",
+  "Upgrade tools handle most of a large migration, but the presenter checks only the global stylesheet and a handful of components of the 137 changed files.",
+  "Quality is capped at 3 by design: this is a release-notes walkthrough with a light migration demo and no hard benchmarks or deep failure cases."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Tailwind v4 is front-end styling; the AgentOS profile lists no UI, styling or front-end work.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness is a CLI harness with phone-driven approvals; the profile names no web styling needs.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

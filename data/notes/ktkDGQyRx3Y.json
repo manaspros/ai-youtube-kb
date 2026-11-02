@@ -1,0 +1,151 @@
+{
+ "one_line": "Better Stack builds the same screen-recorder app in Tauri, Electrobun, Deno Desktop and Electron and measures size, startup, memory and developer experience; Tauri wins on size and recording, Electron is the mature TypeScript option.",
+ "summary": "Warren from Better Stack builds one screen-recording and timeline-export app four times, once each in Tauri (Rust), Electrobun (Bun), Deno Desktop and Electron as a baseline, and compares bundle size, startup time, memory and developer experience. Tauri is by far the smallest on disk (about 57 MB against 323 MB for Electron), because it records through the native macOS ScreenCaptureKit API from the Rust backend rather than the web view. Electrobun is the largest because its screen capture path forces it to ship Chromium. Startup is not won by Tauri: Deno Desktop was fastest at about 242 ms, and Electrobun was nearly three times Electron because it boots three runtimes in a chain. Memory after launch is roughly even between Tauri and Deno, and Electrobun is about double, but the Tauri figure is only correct if you sum the system web view processes that Activity Monitor does not show as children. The developer-experience section reports that Deno Desktop quit the whole app when the last window was hidden. The verdict is Tauri for most people, Electron for TypeScript-only teams, and a caution that Deno Desktop and Electrobun are not yet mature. This is a single-author, single-app benchmark, so the numbers are indicative, not general.",
+ "speakers": [
+  "Warren"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Bun",
+  "Deno",
+  "Tauri"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "desktop-apps",
+  "cross-platform",
+  "tauri",
+  "electron",
+  "electrobun",
+  "deno-desktop",
+  "benchmarks",
+  "screen-recording",
+  "memory-footprint",
+  "startup-time"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Bundle size differs by roughly 7x: Tauri about 57 MB, Deno Desktop about 111 MB, Electron 323 MB, Electrobun 418 MB. FFmpeg alone adds about 45 MB to each app.",
+   "detail": "All four apps had identical functionality and embedded FFmpeg for MP4 export. Electrobun's extra size comes from bundling Chromium, which it needs for screen capture.",
+   "t": "1:28"
+  },
+  {
+   "idea": "Where the screen capture lives decides the bundle size. Tauri records in the Rust backend through macOS ScreenCaptureKit and the web view only renders UI, while JavaScript-driven apps route frames through the web view.",
+   "detail": "Tauri's backend takes a display, a codec and a file path and writes the MP4 itself, mixing mic and system audio, so the web view never touches a frame. Electron and Deno use getDisplayMedia plus MediaRecorder. Electrobun lacks that API, so it reintroduces Chromium (about 200 MB more).",
+   "t": "1:28"
+  },
+  {
+   "idea": "Startup time is not where Tauri wins. Deno Desktop starts fastest, and Electrobun is an outlier because it chains a launcher, Bun and Chromium.",
+   "detail": "Median of 10 runs: Deno about 242 ms, Electron 273 ms (baseline), Tauri about 311 ms, Electrobun about 773 ms. The speaker attributes Tauri's slight lag to the system web view engine still having to boot.",
+   "t": "2:55"
+  },
+  {
+   "idea": "Memory after launch is closest between Tauri (about 109 MB) and Deno (about 98 MB), with Electron at 128 MB and Electrobun at 208 MB.",
+   "detail": "The speaker says Tauri's on-disk advantage does not carry over to runtime memory the way the marketing implies (about 10x).",
+   "t": "4:09"
+  },
+  {
+   "idea": "Activity Monitor undercounts Tauri because macOS starts its system web view processes as separate processes, not children of the app. Sum them to compare fairly.",
+   "detail": "Activity Monitor shows Tauri at about 36 MB, which looks like a 3x win over Electron. Adding the web view processes brings it to about 109 MB, the figure recorded in the test.",
+   "t": "4:09"
+  },
+  {
+   "idea": "During recording, Tauri was noticeably smoother. The speaker attributes this to native capture: frames never cross a JavaScript bridge.",
+   "detail": "Tauri is the choice if you need something close to 60 fps in the recording pipeline.",
+   "t": "4:09"
+  },
+  {
+   "idea": "Deno Desktop terminates the entire app when the last visible window is hidden, which broke a recording-then-hide flow.",
+   "detail": "The speaker's guess is that Deno treats 'no visible screens' as 'application finished'. The workaround was to move the window off-screen instead of hiding it.",
+   "t": "4:09"
+  },
+  {
+   "idea": "Verdict: Tauri for most projects if Rust is acceptable, Electron for TypeScript-only teams because it is the mature platform, Deno Desktop still maturing, and Electrobun rated the worst of the four.",
+   "detail": "The speaker explicitly frames this as a judgment for the viewer to make based on team skills and product type.",
+   "t": "5:37"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Measure startup as a median over repeated launches",
+   "how": "A script launches each app 10 times and the median is taken, to avoid one-off noise. Startup is measured to the point the app is up, and the speaker reports medians in ms.",
+   "when": "Comparing desktop app runtimes or any cold-start benchmark where a single run is noisy."
+  },
+  {
+   "name": "Sum all related processes when measuring memory",
+   "how": "Include the system web view processes that macOS starts as separate processes, not children, and add them to the app's own process before comparing against Electron or other bundled-Chromium apps. Activity Monitor on its own can undercount by about 3x for Tauri.",
+   "when": "Comparing memory footprint across apps that use a system web view versus a bundled Chromium."
+  },
+  {
+   "name": "Keep screen capture in the native backend",
+   "how": "Use the platform capture API (ScreenCaptureKit on macOS) from the backend, handing it a display, a codec and an output file path, and let it write the MP4 with mixed mic and system audio. The web view only handles UI.",
+   "when": "Building a recording or media-processing desktop app where frame throughput and bundle size matter more than sharing one codebase between the UI and capture logic."
+  },
+  {
+   "name": "Keep a Deno Desktop app alive with no visible windows",
+   "how": "Instead of hiding the last window, move it off-screen, so the runtime does not treat the app as finished and terminate.",
+   "when": "Building on Deno Desktop with flows that hide the main window during a long-running task such as recording."
+  }
+ ],
+ "tools": [
+  "Tauri",
+  "Electrobun",
+  "Deno Desktop",
+  "Electron",
+  "Bun",
+  "Chromium",
+  "FFmpeg",
+  "ScreenCaptureKit",
+  "Rust",
+  "TypeScript",
+  "Three.js",
+  "Babylon.js",
+  "Activity Monitor",
+  "QuickTime"
+ ],
+ "numbers": [
+  {
+   "claim": "Bundle size: Electron 323 MB (baseline), Tauri 57 MB, Electrobun 418 MB, Deno Desktop 111 MB. FFmpeg adds about 45 MB to each; Chromium adds about 200 MB to Electrobun.",
+   "t": "1:28"
+  },
+  {
+   "claim": "Median startup (10 runs): Deno Desktop about 242 ms, Electron 273 ms (baseline), Tauri about 311 ms, Electrobun about 773 ms.",
+   "t": "2:55"
+  },
+  {
+   "claim": "Memory after launch: Electron 128 MB (baseline), Tauri 109 MB, Electrobun 208 MB, Deno Desktop 98 MB.",
+   "t": "4:09"
+  },
+  {
+   "claim": "Activity Monitor shows Tauri at about 36 MB; summing its system web view processes gives about 109 MB.",
+   "t": "4:09"
+  }
+ ],
+ "hot_takes": [
+  "The 10x memory improvement that Tauri's marketing implies does not hold at runtime, because the on-disk size gap is much larger than the memory gap.",
+  "Electrobun is the worst of the four in this test: largest bundle, slowest startup, double the memory, and the most developer-experience issues.",
+  "Deno Desktop is a reasonable option but the platform still needs time to mature, judged on the crash-on-hide behavior.",
+  "Tauri is the recommended pick for most people, unless the team does not want to write Rust, in which case Electron is the mature TypeScript option."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Desktop app framework comparison has no bearing on AgentOS's proxy, retrieval, inference or storage layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI and does not ship a desktop app; nothing in the video affects it.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

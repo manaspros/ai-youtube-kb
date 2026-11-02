@@ -1,0 +1,184 @@
+{
+ "one_line": "Merve Noyan (Hugging Face) argues against running VLMs for real-time vision and shows a pipeline where VLMs label and judge data to train small Apache-2.0 detectors such as RF-DETR, plus a toolkit of models exposed as agent tools.",
+ "summary": "The speaker says developers use vision language models (VLMs) for everything, which rules out real-time use, and that small trained detectors like RF-DETR beat VLMs on detection. She also warns about licenses, asking people to prefer Apache 2.0 or MIT models over YOLO (AGPL). She built a toolkit (called Vibevision in the transcript) that gives her favorite vision models to a coding agent as tools and includes a \"vibe training\" pipeline. In that pipeline a small VLM labels an image dataset, two small VLM judges (Gemma 4 E4B and LFM2.5-VL) check each labeled box by overlaying it on the image, and their verdicts are merged by minimum agreement rather than consensus. The trained RF-DETR model is then fine-tuned on the result, and she reports it works on road-sign detection (checked against ground truth) and on document parsing (where it even found a signature the labeler missed). The run uses Hugging Face jobs, serverless inference providers and buckets, and she estimates the whole pipeline costs about three to four dollars. She also lists findings: judges disagree a lot, prompt generation still needs human approval, and coding agents lack computer-vision common sense (for example flipping traffic signs horizontally). The talk ends with a list of recommended open models and future ideas like image-guided detection and IoU-based judging.",
+ "speakers": [
+  "Merve Noyan"
+ ],
+ "orgs": [
+  "Hugging Face",
+  "TII",
+  "Roboflow"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "data-engineering",
+  "training-finetuning-rl",
+  "evals"
+ ],
+ "tags": [
+  "vision-language-models",
+  "object-detection",
+  "RF-DETR",
+  "auto-labeling",
+  "VLM-as-judge",
+  "ensemble-judges",
+  "license-selection",
+  "coding-agents",
+  "Hugging-Face",
+  "small-models",
+  "segmentation",
+  "distillation-to-detector"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Do not run VLMs for real-time vision; train a small specialized detector instead.",
+   "detail": "VLMs do not reach real-time frame rates on modest hardware, and a trained RF-DETR-style detector outperforms them on detection. The VLM is used offline as a labeler, not at inference.",
+   "t": "1:04"
+  },
+  {
+   "idea": "Check the license before the model.",
+   "detail": "Developers often deploy AGPL models such as YOLO without knowing the obligations. License is the first filter, then benchmark performance, then personal judgement.",
+   "t": "1:04"
+  },
+  {
+   "idea": "Pipeline: VLM labels, small VLM judges verify, then train the detector.",
+   "detail": "A VLM labels an unlabeled image set, two smaller judges verify the boxes, and the merged verdicts become training labels for RF-DETR. The coding agent runs this long-horizon pipeline with a human supervising.",
+   "t": "4:05"
+  },
+  {
+   "idea": "Use an ensemble of small judges, not one large judge.",
+   "detail": "She read that several smaller judges are better than one, and says asking a VLM for a numeric confidence score does not work when judges differ in size. She uses yes/no verdicts.",
+   "t": "6:00"
+  },
+  {
+   "idea": "Overlay the box on the image and ask a yes/no question per box.",
+   "detail": "The labeled bounding boxes are drawn onto the image and passed to the judge with the label description. The judge only approves or rejects each box, which avoids having to parse coordinates from the judge.",
+   "t": "7:17"
+  },
+  {
+   "idea": "Merge judges by minimum agreement (any yes keeps the example), not consensus.",
+   "detail": "One judge (LFM) rejects far more than the other, so requiring agreement would leave very few examples. Keeping an example when either judge approves gave a usable dataset. She notes that for recall-sensitive large datasets a consensus approach could be preferable.",
+   "t": "11:48"
+  },
+  {
+   "idea": "Coding agents lack computer-vision common sense.",
+   "detail": "Even a strong coding agent proposed a horizontal flip on traffic signs and jitter on traffic lights, which would corrupt the data. She added explicit augmentation rules to the agent's instructions.",
+   "t": "13:02"
+  },
+  {
+   "idea": "Human approval is still needed for generated judge prompts.",
+   "detail": "The agent drafts the label descriptions and judge prompts, but a person must check them against the dataset. She says there is no escape from looking at the data.",
+   "t": "11:48"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "VLM as offline labeler, small detector at runtime",
+   "how": "Label an unlabeled image set with a ~3.5B VLM, then train an RF-DETR detector on the labels so inference is fast and cheap.",
+   "when": "You need real-time detection but have images without labels."
+  },
+  {
+   "name": "Overlay-and-ask judging",
+   "how": "Draw each candidate bounding box onto the image, pass the image with the label description to a small VLM judge, and ask approve or reject for that box.",
+   "when": "You want to verify auto-generated boxes without parsing VLM coordinate output."
+  },
+  {
+   "name": "Ensemble of small judges with any-yes merge",
+   "how": "Run two or more small judges of different families over the same items and keep an item if any judge approves it. Do not use numeric scores across different model sizes.",
+   "when": "A single judge is unreliable or one judge is too strict and consensus would discard most data."
+  },
+  {
+   "name": "License-first model selection",
+   "how": "Filter candidate models to Apache 2.0 or MIT before comparing benchmarks; check license per size variant because one size may differ.",
+   "when": "Choosing models for anything that will be deployed commercially."
+  },
+  {
+   "name": "Agent with domain rules and human checkpoints",
+   "how": "Let a coding agent run the multi-step labeling and training pipeline, add explicit domain rules such as which augmentations are forbidden, and require a person to approve generated prompts or labels.",
+   "when": "Running long pipelines where the agent lacks domain common sense."
+  },
+  {
+   "name": "Models exposed as agent tools",
+   "how": "Package favourite models as callable tools so a coding agent can pick a detector, segmenter or OCR model for a task.",
+   "when": "Giving a coding agent the ability to build vision apps without deep domain knowledge."
+  }
+ ],
+ "tools": [
+  "RF-DETR",
+  "Gemma 4 E4B",
+  "LFM2.5-VL",
+  "Qwen VLM (auto-caption reads 'Q1 3.5', ~3.5B)",
+  "Falcon Perception",
+  "Moondream 3",
+  "MM Grounding DINO",
+  "SAM 3.1",
+  "Supervision (Roboflow)",
+  "Hugging Face Jobs",
+  "Hugging Face Inference Providers",
+  "Hugging Face buckets",
+  "DeepInfra",
+  "Together",
+  "transformers v5",
+  "OlmOCR benchmark",
+  "Claude Opus 4.8",
+  "GLM 5.2",
+  "YOLO"
+ ],
+ "numbers": [
+  {
+   "claim": "VLMs typically reach only about 30-40 FPS on a toaster-class device in the speaker's comparison, which is not real time.",
+   "t": "1:04"
+  },
+  {
+   "claim": "Whole pipeline (labeling, judging, training) costs about 3-4 dollars per run per the speaker's benchmark.",
+   "t": "8:40"
+  },
+  {
+   "claim": "Labeling was cheapest on DeepInfra serverless; Together is said to be better for batch processing; judging ran on Hugging Face jobs; training on an L4 GPU.",
+   "t": "8:40"
+  },
+  {
+   "claim": "Document-parsing and road-sign tests reported only a 'good' mAP@50 with a bit of a gap to ground-truth annotations; no exact figure was given.",
+   "t": "9:44"
+  },
+  {
+   "claim": "Falcon Perception is about 600 million parameters under Apache 2.0.",
+   "t": "14:17"
+  },
+  {
+   "claim": "The large depth-estimation model has a non-commercial license while the other sizes are Apache 2.0.",
+   "t": "15:29"
+  }
+ ],
+ "hot_takes": [
+  "Stop deploying VLMs directly for vision tasks; train a small detector instead.",
+  "Most developers do not read licenses and deploy AGPL models such as YOLO without realising the obligations.",
+  "Asking a VLM for a confidence score is unreliable when judges differ in size; use yes/no verdicts.",
+  "Coding agents are clueless computer-vision engineers without explicit domain rules."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Ensemble-judge labeling for small models is loosely related to MemoryMesh or SkillForge evals, but the talk is about vision.",
+   "action": "Optional: when next building an LLM-as-judge eval for AgentOS, compare any-yes versus consensus merging on a labeled slice and measure recall."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Shows a long-horizon agent pipeline that needs human checkpoints and explicit domain rules, which matches the ProsHarness plan and approval flow.",
+   "action": "Consider adding a per-domain rules file and a required human approval step before the agent runs destructive or data-changing actions in long ProsHarness loops."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Relevant to cheap-model pipelines and LLM-as-judge: small judges with yes/no per item and a merge rule, plus the recall-versus-consensus trade-off, applies to entity resolution and data-quality labeling.",
+   "action": "Read the judge-ensemble section around 6:00 to 11:48 and test a yes/no per-item judge with any-yes merging on an entity-resolution labeling sample."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

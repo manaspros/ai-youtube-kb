@@ -1,0 +1,217 @@
+{
+ "one_line": "Better Stack podcast on GPT-5's messy rollout, Claude Code's lead among CLI coding tools, benchmark contamination, and why MCP won while rival agent protocols stalled. Opinion-heavy, little hard data.",
+ "summary": "Three hosts (James, Richard, Andris) discuss the GPT-5 launch backlash: wrong benchmark charts in the livestream, a router that sent requests to the wrong model variant, and confusing GPT-5 / medium / high options. They compare coding tools by feel and report that Claude Code outperformed Codex and Goose in their hands-on tests, and cite a YouTube audience poll where Claude Code led. They discuss benchmark trust, arguing that fixed public subsets such as SWE-bench Verified can be trained on, and that post-cutoff question sets such as LiveCodeBench are a fairer check. On protocols, they conclude MCP became the standard because it is easy to wrap an existing REST API, while A2A has few visible real-world uses and most newer protocols are mostly white papers. They close with AI browsers, noting that token cost keeps them paid and that tools which convert pages to Markdown reduce that cost. Most of the content is anecdote and opinion, and the speakers do not show commands or configs.",
+ "speakers": [
+  "James (host)",
+  "Richard",
+  "Andris"
+ ],
+ "orgs": [
+  "OpenAI",
+  "Anthropic",
+  "Cursor",
+  "Microsoft",
+  "Google",
+  "IBM",
+  "Charm",
+  "SST",
+  "Perplexity",
+  "The Browser Company (Dia / Arc)",
+  "ByteDance",
+  "ElevenLabs",
+  "Better Stack"
+ ],
+ "format": "other",
+ "topics": [
+  "coding-agents",
+  "claude-code",
+  "mcp-and-tools",
+  "evals"
+ ],
+ "tags": [
+  "gpt-5",
+  "model-router",
+  "benchmark-contamination",
+  "swe-bench",
+  "livecodebench",
+  "mcp",
+  "a2a",
+  "agent-protocols",
+  "ai-browser",
+  "token-cost",
+  "claude-code",
+  "codex",
+  "opencode",
+  "crush",
+  "warp",
+  "terminal-agents",
+  "podcast"
+ ],
+ "key_ideas": [
+  {
+   "idea": "GPT-5's launch went badly because of a router that sent requests to different model variants, and because the GPT-5 / medium / high options were confusing to users.",
+   "detail": "The speakers say the router often chose a cheaper or wrong variant, and that users were unclear which model the benchmarks were run on. One host cites a video claiming only about 30% of ChatGPT users had been using reasoning models before launch (second-hand, unverified). They also say the livestream charts were wrong.",
+   "t": "4:02"
+  },
+  {
+   "idea": "Developers judge coding models partly by how they behave in a specific client, so one model can look much worse in another tool.",
+   "detail": "One host found GPT-5 in Goose only scaffolded empty files, and Codex crashed repeatedly while editing (it failed mid-replace). The speakers argue the tool's MCP configuration and prompting may not be tuned for the model. They describe Claude Code as more reliable in their use, though this rests on feel and anecdote.",
+   "t": "6:41"
+  },
+  {
+   "idea": "Public benchmarks can be contaminated, and the fix is to use question sets dated after the model's training cutoff.",
+   "detail": "SWE-bench Verified is a human-checked subset of about 500 of roughly 2,200 GitHub issues, built with OpenAI's involvement, and it is never updated, so models can train on it. LiveCodeBench draws questions from LeetCode and AtCoder and gives models only ones released after their cutoff. The speakers say Aider Polyglot may use older questions (transcribed as 'Ada Polygot'). They also note that cutoff dates are often hard to verify.",
+   "t": "13:27"
+  },
+  {
+   "idea": "Claude Code's Opus plan mode lets a team plan with the stronger model and execute with the cheaper one, saving the top-tier quota.",
+   "detail": "The speaker describes plan mode as planning in Opus and executing in Sonnet, which he says now has a 1M-token window. He presents this as a way to avoid using up Opus credits on a lower plan. These are his own descriptions and he does not verify the window size.",
+   "t": "10:48"
+  },
+  {
+   "idea": "The speakers' poll of their own YouTube audience shows Claude Code ahead of Cursor and GitHub Copilot, which are roughly tied.",
+   "detail": "The poll reported 50% using Claude Code, 25% Cursor, and 25% GitHub (Copilot). The speakers note that Cursor and Copilot were close, and that many VS Code users never switched. This is a self-selected audience poll, not a survey.",
+   "t": "15:57"
+  },
+  {
+   "idea": "A terminal agent hides long-running background output, which pushes some users toward a terminal emulator with a visible shell.",
+   "detail": "Richard says he uses Warp because he can see a dev server's output and ask about errors directly. He says Claude Code's background tasks read stdout but hide it, so he has to copy errors across. He argues Anthropic would need a terminal of its own to fix this.",
+   "t": "18:38"
+  },
+  {
+   "idea": "MCP became the default agent-tool protocol because it is simple and easy to wrap around existing REST APIs, and most other protocols have not gained traction.",
+   "detail": "The speakers say MCP and A2A are the only ones in heavy use. Google's A2A is presented as mostly invisible back-end plumbing, and IBM's ACP is described as nearly the same. Protocols such as ANP and AITP (crypto plus AI) are dismissed as white-paper hype. Several speakers say investors now expect startups to have an MCP server.",
+   "t": "21:08"
+  },
+  {
+   "idea": "Two MCP servers are used regularly: Context7 for library documentation and a GitHub code-search MCP for real code examples. Others, such as Notion's, were less reliable.",
+   "detail": "Context7 loads documentation into context. A grep-based server searches GitHub for code examples. The speakers say a few other servers felt restricted or imperfect, and that some MCP tools are more useful than others.",
+   "t": "28:46"
+  },
+  {
+   "idea": "AI browsers are costly because raw page HTML is huge, so converting pages to Markdown first (Firecrawl is named) reduces token use.",
+   "detail": "A browser agent that uses a Puppeteer-style wrapper needs the whole page in context, which is expensive. The speakers say conversion tools such as Firecrawl scrape a page and return the main content as Markdown, which removes the CSS and markup. They note that cost is a reason AI browsers like Comet are still paid products.",
+   "t": "31:05"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Benchmark contamination check",
+   "how": "Evaluate on a benchmark whose questions were released after the model's training cutoff, such as LiveCodeBench-style sets, instead of a fixed public subset such as SWE-bench Verified. Check the model's stated cutoff first.",
+   "when": "When comparing coding models or reporting your own agent benchmarks, to avoid results from questions the model may have trained on."
+  },
+  {
+   "name": "Plan with the strong model, execute with the cheaper one",
+   "how": "Use Claude Code's Opus plan mode (as the speaker describes it): plan in Opus, then execute in Sonnet, so the top-tier quota is spent only on planning.",
+   "when": "On a plan with limited top-model usage, for multi-step coding tasks where planning matters more than typing the code."
+  },
+  {
+   "name": "Turn an existing REST API into an MCP server",
+   "how": "Wrap the endpoints of an existing REST API as MCP tools, exposing them with names and schemas the model can read. The speakers say this is easy and is why MCP spread quickly.",
+   "when": "When an agent needs to call an internal or third-party service, and you want the tool to be reusable across MCP clients."
+  },
+  {
+   "name": "Convert web pages to Markdown before sending them to the model",
+   "how": "Use a scraper such as Firecrawl to fetch a page and return the main content as Markdown, dropping CSS and markup, and then pass that text to the model.",
+   "when": "When an agent reads web pages, to cut token use compared with raw HTML and to keep the context focused."
+  },
+  {
+   "name": "Pair a strong general model with a browser MCP server",
+   "how": "Launch a browser and attach a browser MCP server (the speaker names a ByteDance one) so the model drives it. The speaker says the choice of model matters most for how well it works with the server.",
+   "when": "For browser automation tasks where a custom agent is simpler than a commercial AI browser."
+  },
+  {
+   "name": "Custom Claude Code status line",
+   "how": "Use the status line feature to show extra information such as time, weather or the active model. The speaker mentions it without showing the configuration.",
+   "when": "When you want at-a-glance session info in the Claude Code interface."
+  }
+ ],
+ "tools": [
+  "GPT-5",
+  "GPT-5 medium",
+  "GPT-5 high",
+  "OpenAI Codex (Codex CLI)",
+  "Claude Code",
+  "Claude Sonnet",
+  "Claude Opus (4.1)",
+  "Cursor",
+  "GitHub Copilot",
+  "VS Code",
+  "Goose",
+  "OpenCode (SST)",
+  "Crush (Charm)",
+  "Warp",
+  "MCP (Model Context Protocol)",
+  "A2A (Agent2Agent)",
+  "ANP (Agent Network Protocol)",
+  "ACP (IBM)",
+  "AITP",
+  "Context7",
+  "GitHub code-search MCP server (grep)",
+  "ByteDance browser MCP server",
+  "Notion MCP server",
+  "Firecrawl",
+  "Puppeteer",
+  "Perplexity Comet",
+  "Dia browser (The Browser Company / Arc)",
+  "NotebookLM",
+  "ElevenLabs API",
+  "SWE-bench Verified",
+  "LiveCodeBench",
+  "Aider Polyglot",
+  "ARC-AGI",
+  "Grok 4",
+  "v0",
+  "Gemini"
+ ],
+ "numbers": [
+  {
+   "claim": "SWE-bench Verified is a human-verified subset of about 500 of roughly 2,200 GitHub issues, and it is never updated.",
+   "t": "13:27"
+  },
+  {
+   "claim": "A host cites a video saying only about 30% of ChatGPT users were using reasoning models before GPT-5 (second-hand, unverified).",
+   "t": "4:02"
+  },
+  {
+   "claim": "YouTube audience poll on coding tools: 50% Claude Code, 25% Cursor, 25% GitHub.",
+   "t": "15:57"
+  },
+  {
+   "claim": "Speaker says Sonnet now has a 1 million token window (his claim, not verified).",
+   "t": "10:48"
+  },
+  {
+   "claim": "Speaker says GPT-5 ranked second, or first on some benchmarks, behind Claude on others (no figures given).",
+   "t": "12:12"
+  }
+ ],
+ "hot_takes": [
+  "GPT-5's rollout was botched and oversold, and the router made the model feel worse than the benchmarks suggested.",
+  "Codex is 'terrible' in the speaker's experience (crashes), though this is based on a few sessions.",
+  "Claude Code's dominance is explained by a 'feel' that is hard to measure, and the speakers say its code indexing is better.",
+  "Most newer agent protocols are white-paper hype (crypto-style), and A2A has few visible real-world uses.",
+  "Anthropic may need its own terminal to fix hidden background-task output.",
+  "AI browsers are a dystopian direction that could upset the economics of SEO and publishing.",
+  "Publicly reported benchmarks may be contaminated, and the only reliable test is one on questions released after the training cutoff.",
+  "Investors will soon ask startups whether they have an MCP server."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The benchmark contamination discussion bears on the next-phase thesis of proving AgentOS with benchmarks. Fixed public subsets can be trained on, so the evals need held-out or post-cutoff tasks.",
+   "action": "When AgentOS reports benchmark or RAGAS numbers, use a held-out or post-cutoff task set, and note the model's training cutoff next to each result."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and runs plan, critique and debate stages. The speakers describe Opus-plan / Sonnet-execute as a cost split, and they report that Claude Code hides background-task output, which affects checkpoint and resume work.",
+   "action": "Check whether ProsHarness can surface stdout from Claude Code background tasks in its run log. Also test whether the plan stage can use Opus and the execute stage Sonnet, and measure the quota effect."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

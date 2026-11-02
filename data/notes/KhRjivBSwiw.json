@@ -1,0 +1,243 @@
+{
+ "one_line": "TypeDef's talk and workshop argue that data and code agents need a computed, traversable context graph; deterministic structure comes first, and agents still default to grep unless tools are shaped and measured.",
+ "summary": "Yoni Michael (TypeDef) argues that the bottleneck for data agents is missing context, not the model. Valid SQL can still be wrong when the grain, join cardinality, metric definition, or model relationships change, and none of these are written down where an agent can read them. TypeDef's answer is a data context layer: a typed graph built deterministically from SQL ASTs and warehouse profiling, refreshed on every commit, and queried by traversal rather than prompt stuffing. Brandon Callender then runs a hands-on workshop that builds the code-side version over the Qdrant (captioned \"Quadrant\") Rust codebase, climbing from grep to tree-sitter parsing to compiler-resolved symbols to a Neo4j graph with a blast-radius tool. The most useful part is the eval story: agents kept using grep even with graph tools, so the work shifted to renaming tools to look like ripgrep, making first calls pay off, and measuring pass^k consistency and tool-adoption rates from traces. The speakers admit the graph and grep tied on first pass, and that a harness bug had hidden a wrong-path problem until they read the traces. Numbers come from the vendor's own benchmarks, so treat them as directional.",
+ "speakers": [
+  "Yoni Michael",
+  "Brandon Callender"
+ ],
+ "orgs": [
+  "TypeDef",
+  "Mattermost",
+  "Qdrant",
+  "Neo4j",
+  "Pydantic",
+  "OpenRouter"
+ ],
+ "format": "workshop",
+ "topics": [
+  "context-engineering",
+  "evals",
+  "data-engineering",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "data-context-layer",
+  "context-graph",
+  "grain",
+  "join-safety",
+  "lineage",
+  "blast-radius",
+  "dbt",
+  "tree-sitter",
+  "rustdoc-json",
+  "cypher",
+  "pass-at-k",
+  "pass-hat-k",
+  "tool-adoption",
+  "ripgrep-parity",
+  "eval-driven-development",
+  "golden-set",
+  "fennec",
+  "logfire",
+  "ade-bench",
+  "scip"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The model is not the bottleneck; missing context is",
+   "detail": "The speaker's thesis is that model capability keeps rising, so the gap is the semantic context an agent needs to act safely on data systems. Coding-agent context work has not yet been applied to the data side.",
+   "t": "1:37"
+  },
+  {
+   "idea": "Valid SQL is not enough: grain and semantics decide correctness",
+   "detail": "A query can compile and run while silently changing meaning. Example: a one-to-one join becomes one-to-many upstream, so a row-count spike is misdiagnosed as real growth when the grain changed.",
+   "t": "5:32"
+  },
+  {
+   "idea": "Four facts decide answers and are usually unwritten",
+   "detail": "What one row represents (grain), whether a join is safe, what a metric means, and which models relate to which. Reading code re-derives these each session; querying data sees values without meaning.",
+   "t": "8:23"
+  },
+  {
+   "idea": "Compute facts deterministically first; use the LLM only for ambiguity and naming",
+   "detail": "Parse transformation logic down to the AST to get structure, dependencies, and grain. Verify join-key uniqueness by profiling the tables. Use the LLM for business names, summaries, and classification, and check its output against the computed facts.",
+   "t": "11:46"
+  },
+  {
+   "idea": "Store the context as a persistent graph and traverse it instead of stuffing prompts",
+   "detail": "Nodes and typed edges (e.g. materialized-by, has-definition) are computed once and updated atomically on each data commit. The agent pulls only the subgraph it needs in one traversal, which scales past roughly 500 models.",
+   "t": "14:29"
+  },
+  {
+   "idea": "Check pre-flight impact and business definitions as first-class constraints",
+   "detail": "Before writing SQL, walk downstream dependents to see what a grain change breaks, such as a monthly ARR measure repeated across weekly rows. Treat metric predicates as constraints: dropping a 'paid' filter still compiles but silently changes three dashboards.",
+   "t": "17:45"
+  },
+  {
+   "idea": "Evaluate on isolated data clones with pass/fail checks, and measure lift from context alone",
+   "detail": "Each task runs on an isolated copy of the data environment with programmatic checks. Same models and tasks, with and without the context layer: the speaker reports about 35 points higher task success with it.",
+   "t": "21:29"
+  },
+  {
+   "idea": "Agents keep reaching for grep even when better tools exist",
+   "detail": "Post-training gives models a strong reflex toward grep and read, so a better graph tool is ignored unless the prompt and tool shape are adjusted. The speaker's team had to fight that reflex, not just build a better tool.",
+   "t": "57:53"
+  },
+  {
+   "idea": "Shape tools to match model priors and make the first call pay off",
+   "detail": "Name the graph lookup 'search', accept multi-keyword queries, and return ripgrep-shaped results (path, line, match). If the first call returns nothing useful, the agent concludes the tool is broken and does not return to it.",
+   "t": "1:00:40"
+  },
+  {
+   "idea": "Report consistency (pass^k) and adoption rate, not single-run accuracy",
+   "detail": "Run each task k times. pass@k asks whether it was ever right; pass^k asks whether it was right every time. Tool-call share in traces shows adoption, which they treat as the gate on any capability gain.",
+   "t": "1:07:23"
+  },
+  {
+   "idea": "Read the traces; never trust a clean scoreboard",
+   "detail": "A directionally correct eval hid a bug where the search tool returned wrong file paths. Read traces in the observability tool, harden the harness (the agent cheated by checking out main), and rerun before concluding anything.",
+   "t": "1:24:06"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Deterministic structure first, LLM last",
+   "how": "Parse code or SQL to ASTs (tree-sitter for syntax, compiler output such as rustdoc JSON for resolved identities). Compute grain, lineage, and symbol identity from the parse. Verify join keys by profiling real data. Call the LLM only for naming, summarizing, classifying, or resolving leftover ambiguity.",
+   "when": "Building any context layer where the agent must not drift from the actual implementation."
+  },
+  {
+   "name": "Layered extraction ladder for code",
+   "how": "Rung 0: tree-sitter syntax tree. Rung 1: compiler-resolved symbols, so two types named PostingList become distinct identities. Rung 2: LLM semantic summaries stored with their outputs. Pick how deep to go per language and stop where the payoff drops.",
+   "when": "Deciding how much to index a codebase before the agent can use it."
+  },
+  {
+   "name": "Persistent typed graph with subgraph traversal",
+   "how": "Store symbols or models as nodes and relationships as typed edges. Compute once, update incrementally from changed files or data commits, and expose a small schema in the system prompt so the agent can turn natural-language requests into Cypher.",
+   "when": "Corpora are large (hundreds of models or many crates) and re-deriving context each session is expensive and fragile."
+  },
+  {
+   "name": "Blast-radius tool before edits",
+   "how": "Given a canonical qualified name, walk downstream edges to list dependents and what breaks. Ask this before the agent writes any change, not after a failure.",
+   "when": "Proposing changes to shared functions, models, or metric definitions."
+  },
+  {
+   "name": "Incremental re-indexing keyed to changed files",
+   "how": "Track what changed since the last index and re-index only those files or models. The speaker argues the trade-off gets better as the indexed context grows, because full re-indexing gets more expensive.",
+   "when": "Keeping a graph in sync with a repo or warehouse across frequent commits."
+  },
+  {
+   "name": "Isolated data clones for evals, with injected bugs",
+   "how": "Each eval trial runs on its own clone of the data environment. Inject a diff that introduces a bug, then check that the agent fixes the root cause (the right model) rather than patching downstream. Harden the harness so the agent cannot find the answer through git history.",
+   "when": "Benchmarking data-engineering or code-fixing agents."
+  },
+  {
+   "name": "Tool renaming and shape-matching",
+   "how": "Expose a new capability under a name the model already uses for grep-style search, take multi-keyword input, and return the same result shape (path, line, snippet). Keep the first call useful so the agent does not abandon the tool.",
+   "when": "Adding a new retrieval tool that must compete with built-in grep or read."
+  },
+  {
+   "name": "Consistency and adoption metrics",
+   "how": "Run each task k times and report pass@k and pass^k. Count tool-call share from traces. Use prompt nudges to raise adoption; the speaker's example moved tool use from 34% to 72%.",
+   "when": "Deciding whether a new tool is actually used and reliable enough to ship."
+  },
+  {
+   "name": "Many small focused LLM questions",
+   "how": "Parse the structure first, then ask one narrow question per chunk (e.g. is this column a measure or a dimension, or what is this item for in one sentence). Give more context to a single question rather than packing many questions into one prompt. Keep outputs auditable.",
+   "when": "Adding semantic meaning on top of deterministic structure."
+  },
+  {
+   "name": "Eval set pinned to a snapshot, with near-failing tasks",
+   "how": "Freeze the corpus at one commit so gold answers stay valid. Mine tasks from the corpus, cross-check gold against source so the answer key does not leak context, and keep scoring deterministic and unit-tested. Include tasks the agent is likely to fail so the eval stays informative.",
+   "when": "Designing an eval for an agent that will be rerun as the agent improves."
+  }
+ ],
+ "tools": [
+  "Neo4j",
+  "Cypher",
+  "tree-sitter",
+  "rustdoc JSON",
+  "Pydantic AI",
+  "pydantic evals",
+  "Fennec",
+  "OpenRouter",
+  "Logfire",
+  "dbt",
+  "Snowflake",
+  "Databricks",
+  "Airflow",
+  "SCIP",
+  "ADE-bench",
+  "ripgrep",
+  "Claude Code",
+  "Griffe",
+  "ty",
+  "Maturin"
+ ],
+ "numbers": [
+  {
+   "claim": "Context-layer runs show about 35 points higher task success, with the same models and tasks, versus no context layer (vendor benchmark).",
+   "t": "21:29"
+  },
+  {
+   "claim": "Example in the talk: a grain change repeats a monthly ARR measure across weekly rows, inflating a downstream total about 4x.",
+   "t": "17:45"
+  },
+  {
+   "claim": "Join example: an unsafe join can fan out rows about 7x or silently drop a share of rows (speaker says 12) with no error.",
+   "t": "18:56"
+  },
+  {
+   "claim": "Illustrative row-count spike of 40% overnight that can be a grain change instead of real growth.",
+   "t": "5:32"
+  },
+  {
+   "claim": "Benchmark corpus: an open-source Mattermost dbt project of roughly 300 to 350 models, with simulated data and scenarios.",
+   "t": "55:06"
+  },
+  {
+   "claim": "Eval run: 30 questions, 5 retries, run overnight; the notebook results are pre-cached.",
+   "t": "1:02:07"
+  },
+  {
+   "claim": "Graph-tool agent used about 3.1x fewer tokens on average than the grep-only control.",
+   "t": "1:07:23"
+  },
+  {
+   "claim": "Graph agent was about 2x better at getting the answer right on all five runs (pass^5), while pass@5 was close with grep slightly ahead.",
+   "t": "1:07:23"
+  },
+  {
+   "claim": "Tool adoption: a naive prompt gave 34% tool usage; after a prompt change it reached 72%.",
+   "t": "1:08:51"
+  },
+  {
+   "claim": "Hands-on code sample covers five crates of the Qdrant (captioned Quadrant) Rust codebase, about 90 minutes of workshop.",
+   "t": "35:49"
+  }
+ ],
+ "hot_takes": [
+  "The model is not the bottleneck; the missing semantic context is.",
+  "Valid SQL is not enough: grain and metric semantics are what agents lack, and wrong answers look plausible.",
+  "Agents will grep anyway; a better tool loses to post-training reflexes, so design with the grain instead of fighting it.",
+  "pass^k (consistency across runs) matters more than pass@k for agent evals.",
+  "Tool adoption, not tool quality, caps the gains from a new tool; never trust your own scoreboard, read the traces."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already does hybrid retrieval and GraphRAG; the talk's pass^k and tool-adoption measurement, plus grep-parity tool shaping, applies directly to how agents will call memory retrieval.",
+   "action": "Add a tool-adoption metric (share of agent turns that call MemoryMesh retrieval vs. built-in fallbacks) and a pass^k column (k=5) to the RAGAS/agent eval harness before tuning retrieval further."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and ranks skills; if Claude Code ignores skills the way the speaker saw it ignore graph tools, the harness gets no benefit from them.",
+   "action": "Check Claude Code trace logs for how often each ProsHarness skill is actually invoked; if adoption is low, rename or reshape skill entrypoints to match default behaviour and re-measure with k=5 runs."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,186 @@
+{
+ "one_line": "A walkthrough of skills, plugins and slash commands the Claude Code team reportedly uses, including batch worktree fan-out, a verify skill and an end-of-session tech debt skill. Several are internal and unverified, and a sponsor segment is included.",
+ "summary": "The host goes through skills, plugins and slash commands that they say the Claude Code team uses daily, sourced from posts, open-source repos, the official plugin marketplace and what they call leaked source code. Public items include the frontend-design plugin, the batch command, the Code Simplifier plugin, the built-in Simplify command, the built-in security scan, a commit command, and the Remotion skill. Several others are described as internal-only: verify, Skillify, tech debt and dedupe, and the host reverse-engineers their likely behaviour and suggests building your own versions with the skill creator. The most reusable ideas are the batch flow (plan, approve, one agent per unit in its own git worktree, then merge) and project-specific verify and tech-debt skills. Most of the content is high-level, with few exact commands or configs, and the sponsor segment and a plug for a paid tier take up part of the runtime.",
+ "speakers": [
+  "unnamed AI LABS host"
+ ],
+ "orgs": [
+  "Anthropic",
+  "AI LABS",
+  "Airtop",
+  "GitHub"
+ ],
+ "format": "review",
+ "topics": [
+  "claude-code",
+  "skills-self-improvement",
+  "multi-agent",
+  "testing-verification"
+ ],
+ "tags": [
+  "claude-code",
+  "skills",
+  "slash-commands",
+  "plugins",
+  "git-worktrees",
+  "batch",
+  "verify-skill",
+  "skillify",
+  "security-scan",
+  "tech-debt",
+  "code-simplifier",
+  "frontend-design",
+  "remotion",
+  "github-issues",
+  "dedupe"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The batch command fans parallelizable work out to several agents, each in its own git worktree, so they cannot clobber each other.",
+   "detail": "Batch first enters plan mode. The plan covers the current app state, the division into units, the list of additions, and how end-to-end verification should run. After approval it spawns one agent per unit, each in a separate worktree. The main agent merges the worktrees into main and can open a PR if a remote is configured. The host suggests this is different from ordinary subagent parallelism because of the worktree isolation.",
+   "t": "1:24"
+  },
+  {
+   "idea": "A project-specific verify skill gives the agent a way to prove its own changes work.",
+   "detail": "The host says the internal verify skill runs the app, tests changes from several angles and fixes failures. It scans the codebase to generate a tailored version, using Playwright, MCP checks, tests or other methods. Good setup includes test cases and visual checks, for example through the Claude Chrome extension. A CLI reference file lists the available tools, linters, exit codes and npm test files.",
+   "t": "4:15"
+  },
+  {
+   "idea": "Skillify turns a session that refined a workflow into a reusable SKILL.md draft.",
+   "detail": "Per the host, Skillify (internal, behind an environment flag, with its system prompt in the leaked source) analyses the session for repeatable processes, tools, permissions and agents. It asks clarifying questions, produces a skill file for review, and saves it to the project once confirmed. The host suggests recreating it with the skill creator.",
+   "t": "5:34"
+  },
+  {
+   "idea": "The team uses slash commands for every repetitive inner-loop task, such as commit, push and open a PR.",
+   "detail": "The host cites a commit-push-PR command and the official commit command, which builds commits from staged and unstaged changes. Both are in the official plugin marketplace.",
+   "t": "8:00"
+  },
+  {
+   "idea": "A tech-debt skill run at the end of every session finds duplicated code and consolidates it into a shared library.",
+   "detail": "The internal skill runs multiple agents across the codebase, reports redundant duplication, creates a shared library, and updates components to use it. The host advises writing the skill instructions as a step-by-step workflow: identify session changes, detect duplicates, define the file-structure rules, and finish with npm test and the linter.",
+   "t": "8:58"
+  },
+  {
+   "idea": "The built-in security scan checks several vulnerability classes, then Claude can fix what it finds.",
+   "detail": "The host lists input validation, authentication, secret management, injection and code execution, and endpoint exposure. The scan is a released feature that the team used internally first. The suggested flow is to run the scan over the repo, then prompt Claude to fix the findings.",
+   "t": "6:53"
+  },
+  {
+   "idea": "The frontend-design plugin steers UI generation away from generic AI aesthetics.",
+   "detail": "It is an official plugin that improves UI and UX from simple prompts. It can be invoked by slash command or triggered by Claude when it judges it useful.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Built-in Simplify is a heavier version of the Code Simplifier plugin.",
+   "detail": "Code Simplifier runs a single agent that removes duplicates and unnecessary files, then returns a summary. The built-in Simplify spawns three agents and checks code against several metrics. The host says the team uses both.",
+   "t": "2:48"
+  },
+  {
+   "idea": "A dedupe skill flags likely duplicate GitHub issues and comments with the reasons, but still needs a human to verify.",
+   "detail": "The internal skill (reverse-engineered from a linked issue) parses the issue, searches for similar issues with the gh CLI, and comments on the match once it reaches roughly 70% certainty. The comment explains the match. The host notes that a human still has to verify.",
+   "t": "10:25"
+  },
+  {
+   "idea": "The Remotion skill generates motion graphics and videos from prompts inside Claude Code.",
+   "detail": "The host says the Claude marketing team uses it across product-announcement and marketing videos. This is a claim the host makes without evidence.",
+   "t": "11:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Batch fan-out with worktrees",
+   "how": "Run the batch command with an instruction. Review the plan it produces in plan mode: current state, work units, additions, and end-to-end verification steps. Approve it; one agent starts per unit in its own worktree. The main agent merges the worktrees into main and can open a PR if a remote is set. Exact flags and settings were not shown.",
+   "when": "Parallelizable changes such as migrating from one library to another, where each unit can be worked on separately."
+  },
+  {
+   "name": "Project-specific verify skill",
+   "how": "Generate it with the skill creator or start from the repo template, letting it scan the codebase. Give it step-by-step rules for handling changes and reporting results. Add a CLI reference file listing linters, exit codes and npm test files. Add test cases and visual checks (Playwright, or the Claude Chrome extension).",
+   "when": "Any project where the agent needs its own check that a change works before reporting done."
+  },
+  {
+   "name": "Skillify-style session capture",
+   "how": "After a session that refined a workflow, run a skill that analyses it for repeatable steps, tools, permissions and agents. Answer its clarifying questions, review the generated SKILL.md, then save it to the project.",
+   "when": "A workflow was worked out over several conversations and should be reused."
+  },
+  {
+   "name": "End-of-session tech-debt pass",
+   "how": "Create a tech-debt skill, named as the host suggests, with instructions for: identifying the session's changes, detecting duplicates, the file-structure rules, and verification with npm test and the linter. Run it at the end of each session. It fans out agents across the codebase, then creates a shared library and updates the callers.",
+   "when": "To stop duplication building up across sessions."
+  },
+  {
+   "name": "Inner-loop slash commands",
+   "how": "Wrap each repetitive step in a slash command, for example commit, push and open PR. Install existing ones from the plugin marketplace by searching (e.g. commit).",
+   "when": "Any workflow repeated many times a day."
+  },
+  {
+   "name": "Issue dedupe with a confidence threshold",
+   "how": "Parse the incoming issue, search for similar issues with the gh CLI, and set a threshold (about 70%). Above it, comment on the older issue with the reasons for the match. A human checks before closing.",
+   "when": "Busy repos where the same bug gets reported repeatedly."
+  },
+  {
+   "name": "Security scan, then fix",
+   "how": "Run the built-in security scan across the repo, read the findings, then prompt Claude to implement fixes.",
+   "when": "Before shipping, especially on large codebases where issues are easy to miss."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude Code batch command",
+  "git worktrees",
+  "frontend-design plugin",
+  "Code Simplifier plugin",
+  "Simplify (built-in)",
+  "Claude Code security scan (built-in)",
+  "commit command plugin",
+  "Remotion skill",
+  "skill creator skill",
+  "Skillify (internal)",
+  "verify skill (internal)",
+  "tech-debt skill (internal)",
+  "dedupe skill (internal)",
+  "Playwright",
+  "Claude Chrome extension",
+  "gh (GitHub CLI)",
+  "npm test",
+  "Airtop (sponsor segment, not evaluated)"
+ ],
+ "numbers": [
+  {
+   "claim": "Batch spawns one agent per unit of work, each in its own worktree.",
+   "t": "1:24"
+  },
+  {
+   "claim": "Built-in Simplify spawns three agents, against one agent for Code Simplifier.",
+   "t": "2:48"
+  },
+  {
+   "claim": "Dedupe comments on a duplicate once it reaches about 70% certainty (host's figure, not benchmarked).",
+   "t": "10:25"
+  }
+ ],
+ "hot_takes": [
+  "Quality is capped at 2 because of a sponsored segment (Airtop, around 3:00 to 4:15) and a plug for a paid tier, AI Labs Pro (around 9:30 to 10:25).",
+  "Most of the internal skills (verify, Skillify, tech debt, dedupe) are described from leaked source or reverse-engineered outputs. None are verified and none can be installed as shown.",
+  "The host gives no exact install commands, config keys or prompts, so the content is a directory of skill names rather than a how-to.",
+  "The claim that the Remotion skill powers all of Anthropic's product and marketing video is unverified.",
+  "The verify and security-scan framing (agents must prove their own changes) is the most transferable idea here, and it is only sketched."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Skillify (session to SKILL.md draft with clarifying questions) overlaps with SkillForge's open question on governed skill creation and skill-worthiness scoring, though it is manual, not telemetry-driven.",
+   "action": "Compare Skillify's flow (session, then SKILL.md draft, then clarifying questions, then human review) with SkillForge's open skill-worthiness scoring question."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and runs loops and parallel agent runs. The batch pattern (plan approval, one agent per unit in its own worktree, merge step) and verify-skill gating are directly relevant.",
+   "action": "Prototype a batch-style fan-out mode for ProsHarness (plan approval, one Claude Code agent per unit in its own git worktree, merge) and check whether its loops can gate completion on a verify skill."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

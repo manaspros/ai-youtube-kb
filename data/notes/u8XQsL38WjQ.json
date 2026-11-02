@@ -1,0 +1,156 @@
+{
+ "one_line": "Better Stack runs the 90M-parameter Falcon H1 Tiny on a 2014 Raspberry Pi 1 by cross-compiling llama.cpp for ARMv6 and testing 2/4/8-bit quants; it works, but is far too slow and thin on knowledge to be useful.",
+ "summary": "The speaker (Andrus, Better Stack) tries to run a small language model on a first-generation Raspberry Pi with 512 MB RAM and an ARMv6 single-core CPU. He picks Falcon H1 Tiny (90M parameters, hybrid transformer plus Mamba) and argues for legacy Q4-style quantization over IQ quants, because IQ formats need CPU instructions the Pi lacks. Compiling llama.cpp on the Pi would take an estimated 18 hours, so he cross-compiles it on a Mac with flags that disable shared libs, NEON and OpenMP, then copies the binary over SSH. He runs with one thread, a 128-token context, a 32-token output cap and mmap disabled for memory stability. The 2-bit model produces near-nonsense at roughly one token every three seconds, the 4-bit model gives a coherent greeting, and the 8-bit model answers a capital-city question wrong for Albania but right for Belgium. His verdict: theoretically possible, but not fast, not precise and not for production.",
+ "speakers": [
+  "Andrus"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Technology Innovation Institute",
+  "IBM",
+  "Raspberry Pi"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "local-ai",
+  "inference-serving"
+ ],
+ "tags": [
+  "raspberry-pi",
+  "llama.cpp",
+  "quantization",
+  "gguf",
+  "arm",
+  "armv6",
+  "cross-compilation",
+  "small-models",
+  "falcon-h1",
+  "edge-inference",
+  "mamba",
+  "hybrid-architecture"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Falcon H1 Tiny is a 90M-parameter model from the Technology Innovation Institute, built to probe the lower bound of language modeling.",
+   "detail": "Chosen as the candidate small enough for a 512 MB board. Speaker says it is probably among the smallest AI models available; not verified in the video.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The model uses a hybrid transformer plus Mamba architecture, the same family IBM used for its tiny Granite 4 models.",
+   "detail": "Speaker presents this as the reason the model can be so small; he links an earlier video on Granite 4.",
+   "t": "1:08"
+  },
+  {
+   "idea": "Pick legacy Q4 quantization over IQ quants on old CPUs.",
+   "detail": "Falcon ships in 2-, 4- and 8-bit variants. IQ (importance) quants rely on bit manipulation that needs modern CPU instructions, which the ARMv6 Pi lacks. Q4 is the speaker's chosen middle ground for size versus quality.",
+   "t": "1:08"
+  },
+  {
+   "idea": "Native compilation on the Pi is impractical, so cross-compile on a laptop.",
+   "detail": "Speaker estimates about 18 hours on the Pi, likely ending in out-of-memory failure. He builds on a Mac instead, targeting ARMv6 with VFP enabled, then copies the binary over SSH.",
+   "t": "2:17"
+  },
+  {
+   "idea": "Disable mmap when loading the model on a 512 MB 32-bit board.",
+   "detail": "Speaker says mmap can fail on 32-bit systems when no contiguous address space is free. Disabling it loads the weights into the heap, which gives more predictable memory use.",
+   "t": "5:50"
+  },
+  {
+   "idea": "Quantization level is a sharp quality cliff at this size.",
+   "detail": "The 2-bit model gives near-nonsense output at about one token every three seconds. The 4-bit model returns a coherent greeting, which the speaker treats as the proof point.",
+   "t": "7:01"
+  },
+  {
+   "idea": "Tiny models lose long-tail facts first.",
+   "detail": "The 8-bit model misses the capital of Albania (says it is wrong) but answers Belgium correctly. Speaker attributes this to limited capacity in 90M parameters, so lesser-known facts are dropped.",
+   "t": "8:17"
+  },
+  {
+   "idea": "Speaker's bottom line: feasibility demo, not a deployable system.",
+   "detail": "He says it is not fast, not precise, and not for production, except perhaps for a very slow robot. The point was that it is theoretically possible.",
+   "t": "8:17"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Pick the OS image for a low-RAM board",
+   "how": "Flash Raspberry Pi OS Lite (32-bit) with Raspberry Pi Imager. In the advanced settings, pre-configure Wi-Fi and enable SSH so the board can be managed remotely. Speaker says the desktop OS idles at much more memory than Lite.",
+   "when": "Any headless Pi with 512 MB RAM where most memory should go to the model."
+  },
+  {
+   "name": "Cross-compile llama.cpp for ARMv6 on a laptop",
+   "how": "Clone llama.cpp and create a separate build directory. Use a cross-compiler toolchain on the host (the speaker calls it DocCross and says it runs on a Mac and emits Pi-legacy binaries). Target ARMv6 with the VFP math unit enabled. Configure with shared libs off (single portable binary), NEON off (Pi lacks it) and OpenMP off (lower memory). Build (about 2 minutes on his Mac), then scp the binary to a fresh directory on the Pi. Exact CMake flag names are not shown on screen.",
+   "when": "Targeting a CPU older than the one your libraries assume (no NEON), where on-device compilation would take hours or run out of memory."
+  },
+  {
+   "name": "Minimal-footprint inference invocation",
+   "how": "Prompt with a short input (speaker uses hello, how are you?). Cap output at 32 tokens. Use exactly one thread. Set context to 128 tokens. Disable mmap so weights load into the heap. Run the cross-built binary against the Q2, Q4 and Q8 Falcon H1 Tiny GGUF files. Flag names beyond the no-mmap option are not given in the transcript.",
+   "when": "Checking whether a model fits and runs on very constrained hardware, before tuning for speed."
+  },
+  {
+   "name": "Stepwise quantization sweep with graded probes",
+   "how": "Download the 2-, 4- and 8-bit variants, copy them over one at a time and test in order. Use a simple greeting first to check the model is coherent, then a factual question (capital of Albania, capital of Belgium) to see how much knowledge survived.",
+   "when": "Choosing the largest quant that still gives coherent output on a given device, and spotting knowledge loss that a greeting test would miss."
+  }
+ ],
+ "tools": [
+  "llama.cpp",
+  "Falcon H1 Tiny (90M, Technology Innovation Institute)",
+  "Raspberry Pi OS Lite 32-bit",
+  "Raspberry Pi Imager",
+  "cross-compiler toolchain (spoken as DocCross)",
+  "ssh / scp",
+  "Mamba",
+  "IBM Granite 4 (mentioned)"
+ ],
+ "numbers": [
+  {
+   "claim": "Raspberry Pi 1 (2014): 700 MHz single-core CPU, 512 MB RAM.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Falcon H1 Tiny: 90M parameters, released in 2-, 4- and 8-bit quantizations.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Estimated native llama.cpp compile time on the Pi: about 18 hours, possibly failing with out-of-memory first.",
+   "t": "2:17"
+  },
+  {
+   "claim": "Cross-build on a Mac took about 2 minutes.",
+   "t": "4:40"
+  },
+  {
+   "claim": "2-bit model throughput: about one token every three seconds.",
+   "t": "7:01"
+  },
+  {
+   "claim": "Test run settings: 1 thread, 32-token output cap, 128-token context.",
+   "t": "5:50"
+  }
+ ],
+ "hot_takes": [
+  "Speaker: a 90M model can run on a 12-year-old Pi but is 'not fast' and 'not precise', and 'the practical implementation is useless' though still cool.",
+  "Small-model knowledge is capacity-limited: lesser-known facts go first, which he uses to explain the Albania miss.",
+  "Claims 'probably the smallest AI models currently out there' without verification in the video.",
+  "Single-prompt, single-machine demo: no quality benchmark, so the 4-bit 'success' rests on one greeting."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "InferCraft targets a single RTX 5090 with vLLM and quantization (NVFP4); this video shows CPU-only quant choice depends on the target ISA, which matters only if we add a CPU or edge fallback.",
+   "action": "Low priority: if InferCraft ever needs a CPU or edge tier, check the target CPU instruction set before choosing a quant format; IQ quants need modern CPU instructions."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No Claude Code harness, checkpointing, planning or approval content.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,150 @@
+{
+ "one_line": "Pinecone's Edo Liberty argues agents need a persistent, domain-owned company knowledge layer (Nexus) that goes beyond RAG, with query-time code generation and budgeted queries. Mostly a product pitch with vendor-reported numbers.",
+ "summary": "Edo Liberty of Pinecone frames the problem as a theory-of-mind mismatch: agents are capable but start each session like a new hire with no knowledge of company tribal knowledge. He sorts knowledge into general (models already have it), private specific (RAG and vector search handle it), and tribal knowledge (not findable by search). He says a knowledge layer should be persistent, specialized and owned by domain experts, and kept current so deprecated facts are overridden quickly. His product Nexus is built from connectors, a manifest-driven \"context\" (semantic map, markdown, SQL tables, vector index, graph), and tasks (import, curate, search, and a budgeted query language). The most distinctive claim is that Nexus answers queries by generating and executing code, producing reusable programs rather than returning database results. He reports that tool-spec prompts shrink from about 150,000 tokens to under 1,000, and that early-access customers saw 77-90% token reduction and faster, more accurate answers. These results are vendor-reported and not backed by detail, and the talk ends with a launch push.",
+ "speakers": [
+  "Edo Liberty"
+ ],
+ "orgs": [
+  "Pinecone"
+ ],
+ "format": "talk",
+ "topics": [
+  "memory",
+  "rag-retrieval",
+  "context-engineering"
+ ],
+ "tags": [
+  "knowledge layer",
+  "tribal knowledge",
+  "manifest",
+  "semantic map",
+  "runtime code generation",
+  "budgeted query",
+  "agent memory",
+  "Pinecone Nexus",
+  "product pitch"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents behave like new hires on day one every session, so they need a persistent company knowledge layer, not just a smarter model or more tools.",
+   "detail": "The speaker treats the gap as a theory-of-mind mismatch: the agent does not know company goals, processes, or who owns what, and must re-read documents each time.",
+   "t": "3:51"
+  },
+  {
+   "idea": "Knowledge comes in three kinds, and only the first two are solved by existing tools.",
+   "detail": "General knowledge is in the model, private documents are handled by RAG and vector search, and tribal knowledge (how the company operates) cannot be retrieved from one document.",
+   "t": "2:27"
+  },
+  {
+   "idea": "A knowledge layer must be persistent, specialized per domain with domain experts owning it, and continuously updated so that old facts are deprecated.",
+   "detail": "The CEO example: after a change, the new name should become the overriding fact at once, even when thousands of older documents say otherwise. Plain RAG keeps returning the old answer.",
+   "t": "5:09"
+  },
+  {
+   "idea": "The context is driven by a manifest: users declare the tasks, entities, and information they care about, and the system builds and maintains its own storage.",
+   "detail": "The manifest replaces hand-written skills, plugins, and markdown files. Its contents are a semantic map plus markdown notes, SQL tables, a vector index, and graph entities and indexes, all maintained by the system.",
+   "t": "9:23"
+  },
+  {
+   "idea": "Curate is the main write path: a new file or event is assimilated by consulting the manifest and semantic map, then updating tables, graph, and indexes.",
+   "detail": "Import brings data in, curate updates the world model, and search wraps internal access so that agents do not need to know the storage layout.",
+   "t": "11:39"
+  },
+  {
+   "idea": "Queries specify a budget (tokens or dollars, and time) so the agent can choose between a quick answer and an exhaustive search.",
+   "detail": "Results are grounded, structured text for agents, not chat replies. The interface is an agentic tool, not a human chat UI.",
+   "t": "13:08"
+  },
+  {
+   "idea": "Nexus answers queries by writing and running code at query time, and the code it produces is saved and can be rerun as a program.",
+   "detail": "The speaker calls this a runtime coding agent. It works like a notebook: write code, run it, inspect the result, and rewrite the failing step. Answers come from code rather than a single database query, which he says makes them more flexible.",
+   "t": "15:39"
+  },
+  {
+   "idea": "Replacing tool sprawl with a compact interface spec cuts prompt overhead dramatically.",
+   "detail": "He reports going from about 150,000 tokens of tooling to under 1,000 tokens of interface specification. He says the agent without the layer is slower, more expensive, and less accurate.",
+   "t": "17:04"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Manifest-declared knowledge base",
+   "how": "Write a manifest that lists the tasks, entities, and information a domain must track. The system then maintains its own semantic map, notes, tables, vector index, and graph from it, so no one hand-writes the storage.",
+   "when": "Shared company context used by many agents, where skills or markdown files are getting hard to maintain."
+  },
+  {
+   "name": "Curate-on-ingest",
+   "how": "On each new document or event, use the manifest and semantic map to decide which tables, graph edges, and indexes to update. Mark old facts as deprecated when new ones arrive.",
+   "when": "Information changes often and stale answers are costly, such as org charts, policies, or customer facts."
+  },
+  {
+   "name": "Budgeted agent queries",
+   "how": "Pass a token or dollar budget and a time limit with each query, and get back grounded, structured text the agent can parse.",
+   "when": "Agents need to trade off speed, cost, and accuracy per call instead of always getting the same depth of search."
+  },
+  {
+   "name": "Query-time code generation over a knowledge layer",
+   "how": "Let the engine write and execute code against the stored data to answer a question, then keep the working program so it can be rerun.",
+   "when": "Questions need multi-step logic that a single retrieval or SQL call cannot express, and the answer should be repeatable."
+  },
+  {
+   "name": "Compact interface spec in place of tool sprawl",
+   "how": "Expose only the few interfaces needed to query the knowledge layer, instead of giving the agent a large tool set to learn each time.",
+   "when": "The agent's prompt is filling up with tool definitions and it is spending time figuring out where data lives."
+  }
+ ],
+ "tools": [
+  "Pinecone Nexus",
+  "vector database",
+  "SQL tables",
+  "graph database",
+  "markdown notes"
+ ],
+ "numbers": [
+  {
+   "claim": "Tooling prompt reduced from about 150,000 tokens to under 1,000 tokens for interface specs (vendor claim)",
+   "t": "17:04"
+  },
+  {
+   "claim": "Token reduction of 77% to 90% commonly seen in early-access customers (vendor-reported, no methodology given)",
+   "t": "18:31"
+  },
+  {
+   "claim": "Up to 20-30%, sometimes 77%, faster (vendor-reported)",
+   "t": "18:31"
+  },
+  {
+   "claim": "Example of a stale-fact problem: 9,000 documents with an outdated fact spanning ten years",
+   "t": "6:32"
+  }
+ ],
+ "hot_takes": [
+  "Agents need a separate persistent knowledge layer, and RAG alone will keep returning old facts after a change.",
+  "Code generated at query time and saved as a rerunnable program beats a database query for flexibility.",
+  "Giving agents many tools is a bigger cost than most people admit; a compact interface is enough."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already has tiered memory, GraphRAG, and conflict resolution with provenance. The manifest idea and budgeted queries map onto its retrieval layer.",
+   "action": "Add an optional token or dollar budget and time limit to the MemoryMesh retrieval call so the agent can choose between fast and exhaustive search, and measure the latency and accuracy trade-off with the existing RAGAS evals."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Checkpoint and resume of long Claude Code runs could benefit from a declared list of what must persist, but the talk is about enterprise knowledge, not run state.",
+   "action": "Consider whether ProsHarness checkpoints could be built from a short manifest of tracked entities instead of free-form notes; low priority."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The talk gives a framework for why agents lose company context, which is useful background for context-engineering work.",
+   "action": "Read the transcript sections on manifest and curate if designing shared agent memory; no code change needed yet."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

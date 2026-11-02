@@ -1,0 +1,201 @@
+{
+ "one_line": "Samuel Colvin (Pydantic) live-demos optimizing a structured-output extraction prompt with GEPA against a golden dataset, then serving managed prompt variables from Logfire without redeploying. Main takeaway: deterministic golden-set evals plus automated prompt search help most for cheaper models and private data.",
+ "summary": "Samuel Colvin walks through a workshop-style demo of agent prompt optimization using the GEPA library (auto-captioned as \"JEPA\") on a political-dynasty extraction task built with Pydantic AI. He starts with a golden dataset of MPs and their political relations, a deterministic custom evaluator, and a comparison of a simple prompt (85-87% accuracy) against a hand-written expert prompt (92%). GEPA then proposes and keeps candidate prompts from a Pareto frontier and reaches about 96.7%, though the final prompt becomes verbose and has overfit edge cases such as excluding uncles and aunts. He then shows Logfire managed variables, typed Pydantic config pushed from code and pulled at runtime with percentage targeting, so prompts can change in a running service without redeploying. He closes with caveats: optimization pays off most for cheaper models and large private data, evals are hard when no golden answer exists, and a model change means re-optimizing. Much of the talk promotes Logfire, which tempers the takeaways somewhat.",
+ "speakers": [
+  "Samuel Colvin"
+ ],
+ "orgs": [
+  "Pydantic",
+  "Shopify",
+  "Harvey",
+  "Legora",
+  "OpenAI",
+  "Anthropic"
+ ],
+ "format": "workshop",
+ "topics": [
+  "evals",
+  "context-engineering",
+  "observability"
+ ],
+ "tags": [
+  "prompt-optimization",
+  "gepa",
+  "pydantic-ai",
+  "logfire",
+  "managed-variables",
+  "golden-dataset",
+  "deterministic-evals",
+  "structured-output",
+  "overfitting",
+  "feedback-loops",
+  "dspy",
+  "ab-testing",
+  "privacy-evals"
+ ],
+ "key_ideas": [
+  {
+   "idea": "GEPA is a genetic-style optimizer over a string or structured object. It keeps the best candidates on a Pareto frontier, mixes them, and proposes new ones, so it is closer to breeding the best candidates than to random search.",
+   "detail": "The optimized target can be a prompt or a JSON/dict of keyed components. Multiple keys (model, tools, individual prompt lines) can be recombined from the best values seen so far.",
+   "t": "2:33"
+  },
+  {
+   "idea": "Prefer a deterministic custom evaluator against a golden dataset over LLM-as-judge.",
+   "detail": "Speaker calls LLM-as-judge risky ('lunatics running the asylum'). His extractor scores each case against golden answers and reports accuracy, with partial credit for near matches (e.g. 0.9 when the description differs slightly).",
+   "t": "18:39"
+  },
+  {
+   "idea": "Baseline numbers: a simple one-line prompt scored about 85-87%, a hand-written detailed prompt about 92%, and GEPA-optimized prompt 96.7%.",
+   "detail": "The gain from the human expert prompt was about 5 points before any automated search. The GEPA prompt is noticeably more verbose and more specific about what counts as a relation.",
+   "t": "26:40"
+  },
+  {
+   "idea": "Optimization value depends on data privacy and model tier. It matters most for cheaper or faster models and for large private domain data that frontier models were not trained on.",
+   "detail": "For frontier models, which often answer correctly from public knowledge, the gain is smaller. The speaker notes that this demo uses public data, which is a weak proxy for private data.",
+   "t": "41:35"
+  },
+  {
+   "idea": "Overfitting and the verbose-prompt problem are the main failure modes of prompt search, and the fixes are data and structure.",
+   "detail": "Optimizer rewrites produce long prompts. Splitting the prompt into keyed sentences and letting the optimizer pick a subset keeps prompts short. Overfitting needs roughly 2x the data covering the full input space, with separate train and eval sets, plus a final check harness. The optimized prompt excluded uncles and aunts, which the golden set counts as relations, because the training subset probably did not cover them.",
+   "t": "44:15"
+  },
+  {
+   "idea": "Managed variables let a running service pick up a typed config change without redeploying.",
+   "detail": "A Pydantic model (instructions, model, max tokens, temperature) is pushed from code with a CLI, then edited in the platform. The service reads the variable at call time, and targeting sets what share of calls get which value (A/B style, using the OpenFeature standard). The demo swapped the language of the reply and the model live.",
+   "t": "1:00:31"
+  },
+  {
+   "idea": "Implicit user behavior is the best free eval signal for a chat agent.",
+   "detail": "If a user retries, rephrases, or says the answer was wrong, that is evidence the response failed. If they move on, the response is probably acceptable. The speaker compares this to Google's old dwell-time signal. Thumbs up/down clicks are rarely used.",
+   "t": "1:11:52"
+  },
+  {
+   "idea": "Privacy-preserving evals: record only categorical grades, not raw inputs and outputs.",
+   "detail": "Legal-tech customers keep client data inside their boundary and send only categorical performance scores (good/bad or about 50 grades) to the observability platform. Self-hosting in a VPC is the other option.",
+   "t": "1:16:02"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Golden-dataset structured-output eval with a custom deterministic evaluator",
+   "how": "Create one case per entity from a golden answer file. Run the agent with the candidate prompt via Pydantic AI's agent override. Score each case with code (exact or partial match on the extracted list). Run cases in parallel with a concurrency cap (5 here), then compare experiments.",
+   "when": "Any extraction or classification task where ground-truth answers exist or can be created, before you tune prompts or models."
+  },
+  {
+   "name": "Compare-two-runs error analysis",
+   "how": "Run the baseline and the candidate prompt as separate experiments on the same cases, then look at per-case diffs (false positives like a sports commentator's father counted as a political relation). Turn the recurring mistakes into prompt rules.",
+   "when": "When the aggregate accuracy moves but you do not yet know why, or to find the edge cases to write into the prompt."
+  },
+  {
+   "name": "GEPA prompt search with an expert-prompt-engineer proposer",
+   "how": "Use a GEPA adapter whose proposer is a cheap agent. Feed it failed cases and traces, have it propose a new system prompt, evaluate it on the training set, and keep candidates on the Pareto frontier. Use GPT-4.1 as the proposer for speed. The speaker also wrapped the sync library's HTTP client per call to avoid async errors.",
+   "when": "When a task has a golden set and a cheaper model needs to match a bigger one, or you need better quality within a fixed cost."
+  },
+  {
+   "name": "Keyed-component optimization instead of free-form prompt rewrites",
+   "how": "Split the instructions into a dict of keyed lines or sentences, or put model and tool choices in the same dict. The optimizer selects a subset of values, so the prompt stays short.",
+   "when": "When optimizer output keeps growing in length and latency rises, which the speaker saw with GPT-5 mini."
+  },
+  {
+   "name": "Typed managed variables for live prompt and config changes",
+   "how": "Define the config as a Pydantic model with a code default. Push it with a CLI, then read it at call time. Use percentage targeting to roll out a new value to a share of traffic. Use a separate API key with variable permissions for production.",
+   "when": "When prompt or model changes must go out quickly in production or staging without a long CI and deploy cycle."
+  },
+  {
+   "name": "Trace the optimizer itself",
+   "how": "Instrument the library's print output so the optimizer's proposals, evaluations and scores appear as spans. The speaker turned off console logging because the output was too noisy to read.",
+   "when": "When an optimization run is long and opaque, and you need to inspect why it chose a candidate."
+  },
+  {
+   "name": "Train/eval split with extra coverage",
+   "how": "Use roughly twice the data needed to cover the input space, split it into a training set for the optimizer and a held-out evaluation set, and add a final check for known systematic errors.",
+   "when": "Before trusting an optimized prompt's score, especially when it is high (96%) but wrong on known categories."
+  }
+ ],
+ "tools": [
+  "Pydantic AI",
+  "Pydantic Logfire",
+  "GEPA (called JEPA in captions)",
+  "DSPy",
+  "OpenFeature",
+  "Beautiful Soup",
+  "FastAPI",
+  "Pydantic AI Gateway",
+  "uv"
+ ],
+ "numbers": [
+  {
+   "claim": "Initial simple prompt accuracy on the golden set: 85% (first run) and 87% (comparison run)",
+   "t": "22:28"
+  },
+  {
+   "claim": "Expert hand-written prompt accuracy: 92% vs 87% for the initial prompt on 65 test cases",
+   "t": "26:40"
+  },
+  {
+   "claim": "GEPA-optimized prompt reached 96.7% accuracy, using about 400 calls on the 650-MP set",
+   "t": "44:15"
+  },
+  {
+   "claim": "Optimization cost about $2 while roughly 50% complete; the speaker estimates a few hundred dollars if the whole room runs it",
+   "t": "31:33"
+  },
+  {
+   "claim": "Shopify: moving from GPT-5 over whole sites to an agentic Qwen setup with GEPA-style optimization reportedly cut cost from about $5M/year to roughly $60-70k/year (transcribed unclearly; the speaker says this also involved an architecture change, not just prompt optimization)",
+   "t": "30:31"
+  },
+  {
+   "claim": "Hedge funds reportedly spend about $20,000 a night running full eval sets to reduce variance (secondhand claim)",
+   "t": "41:35"
+  },
+  {
+   "claim": "Private-equity example: 200 million invoices, where a cheaper tuned model saves about $10M versus a frontier model, against one analyst at half a million dollars working for three weeks",
+   "t": "52:38"
+  },
+  {
+   "claim": "Logfire free tier described as very generous; the demo key was limited to $1,000",
+   "t": "12:06"
+  },
+  {
+   "claim": "Full optimization run used the 650 MP set; the quick comparison used 65 test cases",
+   "t": "24:09"
+  }
+ ],
+ "hot_takes": [
+  "Observability for AI is a feature that will be absorbed by general observability or by AI platforms; he does not believe in a separate category.",
+  "LLM-as-judge is risky; a deterministic golden-set evaluator is much better when you can write one.",
+  "GEPA-style optimization is 'not actually that groundbreaking' compared with the complexity of the models.",
+  "Most coding-agent teams work mostly on vibes, and most people never run evals.",
+  "Fine-tuning is usually not worth it versus improving the harness and waiting for the next model, except where volume is enormous, as in finance."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "EvolveCraft and SkillForge need a success signal and a way to improve agents. This talk shows a golden-set eval, a deterministic scorer and a train/eval split as the loop for automated prompt improvement.",
+   "action": "Prototype a GEPA-style optimizer on one AgentOS agent prompt with a deterministic golden-set scorer and a held-out split, before trying it on skill mining."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs plan, critique and debate steps that are prompt-driven. The keyed-component idea (optimizer chooses from a fixed set of lines rather than rewriting) and the caution about overfitting apply directly.",
+   "action": "Store the plan and critique prompts as keyed components, and evaluate prompt changes against a golden set of past plan outcomes with a held-out split."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Entity resolution and data-quality work needs a golden set and a deterministic scorer. The talk's warnings on overfitting, held-out data and avoiding LLM-as-judge apply to that work.",
+   "action": "For ER evals, keep a held-out split of the golden pairs and use the deterministic rule scorer as the primary metric, keeping LLM judging only as a secondary check."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Context engineering is covered mainly as a side note: compaction and context restarts are optimization targets, and a smaller model with a more deterministic workflow can replace one large prompt.",
+   "action": "Read the Shopify example and the compaction note if working on long-running agent context strategy."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

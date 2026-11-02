@@ -1,0 +1,44 @@
+# Python Logging Made EASY with Loguru
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `y8qLhov8QU8` · [watch](https://youtu.be/y8qLhov8QU8) · **date:** 2025-11-02 · **length:** 9:49 · **format:** tutorial · **quality:** 3/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Better Stack
+- **topics:** dev-tools, observability · **tags:** python, logging, loguru, json-logs, log-rotation, exception-logging, structured-logging, better-stack, logtail, contextualize, bind
+
+> Tutorial on Python logging with the loguru package: one-import setup, reconfiguring sinks and levels, context binding, exception capture, JSON and file output, and shipping logs to Better Stack.
+
+## Summary
+The presenter argues that the standard Python logging module and bare print statements are painful, and proposes loguru as a near drop-in replacement. Importing the single preconfigured logger gives formatted output (time, level, scope, module, line number, message) with no setup. The video then covers reconfiguring with logger.remove() and logger.add(), including lowering the minimum level so TRACE appears, and changing the format string. It shows two ways to attach context to log lines: logger.bind() returns a child logger, while logger.contextualize() used in a with-block scopes the context without creating a new logger. Exceptions can be captured with logger.catch() as a with-block or decorator, which records the stack trace. The last sections cover serialize=True for JSON output, file sinks, and adding a second handler that sends logs to Better Stack. The Better Stack part is largely a product pitch with a short setup walkthrough, and the video gives no benchmarks or production-scale evidence.
+
+## Key ideas
+- **A single preconfigured logger works with one import and gives useful default output.** — Importing logger from loguru needs no setup. Default lines show time, level, scope (main), module, line number and message. The presenter positions it as a near drop-in replacement for the standard library logger that needs only pip install. ([0:00](https://youtu.be/y8qLhov8QU8?t=0))
+- **Default minimum level is DEBUG, so TRACE is hidden until you reconfigure.** — Everything is configured through logger.add(). The presenter calls logger.remove() to drop the default handler, then adds a stderr handler with level set to TRACE. Only after that do trace messages appear. ([1:10](https://youtu.be/y8qLhov8QU8?t=70))
+- **Use logger.bind() for scoped context and logger.contextualize() for block-scoped context.** — bind() returns a child logger that carries extra fields (the example uses seller_id and product_id) and leaves the parent logger unchanged, which suits per-request or per-function scopes. contextualize() modifies the extra dictionary directly inside a with-statement, without a new logger instance. Both need the format string to include the extra field. ([3:33](https://youtu.be/y8qLhov8QU8?t=213))
+- **logger.catch() logs exceptions with their stack trace, either as a with-block or as a decorator.** — The example divides 50 by zero. The error message and stack trace land in the log record's extra data. The decorator form gives the same output. The catch call accepts arguments to choose which exceptions and levels are caught; the presenter points to the docs for those options. ([4:38](https://youtu.be/y8qLhov8QU8?t=278))
+- **serialize=True outputs JSON, and a file path works as a sink with rotation, retention and compression.** — Setting serialize=True on the handler switches output to structured JSON for log exporters and collectors. Replacing the stderr sink with a filename such as test.log writes to a file. The presenter says retention, rotation and compression can be configured on file sinks, but the video does not show those options. ([5:53](https://youtu.be/y8qLhov8QU8?t=353))
+- **Multiple handlers can run at once, so logs can go to the console and to Better Stack together.** — Each logger.add() call adds an independent handler. The Better Stack handler is one of them, with a simplified format of just the message. The video shows the console and remote sinks both receiving messages. The Better Stack section is largely a product pitch. ([7:08](https://youtu.be/y8qLhov8QU8?t=428))
+
+## Techniques
+- **Reconfigure loguru with remove() and add()** — 1) from loguru import logger. 2) logger.remove() to drop the default handler. 3) logger.add(sys.stderr, level="TRACE", format=...) where format is a string of Python-style directives (time, level, message) separated by pipes, with optional color markup tags. Add more logger.add() calls for more sinks. The video does not show the exact format string. *When:* Any project that needs a different minimum level, output format, or additional sinks. Apply it once at startup.
+- **Add contextual fields with bind() or contextualize()** — Add the extra directive to the format string so extra fields are printed. Then either child = logger.bind(seller_id=..., product_id=...) and log through child, or with logger.contextualize(seller_id=..., product_id=...): and log inside the block. The parent logger is unaffected. *When:* Correlating or filtering log lines by entity IDs or request IDs. Use bind() for scope inside one function or object. Use contextualize() for a with-block.
+- **Capture exceptions with logger.catch()** — Wrap the failing call in with logger.catch(): ... or decorate the function with @logger.catch. The exception and full stack trace are logged automatically. Filtering arguments for exception type and log level exist, per the docs the presenter links. *When:* Background tasks or handlers where an uncaught exception should be logged with a stack trace rather than lost.
+- **Switch to JSON output with serialize=True** — logger.add(sink, serialize=True). Keep the same log calls; each record is emitted as a JSON object. *When:* Output feeds log exporters, collectors or a log store that expects structured records.
+- **Write to a rotated file sink** — logger.add("test.log") replaces the console sink with a file. The presenter says retention, rotation and compression are configurable on file sinks; the video does not show the parameter names. *When:* Persisting logs locally for long-running processes.
+- **Send logs to Better Stack alongside the console** — 1) Create a Python source in Better Stack's Telemetry > Sources and copy the source token. 2) Install the Better Stack Python package (the video's auto-caption reads it as 'logtel'). 3) from logtail import LogtailHandler, then handler = LogtailHandler(source_token="<token>"). 4) logger.add(handler, format="{message}", level=..., diagnose=..., backtrace=...), keeping the console logger.add() call. 5) Check Live Tail in Better Stack. *When:* When you want a hosted log search UI and querying alongside local console output.
+
+## Numbers
+- Default minimum log level in loguru is DEBUG, which hides TRACE messages until reconfigured. ([1:10](https://youtu.be/y8qLhov8QU8?t=70))
+- Example error: 50 divided by zero, logged with its stack trace via logger.catch(). ([4:38](https://youtu.be/y8qLhov8QU8?t=278))
+- Video length is 9:49. The Better Stack segment runs from about 7:08 to the end, roughly a quarter of the runtime. ([7:08](https://youtu.be/y8qLhov8QU8?t=428))
+
+## Hot takes
+- The video says Better Stack is 'the fastest log search on the planet' with no benchmark or evidence.
+- The opening claim that standard logging and print are both bad is opinion, not backed by data.
+- The Better Stack section is a vendor pitch built into the tutorial. It has a short real setup walkthrough, but the value depends on that product. Quality is held at 3 because the loguru content is solid and the pitch is not labelled as a sponsorship.
+- The video shows serialize=True, file sinks and the Better Stack handler but skips their options (rotation, retention, compression, diagnose, backtrace). Those are where production concerns live, and the video does not discuss them.
+
+## Tools mentioned
+loguru, Python, pip, Better Stack (Logtail), LogtailHandler (logtail Python package), sys.stderr
+
+## Relevance to our work
+- **agentos** (1/3): AgentOS observability (L4) uses Prometheus, Grafana and OTel. loguru is a Python-side logging option, and AgentOS's Rust proxy is outside its scope. → *If any Python service in AgentOS needs logs, try logger.add(..., serialize=True) and logger.contextualize(request_id=...) and compare them with the OTel log pipeline before choosing one.*
+- **prosharness** (1/3): ProsHarness wraps the Claude Code CLI and does checkpoint/resume of long runs. Per-run context and a rotated file log would help if the harness is written in Python. → *If the harness is Python, wrap each agent run in logger.contextualize(run_id=...) and write JSON logs with rotation to a file, so resumed runs can be traced.*

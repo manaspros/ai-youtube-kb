@@ -1,0 +1,200 @@
+{
+ "one_line": "Better Stack tests DeepSeek V4 Flash against seven similar models on cost, speed and output quality by building the same full-stack finance app; it is far cheaper per task but weaker on UI and slower.",
+ "summary": "The presenter looks at DeepSeek V4 Flash (0731), an open-weight model released with MIT-licensed weights on Hugging Face, roughly 300B total and 13B active parameters, and a 1M-token context. It scores 52 on the Artificial Analysis Intelligence Index, below frontier models, but the full Artificial Analysis test suite cost about $72, far less than similar-scoring models. Cost per task on the index ranks it cheapest among 21 compared models, despite it using the third-most output tokens. The main test gives eight models the same OpenCode prompt in an empty folder: build a full-stack personal finance dashboard. DeepSeek produced a semi-working CRUD app with real SQLite storage, placed second cheapest and sixth fastest, with layout bugs. GPT 5.6 Luna at max effort produced the best-looking UI for about 6 cents (12 cents without a 50% OpenRouter discount), but implemented only one page and used in-memory storage. Opus 5 cost $9.65 for a similar result. GPT 5.6 Sol at low effort was the fastest (3 min 42 s) with the UI the presenter preferred, but only some tabs worked. The presenter concludes that DeepSeek is competent, weaker on UI design, and suggests pairing an OpenAI model for UI with DeepSeek for back-end code. Evidence is one run per model with no repeated trials and no published prompt.",
+ "speakers": [
+  "Better Stack presenter (not named in transcript)"
+ ],
+ "orgs": [
+  "DeepSeek",
+  "OpenRouter",
+  "Artificial Analysis",
+  "OpenAI",
+  "Google",
+  "Hugging Face",
+  "Moonshot (maker of Kimi, not named in the transcript; omit if unverified)"
+ ],
+ "format": "review",
+ "topics": [
+  "models-research",
+  "token-cost-efficiency",
+  "coding-agents"
+ ],
+ "tags": [
+  "deepseek-v4-flash",
+  "cost-per-task",
+  "open-weight-models",
+  "openrouter",
+  "opencode",
+  "model-comparison",
+  "artificial-analysis",
+  "full-stack-app-benchmark",
+  "in-memory-db-vs-real-db",
+  "model-routing-by-task"
+ ],
+ "key_ideas": [
+  {
+   "idea": "DeepSeek V4 Flash is not frontier-grade but is much cheaper per task than similar-scoring models.",
+   "detail": "It scores 52 on the Intelligence Index, 8 points behind Kimi K3 and between GLM 5.2 and Gemini 3.6 Flash. The full Artificial Analysis suite costs about $72, roughly 10x cheaper than models with the same score and 33x cheaper than Kimi K3.",
+   "t": "0:00"
+  },
+  {
+   "idea": "On cost per task it ranks cheapest of 21 models, even though it emits many output tokens.",
+   "detail": "It is third-best on the agentic index among the same models and cheapest on cost per task, despite using the third-most output tokens. The presenter says a one-point gain from a nearby model would cost about 9x more.",
+   "t": "0:56"
+  },
+  {
+   "idea": "Token list prices are low, and third-party providers on OpenRouter are cheaper still.",
+   "detail": "DeepSeek advertises $0.14 per million input tokens and $0.28 per million output. OpenRouter providers average about $0.08 input and $0.25 output per million.",
+   "t": "2:10"
+  },
+  {
+   "idea": "Same-prompt build test in OpenCode from an empty folder is the main comparison method.",
+   "detail": "All models get one prompt to build a full-stack personal finance dashboard. The presenter scores cost, time, working features, stack choice and whether the data layer is a real database.",
+   "t": "3:36"
+  },
+  {
+   "idea": "DeepSeek's app works largely but has layout issues, and it uses a real database.",
+   "detail": "Accounts, transactions, goals, add funds and send money work, with some card-sizing and responsiveness bugs. Stack is React 18, Recharts, Express and node SQLite. The presenter notes it is second cheapest and sixth fastest.",
+   "t": "3:36"
+  },
+  {
+   "idea": "Cheap is not the same as good on UI: the most expensive model did not give the best result.",
+   "detail": "Opus 5 at low effort cost $9.65, about 160x the cheapest runs, and its feature UI was praised, but the data layer was in-memory. GPT 5.6 Luna and GPT 5.6 Sol at about $0.06 and $0.90 produced stronger UIs.",
+   "t": "4:46"
+  },
+  {
+   "idea": "Persistence and feature completeness varied more than cost did.",
+   "detail": "GLM 5.2 (extra high, 47 min, $3.68) used Next.js with Prisma and a real database. Gemini 3.6 Flash used a JSON file. GPT 5.5 built a single-page app with in-memory storage. Kimi K3 used vanilla JS with Express and a JSON file. The presenter concludes many cheap runs skipped real databases or tabs unless the prompt asked for them.",
+   "t": "5:56"
+  },
+  {
+   "idea": "Suggested split: an OpenAI model for UI and DeepSeek V4 Flash for back-end code.",
+   "detail": "The presenter says DeepSeek's back-end code is good, though its runs were slow (23 min). He suggests combining the two models to get the best of both.",
+   "t": "8:14"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Cost-per-task ranking instead of per-token price",
+   "how": "Compare models by total cost for a complete task (for example the Artificial Analysis cost-per-task view), not list price per million tokens. Account for token volume: a cheap model that emits many output tokens can still be expensive, and the reverse can also hold.",
+   "when": "Picking a default or cheap model for agent pipelines or coding runs where budget per task matters."
+  },
+  {
+   "name": "Same-prompt, from-scratch build benchmark",
+   "how": "Run each candidate model in the same coding harness (OpenCode here) with the same prompt in an empty folder. Record cost, wall-clock time, which features work, chosen stack, and whether the data layer is a real database or in-memory/JSON storage. Do not change the prompt between runs.",
+   "when": "A quick, reproducible way to compare coding models on end-to-end app generation when benchmarks do not reflect your use case."
+  },
+  {
+   "name": "Check provider prices on OpenRouter",
+   "how": "Compare the same model across OpenRouter providers. The presenter saw averages of about $0.08 per million input tokens versus $0.14 at the vendor list price for DeepSeek V4 Flash, and promotional discounts (here 50% on GPT 5.6 Luna) can change the ranking.",
+   "when": "Routing a model through a gateway, where price varies by provider and by promotion."
+  },
+  {
+   "name": "Split models by task strength",
+   "how": "Use one model for UI or front-end generation and another for back-end or data-layer code, based on observed strengths. The presenter suggests an OpenAI model for UI and DeepSeek V4 Flash for the back end.",
+   "when": "Multi-part app generation where each part can be sent to a different model."
+  },
+  {
+   "name": "Explicit prompt for real persistence",
+   "how": "State in the prompt that the app must use a real database (for example SQLite) and every feature tab must work. The presenter says the in-memory and JSON-file results would likely change with this constraint, but did not test it.",
+   "when": "Generating apps where in-memory or JSON storage would be an unacceptable result."
+  }
+ ],
+ "tools": [
+  "DeepSeek V4 Flash 0731",
+  "DeepSeek V4 Flash",
+  "Kimi K3",
+  "GLM 5.2",
+  "Gemini 3.6 Flash",
+  "Gemini 3.5 Flash",
+  "GPT 5.6 Luna",
+  "GPT 5.6 Sol",
+  "GPT 5.6 Terra",
+  "GPT 5.5",
+  "Opus 5",
+  "MuseSpark",
+  "OpenCode",
+  "OpenRouter",
+  "Artificial Analysis Intelligence Index",
+  "React 18",
+  "React 19",
+  "Recharts",
+  "Express",
+  "node sqlite",
+  "Next.js",
+  "Prisma",
+  "Hugging Face",
+  "Sonic 5 (auto-caption; probably Sonnet 5)",
+  "RKGI (auto-caption; probably ARC-AGI)"
+ ],
+ "numbers": [
+  {
+   "claim": "DeepSeek V4 Flash: about 300B total parameters, 13B active, 1M-token context, MIT-licensed weights",
+   "t": "0:00"
+  },
+  {
+   "claim": "Intelligence Index score 52, 8 points behind Kimi K3",
+   "t": "0:00"
+  },
+  {
+   "claim": "Full Artificial Analysis test suite cost about $72; roughly 10x cheaper than same-score models and 33x cheaper than Kimi K3",
+   "t": "0:00"
+  },
+  {
+   "claim": "Cost per task on the index: cheapest of 21 models; about 8x cheaper than Kimi K3 (low effort) and about 18x cheaper than the Gemini models at the same score",
+   "t": "0:56"
+  },
+  {
+   "claim": "Moving one point up on the index from a nearby model would cost about 9x more",
+   "t": "0:56"
+  },
+  {
+   "claim": "Advertised DeepSeek prices: $0.14 per million input tokens, $0.28 per million output; OpenRouter average about $0.08 input and $0.25 output",
+   "t": "2:10"
+  },
+  {
+   "claim": "On the RKGI benchmark (likely ARC-AGI) it beats Kimi K3 at max effort and is about 20x cheaper",
+   "t": "2:10"
+  },
+  {
+   "claim": "Build test costs (USD) and times: DeepSeek V4 Flash (second cheapest, 6th fastest, 23 min as stated later); GPT 5.6 Luna max $0.06 in 6 min ($0.12 without a 50% discount); Opus 5 low $9.65 (over 160x the others); GLM 5.2 extra high $3.68 in 47 min; Gemini 3.6 Flash $1.69 in 11 min; GPT 5.5 medium $1.15 in 7 min; GPT 5.6 Sol low $0.90 in 3 min 42 s; Kimi K3 low $0.58 in 8 min",
+   "t": "3:36"
+  },
+  {
+   "claim": "DeepSeek V4 Flash took 23 minutes on the build test (presenter calls this slow)",
+   "t": "8:14"
+  }
+ ],
+ "hot_takes": [
+  "The title frames the video as a case where token cost does not matter, but the presenter's own results show DeepSeek was slow (23 min) and produced weaker UI, so cost is not the only trade-off.",
+  "The build test uses one run per model with no repeats, a single prompt and subjective UI judgment, so the rankings are anecdotal, not statistically meaningful.",
+  "The 50% OpenRouter discount on GPT 5.6 Luna changes its cost ranking; the presenter flags this himself.",
+  "The most expensive model (Opus 5, $9.65) did not produce a better app than cheap ones, which undercuts the idea that higher spend buys better results on this task.",
+  "The presenter argues Chinese labs undercutting US labs on price could start a price war that benefits users.",
+  "No sponsor segment is visible in the transcript; the recommendations are the presenter's own opinion from one test."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L1 Govrix Scout has budgets and strategy routing; this video's cost-per-task method and provider price variance directly inform routing defaults and budget rules.",
+   "action": "Add cost-per-task (not per-token list price) as a routing metric for the strategy router, and test an OpenRouter provider-price lookup before choosing a default cheap model."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code and may pick subagent models; the split of UI vs back-end model is a small idea for subagent model selection.",
+   "action": "Consider letting a planning step assign different models to frontend and backend subtasks, and log cost and time per subtask."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The same-prompt, from-scratch build benchmark with cost, time and persistence checks is a reusable eval design for coding agents and model selection.",
+   "action": "Reuse this same-prompt build-and-score method, adding a check that the data layer is a real database, to compare cheap coding models before committing to one."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

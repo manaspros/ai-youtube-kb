@@ -1,0 +1,173 @@
+{
+ "one_line": "Notion's GTM engineer explains a know/decide/act/learn system that unifies sales and self-serve signals, with humans and agents working in one shared context layer on durable workflows.",
+ "summary": "Flora Liu, an engineer on Notion's GTM engineering team, describes replacing a fragmented sales and marketing tool stack with one decisioning system. The team's architecture has four layers: know (a trusted per-customer context), decide (pick the next best step), act (emit a lifecycle email, in-app nudge, or rep task), and learn (feed outcomes back into decisions). Humans and agents operate on the same substrate, with agents doing the repetitive gathering and drafting and humans approving anything customer-facing. The team owns the context layer and rents orchestration, email, and enrichment, using Snowflake for modeled entities, DynamoDB for fast profile reads, and Temporal for durable per-signal workflows. Reported results are early: a 63% higher next-step rate for users who got context-aware recommendations, and more qualified opportunities for enterprise reps over 13 weeks, with no baseline given. The talk is a practitioner case study with few hard numbers and some company-promotional framing.",
+ "speakers": [
+  "Flora Liu"
+ ],
+ "orgs": [
+  "Notion"
+ ],
+ "format": "talk",
+ "topics": [
+  "enterprise-adoption",
+  "multi-agent",
+  "agent-architecture",
+  "data-engineering"
+ ],
+ "tags": [
+  "gtm-engineering",
+  "signals",
+  "durable-workflows",
+  "temporal",
+  "human-in-the-loop",
+  "context-layer",
+  "decision-logs",
+  "entity-resolution",
+  "snowflake",
+  "dynamodb",
+  "subagents",
+  "build-vs-buy"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Four-question loop as the architecture",
+   "detail": "Every GTM workflow reduces to: what do we know about the customer, what should happen next, how do we execute safely, and did it work. These map to know, decide, act, learn, with learn feeding back into decide.",
+   "t": "5:21"
+  },
+  {
+   "idea": "Humans and agents share one loop and one substrate",
+   "detail": "Agents do repetitive work at scale (gathering context, researching, drafting). Humans supply judgment, approve recommendations, and own the relationship. The agent is treated as another operator inside the same system, not a layer on top. Context is kept readable to both.",
+   "t": "6:25"
+  },
+  {
+   "idea": "No direct agent-to-customer contact; untrusted form input",
+   "detail": "For sales-assist workflows, humans stay in the loop by default and approve agent actions. Inbound contact-sales form data is treated as untrusted input so trust boundaries hold when an agent is in the middle.",
+   "t": "6:25"
+  },
+  {
+   "idea": "Build the context layer, rent everything else",
+   "detail": "The team builds its own customer context model because that is where its edge is and it must be debuggable. It rents orchestration (Temporal), email, and enrichment (Clay). The choice is made per layer, not as a blanket build-or-buy rule.",
+   "t": "7:47"
+  },
+  {
+   "idea": "Signal as the unit of action",
+   "detail": "A signal is one customer event important enough to change the next step, either user-driven (hit AI limit, contacted sales) or external (funding, hiring, tech-stack change). External signals make the system proactive. A signal service decides whether an action exists, who owns it, and emits a task for a human or agent.",
+   "t": "12:05"
+  },
+  {
+   "idea": "Each signal runs as a durable workflow",
+   "detail": "Every signal becomes a Temporal workflow covering enrichment, web search, and drafting. Retries, dedupe, and resume-from-failure are handled by the engine, so one malformed transcript cannot fail the whole batch. Every LLM step is traced for evaluation.",
+   "t": "13:25"
+  },
+  {
+   "idea": "Decision logs tie outcomes to the decision that caused them",
+   "detail": "Every action is logged as a decision, and outcomes thread back to it. Engagement and lifecycle-message history feed the decision layer, so it can continue, advance, or pivot a thread. The speaker frames this as the self-improvement loop.",
+   "t": "14:48"
+  },
+  {
+   "idea": "Shadow the best human first, and start with the most legible workflow",
+   "detail": "The team shadowed top reps to find the most repetitive part of their job and encoded that. The speaker's warning: encoding a mediocre process yields a mediocre agent. The aim is to raise the floor so new reps can learn from strong reps' patterns.",
+   "t": "15:47"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Four-layer know/decide/act/learn loop",
+   "how": "Build a trusted per-entity context layer, a decision step that picks one next action, an action step that emits concrete tasks or messages, and a feedback step that links outcomes to the decision logs.",
+   "when": "When automations across several tools keep acting on stale or conflicting data and you need a closed loop, not one-shot automations."
+  },
+  {
+   "name": "Denormalized key-addressable profile plus keyed unstructured artifacts",
+   "how": "Compute versioned, modeled entities (accounts, contacts, eligibility, facts) in the warehouse with owner and timestamp per row. Publish a join-free profile per ID to a key-value store for millisecond reads. Store agent-generated notes and summaries under the same IDs so one lookup returns structured and unstructured context.",
+   "when": "When agents need low-latency, join-free reads of entity state and must combine structured data with notes."
+  },
+  {
+   "name": "Durable workflow per event with engine-managed retries",
+   "how": "Run each trigger as a workflow on a durable engine. Write only the sequential business logic and let the engine handle retries, dedupe, and resume after failure, isolating each item so one bad input cannot fail the batch.",
+   "when": "When each event fans out to several flaky network calls such as LLM, enrichment, or search APIs, and batches must survive single-item failures."
+  },
+  {
+   "name": "Parallel research subagents with score-and-select review loop",
+   "how": "Fan out concurrent research sub-agents, generate several candidate drafts, score them, then have a review agent pick the best and revise it. Repeat the revise step if needed.",
+   "when": "For outbound drafting where quality varies and a cheap scored best-of-N with a reviewer beats a single draft."
+  },
+  {
+   "name": "Single eligibility and routing classifier",
+   "how": "Move segmentation and signal definitions out of individual tools into one shared place that every system reads. One classifier decides what the customer should receive, which prevents double sends.",
+   "when": "When several tools each apply their own eligibility rules and produce duplicate or contradictory messages."
+  },
+  {
+   "name": "Human approval gate by default, untrusted inbound input",
+   "how": "Agents draft and gather; a human approves before anything reaches a customer. Treat form submissions and other inbound text as untrusted before they enter agent context.",
+   "when": "For any customer-facing action with agents in the loop, where a wrong message damages trust."
+  },
+  {
+   "name": "Trace every LLM step and log decisions with outcome links",
+   "how": "Trace each LLM call so quality can be evaluated later. Record each automated action as a decision entry and join downstream outcomes back to it for offline improvement.",
+   "when": "When you need to measure whether agent decisions improve over time, not only whether they ran."
+  }
+ ],
+ "tools": [
+  "Notion",
+  "Snowflake",
+  "DynamoDB",
+  "Temporal",
+  "Clay",
+  "Gong",
+  "Salesforce",
+  "Outreach",
+  "Nooks",
+  "ZoomInfo",
+  "Snowflake (product usage)",
+  "Notion custom agents",
+  "MCP"
+ ],
+ "numbers": [
+  {
+   "claim": "Users who received context-aware lifecycle recommendations were 63% more likely to take the next step (no baseline or sample size given)",
+   "t": "18:32"
+  },
+  {
+   "claim": "Enterprise reps show increased qualified opportunities over the last 13 weeks (no figure given)",
+   "t": "18:32"
+  },
+  {
+   "claim": "Each cold outbound signal produces three email drafts that are scored, and the best is revised by a review agent",
+   "t": "12:05"
+  },
+  {
+   "claim": "Snowflake ingests all GTM vendors with daily transforms, some real-time; DynamoDB serves profiles in milliseconds with no joins",
+   "t": "9:13"
+  }
+ ],
+ "hot_takes": [
+  "If you encode a mediocre process, you get a mediocre agent, so shadow your best human first.",
+  "Be headless by default and design for agents as operators, not just copilots.",
+  "Build versus buy is a per-layer decision: own the context layer, rent orchestration, email, and CRM.",
+  "Customer-facing agent actions should stay behind human approval, especially where inbound data is untrusted."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The decision-log plus outcome-linking loop maps onto the open question of what success signal SkillForge should use, but the talk gives no method for scoring skill-worthiness.",
+   "action": "Record each agent action as a decision entry with an ID, and join later outcomes back to it as one candidate success signal for SkillForge."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Per-step durable execution with retries and resume-from-failure is close to ProsHarness checkpoint/resume, and the approval gate matches its phone-driven approvals.",
+   "action": "Compare ProsHarness checkpoints against per-step retry and dedupe semantics, and check that one malformed step cannot stall a whole batch."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Strong, directly applicable pattern for the recurring interests: a plain-markdown context layer that both humans and agents can navigate, with an approval gate and entity-level provenance.",
+   "action": "Read the talk's context-layer section and design a CLAUDE.md-style context hierarchy that is readable to both humans and agents, with source and timestamp per fact."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

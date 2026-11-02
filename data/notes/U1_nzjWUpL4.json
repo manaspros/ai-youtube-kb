@@ -1,0 +1,141 @@
+{
+ "one_line": "Three practical ways to turn website designs into working Next.js UI in Cursor: a structured front-end spec prompt, a design.json built from screenshots, Browser MCP for cloning structure, and stagewise for precise element-level edits.",
+ "summary": "The host argues that handing Cursor a design image or asking it to clone a site produces hallucinated, generic output, and that agents need a structured spec up front. Method 1 is a prompt template covering required pages, user roles and auth, shared components, modals, technical requirements and framework, which an LLM such as Claude can fill in for you. Method 2 turns six or seven screenshots of a reference design into a design.json through a prompt, then tells Cursor to follow it strictly for a Next.js and Tailwind weather app, with Claude Code brought in to fix dependency conflicts. Method 3 clones a site's structure with Browser MCP, which drives a real browser tab through the Chrome extension, and the host says to strip the design section from the prompt if you want your own styling. The final method is stagewise, a Cursor-side bar that lets you select a live element and send its code location and context back to the agent, so a small change like a hover state does not disturb the rest of the layout. The video shows demos but no before/after measurements, and the first generated design needed manual correction.",
+ "speakers": [
+  "AI LABS host (unnamed)"
+ ],
+ "orgs": [
+  "Cursor",
+  "Anthropic",
+  "OpenAI"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "vibe-coding-app-building",
+  "coding-agents",
+  "mcp-and-tools",
+  "context-engineering"
+ ],
+ "tags": [
+  "cursor",
+  "design-to-code",
+  "ui-generation",
+  "browser-mcp",
+  "stagewise",
+  "nextjs",
+  "tailwind",
+  "prompt-templates",
+  "design-json",
+  "screenshot-to-code"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Asking an agent to clone a design file or image directly tends to yield hallucinated, generic output; the host recommends giving it a structured spec first.",
+   "detail": "Pre-planning pages, roles, shared components, modals and technical requirements in one prompt means the agent does not have to guess what components to build.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Method 1: a front-end spec prompt template that the LLM can fill in itself.",
+   "detail": "Fields cover required pages, user roles and permissions for auth, shared components (nav bar, header, breadcrumbs), modals and popups, technical requirements for later backend hookup, and the framework. The host had Claude fill it out for a weather app, then edited as needed.",
+   "t": "1:15"
+  },
+  {
+   "idea": "A design can be captured as a design.json profile from screenshots and given to Cursor as a binding style reference.",
+   "detail": "The host gave Claude six or seven screenshots of the Cursor landing page; the output JSON captured the gradient-based style. Cursor was told to strictly follow design.json while building the Next.js app; the gradient and card styling matched, but the first attempt had mistakes.",
+   "t": "2:21"
+  },
+  {
+   "idea": "Cursor struggled with version conflicts, and the host used Claude Code to fix them.",
+   "detail": "This is a brief mention, but it shows the generation step is not one-shot and that a second coding agent was used as a repair tool.",
+   "t": "3:49"
+  },
+  {
+   "idea": "Method 2: Browser MCP lets the agent explore a live site and clone its structure, with the design layer optional.",
+   "detail": "The MCP server drives a real browser tab through a Chrome extension, using screenshots and navigation to understand layout, navigation patterns and styling. For your own design, the host removes the design portion of the prompt so the agent focuses on structure. The demo site was simple, so the copy was not a strong test.",
+   "t": "4:57"
+  },
+  {
+   "idea": "Method 3: stagewise sends precise element context from the running app back to the agent.",
+   "detail": "Selecting an element passes its exact code location and details to Cursor, avoiding vague instructions that could alter other parts of the layout. The host's example turns a plain-text restart button into a styled button with a hover animation.",
+   "t": "7:15"
+  },
+  {
+   "idea": "stagewise must be set up separately in each project, because its setup modifies the project code.",
+   "detail": "The setup runs from the Cursor command palette and enters a prompt that tells the agent to initialize the stagewise bar in the project.",
+   "t": "8:15"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Structured front-end spec prompt",
+   "how": "Before building, write a prompt with these sections: required pages; user roles and permissions (if auth is needed); shared components such as nav bar, header and breadcrumbs; modals and popups; technical requirements for later backend connection; and the target framework. Have an LLM such as Claude fill in any section you skip, then review and edit. Give the completed prompt to Cursor or another agent together with the build request.",
+   "when": "At the start of a new front-end project, so the agent plans all components before writing code instead of guessing."
+  },
+  {
+   "name": "Screenshot to design.json style profile",
+   "how": "Send six or seven screenshots of a reference design to Claude (or ChatGPT) with the design-to-JSON prompt. The author links an updated prompt in the video description (not shown in the transcript). Save the output as design.json in the project. Tell Cursor: 'build the front-end app in this Next.js app, and for the design, strictly follow the design.json'. Ask it to focus on how gradients and cards are built. Expect to correct mistakes, and use a second coding agent for dependency or version conflicts.",
+   "when": "When you want a particular visual style (gradients, card treatment) reproduced consistently across generated pages."
+  },
+  {
+   "name": "Clone a site's structure with Browser MCP",
+   "how": "1) Install the Browser MCP extension from the Chrome Web Store. 2) Connect it to the tab of the site you want to clone. 3) Add the Browser MCP server to Cursor's mcp.json, using the setup snippet for your IDE from the project's install docs. 4) Prompt the agent with the target URL and ask it to explore the site thoroughly and break down its architecture, navigation patterns and styling approach. 5) To use your own design, remove the styling part of the prompt so only structure is copied. 6) Ask it to build the clone in Next.js.",
+   "when": "When you want a proven layout and navigation as a starting structure before applying your own design."
+  },
+  {
+   "name": "Element-level UI edits with stagewise",
+   "how": "1) In Cursor, open the Extensions tab and install stagewise. 2) Run the command palette (Ctrl/Cmd+Shift+P in the video) and type 'stagewise'. 3) Pick the setup option; it runs a prompt that initializes the stagewise bar in the current project. 4) Repeat per project. 5) In the running app, select the exact element, write the change (e.g. a hover animation consistent with the UI), and send it. The context includes the element's code location, which the agent uses for a targeted edit.",
+   "when": "For small, precise UI tweaks on a running app where a broad instruction might break surrounding layout."
+  }
+ ],
+ "tools": [
+  "Cursor",
+  "Claude",
+  "ChatGPT",
+  "Claude Code",
+  "Next.js",
+  "Tailwind CSS",
+  "Browser MCP",
+  "stagewise",
+  "mcp.json",
+  "design.json"
+ ],
+ "numbers": [
+  {
+   "claim": "Reference design input was six or seven screenshots converted to a design.json profile.",
+   "t": "2:21"
+  },
+  {
+   "claim": "Video length is 10:07; the first channel-membership tier had 79 members at the time of the plug.",
+   "t": "3:49"
+  },
+  {
+   "claim": "The demo weather app used Next.js with Tailwind; no timing, token, or cost data is given for any method.",
+   "t": "2:21"
+  }
+ ],
+ "hot_takes": [
+  "Structured prompts are presented as preventing 'AI slop' and hallucination, but no before/after comparison or failure rate is shown.",
+  "The host admits the first design attempt was not right and Cursor made mistakes, which undercuts the claim that the method gives a reliable result.",
+  "The Browser MCP clone demo used a deliberately simple site, so the structure-copying claim is weakly tested.",
+  "Membership plug at 3:49 is self-promotion, not a sponsorship; it does not affect quality.",
+  "Title promises 'ACTUALLY' beautiful websites; the content is a sequence of tool demos with limited depth."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Front-end website generation in Cursor has no connection to the AgentOS proxy, memory, inference or sandbox layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI; this video only uses Claude Code as a one-off fixer for dependency conflicts, with no harness or checkpoint content.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

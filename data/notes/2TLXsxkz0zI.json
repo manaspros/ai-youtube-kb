@@ -1,0 +1,215 @@
+{
+ "one_line": "Chris Parsons runs a live workshop on Ralph loops: re-running Claude Code on fresh context until work ships, fed by ticket files, a sequential queue, and reversibility limits on unattended agents.",
+ "summary": "Chris Parsons (Cherrypick) argues that agents are already loops (read, decide, call a tool, repeat), and that skills plus loops beat complicated n8n-style workflows that were brittle to maintain. He traces the \"Ralph loop\" to Jeffrey Huntley: give the same prompt again after the agent says it is done, because re-runs often catch missed work, and recent models (he says from about late 2025) make this work. The live demo is a toy Pomodoro CLI with flat-file tickets; he shows a stop-hook version failing, then a bash while-loop that starts a fresh Claude session per ticket. His biggest lesson: pointing six or seven parallel agents at a dependency graph of tickets produced duplicated work, so he switched to \"pick the next most important ticket\" run one at a time, with the AI working out dependencies itself. The rest of the talk covers the prompt as the real lever (definition of done, recovery checks, TDD, a simplify pass, git discipline), using a fresh-context subagent to review instead of self-review, and a reversibility rule for unattended work (draft but never send, stop and report at irreversible steps). He ends with personal-scale loops (a 15-minute heartbeat, a 6am briefing, a project-based worker), his views that spec-driven development risks fossilising today's workflow and that the real bottleneck is human review, and a theory-of-constraints point about fixing release and review first.",
+ "speakers": [
+  "Chris Parsons"
+ ],
+ "orgs": [
+  "Cherrypick",
+  "Anthropic",
+  "Docker"
+ ],
+ "format": "workshop",
+ "topics": [
+  "software-factory",
+  "coding-agents",
+  "agent-architecture",
+  "context-engineering"
+ ],
+ "tags": [
+  "ralph-loop",
+  "fresh-context",
+  "sequential-tickets",
+  "reversibility-gate",
+  "lethal-trifecta",
+  "skills-as-prompts",
+  "theory-of-constraints",
+  "adversarial-review",
+  "claude-code-loop",
+  "workshop"
+ ],
+ "key_ideas": [
+  {
+   "idea": "An agent is already a loop: it reads context, picks a step, calls a tool, and repeats until it decides it is done.",
+   "detail": "He argues that a skill-driven Claude Code session replaced a brittle multi-node n8n newsletter workflow that failed every Monday. The better pattern is a simple loop with good context, not orchestration graphs.",
+   "t": "6:11"
+  },
+  {
+   "idea": "Ralph loop: re-run the same prompt after the agent claims completion.",
+   "detail": "The idea comes from Jeffrey Huntley. A re-run often finds a missed step, such as a status update or a test. He says newer models (GPT-5.x and Claude Opus/Sonnet 4.6 onward) are much better at noticing they are actually done, which made this practical.",
+   "t": "8:34"
+  },
+  {
+   "idea": "Use a fresh context per unit of work.",
+   "detail": "A stop hook that re-runs the same command kept stopping early. A bash while-loop that starts a new Claude session per ticket works better, because state lives in repo files (tickets, git, tests) rather than chat history.",
+   "t": "17:29"
+  },
+  {
+   "idea": "Do not hand a dependency graph to parallel agents; run one ticket at a time and let the AI pick the next most important one.",
+   "detail": "Six or seven parallel agents over a complex ticket graph duplicated work and fought over shared tickets, which he likens to 1990s waterfall requirement handoffs. The AI can work out dependencies on the fly. Parallelism is not the bottleneck; the human keeping up is.",
+   "t": "23:53"
+  },
+  {
+   "idea": "The prompt and the feedback loop are the real levers.",
+   "detail": "The loop has no magic. Improve it after each run: say what done means for this project, how to run tests, when to stop, and how to check git state. Add a simplify/refactor pass at the end. Keep the prompt in a skill under git so each change is versioned.",
+   "t": "32:32"
+  },
+  {
+   "idea": "Self-validation in the same context confirms the agent's own work; use a fresh subagent to review.",
+   "detail": "A review step in the same context just pats itself on the back (confirmation bias). A subagent starts with a small, clean context and finds more problems. Claude's bundled simplify skill runs three subagents over recent changes.",
+   "t": "54:55"
+  },
+  {
+   "idea": "Give unattended agents a reversibility rule and a stop-and-report contract.",
+   "detail": "Rule: if an action is not reversible without embarrassment, do not do it. Agents draft emails and posts but never send. Workers stop at irreversible steps or when context runs low, write status into the project file, and never close projects themselves.",
+   "t": "1:06:18"
+  },
+  {
+   "idea": "Automated feedback (tests, end-to-end checks, screenshots) is what lets a human step out of the loop, and review remains the bottleneck.",
+   "detail": "He trusts AI for linting and tests but still reads diffs for security or customer-data code. Playwright end-to-end tests and screenshot checks help, though UI checks worked about 50% of the time for him. Adversarial reviewer agents still leave him reviewing a large backlog.",
+   "t": "1:42:41"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Bash while-loop over fresh Claude sessions",
+   "how": "A shell loop calls claude once per iteration with a fixed prompt, such as 'implement the next most important ticket using TDD, mark it done, commit'. Each run starts with a clean context. A git reset lets you restart from a known point.",
+   "when": "Sequential backlog work on a project with tests, where you can watch and stop the run. Not for production without observability."
+  },
+  {
+   "name": "Next-most-important-ticket selection over flat markdown tickets",
+   "how": "Keep tickets as markdown files in the repo with a status field. Prompt the agent to read all tickets, choose the next most important one (dependencies included), implement it, mark it done, and commit. Avoids hand-written dependency graphs.",
+   "when": "Small to medium backlogs where a human cannot keep a dependency graph current, and when running one agent at a time."
+  },
+  {
+   "name": "Recovery check for mid-flight work",
+   "how": "On start, check git state. A dirty tree with passing tests may be finished but not marked done. A dirty tree with failing tests is probably mid-flight and broken, so discard or treat it differently.",
+   "when": "Any loop that can crash or be interrupted and restart without a human looking at state."
+  },
+  {
+   "name": "Reversibility gate with stop-and-report",
+   "how": "Put a rule in the loop's skill: reversible actions proceed, irreversible ones (send email, post, deploy, close) are only drafted. The agent writes its status and questions into the project file for human review, then stops.",
+   "when": "Unattended agents that touch external communications or production state."
+  },
+  {
+   "name": "Fresh-subagent adversarial review",
+   "how": "After the dev agent finishes, start a separate reviewer subagent with a small context and the spec. Pass its findings back to the dev agent for another iteration. Do not let the same context review its own output.",
+   "when": "Any agent-written change where confirmation bias could hide defects."
+  },
+  {
+   "name": "Claude /loop for timed repetition",
+   "how": "Inside Claude Code, /loop with an interval (for example every minute or every hour) uses a cron-style scheduled task. Each tick runs a prompt such as 'build the next ticket' or 'check Linear for new bug reports'. The session can run for days and needs refreshing.",
+   "when": "Recurring background work in one session, and when you do not want to write your own shell loop."
+  },
+  {
+   "name": "Resume a project in an interactive session",
+   "how": "A shell alias starts Claude with a project's context file loaded. The agent interviews the human to extract the information needed for a piece of writing or spec, and the output is saved back into the project.",
+   "when": "Work that needs human judgement or taste, where you want the AI to draw out your thinking instead of drafting for you."
+  },
+  {
+   "name": "Simulated audience personas run in parallel subagents",
+   "how": "Build personas from transcripts and survey responses. Run each persona as a parallel subagent to critique a draft from a different viewpoint, then ask for improvements.",
+   "when": "Editorial feedback on content, or any review where a fresh perspective helps."
+  },
+  {
+   "name": "Nightly session digest",
+   "how": "A nightly job reads all of the day's Claude sessions across machines and writes a JSON file plus a short paragraph per session, for tracking work and improving the system.",
+   "when": "When you run many agent sessions and need an audit trail or a record of what was done."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "Cursor",
+  "n8n",
+  "Docker Sandbox",
+  "Playwright",
+  "Obsidian",
+  "Lian (embeddings CLI)",
+  "Beads",
+  "Linear",
+  "Jira",
+  "Telegram",
+  "Superpowers",
+  "Gastown",
+  "MCP Agent Mail",
+  "OpenClaw",
+  "Lockbox",
+  "AirSkills",
+  "Nano Banana Pro"
+ ],
+ "numbers": [
+  {
+   "claim": "Newsletter n8n workflow took about a week to build and failed most Mondays at 2pm, prompting a switch to a Claude Code skill.",
+   "t": "3:43"
+  },
+  {
+   "claim": "Models that made Ralph loops reliable: GPT-5.x (he says 5.12 onward) and Claude Opus 4.6 or Sonnet 4.6 onward, emerging around late November.",
+   "t": "7:16"
+  },
+  {
+   "claim": "Ralph loop idea dates from about June of the previous year (Jeffrey Huntley). The Matt Pocock video that took it further was posted around September of the previous year.",
+   "t": "8:34"
+  },
+  {
+   "claim": "Six or seven parallel agents on a ticket dependency graph failed, with duplicated implementations and contention.",
+   "t": "25:02"
+  },
+  {
+   "claim": "He runs about 50 personal skills, and loop sessions last about three days before they need refreshing.",
+   "t": "42:39"
+  },
+  {
+   "claim": "Heartbeat loop every 15 minutes; a morning briefing loop at 6am; each morning he finds about 15-16 draft emails prepared by his worker loop.",
+   "t": "1:03:51"
+  },
+  {
+   "claim": "On a Max $200/month plan he says he usually hits about 80% of his weekly limit.",
+   "t": "1:21:28"
+  },
+  {
+   "claim": "UI testing with an AI agent clicking through the app works about 50% of the time in his experience.",
+   "t": "1:44:05"
+  },
+  {
+   "claim": "Simplify skill runs three subagents over recent changes to find cleanup issues.",
+   "t": "55:59"
+  },
+  {
+   "claim": "Lian embeddings index a vault of several thousand files plus transcripts and saved links.",
+   "t": "1:29:49"
+  }
+ ],
+ "hot_takes": [
+  "Spec-driven development at the extreme takes us back to waterfall; prefer just-in-time specs.",
+  "Pointing parallel agents at a big dependency graph is a waterfall recreation; run one sequential loop first.",
+  "Do not give agents tokens to burn for speed; with a Max plan, optimise for your own time rather than token cost.",
+  "Parallel agent orchestration (for example Gastown) solves a problem most teams do not yet have; the bottleneck is spec and review.",
+  "Do not trust AI with security or customer data; still read the diffs.",
+  "If your team is slow with AI, the constraint is probably release or review, not coding speed; fewer, smaller teams may help."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 3,
+   "why": "ProsHarness is a harness around Claude Code with checkpoint/resume, loops, schedules and phone approvals. This talk gives concrete patterns for fresh-context loops, stop-and-report contracts, recovery checks and reversibility gates that map directly onto those features.",
+   "action": "Add a reversibility gate to ProsHarness loops: reversible steps run, irreversible steps (send, post, deploy, close) are only drafted and queued for phone approval, and the loop writes its stop reason into the checkpoint file. Then test a recovery check that reads git state and test results on resume."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS Crucible and exec-gate guardrails could use a check for the lethal trifecta (untrusted input, internet access, secrets). The talk gives no benchmarks, and it is about agent practice rather than infrastructure.",
+   "action": "Read the lethal-trifecta framing from the talk and consider a per-run policy flag in the exec-gate that refuses runs combining untrusted input, network egress and secret access."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Fresh-context subagent review, the same-context confirmation bias finding and the single-loop-before-parallel advice bear on context engineering and multi-agent work, which are both recurring interests.",
+   "action": "In the next agent-written change, run a review pass in a fresh subagent with only the spec and the diff, not the dev context, and record how many issues it finds that the dev pass missed."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

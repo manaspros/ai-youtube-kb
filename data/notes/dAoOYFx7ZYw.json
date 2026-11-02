@@ -1,0 +1,168 @@
+{
+ "one_line": "Arize's Mikyo King argues agents should get a search tool plus a code sandbox instead of a large tool catalog, reporting 43% fewer tokens and 31% lower cost in their own Harbor evals, while listing open problems such as secrets, permissions, and durability.",
+ "summary": "Mikyo King of Arize AI presents \"code mode,\" an agent architecture where the model gets a tool-search capability and a programming sandbox in which it can chain, parallelize, and branch tool calls, returning only the needed results to the context window. He frames this as a response to context bloat, extra turns, and compaction in traditional tool-calling agents. Arize's own agent in Phoenix started with Bash, then added a Python sandbox with their REST CRUD endpoints and a SQL capability for aggregate queries. He also describes a UI variant where the agent's code runs in a web worker bound to the front end. The talk is candid about costs: sandbox resources, network egress, secrets leaking into context, overbroad permissions, debugging code instead of tools, double sandboxing when code mode is inside MCP or a harness, and weaker smaller models. Arize evaluates with the Harbor framework, running agents in sandboxes with network off, multiple trials per task, binary verifier rewards, and pass@k. Their reported result is a 43% token reduction and a 31% cost reduction with roughly constant latency, and the trajectories are used to hill-climb agent instructions.",
+ "speakers": [
+  "Mikyo King"
+ ],
+ "orgs": [
+  "Arize AI"
+ ],
+ "format": "talk",
+ "topics": [
+  "sandboxing-execution",
+  "mcp-and-tools",
+  "token-cost-efficiency",
+  "evals"
+ ],
+ "tags": [
+  "code-mode",
+  "progressive-disclosure",
+  "tool-calling",
+  "sandbox",
+  "bash",
+  "sql-tool",
+  "harbor",
+  "pass-at-k",
+  "phoenix",
+  "context-bloat",
+  "secrets",
+  "double-sandboxing"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Coding agents are dissolving the line between software for engineers and software for non-engineers, so agents should be built to write the software they need on the fly.",
+   "detail": "The speaker's framing: an agent can generate a small script for a task (for example, pulling invoices out of email) instead of forcing users through a fixed product UI.",
+   "t": "1:22"
+  },
+  {
+   "idea": "Code mode replaces a big tool menu with search-for-a-tool plus execute-in-a-program.",
+   "detail": "The model searches for the tool it needs, then runs it inside a programming environment where it can call tools sequentially, in parallel, or with conditionals, returning only what is needed to context.",
+   "t": "2:47"
+  },
+  {
+   "idea": "Four reasons code mode works: progressive disclosure, composability, token efficiency, and emergent tool building.",
+   "detail": "Tools are loaded only when needed, calls can be chained or fanned out, large tool outputs stay out of context, and the agent can write its own helper to do things no tool covers.",
+   "t": "4:00"
+  },
+  {
+   "idea": "Emergent tool building matters most for data-handling tasks that would otherwise leak sensitive data into context.",
+   "detail": "The example is removing PII from records: a tool-calling agent would have to push raw records through the context window, while code can run the transformation inside the sandbox.",
+   "t": "5:15"
+  },
+  {
+   "idea": "Arize's rollout went incrementally: Bash first, then a Python sandbox, then REST CRUD endpoints and a SQL capability.",
+   "detail": "Bash composes grep, sed and their own CLI and can save outputs to files for later reuse. SQL covers aggregate questions, such as finding LLM spans above a P95 latency threshold, without paginating through traces.",
+   "t": "6:33"
+  },
+  {
+   "idea": "Code mode has real costs that the speaker lists as open problems: secrets, permissions, networking, debugging, and durability.",
+   "detail": "Secrets must stay out of the context window, network egress must be controlled, permissions tend to be too broad (correct for early steps, wrong later), a failure mid-program cannot be resumed from the failed step, and tool-parameter accuracy becomes code correctness.",
+   "t": "8:51"
+  },
+  {
+   "idea": "Putting code mode inside MCP servers or harnesses creates a double-sandboxing problem.",
+   "detail": "Results come back as serialized JSON, get parsed, and feed another code-mode layer. Binary artifacts such as images need a signed handoff so the bytes do not enter the context window.",
+   "t": "10:14"
+  },
+  {
+   "idea": "Evaluate code mode with sandboxed, network-off, multi-trial runs and pass@k, then feed the trajectories back into prompt tuning.",
+   "detail": "Each task gets a binary verifier reward, runs several trials to absorb flakiness, and tracks pass@k per task. A new tool sometimes lowers efficiency at first, and the trajectories show which instruction lines push the agent the wrong way.",
+   "t": "11:42"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Search-then-execute tool access (code mode)",
+   "how": "Expose a tool-search capability plus one execute capability backed by a real programming environment. The model finds the tools it needs, writes code that chains, parallelizes or branches the calls, and only the final needed output goes back into context.",
+   "when": "Large tool catalogs, multi-step tasks over large tool outputs (pagination, bulk records), and long-horizon agents where context bloat and turn count hurt latency and cost."
+  },
+  {
+   "name": "Bash plus CLI as the first sandbox",
+   "how": "Give the agent a shell with standard Linux primitives (grep, sed) and your own CLI, and let it write intermediate results to files it can reuse later instead of holding them in context.",
+   "when": "A cheap first step toward code mode before building a bespoke sandbox, especially for tools that already have a CLI."
+  },
+  {
+   "name": "Hoist REST CRUD endpoints into a sandbox language",
+   "how": "Wrap existing create, read, update and delete API endpoints as functions in the sandbox (the speaker used Python), so the agent composes them in code instead of making one tool call per operation.",
+   "when": "APIs where useful work is a combination of reads and writes, such as fetching traces and then updating datasets."
+  },
+  {
+   "name": "SQL as an aggregate-query escape hatch",
+   "how": "Add a text-to-SQL capability next to CRUD tools so the agent can ask for aggregates and filters directly rather than paginating through records.",
+   "when": "Analytics questions over telemetry or large datasets (for example, filtering spans by P95 latency)."
+  },
+  {
+   "name": "Keep secrets out of the model's context",
+   "how": "Run credentialed calls inside the sandbox and return only sanitized results. The speaker says each sandbox provider is working on its own vaulting approach, and that secrets must not return to the context window.",
+   "when": "Any code-mode design where generated code calls authenticated APIs."
+  },
+  {
+   "name": "Signed handoff for binary artifacts",
+   "how": "Do not serialize images or other binary blobs through the context. Pass a signed reference out of the sandbox so the next step can fetch the artifact.",
+   "when": "Multimodal code-mode flows, such as image manipulation, where the bytes would otherwise enter the model's context."
+  },
+  {
+   "name": "Sandboxed, multi-trial agent evals with pass@k",
+   "how": "Run each agent in a sandbox with network access turned off, using the Harbor framework and its verifiers. Give each task a binary 1/0 reward, repeat trials per task, and track pass@k to separate real regressions from flaky runs.",
+   "when": "Comparing agent architectures (for example, tool calling vs code mode) where the outcome is indeterminate and the same prompt can take different trajectories."
+  },
+  {
+   "name": "Trajectory-driven instruction hill-climbing",
+   "how": "Capture each run's trajectory alongside its eval result, identify where the agent wastes steps (for example, after a new tool is introduced), and edit the instructions to correct that behavior. Re-run the eval to confirm.",
+   "when": "When a new tool or capability lowers efficiency and you need to find which instruction is misleading the agent."
+  }
+ ],
+ "tools": [
+  "Arize Phoenix",
+  "Harbor Framework",
+  "Claude Code",
+  "MCP",
+  "Bash",
+  "Python sandbox",
+  "SQL (text-to-SQL)",
+  "SWE-bench",
+  "PyDurable (named in the talk; caption may be garbled)"
+ ],
+ "numbers": [
+  {
+   "claim": "Code mode reduced total token usage by 43% compared with pre-code-mode runs in the Harbor evals.",
+   "t": "13:01"
+  },
+  {
+   "claim": "Cost went down by 31% in the same runs.",
+   "t": "13:01"
+  },
+  {
+   "claim": "Latency stayed roughly constant despite overhead from the sandbox.",
+   "t": "13:01"
+  },
+  {
+   "claim": "Results were reported across three surfaces (Claude Code, MCP, and a CLI), with the same direction of improvement on each.",
+   "t": "13:01"
+  }
+ ],
+ "hot_takes": [
+  "Code mode can be better than tool calling for long-horizon tasks, but only with sandbox security, eval discipline, and cost control in place.",
+  "A new tool can lower efficiency at first; the fix is to read trajectories and rewrite instructions, not to add more tools.",
+  "Frontier models handle code mode well, but cheaper models may not keep up, which limits any cost-saving goal.",
+  "The speaker presents this as a vendor (Arize Phoenix) case study. The 43% and 31% figures come from Arize's own harness with no published baseline details, sample sizes, or task list, so treat them as directional."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Crucible (L2C) is the opt-in sandboxed code-execution pillar with exec-gate guardrails, and this talk covers the same risks (secrets, egress, overbroad permissions, durability) plus a concrete eval method that could test whether code mode saves tokens in our stack.",
+   "action": "Build a small Harbor-style eval for Crucible: network-off sandbox, several trials per task, binary verifier, pass@k, comparing a tool-calling baseline against a code-mode variant on tokens, cost and turns."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The talk names durability as an open problem: a failed multi-step program cannot resume from the failed step. ProsHarness already handles checkpoint/resume for long Claude Code runs, so this is a related gap to watch.",
+   "action": "Check whether ProsHarness checkpoints at tool-call or code-cell granularity, and decide whether sandbox-executed steps need their own checkpoints."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

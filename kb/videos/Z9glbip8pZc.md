@@ -1,0 +1,48 @@
+# How Claude Solved AI's Biggest Problem
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `Z9glbip8pZc` · [watch](https://youtu.be/Z9glbip8pZc) · **date:** 2025-11-02 · **length:** 9:30 · **format:** review · **quality:** 3/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Anthropic, Figma, OpenAI, Scalekit
+- **topics:** claude-code, skills-self-improvement, mcp-and-tools, context-engineering · **tags:** claude-skills, skill-md, skill-creator, progressive-disclosure, mcp-vs-skills, claude-desktop, seo-skill, visualization-widgets, sponsored
+
+> Walkthrough of Claude Skills: SKILL.md folders loaded on demand, how they differ from MCP, building one with skill-creator, and HTML visualization widgets. Mostly demo, with one sponsor segment.
+
+## Summary
+The video explains Claude Skills as folders of instructions, reference files and scripts that turn a general Claude agent into a specialist for repeated tasks. Skills live in a skills folder under .claude in a project, each identified by its folder name, with a SKILL.md file whose top gives a name and short description. The speaker's main comparison is with MCP: MCP adds external tools and access, while skills package internal procedures, and skills expose only the name and description up front, loading the full instructions when needed. He states that skills cannot make network requests, so an API-backed skill cannot replace the Figma MCP, with web search as a partial workaround. The skill-creator skill can generate new skills from a prompt; in Claude Code it is downloaded from Anthropic's skills repository into the project's .claude folder. A demo shows a generated SEO skill raising a test site's performance score from 86 to 94. The last demo uses a skill with a fixed HTML template to render search results as an in-session visualization widget. The speaker's demos of the built-in document and creative skills are mixed, with weak output in an infographic and a basic PowerPoint.
+
+## Key ideas
+- **A skill is a folder of instructions, data and scripts that specializes a general-purpose Claude agent for a repeated task.** — Projects were introduced earlier but the speaker says they only covered part of the repetition problem. The pitch is that skills make Claude a specialized agent for specific work. ([0:00](https://youtu.be/Z9glbip8pZc?t=0))
+- **Skill layout: a folder per skill under .claude/skills, with SKILL.md at the centre and optional reference files and executable scripts beside it.** — The folder name identifies the skill. The top of SKILL.md holds a name and a short description so Claude knows what the skill is and does. Example from the video: a PDF Extractor skill with an extraction guide and an Extract Text script. ([0:00](https://youtu.be/Z9glbip8pZc?t=0))
+- **The core difference from MCP is progressive disclosure: skills expose only name and description to the model until they are needed.** — The speaker says MCP puts all tool definitions into the context window, growing it, while a skill's one-line description is all the model holds until it decides to read the full SKILL.md. ([4:50](https://youtu.be/Z9glbip8pZc?t=290))
+- **MCP and skills serve different jobs: MCP adds access to external tools, skills enhance internal behaviour.** — Skills bundle prompts, instructions, data or scripts in a folder for specialized repeated tasks, which the speaker says gives setup speed and consistency. Before skills, people often built such internal tools as MCP servers. ([4:50](https://youtu.be/Z9glbip8pZc?t=290))
+- **Speaker's stated limitation: skills cannot use the network, so an API-backed skill cannot replace an MCP server like Figma's.** — The workaround he gives is the web search tool in Claude Desktop or Claude Code, which still cannot make the API requests an MCP server makes. This is a claim as of the recording date (Nov 2025). ([6:01](https://youtu.be/Z9glbip8pZc?t=361))
+- **The skill-creator skill builds new skills from a plain-language request, including the markdown docs and scripts.** — In Claude Desktop it is built in. For Claude Code the speaker downloads it from Anthropic's skills repository and copies it into the project's .claude folder, where Claude picks it up automatically. ([6:01](https://youtu.be/Z9glbip8pZc?t=361))
+- **Demo: a skill generated for SEO optimization raised a test site's performance score from 86 to 94.** — Claude Code used skill-creator to produce the SEO skill with its tools and scripts, then analysed the site and applied improvements. The score comparison is the speaker's only quantified result. ([7:23](https://youtu.be/Z9glbip8pZc?t=443))
+- **Visualization widgets: a skill with a fixed HTML template renders data inside a local Claude Code session.** — The speaker contrasts this with ChatGPT apps, which can make HTTP calls. He says Claude's environment is local and cannot reach the internet, yet his demo gathers the top AI tools through web search before rendering. ([8:22](https://youtu.be/Z9glbip8pZc?t=502))
+
+## Techniques
+- **Skill folder layout** — Create .claude/skills/<skill-name>/ in the project. Put SKILL.md inside with a name and short one-line description at the top, then the instructions, which reference any other files. Add reference guides and executable scripts (e.g. an Extract Text script) in the same folder and point to them from SKILL.md. *When:* Any repeated task where you keep re-explaining the same procedure, document format or tool usage to the agent.
+- **Keep the description one line; push detail into referenced files** — Write the name and description so they explain what the skill does in one line, since that is the only part loaded up front. Put long guides, examples and scripts in separate files that SKILL.md tells the agent to read when needed. *When:* Building many skills, or any setup where context-window size matters and tool or instruction lists would otherwise bloat the prompt.
+- **Install shared skills into Claude Code** — Download the skill repository from Anthropic's skills collection (the speaker names skill-creator in it) and copy the skill folders into the project's .claude folder. Claude Code detects them automatically; the speaker showed no config step beyond the copy. *When:* Starting with Anthropic's ready-made skills (docs, PDF, skill-creator) before writing your own.
+- **Bootstrap a skill with skill-creator** — In Claude Code with skill-creator installed, ask in plain language for a skill for a specific job (the demo: optimise a website for SEO). It generates the skill folder, SKILL.md and any scripts. Then run it on a real target and measure before and after. *When:* Turning a repeated workflow into a reusable skill without writing the folder by hand.
+- **Visualization widget skill** — Build a skill whose scripts fill one consistent HTML template. Ask Claude for a visualization; it runs web search and scripts to gather data, then renders the template in the session. The speaker's example was the top 10 trending AI tools. *When:* When you want recurring, consistently styled visual output of fetched data in a local Claude Code session instead of plain text.
+
+## Numbers
+- SEO skill generated with skill-creator raised a test site's overall performance score from 86 to 94 ([7:23](https://youtu.be/Z9glbip8pZc?t=443))
+- The project in the demo has three skills, each with a folder and a SKILL.md ([0:00](https://youtu.be/Z9glbip8pZc?t=0))
+- Sponsored segment (Scalekit) runs about 3:41 to 4:50 ([3:41](https://youtu.be/Z9glbip8pZc?t=221))
+- Video length 9:30; no benchmarks, costs or token counts are given ([0:00](https://youtu.be/Z9glbip8pZc?t=0))
+
+## Hot takes
+- The title says skills solve MCP's biggest problem, but the speaker's own comparison presents them as complementary: MCP for external access, skills for internal procedures.
+- The no-network limitation is a claim about the recording date (Nov 2025). Check current Claude Skills docs before designing around it.
+- The speaker says Claude's environment is local with no internet access, yet the widget demo relies on web search to gather data. The distinction is unclear.
+- Demo output is mixed by the speaker's own account: the canvas infographic text was too small and a retry did not fix it, and the PowerPoint design was too simple.
+- The quality is solid but shallow: an overview with a usable file layout and one quantified demo, no code, and no concrete SKILL.md example.
+- Scalekit sponsor segment at about 3:41 to 4:50 is separate from the technical content, so it does not change the score.
+
+## Tools mentioned
+Claude Skills, Claude Desktop app, Claude Code, skill-creator skill (Anthropic skills repo), MCP builder skill, MCP, Figma MCP server, Figma API, PDF Extractor skill, Algorithm art skill, Canvas design skill, Word, PDF, Excel and PowerPoint document skills, ChatGPT apps and widgets, Scalekit (sponsor), Auth0, Supabase
+
+## Relevance to our work
+- **agentos** (2/3): SkillForge aims to turn agent telemetry into governed, reusable skills. This video documents the on-disk skill format (SKILL.md, name and description, scripts) and the progressive-disclosure loading model that such a store would need to match. → *Compare SkillForge's skill artifact format with SKILL.md, and check whether it exposes only name and description to the model until a skill is invoked.*
+- **prosharness** (2/3): ProsHarness wraps Claude Code and includes skill ranking. The video covers how Claude Code discovers skills from a .claude/skills folder and how skill-creator generates them, which directly affects what the harness would rank. → *Make skill ranking read SKILL.md front matter (name and description) only, and treat a skill folder with its scripts as the unit to rank, test and checkpoint.*

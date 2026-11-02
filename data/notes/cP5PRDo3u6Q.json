@@ -1,0 +1,179 @@
+{
+ "one_line": "Walkthrough of Whiteboard, an open-source Mac app that lets a coding agent draw linked review diagrams of its own branch changes, with a privacy warning about its default telemetry.",
+ "summary": "The host presents Whiteboard, an MIT-licensed Mac app (a VS Code fork on Electron, Apple Silicon only) that connects to Claude Code through an MCP-based plugin and has the agent author review diagrams on a local canvas. The core argument is that agents made code cheap but not understanding, so review has become the bottleneck. In the demo, the agent reviews a branch against main, draws a sequence diagram of the request flow with the relevant code beside each step, and clicking a step opens the function. The diff view folds tests and docs and summarizes large functions as pseudocode, and a Rust diff engine works from the syntax tree. The tool also has a decision log of choices the agent made unasked and a \"trace archaeology\" feature that is off by default. The host's main caution is privacy: telemetry is on by default, and Electron crash dumps can contain source text, so he recommends disabling telemetry before opening private repos and keeping prompt logging off. He also says a link into the code does not make a diagram correct, and the tool is a reading aid, not a replacement for reading the change.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "Y Combinator",
+  "CodeRabbit",
+  "Graphite"
+ ],
+ "format": "review",
+ "topics": [
+  "pr-code-review",
+  "coding-agents",
+  "claude-code",
+  "dev-tools"
+ ],
+ "tags": [
+  "whiteboard",
+  "code review",
+  "agent-written diffs",
+  "sequence diagram",
+  "MCP",
+  "telemetry privacy",
+  "crash dumps",
+  "OpenTelemetry",
+  "review-only permissions",
+  "decision log"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The bottleneck has moved from writing code to understanding it. Agents make code cheap, but reviewers still pay the comprehension cost on every diff, especially when tests, docs and logic are mixed together.",
+   "detail": "Framed as cognitive debt. A chat explanation becomes a wall of markdown, so the host wants a simpler map of who calls what and what changed.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Whiteboard constrains the agent to fill typed blocks rather than draw freely. Blocks include sequence diagrams, flow diagrams, call-stack diffs, code peeks and a database lens, each with a defined structure tied to real code.",
+   "detail": "The host compares this to filling in forms instead of a blank page. Each block connects to source, so a diagram element can be clicked through into the function it describes.",
+   "t": "2:50"
+  },
+  {
+   "idea": "The diff view is reduced to the logic that changed. Tests and docs are folded away and big functions are summarized as pseudocode.",
+   "detail": "The diff engine is written in Rust and parses the syntax tree rather than raw lines, which is how it separates structure from text.",
+   "t": "1:52"
+  },
+  {
+   "idea": "Whiteboard positions itself against neighbouring tools. Archify maps a whole system while Whiteboard reviews a change, Mermaid lives in docs without click-through to code, and CodeRabbit or Graphite comment on PRs in the cloud.",
+   "detail": "Whiteboard runs locally with the user's own agent and posts nothing to GitHub. The team reportedly started with HTML artifacts and moved to VS Code because pure HTML could not link diagrams to code.",
+   "t": "2:50"
+  },
+  {
+   "idea": "A decision log and trace archaeology try to recover why the agent did something. The decision log lists choices the agent made without asking, and asking why a line exists is meant to answer from the sessions that wrote it.",
+   "detail": "The host has not tested trace archaeology. Trace capture is off by default, and traces can live locally or in Whiteboard's hosted store, so the storage choice matters.",
+   "t": "4:04"
+  },
+  {
+   "idea": "A diagram is a claim that needs checking. The host reports a launch demo showed a flow that was not in the code, and the creator's answer that linked diagrams prevent this is only the creator's assertion.",
+   "detail": "A link makes an explanation easier to verify but does not make it true. The host's own rule is to click through and read the code the diagram points to.",
+   "t": "5:04"
+  },
+  {
+   "idea": "Default telemetry is the main privacy risk. Electron crash dumps can hold process memory, including source text that was open, and are kept for 30 days.",
+   "detail": "With telemetry turned off, the docs say crash dumps are deleted without upload. The host recommends turning it off before opening a private repo.",
+   "t": "5:04"
+  },
+  {
+   "idea": "The optional hosted trace store uploads full agent transcripts, and enabling it asks for GitHub sign-in with repo scope. For observability without that exposure, the host points Claude Code's OpenTelemetry at his own backend, BetterStack, and keeps prompt logging off.",
+   "detail": "Own backend gives cost, usage and failure data. Crash dumps and transcripts stay out of Whiteboard's canvas. The host's point is that running locally does not mean every optional feature keeps data local.",
+   "t": "6:13"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Install Whiteboard as a Claude Code plugin",
+   "how": "Download the Mac app and open it. Click 'connect Claude code', which installs a small CLI and prints two plugin commands. Paste both into a terminal, then reload Claude Code. Keep the Whiteboard app running, because it is the local server the plugin talks to.",
+   "when": "Before any agent-authored review. The app must stay running for the plugin to work."
+  },
+  {
+   "name": "Turn telemetry off before opening a private repo",
+   "how": "In Whiteboard settings, disable 'share anonymous usage data'. Per the docs, with telemetry off, Electron crash dumps are deleted without upload. Telemetry is on by default.",
+   "when": "Before opening any private or sensitive repository. Do this first, not after the fact."
+  },
+  {
+   "name": "Review-only prompt with tool-call approval",
+   "how": "Prompt: 'review my current branch against up-to-date main, use whiteboard, open the result in whiteboard, walk the request flow as a sequence diagram and put the relevant code next to each step.' Approve tool calls but deny writes, so the run stays review-only.",
+   "when": "Reviewing an agent-written branch without letting the agent change files."
+  },
+  {
+   "name": "Click-through verification of diagram blocks",
+   "how": "Click a step in a sequence or flow diagram to jump to the function it describes. Check that the code matches the diagram before trusting the explanation.",
+   "when": "Every time a generated diagram is used to approve a merge. The creator's claim that links prevent hallucination is not independently verified."
+  },
+  {
+   "name": "Typed diagram blocks instead of free-form output",
+   "how": "Constrain the agent to fill predefined block types (sequence, flow, call-stack diff, code peek, database lens), where each block has a fixed structure and is linked to real code. This is contrasted with free HTML or Mermaid.",
+   "when": "When the explanation has to stay clickable and checkable against the source."
+  },
+  {
+   "name": "Diff reduction for large agent branches",
+   "how": "Fold tests and docs out of the diff view, summarize large functions as pseudocode, and leave only changed logic visible.",
+   "when": "Big agent-written branches. The host suggests skipping the tool for small diffs, such as a 10-line change."
+  },
+  {
+   "name": "Own-backend OpenTelemetry instead of vendor telemetry",
+   "how": "Point Claude Code's OpenTelemetry export at your own backend (the host uses BetterStack). Leave prompt logging off unless you deliberately want prompts sent. This gives cost, usage and failure data without uploading crash dumps or transcripts.",
+   "when": "When you need agent observability on private code and do not want to send transcripts to a vendor."
+  },
+  {
+   "name": "Check trace storage before enabling trace capture",
+   "how": "Trace capture is off by default. Before turning it on, confirm whether traces go to local storage or the hosted store, since the hosted store uploads full agent transcripts and needs GitHub sign-in with repo scope.",
+   "when": "Before using decision log or trace archaeology on private code."
+  }
+ ],
+ "tools": [
+  "Whiteboard (open-source Mac app, MIT, VS Code fork)",
+  "Claude Code",
+  "Codex",
+  "Cursor",
+  "OpenCode",
+  "VS Code / Code OSS",
+  "Electron",
+  "Rust (diff engine)",
+  "MCP",
+  "Mermaid",
+  "Archify",
+  "CodeRabbit",
+  "Graphite",
+  "GitHub",
+  "OpenTelemetry",
+  "BetterStack"
+ ],
+ "numbers": [
+  {
+   "claim": "Mac download is about 340 MB and Apple Silicon only.",
+   "t": "6:13"
+  },
+  {
+   "claim": "Electron crash dumps are kept for 30 days and are unlocked on the next launch, per the host's reading of the privacy docs.",
+   "t": "5:04"
+  },
+  {
+   "claim": "Issue tracker has 13 open issues, including a Codex startup crash, a flow diagram error, and requests for Intel Mac, Copilot and GitHub Enterprise support.",
+   "t": "6:13"
+  },
+  {
+   "claim": "Whiteboard is MIT licensed and comes from a company in the YC winter 2026 batch.",
+   "t": "4:04"
+  },
+  {
+   "claim": "Video length is 8:09.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The map is not the value. The host judges the tool by whether the reader understands what they are about to merge, not by how good the diagram looks.",
+  "Diagrams generated by an agent should be treated as claims. A link to code does not make them true, and the host's own check is to read the linked code.",
+  "Default-on telemetry is a real concern for private repos, since crash dumps can capture source text. The host says to turn it off first.",
+  "Running locally does not mean every optional feature keeps data local. The hosted trace store uploads full transcripts, so observability is better sent to your own backend.",
+  "Skip the tool for small diffs. The host says a 10-line change does not need a map."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Whiteboard's decision log, which records choices an agent made without asking, is a per-run audit idea that overlaps with AgentOS's Merkle audit and observability layers. It is a single tool demo, not a system design.",
+   "action": "Look at whether a per-run decision log (choices made without asking) fits as an L4 observability artifact alongside the Merkle audit trail."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The review-only permission pattern (approve tool calls, deny writes) and the phone-driven approval concept relate to ProsHarness's approval flow for Claude Code runs, but the video does not cover harness design.",
+   "action": "Consider a review-only mode in ProsHarness where tool calls are approved and file writes are denied when the agent is only reviewing a branch."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

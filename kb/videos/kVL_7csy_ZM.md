@@ -1,0 +1,37 @@
+# The Rise of Generative UI for Developers (CopilotKit)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `kVL_7csy_ZM` · [watch](https://youtu.be/kVL_7csy_ZM) · **date:** 2026-07-02 · **length:** 7:33 · **format:** review · **quality:** 3/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Better Stack, CopilotKit, Vercel, LangChain, CrewAI, Mastra
+- **topics:** product-ux, mcp-and-tools · **tags:** generative-ui, copilotkit, ag-ui, human-in-the-loop, shared-state, co-agents, react, nextjs, vercel-ai-sdk, agent-frontend
+
+> Better Stack walkthrough of CopilotKit as a front-end stack for agent UIs: AG-UI event protocol, generative UI, shared state, and approval gates, with a candid trade-off section versus Vercel AI SDK and building in-house.
+
+## Summary
+The video argues that most AI features bolt a chat box onto a product, creating a second app where users copy context back and forth. It demos a CopilotKit app scaffolded from the project's install command, where the agent streams a reply, calls tools, renders a real component inside the UI, and pauses for user approval before acting. The narrator breaks CopilotKit into four pieces: AG-UI (an open event protocol between agent backends and front ends), generative UI, shared state (co-agents) synced in both directions, and human-in-the-loop approval. He positions CopilotKit as "batteries included" compared with the lighter, lower-level Vercel AI SDK, and says building everything yourself is harder than the chat rendering itself. Trade-offs named are added weight, adopting its patterns, and cost at scale, with a call to understand which parts are open source, keyed, hosted, or paid. The recommendation is to use it for serious in-app agentic UX in React or Next.js, and skip it for simple Q&A or if you already built streaming and tool-call UI.
+
+## Key ideas
+- **Bolted-on AI chat creates a second app inside the product, and users must copy context between the two by hand.** — Framed as the core problem. Q&A is fine, but once the agent must update state, call tools, or work inside a workflow, the basic chat structure hits a wall. ([0:00](https://youtu.be/kVL_7csy_ZM?t=0))
+- **Every agent-to-frontend pairing gets rebuilt from scratch: streaming, state sync, and approval flows.** — The narrator names many agent frameworks and front-end targets with no shared protocol between them, so each backend needs custom code per frontend. CopilotKit's pitch is to solve this upfront. ([1:00](https://youtu.be/kVL_7csy_ZM?t=60))
+- **The agent can render real app components and pause for approval before changing anything.** — Demo shows streamed output, tool calls, a component rendered into the page, and an approval pause on a follow-up question. The narrator stresses that user control is not optional in real software. ([2:16](https://youtu.be/kVL_7csy_ZM?t=136))
+- **CopilotKit is made of four pieces: AG-UI, generative UI, shared state (co-agents), and human-in-the-loop.** — AG-UI is an open event-based protocol carrying messages, state updates, tool calls, and UI events over one stream. Shared state syncs in both directions between the UI and the agent backend. ([3:23](https://youtu.be/kVL_7csy_ZM?t=203))
+- **CopilotKit is batteries-included, whereas the Vercel AI SDK is lighter with more low-level control.** — Pick CopilotKit for streaming chat, generative UI, shared state, and approval patterns out of the box. Pick the Vercel AI SDK if you want to own every part of the architecture. Building it all yourself is the harder comparison. ([4:38](https://youtu.be/kVL_7csy_ZM?t=278))
+- **Trade-offs: heavier dependency, adopted patterns, and costs that appear at scale.** — Free for solo experimentation, but scale brings cost. The narrator says you must check what is open source, what needs keys, what is hosted, and what is paid. He also asks viewers for a fully open-source alternative. ([5:52](https://youtu.be/kVL_7csy_ZM?t=352))
+- **Use it only when agent-UI interaction is central; skip it for simple Q&A or if you already have streaming and tool-call UI.** — Best fit is serious in-app AI in React or Next.js where the agent works on app state. Overkill for a basic support chatbot, and not worth switching to if you already built your own streaming and tool-call UI. ([7:07](https://youtu.be/kVL_7csy_ZM?t=427))
+
+## Techniques
+- **Generative UI: agent triggers real components** — Instead of returning markdown or tables, the agent emits a tool call or event that makes the front end render an existing app component at that moment. The UI stays your own component library. The video shows this with CopilotKit, but gives no code. *When:* The agent's answer should be an interactive part of the product, such as a form, card, or table in the app, rather than text the user has to act on elsewhere.
+- **Bidirectional shared state between UI and agent (co-agents)** — The front end and agent backend share one state object. User edits flow to the agent, and agent updates flow back to the UI. CopilotKit calls this co-agents state. The video shows no implementation. *When:* The user and the agent are editing the same object, such as a dashboard, a document, or a tool configuration.
+- **Approval gate before state-changing tool calls** — The agent pauses before an action such as sending, creating, or approving. The user confirms or picks among options, then the agent continues. The video demos this as a pause on a follow-up request. *When:* Actions are external or hard to undo, or users need final say, as in confirm-before-send or approve-before-create flows.
+- **Scaffold the stack from the project's install command** — Run the install command from the CopilotKit repo in a clean terminal. It scaffolds a starter app with the front-end pieces already wired, then start the dev server locally. The exact command is not spoken or shown in the transcript, so check the CopilotKit repo README. *When:* You want a working reference app to test the agent-UI experience before adapting it to your product.
+
+## Hot takes
+- Framing is pitch-leaning ('a second app inside their app'), but the video includes real trade-offs and a clear 'skip it' case, so it is not pure hype.
+- The demo shows streaming, tool calls, a rendered component, and an approval pause, but no code, install command, or repo URL, so a viewer cannot reproduce it from the video alone.
+- The narrator says cost and open-source status are unclear at scale and asks for an open-source alternative. The video leaves the licensing and hosting story unresolved.
+
+## Tools mentioned
+CopilotKit, AG-UI, Vercel AI SDK, LangGraph, CrewAI, Mastra, React, Next.js
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness already has phone-driven approvals and checkpointed agent runs. AG-UI's event stream and approval flow are a direct comparison point for how approval requests and state sync are shaped on the wire. → *Read the AG-UI protocol spec and check whether its event types for tool calls, state updates, and approval requests fit ProsHarness's phone-approval messages before inventing a custom schema.*
+- **agentos** (1/3): AgentOS is a proxy for agent traffic, not a UI product, so the front-end protocol is peripheral. The approval-before-action idea overlaps with exec-gate guardrails in Crucible. → *Compare the approval-before-action pattern with the exec-gate guardrails in Crucible (L2C), but do not build any front-end protocol now.*

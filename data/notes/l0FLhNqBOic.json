@@ -1,0 +1,189 @@
+{
+ "one_line": "Varick Agents explain why process understanding, not model execution, is now the bottleneck, and describe the forward-deployed engineering agent they built for it.",
+ "summary": "Vasuman Moza, CEO of Varick Agents, argues that models and harnesses now execute knowledge work well, so the constraint is how deeply a team can understand a specific business and redesign its processes around AI. He says forward-deployed engineers (FDEs) should map how work really runs, including failure paths, then decide which steps are automated, human-in-the-loop, or manual. Varick builds agents on top of existing systems of record (NetSuite, Dynamics, SAP, Salesforce) instead of asking clients to migrate. Head of engineering JD Pruitt describes the FDE agent in three stages: an engagement assistant for FDEs (built because uploading about 150 pages to Claude gave slow, verbose, incorrect analysis), a workflow agent embedded in their platform, and an autonomous agent that is still in development. The technical core is a dependency graph of company processes, a post-trained open-source model for analysis writing, and an RL environment that trains the model to use custom graph-traversal tools such as identity matching and cycle detection. Much of the talk is company pitch and hiring, and the performance claims come without evaluation data.",
+ "speakers": [
+  "Vasuman Moza (Voss)",
+  "JD Pruitt"
+ ],
+ "orgs": [
+  "Varick Agents",
+  "Cursor",
+  "Factory",
+  "Anthropic",
+  "OpenAI",
+  "NetSuite",
+  "Microsoft Dynamics",
+  "SAP",
+  "Salesforce",
+  "Granola",
+  "Kimi",
+  "MIT Technology Review"
+ ],
+ "format": "talk",
+ "topics": [
+  "enterprise-adoption",
+  "product-ux",
+  "training-finetuning-rl",
+  "rag-retrieval"
+ ],
+ "tags": [
+  "forward-deployed-engineering",
+  "enterprise-agents",
+  "process-reengineering",
+  "human-in-the-loop",
+  "dependency-graph",
+  "knowledge-graph",
+  "entity-resolution",
+  "post-training",
+  "rl-environment",
+  "systems-of-record",
+  "roi",
+  "varick-os"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Execution is no longer the bottleneck; understanding a specific business is.",
+   "detail": "The speaker says models and tool harnesses now complete end-to-end tasks well. The hard part is extracting each client's context, since the same department works differently across industries.",
+   "t": "1:31"
+  },
+  {
+   "idea": "Map the failure paths, not just the documented golden path.",
+   "detail": "Documentation covers the normal flow and maybe an edge case or two. Real work moves when things go wrong, e.g. an AP lead hands exceptions to a colleague who takes four days to reconcile a PO against an invoice.",
+   "t": "4:20"
+  },
+  {
+   "idea": "Adding AI to a broken process does not produce ROI.",
+   "detail": "The speaker's explanation for weak pilot results is that AI gets bolted onto processes it does not understand. He argues the work must be redesigned around AI.",
+   "t": "4:20"
+  },
+  {
+   "idea": "Split each process into autonomous, human-in-the-loop and manual steps.",
+   "detail": "The change must be familiar enough for adoption but different enough to capture value. Example: of 8 steps, 4 run autonomously, 3 need human review, and 1 stays human, based on risk and whether an agent adds measurable value.",
+   "t": "5:45"
+  },
+  {
+   "idea": "Build agents on top of systems of record instead of requiring migration.",
+   "detail": "Enterprises are tied to NetSuite, Dynamics, SAP or Salesforce. A client quoted spending $5M and five years on a NetSuite migration, so Varick's platform layers agents, governance and evals over those systems.",
+   "t": "7:08"
+  },
+  {
+   "idea": "Give FDEs an assistant that handles context load, then embed it in the build tool.",
+   "detail": "The first version answers questions over meeting notes, documents and slides, including whether two name spellings are the same person. The second version sits inside the workflow builder and flags missing edge cases and process owners. A third autonomous version that handles client change requests is still in development.",
+   "t": "12:48"
+  },
+  {
+   "idea": "Model company processes as a dependency graph, and expect cycles.",
+   "detail": "Enterprise workflows are mostly linear with loops. The team uses a dependency graph as the single source of truth so that no person acts before their dependencies have approved.",
+   "t": "15:21"
+  },
+  {
+   "idea": "Post-train for judgment on detail, and train retrieval with graph tools in RL.",
+   "detail": "Frontier models write verbose analysis that does not separate what matters from what can be skipped, so the team post-trains open-source models. Retrieval is a separate problem: the team trains a model in an RL environment with custom tools for identity matching and for finding redundancy cycles or DAG violations in the knowledge graph.",
+   "t": "16:38"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Failure-path process interviews",
+   "how": "Embed engineers with each process lead and ask what happens when things go wrong, not only the documented path. Record the real handoffs, delays and workarounds.",
+   "when": "Before automating any operational workflow, especially in finance, procurement or other non-technical departments."
+  },
+  {
+   "name": "Per-step autonomy split",
+   "how": "For each step, assign one of three modes: fully autonomous, human-in-the-loop, or human-only. Base the choice on risk and on whether an agent would add measurable value at that step.",
+   "when": "Scoping an automation project so that ROI is captured without removing human checkpoints where risk is high."
+  },
+  {
+   "name": "Dependency graph as shared state",
+   "how": "Represent people, processes and approvals as a graph of dependencies. Detect cycles and DAG violations. Use the graph as the source for agent context.",
+   "when": "Enterprise workflows with many handoffs where agents must know who owns what and what must happen first."
+  },
+  {
+   "name": "Post-training an open model for analysis style",
+   "how": "Start from an open-source model and post-train it on the desired balance of detail and clarity, since frontier models tend to be verbose.",
+   "when": "Producing long analyses for non-technical clients where frontier output is too wordy or misses what the client cares about."
+  },
+  {
+   "name": "RL environment with domain traversal tools",
+   "how": "Expose custom tools (for example, check whether two records are the same person, or detect redundancy cycles) inside an RL environment so the model learns to traverse a messy knowledge graph and fetch the right context.",
+   "when": "Retrieval over a noisy enterprise knowledge graph where generic search returns the wrong entities."
+  },
+  {
+   "name": "Assistant embedded in the authoring tool",
+   "how": "Run the same assistant inside the workflow builder so it checks edge cases and ownership while a human builds the configuration.",
+   "when": "Human-authored workflow or configuration where missing edge cases are the main source of errors."
+  }
+ ],
+ "tools": [
+  "Varick OS (in-house platform)",
+  "Claude",
+  "Codex",
+  "Granola",
+  "Kimi (open-source base model, named as K2.6)",
+  "NetSuite",
+  "Microsoft Dynamics",
+  "SAP",
+  "Salesforce"
+ ],
+ "numbers": [
+  {
+   "claim": "MIT review: 95% of generative AI pilots fail to reach production (speaker calls it semi-outdated)",
+   "t": "4:20"
+  },
+  {
+   "claim": "87% of AI pilots do not produce measurable ROI or do not ship to production (speaker's second statistic, unattributed)",
+   "t": "4:20"
+  },
+  {
+   "claim": "Example reconciliation step takes four days of cycle time (PO vs. invoice)",
+   "t": "4:20"
+  },
+  {
+   "claim": "Example split of an 8-step process: 4 autonomous, 3 human-in-the-loop, 1 human-only",
+   "t": "5:45"
+  },
+  {
+   "claim": "Client quote: spent $5 million and five years migrating to NetSuite",
+   "t": "7:08"
+  },
+  {
+   "claim": "Point solutions (e.g. one sales step) deliver about 5-10% ROI; department-wide transformation is claimed to deliver 25%, 50%, 75% ROI (vendor's own claim, no methodology given)",
+   "t": "11:20"
+  },
+  {
+   "claim": "Prior workflow: about 150 pages of documentation uploaded to Claude, roughly two-minute waits, output described as verbose and incorrect",
+   "t": "12:48"
+  }
+ ],
+ "hot_takes": [
+  "Knowledge work is almost entirely solved; designing how work gets done around AI is the next bottleneck.",
+  "Operations will be centered around AI rather than around humans.",
+  "Frontier models have no concept of which details a client cares about, so consultants' judgment is what open models must be trained to copy.",
+  "Most AI pilot failures come from putting AI on top of broken processes, not from the models.",
+  "Enterprises will not migrate off their systems of record, so agents have to be built on top of them."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The per-step split (autonomous, human-in-the-loop, human-only) maps onto ProsHarness approvals and checkpoints, and the talk gives a rationale for it.",
+   "action": "Add an explicit autonomy label (auto, approval-gated, manual) to each step of ProsHarness plan output, chosen by risk and value, so the harness knows where to pause for phone approval."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "MemoryMesh needs entity identity and conflict handling. The talk's approach of exposing identity-match and cycle checks as explicit tools is relevant, though the talk gives no evaluation.",
+   "action": "Check whether MemoryMesh's GraphRAG path has an explicit same-entity check and a conflict or cycle check, or whether it relies only on retrieval."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The talk pairs entity identity matching with graph-cycle detection as tools for context retrieval. This is relevant to the entity-resolution and data-quality interests, though the talk is pitch-heavy.",
+   "action": "For entity-resolution work, test a model with explicit identity-check and conflict-check tools against retrieval alone, measuring on a labeled set."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,165 @@
+{
+ "one_line": "Auditoria AI speaker says human attention bottlenecks agent work: use parallel worktree subagents, skills, one-pane UX, goals and loops, and self-improving harnesses, keeping humans at intake and sign-off.",
+ "summary": "The speaker, a data scientist at Auditoria AI (finance agents), argues that production agent failures come from slow developer loops, not from models or frameworks that change every few months. He proposes four primitives: subagents running in parallel git worktrees, organizational skills as encoded recipes, MCP connections to client systems, and goals plus loops. He walks through a nine-step bug-ticket-to-stage pipeline where a human is needed only at intake (step 1) and final validation on stage (step 9). He suggests a single \"one pane of glass\" UI that aggregates cluster status, logs, Jira, GitHub PRs and an agent session. For finance, he argues accountability and SOX sign-off keep humans in the loop, so human attention becomes the bottleneck. In the last section he describes having the agent review its own loop each day to remove bottlenecks, and a background \"dreaming\" process that compacts customer session patterns into improvement data. The talk offers no measured results, and most numbers are the speaker's own claims or verbal estimates.",
+ "speakers": [
+  "Ramana Siddanth Emani"
+ ],
+ "orgs": [
+  "Auditoria AI"
+ ],
+ "format": "talk",
+ "topics": [
+  "software-factory",
+  "multi-agent",
+  "coding-agents",
+  "governance-compliance"
+ ],
+ "tags": [
+  "harness-engineering",
+  "developer-velocity",
+  "git-worktrees",
+  "parallel-subagents",
+  "human-in-the-loop",
+  "sox-compliance",
+  "finance-agents",
+  "goals-and-loops",
+  "self-improving-harness",
+  "dreaming",
+  "minimal-ux"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Production agent failures are a developer-velocity problem, not a model problem",
+   "detail": "Models and frameworks change every few months or years, so swapping them does not fix production bugs fast. The speaker says the answer is to speed up the developer loop itself by automating it.",
+   "t": "1:12"
+  },
+  {
+   "idea": "Four primitives: subagents in worktrees, skills, MCP connections, goals and loops",
+   "detail": "Each subagent gets its own git worktree as an isolated folder so parallel agents do not collide. Skills hold organizational workflows, and MCP lets agents reach client data in any system.",
+   "t": "2:43"
+  },
+  {
+   "idea": "Human attention, not compute, becomes the limit once agents run in parallel",
+   "detail": "With many worktrees running, the orchestrator's attention is the constraint. The speaker says tasks should not be queued by hand; the agents should handle the queue.",
+   "t": "3:47"
+  },
+  {
+   "idea": "Map each QA bug ticket to its own worktree and pipeline",
+   "detail": "Each ticket runs a root-cause analysis, pulls traces and logs, does TDD, runs local end-to-end tests, opens a PR, merges, and deploys through dev and stage. The speaker proposes a human at only the first and last steps.",
+   "t": "5:52"
+  },
+  {
+   "idea": "Accountability in regulated finance limits how far humans can be removed",
+   "detail": "Under SOX, a human auditor and controller sign off on work, and agent-reviews-agent does not give clear accountability when production breaks. The speaker therefore keeps a human as verifier.",
+   "t": "8:26"
+  },
+  {
+   "idea": "Let the agent analyze and remove its own loop bottlenecks each day",
+   "detail": "After each batch of tickets, the agent lists bottlenecks in its own process and removes them over time. The speaker says after about a month a one-sentence request can drive the full bug-fix cycle.",
+   "t": "9:31"
+  },
+  {
+   "idea": "Combine goals and loops, run from a phone, and add background dreaming",
+   "detail": "A goal such as fixing a data discrepancy can run as a loop that the user monitors from a phone. A background process collects patterns from customer sessions and compacts them into data points the system can learn from.",
+   "t": "11:00"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Worktree-per-task parallel subagents",
+   "how": "Give each independent task (for example each Jira ticket) its own git worktree. Let an agent in that worktree spawn its own subagents, and keep worktrees parallel so agents do not fight over files.",
+   "when": "Many independent bug or feature tasks at once, where work must not collide on the same checkout."
+  },
+  {
+   "name": "Ticket-to-stage pipeline with two human gates",
+   "how": "The agent handles requirements, RCA, trace and log pulls, TDD fix, local end-to-end tests, PR creation, and deploys to dev and stage. A human reviews intake at the start and validates on stage at the end. The speaker says the middle steps need no human.",
+   "when": "High-volume bug fixing where the team trusts the agent for middle steps but must keep sign-off, such as regulated finance."
+  },
+  {
+   "name": "Encode organizational procedure as skills",
+   "how": "Write each team workflow as a reusable skill so agents follow the correct process for each production bug, not an improvised one.",
+   "when": "Repeated workflows where consistency and audit of the procedure matter."
+  },
+  {
+   "name": "Single-pane minimal UX for orchestration",
+   "how": "One widget or dashboard shows cluster services and pods, system logs, Jira tickets, GitHub PRs, and an agent session, so the orchestrator does not switch windows.",
+   "when": "An orchestrator is juggling many agents and tools and losing time to context switching."
+  },
+  {
+   "name": "Daily self-retrospective on the agent's own loop",
+   "how": "After each batch of tickets, ask the agent to list the bottlenecks in its own workflow and fix them, repeating daily.",
+   "when": "A stable, repeating dev workflow where the harness itself can be iteratively improved."
+  },
+  {
+   "name": "Goals plus loops, monitored from a phone",
+   "how": "Set a goal (for example, resolve a data discrepancy in a report), run it as a loop, and check progress from a phone rather than staying at a laptop.",
+   "when": "Long-running fixes that need little steering and periodic check-ins."
+  },
+  {
+   "name": "Background dreaming for pattern compaction",
+   "how": "Run a background job that gathers customers' repeated session patterns and failure types and compacts them into data points that the system can use for upgrades.",
+   "when": "Many customers hitting the same problem patterns in production, so shared improvement data helps everyone."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "git worktrees",
+  "Kubernetes",
+  "Docker",
+  "Jira",
+  "GitHub",
+  "MCP"
+ ],
+ "numbers": [
+  {
+   "claim": "New model releases arrive about every 3.5 months, and new chips about once a year (speaker's general estimate, not measured)",
+   "t": "1:12"
+  },
+  {
+   "claim": "On a 48 GB MacBook, the speaker says about 50 active worktrees, meaning 50 active subagents, can run at once (speaker's claim, no benchmark shown)",
+   "t": "3:47"
+  },
+  {
+   "claim": "The ticket-to-stage pipeline has nine steps, with a human needed only at steps 1 and 9",
+   "t": "5:52"
+  },
+  {
+   "claim": "A graph shows the number of neck rotations per shipped change dropping sharply, but no values are given in the transcript",
+   "t": "7:25"
+  },
+  {
+   "claim": "Example cadence: one loop run over a day or two solves about five to six bug tickets",
+   "t": "9:31"
+  }
+ ],
+ "hot_takes": [
+  "Model and framework swaps are not what fixes production bugs; the developer loop's velocity is the real lever.",
+  "Humans should be verifiers, not the throughput ceiling, since human attention is limited.",
+  "In regulated finance, 'the agent did it' is not an acceptable accountability answer, so a human sign-off must stay in the loop.",
+  "Agents can upgrade their own harness by analyzing and removing their bottlenecks, which eventually lets one sentence drive a full bug fix."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code with checkpoint/resume, loops/schedules and phone-driven approvals. The talk's worktree-per-task subagents and goal-plus-loop-from-phone pattern overlap directly with that design.",
+   "action": "Prototype a ProsHarness run that gives each ticket its own git worktree with subagents, and check whether the phone approval flow can cover both the intake gate and the stage-validation gate described in the talk."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The 'dreaming' idea of compacting repeated session patterns into reusable data points is loosely related to SkillForge's telemetry-to-skill mining. The talk gives no method, so it is only a prompt for our own design.",
+   "action": "Note the background pattern-compaction idea as a candidate input for SkillForge's open skill-worthiness question. Design the method ourselves, since the talk offers none."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Parallel worktree subagents, human-gate placement, and self-retrospectives on the agent's own loop are relevant to context engineering and multi-agent work. The evidence is anecdotal, though.",
+   "action": "Run one week of parallel worktree subagents on independent tasks and log how often a human gate is actually needed, compared with a single-session baseline."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

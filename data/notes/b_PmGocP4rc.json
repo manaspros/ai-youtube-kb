@@ -1,0 +1,196 @@
+{
+ "one_line": "Maor Bril (Character.ai) on evaluating AI video: frame-level metrics miss story, physics and pacing, so he distilled a judge committee into a small fast VLM trained on pairwise comparisons and run inside the generation loop.",
+ "summary": "The speaker argues that video generation improved quickly but video evaluation did not, because common metrics such as CLIP-style scores and frame-drift checks look at single frames and prompt match, not whether the story works. Human judging is accurate but slow and costly, and LLM judges are slow and sensitive to prompt wording. He built a repeatable benchmark that combines frame metrics with LLM judges calibrated by periodic human annotation sessions. The main move was distilling that expert committee into a small VLM that scores a 15-second video in about 3 seconds and explains its low scores. Training on absolute 1-10 ratings produced confident but wrong scores, so he switched to pairwise A-vs-B training with manufactured bad videos. A later real-versus-AI pairing step risked teaching an AI detector, which he guarded against with matched encoding and identical annotation. He also moved from a fixed pipeline to an agent that validates its own output, and closed with three rules: compare relatively, score the axes you care about, and put eval inside the generation loop.",
+ "speakers": [
+  "Maor Bril"
+ ],
+ "orgs": [
+  "Character.ai"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "testing-verification",
+  "voice-multimodal",
+  "agent-architecture"
+ ],
+ "tags": [
+  "video-generation",
+  "llm-as-judge",
+  "pairwise-comparison",
+  "distillation",
+  "vlm",
+  "human-calibration",
+  "eval-in-the-loop",
+  "shortcut-learning",
+  "qwen",
+  "dolby-atmos"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Video evaluation has lagged video generation.",
+   "detail": "Generation is cheap and strong, but judging quality still relies on squinting. Tools built for text and images (CLIP-style prompt match, frame-drift checks) judge single frames and prompt match, not whether the story was told.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Frame metrics miss the axes that matter for video.",
+   "detail": "Story, physics, character identity across shots, pacing and audio-visual sync only exist over time. Frame-level tools cannot see them, so they need separate measures.",
+   "t": "2:20"
+  },
+  {
+   "idea": "LLM-as-judge is slow, expensive and prompt-sensitive, so calibrate it with humans.",
+   "detail": "Each harness report gets human annotation, and that feedback is fed back into the judge prompt. Because humans are costly, the judge is only as good as its calibration.",
+   "t": "4:35"
+  },
+  {
+   "idea": "Catch drift early, before stitching.",
+   "detail": "Starting frames for shots are generated from earlier frames, so a character drifting between two starting frames is cheap to fix. Long videos are many short clips, so a drifted 6-second clip should be regenerated before assembly.",
+   "t": "5:48"
+  },
+  {
+   "idea": "Distill an expert committee into one small, fast model that explains its verdict.",
+   "detail": "The small VLM returns why a clip is low (extra limb, bad physics, audio out of sync), not just a number. A bigger model scored better but was too slow, so the smaller model was chosen. Scoring a 15-second clip takes about 3 seconds.",
+   "t": "8:08"
+  },
+  {
+   "idea": "Train on pairwise comparisons, not absolute ratings.",
+   "detail": "People disagree on what a 6 means but agree on which of two clips tells a better story. Training on A-vs-B pairs generalises to better-or-worse, and bad examples were manufactured by corrupting good clips or generating random flops.",
+   "t": "9:24"
+  },
+  {
+   "idea": "The first version was confidently wrong because it learned the vibe, not the axes.",
+   "detail": "It gave a 9.2 for camera work on a clip where the camera did not move for four seconds. It learned the polished gloss of generated video rather than whether the story held. The label scheme, not the model, was the cause.",
+   "t": "10:41"
+  },
+  {
+   "idea": "Real-vs-AI pairs help, but they can teach an AI-detector shortcut.",
+   "detail": "Pairing real footage with AI footage raised the risk of the model learning to spot AI rather than quality. Mitigations were matching the encoding of both sides and annotating all axes the same way on both.",
+   "t": "11:58"
+  },
+  {
+   "idea": "Replace the fixed pipeline with an agent that verifies its own output.",
+   "detail": "Pipelines fit narrow use cases but drift when users bring their own characters, images and voices. Giving an agent validation tools lets it check and fix its work as it goes.",
+   "t": "13:10"
+  },
+  {
+   "idea": "Three rules: compare relative, score the real axes, and put eval inside the generation loop.",
+   "detail": "Pairwise comparison beats absolute scores. Score the axes you care about (storytelling, pacing, physics) rather than hoping they appear. Move evaluation as close to generation as possible, because earlier catches are cheaper.",
+   "t": "14:15"
+  },
+  {
+   "idea": "Audio sync is checked by timestamp and loudness, and lip sync is still unsolved.",
+   "detail": "Dolby Atmos is used to keep audio quality understandable. The model matches sound spikes to the timestamps of frames where a prompted event such as a door slam happens. Lip sync for talking animations is still unsolved.",
+   "t": "15:42"
+  },
+  {
+   "idea": "Human annotation is a standing process that also produces training data.",
+   "detail": "Teams run 10-15 minute annotation sessions with randomly assigned clips and axes. The results calibrate the AI judges and become the dataset for the next model version. Taste is subjective, so this is ongoing rather than one-off.",
+   "t": "18:32"
+  },
+  {
+   "idea": "Cost depends on scale and the build-versus-buy trade.",
+   "detail": "A small model can be served on one GPU or scaled to many instances. The trade is training and curation time against serving cost, compared with calling a frontier model per clip, which adds up at thousands per day.",
+   "t": "20:58"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Pairwise A-vs-B judge training",
+   "how": "Collect pairs of clips and label which is better on one axis instead of asking for 1-10 scores. Train the judge on the pairs, then use it for relative ranking.",
+   "when": "Subjective quality where absolute scores drift between raters, such as storytelling or taste."
+  },
+  {
+   "name": "Manufactured negatives",
+   "how": "Build bad examples by corrupting good clips (for example by breaking frames or sync) or by generating random flops, and pair them with good clips.",
+   "when": "Good examples are plentiful but bad ones are rare or unlabeled."
+  },
+  {
+   "name": "Matched-encoding real-vs-AI pairing with identical annotation",
+   "how": "Pair real footage with AI footage only after encoding both sides the same way and annotating all axes with the same procedure, so the model cannot separate them by artifacts.",
+   "when": "You want a quality judge from real-vs-generated contrast but must avoid training an AI detector."
+  },
+  {
+   "name": "Expert-committee distillation into a small VLM",
+   "how": "Run a set of metric and frontier-model judges to produce labels, train a small VLM on them, and have it output reasons along with scores.",
+   "when": "The judge must run inside a fast generation loop and cost or latency rules out calling large models each time."
+  },
+  {
+   "name": "Eval inside the generation loop",
+   "how": "Score each short generation as it is made and regenerate drifted pieces before they are assembled into a longer output.",
+   "when": "Errors are cheaper to fix early, and long outputs are built from many short segments."
+  },
+  {
+   "name": "Calibration sessions with randomized annotation",
+   "how": "Run short recurring human sessions where raters label randomly assigned items across several axes, then use the labels to recalibrate the judge and as training data for the next version.",
+   "when": "The judge needs ongoing alignment with human taste and the domain has no fixed ground truth."
+  },
+  {
+   "name": "Agent with validation tools",
+   "how": "Give the generating agent tools that score its own output so it can check and correct as it works, instead of running a fixed multi-step pipeline.",
+   "when": "Users bring varied inputs that break a fixed pipeline."
+  }
+ ],
+ "tools": [
+  "Qwen (small VLM, post-trained)",
+  "Dolby Atmos (audio quality)",
+  "CLIP-style frame metrics",
+  "frame-drift metrics",
+  "Kling",
+  "Seedance",
+  "Veo",
+  "Sora",
+  "OpenTelemetry (requested, planned for harness)"
+ ],
+ "numbers": [
+  {
+   "claim": "Small VLM scores a 15-second video in about 3 seconds; a bigger model was better but significantly slower.",
+   "t": "8:08"
+  },
+  {
+   "claim": "V1 gave a 9.2 for camera work on a clip where the camera did not move for four seconds.",
+   "t": "10:41"
+  },
+  {
+   "claim": "Regenerating a drifted 6-second clip before assembly is the unit of correction for long-form video.",
+   "t": "5:48"
+  },
+  {
+   "claim": "Human annotation sessions run 10-15 minutes each, periodically.",
+   "t": "18:32"
+  },
+  {
+   "claim": "Speaker has been at the company a bit over two years.",
+   "t": "0:08"
+  }
+ ],
+ "hot_takes": [
+  "Pairwise A-vs-B judgments beat absolute 1-10 scores for subjective quality, because raters agree on which of two is better but not on what a 6 means.",
+  "A judge trained on absolute ratings of generated media learns the polished gloss, not the axes you care about.",
+  "Real-vs-AI pairs are a trap unless encodings and annotation are matched, since the model will learn to detect AI rather than judge quality.",
+  "Evaluation should sit inside the generation loop, because catching drift early is much cheaper than fixing a finished long video."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The lesson on distilling a multi-judge committee into a small fast model applies to eval serving on InferCraft, but the talk is about video and does not cover LLM serving.",
+   "action": "Read only if we build a small judge model for AgentOS evals; otherwise skip."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness checks plan critiques and loop outputs. The talk's point that relative comparison beats absolute scoring, and that verification should sit inside the agent loop, applies directly to the plan to critique to debate flow.",
+   "action": "Try a pairwise check in the ProsHarness critique step: have the reviewer pick the better of two plans rather than give each a score, and log whether the verdicts agree across runs."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Entity-resolution match review is a pairwise decision, and the talk's warning about shortcut learning from manufactured negatives applies to the ER harness.",
+   "action": "On the ER hard cases, test pairwise judging ('which of these two record pairs is the same entity') against absolute match scores, and check whether the judge learns a shortcut such as the fils/associes pattern."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

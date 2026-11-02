@@ -1,0 +1,167 @@
+{
+ "one_line": "A single-repo demo comparing Claude Code's cloud Ultraplan with the Superpowers plugin for planning a release pipeline: Ultraplan is faster and cheaper but thinner, and the host plans locally about 90% of the time.",
+ "summary": "The host compares two ways to plan a feature in Claude Code: Ultraplan, which hands planning to a cloud session that clones the GitHub repo, and the Superpowers plugin, which plans locally in the terminal. Both are asked to plan the same release pipeline for a film-emulation CLI. Ultraplan's first run failed at about 4% usage, so the host reran it in debug mode. The plan it produced wrongly said the repo was empty, and the revision round cost about a third of the five-hour usage. Superpowers asked twice as many clarifying questions, produced a two-stage design and implementation plan of about 833 lines versus about 195 for Ultraplan, and wrote tests before each task. Its session cost about 75k tokens, which the host notes is a lot against an assumed 44k five-hour limit. The host's verdict is that Ultraplan suits starting work away from the machine, while local Superpowers suits most planning because it can talk to local code, skills and MCP tools. The evidence is one anecdotal run per tool, and the implementation was not reviewed.",
+ "speakers": [
+  "Better Stack host (unnamed in transcript)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Anthropic"
+ ],
+ "format": "review",
+ "topics": [
+  "claude-code",
+  "coding-agents",
+  "testing-verification",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "ultraplan",
+  "superpowers",
+  "claude-code",
+  "plan-mode",
+  "cloud-sessions",
+  "planning",
+  "token-usage",
+  "tdd",
+  "release-pipeline",
+  "claude-code-web"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Ultraplan moves planning from the CLI to Claude Code on the web",
+   "detail": "It clones the GitHub repo into a cloud container, writes a detailed plan there, and the plan can then run in the cloud or locally. The repo must be on GitHub because the cloud session needs to clone it.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The first Ultraplan run failed and needed a debug-mode rerun",
+   "detail": "The run failed at about 4% usage. Rerunning the same prompt in debug mode produced a browser link to the plan.",
+   "t": "1:01"
+  },
+  {
+   "idea": "The first Ultraplan plan misread the repo",
+   "detail": "It said the repo was empty with no commits, which was false. The plan's shape looked reasonable, and it included build scripts and a minimal CLI for a smoke test. Revising it made the cloud session clone the correct repo and produced a plan that understood the project.",
+   "t": "2:19"
+  },
+  {
+   "idea": "Plan revisions are expensive in usage",
+   "detail": "Revising the plan took usage from about 19% to 37%, roughly a third of the five-hour allowance for one plan. The first full plan took about 15% of usage.",
+   "t": "3:37"
+  },
+  {
+   "idea": "Ultraplan executes remotely without GitHub credentials",
+   "detail": "Implementation ran in the cloud and took about five minutes. The sandbox had no GitHub credentials, so the host made the branch and PR by hand. The host did not find an obvious way to run the plan in the CLI.",
+   "t": "3:37"
+  },
+  {
+   "idea": "Superpowers asks more questions and writes tests first",
+   "detail": "Ultraplan asked three questions and Superpowers six. Superpowers separates a design doc (problem and requirements) from an implementation plan of bite-sized tasks. Each task starts with a failing test, then the implementation. Ultraplan's plan had no tests.",
+   "t": "3:37"
+  },
+  {
+   "idea": "Superpowers plans are longer and cost more tokens",
+   "detail": "The Superpowers plan is about 833 lines against about 195 for Ultraplan. The whole Superpowers design and plan session used about 75.1k tokens, 57k for messages and 1.9k for skills. The host estimates a five-hour limit at about 44k tokens but says he is not sure of that figure, and the 75.1k excludes prompt caching.",
+   "t": "5:01"
+  },
+  {
+   "idea": "The choice depends on where you work",
+   "detail": "The host plans locally about 90% of the time. Local planning keeps the code, skills and MCP tools in reach and allows a back-and-forth dialogue. Ultraplan fits starting a feature and continuing from a phone or tablet while away from the machine, with the cloud session creating PRs.",
+   "t": "6:23"
+  },
+  {
+   "idea": "Ultraplan availability is limited",
+   "detail": "At recording time it was only in the Claude Code CLI and needed a paid Claude subscription with the Claude Code web link. The host hopes it will reach other plans and platforms, including starting it from Claude Code on the web.",
+   "t": "7:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Launch Ultraplan from the Claude Code CLI",
+   "how": "Use the /ultraplan slash command, or type the word 'ultraplan' in the prompt (it gets a rainbow highlight, like 'ultrathink'). The repo must be on GitHub and the Claude Code CLI version must be recent enough. When Claude asks whether to run the interactive plan on the web, answer yes. Wait about 2 to 3 minutes for the terminal notification that the plan is ready.",
+   "when": "Starting a feature you will continue away from your machine, or when you want the cloud session to clone and plan from the repo."
+  },
+  {
+   "name": "Review and revise an Ultraplan plan in the browser",
+   "how": "Open the plan in the browser (the host used the Claude Code desktop app for Mac). Select text in the plan and add a comment, for example to ask which repo it means or whether it has access. Ask Claude to revise the plan. Check the usage percentage before and after, because each revision spends usage. Accept the plan to run it remotely.",
+   "when": "When the first plan misreads the project. Revise it, and expect a second revision to cost about a third of the five-hour usage."
+  },
+  {
+   "name": "Superpowers two-stage planning",
+   "how": "Install the Superpowers plugin. First have it write a design doc that captures the problem and requirements, after a question round of about six questions. Then have it write an implementation plan that includes goal, architecture, tech stack, file structure and bite-sized tasks. Each task starts with a test that is run to confirm it fails, then the implementation. Use this path when you want the model to ask questions locally.",
+   "when": "Planning locally when you want a thorough plan with tests, and you can afford about 75k tokens for one planning session."
+  },
+  {
+   "name": "Stop the planner from using a skill when comparing",
+   "how": "For a fair comparison, tell the model in the prompt not to use the superpowers skill, so the run tests only the built-in feature.",
+   "when": "Benchmarking one planning feature against another inside the same environment."
+  }
+ ],
+ "tools": [
+  "Claude Code (CLI)",
+  "Ultraplan (Claude Code feature)",
+  "Claude Code on the web (Claude Code for Web)",
+  "Claude Code desktop app for Mac",
+  "Superpowers (Claude Code plugin)",
+  "Claude Routines (mentioned as newly released)",
+  "GitHub"
+ ],
+ "numbers": [
+  {
+   "claim": "Ultraplan run failed at about 4% usage on the first attempt",
+   "t": "1:01"
+  },
+  {
+   "claim": "Usage went from 0% before planning to 4% at the failed run, then 19% after the first plan",
+   "t": "1:01"
+  },
+  {
+   "claim": "Ultraplan plan took about 2 to 3 minutes; the revision about 1 minute",
+   "t": "2:19"
+  },
+  {
+   "claim": "Plan revision moved usage from about 19% to 37%, roughly 33% of usage for one plan",
+   "t": "3:37"
+  },
+  {
+   "claim": "Ultraplan execution took about 5 minutes",
+   "t": "3:37"
+  },
+  {
+   "claim": "Ultraplan asked 3 clarifying questions; Superpowers asked 6",
+   "t": "3:37"
+  },
+  {
+   "claim": "Superpowers plan about 833 lines vs about 195 for Ultraplan",
+   "t": "5:01"
+  },
+  {
+   "claim": "Superpowers design and plan session used about 75.1k tokens (57k messages, 1.9k skills); host assumes a 44k five-hour limit but is not sure of it and figures exclude prompt caching",
+   "t": "5:01"
+  }
+ ],
+ "hot_takes": [
+  "Ultraplan's plan said the repo was empty when it was not, and its first run failed; the host calls it not ready for serious planning without a revision.",
+  "Superpowers' longer, test-first plan is more thorough, but the host notes thoroughness does not guarantee better execution, and he did not compare the implementations.",
+  "A full revision cycle on Ultraplan cost about a third of the five-hour usage, which the host calls a lot for one plan.",
+  "For most work done locally, a dialogue-based local planner beats a cloud planner. Cloud planning is for leaving the machine, so the choice depends on where you work.",
+  "Evidence is one demo per tool on one repo; the 44k-token limit is the host's own unverified assumption."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Claude Code planning workflow with no link to AgentOS's infrastructure, proxy, storage or evals.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code CLI with plan, critique and debate, checkpoint/resume and phone-driven approvals. Ultraplan's cloud handoff (plan in cloud, resume on phone) and Superpowers' design-then-task-plan split with test-first tasks are direct comparison points.",
+   "action": "Compare ProsHarness's plan stage with Superpowers' two-stage design and implementation plan, and check whether its tasks should require a failing test first. Read the Ultraplan cloud handoff as a reference for ProsHarness phone-driven approvals."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

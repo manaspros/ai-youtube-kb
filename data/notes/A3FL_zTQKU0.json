@@ -1,0 +1,182 @@
+{
+ "one_line": "Stephanie Jarmak (Omni Analytics) argues agent evals should be done like experiments: check the tool pipeline end to end, match the benchmark to your own workload, decouple flags from enforcement, and trust independent traces.",
+ "summary": "Stephanie Jarmak, an AI engineer at Omni Analytics and former Sourcegraph evaluation lead for the Amp coding agent, presents a scientific approach to testing agents. She begins with a Sourcegraph experiment where a cheaper run did not actually use the code-search MCP tool under test, which shows that cost metrics can mislead when tool use is not verified. She shows that swapping the harness around a model can change benchmark rankings by 30+ percent, so the configuration under test has to match the real environment. She treats public benchmarks as a shortlist and recommends building internal, workload-representative benchmarks with clustered task families, repeated runs, and retained traces. For debugging, she walks the tool-use pipeline from availability to call to returned values to final outcome. She also covers metric choice, human review load from LLM-judge false alarms, independent trace records, production measurement and autonomy boundaries for her software factory. The talk is practitioner experience with a few concrete numbers and few hard benchmark results.",
+ "speakers": [
+  "Stephanie Jarmak"
+ ],
+ "orgs": [
+  "Omni Analytics",
+  "Sourcegraph"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "testing-verification",
+  "observability",
+  "governance-compliance"
+ ],
+ "tags": [
+  "agent evaluation",
+  "benchmarks",
+  "harness vs model",
+  "tool-use debugging",
+  "trace reliability",
+  "LLM-as-judge false alarms",
+  "human escalation",
+  "autonomy boundaries",
+  "shadow deployment",
+  "software factory",
+  "precision recall",
+  "non-determinism"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A cheaper run is not a win if the agent never used the tool under test.",
+   "detail": "At Sourcegraph, a prompt change made a code-search MCP run about 28% cheaper, but the agent still never called the tool. Check tool use before reading cost or efficiency numbers, since the cost change is only a lead to investigate.",
+   "t": "1:11"
+  },
+  {
+   "idea": "The harness can matter as much as the model, and swapping one can flip the ranking.",
+   "detail": "On a third-party comparison of about 63 Terminal Bench tasks, one model beat another under OpenHands. After only the harness was swapped, the other model did better, a difference of 30+ percent in effectiveness. Evaluate the exact model and harness pairing you will deploy.",
+   "t": "2:31"
+  },
+  {
+   "idea": "Public benchmarks are a shortlist, not a decision.",
+   "detail": "She defines an evaluation as measurement made to decide something about your product or process. Public benchmarks help map the landscape, but results are spiky because of training, and a benchmark about bug fixing may not reflect the work a law firm or a dev team does.",
+   "t": "3:44"
+  },
+  {
+   "idea": "Build internal benchmarks from real workloads and run them repeatedly.",
+   "detail": "Cluster real tasks into families, such as code understanding versus bug fixing or Q&A versus dashboard building. Repeat runs because agents are non-deterministic, test how changes interact, and keep all traces so failures can be investigated later. She frames this as a flywheel of hill-climbing on your own configurations.",
+   "t": "5:56"
+  },
+  {
+   "idea": "Debug tool use as a pipeline with checkpoints.",
+   "detail": "Ask in order: was the tool in the agent's context at all, was it called, what values came back, and were those values used in the final answer. A better tool can still leave the task outcome unchanged, because the agent or configuration may ignore its output.",
+   "t": "7:21"
+  },
+  {
+   "idea": "Pick the metric your business needs, because single-number scores hide the tradeoff.",
+   "detail": "Her search comparison optimized for F1 (precision plus recall). Plain grep pulled 295 files when 6 were needed, while a recall-only goal would have accepted that result. Ask what the validator measures and why it was chosen.",
+   "t": "8:27"
+  },
+  {
+   "idea": "Decouple flagging a problem from enforcing a stop, and size the human review load.",
+   "detail": "An agent noticed failures in her software factory but had no code-level mechanism to stop, so flags did nothing. Separately, an LLM judge with a 1 percent false alarm rate would send about 10,000 reviews to humans at scale, so teams need to know whether they have the domain-expert capacity for that.",
+   "t": "10:52"
+  },
+  {
+   "idea": "The agent's own trace may not be trustworthy, so keep an independent record.",
+   "detail": "In a seeded security test, a hash check on the record passed even though injected issues were present. An independent comparison of traffic and model-change history caught all of them. Match your trace trust level to your security needs.",
+   "t": "12:08"
+  },
+  {
+   "idea": "Production is the ground truth, so measure there and use shadow runs for risky changes.",
+   "detail": "After deploying a change, keep measuring in the real environment. For high-blast-radius changes, run in shadow mode first to gather data without exposing users to the risk. Choose the risk level you will accept up front.",
+   "t": "14:37"
+  },
+  {
+   "idea": "Define autonomy boundaries explicitly for the agent.",
+   "detail": "In her software factory, the agent states the next action, the reason a human is needed, the operating scope, and which human check it suggests removing. The team uses this to decide when autonomous action is safe and when to stop and escalate.",
+   "t": "16:04"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Tool-use pipeline audit",
+   "how": "Log the full available context per run. Check in order: tool present in the agent's context, tool invoked, returned values, and whether those values reached the final output. Stop at the first broken step and fix it there before judging the outcome.",
+   "when": "When a tool looks correct in isolation but the agent does not use it or does not benefit from it."
+  },
+  {
+   "name": "Harness-plus-model pairing as the unit under test",
+   "how": "Hold the harness fixed while comparing models, and hold the model fixed while comparing harnesses. Interpret results only for the exact pairing you plan to deploy, not for a model's standalone benchmark score.",
+   "when": "Choosing a model and agent harness, or assessing a benchmark leaderboard."
+  },
+  {
+   "name": "Workload-representative internal benchmark",
+   "how": "Collect real production or developer tasks. Classify them into families such as Q&A (easy to hard), dashboard building, app building, bug fixing, or code understanding. Sample enough tasks per family, run each configuration several times to measure variance, and retain all traces.",
+   "when": "When deciding whether a change to model, prompt, tool or harness helps your actual workload."
+  },
+  {
+   "name": "Explicit metric choice per use case",
+   "how": "Write down which error matters more, such as precision (too many irrelevant files) or recall (missing relevant ones), then choose a metric that combines them (for example F1) or a single-sided metric to match. Do not accept a single benchmark number without checking the validator.",
+   "when": "Evaluating retrieval or search tools, or reading benchmark summary scores."
+  },
+  {
+   "name": "Separate flagging from enforcement",
+   "how": "Keep detection (for example an LLM judge raising an alarm) separate from a hard gate in code that stops the action. Route alarms to humans only after computing the expected alarm volume from the false alarm rate and the number of runs, and compare that volume against reviewer capacity.",
+   "when": "Building quality gates or approval steps for autonomous agents."
+  },
+  {
+   "name": "Independent record comparison for trust",
+   "how": "Do not rely only on an integrity check of the agent's own trace (such as a hash). Record traffic and model-change history through a separate path and compare the two to detect tampering or missing events.",
+   "when": "High-security agents, or when the agent could alter its own logs."
+  },
+  {
+   "name": "Shadow deployment and production measurement",
+   "how": "Run new configurations in shadow alongside production before full rollout, especially for high-blast-radius changes. Keep observability on in production to validate offline results.",
+   "when": "Rolling out agent changes where offline evals may not match real usage."
+  },
+  {
+   "name": "Autonomy boundary spec for each action",
+   "how": "Have the agent report four things before acting: the next action, why a human is needed, the operating scope, and which human check it would remove. Use these answers to decide whether to proceed autonomously or escalate.",
+   "when": "Designing human-in-the-loop controls for a software factory or other autonomous pipeline."
+  }
+ ],
+ "tools": [
+  "Amp (coding agent)",
+  "Sourcegraph code search MCP tool",
+  "Claude (as used in the grep example)",
+  "grep",
+  "Terminal Bench (transcribed as 'Terminal Bench 4')",
+  "OpenHands (open coding-agent harness)",
+  "Opus 5 (model, as transcribed)",
+  "Astra (model or harness, as transcribed; unverified)",
+  "Code Scale Bench (speaker's own public benchmark for large codebases)",
+  "LLM-as-judge (generic pattern)",
+  "Omni Analytics evaluation harness (in progress)"
+ ],
+ "numbers": [
+  {
+   "claim": "A prompt change made a Sourcegraph code-search MCP run about 28% cheaper, but the tool was still not used.",
+   "t": "1:11"
+  },
+  {
+   "claim": "About 63 Terminal Bench tasks: swapping only the harness changed the model ranking, a difference of 30+ percent in effectiveness.",
+   "t": "2:31"
+  },
+  {
+   "claim": "Grep-based search returned 295 files when about 6 were needed.",
+   "t": "8:27"
+  },
+  {
+   "claim": "An LLM judge with a 1 percent false alarm rate would produce about 10,000 human reviews at scale.",
+   "t": "10:52"
+  }
+ ],
+ "hot_takes": [
+  "Public benchmark leaderboards are spiky and should be used only to shortlist, not to choose a model.",
+  "Harness choice can change effectiveness more than the model choice does (30+ percent in her example).",
+  "A cheaper run that never used the tool is not a result you should act on.",
+  "Integrity hashes on an agent's trace are not enough; an independent record is needed for trust.",
+  "Flagging a problem without a code-enforced stop does not protect anything."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS claims to prove itself with benchmarks and correctness checks. The talk gives a method for workload-representative eval design, a multi-stage tool-use audit, and decoupling alarms from enforcement, which applies to the Crucible and SkillForge evals.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs plan and critique loops and phone-based approvals around Claude Code. The talk's advice to enforce stops in code, not just flags, and to define explicit autonomy boundaries (next action, why a human is needed, scope, check to remove) applies directly to approval design.",
+   "action": "Add an autonomy-boundary record to the approval step: the agent must state the next action, why it needs a human, the scope, and which check it proposes to skip. Enforce the stop in the harness code, not in the prompt."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

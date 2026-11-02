@@ -1,0 +1,49 @@
+# Build Apps with Cursor Like the 1% Using This NEW Method
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `OZaxtm3RyCw` · [watch](https://youtu.be/OZaxtm3RyCw) · **date:** 2025-11-02 · **length:** 12:17 · **format:** tutorial · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** AI LABS host (unnamed) · **orgs:** Cursor, Anthropic, Perplexity, Unsplash
+- **topics:** coding-agents, context-engineering, agent-architecture · **tags:** taskmaster-ai, cursor, prd, task-decomposition, task-dependencies, implementation-drift, context-overload, nextjs, unsplash-api, perplexity, cursor-rules, single-chat-workflow
+
+> Walkthrough of building a wallpaper app in Cursor with Taskmaster AI: the PRD becomes a dependency-ordered task list the agent works through one task at a time, so one chat holds the whole build.
+
+## Summary
+The host builds a Next.js wallpaper app (Unsplash API, search, filters, download, caching) inside Cursor using the Taskmaster AI tool. Setup is a global install, a project init that asks for name, description and version, and an .env file holding an Anthropic key (required) and an optional Perplexity key. The workflow is: brainstorm the app with the agent without letting it edit files, have it write a PRD from an example template, then have the tool parse the PRD into about 10 tasks with priorities and dependencies. Cursor rules map keywords to Taskmaster commands, and the host had to strip a wrong input flag from one command. The agent then works task by task, marking each pending, in progress or done, expanding large tasks into subtasks, and checking dependencies before starting. Plan changes mid-build are handled by telling the agent what changed so it regenerates the upcoming tasks. The host claims all seven tasks finished in one chat without the context overload or repeated re-prompting they had hit before. The evidence is a single small app, and the video gives no cost figure.
+
+## Key ideas
+- **Keep the agent's state in a task store, not in its context window.** — The host credits the tool with avoiding context overload: the agent lists its tasks, checks which one is pending or in progress, and continues. It does not need to remember what comes next, which is why seven tasks fit in one chat. ([9:55](https://youtu.be/OZaxtm3RyCw?t=595))
+- **Plan first in a no-edit discussion, then turn the plan into a PRD and tasks.** — The host asks the agent to discuss the idea without creating or editing files, then has it write a PRD by referencing an example PRD as a template. The PRD is saved to the scripts folder and parsed into tasks. ([2:26](https://youtu.be/OZaxtm3RyCw?t=146))
+- **Tasks carry priorities and dependencies, and the agent respects them.** — Parsing the PRD yielded 10 tasks with priorities and interdependencies. Before starting task 6, the agent found it depended on tasks 2 and 3. Tasks can be completed out of linear order, but only once their dependencies are done. ([5:08](https://youtu.be/OZaxtm3RyCw?t=308))
+- **Large tasks get broken into subtasks by the tool, not the human.** — For task 2 (Unsplash integration), the agent looked up API requirements, decided the task was large, and split it into subtasks before starting. Status moved from pending to in progress to done. ([6:53](https://youtu.be/OZaxtm3RyCw?t=413))
+- **Plan changes mid-build are handled by regenerating future tasks.** — The README describes implementation drift. The user states what changed and lists the modifications. The tool then regenerates the upcoming tasks through Claude. The workflow is described as non-rigid and interruptible. ([6:53](https://youtu.be/OZaxtm3RyCw?t=413))
+- **Tool commands are triggered by Cursor rules, and the default command can be wrong.** — The tool's Cursor rules map keywords to commands documented in the README. Cursor's default choice included an input flag that broke the command, so the host removed it by hand. ([3:47](https://youtu.be/OZaxtm3RyCw?t=227))
+- **Quality claim is a single anecdote.** — The host says the tool 'completely eliminated' the repeated mistakes and re-prompts they had seen before. The evidence is one small app with a ~12 minute video, and the video does not show a comparison run without the tool. ([9:55](https://youtu.be/OZaxtm3RyCw?t=595))
+
+## Techniques
+- **Install and initialize Taskmaster globally, then init per project** — Install the tool globally with the -g flag, then run its init command from the project root. Enter a project name, a description (not functional), and a version (press Enter for the default 1.0), then confirm. The init command itself is pasted from the README, and its name is not spoken in the video. *When:* Starting a new greenfield app in Cursor where the agent needs a persistent plan.
+- **Configure keys in .env** — Rename .env.example to .env. Add the Anthropic API key, which is required because the tool calls Claude to break the plan into chunks and guide the agent step by step. Optionally add a Perplexity key, which the agent uses for research (API structure, requirements) when the project needs external data. *When:* Immediately after init, before running any tool command.
+- **Brainstorm with a no-edit instruction** — Prompt the agent to discuss the app idea and not create or edit any files yet. Let it propose the stack and structure, refine the plan through conversation, then move on. *When:* The idea is still fuzzy and you want the plan settled before any code exists.
+- **Generate the PRD from an example template** — Explicitly reference the example PRD file and ask the agent to write a new one based on the discussion. Save it as prd.txt in the scripts folder, following the template prompt from the README. *When:* After the plan is settled, to produce the input file the tool parses.
+- **Parse the PRD into tasks, then work them sequentially** — Ask the agent to parse prd.txt into tasks (the tool calls Claude to generate them). Check the generated task list, then tell the agent to start task 1. For each task: agent sets status to in progress, implements, and sets it to done. Before starting a task, the agent checks its dependencies. Ask the agent to continue after a network error by listing tasks and their status. *When:* A multi-step build that would otherwise overflow one chat context.
+- **Handle implementation drift with an explicit change list** — Tell the agent you changed the approach, list the modifications, and ask it to update future tasks. The tool then regenerates the upcoming tasks through Claude. Do not restart the workflow. *When:* Requirements change partway through implementation.
+- **Work in the correct subdirectory** — Tell the agent which directory to work from (the host used a front-end directory) before starting a task. The agent acknowledged this and proceeded in that directory. *When:* The project is a monorepo or has separate front-end and back-end folders.
+
+## Numbers
+- The tool generated 10 tasks from the PRD, with priorities and interdependencies. ([3:47](https://youtu.be/OZaxtm3RyCw?t=227))
+- All seven tasks were completed in a single Cursor chat, and the agent kept asking to start a new chat. ([9:55](https://youtu.be/OZaxtm3RyCw?t=595))
+- Unsplash free-tier limit at the time: about 50 image requests per hour. The host worked around it by fetching one image and repeating it. ([8:29](https://youtu.be/OZaxtm3RyCw?t=509))
+- Default project version set at init is 1.0 when Enter is pressed. ([1:26](https://youtu.be/OZaxtm3RyCw?t=86))
+- Anthropic API key is required. Perplexity API key is optional and only needed if the project uses external data. ([1:26](https://youtu.be/OZaxtm3RyCw?t=86))
+- Token usage for the seven tasks was shown on screen but no dollar or token figure was spoken. The host called it 'not that expensive'. ([9:55](https://youtu.be/OZaxtm3RyCw?t=595))
+
+## Hot takes
+- The title's 'Like the 1%' framing is clickbait; the substance is an ordinary spec-to-tasks workflow.
+- The claim that the tool 'completely eliminated errors' rests on one small wallpaper app and no comparison run without it.
+- Cost is raised as a selling point, but no figure is spoken on screen or in the narration.
+- The host says the tool works 'without any issues' for an app with a known API rate limit, and the repeated wallpaper images were a workaround for that limit, not a success of the tool.
+
+## Tools mentioned
+Cursor, Taskmaster AI, Claude (Anthropic API), Perplexity API, Unsplash API, Next.js
+
+## Relevance to our work
+- **prosharness** (2/3): The video's core mechanism is a persisted task store (pending, in progress, done, with dependencies) that lets an agent resume across an interrupted session without holding the full plan in context. This overlaps with ProsHarness checkpoint/resume of long agent runs. → *Compare ProsHarness checkpoint state with a Taskmaster-style task file: check whether a run can resume from a dependency-ordered task list and whether drift is handled by regenerating only the upcoming tasks.*
+- **agentos** (1/3): Context management and task state are relevant to long-running agents in general, but this is a single-user coding tool, not infrastructure. → *Low priority: note the PRD-to-task-list pattern as a reference for agent planning state; no change needed to AgentOS.*

@@ -1,0 +1,152 @@
+{
+ "one_line": "Walkthrough of the open-sourced Apollo 11 Guidance Computer code: 1960s hardware limits, a priority job scheduler that raised alarm 1202 under overload, restart checkpoints, and how to run it in an emulator.",
+ "summary": "The video is a retro-computing walkthrough of the Apollo 11 Apollo Guidance Computer source code, which is public on GitHub (transcribed by volunteers from scans of printouts). The presenter covers the hardware limits (about 1 MHz, 2048 words of RAM, roughly 70 KB of core rope read-only memory that could not be patched after weaving) and the verb/noun command language forced by a 19-key keypad and digit-only display. The most technically useful part is the executive scheduler: fixed slots for priority jobs, with overflow raising alarm 1202 instead of queueing. It then explains restart protection through checkpoints and an interpreter VM that trades speed for code size. The landing story ties these together: a rendezvous radar fault consumed about 13 to 15 percent of CPU, the navigation job missed its 2-second cycle, and the computer restarted five times on descent. The video closes by running the code in the Virtual AGC emulator and walking through the verb/noun commands used for lamp test, clock, alarm display and the pre-liftoff countdown. Most of the content is history and humor, with the scheduler and restart design as the real engineering substance.",
+ "speakers": [],
+ "orgs": [
+  "MIT Instrumentation Lab",
+  "MIT Museum",
+  "Raytheon",
+  "GitHub",
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools",
+  "agent-architecture"
+ ],
+ "tags": [
+  "apollo-guidance-computer",
+  "assembly",
+  "emulation",
+  "virtual-agc",
+  "real-time-scheduling",
+  "restart-protection",
+  "checkpointing",
+  "retro-computing",
+  "history"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The Apollo 11 source is public (on GitHub since 2016, about 72k stars per the presenter), but the original survived only as two printouts; the GitHub version was transcribed by volunteers from scans.",
+   "detail": "Presenter says more than 400 people worked on Apollo software and Margaret Hamilton led the command module software team; the code is annotated with sign-off pages and comments.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Hardware constraints shaped everything: about 1 MHz clock, 2048 words (about 3840 bytes) of RAM, and roughly 70 KB of core rope read-only memory.",
+   "detail": "Core rope was woven by hand with wire through magnetic rings (wire through ring = 1, around = 0), so the program could not be patched and had to be locked months before launch.",
+   "t": "1:20"
+  },
+  {
+   "idea": "A tiny verb/noun command language replaced words because the keypad had 19 keys and the display only showed digits.",
+   "detail": "Verb = action (display, load), noun = the data it applies to (clock, position); the mapping lived in a document of assembly and operational information, and astronauts likely carried a checklist.",
+   "t": "3:53"
+  },
+  {
+   "idea": "The executive scheduler runs jobs by priority in fixed slots, and overflow is treated as a fatal alarm rather than being queued.",
+   "detail": "The lunar module had 8 job slots of 12 words each; when a new job arrived with all slots full, the computer raised alarm 1202. A code comment was out of date (it said 7 sets of 11 registers, the code scanned 8 sets of 12).",
+   "t": "3:53"
+  },
+  {
+   "idea": "Restart protection uses checkpoints: on restart, protected jobs resume from their last checkpoint and unprotected work is dropped.",
+   "detail": "The landing software re-enabled the descent engine if it had been running. Heavy math ran in an interpreter VM packing two instructions per word, about 19 times slower than native assembly but much smaller.",
+   "t": "4:56"
+  },
+  {
+   "idea": "A rendezvous radar wiring fault forced the landing into overload, causing repeated restarts.",
+   "detail": "The radar fired up to 12,800 pulses per second, using 13 to 15 percent of the CPU. Landing already used about 90 percent, so the 2-second navigation job never finished, copies kept being scheduled until 1202 fired, and the computer restarted five times during descent.",
+   "t": "6:01"
+  },
+  {
+   "idea": "Pre-launch and liftoff were handled by the command module computer itself, with a manual backup.",
+   "detail": "The computer sat in program 2 keeping its gyros aligned; the checklist had the crew pre-type verb 75 without Enter. A liftoff signal from the rocket switches it to program 11 and resets the clock; Enter on verb 75 is the fallback if that signal never arrives.",
+   "t": "7:02"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Fixed-slot priority job scheduler with overflow alarm",
+   "how": "Keep a fixed array of job slots with priorities; the highest-priority runnable job always runs. When no slot is free, raise an explicit alarm (Apollo used 1202) instead of queueing unboundedly. Each job record has a fixed size (12 words in the LM).",
+   "when": "Memory-constrained or hard real-time systems where dynamic allocation is unacceptable and overload must be visible, not silently absorbed. Relevant as prior art for priority schedulers with preemption (e.g. a 4-class scheduler on one GPU)."
+  },
+  {
+   "name": "Checkpoint-based restart protection",
+   "how": "Place checkpoints through critical sequences. On restart, resume each protected job from its last checkpoint and drop anything not marked protected. Restore hardware state explicitly (the landing software re-enables the descent engine if it was on).",
+   "when": "Any long-running, restartable process where some steps must survive a crash and others must be discarded. Maps to checkpoint/resume design for long agent runs."
+  },
+  {
+   "name": "Interpreter VM to trade speed for code size",
+   "how": "Write bulky, infrequent math as bytecode for a small interpreter that packs two instructions per memory word, rather than in native assembly.",
+   "when": "When code size is the binding constraint and the routine is not on the critical path (Apollo accepted about 19x slowdown)."
+  },
+  {
+   "name": "Verb/noun command language for constrained input",
+   "how": "Map a small key set to two-number commands: verb selects the action, noun selects the data, and Enter executes. Keep the full mapping in a reference document the operator carries.",
+   "when": "Input devices with few keys and limited display output, such as embedded panels or emergency consoles."
+  },
+  {
+   "name": "Reproducing Apollo 11 in the Virtual AGC emulator",
+   "how": "The presenter used the Virtual AGC project, ran a script he wrote that builds the emulator and assembles the Apollo 11 source (the output matches the original memory byte for byte, per the presenter), and opens the DSKY keypad. Commands shown: verb 35, Enter (lamp test); verb 16, noun 36 (ticking clock); verb 5, noun 9 (alarm-code display used during landing). Before liftoff, type verb 75 without Enter; the liftoff signal switches to program 11.",
+   "when": "Learning the Apollo code or verifying a retro emulator against the original binary. The presenter does not show the build script itself, so exact commands are not in the transcript."
+  }
+ ],
+ "tools": [
+  "Apollo 11 source code (AGC assembly, GitHub)",
+  "Virtual AGC (emulator project)",
+  "DSKY keypad (emulated)",
+  "VS Code",
+  "Raspberry Pi Pico (comparison only)"
+ ],
+ "numbers": [
+  {
+   "claim": "Apollo software had more than 400 people working on it; source public on GitHub since 2016 with about 72,000 stars (as stated).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Computer ran about 1 MHz with 2048 words (about 3840 bytes) of RAM and about 70 KB of read-only core rope memory; Raspberry Pi Pico has about 70x the RAM and about 130x the clock speed (per presenter).",
+   "t": "1:20"
+  },
+  {
+   "claim": "The processor was built from about 2,800 chips; in 1963 Apollo was buying about 60% of all US microchips.",
+   "t": "1:20"
+  },
+  {
+   "claim": "Keypad had 19 keys; the lunar module had 8 job slots of 12 words each.",
+   "t": "3:53"
+  },
+  {
+   "claim": "Interpreter for bulk math is about 19x slower than assembly but much smaller.",
+   "t": "4:56"
+  },
+  {
+   "claim": "Faulty rendezvous radar fired up to 12,800 pulses per second, consuming about 13 to 15 percent of the CPU; landing already used about 90 percent.",
+   "t": "4:56"
+  },
+  {
+   "claim": "Computer restarted five times during the descent after alarm 1202 overloads.",
+   "t": "6:01"
+  }
+ ],
+ "hot_takes": [
+  "The history and humor carry the video; the engineering content (scheduler, restart protection, radar overload) is real but covered briefly in an 8-minute entertainment piece.",
+  "Presenter claims the assembled source matches the original Apollo 11 memory byte for byte; this is narration, not shown on screen in the transcript.",
+  "Some comments and anecdotes (e.g. the out-of-date comment about register sets) are the presenter's reading of the code, not verified against the source here."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Apollo's executive is a small, concrete prior-art example of a fixed-slot priority scheduler where overload raises an alarm instead of queueing, relevant to InferCraft's 4-class priority scheduler and preemption.",
+   "action": "Read the Apollo executive pattern (fixed slots, highest-priority-first, overflow alarm 1202) as a design reference: decide explicitly whether a full priority queue should preempt, reject, or alarm, and what the InferCraft scheduler does on overflow."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Checkpoint-then-restart with explicit protected vs. unprotected work mirrors ProsHarness checkpoint/resume of long Claude Code runs.",
+   "action": "Compare ProsHarness checkpoint/resume against the Apollo rule (resume protected jobs from last checkpoint, drop the rest); list which ProsHarness steps are protected and what is restored on restart."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

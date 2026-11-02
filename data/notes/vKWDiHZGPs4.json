@@ -1,0 +1,163 @@
+{
+ "one_line": "Better Stack tutorial that walks through Meta's SAM 2 and SAM 3D Objects models and builds an Expo mobile app that turns a photo into a 3D model, with the models hosted on a rented RunPod A40 GPU.",
+ "summary": "The speaker explains Meta's Segment Anything family: SAM 2 uses clicks or boxes, later SAM versions accept text prompts, and SAM 3D reconstructs 3D shapes from a single 2D image plus a mask (SAM 3D Objects for everyday objects, SAM 3D Body for human shape and pose). He describes the pipeline as an image-and-mask encoder, a flow-based transformer that outputs 3D Gaussian primitives, Gaussian splatting rendering, and conversion of the resulting point cloud to a mesh. The build uses an Expo front end that calls an API running in a RunPod A40 container, with SAM 2 for one-click segmentation and SAM 3D Objects for reconstruction. Setup is a single script that takes about 15 minutes, mostly for SAM 3D dependencies, and requires a Hugging Face token with approved access to the gated model weights. In tests, SAM 3D filled in occluded parts of a dog and an old car well, took roughly a minute per object, and exported GLB files that were usable in Blender but low-detail up close. It failed on a squirrel photo (wrong proportions, Pokemon-like result) and did not reproduce text labels, and the speaker stresses that good segmentation is still needed. The speaker also notes that Meta's hosted playground segments more completely than SAM 2 does out of the box.",
+ "speakers": [
+  "Andrus"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Meta",
+  "RunPod",
+  "Expo",
+  "Hugging Face",
+  "Blender"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "voice-multimodal",
+  "inference-serving"
+ ],
+ "tags": [
+  "sam-2",
+  "sam-3d",
+  "segment-anything",
+  "3d-reconstruction",
+  "gaussian-splatting",
+  "expo",
+  "runpod",
+  "mobile-app",
+  "remote-gpu",
+  "huggingface",
+  "glb",
+  "vision-models"
+ ],
+ "key_ideas": [
+  {
+   "idea": "SAM 3D reconstructs 3D geometry and texture from one 2D image plus an object mask, and can fill in parts of an object that are occluded.",
+   "detail": "Pipeline described: image and mask go through a vision encoder, then a flow-based transformer produces 3D Gaussian primitives, which are rendered via Gaussian splatting and converted to a solid mesh. Two variants: SAM 3D Objects (everyday objects and scenes) and SAM 3D Body (human shape and pose).",
+   "t": "1:38"
+  },
+  {
+   "idea": "The app architecture offloads all vision work to a remote GPU container behind a small API, with a thin mobile client.",
+   "detail": "Expo handles photo capture, segmentation UI and 3D preview; a RunPod A40 pod hosts the models and exposes port 8000. The speaker chose an A40 to limit cost and notes an RTX 5090 would be faster.",
+   "t": "3:01"
+  },
+  {
+   "idea": "SAM 2 and SAM 3 are used for different parts of the flow: SAM 2 for one-click segmentation, SAM 3D Objects for reconstruction.",
+   "detail": "SAM 3 uses a draggable box for segmentation; the speaker prefers SAM 2's one-click flow and says the comparison is a chance to test both generations.",
+   "t": "4:05"
+  },
+  {
+   "idea": "Out-of-the-box SAM 2 segmentation can be partial, so extra clicks are needed to mask the whole object before 3D generation.",
+   "detail": "On a dog photo, one click segmented only the head. Meta's playground segmented the whole dog. The speaker says the demo behavior is not what the released model does by default; adding more points fixed it.",
+   "t": "7:48"
+  },
+  {
+   "idea": "SAM 3D output is a GLB mesh plus a preview GIF, and quality is good but limited in fine detail.",
+   "detail": "The app shows a rotating GIF rather than a 3D viewer; the API serves an assets listing for downloading GLB files. In Blender the models were usable for low-poly game assets but low-resolution up close.",
+   "t": "8:53"
+  },
+  {
+   "idea": "SAM 3D fails when the input shows too little of the subject, and it does not reproduce text.",
+   "detail": "A squirrel with only the head masked got added hands and feet with wrong proportions, looking more like a Pokemon. Labels and text on objects were not reproduced, though object shapes and proportions were mostly correct on household items.",
+   "t": "10:17"
+  },
+  {
+   "idea": "The speaker's main takeaway is that segmentation quality is the bottleneck, not the 3D model.",
+   "detail": "He calls the occlusion compensation powerful but says good segmentation is still necessary for good output. He also tested architecture (a CN Tower model) taken outdoors.",
+   "t": "10:17"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Provision a RunPod GPU pod for vision models",
+   "how": "Deploy an A40 pod with container disk raised to 100 GB (project is about 50 GB), expose port 8000 as the API port, SSH in with the copied command, and clone the API repo. Speaker notes that disk is cheap on RunPod and GPU time is the real cost.",
+   "when": "When you need a remote GPU for a self-hosted model demo or prototype and want to avoid buying hardware."
+  },
+  {
+   "name": "Hugging Face gated-model access setup",
+   "how": "Create a Hugging Face account and access token, request access to the SAM model repos (approval is usually quick), then run the Hugging Face CLI login in the pod and paste the token when prompted.",
+   "when": "Before the first run, whenever weights come from gated Hugging Face repos."
+  },
+  {
+   "name": "One-command setup script, then launch the API",
+   "how": "Run the single setup script from the API repo (about 15 minutes, mostly SAM 3D dependencies). Launch the server with uvicorn bound to host 0.0.0.0 and port 8000 (caption reads 'uvicorn api:app', so the module name is inferred). The first launch downloads SAM 2 weights from Hugging Face.",
+   "when": "To reproduce the stack from the repo. Expect a long install and a first-run download."
+  },
+  {
+   "name": "Point the Expo client at the pod",
+   "how": "Clone the front-end repo, run npm install, then run expo. In api.ts, set the SAM API base variable to the container URL from RunPod's connect button.",
+   "when": "To connect a local mobile client to the remote model API."
+  },
+  {
+   "name": "Iterative point-based segmentation before 3D generation",
+   "how": "Tap points on the object in the app; add more points until the whole object is masked (a single click on a dog's head only covered the head). Then trigger 3D generation (roughly a minute on an A40).",
+   "when": "For partially occluded objects or any subject where a single click under-segments."
+  },
+  {
+   "name": "Export and inspect generated assets",
+   "how": "Use the API's assets list endpoint to download generated files, including the GLB, and open the GLB in Blender to check detail.",
+   "when": "When the 3D output needs a 3D tool such as Blender, since the app has no built-in viewer."
+  }
+ ],
+ "tools": [
+  "SAM 2",
+  "SAM 3",
+  "SAM 3D Objects",
+  "SAM 3D Body",
+  "Expo",
+  "RunPod (A40 GPU pod)",
+  "RTX 5090 (mentioned as a faster alternative)",
+  "Hugging Face CLI",
+  "uvicorn",
+  "npm",
+  "Blender",
+  "GLB file format",
+  "Gaussian splatting"
+ ],
+ "numbers": [
+  {
+   "claim": "Project footprint is about 50 GB; container disk set to 100 GB on RunPod.",
+   "t": "4:05"
+  },
+  {
+   "claim": "Full setup takes about 15 minutes, mainly due to SAM 3D dependencies.",
+   "t": "5:21"
+  },
+  {
+   "claim": "A40 GPU used; RTX 5090 suggested as faster but the speaker did not want to pay for it.",
+   "t": "3:01"
+  },
+  {
+   "claim": "3D generation takes roughly a minute on the A40.",
+   "t": "7:48"
+  },
+  {
+   "claim": "Video length is 12:25.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Meta's hosted playground segments objects more completely than SAM 2's out-of-box behavior, and the speaker says even Meta's own demos do not match what the released model does.",
+  "SAM 3D's occlusion compensation is 'really, really powerful' on the dog and car, but it breaks on unusual subjects and text.",
+  "The setup is heavy for a demo: a 50 GB project and roughly 15 minutes of installation."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "InferCraft-style GPU serving: the video is a small example of hosting a vision model on a rented GPU behind a thin API. It is a demo pattern, not a serving-architecture reference.",
+   "action": "No change needed. Revisit only if vision or 3D generation enters AgentOS scope."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content about the Claude Code CLI, checkpoints, planning, or approvals.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

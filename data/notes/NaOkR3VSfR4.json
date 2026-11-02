@@ -1,0 +1,151 @@
+{
+ "one_line": "Viren Baraiya on running production agents: the LLM only plans, a deterministic harness executes side effects, durable state and human gates make it safe, shown with a Conductor SRE remediation demo.",
+ "summary": "Viren Baraiya argues that production agents should be treated as applications built from harnesses, not as a single loop with tools. He splits responsibilities into \"brains\" (the LLM, which only plans the next steps) and \"hands\" (a deterministic harness that executes them, including approvals and side effects). He frames harnesses as late-bound sagas: the tool set is fixed and deterministic, but the agent composes the sequence at runtime. Because harnesses can run for seconds or months, durability is presented as the baseline requirement rather than a feature. The demo is an SRE remediation agent that emits a multi-step plan, compiles it into a Conductor workflow, runs it, and replans in a second loop that skips a rollback already completed in the first. The talk is short and mostly conceptual, with a brief closing pitch for the open-source Conductor project.",
+ "speakers": [
+  "Viren Baraiya"
+ ],
+ "orgs": [
+  "Orkes",
+  "Conductor (open source)"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "security-guardrails",
+  "multi-agent"
+ ],
+ "tags": [
+  "harness",
+  "durable-execution",
+  "saga",
+  "brains-vs-hands",
+  "human-in-the-loop",
+  "idempotency",
+  "workflow-engine",
+  "sre-agent",
+  "conductor",
+  "background-agents",
+  "event-driven-agents"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents in production are applications, not chatbots",
+   "detail": "Background, scheduled, event-driven, long-running coordinator and multi-agent setups are the real shapes. Each harness should have one goal and single responsibility, like microservices, and several can be composed.",
+   "t": "1:08"
+  },
+  {
+   "idea": "A harness mixes non-deterministic and deterministic parts",
+   "detail": "The LLM supplies reasoning. Anything that must happen the same way every time (payments, cluster restarts) should be fixed code in the harness, so LLM nondeterminism does not leak into it.",
+   "t": "5:00"
+  },
+  {
+   "idea": "Durability is the cost of admission",
+   "detail": "Harnesses may run seconds to months, waiting on humans, third parties or events. They must recover from crashes, network partitions and host failures, so durability is assumed rather than sold as a feature.",
+   "t": "6:28"
+  },
+  {
+   "idea": "Brains plan, hands execute",
+   "detail": "The agent only proposes what should happen next. The harness decides how to do it (for example, how to restart a cluster) using deterministic code. The speaker calls this the single most important takeaway.",
+   "t": "7:34"
+  },
+  {
+   "idea": "Approvals and idempotency belong in the harness",
+   "detail": "A prod restart should pass through a human gate (for example, a Slack approval) enforced by code, not left to the LLM's judgment. Steps should be idempotent, or their non-idempotency should be recorded so side effects can be handled separately.",
+   "t": "9:03"
+  },
+  {
+   "idea": "Harnesses are late-bound sagas",
+   "detail": "Classic sagas fix the steps ahead of time. An agent harness has a finite, deterministic set of tools and composes the sequence at runtime, which gives the visibility and control of a workflow while allowing many branch combinations no one could enumerate in advance.",
+   "t": "10:28"
+  },
+  {
+   "idea": "Plan, compile, execute, then replan from state",
+   "detail": "In the demo the LLM emits several steps at once, a plan-and-compile tool turns them into a runnable Conductor workflow, and the engine runs it. The loop then reads the recorded state and plans again. In the second iteration the agent skipped a rollback already done in the first.",
+   "t": "14:00"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Brains/hands split",
+   "how": "The LLM returns only a plan (ordered steps). Deterministic harness code performs every side effect, such as restarts, emails and deploys, and the LLM never calls those directly.",
+   "when": "Any agent that changes production systems or external state, where repeatable and auditable execution matters."
+  },
+  {
+   "name": "Plan-compile-execute",
+   "how": "Have the agent emit a multi-step plan, compile it into a fixed workflow graph (the talk uses Conductor), then run that graph on a durable engine.",
+   "when": "Multi-step remediation or ops tasks that need visibility, retries and a record of what ran."
+  },
+  {
+   "name": "Code-enforced human approval gate",
+   "how": "Pause the workflow at a defined step, notify a human (for example, via Slack), and continue only on approval, implemented as workflow logic rather than a prompt instruction.",
+   "when": "High-impact or irreversible actions such as restarting a production cluster."
+  },
+  {
+   "name": "Idempotent steps or recorded side effects",
+   "how": "Make each tool step idempotent where possible. If not, log that it is non-idempotent and what it did, so retries and cleanup can be handled separately.",
+   "when": "Long-running harnesses that may retry or resume after failure."
+  },
+  {
+   "name": "State-driven replanning loop",
+   "how": "Each iteration reads recorded side effects and current system state, then asks the LLM what remains. Completed actions are visible to the planner so it does not repeat them.",
+   "when": "Iterative remediation or any loop that spans several cycles over the same system."
+  },
+  {
+   "name": "Single-responsibility harnesses",
+   "how": "Build one harness per business goal, for example an SRE harness that combines logs, Kubernetes, metrics and support dashboards, and avoid one agent owning many responsibilities.",
+   "when": "When an agent's scope grows and hallucination risk rises with the number of responsibilities."
+  }
+ ],
+ "tools": [
+  "Conductor",
+  "Kubernetes",
+  "Slack",
+  "LangChain agents",
+  "OpenAI Agents SDK",
+  "Google ADK",
+  "MCP",
+  "APIs"
+ ],
+ "numbers": [
+  {
+   "claim": "Talk length is 16:50 and the speaker said 15 to 20 minutes was planned. No benchmarks or cost figures are given.",
+   "t": "0:12"
+  },
+  {
+   "claim": "Audience poll: many hands went up for running agents in production. The speaker said a conference a couple of weeks earlier had about one hand.",
+   "t": "0:12"
+  },
+  {
+   "claim": "Harness lifetimes range from a few seconds to days, months or longer.",
+   "t": "5:00"
+  },
+  {
+   "claim": "Demo SRE remediation loop ran for two iterations, and the second skipped a rollback already done in the first.",
+   "t": "15:06"
+  }
+ ],
+ "hot_takes": [
+  "Durability is the cost of admission for a harness, not a feature to sell.",
+  "The LLM should only plan; the harness, not the model, should decide how a restart is done.",
+  "Agent harnesses are late-bound sagas.",
+  "Human approval for production actions should be enforced by code, not left to an LLM's judgment."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already has checkpoint/resume, loops and phone approvals around Claude Code. The brains/hands split and code-enforced approval gates give a concrete way to check which steps are deterministic side effects.",
+   "action": "Audit ProsHarness so that side-effecting steps (push, deploy, restart, send) run through a fixed executor with an approval gate, and record each step's idempotency in the checkpoint."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Crucible's exec-gate and the budget/guardrail layer overlap with the idea of deterministic execution around the agent. The talk gives no benchmarks or implementation details.",
+   "action": "Consider whether the exec-gate should treat tool calls with side effects as steps that a deterministic executor must run, with idempotency keys recorded."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

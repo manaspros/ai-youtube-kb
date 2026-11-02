@@ -1,0 +1,45 @@
+# The Agentic Web and the Bazaar Era of AI - Ramesh Raskar, MIT Media Lab
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `sum9DgexFRQ` · [watch](https://youtu.be/sum9DgexFRQ) · **date:** 2026-07-18 · **length:** 12:11 · **format:** talk · **quality:** 2/5 · **depth:** intro
+- **speakers:** Ramesh Raskar, Maria · **orgs:** MIT Media Lab, Project Nanda, Maritime, OpenClaw, AWS, Host39
+- **topics:** mcp-and-tools, multi-agent, security-guardrails, infra-cost-scaling · **tags:** agentic-web, agent-discovery, agent-identity, agent-registry, agent-to-agent, simulation, self-hosted-agents, project-nanda, nandatown, sleep-wake-hosting
+
+> Ramesh Raskar and Maria of MIT's Project Nanda outline an open infrastructure for a web of AI agents: a signed discovery index, agent hosting, and NandaTown, a simulator for testing agent networks before they go live.
+
+## Summary
+The talk argues that agents need an open web-style layer for discovery, identity, trust and commerce, since today they are mostly built inside walled gardens. Maria defines an agent as a model that uses tools in a loop, and names OpenClaw as a self-hosted agent gateway. The Nanda index maps an agent identity to a signed agent card, and messages go through a message box that checks the sender and holds requests until the agent is awake. Resolution is adaptive: the index can return different endpoints depending on who asks and what they may access. Hosting options range from local machines to cloud platforms such as Maritime, which uses sleep and wake so idle agents do not burn compute. The speakers say the hard problems appear between agents at scale, so they built NandaTown, an open-source discrete event simulator where scenarios are defined in YAML, with scripted agents first and real models in a second tier. The talk is a short project overview with few measured results, and it ends by pointing to the project site and papers.
+
+## Key ideas
+- **Agents need an open discovery layer, the way the open web was built for documents** — Agents today lack a shared way to find each other across vendors, a portable identity or trust not owned by one platform, and open transactions across organizations. The speakers frame the current walled gardens as an AOL-style phase that an open web of agents should replace. They name three layers: discovery, commerce, and a open marketplace they call the bazaar. ([2:33](https://youtu.be/sum9DgexFRQ?t=153))
+- **An agent is a model that uses tools in a loop** — Maria's working definition: the model gets a goal, picks the next step, calls a tool, reads the result, and repeats until the task is done. Memory, orchestration and multi-agent setups are built on top of this loop. ([3:20](https://youtu.be/sum9DgexFRQ?t=200))
+- **The index returns a signed agent card, not just an address** — Given an agent identity, the index returns a card that says what the agent is, how to reach it, and where to send messages. The speakers present the signed record as what makes discovery trustworthy, since other agents can check who built the agent and what it may touch before connecting. ([5:25](https://youtu.be/sum9DgexFRQ?t=325))
+- **Messages go to a message box before the agent runtime** — The message box checks who is sending, applies access rules, filters spam or bad requests, and holds messages until the agent is ready. This lets an agent be offline or asleep without losing requests. ([5:25](https://youtu.be/sum9DgexFRQ?t=325))
+- **Resolution is adaptive, so one agent can have many endpoints** — The index can route traffic to the best endpoint and hide private details. The answer depends on where the agent is, who is asking, and what that requester is allowed to see. ([6:47](https://youtu.be/sum9DgexFRQ?t=407))
+- **Simulate agent networks at scale before relying on them** — The speakers argue that protocols for discovery, identity and coordination must be tested under load and watched for failure before they carry real traffic. NandaTown models the whole agent economy on a laptop, with marketplaces, auctions, voting, consensus and supply-chain scenarios. ([8:13](https://youtu.be/sum9DgexFRQ?t=493))
+- **NandaTown is a discrete event simulation with tiered agents** — A scenario is written as a short YAML file, and agents and traffic are injected into the testbed. Tier 1 uses simple scripted agents, and Tier 2 swaps in real AI models. The network is split into 12 parts, and a team can replace one layer with its own version and still run it inside the simulator. ([10:55](https://youtu.be/sum9DgexFRQ?t=655))
+
+## Techniques
+- **Signed agent facts record and agent card** — Each agent publishes a signed record covering its capabilities, permitted resources, builder and reachable endpoint. Other agents check these facts before they connect. *When:* Cross-organization agent discovery where the caller needs to verify an agent before trusting or talking to it.
+- **Message box in front of the agent runtime** — Route all inbound messages through a box that authenticates the sender, applies access rules, filters spam, and queues requests until the agent is awake. *When:* Agents that sleep or run on intermittent hosts and still must receive requests reliably.
+- **Adaptive endpoint resolution** — Make the registry return different endpoints or facts depending on the requester identity, location and permissions, and keep private details out of the public record. *When:* One logical agent runs in several places, or some of its details should only be visible to certain callers.
+- **Sleep and wake hosting** — Shut down idle agents and wake them when a request arrives, so per-agent compute is only paid during use. *When:* Running many agents for a team, product or simulation where most agents are idle most of the time.
+- **Tiered simulation with scripted agents, then LLM agents** — Define a scenario in a short YAML file. Run it first with cheap scripted agents to check protocol behavior, then rerun with real models to see how the protocol holds up. *When:* Testing multi-agent coordination protocols (negotiation, auctions, voting, consensus) before exposing them to real traffic.
+- **Onboarding in three tiers** — Enterprises run their own catalog and register a gateway from their own domain. Existing websites can later attach agents to domains they already own through DNS-based discovery. Individuals get a hosted agent URL from a host service without needing a domain. *When:* Choosing how to list an agent on a registry, depending on whether you are an enterprise, a site owner, or an individual.
+
+## Numbers
+- Speaker's projection: the internet may eventually host trillions of autonomous agents, not millions or billions (a forecast, not a measured result) ([1:36](https://youtu.be/sum9DgexFRQ?t=96))
+- NandaTown breaks the agent web into 12 layers: transport, communication, identity, registry, auth, trust, payments, coordination, negotiation, memory, privacy, data facts ([10:55](https://youtu.be/sum9DgexFRQ?t=655))
+- The talk gives no benchmark, latency, or cost figures; per-agent cost is discussed only qualitatively ([8:13](https://youtu.be/sum9DgexFRQ?t=493))
+
+## Hot takes
+- The next internet will host trillions of autonomous agents, and DNS-style identity and discovery were built for documents and will strain under that load.
+- The current agent platforms are walled gardens that repeat the AOL era, and open infrastructure should replace them the way the open web replaced AOL.
+- Getting one agent online is the easy part; the hard problems sit between agents at scale, and they need simulation before they carry real traffic.
+
+## Tools mentioned
+Nanda index, NandaTown, OpenClaw, Maritime, AWS, DNS, YAML
+
+## Relevance to our work
+- **agentos** (1/3): The signed agent-facts card and sender-checking message box are a reference for agent-to-agent trust, though AgentOS currently routes through its own proxy. → *Read the Nanda index spec and check whether a signed capability record would fit the AgentOS manifest as an optional extension.*
+- **prosharness** (1/3): Sleep and wake hosting for idle agents relates to checkpoint and resume of long runs, though the talk does not discuss checkpointing itself. → *Check whether ProsHarness checkpoint/resume could back a sleep-and-wake model where idle sessions are paused and queued requests wake them.*
+- **general** (1/3): Testing multi-agent protocols with scripted agents first and real models second is a reusable test pattern. → *Look at the NandaTown scenario format and tiers as a template for testing multi-agent coordination before running it with live models.*

@@ -1,0 +1,148 @@
+{
+ "one_line": "Better Stack reviews PG Rust, a from-scratch Rust reimplementation of Postgres that passes the official regression suite but is not production ready, with its headline performance claims unverified.",
+ "summary": "The video walks through PG Rust, a separate Rust reimplementation of Postgres behavior rather than an extension or fork. The host runs the official Docker image and shows that stock psql sees the same SQL, output and query plans as Postgres, including an index scan on a 100,000-row table. The released version reportedly passes about 46,000 official regression queries, speaks the real wire protocol, and can boot from an existing Postgres 18.3 data directory. The main architectural bet is an unreleased thread-per-connection version, which the speaker says reportedly yields about 50% better transactional and roughly 300x analytical performance, but no code or benchmarks are available to check. The host argues that extensions and forks inherit Postgres's architecture, while a separate engine can change it, and that the thread model trades process isolation for lower overhead. Coding agents were used heavily for the rewrite, and the host frames the real question as whether AI makes large architectural experiments affordable. The verdict is clear: passing regression tests is a measurable compatibility target, but not evidence of crash recovery, replication, or extension-ecosystem maturity, so don't use it in production, though it is worth trying.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "PostgreSQL",
+  "CockroachDB",
+  "YugaByte",
+  "Hacker News"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools",
+  "coding-agents"
+ ],
+ "tags": [
+  "postgres",
+  "rust",
+  "database-reimplementation",
+  "regression-testing",
+  "thread-per-connection",
+  "psql",
+  "docker",
+  "ai-assisted-rewrite",
+  "compatibility"
+ ],
+ "key_ideas": [
+  {
+   "idea": "PG Rust is a separate engine that imitates Postgres behavior, not an extension or feature layered on top of it.",
+   "detail": "It keeps Postgres behavior, the client experience and the disk formats, and replaces the engine underneath with Rust.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Stock psql cannot tell it apart from Postgres in the demo.",
+   "detail": "Same client, same SQL, same output, and the planner chose an index scan with real execution stats on a 100k-row table.",
+   "t": "0:48"
+  },
+  {
+   "idea": "The released version is not the performance story; the unreleased thread-per-connection build is.",
+   "detail": "The released build is not heavily optimized and is not expected to be dramatically faster than regular Postgres. The big claims come from the unpublished version.",
+   "t": "2:16"
+  },
+  {
+   "idea": "Forks and extensions carry Postgres's architecture; a separate engine can change it.",
+   "detail": "Extensions sit on the Postgres core, and a fork inherits the same architecture plus the ongoing cost of tracking upstream. Using Postgres behavior as the spec is different from CockroachDB or YugaByte, whose goal is not drop-in compatibility.",
+   "t": "3:25"
+  },
+  {
+   "idea": "Thread-per-connection removes process walls that currently contain failures.",
+   "detail": "Threads lower per-connection overhead and make sharing state easier, but one unsafe extension or memory bug could affect more of the server.",
+   "t": "4:30"
+  },
+  {
+   "idea": "The real experiment is whether AI makes very large rewrites cheap enough to rethink architecture.",
+   "detail": "The rewrite used coding agents heavily. The speaker frames it less as can Rust make Postgres faster and more as can AI make this kind of rewrite affordable.",
+   "t": "4:30"
+  },
+  {
+   "idea": "Passing the official suite is a measurable bar, but it is not production trust.",
+   "detail": "The regression suite is a fixed external judge, unlike vague 'Postgres compatible' claims. It does not cover years of crash recovery and replication testing, or the extension ecosystem, which is still unfinished.",
+   "t": "6:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Use an upstream regression suite as the compatibility oracle",
+   "how": "Run the reimplementation against the official test suite (the default regression and isolation tests) and report pass counts, e.g. 46,000+ queries. Treat the suite as the external spec rather than the project's own tests.",
+   "when": "Building a compatible reimplementation of a well-specified system where 'compatible' is otherwise an unmeasurable claim."
+  },
+  {
+   "name": "Smoke-test compatibility with unmodified clients",
+   "how": "Start the official Postgres-compatible Docker image, connect with a stock psql (no custom client), check the reported version, create a table, insert data, and compare EXPLAIN ANALYZE output. The speaker also suggests running your own client library against it. Exact commands are not shown in the video.",
+   "when": "Evaluating any wire-compatible database or proxy before trusting it with application code."
+  },
+  {
+   "name": "Check on-disk compatibility by booting an existing data directory",
+   "how": "Point the new server at a data directory created by the target version (here Postgres 18.3) and confirm it starts.",
+   "when": "Assessing whether a rewrite can be adopted in place or requires a dump and restore migration."
+  },
+  {
+   "name": "Triage performance claims by asking for the code or benchmark",
+   "how": "Separate claims that have published code and reproducible numbers from those that do not (here, the unreleased thread-per-connection build's 50% and 300x figures). Treat unverified numbers as promising, not settled.",
+   "when": "Reading vendor or project benchmark claims for a system you cannot yet run."
+  }
+ ],
+ "tools": [
+  "PG Rust (Postgres 18.3 compatible target)",
+  "PostgreSQL",
+  "Docker",
+  "psql",
+  "Bun (mentioned as another Rust rewrite)",
+  "CockroachDB",
+  "YugaByte",
+  "GitHub",
+  "Hacker News"
+ ],
+ "numbers": [
+  {
+   "claim": "Roughly a million lines of C and nearly four decades of Postgres architecture",
+   "t": "0:00"
+  },
+  {
+   "claim": "Released version passes about 46,000 Postgres regression queries",
+   "t": "0:00"
+  },
+  {
+   "claim": "Demo inserts 100,000 generated rows before running a query plan",
+   "t": "2:16"
+  },
+  {
+   "claim": "Released version targets Postgres 18.3 and boots an existing 18.3 data directory",
+   "t": "3:25"
+  },
+  {
+   "claim": "Unreleased thread-per-connection build claims roughly 50% better transactional performance",
+   "t": "5:34"
+  },
+  {
+   "claim": "Unreleased thread-per-connection build claims roughly 300x Postgres on analytical workloads",
+   "t": "5:34"
+  }
+ ],
+ "hot_takes": [
+  "The 50% transactional and 300x analytical claims are unverifiable because the code and benchmarks for the unreleased build are not public; the speaker says to treat them as promising claims, not facts.",
+  "Passing the official regression suite is a serious and measurable achievement, but the speaker says it does not establish production trust.",
+  "Thread-per-connection is not automatically better: it lowers overhead but removes process-level fault containment.",
+  "Verdict: do not replace a production Postgres cluster with PG Rust, but do try it against your own clients."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS L3 storage is Postgres/pgvector, and the video's per-connection overhead and pooling tradeoff applies there. The video also offers a compatibility-testing method: an external suite as the measurable target.",
+   "action": "When making compatibility claims for the AgentOS proxy or storage layer, define an external conformance suite and report pass counts instead of saying 'compatible'."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The video is about a database reimplementation and does not touch the Claude Code harness, checkpointing, or approvals.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

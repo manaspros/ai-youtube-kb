@@ -1,0 +1,44 @@
+# This Open-Source Auth Stack Might Replace Auth0 (Ory Kratos)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `cvJKfqZrtgI` · [watch](https://youtu.be/cvJKfqZrtgI) · **date:** 2026-01-02 · **length:** 12:29 · **format:** tutorial · **quality:** 3/5 · **depth:** intro
+- **speakers:** Andrus (Better Stack host, per the sign-off in the transcript) · **orgs:** Better Stack, Ory, Auth0, Okta
+- **topics:** dev-tools, security-guardrails · **tags:** identity, authentication, self-hosted, open-source, docker, docker-compose, nextjs, 2fa, mfa, sso, auth0-alternative, sqlite, smtp
+
+> Tutorial on self-hosting Ory Kratos, an open-source identity server, in Docker and wiring it to a Next.js app with prebuilt Ory Elements login, signup, verification, settings and 2FA screens, pitched as an Auth0 alternative.
+
+## Summary
+Better Stack walks through running Ory Kratos as a self-hosted, backend-only identity server in Docker, with a SQLite user store and a local config directory. It then builds a small Next.js app on Ory's Next.js and Ory Elements packages, using the sample quickstart templates for login, registration, verification and settings routes. The demo shows the built-in breached-password check, email verification through a fake SMTP server, and TOTP-style 2FA enrolment from the settings page, all without writing input fields by hand. The video's claim that Kratos "might replace Auth0" is argued from open-source, no-lock-in and GDPR framing rather than measured against Auth0. The Auth0-to-Ory migration is mentioned as a guide but not shown. Most of the code is Ory's quickstart copied with a custom logout route, so the value is the setup checklist more than the code itself.
+
+## Key ideas
+- **Kratos is a self-hosted, backend-only identity server that ships as a Docker image and covers login flows, account activation, MFA, profile and session management, and recovery.** — The UI is optional and separate. Ory Elements supplies ready-made components, and Hydra (OAuth 2), Keto (permissions), Polis (enterprise SSO bridge) and Oathkeeper (identity-aware proxy) are named as add-on pieces. The video only uses Kratos and Elements. ([0:00](https://youtu.be/cvJKfqZrtgI?t=0))
+- **The setup is a small set of config files: a compose file, an identity schema, and a Kratos YAML, plus a SQLite user database file.** — The narrator creates kratos-demo/docker, kratos-demo/config (identity.schema.json and a kratos YAML) and a usersdb file, then starts from Ory's sample compose file and changes it to bind the local database and config. ([2:33](https://youtu.be/cvJKfqZrtgI?t=153))
+- **Most of the setup risk is in URL and origin config. Mismatches in the Kratos YAML break the flows.** — The base URL, allowed origins, allowed request methods and allowed return URLs must point at localhost. Each flow's UI URL must match a route in the Next.js app, because Kratos redirects there after each operation. Secrets are left as sample values, with a warning to use strong ones before production. ([4:41](https://youtu.be/cvJKfqZrtgI?t=281))
+- **Ory's default identity schema is used unchanged. The user object is an email, a first name, a last name and a password credential.** — The schema defines the traits a user object carries. It is the place to add more traits, but the demo does not change it. ([3:37](https://youtu.be/cvJKfqZrtgI?t=217))
+- **The Next.js integration is a config object, a middleware built from it, and one route per auth flow that renders the matching Ory Elements component.** — Login, registration, settings and verification routes are near-identical async functions that check for a flow and render its component. The logout route is the only custom one: it takes a logout token and calls the Kratos self-service endpoint with it, then redirects to login. The app URL and the Kratos SDK URL go in an env file. ([6:02](https://youtu.be/cvJKfqZrtgI?t=362))
+- **The home page reads the server-side session to choose its UI.** — With a session it shows a welcome message and logout. Without one it shows login and register buttons. The settings page is part of the Kratos and Elements package, so no custom UI is needed. ([8:08](https://youtu.be/cvJKfqZrtgI?t=488))
+- **Several security features come on by default: breached-password rejection, email verification and 2FA enrolment.** — A weak password (hello123) is rejected at signup as found in data breaches. Verification codes arrive via a fake SMTP server on port 4438 in this demo. 2FA is enrolled by scanning a QR code with an authenticator app from the settings page, and then the next login asks for the code. ([9:16](https://youtu.be/cvJKfqZrtgI?t=556))
+
+## Techniques
+- **Kratos local dev stack via Docker Compose** — Create kratos-demo/docker/ with a compose file, and kratos-demo/config/ with identity.schema.json and a kratos YAML. Create an empty SQLite usersdb file at the project root. Start from Ory's sample compose file and change it to bind the usersdb file and the kratos YAML into the container, and to set the public and browser URLs. Keep the default ports. Run `docker compose up`; Kratos starts in dev mode. *When:* Standing up a self-hosted identity backend for a prototype or internal app, where you want no vendor lock-in and the users table on your own database.
+- **Kratos YAML checklist for localhost** — Set the base URL and allowed origins to the localhost addresses. Allow the request methods the flows need. Add the app's return URLs to the allowed return URLs list. Set each flow's UI URL to the matching Next.js route. Bind identity.schema.json. Point the SMTP section at a mail server (the demo uses a fake one on port 4438). Replace the sample secrets before deploying. *When:* Any time Kratos redirects to the wrong place or refuses a flow; most of the setup problems come from these fields.
+- **Next.js integration with Ory Elements** — Scaffold a Next.js app and add the Ory Next.js package and the Ory Elements package. Add an env file with the Kratos SDK URL (the API port from the Kratos YAML) and the app's UI URL. Add an ory config file that declares the login, registration, settings, verification and logout routes. Build a middleware file from that config. Add one route per flow that checks for a flow and renders its Elements component. Add a custom logout route: if a logout token is present, call the Kratos self-service logout endpoint with it and redirect to login. On the home page, read the server session and show either welcome plus logout, or login and register. *When:* A Next.js front end that should get login, signup, verification and settings UI without writing form fields or flow logic.
+- **Enabling 2FA through the built-in settings page** — Open the settings page that Kratos and Elements provide. Scroll to the authenticator section, scan the QR code with an authenticator app, and enter the code shown. The next login then asks for a code from the app. *When:* Adding a second factor to an app without writing a TOTP flow yourself.
+
+## Numbers
+- The default identity schema has three traits (email, first name, last name) plus a password credential. ([3:37](https://youtu.be/cvJKfqZrtgI?t=217))
+- The fake SMTP server used for verification emails runs on port 4438. ([9:16](https://youtu.be/cvJKfqZrtgI?t=556))
+- A weak password (hello123) is rejected at signup as found in data breaches, with no extra setup. ([9:16](https://youtu.be/cvJKfqZrtgI?t=556))
+- The whole stack is set up in roughly 12 minutes of video, which the narrator frames as a few minutes; no timing, latency or scale figures are given. ([10:30](https://youtu.be/cvJKfqZrtgI?t=630))
+
+## Hot takes
+- The title says it 'might replace Auth0', but the video only demonstrates a self-hosted login stack for one Next.js app. It does not test scale, SSO, OAuth or migration.
+- The Auth0 migration is mentioned as a guide but is not shown.
+- The code is mostly Ory's quickstart templates copied in, so the reusable value is the config checklist more than the authored code.
+- No sponsor segment. Solid practitioner walkthrough, but shallow.
+
+## Tools mentioned
+Ory Kratos, Ory Elements, Ory Next.js integration package, Ory Hydra, Ory Keto, Ory Polis, Ory Oathkeeper, Docker, Docker Compose, Next.js, SQLite, Auth0, Okta, authenticator app
+
+## Relevance to our work
+- **prosharness** (1/3): Phone-driven approvals need an authenticated user. The video shows self-hosted login, verification and 2FA enrolment, but nothing about agent credentials or approvals. → *If phone approvals need a verified user, a 2FA-enabled self-hosted identity layer is a candidate. Keep ProsHarness's zero-token credential handling separate from user auth.*
+- **general** (1/3): Useful reference for self-hosted auth in any Next.js prototype. → *Bookmark the Kratos config checklist (URLs, origins, UI URLs) as a starting point for future auth setups.*

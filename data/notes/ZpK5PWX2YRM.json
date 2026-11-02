@@ -1,0 +1,185 @@
+{
+ "one_line": "Alex Volkov on the \"Z/L continuum\" for how much agent-written code engineers should read in 2026: route review effort by the proof a change needs, not by a blanket rule.",
+ "summary": "Alex Volkov (ThursdAI) frames the 2026 debate about reading agent-written code as a continuum between two AI Engineer EU talks: Ryan Lopopolo (OpenAI), who says code is free and the prompts and guardrails matter, and Mario Zechner (creator of Pi), who says read every line of critical code. He corrects his own framing: the continuum is about the task, not the person, so one engineer may need different proof for different changes. He cites 2026 survey data showing output rising faster than review quality (more incidents and bugs per PR, more PRs merged without review), and an Anthropic essay saying human review has become the bottleneck. His proposed routing table sends auth, money movement, permissions and irreversible data changes to a human reading every line, while other changes get lighter proof. Other advice: split work into small reviewable PRs, keep the writer separate from the inspector and test author, and turn repeated review findings into docs and lint rules. He ends with loops (scheduled self-verifying agent runs) and warns that a builder grading its own work does not remove the review. The talk is mostly opinion and anecdote, with a few useful frames and some stats whose sources are not clearly named.",
+ "speakers": [
+  "Alex Volkov"
+ ],
+ "orgs": [
+  "ThursdAI",
+  "Weights & Biases",
+  "CoreWeave",
+  "OpenAI",
+  "Anthropic",
+  "GitHub",
+  "METR",
+  "Google"
+ ],
+ "format": "talk",
+ "topics": [
+  "pr-code-review",
+  "testing-verification",
+  "coding-agents",
+  "software-factory"
+ ],
+ "tags": [
+  "code-review",
+  "human-in-the-loop",
+  "risk-based-review",
+  "agent-generated-code",
+  "loops",
+  "verification",
+  "writer-reviewer-separation",
+  "decomposition",
+  "review-bottleneck",
+  "z-l-continuum",
+  "claude-code",
+  "codex",
+  "pi",
+  "openclaw"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The useful question is what proof a specific change needs, not whether to read code in general.",
+   "detail": "The speaker says 'should I still read code in 2026?' is the wrong question. The better one is 'what proof does this specific change need?' Review effort should follow the risk of the change.",
+   "t": "14:04"
+  },
+  {
+   "idea": "The continuum is about the task, not the person.",
+   "detail": "His correction: the same engineer can go Lopopolo-style on low-stakes code and Zechner-style on critical code. Different tasks need different proof.",
+   "t": "11:06"
+  },
+  {
+   "idea": "Route review by risk. Critical paths get a human reading every line.",
+   "detail": "Auth, money movement, permissions and irreversible data should be read line by line by a person. Other code can be lighter, with checks chosen to match the risk. Agents can help point to which code is critical in a large repo.",
+   "t": "14:04"
+  },
+  {
+   "idea": "Output has outrun review, and quality is paying for it.",
+   "detail": "He cites 2026 survey data: more code deleted per PR, more PRs merged with no review, many more incidents per PR, and more bugs per developer. He also points to Anthropic's own status page as an example that speed does not guarantee stability.",
+   "t": "8:28"
+  },
+  {
+   "idea": "Fix a repeated mistake once in the system, not once per PR.",
+   "detail": "Humans are bad at catching the same mistake again and again. A reviewer should record the finding once, in docs, a linter, or a reviewer rule, so the system catches it next time. The point is to inspect the system, not every line.",
+   "t": "15:27"
+  },
+  {
+   "idea": "The agent that writes the code should not be the one that checks it.",
+   "detail": "If the same agent writes the code, writes the tests and judges the output, it is like grading your own exam. Keep the writer, the reviewer and the test author separate.",
+   "t": "14:04"
+  },
+  {
+   "idea": "Loops are scheduled agents that verify themselves, and self-verification does not remove review.",
+   "detail": "A loop finds a task, writes a prompt, runs a plan, verifies the result, and retries if it fails. But if the builder is also the grader, the review step has only moved. Automation raises the stakes on where human judgment goes.",
+   "t": "19:21"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Risk-tiered review routing",
+   "how": "Sort every change into a tier. Auth, money movement, permissions and irreversible data changes get a human line-by-line read. Other changes get proof suited to their risk, such as tests, traces, evals or shadow mode.",
+   "when": "When agent output volume is too high to read everything, but some code paths can still cause serious harm."
+  },
+  {
+   "name": "Decompose into atomic PRs with agents",
+   "how": "Ask an agent to split a large change into small, reviewable PRs before review starts. Each piece should be small enough to read properly.",
+   "when": "When a PR is too long and reviewers start to skim."
+  },
+  {
+   "name": "Separate writer, inspector and test author",
+   "how": "Do not let one agent write the code, review it and write its tests. Use a different agent or a fresh context for the inspection and the tests.",
+   "when": "Any time agent-written code is checked by the same agent that wrote it."
+  },
+  {
+   "name": "Turn review findings into system rules",
+   "how": "When a reviewer catches a repeated mistake, record it once as documentation, a lint rule or a reviewer instruction so the system catches it in future runs.",
+   "when": "When the same class of bug keeps reappearing in agent PRs."
+  },
+  {
+   "name": "Ask the agent where the critical code is",
+   "how": "In a large repo, ask an agent to point out critical primitives or code areas, and use its answer to decide where human reading should go.",
+   "when": "When you need to decide what to read carefully in a codebase you do not fully know."
+  },
+  {
+   "name": "Loops with verification and retry",
+   "how": "Run scheduled agent jobs that discover a task, plan it, execute it, verify the result and retry on failure. The speaker says the verification must come from something other than the builder.",
+   "when": "For recurring, well-defined maintenance work where success can be checked automatically."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "OpenClaw",
+  "Pi",
+  "Antigravity",
+  "Grok Code"
+ ],
+ "numbers": [
+  {
+   "claim": "METR: models first completed tasks that would take engineers over 16 hours, and the trend has risen since.",
+   "t": "1:12"
+  },
+  {
+   "claim": "Anthropic: about 80% of its code is now AI-written (a stat the speaker says is a few months old); Boris Cherny's code is 100% AI-written.",
+   "t": "2:11"
+  },
+  {
+   "claim": "GitHub is on track for about 14 billion commits in 2026, against about 1 billion in all of 2025 (14x).",
+   "t": "2:11"
+  },
+  {
+   "claim": "Survey of 22,000 engineers (April 2026, cited as the 'acceleration whiplash' study): +861% code deleted per PR.",
+   "t": "8:28"
+  },
+  {
+   "claim": "Anthropic says it ships about 8x more code per quarter than in 2025.",
+   "t": "8:28"
+  },
+  {
+   "claim": "Same study: 31% increase in PRs merged with no review, human or agent.",
+   "t": "9:50"
+  },
+  {
+   "claim": "Same study: 242% increase in incidents per PR.",
+   "t": "9:50"
+  },
+  {
+   "claim": "Bugs per developer are up about 6x compared with 2025.",
+   "t": "9:50"
+  },
+  {
+   "claim": "AI Engineer World's Fair: about 7,000 attendees, 36 tracks, roughly 3x last year's size.",
+   "t": "2:11"
+  }
+ ],
+ "hot_takes": [
+  "Code is cheap, but attention is not. The bottleneck has moved to human judgment and review.",
+  "The review layer moves over time: from reading outputs, to directing tasks, to inspecting loops. Capability growth does not remove the need for proof.",
+  "A builder grading its own loop output has not removed review, only moved it.",
+  "Not every line in 2026 needs your eyes. Every system still needs your judgment."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already runs plan, critique (Codex) and debate, and has loops and phone approvals. The talk's advice to split writer from verifier and to route critical changes to a human fits that design, but it adds no new mechanism.",
+   "action": "Add a risk tier to the ProsHarness plan step: changes touching auth, money, permissions or irreversible data always go to the phone-approval gate, and other changes proceed after an independent verifier pass. Check that the verifier never shares context with the builder."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk's loop and verification points are general engineering advice, not infrastructure. The only overlap is the idea that self-verifying loops need an outside check.",
+   "action": "When designing AgentOS SkillForge or EvolveCraft loops, require verification from a separate evaluator and not from the agent that produced the change."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Turning repeated review findings into docs, lint rules and reviewer instructions connects to the context-engineering interest in CLAUDE.md and AGENTS.md. It also gives a way to measure review quality over time.",
+   "action": "Track repeated review findings in one list for a repo, and convert the top recurring ones into CLAUDE.md rules or lint checks. Count how often each one recurs."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

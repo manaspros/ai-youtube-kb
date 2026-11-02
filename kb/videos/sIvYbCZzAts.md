@@ -1,0 +1,44 @@
+# Shadcn is now PERFECT for Vibe Coding (v2 changes)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `sIvYbCZzAts` · [watch](https://youtu.be/sIvYbCZzAts) · **date:** 2026-01-02 · **length:** 7:00 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** Better Stack host (not named in transcript) · **orgs:** Better Stack, shadcn, Radix, Floating UI, Material UI
+- **topics:** vibe-coding-app-building, dev-tools · **tags:** shadcn, shadcn-v2, base-ui, radix-ui, tailwind, vibe-coding, component-library, design-tokens, customizer, tanstack-start, accessibility, ai-ui-generation
+
+> Walkthrough of shadcn v2: a new visual customizer, Base UI as the component core instead of Radix, and a one-prompt comparison showing that AI-built UI looks better when constrained to shadcn components.
+
+## Summary
+The host walks through shadcn v2 (released as "ShadCN2"), which he presents as fixing two complaints: generic-looking apps and reliance on Radix UI. The main change is a web customizer that goes beyond Tailwind classes and lets you pick the component library (Base UI or Radix), base color, primary theme, icon set, font, border radius, and a style preset that controls spacing. A "create project" button outputs a CLI command that scaffolds a new TanStack Start app with shadcn preinstalled and a components.json config. Base UI is described as the spiritual successor to Radix, built by much of the same team and headless with accessibility built in. The closing argument is a two-run comparison: a dashboard prompted with no components looked generic with AI gradients and chart issues, while the same request with "use only shadcn components" looked much better. Both were vibe-coded with no hand-written code. The host says code living in your project lets the AI read and modify components. The evidence is one anecdote with a single run per condition, and the migration path from v1 is an unverified guess.
+
+## Key ideas
+- **shadcn v2 targets two complaints: apps all look alike, and the default components depend on Radix UI, which the host says is largely abandoned.** — The v2 customizer is the headline change. It covers far more than Tailwind classes, so you can pick the component library, colors, theme, icons, font, and radius before generating code. ([0:00](https://youtu.be/sIvYbCZzAts?t=0))
+- **Base UI is offered as a component core alongside Radix. It is described as the successor to Radix from much of the same team, headless and accessibility-first.** — The host calls it the spiritual successor to Radix and says members of the Radix team, plus people from Floating UI and Material UI, moved to it. He recommends it for anyone building their own component library. ([1:07](https://youtu.be/sIvYbCZzAts?t=67))
+- **The style preset controls spacing and shape, separately from color and theme.** — Presets named in the video include Vega (classic shadcn), a reduced-padding option, Amaya (soft, rounded, generous spacing), Lyra (boxy, sharp), and a compact preset for dense interfaces. The host picks Lyra. ([1:07](https://youtu.be/sIvYbCZzAts?t=67))
+- **Create project turns the customizer output into a scaffolded app, and the shadcn files are committed into your repo.** — The host ran the generated command with bun and got a TanStack Start project with components.json and a set of pre-installed components. He stresses that you still own the code, which matters for AI editing. ([3:18](https://youtu.be/sIvYbCZzAts?t=198))
+- **The host's migration idea for v1 users is to scaffold a fresh v2 project and copy the shadcn component files over. He does not verify it and says he imagines this works.** — The customizer has no apply-to-existing-project option as far as he can see. ([3:18](https://youtu.be/sIvYbCZzAts?t=198))
+- **The main argument is a single-run, two-prompt test. Prompting for a finance dashboard without components gave generic AI gradients and chart problems. Adding 'use only shadcn components' gave a clearly better result.** — Both runs were vibe-coded with no hand-written code. The shadcn version already had the pink theme from the customizer applied. ([4:31](https://youtu.be/sIvYbCZzAts?t=271))
+- **The host's reasoning is that constraining AI to a component library you own gives it code it can understand and modify, plus accessibility from Radix or Base UI.** — He recommends starting in the customizer and then prompting from there. ([5:37](https://youtu.be/sIvYbCZzAts?t=337))
+
+## Techniques
+- **Customizer-first scaffold for vibe-coded UI** — Pick the look in the shadcn v2 customizer (library, base color, theme, icons, font, radius, style preset), then click create project and run the generated command. The host used bun with a TanStack Start template. Build the app from the preset styles, not from a blank Tailwind app. The exact command text is not shown in the video. *When:* Starting a new web app with an AI coding agent where you want a consistent, non-generic look from the first prompt.
+- **Constrain AI generation to a component library** — Put an explicit instruction in the prompt, for example 'use only shadcn components', so the model composes existing components instead of inventing styled markup. The host reports this made a clearly better dashboard in one run. *When:* Asking an agent to build UI screens in a project that already has a component library installed.
+- **Use the shuffle button and open the customizer in a second tab** — Shuffle the customizer to see combinations, and open the customizer in a new tab so the current selections are not overwritten. *When:* Looking for a visual direction before you commit to a preset.
+- **Migrate v1 to v2 by copying components (unverified)** — The host suggests creating a fresh v2 project from the customizer and copying the shadcn component files into the existing app. He says he imagines this would work but does not test it. *When:* Only as a starting hypothesis for a v1 project. Verify it before relying on it.
+
+## Numbers
+- The customizer offers 4 base colors (neutral, stone, zinc, gray), 4 icon sets, and several fonts including Inter, Noto Sans, and JetBrains Mono (the one chosen). ([1:07](https://youtu.be/sIvYbCZzAts?t=67))
+- 5 style presets are named or described: Vega, a reduced-padding preset, Amaya, Lyra, and a compact preset. ([1:07](https://youtu.be/sIvYbCZzAts?t=67))
+- The dashboard comparison used 2 prompts, one run each, with no hand-written code. The host gave no count of runs, no variance, and no quality metric beyond his opinion. ([4:31](https://youtu.be/sIvYbCZzAts?t=271))
+- The video runs 7:00. ([0:00](https://youtu.be/sIvYbCZzAts?t=0))
+
+## Hot takes
+- The title says shadcn is 'PERFECT for vibe coding', but the evidence is one qualitative comparison with one run per condition. The 'perfect' claim is overstated.
+- The v1-to-v2 migration path is a guess ('I imagine'), presented without testing.
+- Base UI is framed as the successor to Radix, and the host also says most of the team moved over. These are his claims, not verified in the video.
+- The host says he wondered why Geist was not in the font list and did not resolve it.
+- Quality is capped near 2 because the video is a product feature tour with a hype title and only one anecdotal test, though it does show concrete UI options.
+
+## Tools mentioned
+shadcn/ui (v2), Base UI, Radix UI, Tailwind CSS, TanStack Start, bun, components.json, Tabler Icons, Lucide, Hugeicons, Phosphor, JetBrains Mono, Inter, Noto Sans, TweakCN, Floating UI, Material UI
+
+## Relevance to our work
+- **general** (1/3): The pattern of constraining AI-generated UI to a component library the team owns is a reusable habit for any internal dashboard. It is not a project change. → *If an internal dashboard is ever needed, scaffold it from a component-library customizer and add 'use only <library> components' to the agent prompt, then compare against an unconstrained run.*

@@ -1,0 +1,225 @@
+{
+ "one_line": "Qwen 3.8 27B ships an MTP draft head inside its weights; enabling it can roughly double or triple local decode speed with the same output, but only on a current runtime build, with a tuned draft depth and temperature, and only if the model fits in VRAM.",
+ "summary": "The host argues that Qwen 3.8 27B already contains a multi-token-prediction (MTP) head that gives speculative decoding for free, and that most local runtimes leave it off. Decoding is memory-bandwidth bound, so drafting several tokens and verifying them in one pass recovers idle GPU time, and the full model verifies every draft, so he says output quality is unchanged. He says a llama.cpp flag rename on May 13, 2026 made older spellings silently ignored, which cost him three days and roughly halved his throughput. He then covers draft depth (throughput peaks around 4-5 rather than the common 2-3), sampler temperature (lower temperature raises draft acceptance), and gains per hardware: NVIDIA 3090/4090, Blackwell-only NVFP4, AMD Vulkan vs ROCm, Apple Silicon, and a laptop where CPU offload over PCIe makes the flag useless. Setup is summarized for llama.cpp, vLLM, SGLang and Ollama. Every benchmark is a single measurement he himself caveats as a ceiling.",
+ "speakers": [],
+ "orgs": [
+  "Qwen",
+  "Ollama",
+  "llama.cpp",
+  "vLLM",
+  "SGLang",
+  "NVIDIA",
+  "AMD",
+  "Apple"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "inference-serving",
+  "local-ai"
+ ],
+ "tags": [
+  "mtp",
+  "multi-token-prediction",
+  "speculative-decoding",
+  "qwen",
+  "llama.cpp",
+  "ollama",
+  "vllm",
+  "sglang",
+  "draft-depth",
+  "sampler-temperature",
+  "vram",
+  "rtx-5090",
+  "apple-silicon",
+  "amd-vulkan",
+  "nvfp4",
+  "dense-model",
+  "cpu-offload"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The MTP draft head is already inside the Qwen 3.8 27B weights, so speculative decoding needs no separate drafter model or extra download.",
+   "detail": "Ollama's 4-bit MTP tag is about 18 GB with the head and about 18 GB without it. A separate drafter would normally add a few GB of resident memory and config work.",
+   "t": "2:34"
+  },
+  {
+   "idea": "Decoding is limited by memory bandwidth, not arithmetic. Each token re-reads the full weights, so the GPU is mostly waiting.",
+   "detail": "Speculative decoding attacks that waste: a cheap guesser proposes several tokens, and the full model verifies them in one pass. Wrong guesses are discarded, so the output is unchanged by design.",
+   "t": "1:25"
+  },
+  {
+   "idea": "A llama.cpp flag rename on May 13, 2026 silently broke the old spelling. The old name is still accepted but ignored, so throughput quietly drops.",
+   "detail": "The host ran about 70 tok/s for three days on a stale flag. A write-up on a 4090 reports about 140 tok/s falling to about 70 when speculation is off. The exact flag spelling is garbled in the captions, so confirm it against your build's help output.",
+   "t": "3:58"
+  },
+  {
+   "idea": "Draft depth has a throughput peak in the middle, not at the lowest value. Acceptance falls with depth, but throughput does not follow it down.",
+   "detail": "Reported acceptance is 81% at depth 2, 56% at depth 5 and 40% at depth 8. Throughput climbs to about 115 tok/s at depth 5. Common recipes at 2-3 leave up to 27% of available throughput unused.",
+   "t": "4:57"
+  },
+  {
+   "idea": "Sampler temperature strongly affects draft acceptance. Qwen's recommended temperature of 1 cut acceptance from about 85% to about 65% in one researcher's runs.",
+   "detail": "A hotter sampler flattens the next-token distribution, which makes the drafter's guesses miss more often. Lowering temperature raised acceptance and speed, but it is a real trade-off against the author's recommended setting.",
+   "t": "6:25"
+  },
+  {
+   "idea": "Gains depend heavily on task and hardware. The same card and file gave 93 tok/s on standard prompts and 167 on agent turns.",
+   "detail": "The 206 tok/s NVFP4 headline only runs on Blackwell, so it is unreachable on 3090/4090 cards. On AMD, the vendor's figures were measured on Vulkan rather than ROCm, and independent tests put Vulkan 20-30% ahead for generation. Apple Silicon gained about 2.45x on average with a ported drafter.",
+   "t": "7:48"
+  },
+  {
+   "idea": "Speculation cannot fix a transfer bottleneck. If the model spills to system RAM over PCIe, the flag adds drafter overhead with no gain.",
+   "detail": "A 12 GB laptop got 4.5 tok/s with 4-bit plus the flag and 12.8 tok/s with 2-bit and no flag. The host's advice is to buy VRAM for the quantization first, because MTP multiplies existing speed and cannot create it.",
+   "t": "10:29"
+  },
+  {
+   "idea": "This model is dense, so expert-offload flags do nothing. The correct setup is plain layer offload plus the speculative flag.",
+   "detail": "The host says the flag that pushes experts to the CPU has no effect on a dense model.",
+   "t": "3:58"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Enable MTP in llama.cpp",
+   "how": "Use a llama.cpp build from after May 13, 2026. Set the speculative-decoding type flag to MTP. The host's caption-garbled name reads like 'speculative NGPU layers in the spec type flag'. Confirm the exact spelling with the build's --help output, because the old spelling is silently ignored. Use plain layer offload (not expert offload) for this dense model. Start the draft depth at 4 or 5, then sweep.",
+   "when": "Running Qwen 3.8 27B locally on llama.cpp on a GPU that holds the quantized model."
+  },
+  {
+   "name": "Enable MTP in vLLM",
+   "how": "Speculative decoding is configured as a JSON-style config key in the serving configuration, not a command-line flag. Read the speculative decoding section of the vLLM docs for the exact version you run, and set the draft depth there.",
+   "when": "Serving the model with vLLM on a single GPU, including the RTX 5090 setup described in the video."
+  },
+  {
+   "name": "Enable MTP in SGLang",
+   "how": "Set the speculative algorithm parameter. The host says the flag exists on older cards with lower ceilings. He did not give the exact key name.",
+   "when": "Serving the model with SGLang."
+  },
+  {
+   "name": "Enable MTP in Ollama with a tag",
+   "how": "Pull one of the three MTP-marked tags instead of the default tag (4-bit is about 18 GB with the head). No config editing is needed.",
+   "when": "You want the simplest setup and are on Ollama."
+  },
+  {
+   "name": "Sweep draft depth and find your peak",
+   "how": "Benchmark draft depths from 2 to 8 on your own card and workload. Record tokens/s and draft acceptance at each depth. Pick the peak rather than copying 2-3 from community recipes. The host's example peak is near 5.",
+   "when": "Before deploying speculation on any new hardware, model or task mix."
+  },
+  {
+   "name": "Tune sampler temperature for draft acceptance",
+   "how": "Sweep the temperature downward and log acceptance and throughput alongside output-quality checks. Lower temperature raised acceptance in the host's runs. Decide explicitly between the author's recommended temperature (1) and a lower temperature for speed.",
+   "when": "Speculation is on and acceptance is lower than expected."
+  },
+  {
+   "name": "Benchmark by task type, not one number",
+   "how": "Measure agent-style turns (short context, predictable structure) separately from standard prompts. Report both, since the same setup gave 167 vs 93 tok/s in the host's test.",
+   "when": "Reporting or comparing speculative-decoding throughput."
+  },
+  {
+   "name": "Check the memory path before enabling",
+   "how": "If the model spills to system RAM over PCIe, measure before and after. Speculation does not hide transfer latency and can cost throughput. Prioritize VRAM for the quantization level.",
+   "when": "The model does not fully fit on the GPU."
+  }
+ ],
+ "tools": [
+  "Qwen 3.8 27B (dense, 27B parameters)",
+  "MTP (multi-token prediction) draft head",
+  "llama.cpp (build after May 13, 2026)",
+  "Ollama (MTP-tagged model tags)",
+  "vLLM (speculative decoding config)",
+  "SGLang (speculative algorithm parameter)",
+  "NVFP4 (4-bit format, Blackwell only)",
+  "EAGLE-3 (not mentioned in this video)",
+  "NVIDIA RTX 3090, 4090, 5090",
+  "AMD Radeon (Vulkan and ROCm backends)",
+  "Apple Silicon with Metal kernels"
+ ],
+ "numbers": [
+  {
+   "claim": "Same GPU, same model file, same prompt: 60 tok/s without the flag vs 167 tok/s with MTP on.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Quen released the weights on August 14 with an MTP head trained in; the 4-bit Ollama tag is about 18 GB with the head and about 18 GB without it.",
+   "t": "2:34"
+  },
+  {
+   "claim": "A 27B model at 4-bit reads about 18 GB of weights for each token generated.",
+   "t": "1:25"
+  },
+  {
+   "claim": "A 4090 write-up reports about 140 tok/s falling to about 70 tok/s when the speculative flag is silently ignored.",
+   "t": "4:57"
+  },
+  {
+   "claim": "Draft acceptance at depth 2 is 81%, at depth 5 it is 56%, and at depth 8 it is 40%. Throughput peaks around 115 tok/s at depth 5.",
+   "t": "4:57"
+  },
+  {
+   "claim": "Common depth-2 or depth-3 recipes leave up to 27% of available throughput unused.",
+   "t": "4:57"
+  },
+  {
+   "claim": "Draft acceptance fell from about 85% on the previous model to about 65% on this one when the sampler ran at temperature 1 (the author's recommendation). Lowering temperature raised acceptance and speed.",
+   "t": "6:25"
+  },
+  {
+   "claim": "On the same RTX 3090/4090 card and file: 167 tok/s on agent turns vs 93 tok/s on standard prompts.",
+   "t": "7:48"
+  },
+  {
+   "claim": "Headline 206 tok/s uses NVFP4, which only runs on Blackwell (RTX 5090 generation), not 3090/4090.",
+   "t": "7:48"
+  },
+  {
+   "claim": "AMD's launch post quotes up to 51.8 tok/s on a workstation Radeon, measured on Vulkan. Independent tests put Vulkan 20-30% ahead of ROCm for generation.",
+   "t": "9:01"
+  },
+  {
+   "claim": "16 GB Radeon: 32 tok/s at 128k context; 51 tok/s with the flag on at half the context.",
+   "t": "9:01"
+  },
+  {
+   "claim": "48 GB Apple laptop: 8.3 tok/s at 8-bit rises to 20.3 tok/s with a ported drafter (2.45x average, 3x peak). 8-bit with drafting (20 tok/s) beats 4-bit without it (14.6 tok/s).",
+   "t": "9:01"
+  },
+  {
+   "claim": "A desktop Apple owner went from 10 tok/s on llama.cpp to 70 tok/s on a Metal engine with handwritten kernels.",
+   "t": "9:01"
+  },
+  {
+   "claim": "12 GB laptop with CPU offload over PCIe: 4-bit with the flag gives 4.5 tok/s; 2-bit without the flag gives 12.8 tok/s (2.8x faster).",
+   "t": "10:29"
+  },
+  {
+   "claim": "The host's own stale-flag case ran about 70 tok/s for three days before the fix, which then raised throughput.",
+   "t": "4:57"
+  },
+  {
+   "claim": "llama.cpp flag rename date was May 13, 2026. Multi-token prediction support landed three days later.",
+   "t": "3:58"
+  }
+ ],
+ "hot_takes": [
+  "The title '3X Faster' rests on one best-case single-card comparison. The host himself says every figure is a ceiling measured with conditions cropped off, so the real gain on a given setup can be much smaller.",
+  "The claim that output is 'token for token identical' and 'mathematically guaranteed' is stated strongly from one benchmark. Speculative decoding is lossless in principle, but the host also shows that sampler settings change acceptance, so verify on your own prompts.",
+  "The most reusable point is operational, not the speedup: a silently ignored flag can halve throughput with no log warning. Verify your build reads the flag."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft runs vLLM with speculative decoding on one RTX 5090, and the video gives draft-depth, temperature and per-workload benchmark guidance that applies to that stack. Its claim that the peak sits near depth 4-5 is worth checking against our own sweep.",
+   "action": "Add MTP-enabled Qwen as a speculator arm in the InferCraft benchmark. Sweep draft depth 2-8 and sampler temperature, log tokens/s and acceptance separately for agent-style turns and standard prompts, and compare against the current speculative setup."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI and does not run local models, so decoding speed does not apply.",
+   "action": ""
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

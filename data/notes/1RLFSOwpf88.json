@@ -1,0 +1,143 @@
+{
+ "one_line": "Step-by-step FastAPI logging tutorial: a configured Python logger, a per-request logging and timing middleware, and shipping logs to Better Stack, with the slow-request search as the payoff.",
+ "summary": "Better Stack walks through adding logging to a small FastAPI app (served with Uvicorn). It builds a logger.py with a formatter, a stdout handler and a file handler at INFO level, then adds a Logtail handler that ships logs to a Better Stack source. It next adds an HTTP middleware that logs method and URL for every request, moves that middleware into its own module (switching to a BaseHTTPMiddleware-based registration to avoid a circular import), and passes the log dict through extra= so its keys become top-level searchable fields. Finally it times each request with time.time() around call_next, adds an artificial 1.5 s asyncio.sleep to one endpoint, and filters Better Stack for process_time greater than 1 s to find it. The content is beginner-level and the video ends by promoting the Better Stack UI; the reusable pattern is the timing middleware plus structured extra fields.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "observability",
+  "dev-tools"
+ ],
+ "tags": [
+  "fastapi",
+  "python",
+  "logging",
+  "middleware",
+  "structured-logging",
+  "request-latency",
+  "starlette",
+  "uvicorn",
+  "better-stack",
+  "logtail",
+  "live-tail"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Configure one logger module, not per-file print calls: a logging.Formatter with time, level and message fields, a stdout StreamHandler and a FileHandler (app.log), both given the formatter, then logger.setLevel(INFO).",
+   "detail": "Logger lives in logger.py and is imported into main.py. Log output shows time, level name and message. Handlers decide where records go; any can be removed.",
+   "t": "3:32"
+  },
+  {
+   "idea": "Ship logs to a hosted platform by adding a Logtail handler built from the source token and appending it to logger.handlers alongside stdout and file.",
+   "detail": "Create a Python source in the Better Stack UI, copy its token, install the Logtail Python package, and add the handler. The speaker hardcodes the token for demo purposes and warns against that in real code.",
+   "t": "10:46"
+  },
+  {
+   "idea": "Use an app-level middleware to log every request once instead of adding log calls to each endpoint handler.",
+   "detail": "Middleware runs before each path operation and can process the response after it is produced. The speaker logs request.url.path and request.method, then awaits call_next(request) and returns the response.",
+   "t": "14:31"
+  },
+  {
+   "idea": "Moving middleware to its own module breaks the app.middleware decorator, so register it with app.add_middleware(BaseHTTPMiddleware, dispatch=...) instead.",
+   "detail": "The decorator needs the app object, which causes a circular import. The fix is to import BaseHTTPMiddleware from starlette.middleware.base (the older starlette.middleware path from a 2019 GitHub answer fails) and pass the dispatch function. Starlette docs say to override dispatch.",
+   "t": "19:28"
+  },
+  {
+   "idea": "Pass the log dict as extra= so its keys become top-level, indexed fields in Better Stack instead of text inside the message.",
+   "detail": "logger.info(log_dict, extra=log_dict) keeps the message and adds url and method as searchable fields, so queries like method equals GET work.",
+   "t": "23:27"
+  },
+  {
+   "idea": "Time each request in the middleware: record time.time() before call_next, subtract after it returns, and log the delta as a process_time field.",
+   "detail": "Logging moves below the response so process_time can be included. The check: a near-zero value for fast routes and about 1.5 s for the endpoint with the artificial sleep.",
+   "t": "26:02"
+  },
+  {
+   "idea": "Find slow endpoints by filtering the structured field: process_time greater than 1 returns the sleeping upload endpoint at 1.49 s.",
+   "detail": "Better Stack infers the field is a float, offers numeric comparison and substring search, and the same method works for url. This is a demo of the query pattern, not a benchmark.",
+   "t": "28:26"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Central logger module with formatter and multiple handlers",
+   "how": "In logger.py: import logging and sys; logger = logging.getLogger(); formatter = logging.Formatter(<format string with time, levelname and message>); stream = logging.StreamHandler(sys.stdout); file = logging.FileHandler('app.log'); call setFormatter(formatter) on both; logger.handlers = [stream, file]; logger.setLevel(logging.INFO). Import logger from logger.py into main.py. The exact format string is not shown in full on screen; the speaker describes time, a dash, level name, a dash, then message.",
+   "when": "Any FastAPI or Python service that needs consistent log lines in more than one place (console, file, hosted platform)."
+  },
+  {
+   "name": "Ship logs to Better Stack with the Logtail handler",
+   "how": "In the Better Stack UI, create a source named e.g. 'FastAPI Demo' with the Python platform and copy its token. pip install the Logtail Python package from Better Stack's docs. Import the Logtail handler, create it with the source token, and add it to logger.handlers. Load the token from an environment variable in real code (the video hardcodes it for demo purposes only).",
+   "when": "You want centralized, searchable logs with live tail, and the app already uses the standard logging module."
+  },
+  {
+   "name": "Request logging middleware",
+   "how": "Define an async function with the @app.middleware('http') decorator taking (request, call_next). Build a dict with request.url.path and request.method, then response = await call_next(request). Return the response. Remove per-handler logger.info calls once the middleware covers them.",
+   "when": "You need one log record per request for all endpoints rather than per-handler log calls."
+  },
+  {
+   "name": "Middleware in a separate module (class-based registration)",
+   "how": "Move the function to middleware.py without the decorator. In main.py: from starlette.middleware.base import BaseHTTPMiddleware (the speaker corrected the older starlette.middleware path); app.add_middleware(BaseHTTPMiddleware, dispatch=log_middleware). This avoids importing app into middleware.py.",
+   "when": "The middleware lives in its own file and would otherwise need the app object, which causes a circular import."
+  },
+  {
+   "name": "Structured log fields via extra=",
+   "how": "Build a dict log_dict with url, method and other keys. Call logger.info(log_dict, extra=log_dict). The dict appears in the message and each key becomes a top-level field in the log platform.",
+   "when": "You want to filter and aggregate logs by field (method, path, status, duration) rather than search raw message text."
+  },
+  {
+   "name": "Per-request latency via timing middleware",
+   "how": "In the middleware: start = time.time(); response = await call_next(request); process_time = time.time() - start; add log_dict['process_time'] = process_time; logger.info(log_dict, extra=log_dict). Use the field to filter slow requests, e.g. process_time > 1 in the log platform.",
+   "when": "You need to find slow endpoints in a FastAPI app without a full tracing setup."
+  }
+ ],
+ "tools": [
+  "FastAPI",
+  "Uvicorn",
+  "Starlette",
+  "Python logging module",
+  "Python time module",
+  "Python asyncio",
+  "Logtail Python package",
+  "Better Stack (Logtail source and Live Tail UI)",
+  "VS Code"
+ ],
+ "numbers": [
+  {
+   "claim": "Video length is 31:01; the logging and middleware steps take most of it, and the Better Stack source setup is around 10:46 to 13:10.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Artificial latency added to the upload endpoint with asyncio.sleep(1.5).",
+   "t": "27:20"
+  },
+  {
+   "claim": "Measured process_time for the sleeping endpoint is about 1.49 s; a process_time > 1 filter returns two results, both for the upload endpoint.",
+   "t": "28:26"
+  }
+ ],
+ "hot_takes": [
+  "Beginner-level content with little beyond the stdlib logging and FastAPI middleware docs; the Better Stack-specific parts are the only non-generic material.",
+  "The video hardcodes a live source token in logger.py and then says not to do that; it is flagged as a demo shortcut, not a recommendation.",
+  "Platform promotion: the demo's payoff is a query in Better Stack's Live Tail UI. The stdout, file and extra= patterns work without it, but the video does not show a self-hosted or open-source alternative."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS has L4 observability (Prometheus/Grafana, OTel); this is basic per-request logging in Python that only matters if an AgentOS Python service sits on the request path. The extra= structured-field pattern is the only reusable bit.",
+   "action": "If any AgentOS Python service logs requests, add a timing middleware that logs method, path and process_time via logger.info(d, extra=d), and check that these fields show up as queryable keys in the log store before reaching for OTel."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No overlap with the ProsHarness Claude Code harness, checkpointing, or approval flow.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

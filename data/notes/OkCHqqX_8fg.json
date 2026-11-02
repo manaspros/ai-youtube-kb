@@ -1,0 +1,138 @@
+{
+ "one_line": "Head-to-head test of Gemini CLI and Claude Code building the same MP3-to-Whisper transcriber app from one prompt file. Claude Code ran with fewer approval interruptions and tokens; Gemini CLI eventually worked but looped on fixes.",
+ "summary": "The presenter gives a short overview of Gemini CLI, saying it mirrors Claude Code's surface (slash commands, bash mode, @file references, a GEMINI.md file like CLAUDE.md, MCP support) with differences such as /compress instead of /compact and no /init equivalent. He then runs the same task in both tools: each project has a prompt.md asking for a React and Vite app with a drag-and-drop MP3 uploader that transcribes via OpenAI's Whisper model. Claude Code plans, installs the OpenAI SDK with Bun, and after one pasted runtime error produces a working app that transcribes the file. Gemini CLI asks for style preferences and repeatedly requests approvals; yolo mode and \"always allow\" did not stop the prompts, it did not create a .env file, and it went back and forth on the same file several times before the error was fixed. Both end with a working app, but Gemini CLI took longer and used noticeably more tokens, by the presenter's rough impression. He closes by saying Gemini CLI's 1M-token context window and sandbox mode are not yet enough to switch, and that the promo's image and video generation claims could not be reproduced. The test is a single, unrepeated run with no measurements.",
+ "speakers": [
+  "Unnamed Better Stack presenter"
+ ],
+ "orgs": [
+  "Google",
+  "Anthropic",
+  "OpenAI",
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "gemini-cli",
+  "claude-code",
+  "head-to-head",
+  "yolo-mode",
+  "permission-prompts",
+  "agent-looping",
+  "GEMINI.md",
+  "CLAUDE.md",
+  "whisper",
+  "react-vite",
+  "single-prompt-test"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Gemini CLI copies much of Claude Code's surface: slash commands, bash mode, @file references, a project markdown file for context (GEMINI.md vs CLAUDE.md), memory saved there, and MCP support. Differences noted: /compress instead of /compact, and no /init command to generate the file.",
+   "detail": "The presenter frames Gemini CLI as open source with a generous free tier. Its context summary command is /compress and it has no automatic file-creation command, but it shows the model and context usage at all times, which he sees as a plus.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Same task, same spec file: each tool gets a prompt.md in its own React and Vite project, asking for an MP3 drag-and-drop uploader that sends audio to OpenAI's Whisper for a transcript. This makes the comparison about agent behavior, not the spec.",
+   "detail": "Claude Code produced a plan, installed the OpenAI SDK with Bun, and after one pasted runtime error the app ran on localhost and transcribed the test file as requested.",
+   "t": "1:23"
+  },
+  {
+   "idea": "Auto-accept settings change how the run feels: the presenter switched Claude Code into auto-accept edits mode (Shift+Enter) to speed up the run, and enabled yolo mode in Gemini CLI to skip questions.",
+   "detail": "Gemini CLI still asked for approvals after yolo mode was enabled. Shift+Tab did not help, and the presenter had to approve with 'always allow' several times.",
+   "t": "2:50"
+  },
+  {
+   "idea": "Gemini CLI did not generate a .env file for the OpenAI key, while Claude Code did. The presenter had to add the key by hand before the app would run.",
+   "detail": "Both tools hit an OpenAI-related runtime error that was fixed by pasting the error back into the agent. Gemini's fix took several rounds of accepted edits to the same file, which the presenter described as going in circles.",
+   "t": "2:50"
+  },
+  {
+   "idea": "Outcome: both tools eventually produced a working app that did what was asked. Gemini CLI took longer and used a lot more tokens, though the presenter says this was a rough impression and not a measurement.",
+   "detail": "He attributes some of this to Gemini CLI being newly released. Other friction he noted: exiting to change the model, and Ctrl+C not clearing the input.",
+   "t": "2:50"
+  },
+  {
+   "idea": "The presenter could not reproduce the promo claims for Gemini CLI image and video generation, and he is not ready to switch. He cites the 1M-token context window and the sandbox mode as not enough reason yet.",
+   "detail": "This is a conclusion from a single test, not a broader evaluation.",
+   "t": "4:14"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Identical-spec head-to-head test",
+   "how": "Create one project folder per agent with the same prompt.md spec. Give each agent the file, then run the app in the agent's bash mode. Paste any runtime error back into the same agent and count the rounds until the app works.",
+   "when": "Comparing coding agents on a small, end-to-end feature when you want behavior (approvals, looping, error recovery, token use) rather than benchmark scores."
+  },
+  {
+   "name": "Auto-accept edits mode in Claude Code",
+   "how": "Press Shift+Enter in Claude Code to switch to auto-accept edits mode before a long run, so edits are not confirmed one by one.",
+   "when": "A well-scoped build task where you trust the spec and want fewer approval interruptions."
+  },
+  {
+   "name": "Yolo mode and 'always allow' in Gemini CLI",
+   "how": "Enable yolo mode, then approve a prompt with 'always allow' when it appears. Shift+Tab was tried to stop further prompts and did not work in this run.",
+   "when": "Only for trusted, sandboxed runs. Expect repeated approval prompts even after enabling it."
+  },
+  {
+   "name": "Paste-error repair loop",
+   "how": "Copy the runtime error from the running app (for example from the terminal or browser console), paste it into the agent with a request to fix it, and re-run the app.",
+   "when": "Fixing a bug that the agent introduced in its own generated code, with a clear reproduction."
+  }
+ ],
+ "tools": [
+  "Gemini CLI",
+  "Claude Code",
+  "OpenAI Whisper",
+  "OpenAI SDK",
+  "Bun",
+  "React",
+  "Vite",
+  "OpenAI Codex",
+  "MCP"
+ ],
+ "numbers": [
+  {
+   "claim": "Gemini CLI advertised 1 million token context window (presenter cites it; not measured)",
+   "t": "4:14"
+  },
+  {
+   "claim": "Gemini CLI run used noticeably more tokens and took longer than Claude Code on the same task (qualitative, no counts given)",
+   "t": "2:50"
+  },
+  {
+   "claim": "Each tool needed one pasted runtime error fixed before the app worked (single run per tool)",
+   "t": "1:23"
+  },
+  {
+   "claim": "Video length 4:46",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Single unrepeated run per tool with no metrics. The token and speed verdict is a rough impression and should not be read as a benchmark.",
+  "Title promises the 'future of coding' with a 'catch'. Substance is a one-off comparison, so quality is capped at 2.",
+  "The presenter says Gemini CLI's promo claims (image and video generation) could not be reproduced, which is a useful caveat about vendor demos.",
+  "Gemini CLI's approval friction (yolo mode not stopping prompts) and same-file edit looping are presented as early-release problems, not inherent design issues. The presenter does not test whether they persist."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Consumer-level comparison of two coding CLIs. No infra, proxy, memory, or serving content that touches AgentOS.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI, so approval handling and edit loops in agent CLIs are the failure modes a harness must manage. This video shows both, but only anecdotally.",
+   "action": "Check how ProsHarness handles 'always allow' and auto-accept approvals, and consider a guard that flags repeated edits to the same file in one fix cycle."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

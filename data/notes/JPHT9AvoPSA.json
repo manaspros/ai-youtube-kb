@@ -1,0 +1,327 @@
+{
+ "one_line": "A price-and-speed tour of every route to 256GB of memory for running DeepSeek V4.1 Flash locally; the real metric is bits per weight, and a cheap DDR4 plus RTX 3090 MoE-offload build is the surprise pick.",
+ "summary": "The host argues that the memory size on a box matters less than the quantization level it lets you run, and frames every 256GB option around whether it can hold the 3-bit tier of DeepSeek V4.1 Flash, with the 4-bit tier as the upgrade target. He walks through Mac Studio, two Mac-free mini-PC builds (DGX Spark pair, Strix Halo pair), a DDR4 server plus one RTX 3090 build, a full-precision proof of concept, multi-GPU card piles, and used V100 and MI50 servers, quoting prices, tokens/s and prefill speeds mostly from owner reports and forums. A key architectural point is that the model is sparse (about 16B of 552B parameters active per token), so the hot parts can sit on a GPU and the rest in ordinary RAM or on SSD. He measures quantization cost as next-token agreement with the reference model (91.2% at 2-bit, 95.1% at 3-bit, 98.5% at 4-bit). He closes with a break-even comparison against the hosted API, a decision guide by use case (privacy, cheapest, easiest, fastest prompt reads), and a note that the API already serves the full model cheaply. The video is a practitioner comparison built from secondhand benchmarks and live retail prices as of late October 2026, not from the host's own runs.",
+ "speakers": [
+  "Kai (host, channel Kai Explains; surname not stated in the transcript)"
+ ],
+ "orgs": [
+  "Apple",
+  "DeepSeek",
+  "Unsloth",
+  "NVIDIA",
+  "AMD",
+  "Intel",
+  "Framework",
+  "Minis Forum",
+  "GMK Tech",
+  "RunPod",
+  "Micro Center",
+  "Swappa",
+  "eBay"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "token-cost-efficiency",
+  "inference-serving"
+ ],
+ "tags": [
+  "quantization",
+  "bits-per-weight",
+  "deepseek-v4.1-flash",
+  "256gb",
+  "mac-studio",
+  "dgx-spark",
+  "strix-halo",
+  "ddr4-offload",
+  "moe-offload",
+  "kv-cache",
+  "prefill",
+  "api-vs-self-host",
+  "break-even",
+  "vram",
+  "v100",
+  "mi50"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Bits per weight decide what you actually run, not the raw memory size.",
+   "detail": "A 256GB box is only useful if the quantized model fits with room for context; the speaker's rule is to pick the bit level first and then find the cheapest box that reaches it.",
+   "t": "1:23"
+  },
+  {
+   "idea": "DeepSeek V4.1 Flash has a large lookup table that does not need fast memory.",
+   "detail": "The sparse 'engram' lookup table (about 189GB) is read only a few rows per token, so engines such as the Dwarfstar build (transcribed 'Antiresis Dwarfstar') can keep it on SSD. Stripping it out leaves a 2-bit core of about 152GB.",
+   "t": "2:39"
+  },
+  {
+   "idea": "Quantization cost is measured as next-token disagreement with the reference model.",
+   "detail": "Unsloth compared quantized builds to DeepSeek's reference and counted how often the next token matched. Agreement was 91.2% at 2-bit, 95.1% at 3-bit and 98.5% at 4-bit, i.e. roughly one mismatch every 11, 20 and 67 tokens.",
+   "t": "3:53"
+  },
+  {
+   "idea": "256GB is just enough for the 3-bit tier; 4-bit needs about 300GB.",
+   "detail": "Approximate footprints are 165-200GB for 2-bit, 234-262GB for 3-bit and about 298GB for 4-bit. Every 256GB route is competing for the same third bit, and the price of the fourth bit differs widely by route.",
+   "t": "5:01"
+  },
+  {
+   "idea": "Apple's default GPU memory limit blocks the 3-bit tier on a 256GB Mac Studio.",
+   "detail": "Owners report the GPU starts at roughly 192GB, so the 2-bit build fits but the 3-bit build does not. One terminal command raises the limit to about 248GB, but it resets on reboot and must go in a startup script. The command is not shown in the transcript.",
+   "t": "6:09"
+  },
+  {
+   "idea": "The inference engine matters more than the extra GPU cores.",
+   "detail": "On the 80-core Mac, a mixed 2/3-bit build with the draft head reached 70-105 tokens/s writing and about 1,800 tokens/s prompt reading. The more common MLX route on the 64-core chip reached 26-29 tokens/s writing and under 500 tokens/s reading, which the host attributes to the engine and build.",
+   "t": "7:23"
+  },
+  {
+   "idea": "Sparse MoE models let a small GPU serve the hot path while cheap system RAM holds the rest.",
+   "detail": "Only about 16B of the 552B parameters activate per token, so the always-used parts go on a GPU and the bulk sits in DDR4. One RTX 3090 with 256GB of DDR4 and a 200GB SSD ran the model at 26 tokens/s for one user and 41 across four users, for around $6,000.",
+   "t": "13:39"
+  },
+  {
+   "idea": "A used DDR4 server is the cheapest path to the fourth bit.",
+   "detail": "DDR5 server memory is about $29 per GB, while 64GB DDR4 sticks are about $6.23 per GB. Two more sticks ($798) could give the same machine the roughly 300GB the 4-bit build needs, if the board has free slots. This path has not been published yet.",
+   "t": "14:57"
+  },
+  {
+   "idea": "Full-precision weights have run on one box.",
+   "detail": "A developer ran the untouched original weights on a 96GB RTX Pro 6000 plus 512GB of DDR4, using 89GB of VRAM and 346GB of RAM. Throughput was 65 tokens/s for one user and 143 across eight users.",
+   "t": "14:57"
+  },
+  {
+   "idea": "Multi-GPU card piles hit a ceiling because the fourth bit requires replacing every card.",
+   "detail": "Eight PCIe slots leave no room for a ninth card, so the 4-bit upgrade means swapping the whole set. Four 96GB RTX Pro 6000s cost about $64,000 at list price.",
+   "t": "18:18"
+  },
+  {
+   "idea": "The KV cache is small, but first-time prefill of a long prompt is slow.",
+   "detail": "DeepSeek V4.1 Flash uses about 890 bytes per token, so a 1M-token context is about 0.93GB. Prefill is the real cost: about 12 minutes for 1M tokens on the Mac, 22-29 minutes on the DDR4 build. Cached turns in the same session run far faster.",
+   "t": "20:37"
+  },
+  {
+   "idea": "Self-hosting is a break-even bet against the cheap hosted API.",
+   "detail": "$9,499 buys about 15.8B output tokens at DeepSeek's off-peak API price. A Mac at 35 tokens/s running around the clock takes about 14 years to break even on that basis, and about 6 years at 80 tokens/s. Self-hosting still makes sense when data must stay on the machine, or when the box is busy serving a team.",
+   "t": "21:37"
+  },
+  {
+   "idea": "Decision guide by use case.",
+   "detail": "If data must not leave the machine, buy a box. If 3 bits is enough, the cheapest route that keeps getting updates is the DDR4 build. The Mac is the easiest to set up. Two DGX Sparks give the best CUDA compatibility and prompt speed. Otherwise the API already serves all four bits cheaply.",
+   "t": "25:18"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Size the box from bits per weight, not gigabytes",
+   "how": "Estimate footprint per quant tier (about 165-200GB at 2-bit, 234-262GB at 3-bit, about 298GB at 4-bit for this model) plus headroom for context and OS, then pick the cheapest hardware that clears the target tier.",
+   "when": "Choosing local hardware for a large open-weight model, before comparing vendors."
+  },
+  {
+   "name": "Measure quantization fidelity as next-token agreement",
+   "how": "Run each quantized build and the reference model over the same prompts, count how often the greedy next token matches, and convert to mismatches per token (for example 95.1% agreement is about one mismatch every 20 tokens).",
+   "when": "Deciding whether a 2-bit or 3-bit build is good enough for a workload."
+  },
+  {
+   "name": "Keep the hot parts of a sparse MoE on GPU and the rest in system RAM",
+   "how": "Place the always-active or per-token-hot layers on the GPU and keep the bulk of the experts in DDR4 or on SSD. Engines that support this read only the needed experts per token; the speaker reports a single RTX 3090 serving DeepSeek V4.1 Flash this way.",
+   "when": "Running a large sparse model on a small GPU with lots of cheap RAM, especially when concurrency is low."
+  },
+  {
+   "name": "Put a large, sparsely read lookup table on SSD",
+   "how": "Leave the engram/lookup table on disk and read only the rows each token needs, keeping the core weights in memory. The Dwarfstar build keeps about 189GB of it on SSD this way.",
+   "when": "A model with a big embedding-style lookup table that is read only a few rows per token."
+  },
+  {
+   "name": "Raise the macOS GPU memory limit and persist it",
+   "how": "A single terminal command raises the GPU memory limit to about 248GB on a 256GB Mac Studio. The value resets on reboot, so put the command in a startup script. The exact command is not shown in the transcript.",
+   "when": "Running a model that needs more than the default GPU share on Apple silicon."
+  },
+  {
+   "name": "Enable the model's draft head for speculative decoding",
+   "how": "Turn on DeepSeek's built-in draft head in the engine. On two DGX Sparks it raised writing from 31 to 87 tokens/s on code and to 131 tokens/s on structured output.",
+   "when": "Output-heavy local inference where decode speed is the bottleneck and the engine supports the draft head."
+  },
+  {
+   "name": "Break-even against the API before buying hardware",
+   "how": "Divide hardware price by (tokens/s x seconds of use x API price per token) to get payback in years, then compare with a rented GPU per-hour rate. Include electricity and utilization.",
+   "when": "Deciding between buying a local box and using a hosted API for the same model."
+  },
+  {
+   "name": "Budget prefill time for long first prompts",
+   "how": "Estimate prefill time as prompt tokens divided by prompt-read speed (for example 1M tokens at about 1,800 tokens/s is about 9 minutes), and expect cached turns in the same session to be much faster.",
+   "when": "Loading a large codebase or document set into a local model at the start of a session."
+  }
+ ],
+ "tools": [
+  "DeepSeek V4.1 Flash",
+  "DeepSeek API",
+  "Unsloth quantized builds",
+  "Dwarfstar inference engine (transcribed 'Antiresis Dwarfstar')",
+  "MLX (Mac inference route)",
+  "vLLM 0.20",
+  "CUDA 13",
+  "ROCm",
+  "Qwen 3.8 (incl. a Flash Next variant)",
+  "Mac Studio M5 Ultra 256GB / 512GB",
+  "Mac Studio M3 Ultra",
+  "NVIDIA DGX Spark",
+  "AMD Ryzen AI Max+ 395 (Strix Halo)",
+  "AMD Gorgon Halo",
+  "Framework Desktop",
+  "Minis Forum MS-S1 Max",
+  "GMK Tech Evo X2",
+  "NVIDIA RTX 3090",
+  "NVIDIA RTX 5090",
+  "NVIDIA RTX Pro 6000 (96GB)",
+  "NVIDIA RTX Pro 5000 (72GB)",
+  "AMD Radeon AI Pro R9700 (32GB)",
+  "Intel Arc Pro B70",
+  "NVIDIA V100 (32GB, NVLink, eBay)",
+  "AMD MI50 (32GB)",
+  "RunPod H200 rental",
+  "USB4 / Thunderbolt 5 interconnect"
+ ],
+ "numbers": [
+  {
+   "claim": "Apple 512GB Mac Studio $22,299 vs 256GB $9,499 (launch Oct 28); two 256GB units cost $21,598.",
+   "t": "1:23"
+  },
+  {
+   "claim": "DeepSeek V4.1 Flash has 552B parameters plus a 196B lookup table; full download about 510GB; 2-bit core about 152GB.",
+   "t": "2:39"
+  },
+  {
+   "claim": "Next-token agreement with the reference model: 91.2% at 2-bit, 95.1% at 3-bit, 98.5% at 4-bit (about one mismatch every 11, 20 and 67 tokens).",
+   "t": "3:53"
+  },
+  {
+   "claim": "Approximate memory per tier: 165-200GB (2-bit), 234-262GB (3-bit), about 298GB (4-bit).",
+   "t": "5:01"
+  },
+  {
+   "claim": "Mac Studio 256GB M5 Ultra $9,499 (64-core) or $10,799 (80-core); 13-17 week ship time; about 1.2 TB/s memory bandwidth.",
+   "t": "6:09"
+  },
+  {
+   "claim": "Mac GPU default limit about 192GB, raised to about 248GB by one terminal command that resets on reboot.",
+   "t": "6:09"
+  },
+  {
+   "claim": "80-core Mac with draft head: 70-105 tokens/s writing, about 1,800 tokens/s prompt reading; 64-core MLX route: 26-29 tokens/s writing, under 500 reading.",
+   "t": "7:23"
+  },
+  {
+   "claim": "Used 256GB M3 Ultra listed on Swappa for $6,700-$9,200 (819 GB/s bandwidth).",
+   "t": "8:14"
+  },
+  {
+   "claim": "DGX Spark $6,950 each (up from $3,999 at launch); two units $13,900; about 121GB usable each; 2.9-bit build uses about 196GB across both.",
+   "t": "8:14"
+  },
+  {
+   "claim": "Two DGX Sparks: about 2,100 tokens/s prompt reading, 128K prompt waits about 63s before the first word; writing 31 tokens/s without draft, 87 on code and 131 on structured output with draft head; crashes reported above about 92% memory use.",
+   "t": "9:34"
+  },
+  {
+   "claim": "Strix Halo mini PCs: Framework Desktop $3,449; MS-S1 Max $3,639 on sale ($4,549 regular); GMK Evo X2 about $3,650; pair about $6,900-$7,800.",
+   "t": "10:56"
+  },
+  {
+   "claim": "Measured USB4 link about 9.2 GB/s in practice on a 40Gb link.",
+   "t": "10:56"
+  },
+  {
+   "claim": "Two Strix Halo boxes: about 27 tokens/s writing, 700-750 tokens/s prompt reading; second box adds about 23% writing speed on a short prompt and makes fresh prompt reads 13% slower.",
+   "t": "12:17"
+  },
+  {
+   "claim": "Gorgon Halo single box with 192GB; MinisForum version $7,399. A 1-bit build on a 128GB Strix Halo reads about 1,000 tokens/s and writes 23-28 tokens/s, with roughly one wrong token every 8-9.",
+   "t": "12:17"
+  },
+  {
+   "claim": "DeepSeek V4.1 Flash activates about 16B of its 552B parameters per token.",
+   "t": "13:39"
+  },
+  {
+   "claim": "RTX 3090 + 256GB DDR4 + 200GB SSD build: 26 tokens/s single user, 41 across four users, 600-800 tokens/s prompt reading, 262K context, about $6,000 total.",
+   "t": "13:39"
+  },
+  {
+   "claim": "DDR5 server memory about $29.37/GB (about $7,500 for 256GB); 64GB DDR4 server stick $399 ($6.23/GB); 256GB DDR4 about $1,596; two more sticks $798.",
+   "t": "14:57"
+  },
+  {
+   "claim": "Unquantized weights on one 96GB RTX Pro 6000 + 512GB DDR4: 89GB VRAM and 346GB RAM used; 65 tokens/s single user, 143 across eight.",
+   "t": "14:57"
+  },
+  {
+   "claim": "AMD Radeon AI Pro R9700 launched $1,299, found at $1,680-$1,700; Intel Arc Pro B70 launched $949, now $1,280-$1,700; eight cards $10,240-$13,600 before the rest of the build.",
+   "t": "16:12"
+  },
+  {
+   "claim": "Eight RTX 5090s about $38,000 at resale; four 72GB RTX Pro 5000s (288GB) about $40,000; four R9700s on Qwen 3.8 Flash Next reach 236 tokens/s for one user (single owner's benchmark).",
+   "t": "17:13"
+  },
+  {
+   "claim": "Upgrading eight card slots to the fourth bit requires replacing the cards: 96GB RTX Pro 6000 at $16,000 each, about $64,000 for the set.",
+   "t": "18:18"
+  },
+  {
+   "claim": "8x32GB V100 NVLink server listed at $5,899 on eBay, one sold for just under $3,000 (about $23/GB); four 16GB V100s matched one RTX 5090 at about 219 tokens/s on Qwen 3.8 4-bit.",
+   "t": "18:18"
+  },
+  {
+   "claim": "AMD MI50 (32GB) listed $250-$700; four MI50s on a 2-bit DeepSeek: 50 tokens/s writing, 275 reading (community ROCm preview).",
+   "t": "19:34"
+  },
+  {
+   "claim": "KV cache about 890 bytes per token; a full 1M-token context is about 0.93GB.",
+   "t": "20:37"
+  },
+  {
+   "claim": "Prefill of a 1M-token prompt: about 740s (about 12 min) on the Mac; 479K tokens in 280s on two Sparks (about 10 min per 1M); at least 23 min on the Strix Halo pair; 22-29 min on the 3090 + DDR4 build.",
+   "t": "20:37"
+  },
+  {
+   "claim": "Cached turns on the Mac run at about 350 tokens/s of new prompt processing.",
+   "t": "21:37"
+  },
+  {
+   "claim": "DeepSeek API: about $0.15 per million input tokens off-peak; about $0.60 per million output tokens off-peak. $9,499 buys about 15.8B output tokens at that rate.",
+   "t": "21:37"
+  },
+  {
+   "claim": "Mac at 35 tokens/s around the clock is about 1.1B tokens/year, about 14 years to break even; at 80 tokens/s about 6 years; two rented H200s on RunPod at $10.58/hr break even against the Mac after about 900 hours.",
+   "t": "22:48"
+  },
+  {
+   "claim": "Price of the fourth bit: $798 (DDR4 sticks), $11,500 (Mac 512GB upgrade), $13,900 (two more Sparks plus a switch or cable ring), $64,000 (GPU card replacement).",
+   "t": "24:05"
+  }
+ ],
+ "hot_takes": [
+  "The host calls the cheap DDR4 server build the underrated path and says the forums are not talking about it enough.",
+  "The 3-bit tier is the practical floor for a 256GB box, and the fourth bit is the real price driver across every route.",
+  "For most people the hosted API is the right answer, since it already serves all four bits cheaply and self-hosting breaks even only after many years or with heavy use.",
+  "Apple shipping a default GPU memory limit that blocks the 3-bit build is an odd choice.",
+  "Most of the performance numbers come from owner reports and forums rather than the host's own runs, and the host says so; several key builds (the DDR4 4-bit path, two M5 Ultras linked by Thunderbolt 5) have no published results yet."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft (L2B) plans vLLM on one RTX 5090 with CPU offload and quantization. This video gives measured quantization agreement rates, a hot/cold split for sparse MoE (GPU for active parts, RAM or SSD for the rest), and prefill-time budgeting for long contexts.",
+   "action": "Add a quantization-fidelity check to InferCraft's benchmark harness: for each candidate quant, measure greedy next-token agreement against the reference on a fixed prompt set and report mismatches per 100 tokens next to tokens/s and prefill time."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Local hardware sizing for large models is not part of the ProsHarness harness around Claude Code.",
+   "action": ""
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

@@ -1,0 +1,68 @@
+# How Fast Is Local AI on Your Mac? (Every Chip, M1 to M6)
+
+- **channel:** [Kai Explains](../channels/kai.md) · **id:** `WoGwVXFmWzU` · [watch](https://youtu.be/WoGwVXFmWzU) · **date:** 2026-10-02 · **length:** 16:21 · **format:** review · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Kai (channel host, unnamed in transcript) · **orgs:** Apple, Kai Explains
+- **topics:** local-ai, inference-serving · **tags:** apple-silicon, mac, memory-bandwidth, prefill, decode, speculative-decoding, llama.cpp, mlx, local-llm-benchmarks, agent-latency, kv-cache, unified-memory
+
+> Kai Explains compares Apple Silicon Macs (M1 to M6) for local LLM use and argues that memory size, then memory bandwidth, then the exact chip variant predict real speed better than the chip generation, and that software and speculative decoding can matter more than hardware.
+
+## Summary
+The speaker says popular Mac-vs-Mac local AI charts show only one of two speeds. Local inference has two phases: prefill (reading the prompt, compute-bound) and decode (writing tokens, memory-bandwidth-bound). Decode speed is roughly memory bandwidth divided by model weight size, and he checks this against community benchmarks, including a long-running llama.cpp GitHub thread where owners run the same 7B model on the same build. Across those numbers, an M1 Max writes faster than newer chips such as the M4 Pro, because bandwidth, not generation, drives writing speed. Same-named chips can ship in different bandwidth variants (M4 Max 410 vs 546 GB/s; M5 Max 460 vs 614 GB/s), and base memory configs can hide the speed. The M5's Neural Accelerators are the one real jump, roughly 3.6x faster prefill on the same software, but decode only rose about 25%. For agent workloads that resend about 30k tokens per call, prefill matters a lot, while for normal chat the older M1 Max still wins. He recommends checking memory first, then bandwidth, then generation, and trying a faster inference engine or speculative decoding before buying hardware. Much of the data is secondhand (forum posts, a GitHub thread, one commenter's measurements), and the speaker says it is partly modeled.
+
+## Key ideas
+- **Local inference has two speed limits: prefill (reading the prompt) is compute-bound, decode (writing tokens) is memory-bandwidth-bound** — Prefill is a big burst of matrix math, so more compute units help. Decode streams the full model weights out of memory for every token, so bandwidth sets the ceiling. Different chips are fast at different phases. ([1:21](https://youtu.be/WoGwVXFmWzU?t=81))
+- **Decode ceiling is bandwidth divided by model size, and measured results land near it** — M6 Mac Mini: 170 GB/s / ~16 GB (27B at 4-bit) gives ~10.6 tok/s; measured 9.7 (about 90% of ceiling). M1 Max: 400 / 16 gives ~25; measured 19.8. ([2:38](https://youtu.be/WoGwVXFmWzU?t=158))
+- **On real community benchmarks for writing speed, the staircase of chip generations falls apart** — In a llama.cpp GitHub thread (opened Nov 2023, same 7B model, same build), M1 Max writes at 61 tok/s vs 51 for a 2024 M4 Pro. M3 Pro had less bandwidth than M2 Pro and writes about 20% slower as a result. ([4:01](https://youtu.be/WoGwVXFmWzU?t=241))
+- **Same chip name can hide different bandwidth, and the cheaper variant can be about 25% slower** — M4 Max comes in 410 or 546 GB/s; M5 Max in 460 or 614 GB/s. Base M6 with 16 GB has 153 GB/s (same as M5); 170 GB/s only with 24 or 32 GB. The 32-core M4 Max and M5 Max cap at 36 GB, so a 70B 4-bit model (~40 GB) won't load (auto-caption reads '7db'). ([5:08](https://youtu.be/WoGwVXFmWzU?t=308))
+- **M5's Neural Accelerators are the one real leap, but only for prefill and only with software that uses them** — Same llama.cpp thread: M4 Max prefill 886 tok/s vs M5 Max 3,220 tok/s (3.6x). A 2023 llama.cpp build on M5 Max reads only ~990 tok/s, so old software can't use the accelerators. Decode rose only ~25% M4 Max to M5 Max, bounded by bandwidth. ([7:47](https://youtu.be/WoGwVXFmWzU?t=467))
+- **Agent sessions are prefill-bound, chat is not: the right machine depends on prompt-to-answer ratio** — Agents resend ~30k tokens of instructions, tool output and history on every call. A 32k prompt on an M1 Max with a 27B model took over 500s to first token; an M5 Max takes under a minute (~40s with optimized software). For a 1000-token question with 500-token answer, M1 Max takes ~10s vs ~17s on base M5. Crossover is roughly 30 prompt tokens per answer token. ([9:13](https://youtu.be/WoGwVXFmWzU?t=553))
+- **Check memory first, then bandwidth, then generation: a model that doesn't fit has no speed** — A 16 GB Mac gives the GPU about 12.7 GB, too small for a 27B 4-bit model (~16 GB). 24 GB loads it but leaves little room for context. 32 GB makes 27B usable day to day; 64 GB is where he says 70B models become practical. ([10:30](https://youtu.be/WoGwVXFmWzU?t=630))
+- **Software and speculative decoding can beat a hardware upgrade, but the gain depends on the task and the machine** — On M6, plain MLX gets ~9 tok/s, multi-token prediction 16-19 tok/s, and a different engine (Splash, as captioned) 52 tok/s on a short prompt (6x from software alone). Speculative decoding (a small draft model guesses several tokens, the big model verifies them in one memory pass) hit ~144 tok/s on an M5 Max vs a ~38 tok/s ceiling. Acceptance was 94% on code vs 19% on prose, and on an M5 MacBook Air it dropped speed from 7.4 to 3 tok/s. ([11:45](https://youtu.be/WoGwVXFmWzU?t=705))
+- **For coding agents, first-token latency after each tool call adds up, and the M1 Max is the wrong machine** — One logged agent session had ~95% of the prompt cache-eligible, yet half the wall time still went to waiting for the first token after each tool call. Hundreds of such waits add up to an afternoon. ([12:58](https://youtu.be/WoGwVXFmWzU?t=778))
+
+## Techniques
+- **Decode throughput ceiling estimate** — Estimate max tok/s as memory bandwidth (GB/s) divided by model weight size in GB (e.g. 170 / 16 ~ 10.6 tok/s). Compare measured tok/s against it; the speaker treats ~90% of ceiling as already optimal. Only valid for decode, not prefill. *When:* Sanity-checking a local benchmark claim, or judging whether a hardware or engine change can help decode speed at all.
+- **Memory-fit check before speed** — Compute model size at the chosen quantization (27B at 4-bit ~ 16 GB), then compare to usable GPU memory (~12.7 GB on a 16 GB Mac). Leave headroom for context and conversation history (24 GB barely loads a 27B model; 32 GB is usable). Reject configurations that cannot load. *When:* Choosing a Mac or GPU for local models, or reading a benchmark for a model that may not fit.
+- **Like-for-like benchmark protocol** — Run the same model, same quantization, and same pinned software build on every machine; report prefill (pp) and decode (tg) tok/s separately. Report the exact chip variant (bandwidth and memory SKU). The speaker cites the llama.cpp GitHub community thread as this model. *When:* Comparing hardware, or reading benchmark videos that do not specify the chip variant or software version.
+- **Speculative decoding for memory-bound decode** — Run a small draft model that proposes several tokens ahead; the big model verifies them all in one memory pass. Gains depend on the draft acceptance rate, so measure it per task type (code accepted 94%, prose 19% in one report). Compare speculative vs non-speculative runs on the same machine; disable it on memory-constrained machines where it slowed decoding (7.4 -> 3 tok/s). *When:* Decode is the bottleneck, the workload is predictable (for example, code), and there is enough memory for the draft model.
+- **Try a faster inference engine before buying hardware** — Compare plain MLX with multi-token prediction and with other engines on the same model. The speaker's example: plain MLX ~9 tok/s on M6, multi-token prediction 16-19, another engine 52 on a short prompt. Keep the same model and prompt length when comparing. *When:* Local decode is slower than the hardware ceiling suggests, before spending money on a new machine.
+- **Prompt-to-answer ratio rule for hardware choice** — Estimate the average input tokens per output token. Around 30:1 or more, prefill speed matters (newer M5+ chips pull ahead); below that, decode speed and bandwidth matter (older high-bandwidth chips can win). *When:* Deciding between an older high-bandwidth chip and a newer chip with faster prefill, for chat or agent workloads.
+- **Cache-aware agent latency accounting** — Log per-call time to first token after each tool call, separately from total time. Even with a high cache-eligible share (~95% in one session), first-token waits can take half of wall time. *When:* Profiling a local or self-hosted agent loop, to see whether prefill latency or decode dominates.
+
+## Numbers
+- Decode ceiling = bandwidth / model size: M6 Mac Mini 170 GB/s / 16 GB ~ 10.6 tok/s; measured 9.7 (~90% of ceiling) ([2:38](https://youtu.be/WoGwVXFmWzU?t=158))
+- M1 Max: 400 GB/s / 16 GB ~ 25 tok/s ceiling; measured 19.8 tok/s ([2:38](https://youtu.be/WoGwVXFmWzU?t=158))
+- Llama.cpp community thread, 7B model: M1 Max 61 tok/s vs M4 Pro 51 tok/s ([4:01](https://youtu.be/WoGwVXFmWzU?t=241))
+- M3 Pro has less bandwidth than M2 Pro and writes about 20% slower ([4:01](https://youtu.be/WoGwVXFmWzU?t=241))
+- M4 Max bandwidth 410 vs 546 GB/s; cheaper variant writes about a quarter slower ([5:08](https://youtu.be/WoGwVXFmWzU?t=308))
+- M5 Max bandwidth 460 vs 614 GB/s ([5:08](https://youtu.be/WoGwVXFmWzU?t=308))
+- Base M6 16 GB: 153 GB/s (same as M5); 170 GB/s at 24 or 32 GB ([5:08](https://youtu.be/WoGwVXFmWzU?t=308))
+- 32-core M4 Max and M5 Max top out at 36 GB; a 70B 4-bit model needs ~40 GB (captioned '7db') ([6:27](https://youtu.be/WoGwVXFmWzU?t=387))
+- Prefill: M4 Max 886 tok/s vs M5 Max 3,220 tok/s (3.6x) on the same prompt ([7:47](https://youtu.be/WoGwVXFmWzU?t=467))
+- Apple's slide claims 13.5x prefill (M1 Mac Mini to M6 Mac Mini); speaker calls it cherry-picked ([7:47](https://youtu.be/WoGwVXFmWzU?t=467))
+- M5 Max on a 2023 llama.cpp build reads ~990 tok/s prefill; M4 to M5 decode only ~25% faster ([7:47](https://youtu.be/WoGwVXFmWzU?t=467))
+- Agent prompts ~30,000 tokens before the user types; 32k-token prompt on M1 Max with 27B took >500s to first token ([9:13](https://youtu.be/WoGwVXFmWzU?t=553))
+- M5 Max first-token time under a minute, ~40s with optimized software (agent long-context call) ([9:13](https://youtu.be/WoGwVXFmWzU?t=553))
+- 1000-token question + 500-token answer: ~10s on M1 Max vs ~17s on base M5 (M1 Max ~70% faster) ([10:30](https://youtu.be/WoGwVXFmWzU?t=630))
+- Crossover for newer chips: ~30 prompt tokens per answer token ([10:30](https://youtu.be/WoGwVXFmWzU?t=630))
+- 16 GB Mac gives GPU ~12.7 GB; 27B 4-bit (~16 GB) does not fit ([10:30](https://youtu.be/WoGwVXFmWzU?t=630))
+- M6 plain MLX ~9 tok/s; multi-token prediction 16-19 tok/s; another engine 52 tok/s on a short prompt (~6x from software alone) ([11:45](https://youtu.be/WoGwVXFmWzU?t=705))
+- M5 Max speculative decoding: 144 tok/s vs theoretical ~38 tok/s ceiling (~4 guesses accepted per trip) ([12:58](https://youtu.be/WoGwVXFmWzU?t=778))
+- Speculative acceptance: 94% on code vs 19% on prose (M1 Max owner) ([12:58](https://youtu.be/WoGwVXFmWzU?t=778))
+- M5 MacBook Air: speculative decoding dropped speed from 7.4 to 3 tok/s ([12:58](https://youtu.be/WoGwVXFmWzU?t=778))
+- Agent session: ~95% of prompt cache-eligible, but half of wall time spent waiting for first token after tool calls ([12:58](https://youtu.be/WoGwVXFmWzU?t=778))
+- M5 Pro Mac Mini at $1,699 reads prompts more than 2x faster than M1 Max with similar write speed ([14:16](https://youtu.be/WoGwVXFmWzU?t=856))
+- Used 64 GB M1 Max MacBook Pro for ~$1,200 has 2.35x the bandwidth of the $1,299 M6 Mac Mini 32 GB (speaker's figure) ([14:16](https://youtu.be/WoGwVXFmWzU?t=856))
+
+## Hot takes
+- The chip generation number after the 'M' is the least predictive measure of how fast local AI feels; memory, bandwidth and exact variant matter more.
+- Benchmarks showing a speed for a model that doesn't fit in memory (27B on a 16 GB Mac) are showing a machine that can't start, so the chart is wrong or misleading.
+- Most of the speed people chase may be available from a better inference engine or speculative decoding, free, before spending about $2,000 on new hardware.
+- Newer Macs are mostly faster at prefill, which matters for long agent prompts, while for everyday chat an older high-bandwidth M1 Max can beat newer hardware.
+- The speaker's own benchmark data is mostly secondhand (community threads and comments) and partly modeled by formula, so treat specific numbers as directional.
+
+## Tools mentioned
+Apple Silicon M1 through M6 (Mac Mini, Mac Studio, MacBook Pro and Air), llama.cpp (called 'Lama CPP' in the auto-captions), MLX (Apple's ML framework), Multi-token prediction (MLX variant), Splash (inference engine, as captioned; 52 tok/s on a short prompt), Speculative decoding with a small draft model, Qwen 27B (auto-caption 'QEN327B'), 4-bit, Apple Neural Accelerator (in M5 GPU cores)
+
+## Relevance to our work
+- **agentos** (2/3): InfraCraft serves a 27B-class model on a single RTX 5090 with speculative decoding (EAGLE-3). The video's bandwidth-ceiling and per-task acceptance-rate points apply to that stack, though the hardware here is Apple Silicon. → *Add a decode-throughput ceiling (memory bandwidth / weight bytes) to InferCraft benchmarks, report measured tok/s as a percent of it, and measure speculative acceptance per task type (code vs prose) before enabling EAGLE-3 by default.*

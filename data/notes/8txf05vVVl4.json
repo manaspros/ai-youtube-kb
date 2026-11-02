@@ -1,0 +1,150 @@
+{
+ "one_line": "Cloudflare's Sunil Pai on \"Code Mode\": have models write code against an API instead of making many tool calls, cutting a 2,600-endpoint API from ~1.2M tokens to ~1K, inside capability-restricted sandboxes.",
+ "summary": "Pai argues that JSON tool calling breaks down at scale: many tools fill the context window and each step needs a slow round trip through the model. His team instead asks the model to write JavaScript that runs in a sandbox next to the API, so loops, state, sequencing and parallel calls happen in one execution. For Cloudflare's own API (about 2,600 endpoints), they expose only two tools, search and execute, both taking code as input; search runs over the OpenAPI spec and execute calls the typed functions, which he says cut the first-call cost from about 1.2M tokens to about 1,000. A live demo of the DDoS-blocking use case partly stalled on stage (JavaScript errors and pagination trouble), so it is an illustration, not evidence. He then describes an emergent example: a model given the raw state of a canvas app (an array of strokes) read it and played tic-tac-toe in place, without any game code, and he frames this as the model \"inhabiting the state machine\" rather than generating a new app. The sandbox design he recommends starts with zero capabilities, grants named APIs explicitly, blocks outbound fetches by default, and requires full observability; he uses V8 isolates for fast startup. He closes by saying agents are the new users of software and need developer experience (markdown docs, errors that say what to do next, search-based discovery) plus capability-based security.",
+ "speakers": [
+  "Sunil Pai"
+ ],
+ "orgs": [
+  "Cloudflare"
+ ],
+ "format": "talk",
+ "topics": [
+  "mcp-and-tools",
+  "token-cost-efficiency",
+  "sandboxing-execution",
+  "agent-architecture"
+ ],
+ "tags": [
+  "code-mode",
+  "search-and-execute",
+  "mcp-token-cost",
+  "tool-calling",
+  "openapi",
+  "sandbox",
+  "v8-isolates",
+  "capability-security",
+  "generative-ui",
+  "agent-dx",
+  "cloudflare-workers"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Tool calling via JSON breaks at scale",
+   "detail": "With hundreds of tools filling the context, and each step needing a model round trip, multi-step tasks get slow and fragile. Pai's team asks the model to write code instead and runs that code against the environment.",
+   "t": "1:32"
+  },
+  {
+   "idea": "Code gives you loops, state, sequencing and parallelism in one run",
+   "detail": "Instead of many back-and-forth calls, one generated program does the whole job in a single execution. He also notes typed APIs let you type-check and get syntax errors, which models can read and fix.",
+   "t": "2:28"
+  },
+  {
+   "idea": "Search and execute pair for huge API surfaces",
+   "detail": "Rather than one tool per endpoint, expose two tools that both take code: search runs over the OpenAPI spec, and execute calls the typed functions. This is the core technique of the talk.",
+   "t": "3:29"
+  },
+  {
+   "idea": "Unbounded tool count is a token-cost problem",
+   "detail": "One tool per endpoint for Cloudflare's ~2,600 endpoints would be ~1.2M tokens in the first call. The per-task cost of a classic MCP approach is about eight round trips, versus one code run.",
+   "t": "4:55"
+  },
+  {
+   "idea": "Non-programmers get custom software through generated code",
+   "detail": "A user can ask for a behavior like renaming files by date and location, and the model writes and runs code against exposed systems. This replaces buying a generic app or waiting for a developer.",
+   "t": "8:52"
+  },
+  {
+   "idea": "Let the agent inhabit the app's state rather than build a new app",
+   "detail": "In Kenton's canvas example, the model was shown the raw stroke array instead of being asked for a tic-tac-toe program. It read the state and played in place. Pai presents this as anecdotal and emergent, not a benchmark, and says the model lost the game.",
+   "t": "10:17"
+  },
+  {
+   "idea": "Sandboxes start with zero capabilities",
+   "detail": "The sandbox can only execute code by default. Named APIs are granted explicitly, outbound fetches are blocked unless allowed, and full observability of every run is required. He uses V8 isolates for fast startup and says the default recommendation is no outgoing fetches, only APIs.",
+   "t": "12:33"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Search + execute two-tool facade",
+   "how": "Expose two tools that take code as a string. Search runs code over the API's OpenAPI spec to find endpoints. Execute runs code that calls typed functions for those endpoints. Token cost stays roughly flat as the API grows.",
+   "when": "The API or tool surface is too large to list as individual tools (thousands of endpoints), or each task chains many calls."
+  },
+  {
+   "name": "Code as the tool-call format",
+   "how": "Ask the model to generate a short JavaScript program that uses loops, await, pagination and parallel calls, then run it in the sandbox and return the result. Errors come back to the model so it can fix and retry.",
+   "when": "Multi-step tasks with dependencies, pagination or fan-out where JSON round trips are slow or costly."
+  },
+  {
+   "name": "Zero-capability sandbox with explicit grants",
+   "how": "Start the isolate with no network and no APIs. Expose only named functions. Block outbound fetch by default. Log every run for later inspection.",
+   "when": "Running model-written code on systems you care about, where you need to explain later why an action happened."
+  },
+  {
+   "name": "Agent-facing developer experience",
+   "how": "Write docs in Markdown, make errors say what to do next, and make the API discoverable through search. Pai treats agents as the new users of an API and says they need the same care as humans.",
+   "when": "Designing internal or public APIs that agents will call, or building a registry agents must search."
+  },
+  {
+   "name": "Operate on the app's raw state",
+   "how": "Give the model the app's underlying state (for example, a stroke array) and let it read and write that state directly, instead of generating new UI logic.",
+   "when": "The app's state is inspectable and structured, and you want flexible behavior without writing new features."
+  }
+ ],
+ "tools": [
+  "Cloudflare Workers",
+  "Cloudflare Dynamic Workers",
+  "V8 isolates",
+  "OpenAPI",
+  "PartyKit",
+  "Claude Opus",
+  "TLDraw-style canvas"
+ ],
+ "numbers": [
+  {
+   "claim": "Cloudflare API surface is about 2,600 endpoints",
+   "t": "3:29"
+  },
+  {
+   "claim": "One tool per endpoint would be about 1.2 to 1.5M tokens in the first call",
+   "t": "3:29"
+  },
+  {
+   "claim": "Search + execute reduced this to about 1,000 tokens (speaker's figure, which he calls a ~99.9% reduction)",
+   "t": "3:29"
+  },
+  {
+   "claim": "Classic per-call MCP approach would take about eight round trips per task (speaker's estimate)",
+   "t": "4:55"
+  },
+  {
+   "claim": "Live demo was rehearsed 10 times, but it stalled on stage with JS errors and pagination trouble; no measured result was shown",
+   "t": "6:27"
+  }
+ ],
+ "hot_takes": [
+  "Give the model the API as code and let it write the calls, instead of exposing one tool per endpoint.",
+  "A large MCP server's token cost can be cut by about 99% with a two-tool search and execute pair.",
+  "The model should inhabit the app's state machine rather than generate a new app for each request.",
+  "Agents are the next billion users of software, so developer experience for agents matters as much as for humans.",
+  "Capability-based security should be the default: start a sandbox with no capabilities and grant them one by one."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Crucible is the opt-in sandboxed code execution layer. The zero-capability sandbox with explicit grants and no default outbound fetch maps onto it, and the search+execute pattern is a candidate for exposing large tool surfaces through the proxy.",
+   "action": "Prototype a Crucible-style search+execute tool pair over one large AgentOS tool surface, measure first-call token cost against one-tool-per-endpoint, and check whether exec-gate guardrails still apply to the executed code."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The speaker frames a harness as a sandbox with explicitly granted capabilities and long-running stateful workflows, which overlaps with ProsHarness's Claude Code wrapper. He does not discuss checkpoint or resume.",
+   "action": "Consider whether ProsHarness should expose tools to the Claude Code run through explicit, zero-by-default grants rather than broad access."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

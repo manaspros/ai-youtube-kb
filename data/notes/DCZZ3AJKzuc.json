@@ -1,0 +1,126 @@
+{
+ "one_line": "ElevenLabs' Luke Harries argues chat agents should add voice, and previews VoiceEngine, a wrapper that adds STT, TTS and turn-taking to an existing chat agent without a rebuild.",
+ "summary": "Luke Harries (Head of Growth, ElevenLabs) argues that 2025 was the year of chat agents and that voice is the natural next interface because it is faster, more accessible and works across channels such as phone lines and Zoom calls. He observes that most voice stacks look alike: a voice engine (speech-to-text, text-to-speech, turn-taking) plus an agent layer (LLMs, RAG, tool calling, integrations). Many customers had already built the agent layer and did not want to rebuild it, so ElevenLabs is previewing VoiceEngine, a separately packaged voice engine that wraps an existing agent. The server SDK attaches to the existing chat agent and proxies each new session through to it, and a client SDK adds a site widget in about three lines. Telephony and UI components come with it, and a bundled skill lets a coding agent convert a chat agent to voice in roughly one prompt. The talk is a product preview with a short local demo and little measured data, so the claims are mostly unverified.",
+ "speakers": [
+  "Luke Harries"
+ ],
+ "orgs": [
+  "ElevenLabs",
+  "Revolut",
+  "PostHog",
+  "GOV.UK"
+ ],
+ "format": "demo",
+ "topics": [
+  "voice-multimodal",
+  "agent-architecture",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "voice-agents",
+  "text-to-speech",
+  "speech-to-text",
+  "turn-taking",
+  "sdk-wrapper",
+  "elevenlabs",
+  "product-preview",
+  "chat-to-voice"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Voice is the next interface for agents",
+   "detail": "The speaker says chat is now the default AI interface but feels limited. Voice is faster, more accessible (for people with dyslexia or who struggle with keyboards) and omnichannel, so it can reach phone lines and meeting calls.",
+   "t": "1:02"
+  },
+  {
+   "idea": "Most voice stacks share the same two layers",
+   "detail": "A voice engine handles speech-to-text, text-to-speech and turn-taking. An agent layer handles LLMs, RAG, tool calling and integrations. Teams that already built the agent layer did not want to rebuild it.",
+   "t": "2:03"
+  },
+  {
+   "idea": "Wrap the existing agent instead of replacing it",
+   "detail": "VoiceEngine is pitched as a first-class primitive that attaches to any existing chat agent. For each new session it starts a loop that proxies traffic to the agent, so the agent's evals and transcription work are kept.",
+   "t": "3:24"
+  },
+  {
+   "idea": "Client SDK adds a site widget with very little code",
+   "detail": "The speaker says the client SDK takes about three lines to add a widget to a website. Telephony and prebuilt UI components (shadcn/Vercel style) are offered out of the box once the agent is wrapped.",
+   "t": "4:21"
+  },
+  {
+   "idea": "A coding agent plus a bundled skill does the conversion",
+   "detail": "The planned release ships with a skill. The speaker says one prompt is enough for a coding agent to read the codebase, find the chat agent, work out how to deploy it and write the wrapper. The demo was run locally.",
+   "t": "4:21"
+  },
+  {
+   "idea": "Reuse existing tool calls and split client and server tools",
+   "detail": "Most tool calling already lives in the chat agent's backend, so the wrapper needs no new tool work. ElevenLabs also has client-side tools (which can change the DOM in the browser) and server-side tools, and plans to let some client tool calls be proxied to the wrapped agent.",
+   "t": "6:41"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Voice wrapper around an existing agent",
+   "how": "Keep the chat agent as-is. Attach a voice engine to each new session and proxy messages through to the agent so that the agent's logic, RAG and tools stay in place. Add a client widget on the front end.",
+   "when": "You already have a tested chat agent and want a voice channel without rewriting the agent logic or its evals."
+  },
+  {
+   "name": "Client-side vs server-side tools for voice",
+   "how": "Run tools that manipulate the page (DOM) as client-side tools in the browser. Run data and integration tools on the server, and proxy calls from the voice layer to the agent's backend.",
+   "when": "A voice agent needs to act on what the user sees in the browser as well as call backend systems."
+  },
+  {
+   "name": "Prompt a coding agent with a conversion skill",
+   "how": "Ship or install a skill that holds the best-practice wiring. Then give a coding agent one prompt that tells it to analyse the codebase, locate the agent, and write the wrapper and deploy steps.",
+   "when": "You want a fast, mostly automated migration of an existing agent to a new modality, with a skill holding the integration details."
+  }
+ ],
+ "tools": [
+  "ElevenLabs VoiceEngine",
+  "ElevenLabs Scribe (speech-to-text)",
+  "ElevenLabs V3 (text-to-speech)",
+  "ShadCN / Vercel-style UI components"
+ ],
+ "numbers": [
+  {
+   "claim": "The client SDK adds a website widget in about three lines of code.",
+   "t": "3:24"
+  },
+  {
+   "claim": "Converting an existing chat agent to voice is said to take about one prompt to a coding agent (demo was local; release was about two weeks away at the time).",
+   "t": "4:21"
+  },
+  {
+   "claim": "Speaker says voice product release was 'a couple of weeks' away, and the product is in early preview with design partners sought. No latency, accuracy or adoption figures were given.",
+   "t": "2:03"
+  }
+ ],
+ "hot_takes": [
+  "Chat agents will either die or add voice.",
+  "Voice is the natural medium for agents and is more accessible than text."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS already puts a proxy in front of agents, and a voice front end could sit on that proxy. The talk gives no architecture detail beyond a session-proxy loop, and voice is not in the profile.",
+   "action": "Low priority: note the wrap-existing-agent proxy pattern and consider it only if AgentOS ever gets a voice channel; do not build it now."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Harness around Claude Code CLI; voice here is a product wrapper for end-user chat agents, not coding-agent orchestration.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Shows a common pattern for adding a new modality by wrapping an existing agent and having a coding agent do the wiring from a skill. This matches the context-engineering and skills interest.",
+   "action": "Read the skill-based conversion approach if the ElevenLabs skill is published, and compare it with how skills are written in our own repos."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

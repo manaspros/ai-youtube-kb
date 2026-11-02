@@ -1,0 +1,135 @@
+{
+ "one_line": "Better Stack runs the same Twitter-video download task through the Playwright CLI and the Playwright MCP server in Claude Code, and finds the CLI cheaper in context, with MCP better for portable agent loops.",
+ "summary": "The presenter compares the Playwright CLI (used through a Claude Code skill) with the Playwright MCP server on one browser task: open a tweet link, extract a video from a tool they built, wait 10 seconds, take a screenshot, and clear local storage. The CLI run finished cleanly and used about 16% of context, with the skill itself costing about 68 tokens. The MCP run was about 18% (roughly 35k tokens), most of it the MCP tool definitions loaded up front (about 3.6k tokens, 15% of context before the task began), and it had trouble taking the screenshot. The presenter argues the CLI also exposes all its tools by default, while the MCP server hides optional tools such as PDF generation and tracing to save context. The MCP server still wins for agent loops that must run outside the terminal (browser, desktop, mobile) because it uses a standard protocol, and it is also configurable by turning tools on or off. The video ends by pointing to agent-browser, a Rust CLI that wraps Playwright and is claimed to use fewer tokens, without testing it here. Evidence is a single anecdotal run, so the token gap is small and not statistically meaningful.",
+ "speakers": [
+  "Unnamed Better Stack presenter"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "mcp-and-tools",
+  "token-cost-efficiency",
+  "coding-agents",
+  "testing-verification"
+ ],
+ "tags": [
+  "playwright",
+  "playwright-cli",
+  "playwright-mcp",
+  "claude-code",
+  "browser-automation",
+  "context-window",
+  "mcp-tool-overhead",
+  "headless",
+  "agent-browser",
+  "skills"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Playwright CLI vs MCP is mostly a context-cost question, and on this task the CLI used less of it.",
+   "detail": "CLI run used about 16% of context. MCP run used about 18% (about 35k tokens). The gap is small and based on one task. The presenter says MCP might win on other tasks but doubts it.",
+   "t": "1:13"
+  },
+  {
+   "idea": "MCP tool definitions are paid for before any work starts.",
+   "detail": "With the Playwright MCP server loaded, context was already about 15% used (about 3.6k tokens of tool definitions) before the browser task ran. The CLI costs only the skill load, about 68 tokens.",
+   "t": "1:13"
+  },
+  {
+   "idea": "The MCP server hides optional tools by default to save context; the CLI exposes everything.",
+   "detail": "Features like PDF generation or tracing must be opted into on the MCP server because they add tool-schema tokens. All CLI tools are available from the start.",
+   "t": "2:23"
+  },
+  {
+   "idea": "A CLI is useful to humans as well as agents.",
+   "detail": "Repetitive tasks or end-to-end checks can be written as a bash script that a person can run to verify results and an agent can run too.",
+   "t": "3:22"
+  },
+  {
+   "idea": "MCP is the better choice when the agent loop must run outside a terminal.",
+   "detail": "MCP is a standard protocol that agents use to reach tools, so the same setup works in a browser, desktop app or mobile app. The CLI is terminal-bound.",
+   "t": "3:22"
+  },
+  {
+   "idea": "Defaults differ: MCP runs headed, the CLI runs headless.",
+   "detail": "The presenter says the CLI is built for background coding agents, so headless is its default. The MCP server opens a visible browser by default. Tokens can also be cut by turning MCP tools on or off.",
+   "t": "3:22"
+  },
+  {
+   "idea": "The MCP run showed more permission prompts and screenshot failures, but the cause is not established.",
+   "detail": "The MCP run asked for more permissions and failed to take a screenshot several times. The presenter guesses a filename clash with an existing file, and retrying with a new name did not fix it.",
+   "t": "1:13"
+  },
+  {
+   "idea": "agent-browser is presented as a lower-token option that still runs Playwright underneath.",
+   "detail": "agent-browser is a Rust CLI that wraps Playwright. The presenter claims it is faster and uses fewer tokens than Playwright CLI, but the video does not benchmark it and points viewers to a separate video.",
+   "t": "4:31"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Drive the browser through a CLI skill instead of an MCP server (in Claude Code)",
+   "how": "Install the Playwright CLI so that its skill is available to the agent (install command not shown in the video). Name the skill explicitly in the prompt, for example 'use the Playwright CLI skill', so the agent loads it. The skill costs about 68 tokens. Then give task steps in plain language: open the URL, paste it in, click, wait 10 seconds, screenshot, clear localStorage. The browser runs headless and closes when done.",
+   "when": "Coding-agent work in the terminal where token budget matters and only the Claude Code environment needs browser control."
+  },
+  {
+   "name": "Turn a repeated browser check into a bash script for humans and agents",
+   "how": "Write the Playwright steps as a shell script with CLI commands (the video only describes the idea). Run it by hand to verify results, or let the agent run the same script.",
+   "when": "Repeated manual checks or end-to-end tests where you want one artifact that both a person and an agent can run."
+  },
+  {
+   "name": "Keep MCP for portable agent loops and trim its tool list",
+   "how": "Use the Playwright MCP server when the agent loop must work outside a terminal (browser, desktop, mobile). To cut context, enable only the tools you need in its configuration (the video does not show the config keys). Leave optional tools such as PDF or tracing off unless needed.",
+   "when": "Agent runtimes that speak MCP but do not have a shell, or when the same tool contract must work in several hosts."
+  }
+ ],
+ "tools": [
+  "Playwright CLI",
+  "Playwright MCP server",
+  "Claude Code",
+  "agent-browser (a Rust CLI that runs Playwright under the hood; spelled 'Vasell' in the auto-captions)"
+ ],
+ "numbers": [
+  {
+   "claim": "Playwright CLI skill load costs about 68 tokens.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Full CLI task used about 16% of context.",
+   "t": "1:13"
+  },
+  {
+   "claim": "Playwright MCP tool definitions were about 3.6k tokens, which took context to about 15% before the task started.",
+   "t": "1:13"
+  },
+  {
+   "claim": "Playwright MCP run used about 35k tokens, about 18% of context (single run, one task).",
+   "t": "2:23"
+  }
+ ],
+ "hot_takes": [
+  "The CLI-vs-MCP verdict depends on the workload: CLI for terminal coding agents, MCP for portable agent loops.",
+  "The token gap is 16% vs 18% on a single anecdotal run, so it is not strong evidence on its own. The speaker concedes this.",
+  "agent-browser is recommended for lower token use without any measurement in this video."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "The video covers browser automation for a single coding agent. AgentOS's sandboxed execution (Crucible) and proxy do not depend on this choice.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI, so MCP tool-definition overhead (about 3.6k tokens here) affects its context budget. CLI-versus-MCP is also a choice a harness can make per step.",
+   "action": "Measure how many tokens the MCP tool definitions take in a ProsHarness run, and check whether a skill-based CLI step would use less context for browser steps."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

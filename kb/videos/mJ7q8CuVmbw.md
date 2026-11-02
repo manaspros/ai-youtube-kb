@@ -1,0 +1,57 @@
+# We Trust AI Agents That Break Every Day - Shy Ruparel, Temporal
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `mJ7q8CuVmbw` · [watch](https://youtu.be/mJ7q8CuVmbw) · **date:** 2026-10-29 · **length:** 21:32 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Shy Ruparel · **orgs:** Temporal, KPMG, Keycard, OpenAI, Replit
+- **topics:** agent-architecture, observability, token-cost-efficiency, enterprise-adoption · **tags:** durable-execution, temporal, human-in-the-loop, retries, crash-recovery, agent-reliability, state-management, survey, fintech, payments, live-demo
+
+> Temporal developer advocate Shy Ruparel argues agent reliability is a state and recovery problem, not a model problem, and demos durable execution resuming a crashed payout workflow with a human approval.
+
+## Summary
+Shy Ruparel of Temporal presents survey data from 554 engineers actively using AI agents, framed around four gaps: usage vs production, trust vs reliability, prototype vs enterprise deployment, and seeing vs recovering. Most of the numbers come from Temporal's own State of Development Survey, so they are self-reported and vendor-run. The core argument is that agent failures are routine, so the goal is making failures cost nothing, which requires durable state rather than better observability alone. A live demo runs a nine-stage payout workflow with an LLM fraud investigation and a human approval, kills the worker mid-run, approves while no worker is alive, and resumes without re-running completed LLM or tool steps. The talk maps the seven top blockers respondents named (state, debugging, cost, retries, approvals, long-running work, crash recovery) onto Temporal primitives, and closes by claiming OpenAI Codex and Replit agents run on Temporal.
+
+## Key ideas
+- **Agent use is far ahead of agents in production. Daily agent use rose from about 47% (2025 survey) to 80.8%, but only 49.1% say they run agents in production or that agents are core to how they ship.** — The speaker treats the roughly 30-point gap as the first blocker. Production adoption is the bottleneck, not usage. ([3:31](https://youtu.be/mJ7q8CuVmbw?t=211))
+- **Trust is high but failures are frequent. 85.5% trust agent output at least somewhat, yet 41.1% hit agent issues daily or worse and 16.4% hit them hourly.** — The speaker's conclusion is that failure has to be planned for, so the goal is making failures cost nothing rather than reaching zero failures. ([4:37](https://youtu.be/mJ7q8CuVmbw?t=277))
+- **Experience and agent count do not fix reliability. Teams that called themselves successful were 1.7x more likely to report continuous issues, and agent count was not correlated with issue frequency.** — The speaker guesses successful teams simply look for issues harder. He flags this as a question for next year's survey, so it is speculation. ([6:01](https://youtu.be/mJ7q8CuVmbw?t=361))
+- **Respondents' top blockers are state, not models. Tracking state across services was the top blocker at 35.7%, debugging 30.9%, and 22.2% lose progress and redo work after crashes or restarts.** — Observability tools tell you an agent failed. The gap is recovering from the failure, which in practice means a human reading traces and fixing state by hand. ([8:30](https://youtu.be/mJ7q8CuVmbw?t=510))
+- **Durable execution splits deterministic workflow code from side effects. Workflow code decides the next step, while LLM calls, tool calls and bank API calls run as recorded activities, so completed work is not repeated after a crash.** — Each AI step is its own activity with a stored result. If a worker dies mid-activity, only that activity is retried; earlier results are replayed from history. ([13:03](https://youtu.be/mJ7q8CuVmbw?t=783))
+- **A human approval is modeled as a signal recorded in workflow history. It is captured even when no worker is running and processed when a worker comes back, so a long-running wait survives restarts.** — The demo approves the transaction while all workers are stopped and the signal is still picked up on resume. ([15:30](https://youtu.be/mJ7q8CuVmbw?t=930))
+- **The AI step is bounded. If the model fails, the payout continues without the brief, so a model outage does not block money movement.** — The speaker says the same code could wait a year for human approval and resume correctly. ([19:16](https://youtu.be/mJ7q8CuVmbw?t=1156))
+- **Bad model output is treated as an activity failure. The speaker's pattern is to generate, validate, throw away bad output, and let the retry policy run the activity again.** — Retries are declared once in configuration and apply to every call, with no retry loop in the business code. ([20:33](https://youtu.be/mJ7q8CuVmbw?t=1233))
+
+## Techniques
+- **Durable workflow with deterministic orchestration and recorded activities** — Keep the workflow function deterministic (it only decides what happens next, reading state from plain variables). Wrap every non-deterministic or side-effecting call (LLM call, agent tool call, bank or payment API) as an activity whose result is persisted in the event history. On crash, the platform replays history, so completed activities do not re-run and no tokens are re-spent. Only the in-flight activity is retried. *When:* Multi-step agent workflows that span minutes to days (payouts, loan origination, KYC, fraud review) where a crash must not repeat paid LLM calls or side effects.
+- **Human approval as a signal with a long timer** — The workflow waits on an approval signal (in Temporal, an event sent to the workflow). The approval is recorded in history even when no worker is alive, and the workflow resumes from the last successful step when a worker starts. The wait can be arbitrarily long; the speaker says the same code could wait a year. *When:* Any agent action that needs a human decision before a side effect, such as a payout, a deploy or a destructive change.
+- **Declare the retry policy once, not in loops** — Set a retry policy in configuration once; it applies to every activity in the workflow. For LLM steps, raise an activity failure when output is invalid so the same policy re-runs the call. The speaker's example shows no loop in the business code. *When:* Flaky model or tool calls where retries should be uniform and invisible to the business logic.
+- **Degrade the AI step, not the transaction** — Make the AI investigation an optional, bounded step. If the model call fails or times out after its retries, the workflow proceeds without the AI output (the demo proceeds without the brief) instead of blocking the core process. *When:* Money-moving or critical paths where an AI enrichment step must never be a hard dependency.
+- **One event history for both debugging and replay** — Use the same recorded history that the worker replays as the debugging record in the UI, rather than separate logs, traces and state tables that drift apart. The speaker's argument is that this closes the gap between seeing a failure and recovering from it. *When:* When you need to explain what an agent did, and resume it, from the same source of truth.
+
+## Numbers
+- $3 trillion in corporate productivity gains in 2025, per a KPMG Agentic AI report cited by the speaker; financial services leads. ([0:08](https://youtu.be/mJ7q8CuVmbw?t=8))
+- 94% of fintechs say AI is core to how the business operates; 62% of those teams lose measurable time or revenue to reliability issues. ([1:06](https://youtu.be/mJ7q8CuVmbw?t=66))
+- 554 engineers and engineering leaders actively using agents surveyed (second year of the State of Development Survey); about two-thirds US, one-third UK and EMEA. ([2:11](https://youtu.be/mJ7q8CuVmbw?t=131))
+- Daily agent use: about 47.3% in the 2025 survey, 80.8% in the current one. ([3:31](https://youtu.be/mJ7q8CuVmbw?t=211))
+- 49.1% run agents in production or say agents are core to how they ship. ([3:31](https://youtu.be/mJ7q8CuVmbw?t=211))
+- 85.5% trust agent output at least somewhat; about a quarter trust it almost completely; almost none distrust it. ([4:37](https://youtu.be/mJ7q8CuVmbw?t=277))
+- 41.1% hit agent issues daily or more; 16.4% hit them every hour. ([4:37](https://youtu.be/mJ7q8CuVmbw?t=277))
+- Teams calling themselves successful were 1.7x more likely to hit issues continuously; agent count and issue frequency were not correlated. ([6:01](https://youtu.be/mJ7q8CuVmbw?t=361))
+- About 40% of teams say security is what blocks them from autonomous agents (the speaker defers to a separate talk). ([6:01](https://youtu.be/mJ7q8CuVmbw?t=361))
+- 51.3% can take an AI prototype to production-ready code in hours or faster; about 1 in 5 at companies with 5,000+ employees says it takes months, versus about 1 in 20 elsewhere. ([7:18](https://youtu.be/mJ7q8CuVmbw?t=438))
+- Top blockers: tracking state across services 35.7%, isolating and debugging issues 30.9%, losing progress and redoing work after crashes or restarts 22.2%. ([8:30](https://youtu.be/mJ7q8CuVmbw?t=510))
+- Only 13% are very confident they can observe and debug AI workflows at scale. ([9:50](https://youtu.be/mJ7q8CuVmbw?t=590))
+- 80% say cost limits how they use agents. ([14:25](https://youtu.be/mJ7q8CuVmbw?t=865))
+- Demo payout is a nine-stage workflow for a $2,500 transfer, with an agent fraud investigation and a human approval step. ([10:53](https://youtu.be/mJ7q8CuVmbw?t=653))
+
+## Hot takes
+- Vendor talk: Temporal runs the survey, the sample is self-reported, and the demo is a Temporal workflow, so the case for Temporal is the conclusion. The survey data is useful but not independent; quality is capped at 3 for that reason.
+- The 1.7x 'successful teams hit more issues' finding is explained by the speaker's own guess (they look harder for issues). Treat it as a question, not a finding.
+- The claim that OpenAI Codex and Replit agents run on Temporal is asserted in passing with no source or detail in the talk.
+- The 'you can't skill your way out of this' line is the speaker's framing. The data shows agent count is uncorrelated with issues, which supports it only weakly.
+- Live demo was partly simulated: the speaker switched to a pre-recorded video for the approve-while-dead step after the live worker start lagged. The recording is what showed the behavior.
+
+## Tools mentioned
+Temporal, Qwen (run locally as a 36B and a 9B model, per auto-captions), OpenAI Codex (cited as running on Temporal), Replit Agent (cited as running on Temporal), Keycard (talk referenced, not described)
+
+## Relevance to our work
+- **prosharness** (3/3): ProsHarness's checkpoint/resume of long Claude Code runs is the same problem: completed LLM and tool steps must not re-run after a crash, and approvals must survive worker restarts. → *Model each ProsHarness plan/critique/debate step as an activity with a persisted result and an idempotent resume path. Evaluate whether a durable-execution layer (Temporal or a similar design) fits the checkpoint design, and read Temporal's docs on the workflow-versus-activity split.*
+- **agentos** (2/3): AgentOS has human-in-the-loop and budget gating through the proxy, but no durable record of multi-step agent runs. The talk's bounded-AI-step pattern and recorded approval signals apply to its exec-gate guardrails. → *Design AgentOS's exec-gate approvals so the approval decision is stored as an event that survives a proxy restart, and make the AI enrichment step non-blocking when its model call fails.*

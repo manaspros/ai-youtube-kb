@@ -1,0 +1,140 @@
+{
+ "one_line": "Hamza Tahir (ZenML) argues agents need checkpointed runtime state so production runs can be replayed with what-if changes (model swap, mocked tool), compared across cohorts, and shipped only after cohort-level diffs.",
+ "summary": "Tahir says agent traces are disconnected from the runtime, since they record tool calls and I/O but not variables, filesystem state, code, or environment. He proposes a \"save button\" for agents: checkpoint state at each step so a run can be replayed from any point. Replays let you ask what-if questions such as swapping in a cheaper model or mocking a tool, while holding everything else constant. He presents Kitaru, a ZenML tool that sits below the agent harness, snapshots code, artifacts and environment between tool calls, skips unchanged checkpoints on replay, and gives side-by-side diffs of runs. He argues for a checkpoint, replay, diff, decide loop run over cohorts of real production runs (expensive, slow or risky ones) rather than single replays. In his demo, a cohort analysis by an agent via an MCP server concluded not to ship the cheaper model, even though one replay looked fine. He warns that naive model swaps often look cheaper on paper but hurt task outcomes, and cites a Braintrust study and a tau-bench consistency point to argue that one replay is an anecdote. Claims about DoorDash's simulation results come from the speaker's citation of their blog post and are not verified here.",
+ "speakers": [
+  "Hamza Tahir"
+ ],
+ "orgs": [
+  "ZenML",
+  "DoorDash",
+  "Braintrust"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "observability",
+  "evals"
+ ],
+ "tags": [
+  "checkpointing",
+  "replay",
+  "counterfactual-evals",
+  "durable-execution",
+  "trace-analysis",
+  "cohort-analysis",
+  "model-swap",
+  "kitaru",
+  "zenml"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Traces are not enough for agents",
+   "detail": "A trace records tool calls and their inputs/outputs, but it is detached from the runtime: variables, in-flight filesystem, code and decisions are lost. The speaker says the missing piece is a clear link between observability spans and the actual execution.",
+   "t": "0:00"
+  },
+  {
+   "idea": "A save button makes agent runs replayable",
+   "detail": "Persistent checkpoints of agent state let you go back in history and ask what-if questions (swap the model, mock a tool, degrade a tool on purpose). These questions are impossible without captured state.",
+   "t": "1:00"
+  },
+  {
+   "idea": "Production already contains the data needed for improvement",
+   "detail": "If the runtime checkpoints state, production traces plus checkpoints allow replay-based evaluation on real runs. The speaker frames this as closing the loop: checkpoint, replay, diff, decide.",
+   "t": "2:30"
+  },
+  {
+   "idea": "Checkpoints snapshot code, artifacts and environment, not just tool I/O",
+   "detail": "In the Kitaru demo, clicking a checkpoint shows the configuration, code, artifacts in and out, and the environment (Docker image or sandbox). Replay starts from a chosen checkpoint and skips earlier ones because their state is already stored.",
+   "t": "5:19"
+  },
+  {
+   "idea": "Replay from a point, change one thing, hold the rest constant",
+   "detail": "Changing the model at one checkpoint re-runs only the later steps. Mocking a tool with a code function gives a controlled counterfactual. A side-by-side diff of baseline and forks shows where the runs diverge and what decisions changed.",
+   "t": "6:47"
+  },
+  {
+   "idea": "Use cohorts, not single replays",
+   "detail": "Replaying across many runs (sorted by cost, length or risk) gives a distribution. The speaker says a single replay is an anecdote and that a cheap-model swap often looks good on one dimension while failing on outcomes.",
+   "t": "11:14"
+  },
+  {
+   "idea": "Naive model swaps can be a false economy",
+   "detail": "A cheaper model can look better on cost and latency alone while the support bot stops resolving requests. Cite a Braintrust study for this. The decision should weigh cost against value created.",
+   "t": "14:07"
+  },
+  {
+   "idea": "Playbook: real runs, cohorts, human at the end",
+   "detail": "Start from real checkpointed production runs, build cohorts that matter, replay at scale, diff, and only then route, hold or ship. Automate the loop where possible, with a human approving the final ship decision.",
+   "t": "15:35"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Per-step checkpointing of agent state",
+   "how": "Snapshot code version, config, input/output artifacts and execution environment (container or sandbox) at each tool call or LLM step, not just telemetry spans.",
+   "when": "When you need to explain or re-run why an agent made a decision, or to replay a run later."
+  },
+  {
+   "name": "Counterfactual replay from a checkpoint",
+   "how": "Pick a checkpoint, change one variable (model, a tool's return value via a mock function, or a policy), and re-run only the steps after it while earlier checkpoints are reused.",
+   "when": "To test a cheaper model or a changed tool before shipping, without re-running the whole workflow."
+  },
+  {
+   "name": "Side-by-side run diffing",
+   "how": "Compare the original run and each fork: shared prefix, first divergent tool call, latency, token cost, and final artifact or decision.",
+   "when": "To see exactly where a change altered behaviour and whether the outcome is acceptable."
+  },
+  {
+   "name": "Cohort replay with agent-driven analysis",
+   "how": "Select a set of production runs by cost, duration or risk, replay the same change across all of them, export a JSON report, and have an LLM agent (via an MCP server or skill) flag regressions and summarise patterns.",
+   "when": "When single-run results are noisy and you need a population-level go/no-go decision."
+  },
+  {
+   "name": "Replay-based ship gate",
+   "how": "Require cohort-level evidence on quality and cost before routing traffic to a changed model or tool; default verdict is hold.",
+   "when": "Before switching models or tools in production, where a cheap swap could silently hurt task success."
+  }
+ ],
+ "tools": [
+  "Kitaru",
+  "OpenTelemetry",
+  "GPT-5 Nano"
+ ],
+ "numbers": [
+  {
+   "claim": "DoorDash (speaker cites its 1 June blog post): simulated replays of customer bots cut analysis from hours to about 5 minutes across hundreds of simulations, with 90% fewer hallucinations and results within 2 points of production. Speaker-reported, not verified.",
+   "t": "3:53"
+  },
+  {
+   "claim": "Tau-bench point cited by speaker: a model that passes 60% of the time is only self-consistent about a quarter of the time, so one replay is not reliable evidence.",
+   "t": "14:07"
+  },
+  {
+   "claim": "Demo: one replay with GPT-5 Nano looked cheaper and reached the same outcome, but the cohort verdict was don't ship. No cost or token figures were stated numerically; cheaper was described qualitatively.",
+   "t": "12:40"
+  }
+ ],
+ "hot_takes": [
+  "A naive model swap usually does not work; judging it on cost alone is a false economy.",
+  "One replay is an anecdote; ship decisions need cohort-level analysis.",
+  "Agent traces alone are a read-only record; without runtime state you cannot ask what would have happened."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L4 covers observability and L2D mines telemetry into skills, but there is no per-step checkpoint of code, artifacts and environment for replay. Crucible's sandboxing is a possible snapshot target. The cohort-replay idea fits the telemetry-to-skills pipeline.",
+   "action": "Scope a spike: record per-tool-call checkpoints (config, artifacts, sandbox ref) for one AgentOS agent, then replay one run with a swapped model and diff the outputs before adding cohort replay."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already has checkpoint/resume for long Claude Code runs. Replay of a checkpoint with one variable changed (model or mocked tool), plus side-by-side diff, is the piece it does not have.",
+   "action": "Compare the ProsHarness checkpoint format against the per-step snapshot described here, and add a replay-from-step command that accepts a model override and a mocked tool result."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

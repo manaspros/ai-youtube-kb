@@ -1,0 +1,144 @@
+{
+ "one_line": "Better Stack compares Postgres, ClickHouse and DuckDB on 100M rows: columnar stores win big on aggregations, but lose on point lookups and single-row updates.",
+ "summary": "The video explains why columnar databases run aggregation queries far faster than Postgres, using the same SQL over 100 million rows. It attributes the speedup to reading fewer blocks and only the columns a query needs. ClickHouse uses a sort key with a sparse index of block marks, and DuckDB keeps min/max statistics per chunk. The same benchmarks show the trade-off: a row lookup by ID is slow on ClickHouse (168 ms vs 2 ms on Postgres) because its only index is the sort key, and single-row updates are very slow because stored column files are immutable. The speaker frames ClickHouse as a client-server database and DuckDB as an embedded, file-based library with limited concurrency. The video is short and uses one dataset on one machine, with no hardware, version or methodology details.",
+ "speakers": [],
+ "orgs": [
+  "ClickHouse",
+  "DuckDB"
+ ],
+ "format": "review",
+ "topics": [
+  "data-engineering",
+  "infra-cost-scaling",
+  "dev-tools"
+ ],
+ "tags": [
+  "columnar-database",
+  "clickhouse",
+  "duckdb",
+  "postgres",
+  "analytics",
+  "sort-key",
+  "benchmark",
+  "olap-vs-oltp"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Same SQL, 100M rows, GROUP BY revenue: Postgres about 9.7 s, ClickHouse 0.28 s, DuckDB 0.24 s, roughly 40x faster.",
+   "detail": "The speedup comes from doing far less work: only the needed columns are opened and most data is skipped, not from a different query language.",
+   "t": "0:00"
+  },
+  {
+   "idea": "ClickHouse sorts the table by a sort key, splits it into blocks of about 8192 rows (granules), and keeps only the first key value of each block in memory.",
+   "detail": "A time-range count for March read 1,633 of 12,208 blocks and skipped the rest. The video says about 12,000 index marks fit in memory for 100M rows.",
+   "t": "2:25"
+  },
+  {
+   "idea": "DuckDB keeps a min and max for every chunk of a column, so it can skip whole chunks whose range does not match the filter.",
+   "detail": "This gave the same time-range count in 0.03 s. The video also says DuckDB only opens the columns the query names.",
+   "t": "2:25"
+  },
+  {
+   "idea": "Point lookup by ID is the columnar weak spot: Postgres 2 ms (B-tree), ClickHouse 168 ms, DuckDB 2 ms.",
+   "detail": "ClickHouse's only index is the sort key (timestamp, then ID), so a lookup by ID checks all 12,208 blocks and then opens all eight column files to rebuild the row.",
+   "t": "2:25"
+  },
+  {
+   "idea": "DuckDB's ID lookup is fast only because the IDs were inserted in order, so the chunk min/max ranges line up with the ID. Shuffled IDs would force a full column scan.",
+   "detail": "The speaker presents this as luck with the data, not a general property of the engine.",
+   "t": "3:42"
+  },
+  {
+   "idea": "Single-row updates are expensive in ClickHouse because data files are immutable: changing one value rewrites the whole column file for that chunk.",
+   "detail": "Timings: Postgres 5 ms, ClickHouse 5.8 s, DuckDB tens of ms. The video says ClickHouse has a lightweight update in beta, meant for at most about 10% of the table.",
+   "t": "3:42"
+  },
+  {
+   "idea": "Architecture differs: ClickHouse is an open-source server you run, while DuckDB is an in-process library that stores one database in a single file, and that file can be locked while an update runs.",
+   "detail": "The speaker says this limits DuckDB's concurrency. He adds that the real choice depends on scalability, redundancy and extensibility, not only query speed.",
+   "t": "5:49"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Split workloads by access pattern",
+   "how": "Use a row store (Postgres) for point lookups and frequent small updates, and a columnar store (ClickHouse or DuckDB) for wide aggregations such as GROUP BY and COUNT DISTINCT over many rows. The video runs both on the same dataset.",
+   "when": "When one system has to serve both transactional lookups and analytics scans over the same large table."
+  },
+  {
+   "name": "Choose the ClickHouse sort key for the dominant filter",
+   "how": "The table's ORDER BY sort key is its only index. Put the most common range filter first (the video uses timestamp, then ID). Expect block skipping on that column and full scans on everything else.",
+   "when": "When designing a ClickHouse table, or when a query on a non-leading column is slow."
+  },
+  {
+   "name": "Insert in key order to make min/max skipping work",
+   "how": "Write rows in increasing order of the key you filter on, so each chunk's min/max covers a narrow range. The video shows DuckDB finding one ID quickly only because the IDs were inserted in order.",
+   "when": "When using DuckDB or any min/max-per-chunk engine for lookups on a monotonic key such as an ID or timestamp."
+  },
+  {
+   "name": "Avoid per-row updates on columnar stores",
+   "how": "Batch changes or append new rows instead of updating single rows. The video measures one-row updates at 5.8 s in ClickHouse, which rewrites the column chunk, versus tens of ms in DuckDB.",
+   "when": "When a columnar table receives frequent single-row corrections or status changes."
+  },
+  {
+   "name": "Benchmark with identical SQL on the same data",
+   "how": "Load the same 100M-row table into each engine and run the same query, with minimal syntax changes, timing each one. The video reports one run per query with no warm-up or hardware details.",
+   "when": "Before choosing a database for an analytics path. Repeat runs and record hardware and versions before drawing firm conclusions."
+  }
+ ],
+ "tools": [
+  "PostgreSQL",
+  "ClickHouse (open-source server, shown as local server)",
+  "DuckDB (embedded, single-file library)"
+ ],
+ "numbers": [
+  {
+   "claim": "GROUP BY revenue over 100M rows: Postgres 9.7 s, ClickHouse 0.28 s, DuckDB 0.24 s (over 40x faster)",
+   "t": "0:00"
+  },
+  {
+   "claim": "ClickHouse sparse index holds about 12,000 block marks for 100M rows, with 8192 rows per block",
+   "t": "2:25"
+  },
+  {
+   "claim": "Time-range count for March (about 13% of events): Postgres 5.9 s, ClickHouse 0.06 s, DuckDB 0.03 s; ClickHouse read 1,633 of 12,208 blocks",
+   "t": "1:14"
+  },
+  {
+   "claim": "Single-row ID lookup: Postgres 2 ms, ClickHouse 168 ms, DuckDB 2 ms",
+   "t": "2:25"
+  },
+  {
+   "claim": "Single-row update: Postgres 5 ms, ClickHouse 5.8 s, DuckDB tens of ms",
+   "t": "3:42"
+  },
+  {
+   "claim": "COUNT DISTINCT users over the full table: Postgres 38.4 s, ClickHouse 0.78 s, DuckDB under 1 s",
+   "t": "4:43"
+  }
+ ],
+ "hot_takes": [
+  "The 40x headline holds only for scan-heavy aggregations. The same video shows ClickHouse losing badly to Postgres on ID lookups (168 ms vs 2 ms) and updates (5.8 s vs 5 ms).",
+  "No methodology is given: one dataset, one run per query, no hardware, no versions, no cache state. The numbers are illustrative, not a benchmark to copy.",
+  "The claim that an aggressive Postgres index would not get close to ClickHouse and DuckDB on the March query is asserted, not measured.",
+  "No sponsored segment. The only promotion is a subscribe call-out, so quality is not capped on that basis."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The L3 storage roadmap includes ClickHouse analytics and a Parquet + DuckDB archive tier. The video gives concrete evidence that DuckDB handles lookups and updates better than ClickHouse, which matters for choosing the archive read tier.",
+   "action": "Before building the ClickHouse analytics path or the DuckDB archive tier, run the same 100M-row set through Postgres, ClickHouse and DuckDB for three query types: aggregation, ID lookup and single-row update. Record hardware and versions."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The video covers database engine internals and does not touch harness, checkpoint, planning or approval workflows.",
+   "action": ""
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

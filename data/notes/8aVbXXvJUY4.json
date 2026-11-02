@@ -1,0 +1,147 @@
+{
+ "one_line": "Google DeepMind's Ivan Leo presents the Interactions API and Managed Agents: server-side state via interaction IDs, persistent sandboxes via environment IDs, and a credential-injecting proxy. Mostly a product walkthrough with a few reusable patterns.",
+ "summary": "Ivan Leo, on the Developer Experience team at Google DeepMind, traces how models moved from single completions to function calling to multi-tool agents, and argues that an agent is mainly a capable model in a loop with an execution environment. He introduces the Interactions API, which keeps conversation context on the server: each response returns an interaction ID that the next turn passes back as previous_interaction_id, so the client does not resend history or manage thought signatures. The talk then covers Managed Agents, a hosted version of Google's agent harness (the one used in AI Studio and the Antigravity app) that runs in a persistent sandbox; the client keeps the environment ID to reattach to the same files and installed packages. Other points include a man-in-the-middle proxy that injects API tokens into outbound calls so the model never sees them, freezing a configured environment as a named agent (up to 1,000 per account, billed only for model tokens), and packaging a local skills folder into .agents so the same skills run locally and in the cloud. Typed output objects (output.type) and a Steps data model replace the older nested outputs array. Most of this is a vendor pitch, and several claims (Gemini-only multimodal steps, pricing, the proxy's security) are the speaker's own assertions rather than evidence.",
+ "speakers": [
+  "Ivan Leo"
+ ],
+ "orgs": [
+  "Google DeepMind"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "sandboxing-execution",
+  "security-guardrails",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "interactions-api",
+  "managed-agents",
+  "server-side-state",
+  "interaction-id",
+  "environment-id",
+  "persistent-sandbox",
+  "credential-proxy",
+  "steps-data-model",
+  "agent-skills",
+  "gemini",
+  "antigravity"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent state can live on the server instead of in the client",
+   "detail": "Each response returns an interaction ID. Passing it back as previous_interaction_id keeps the full context, so the client avoids resending history. The speaker says a single stray whitespace in a client-built history once broke a startup's cache, and that dropping thought signatures lowers performance on the newer Gemini models.",
+   "t": "5:48"
+  },
+  {
+   "idea": "A managed harness plus a persistent sandbox removes most of the infra work for a coding agent",
+   "detail": "Building a coding agent used to mean tuning a harness, finding a sandbox provider, and handling context between runs. The Managed Agent gives a sandbox out of the box with one API call, using the same Antigravity harness that Google uses in its own products.",
+   "t": "9:12"
+  },
+  {
+   "idea": "The environment ID is the handle for reattaching to the same sandbox",
+   "detail": "If the client keeps the environment ID, later calls reach the same files, installed packages and workspace. Environments can be loaded from GCS buckets, GitHub repos or inline files, and the speaker says the agent needs no persistence logic of its own.",
+   "t": "10:36"
+  },
+  {
+   "idea": "Credentials can be injected at a proxy so the model never holds them",
+   "detail": "A man-in-the-middle proxy reads each outbound request's headers and swaps in tokens, for example for GitHub API calls. The speaker argues that a prompt-injected model can leak nothing it never saw. This is a claim about the design, and the talk shows no test of it.",
+   "t": "13:29"
+  },
+  {
+   "idea": "Working agents can be frozen into named, reusable configurations",
+   "detail": "Configure an environment by files and network sources, or by chatting with the agent until it is set up, then save it as a named agent. Up to 1,000 named agents are supported, and the speaker says storage and sandbox are not billed, only model tokens.",
+   "t": "13:29"
+  },
+  {
+   "idea": "Local skills can be shipped unchanged to the cloud agent",
+   "detail": "A skills folder tuned locally is packaged into .agents and uploaded as a source. The same harness and prompt then run in the cloud, which the speaker presents as a way to move from local iteration to a hosted agent without rewriting.",
+   "t": "12:06"
+  },
+  {
+   "idea": "Typed outputs and a Steps data model replace nested response objects",
+   "detail": "Each output carries a type discriminator (audio, image, text, function call, thought signature), so parsing does not depend on deeply nested fields. The Steps model replaces the legacy outputs array to support async tool calls and multi-model runs, and built-in tools (Google Search, URL context) can be mixed with custom function tools in one call.",
+   "t": "8:13"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Server-side conversation state via interaction ID",
+   "how": "Store the interaction ID returned by each response and pass it as previous_interaction_id on the next turn. Do not resend the whole history, and do not edit or reformat the stored ID.",
+   "when": "Multi-turn or chained calls where you want to keep the cache and preserve thought signatures on newer Gemini models."
+  },
+  {
+   "name": "Reattach to a persistent sandbox via environment ID",
+   "how": "Save the environment ID from the first call and pass it on later calls. Installed packages and written files persist across turns without any client-side state management.",
+   "when": "Long-running coding or analysis agents that work across several calls on the same repo."
+  },
+  {
+   "name": "Proxy-side credential injection",
+   "how": "Route the agent's outbound traffic through a proxy that adds auth headers per destination (for example, a GitHub token on api.github.com calls), so tokens stay out of the sandbox and the model's context.",
+   "when": "Agents that call private APIs and must not be able to leak credentials through prompt injection."
+  },
+  {
+   "name": "Freeze a tuned environment as a named agent",
+   "how": "Iterate by chatting until the sandbox has the right packages and sources, then freeze that configuration as a named agent and call it by name at scale.",
+   "when": "Several repeatable agent roles (for example, a data-analyst agent) that need the same setup on every run."
+  },
+  {
+   "name": "Local-to-cloud skill packaging",
+   "how": "Keep skills as folders, test them locally with the CLI, then upload the same folder into .agents as a source for the hosted agent.",
+   "when": "When skill quality has been checked locally and you want identical behaviour in the cloud."
+  },
+  {
+   "name": "Strongly typed output parsing",
+   "how": "Branch on output.type (audio, image, text, function call) instead of walking nested response objects. Change modality through the response modality and generation config.",
+   "when": "Multimodal pipelines that mix text, image and audio output in one flow."
+  }
+ ],
+ "tools": [
+  "Interactions API",
+  "Managed Agents",
+  "Antigravity agent harness",
+  "Gemini API CLI",
+  "AI Studio",
+  "Google Search tool",
+  "URL context tool",
+  "GCS",
+  "GitHub"
+ ],
+ "numbers": [
+  {
+   "claim": "A Managed Agent run analyzing a hackathon repository burned over 2 million tokens",
+   "t": "12:06"
+  },
+  {
+   "claim": "Up to 1,000 named agents per account; storage and sandbox are not billed, only model tokens (vendor claim)",
+   "t": "14:57"
+  },
+  {
+   "claim": "Deep research agent runs for three minutes or more per task",
+   "t": "4:24"
+  }
+ ],
+ "hot_takes": [
+  "Agents are mostly a capable model in a loop, and as models improve the scaffolding falls away (latest Opus and Fable models just use a bash tool).",
+  "A single stray whitespace in client-built history can break a cache, so server-side state is safer.",
+  "Only Gemini model families can produce these multimodal step pipelines (vendor claim)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The credential-injecting proxy overlaps with the L1 Govrix Scout proxy, and the environment-ID sandbox overlaps with the L2C Crucible sandbox design.",
+   "action": "Prototype header-based credential injection in the Govrix Scout proxy: keep provider keys out of the sandbox env, inject them on outbound calls, and test that a prompt-injected model cannot read them."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Checkpoint/resume of long runs is a core ProsHarness feature. The interaction-ID plus environment-ID pair is a resume handle pattern for reattaching to state.",
+   "action": "Store the provider's session and environment handles with each ProsHarness checkpoint so a resumed run reattaches to the same sandbox and files instead of rebuilding them."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

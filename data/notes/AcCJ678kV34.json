@@ -1,0 +1,127 @@
+{
+ "one_line": "Docker is making its Docker Hardened Images (DHI) free and Apache 2.0 licensed, pitching minimal, patched base images as a supply-chain fix; a short announcement-style explainer with no benchmarks.",
+ "summary": "Better Stack explains that Docker is making its Docker Hardened Images free and open source, covering more than 1000 images under Apache 2.0 with no hidden costs. The speaker argues container security is a supply-chain problem, since every image built on a vulnerable base inherits its packages and CVEs. Previously hardened images were paywalled because patching SLAs and the build service cost money. Migration is pitched as a swap of the base image for its DHI equivalent, which usually works unchanged because DHIs are built on Debian or Alpine. The typical breakage is that bash, curl, apt and other utilities are missing or package managers are locked down, which shows up at image build time and is fixed by explicitly installing the few tools needed. Docker also publishes hardened Helm charts as secure Kubernetes defaults. The video offers no measurements such as image size or CVE counts, so it is an announcement walkthrough rather than evidence.",
+ "speakers": [
+  "Andrus (Better Stack)"
+ ],
+ "orgs": [
+  "Docker",
+  "Better Stack",
+  "Debian",
+  "Alpine"
+ ],
+ "format": "news",
+ "topics": [
+  "dev-tools",
+  "security-guardrails"
+ ],
+ "tags": [
+  "docker",
+  "docker-hardened-images",
+  "container-security",
+  "supply-chain",
+  "base-images",
+  "helm",
+  "kubernetes",
+  "open-source-license"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Docker Hardened Images (DHI) are now free and open source, with the free tier under Apache 2.0",
+   "detail": "More than 1000 images are available to any developer with no hidden costs or restrictive licenses. Previously DHI was a commercial offering.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Container security is a supply-chain problem",
+   "detail": "Every image built on a vulnerable base inherits its outdated packages and known CVEs. Common base images ship with extra tools and legacy packages that most apps never use.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Paywall rationale",
+   "detail": "Hardened images were paid because patching SLAs and the build service carry real operating cost. Docker says the aim is for this level of security to be available to everyone.",
+   "t": "1:52"
+  },
+  {
+   "idea": "Adoption is meant to be a base-image swap",
+   "detail": "Replace the existing FROM base with the DHI equivalent. The Dockerfile, build process and app code stay largely the same. DHIs are built on familiar Debian or Alpine foundations.",
+   "t": "1:52"
+  },
+  {
+   "idea": "Minimal images break in predictable ways at build time",
+   "detail": "Debugging tools such as bash, curl and apt may be absent, package managers may be locked down, and build steps that assume system utilities can fail. The usual fix is to explicitly install the few tools the build needs.",
+   "t": "3:08"
+  },
+  {
+   "idea": "Hardened Helm charts are also offered",
+   "detail": "Instead of community charts that must be hardened by hand, Docker provides charts with secure defaults that remain customizable for Kubernetes deployments.",
+   "t": "3:08"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Swap the base image for its hardened equivalent",
+   "how": "Replace the existing base image in the Dockerfile's FROM line with the DHI version of the same base (Debian or Alpine). Leave the rest of the Dockerfile, the build and the application code unchanged. The video does not show exact image names or commands.",
+   "when": "Any Dockerfile built on a common base image where you want a smaller, lower-CVE base with minimal rework."
+  },
+  {
+   "name": "Explicitly install only needed tools during the build",
+   "how": "When the build fails on a missing utility (curl, bash, apt, or a system tool a build step assumes), add an explicit install of just that tool in the build stage. Failures are caught at image build rather than at runtime.",
+   "when": "After moving to a minimal, locked-down base image where package managers or debugging tools have been removed."
+  },
+  {
+   "name": "Start Kubernetes deployments from hardened Helm charts",
+   "how": "Use Docker's hardened Helm charts instead of pulling random community charts and securing them manually. Customize values as needed.",
+   "when": "Deploying third-party or standard services to Kubernetes where you want secure defaults without becoming a Kubernetes security expert."
+  }
+ ],
+ "tools": [
+  "Docker",
+  "Docker Hardened Images (DHI)",
+  "Debian",
+  "Alpine",
+  "Helm",
+  "Kubernetes",
+  "Apache 2.0 license"
+ ],
+ "numbers": [
+  {
+   "claim": "More than 1000 Docker Hardened Images are now free and open source",
+   "t": "0:00"
+  },
+  {
+   "claim": "Free tier licensed under Apache 2.0",
+   "t": "1:52"
+  },
+  {
+   "claim": "Speaker says last year was a record year for newly discovered supply-chain attacks (no figure given)",
+   "t": "1:01"
+  },
+  {
+   "claim": "No benchmarks given: no image size, CVE count or latency comparisons",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The title's 'best security feature' framing is stronger than the content. The video is a short restatement of Docker's announcement with no measurements, comparisons or hands-on testing.",
+  "The 'record year' claim about supply-chain attacks is asserted without a source or figure.",
+  "Calling the free tier 'no hidden costs' is the vendor's framing; the video does not examine what remains paid, such as patching SLAs or support."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Relevant only if Crucible sandbox or celld container images are built on generic bases; the video is about base-image supply-chain hygiene, not agents.",
+   "action": "If celld or Crucible sandbox images use generic Debian or Alpine bases, check whether DHI equivalents build cleanly and what extra tools the build needs."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content about harnesses, Claude Code runs or credential handling.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

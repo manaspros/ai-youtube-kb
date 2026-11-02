@@ -1,0 +1,171 @@
+{
+ "one_line": "A hands-on workshop on writing a first LLM-as-judge eval for an agent: why vibe checks fail, how traces feed evals, how to write concrete criteria, and how to build and iterate a judge in a prompt playground.",
+ "summary": "SallyAnn DeLucia (head of product at Arize AI) runs a workshop on writing a first AI eval for a travel-planning agent. She argues that vibe checks break once an agent changes often: you cannot detect regressions, compare prompts or models, or put quality gates in CI. She separates evals from unit tests, since agent outputs have many valid forms and the logic only shows up in traces, so traces are the logs and evals are the tests. The main method is LLM-as-judge, with a short taxonomy of other eval types (decision models, code checks, golden datasets, agent-as-judge, user feedback and business metrics). The core workflow is to write concrete pass/fail criteria with one quality per judge, pick the right spans from traces, and iterate the judge prompt in a playground against a dataset. She ends with alignment against human labels, online evals over incoming traces, and comparing an LLM judge with a decision-model version. Much of the talk is a product walkthrough of Arize, but the eval method is vendor-neutral.",
+ "speakers": [
+  "SallyAnn DeLucia"
+ ],
+ "orgs": [
+  "Arize AI",
+  "OpenAI"
+ ],
+ "format": "workshop",
+ "topics": [
+  "evals",
+  "observability",
+  "multi-agent"
+ ],
+ "tags": [
+  "llm-as-judge",
+  "eval-criteria",
+  "traces",
+  "spans",
+  "prompt-playground",
+  "alignment",
+  "online-evals",
+  "decision-models",
+  "variable-mapping",
+  "openinference"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Vibe checks do not scale for agents",
+   "detail": "Shipping prompt changes on feel gives no way to prove a fix held or that a regression happened. Evals are what let you detect regressions, compare prompts or models objectively, and set quality gates in CI.",
+   "t": "1:38"
+  },
+  {
+   "idea": "Traces are the logs for AI, and evals are the tests",
+   "detail": "An agent's logic is not readable in code and its outputs have many valid forms, so a unit test with one expected output does not fit. You need observability (traces) before you can run evals.",
+   "t": "3:56"
+  },
+  {
+   "idea": "LLM-as-judge is the focus eval type, and explanations matter",
+   "detail": "A secondary LLM labels one aspect of the output (QA, summarization, relevance) and returns a label plus an explanation. The explanation is the reasoning behind the label and lets you check the judge rather than take the label at face value.",
+   "t": "5:01"
+  },
+  {
+   "idea": "Eval types differ in cost and where they run",
+   "detail": "Decision models are cheap and fast, returning a true/false or label with a probability but no explanation. Code evals suit deterministic checks such as substring, JSON validity, ROUGE or BLEU. Golden datasets, agent-as-judge and user feedback or business metrics are the other types. The first four can run across development and production; the last three are mainly production.",
+   "t": "6:15"
+  },
+  {
+   "idea": "Define good with concrete criteria and judge one quality per eval",
+   "detail": "Replace 'helpful, accurate' with checks like 'follows the user's follow-up', 'matches the requested number of days', 'keeps totals within budget'. LLM judges handle one criterion well, so add more evals over time rather than bundling criteria, except with decision models or agent-as-judge.",
+   "t": "19:16"
+  },
+  {
+   "idea": "Start with a few evals and grow them from production data",
+   "detail": "The speaker's first evals on the Alex agent were QA correctness, user frustration, jailbreak and toxicity. Alex now runs 32 evals, grown from real production usage. Generic templates are a fine start, but specific evals for the use case are better.",
+   "t": "20:21"
+  },
+  {
+   "idea": "Write criteria as task, success, failure, and specific pass and fail bullets",
+   "detail": "Capture the task being judged, what success and failure look like, and about three concrete bullets each for pass and fail. The bullets become the judge prompt, so write them as if describing success to a stakeholder.",
+   "t": "21:25"
+  },
+  {
+   "idea": "Every stakeholder should define success, and metrics and evals do different jobs",
+   "detail": "Product, engineering, support, domain experts and security should all help define success. A metric signals that something might be broken; an eval identifies the actual failure mode. Use both.",
+   "t": "33:15"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Six-part criteria template",
+   "how": "Before writing any judge prompt, write: (1) the task being judged, (2) what success looks like, (3) what failure looks like, (4) what exactly the judge scores, (5) about three concrete pass bullets, (6) about three concrete fail bullets. Example from the talk: task 'user sends a follow-up about their trip'; success 'answers the follow-up directly using the trip's details'; failure 'falls back to a generic budget'.",
+   "when": "Starting any LLM-as-judge eval, to turn a vague quality goal into something a judge can apply consistently."
+  },
+  {
+   "name": "Judge prompt structure",
+   "how": "Order the prompt as: (a) a role intro that centres the judge on its job, e.g. 'you are evaluating whether an assistant's output accurately captures the details requested in the input'; (b) the pass and fail bullets as criteria; (c) label rules, e.g. 'correct if consistent with input, incorrect if the destination or property type is wrong'; (d) the allowed labels (binary, or multi-label such as correct, partially correct, incorrect, not applicable; the judge returns exactly one); (e) optimization direction (is higher or lower good); (f) a required explanation for each label.",
+   "when": "Writing the judge template in the prompt playground or any eval harness, so labels are consistent and each one can be audited."
+  },
+  {
+   "name": "Variable mapping for judge inputs",
+   "how": "Write the judge prompt with generic placeholder variables, not trace attribute names. Map each variable to the real span attribute (input, output, tool result) in the task that uses the eval. Renaming an attribute then means updating the mapping, not every eval.",
+   "when": "Reusing one judge across several datasets or applications whose traces use different field names."
+  },
+  {
+   "name": "Span-level dataset selection",
+   "how": "Judge the right unit of work. Root spans (parent_id IS NULL) hold the user input and final output, so use them to check end-to-end behaviour, e.g. does the itinerary match the request. Filter by span name or type to judge a single tool call, such as whether a weather-lookup tool returned the expected data. Add the selected spans to a named dataset.",
+   "when": "Choosing what a judge should see: end-to-end quality uses root spans, step-level checks use filtered tool or LLM spans."
+  },
+  {
+   "name": "Iterate the judge in a prompt playground against a dataset",
+   "how": "Create a playground, pick a model (the speaker used a mini OpenAI model; the captions read '401 mini'), attach the judge template, load the dataset, and run it. For each row, check whether you agree with the label and explanation. Edit the prompt, rerun, and repeat. Save the good version as a reusable evaluator.",
+   "when": "Tuning a judge's prompt before it runs on production traces. Read explanations, not just labels."
+  },
+  {
+   "name": "Alignment against human labels",
+   "how": "Annotate the dataset rows yourself (or with domain experts) and run the judge on the same rows. Compare judge labels with human labels to measure agreement, then refine the criteria or prompt where they disagree.",
+   "when": "Before trusting a judge enough to gate CI or monitor production."
+  },
+  {
+   "name": "Online evals on incoming traces",
+   "how": "Attach saved evaluators to a continuous task so each new trace is scored automatically and the results are posted for monitoring.",
+   "when": "Once a judge is aligned with humans and you want ongoing quality monitoring in production."
+  },
+  {
+   "name": "Decision-model comparison",
+   "how": "Rewrite an LLM-as-judge question as a decision-model question (true/false or label with probability, no explanation), run both on the same small set (the speaker suggests about 20 traces, one dimension, one judge), and compare accuracy against human labels.",
+   "when": "When you need a cheaper, faster judge and can accept a score without a written explanation."
+  },
+  {
+   "name": "Instrumentation: auto, manual, or hybrid",
+   "how": "Start with auto-instrumentation via OpenInference, which covers many frameworks and sends standard attributes such as input/output values and LLM input messages. Add manual or hybrid instrumentation for custom attributes your evals need. The speaker suggests letting a coding agent do the instrumentation using the platform's skills, nudged along as needed; the exact install command is named 'MPX evals' in the captions and is unclear.",
+   "when": "Sending your own agent's traces for evaluation: first check what auto-instrumentation already captures, then add only the attributes your criteria need."
+  }
+ ],
+ "tools": [
+  "Arize AI (Arize AX platform, captioned 'Arise' or 'AX')",
+  "Alex (Arize's in-platform AI agent that can run playgrounds and iterate on prompts)",
+  "Signal (Arize's managed agent that reads traces, finds issues and proposes fixes)",
+  "OpenInference (Arize's tracing package with auto-instrumentors for agent frameworks)",
+  "OpenAI decision model API (mentioned as released the week before the talk)",
+  "Anthropic, OpenAI and Gemini provider API keys (configured under AI providers in settings)",
+  "ROUGE and BLEU (named as code-based eval metrics)",
+  "Notion one-pager (workshop instructions)"
+ ],
+ "numbers": [
+  {
+   "claim": "The Alex agent grew from a small starter set (QA correctness, user frustration, jailbreak, toxicity) to 32 evals running on it.",
+   "t": "20:21"
+  },
+  {
+   "claim": "Suggested starting size for a first judge pass: about 20 traces, one dimension, one judge.",
+   "t": "34:11"
+  },
+  {
+   "claim": "Criteria template: one task, one success statement, one failure statement, and about three pass bullets and three fail bullets.",
+   "t": "21:25"
+  },
+  {
+   "claim": "Judges are described as doing well with one criterion at a time, based on research cited by the speaker (no figures given).",
+   "t": "19:16"
+  }
+ ],
+ "hot_takes": [
+  "Evals are the primary signal for agents, and metrics only say something might be broken while evals name the failure mode.",
+  "Judge one quality per eval. Bundling criteria into one LLM judge is discouraged, though decision models and agent-as-judge can take several.",
+  "Every stakeholder (product, eng, support, domain experts, security) should help define what success looks like, not just the engineer.",
+  "Specific, use-case evals beat generic templates, but generic ones are fine as a start.",
+  "Much of the talk is a product walkthrough of Arize AX, so the method is worth taking and the platform details less so. Quality is 3, not higher, because the workshop is largely vendor-led."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already plans RAGAS evals and benchmark-style correctness checks. This workshop gives a concrete method for judging agent output with concrete criteria, one quality per judge, and human alignment, plus the trace-to-eval workflow that AgentOS's observability layer would need.",
+   "action": "Write one judge with the six-part criteria template for a single AgentOS behaviour (e.g. the PII/prompt-injection scan or MemoryMesh retrieval relevance). Label 20 traces by hand, then measure judge-vs-human agreement before adding more judges."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness has a plan, critique and debate loop. The judge criteria and label-plus-explanation structure could check plan quality at the critique step, but the talk does not cover multi-step harnesses beyond tracing.",
+   "action": "Use the six-part criteria template to write pass and fail criteria for one plan-critique output, and run a single-criterion judge over saved plans."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

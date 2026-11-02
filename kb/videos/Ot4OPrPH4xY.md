@@ -1,0 +1,48 @@
+# The Rise of CaaS: Context-as-a-Service for Agentic AI — Omer Primor, Bright Data
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `Ot4OPrPH4xY` · [watch](https://youtu.be/Ot4OPrPH4xY) · **date:** 2026-08-18 · **length:** 22:20 · **format:** talk · **quality:** 2/5 · **depth:** practitioner
+- **speakers:** Omer Primor · **orgs:** Bright Data, Amazon, Microsoft, ZoomInfo, Exa, Parallel, Tavily, New.com, Anthropic
+- **topics:** rag-retrieval, data-engineering, infra-cost-scaling · **tags:** context-as-a-service, web-context, web-search, scraping, entity-resolution, knowledge-graph, cost-per-query, build-vs-buy, data-decay, vendor-talk
+
+> Bright Data's product lead argues that web data is becoming agent context, that repeated queries to paid context services get expensive, and that owning the data can beat renting it past a volume tipping point.
+
+## Summary
+Omer Primor of Bright Data (a web data vendor) presents "Context-as-a-Service" (CaaS), his label for vendors that give agents structured web context through MCP, CLI or API. He argues web data decays fast (social in under a day, news, finance and retail about 30 days), so context must be refreshed continuously rather than fetched once. He compares AI search (Exa, Parallel, Tavily and similar, plus Amazon and Microsoft's new indexes), CAS vendors, SERP/Google and Claude's native search on a small test: enriching 100 companies across 25 fields with a field-by-field agent loop. Coverage converged across most options, the pure CAS vendors scored lower because they can only return what they already collected, and cost per record varied widely. He then builds a quick direct-to-source scraper pipeline with entity merging, which he says cost nothing per query after setup. His rough estimate puts the break-even near 15,000 queries for an assumed one-week, $5,000 build, and he says repeated use is what drives cost. The talk is vendor-sponsored and he says the test is not a benchmark, so the numbers are indicative only.
+
+## Key ideas
+- **Treat the web as a source of agent context, not just a data source** — Knowledge work agents need to fetch, use and keep working with web information, so the web becomes context to reason over, not a one-off extraction target. ([1:34](https://youtu.be/Ot4OPrPH4xY?t=94))
+- **Web data decays, so context has to be refreshed continuously** — The speaker's team measured how quickly content stops being relevant: social media in well under a day, and news, finance and retail about 30 days. Snapshot collection is therefore an ongoing process. ([2:34](https://youtu.be/Ot4OPrPH4xY?t=154))
+- **CAS vendors act like vertical search engines with knowledge graphs** — Context-as-a-Service providers crawl, index, dedupe, structure entities and enrich them from several sources, so agents query a narrow, pre-merged index. ([6:28](https://youtu.be/Ot4OPrPH4xY?t=388))
+- **Pure CAS vendors have a coverage ceiling set by what they already collected** — In the 100-company test, the CAS vendors trailed. The speaker says they cannot answer questions outside their collected fields (e.g. recent hiring), while search can keep exploring. ([11:10](https://youtu.be/Ot4OPrPH4xY?t=670))
+- **Frequency of repeated queries drives cost more than one-off price** — Each repeat query costs the same as the first, even when nothing changed. Teams then cut corners by checking less often or fetching fewer results, which the speaker calls renting context rather than owning it. ([14:20](https://youtu.be/Ot4OPrPH4xY?t=860))
+- **Direct-to-source scraping can replace the middleman for known sources** — When the source is known (LinkedIn companies and jobs, Crunchbase), go to it directly. Use search only when the source is unknown. The speaker says the scrapers and merge logic took about a day's work for this test. ([15:45](https://youtu.be/Ot4OPrPH4xY?t=945))
+- **Owned context has a tipping point and then compounds** — The speaker estimates the one-week, $5,000 build (his assumption) paid off near 15,000 entity queries in his example. After that, extra retrievals are essentially free, so repeated and growing queries favor owning. He says the tipping point may be much lower than people think. ([19:01](https://youtu.be/Ot4OPrPH4xY?t=1141))
+
+## Techniques
+- **Field-by-field enrichment agent loop** — For each entity, an agent loops over a fixed list of fields (25 in the test), searches or retrieves each one, retries until complete, and stops at a budget guardrail. A frontier model (Opus 4.8, per the speaker) acts as the harness. *When:* Entity enrichment where each field may need its own retrieval and the run needs cost limits to keep the comparison fair.
+- **Hybrid search plus direct scrapers** — Use search when the source is unknown. For sources you already know, call dedicated scrapers directly and merge the results per entity. *When:* Recurring enrichment over a known set of sources where per-query cost starts to matter.
+- **Basic heuristic entity merge** — Merge records from several sources into one entity. On conflict, prefer a source chosen by a simple rule. *When:* Combining scraped sources cheaply when no LLM should be spent on reconciliation.
+- **Break-even analysis for build vs rent** — Estimate the upfront build cost (setup time and salary) and compare it with the per-query price of the vendor. Find the query volume where building becomes cheaper. *When:* Deciding whether recurring context retrieval should move in-house.
+- **Self-healing scrapers** — A generated scraper detects when a site changes and repairs itself so the pipeline keeps running. This is a vendor product feature the speaker describes, not something he measured. *When:* Long-running scrapes of sites that change layout often.
+
+## Numbers
+- Bright Data says it serves 20,000+ teams, including over 70% of the largest AI labs, and extracts over 50 billion pages a day (self-reported) ([0:08](https://youtu.be/Ot4OPrPH4xY?t=8))
+- Data decay: social media content goes stale in well under a day; news, finance and retail data is mostly stale after about 30 days (vendor analysis, no method given) ([2:34](https://youtu.be/Ot4OPrPH4xY?t=154))
+- Test design: 100 companies, 25 enrichment fields each, run 100 times; cost measured per record ([9:59](https://youtu.be/Ot4OPrPH4xY?t=599))
+- Break-even in the speaker's example is just over 15,000 entity queries, assuming a one-week build priced at $5,000 (his own assumptions) ([19:01](https://youtu.be/Ot4OPrPH4xY?t=1141))
+- Bright Data startup program offers up to $20,000 in credits (promotional) ([7:40](https://youtu.be/Ot4OPrPH4xY?t=460))
+
+## Hot takes
+- Every repeated query costs the same as the first, so frequency is the real cost killer for agent context.
+- Renting context decays while owned context compounds.
+- For one-off questions use AI search. For repeated, persistent knowledge work the build-it-yourself tipping point may be much lower than people expect.
+- Pure enrichment vendors lose on coverage because they can only return what they already collected.
+
+## Tools mentioned
+Bright Data, Scraper Studio, Exa, Parallel, Tavily, New.com, Amazon AgentCore, Microsoft WebIQ, ZoomInfo / gtm.ai, SERP API, Claude native web search, Opus 4.8
+
+## Relevance to our work
+- **general** (2/3): Entity dedupe and merge across sources plus cost-per-query framing bear directly on entity resolution pipelines, which are a recurring interest. → *Compare our ER pipeline's per-record LLM cost against a direct-source lookup plus heuristic merge at our expected rerun frequency, and compute the break-even volume.*
+- **agentos** (1/3): Owned vs rented context and the break-even argument touch MemoryMesh's knowledge buckets, but the talk is about web data, not agent memory. → *Add a cost-per-query and break-even row to the MemoryMesh design notes for any external retrieval that repeats.*
+- **general** (1/3): Web context engineering framing (search vs structured source per task) is relevant to the context-engineering interest but is shallow. → *Decide per field whether to use search or a known structured source when designing enrichment prompts.*
+- **general** (1/3): The speaker runs the enrichment loop with a frontier harness and says lighter models could cut cost, without testing it. → *Run the same field-by-field enrichment loop with a Haiku-class model and measure coverage against cost.*

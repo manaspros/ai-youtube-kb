@@ -1,0 +1,131 @@
+{
+ "one_line": "Better Stack demo of triaging a live React frontend error from the terminal: Claude Code pulls error data through the Better Stack MCP server, opens a fix PR, then resolves the issue. Short, vendor-led.",
+ "summary": "The presenter reproduces a real uncaught security error in a React video app, which blocks timeline scrubbing, and shows it captured by Better Stack error tracking via the Sentry React SDK. Instead of pasting errors into an agent by hand, they connect the Better Stack MCP server to Claude Code, which pulls the latest error details for the project. The agent summarizes errors, finds related ones to fix together, and separates unrelated 404s. It identifies a root cause, pushes a fix on a feature branch and opens a PR. The presenter verifies locally, the PR is merged, and the agent confirms the fix in code and resolves the issue and its earlier occurrences in Better Stack. The video ends by suggesting scheduled error-summary routines with notifications or auto-PRs. It is a 4-minute demo with no benchmarks, and the closing claim is that agents will replace visits to the UI.",
+ "speakers": [
+  "Unnamed Better Stack presenter"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Anthropic"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "observability",
+  "mcp-and-tools",
+  "claude-code"
+ ],
+ "tags": [
+  "error-tracking",
+  "mcp",
+  "debugging",
+  "sentry-sdk",
+  "session-replay",
+  "pr-workflow",
+  "deferred-tool-loading",
+  "scheduled-routines"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Copying errors into a coding agent by hand does not scale; an MCP server lets the agent read error data directly from the terminal.",
+   "detail": "The motivating problem is opening the browser and pasting each error into the agent, which the presenter calls tedious when there are many errors. The Better Stack MCP server gives Claude Code the error details it needs to fix them in place.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The demo bug is a real, intermittent frontend error that is reproduced live.",
+   "detail": "An uncaught security error appears when scrubbing the timeline after uploading a video in a React app. It is captured through the Sentry React SDK pointed at a Better Stack-specific DSN.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Setup is a copy-paste prompt from the Better Stack UI that the coding agent applies.",
+   "detail": "After connecting an application and choosing its type, Better Stack shows a prompt to paste into an AI agent, which handles the SDK setup. Errors then appear in the Better Stack UI with browser info, reproduction steps, an AI explanation option and anonymous session replay.",
+   "t": "1:24"
+  },
+  {
+   "idea": "The agent triages from the project directory: it finds the right app, summarizes recent errors, and groups only the related ones.",
+   "detail": "A plain request for the app's error details is enough; the agent picks the correct app through MCP. Asking for related errors led the agent to read the codebase in parallel, give a root cause and suggested fix, and keep unrelated 404s separate.",
+   "t": "2:32"
+  },
+  {
+   "idea": "The fix was a one-line change, and the agent handled the git flow: feature branch, PR, then a local check before merge.",
+   "detail": "The agent created a feature branch and a PR. The presenter reviewed the changed files, tested locally by scrubbing for a few minutes, and could not reproduce the error before merging.",
+   "t": "2:32"
+  },
+  {
+   "idea": "The loop closes by resolving issues through the agent after the fix is confirmed.",
+   "detail": "After pulling the merged change, the agent checked the fix was in place and then resolved the three related security issues in Better Stack. Earlier occurrences were resolved too, so no UI clicks were needed.",
+   "t": "3:41"
+  },
+  {
+   "idea": "The same MCP loop can run unattended as a scheduled routine.",
+   "detail": "The presenter suggests a regular routine that emails new errors or pings WhatsApp or Telegram, and even has Claude open PRs for new issues. This is described, not demonstrated.",
+   "t": "2:32"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "MCP-backed error triage loop",
+   "how": "1) Add the Better Stack MCP server to Claude Code, either with the command shown in the video or by editing the harness config, then sign in to Better Stack (exact command not shown on screen). 2) From the project directory, prompt for all error details for the app; the agent picks the right app via the MCP tools. 3) Ask whether other errors are related so they can be fixed together. 4) Have the agent fix the root cause on a new feature branch and open a PR. 5) After merge, pull, have the agent confirm the fix is in the code, then resolve the issue and its occurrences via MCP.",
+   "when": "Many production or frontend errors to work through from the terminal, instead of the browser UI."
+  },
+  {
+   "name": "Deferred tool loading for MCP servers",
+   "how": "Turn on deferred tool loading in the Claude settings JSON so only the MCP tools the agent needs are loaded into context. The exact key is not shown in the video.",
+   "when": "An MCP server exposes many tools and you want to save context window."
+  },
+  {
+   "name": "Frontend error capture with a vendor DSN and an agent setup prompt",
+   "how": "In the Better Stack UI, connect the app and pick its type (here, React). Copy the Better Stack-specific DSN and the setup prompt from the same screen. Paste the prompt into the coding agent, which wires up the Sentry React SDK.",
+   "when": "Adding error tracking with session replay to a React app, using an agent to do the setup."
+  },
+  {
+   "name": "Scheduled error-triage routine",
+   "how": "Run the MCP error summary on a schedule. Send new errors by email, WhatsApp or Telegram, or have the agent open fix PRs for new issues. The presenter describes this but does not show the setup.",
+   "when": "You want unattended triage of new errors, with a human reviewing the PRs."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Better Stack (error tracking, session replay, MCP server)",
+  "Sentry React SDK",
+  "Telegram",
+  "WhatsApp",
+  "email"
+ ],
+ "numbers": [
+  {
+   "claim": "The error the presenter reproduced had triggered about six minutes before it was inspected in the UI.",
+   "t": "1:24"
+  },
+  {
+   "claim": "The agent resolved three related security issues in Better Stack in one pass, along with earlier occurrences.",
+   "t": "3:41"
+  },
+  {
+   "claim": "The fix was one line of code.",
+   "t": "2:32"
+  }
+ ],
+ "hot_takes": [
+  "The presenter says agents will increasingly replace visits to the UI: 'We'll be using more agents and less visiting the UI.' (3:41)",
+  "The video is vendor-led: it promotes Better Stack's own MCP server and product and ends with a recommendation to try it. Treat the setup as the vendor's workflow, not an independent comparison.",
+  "The one-line-fix claim rests on a single bug in a single app, so it is anecdotal evidence, not a measured result."
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS observability (L4) could expose its own error and trace data through an MCP surface, which the video shows as a useful pattern for agent triage. The video itself covers frontend error tracking only.",
+   "action": "Prototype a read-only MCP server over AgentOS error and trace data so Claude Code can summarize recent failures and propose fixes."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The scheduled triage routine with notifications overlaps ProsHarness loops, schedules and phone-driven approvals. The video only describes this and does not show it working.",
+   "action": "Add a scheduled routine that summarizes new errors, then routes any proposed fix through the existing phone approval step before a PR is opened."
+  }
+ ],
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

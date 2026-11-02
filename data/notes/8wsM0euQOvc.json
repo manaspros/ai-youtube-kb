@@ -1,0 +1,182 @@
+{
+ "one_line": "AI LABS sorts Claude Code agent loops into five types (stateless, learning, multi-agent review, verification, workflow-improvement) with setup steps; anecdotal, with a sponsor segment.",
+ "summary": "The AI LABS team argues that agent loops only waste tokens when the wrong loop type is used for the job. They describe the loops they run on coding work: a stateless loop (the goal command and the Ralph loop) that stops when the agent says it is done, a learning loop that repeatedly improves a reusable skill and records lessons in a learning.md file, a multi-agent review loop run by an orchestrate command with four specialist critics, and a verification loop where an implementer is scored by a read-only reviewer. A workflow-improvement loop adds a process-optimizer agent that critiques the run itself, not just one skill. Each section gives the commands and file conventions they use and when each type fits. Tests and rubrics recur as the mechanism for deciding that work is finished. A mid-video sponsor segment for Minimax M3 makes unverified claims. The evidence is anecdotal, with no benchmarks or measured token costs.",
+ "speakers": [],
+ "orgs": [
+  "Minimax"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "agent-architecture",
+  "claude-code",
+  "multi-agent",
+  "testing-verification"
+ ],
+ "tags": [
+  "agent loops",
+  "stateless loop",
+  "goal command",
+  "ralph loop",
+  "learning loop",
+  "skill improver",
+  "multi-agent review",
+  "orchestrator",
+  "verification loop",
+  "workflow improvement loop",
+  "CLAUDE.md",
+  "tests as completion criterion",
+  "sponsored"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Loop type should match the job. Token blowup comes from using the wrong loop type, not from loops themselves.",
+   "detail": "The speaker frames loop engineering as moving from writing prompts to building a system that writes the loop, and says the cost problem is a mismatch between loop and task.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Stateless loops hold no memory or self-improvement. The goal command and the Ralph loop are examples, and they stop when the agent decides it is done.",
+   "detail": "In the earlier video the speaker split loops into deterministic (outcome known, agent can check itself) and non-deterministic (no solid check). This video names the stateless loop as the simplest building block.",
+   "t": "1:06"
+  },
+  {
+   "idea": "Stateless loops only work well when completion can be checked concretely, such as with tests written before the feature.",
+   "detail": "After the main agent claims done, a smaller model (Haiku in Claude Code) checks the work against the prompt's requirements and re-prompts if something is missing. The speaker calls out the weakness: the loop relies entirely on model judgment with no standard to measure against.",
+   "t": "2:12"
+  },
+  {
+   "idea": "Ask the agent to save every working version so it can roll back when autonomous work breaks the app.",
+   "detail": "The speaker recommends one line in CLAUDE.md telling the agent to save each working version. Rollback then replaces trying to undo changes from memory.",
+   "t": "2:12"
+  },
+  {
+   "idea": "A learning loop improves a reusable skill across rounds and keeps a lesson record inside the skill.",
+   "detail": "Each round the skill improver runs the skill, tests it across areas, and makes changes. The loop repeats until no improvements are left. The speaker says the same pattern works for any repeated workflow.",
+   "t": "4:54"
+  },
+  {
+   "idea": "Measure a skill's impact by running the task with and without it, and keep the results in a learning.md journal.",
+   "detail": "Each round launches a separate background Claude session that runs the task twice, once with the skill and once without. learning.md records what was tried, both results, and the lessons across rounds. It lives inside the skill directory.",
+   "t": "6:22"
+  },
+  {
+   "idea": "Split review across perspectives, using separate agents for factual, domain, safety and style, coordinated by an orchestrator that runs multiple rounds.",
+   "detail": "The four agents are a factual checker with web search, a domain-relevance checker, a safety critic (sensitive content, security, policy), and a style critic. The orchestrator is chosen over a direct agent-team setup because one agent must hold context across rounds.",
+   "t": "7:49"
+  },
+  {
+   "idea": "Verification loops pair an implementer with a scorer and are costly. Only use the dynamic-workflow version on a mature, large app.",
+   "detail": "The implementer reads a PRD and builds. A read-only thermonuclear code reviewer returns a score and writes findings to a JSON file. The dynamic workflow fans review out to many sub-agents, which takes a long time and many tokens. The speaker suggests a plain reviewer agent as the cheaper option.",
+   "t": "9:17"
+  },
+  {
+   "idea": "A workflow-improvement loop improves the process itself, not one skill. A process optimizer agent reviews each run and drops steps that are not needed.",
+   "detail": "Three agents run under an iterate command: a builder that delivers one requirement per run, a scorer that grades against a rubric out of 100 and logs scores to JSON, and a process optimizer that suggests changes to the workflow. The iterate all variant implements the entire app in parts inside one workflow.",
+   "t": "11:26"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Goal-command loop with tests as the acceptance criterion",
+   "how": "Write the tests for a feature before asking Claude to build it. Then run the goal command with a description such as getting the feature to pass all tests. The agent writes code, runs tests, and keeps going until they pass, then marks the goal complete. A Haiku check re-prompts the agent if the requirements are not fully met.",
+   "when": "Features whose requirements can be checked concretely. Weak fit when there is no hard standard for done."
+  },
+  {
+   "name": "Save-every-working-version rule in CLAUDE.md",
+   "how": "Add one line to CLAUDE.md telling the agent to save every working version. If later changes break the app, roll back to the last working version and continue from it.",
+   "when": "Any long autonomous run where the agent may break working code."
+  },
+  {
+   "name": "Skill-improvement loop (learning loop)",
+   "how": "Create a command, named skill loop in the video, that calls a skill-improver agent repeatedly until no improvements remain. The improver assesses skill quality, tests across areas, and watches for issues. Each round: run checks after changes, start a background Claude session with the prompt and no permission prompts, run the task with and without the skill, make the changes, and append results and lessons to learning.md inside the skill folder.",
+   "when": "A skill that is reused often and needs evidence that it works and what changed."
+  },
+  {
+   "name": "Multi-agent review loop with an orchestrator",
+   "how": "Create four agents: factual correctness (with web search), domain relevance, safety critic (sensitive content, security, policy), and style critic. Write an orchestrate command with instructions to spin up all four each round, collect their feedback, and coordinate. The main agent applies all fixes from round N, then respawns all four for round N+1.",
+   "when": "Reviews that span several dimensions where one agent would miss blind spots. Use the orchestrator when agents need shared context across rounds. Use the agent-team workflow from an earlier video when agents should talk directly."
+  },
+  {
+   "name": "Implementer vs. scorer verification loop",
+   "how": "Create an implementer agent that reads the PRD and builds the features, and a read-only reviewer agent with no edit tools that returns a score. A review loop command starts round one by understanding the app's goal and running a thermonuclear review. Findings go to a JSON file, the implementer fixes them, and the loop repeats until the score is high enough.",
+   "when": "A mature app that needs a thorough review. For cost, prefer a normal reviewer agent over the dynamic-workflow version."
+  },
+  {
+   "name": "Workflow-improvement loop with a process optimizer",
+   "how": "Create an iterate command that orchestrates three agents: a builder that delivers one requirement per run, a scorer that grades against a rubric out of 100 and logs each round to a JSON file, and a process optimizer that reviews the conversation and proposes workflow changes. Run iterate all to build the whole app in parts inside one workflow.",
+   "when": "When you want the workflow itself tested and refined, and each step validated as necessary."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "CLAUDE.md",
+  "Haiku (completion checker in the goal loop)",
+  "Ralph loop (named as a stateless loop example)",
+  "goal command",
+  "skill loop command (name as spoken)",
+  "learning.md",
+  "thermonuclear review (review skill, named as spoken)",
+  "orchestrate command",
+  "review loop command",
+  "iterate command",
+  "JSON files (findings and scores)",
+  "PRD (product requirements doc)",
+  "Minimax M3 (sponsor, 1M context claim)",
+  "Opus 4.7 (named in the sponsor's comparison claim)",
+  "LLM council (Karpathy concept, referenced)",
+  "agent-team workflow (from an earlier video)"
+ ],
+ "numbers": [
+  {
+   "claim": "Minimax M3 context window of 1 million tokens (sponsor claim)",
+   "t": "3:40"
+  },
+  {
+   "claim": "Minimax token plans start at $20 per month, with a 12% discount via sponsor link (sponsor claim)",
+   "t": "3:40"
+  },
+  {
+   "claim": "Sponsor claims M3 beats Opus 4.7 on autonomous browsing (unverified, sponsor claim)",
+   "t": "3:40"
+  },
+  {
+   "claim": "Completion check uses Haiku to verify the main agent's done claim in the goal loop",
+   "t": "2:12"
+  },
+  {
+   "claim": "Learning loop runs each round twice, with and without the skill, to measure impact",
+   "t": "6:22"
+  },
+  {
+   "claim": "Multi-agent review loop uses four agents (factual, domain, safety, style)",
+   "t": "7:49"
+  },
+  {
+   "claim": "Workflow-improvement scorer grades each run out of 100 against a rubric",
+   "t": "11:26"
+  }
+ ],
+ "hot_takes": [
+  "Sponsored segment for Minimax M3 (about 3:40 to 4:54). Its performance and context claims are unverified and the video gives no independent test.",
+  "The loop taxonomy is a useful frame, but the video has no benchmarks and no measured token costs. Cost claims are qualitative only.",
+  "The speaker warns that the dynamic-workflow verification loop is slow and token-heavy, and suggests a plain reviewer agent for most cases.",
+  "Auto-captions mis-hear names: 'Cloud Code' is Claude Code, and 'that cursor has thermonuclear review' is probably Claude Code's review skill (unverified). Quality is capped at 2 by the sponsored segment."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The learning loop's with-vs-without-skill comparison and learning.md journal map to SkillForge's open question of a success signal and skill-worthiness scoring.",
+   "action": "Prototype a with-vs-without-skill A/B run that logs results to a per-skill journal, and test it as a candidate success signal for SkillForge's skill-worthiness scoring."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and has loops and schedules. This video gives a loop-type taxonomy and a test-based done criterion checked by a cheap model.",
+   "action": "Classify ProsHarness loops into stateless, learning, verification and workflow-improvement types, and require a test-based completion check with a Haiku verifier before a loop is marked done."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

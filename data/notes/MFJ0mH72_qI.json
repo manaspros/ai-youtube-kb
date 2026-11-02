@@ -1,0 +1,139 @@
+{
+ "one_line": "Ralph stop-hook loop plus TDD and screenshot checks for ShadCN UI work; a separate verification iteration before the completion promise fixed premature \"done\" claims.",
+ "summary": "The creator argues that AI agents adding features to an existing ShadCN app tend to break other parts of the app, and that the fix is making the agent prove it finished. He uses Anthropic's Ralph plugin, a stop-hook loop that re-feeds the original prompt file until the agent outputs a chosen completion word, with a max-iteration cap as a safety stop. Features are built test-first with Playwright end-to-end tests and per-behavior screenshots. The command palette finished in one loop. On a board-view feature, the agent output the completion word while ignoring UI errors visible in its own screenshots, because its only UI check was glancing at them. The fix was a screenshot protocol: each reviewed image gets a verified prefix, the agent may not output the completion word in the iteration that marks them, and a later iteration confirms all images are marked before finishing. Image checks are kept separate from functional tests, and the board feature then completed in two loops. The evidence is one project and one session, with no error rates. The video ends with a sponsored segment for Automata.",
+ "speakers": [],
+ "orgs": [
+  "Anthropic",
+  "Automata"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "testing-verification",
+  "agent-architecture",
+  "context-engineering"
+ ],
+ "tags": [
+  "ralph-loop",
+  "stop-hook",
+  "completion-promise",
+  "tdd",
+  "playwright",
+  "screenshot-verification",
+  "shadcn",
+  "ui-verification",
+  "max-iterations"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents building features into an existing ShadCN app break other parts of it. One-shot landing pages are fine; multi-feature apps are not. Agents also get less reliable as context grows, so the goal is to make them finish the work they are given.",
+   "detail": "The speaker frames the problem as completion reliability, not component quality.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The Ralph loop is a Claude Code stop-hook plugin. When Claude stops, the original prompt file is fed back so it keeps iterating on its work. The speaker says Anthropic released and open-sourced it, but that the technique came from someone else.",
+   "detail": "Attribution is the speaker's claim and was not checked against the repo.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The loop exits on a completion promise: a word the agent outputs only when it believes the task is done. Until that word appears, the prompt runs again. A max-iteration count guards against tasks that cannot be solved.",
+   "detail": "The example promise word is 'complete'. The speaker says a max-iteration cap is good practice.",
+   "t": "1:18"
+  },
+  {
+   "idea": "Tests come first. The agent sets up an end-to-end test folder, a screenshots folder and the matching tests before writing feature code. Playwright screenshots for each functional behavior (for example, a card appearing on a board) are used for visual checks rather than the Playwright MCP.",
+   "detail": "The speaker says the agent reviews the screenshots itself, and the screenshots are used only for UI verification.",
+   "t": "2:36"
+  },
+  {
+   "idea": "Loops plus tests suit large tasks. When the context fills or the model gets confused, it quits without the promise, the prompt is fed back, and it restarts. The command palette finished in one pass once all 25 unique tests passed.",
+   "detail": "The loop's exit condition was the test suite going fully green, with the promise as the final signal.",
+   "t": "3:48"
+  },
+  {
+   "idea": "The failure mode was premature completion. On the board view, the agent output the promise while ignoring UI errors visible in its own screenshots. Test counts could also drop mid-run when a change broke other tests.",
+   "detail": "No UI test existed beyond the screenshots, and the agent only glanced at some of them.",
+   "t": "5:50"
+  },
+  {
+   "idea": "The fix is to gate completion behind a separate verification pass. Each reviewed screenshot gets a verified prefix. The agent may not output the promise in the iteration that marks them. The next iteration checks that all images are marked, re-reviews any missed ones and reruns the tests.",
+   "detail": "Image verification was split out of the functional tests. The speaker says at least two loops must run.",
+   "t": "7:18"
+  },
+  {
+   "idea": "With the gate in place, the board-view feature finished in two loops, and the remaining UI errors were fixed.",
+   "detail": "One project, one session. No comparison run or error rate was shown.",
+   "t": "8:46"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Stop-hook completion-promise loop",
+   "how": "Install the Anthropic Ralph plugin. It provides three commands: a loop command, a cancel command and a help command. Give the loop command a prompt file that lays out the workflow, a promise word (the example is 'complete') and a max-iteration count. Tell the agent to output the promise only when the exit criteria are met. The stop hook re-feeds the prompt whenever Claude stops without the promise.",
+   "when": "Multi-step features where the agent might quit partway through or claim done too early. The exit criteria must be checkable, such as a test suite or screenshot checks."
+  },
+  {
+   "name": "Test-first workflow inside the loop",
+   "how": "Ask Claude Code to set up a TDD structure: an e2e test folder, a screenshots folder and one test per behavior. Workflow steps from the speaker: run the tests and expect failures, write the minimum code to pass, review all screenshots, rerun the tests, and only then output the promise. Track the passing-test count across iterations so regressions show up.",
+   "when": "Any feature that touches existing UI, where a change can break unrelated parts of the app."
+  },
+  {
+   "name": "Screenshot verification protocol",
+   "how": "Playwright captures a screenshot for each functional behavior. The agent reviews each image, then renames it with a verified prefix only after it has actually read it. In a later iteration, the agent checks that every file carries the prefix, re-reviews any that do not, and then runs the functional tests.",
+   "when": "UI work where tests pass but visual errors remain, as seen on the board-view feature."
+  },
+  {
+   "name": "Two-phase completion gate",
+   "how": "Do verification in one iteration and forbid the completion promise in that same iteration. Allow the promise only in a later iteration, after the file state (the verified prefixes) and the tests confirm the work. Keep image verification separate from functional tests so each can be checked on its own.",
+   "when": "Any loop where the agent tends to claim done right after skimming its own output. The speaker calls this the key change that fixed the premature completions."
+  }
+ ],
+ "tools": [
+  "ShadCN (UI component library)",
+  "Claude Code",
+  "Ralph plugin (Anthropic, Ralph loop)",
+  "Claude Code stop hooks",
+  "Playwright",
+  "Playwright MCP (named only to say it was not used)",
+  "Notion (reference point for the board view)",
+  "Automata (sponsor)"
+ ],
+ "numbers": [
+  {
+   "claim": "Command palette finished in a single pass, with all 25 unique tests passing as the loop's exit condition",
+   "t": "3:48"
+  },
+  {
+   "claim": "The screenshot gate required at least two loops: one to mark the screenshots verified, one to confirm and emit the promise",
+   "t": "7:18"
+  },
+  {
+   "claim": "Board-view feature completed in two loops after the verification fix",
+   "t": "8:46"
+  }
+ ],
+ "hot_takes": [
+  "The passing test suite did not catch UI errors that were visible in the agent's own screenshots. The real gap is the completion step, not test coverage.",
+  "The two-loop screenshot gate is a prompt and process fix tested on one project in one session, with no error rates. Treat it as a pattern to try, not a measured result.",
+  "The title ('too powerful') overstates the content, which is a process fix for a stop-hook loop.",
+  "The Automata pitch near the end is a sponsored segment, which caps quality at 2."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The completion-gate idea applies to agent runs in general, but the video covers a single UI coding workflow, not infra or the agent proxy.",
+   "action": "Try a verify-then-complete split (verification in one iteration, 'done' accepted only in a later one) when designing the agent-run checks for AgentOS, starting with the Crucible sandboxed execution flow."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and runs long agent runs with loops and schedules. A completion-promise exit, a max-iteration cap and a verification-only iteration map directly onto that loop logic.",
+   "action": "Review ProsHarness loop exit logic: exit only on checkable criteria (tests plus a separate verification iteration), with a max-iteration cap, and compare it with the Ralph completion-promise pattern."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

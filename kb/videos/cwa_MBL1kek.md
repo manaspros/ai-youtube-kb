@@ -1,0 +1,45 @@
+# Dagger - The End of Slow, Messy YAML CI/CD Forever!
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `cwa_MBL1kek` · [watch](https://youtu.be/cwa_MBL1kek) · **date:** 2025-11-02 · **length:** 5:50 · **format:** tutorial · **quality:** 2/5 · **depth:** intro
+- **speakers:** Better Stack presenter (not named in transcript) · **orgs:** Dagger, Docker, Better Stack, GitHub, Jenkins, Microsoft Azure, AWS, GitLab, Homebrew
+- **topics:** dev-tools, testing-verification, observability · **tags:** dagger, ci-cd, github-actions, pipelines-as-code, dependency-caching, opentelemetry, debugging, go, daggerverse, act
+
+> Short Better Stack tutorial on Dagger: write CI pipelines as functions in Go (or Python, TypeScript, PHP), run them identically locally and in GitHub Actions, cache volumes, and debug with a terminal breakpoint.
+
+## Summary
+The host introduces Dagger, a CI/CD tool from some members of the Docker team, that lets you define pipelines in a real programming language, runs them locally or remotely, and emits OpenTelemetry traces. He contrasts it with GitHub Actions YAML and with Act, arguing that Act uses different Docker images from GitHub's runners. The walkthrough installs Dagger via Homebrew (Docker required), bootstraps a Go SDK project for a small Go repo with tests, and explains the generated main.go, where each Dagger function becomes a kebab-cased CLI command. He writes a test function that mounts the source directory into a Go container, downloads dependencies and runs the tests, then replaces the GitHub workflow with a single Dagger call. He shows volume caching for the Go dependency directory, which cuts one step from 27s to 9s, and mentions per-run telemetry, a terminal breakpoint for debugging, CI integrations beyond GitHub, and the Daggerverse module registry. A sponsored Better Stack segment takes up a noticeable part of the runtime, and most claims are shown on a single small repo.
+
+## Key ideas
+- **Dagger pitches CI pipelines written as code in a real language (Go, Python, TypeScript, PHP SDKs) that run locally or remotely, instead of YAML.** — Pipelines are Dagger functions; the speaker says the same code runs the same locally and in GitHub Actions. This parity claim is asserted, not demonstrated in a side-by-side run. ([0:00](https://youtu.be/cwa_MBL1kek?t=0))
+- **Act is criticised for local CI runs that use different Docker images from GitHub's runners, which can cause inconsistencies, and for needing conditionals to skip remote-only steps.** — The speaker presents Dagger as addressing these issues. He concedes that writing pipelines in TypeScript or Go feels odd at first. ([0:00](https://youtu.be/cwa_MBL1kek?t=0))
+- **Each Dagger function is exposed as a CLI command, with function and argument names converted to kebab-case.** — Arguments are passed after a double dash. Listing the available functions is done with the dagger functions command. ([2:48](https://youtu.be/cwa_MBL1kek?t=168))
+- **A pipeline function gets the Go image, mounts the source directory as an argument, sets the working directory, downloads dependencies and runs go test.** — The function is run locally with dagger call. Helper functions such as a base-environment setup can be factored out and chained into other functions. ([2:48](https://youtu.be/cwa_MBL1kek?t=168))
+- **Replacing the GitHub Actions workflow with a single Dagger call moves the logic out of YAML; the workflow only installs the latest Dagger, runs the function and optionally passes a Dagger Cloud token.** — This is shown as the simplified workflow, and the speaker says remote results match local results. ([3:30](https://youtu.be/cwa_MBL1kek?t=210))
+- **Dagger caches each layer automatically, but volume caching for the dependency directory avoids re-downloading Go modules across runs.** — The speaker notes that caching does not help on the first run after the change, only on later runs. The dependency download step fell from 27s to 9s. ([2:48](https://youtu.be/cwa_MBL1kek?t=168))
+- **Dagger emits OpenTelemetry traces for each run, which help find bottlenecks step by step.** — The speaker says he will not explain traces in this video and points to another video. The trace view is not shown in the transcript. ([4:17](https://youtu.be/cwa_MBL1kek?t=257))
+- **Debugging uses a terminal function as a breakpoint, or the interactive flag, which opens a terminal session when a pipeline fails.** — Both are described briefly without a worked example. ([4:17](https://youtu.be/cwa_MBL1kek?t=257))
+
+## Techniques
+- **Daggerize a Go project** — Install Dagger with Homebrew and confirm with dagger version. Install Docker, since pipelines run in containers locally. Bootstrap the project by running the Dagger init command with the Go SDK; it generates a main.go file that holds the functions. The speaker does not show the exact init flags in the transcript. Delete the generated template comment and rename the generated struct if needed. *When:* Migrating a Go project's CI from GitHub Actions YAML to code, starting from a fresh Dagger module.
+- **Write a test function that runs in a container** — Define a function that takes a directory argument named source. Create a container from a golang image. Copy the source directory into the container at a path such as source. Set that path as the working directory. Run the dependency download and then go test, printing output to the console. Run it locally with dagger call test --source=. (flag form inferred from the speaker's double-dash description, not typed out on screen). *When:* Running unit tests in a pipeline that must behave the same on a laptop and on a CI runner.
+- **Replace GitHub Actions YAML with a single Dagger call** — In the workflow, keep only steps that install the latest Dagger, then run the Dagger function as the one command. Pass a Dagger Cloud token from secrets if one is available. The workflow file shrinks to these few lines. *When:* When the CI logic lives in the Dagger module and the workflow should be a thin wrapper.
+- **Cache dependency downloads with a volume** — Replace the plain dependency-download line with a call that mounts a cache volume at the Go module directory, so the downloaded modules persist between runs. The speaker shows the change as a single replaced line; the exact API call is not spelled out in the transcript. The first run after the change is not faster. Later runs are. *When:* Slow dependency installs dominate CI time (for example, Go or Node module downloads) and layer caching alone does not help.
+- **Debug a failing pipeline interactively** — Insert a terminal call in the pipeline function at the point to inspect, which acts as a breakpoint and opens an interactive shell in the container. Alternatively, run the function with the interactive flag so a terminal opens only if it fails. *When:* A step fails only in the container and the state needs inspecting in place.
+- **Reuse modules from the Daggerverse** — Find a module in the Daggerverse, a collection of hundreds of functions and modules, then install it into the project and call it from a pipeline function. The speaker shows a Go module install but does not show the command on screen. *When:* A standard step such as a linter or a build tool already exists as a published module.
+
+## Numbers
+- Dependency-download step time with plain Go module download: 27 seconds on the first run ([2:48](https://youtu.be/cwa_MBL1kek?t=168))
+- Same step after volume caching of the dependency directory: 9 seconds, a reduction from 27 seconds (single-run measurement) ([4:17](https://youtu.be/cwa_MBL1kek?t=257))
+- Video length 5:50, with a sponsored Better Stack segment at about 4:17 ([4:17](https://youtu.be/cwa_MBL1kek?t=257))
+
+## Hot takes
+- Title promises the end of YAML CI/CD forever. The video is a single tutorial on a small Go repo and shows no comparison beyond one 27s-to-9s timing; the promise is hype.
+- The sponsored Better Stack segment at about 4:17 is an ad (the Dagger status-page anecdote is used as the hook), which caps the quality rating at 2.
+- The claim that local and remote runs behave identically is asserted, not shown side by side. The Act criticism is also stated without a demo.
+- Pitching Dagger as a fix for Act-style local runs is a reasonable framing from the speaker, but no evidence of image-mismatch bugs is shown.
+
+## Tools mentioned
+Dagger, Dagger Go SDK, Dagger Python SDK, Dagger TypeScript SDK, Dagger PHP SDK, Docker, GitHub Actions, Act, Go, Alpine container image, Homebrew, OpenTelemetry, Daggerverse, Dagger Cloud, Better Stack, Jenkins, Azure DevOps, AWS, GitLab
+
+## Relevance to our work
+- **agentos** (1/3): Dagger could give AgentOS test and CI pipelines the same local and remote behavior, plus cached dependency volumes, but the video only covers a small Go repo and nothing about AI workloads or the Rust/Python stack of AgentOS. → *Low priority: when next editing AgentOS CI, check whether a Dagger module for the test suite would be worth the cost compared with plain GitHub Actions caching.*

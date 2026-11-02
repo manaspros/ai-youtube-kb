@@ -1,0 +1,197 @@
+{
+ "one_line": "Hippocratic AI's engineering lead explains how their clinical voice agent (200M+ patient conversations) hits safety, latency and accuracy at once: a vertically built stack, 31 parallel specialist models, context-fed ASR, and lossless inference tricks.",
+ "summary": "The speaker, who runs AI engineering at Hippocratic AI, describes a voice agent that places outbound clinical calls to patients, with over 200M conversations, a stated zero significant safety incidents, and deployment at 60+ health systems. He argues that latency and intelligence are not a trade-off for them: each latency optimization is reinvested into more checking, which compounds. The architecture (\"Polaris\") has three parts: an ASR front end that is a decoder-only audio LLM conditioned on conversation context and domain knowledge, a central reasoning model that runs alongside 30 specialist models in parallel (each one short-circuits if it has nothing to say), and a voice and documentation output layer. Background verifiers check tool-call parameters, and some checks run offline so errors can be corrected later. On evals, he works through the statistics: catching a 1% failure rate needs about 450 tests, so they combine roughly 7,000 clinicians with synthetic data, and they grade outputs on a human harm rubric. Inference speedups (4-bit quantization, speculative decoding, a warm KV cache) are kept lossless. Most specific numbers are self-reported, and the talk is a company showcase, so the ideas are more useful than the claims.",
+ "speakers": [
+  "Vivek Muppalla"
+ ],
+ "orgs": [
+  "Hippocratic AI"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "inference-serving",
+  "evals",
+  "multi-agent"
+ ],
+ "tags": [
+  "healthcare",
+  "voice-agent",
+  "latency",
+  "asr",
+  "speculative-decoding",
+  "kv-cache",
+  "quantization",
+  "specialist-models",
+  "tool-call-verification",
+  "statistical-evals",
+  "safety-rubric",
+  "empathy-benchmark"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Latency savings are reinvested, not banked",
+   "detail": "Each latency optimization frees budget that the team spends on more intelligence or checking, so the latency-vs-intelligence tension becomes a compounding flywheel.",
+   "t": "7:09"
+  },
+  {
+   "idea": "Parallel specialists with a short-circuit gate",
+   "detail": "About 31 models run on every turn in parallel. Each specialist first decides whether it needs to speak, which keeps the latency budget. A central model steers the conversation using specialist input, and the redundancy avoids a single point of failure.",
+   "t": "12:20"
+  },
+  {
+   "idea": "Generic benchmarks miss the failures that matter in clinical voice",
+   "detail": "Lab-result checks and IVR navigation are not in common benchmarks, and generic models do poorly on them. The team says it needed over 99% on such domain benchmarks. Many apparent reasoning failures were actually mishearing (e.g., drug names, letters vs. numbers).",
+   "t": "7:09"
+  },
+  {
+   "idea": "Give ASR the conversation and domain context",
+   "detail": "A fine-tuned Whisper-large-turbo encoder feeds an audio LLM that also receives the conversation so far, the domain and policy, and lists such as the patient's medications. Choosing from a finite list cuts word errors. Synthetic patient data is used for contextual biasing on addresses and phone numbers.",
+   "t": "9:56"
+  },
+  {
+   "idea": "Re-score single-word answers with full context",
+   "detail": "Short replies like 'no' vs 'now' or 'five' vs 'fine' are where transcription errors are most harmful. The team runs a second scoring pass only for single-word utterances, using the whole conversation.",
+   "t": "12:20"
+  },
+  {
+   "idea": "Verify tool calls asynchronously, and offline when time allows",
+   "detail": "Background verifiers check tool-call parameters and responses. For scheduling, this is said to reach high accuracy. Where time permits, verification runs offline, so an wrong appointment can be corrected by calling the patient back.",
+   "t": "13:39"
+  },
+  {
+   "idea": "Do the statistics before trusting an eval",
+   "detail": "With 10,000+ calls a day, a 1% error rate means about 100 wrong appointments daily. Catching a 1% rate needs about 450 tests for 99% confidence, and about 1,900 to see 10 hits. Synthetic data alone was judged insufficient, so they combine it with human-graded conversations.",
+   "t": "16:05"
+  },
+  {
+   "idea": "Grade safety on a clinical harm scale, not just correctness",
+   "detail": "Outputs are graded on correctness, no harm, minor harm, severe harm and death, the same scale used for human clinicians. The speaker reports 99.89% no-harm across five product generations, against about 81% for humans on the same rubric.",
+   "t": "17:12"
+  },
+  {
+   "idea": "Inference optimizations must be lossless",
+   "detail": "Quality is the constraint and speed is the work. Three named techniques: 4-bit quantization (described as lossless), speculative decoding with a small draft model, and KV-cache handling that keeps long conversations warm.",
+   "t": "14:47"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Parallel specialist models with self-gating",
+   "how": "Run many domain specialists on every turn concurrently. Each one does a fast check on whether it should speak, and only then produces output. A central model integrates the specialist input and decides what to say.",
+   "when": "Many domain checks per turn under a tight latency budget, where a single monolithic model is a single point of failure."
+  },
+  {
+   "name": "Context-conditioned ASR",
+   "how": "Use an audio LLM (decoder-only) that takes the audio plus conversation history, domain knowledge and task context such as the medication list or form fields. Constrain candidates to a finite list where one exists. Use synthetic data in training to teach rare entities such as addresses.",
+   "when": "Domain speech with rare named entities (drug names, addresses) where generic ASR errors change the meaning."
+  },
+  {
+   "name": "Second-pass rescoring for ambiguous short utterances",
+   "how": "Detect single-word or very short responses and re-score them with the whole conversation as context.",
+   "when": "Yes/no or number answers, where one wrong word flips the meaning of the answer."
+  },
+  {
+   "name": "Async and offline verifiers for tool calls",
+   "how": "Run background checks on tool-call parameters and results without blocking the live turn. Where latency allows, re-verify offline and correct the record afterward.",
+   "when": "Agents that call scheduling or record-writing tools where a silent wrong call is costly and can be fixed later."
+  },
+  {
+   "name": "Human plus synthetic eval mix with sample-size planning",
+   "how": "Compute how many tests are needed to detect a target failure rate at a given confidence before running them. Use human clinicians on a continuous basis to supply most of the eval data, and synthetic data to scale.",
+   "when": "Low-error-rate production agents where synthetic data alone misses real failures."
+  },
+  {
+   "name": "Severity-graded harm rubric",
+   "how": "Grade every output on an ordered scale (correct, no harm, minor harm, severe harm, death), using the same rubric humans are graded on, so AI and human performance can be compared directly.",
+   "when": "High-stakes domains where a pass/fail score hides how bad a failure is."
+  },
+  {
+   "name": "Lossless inference stack",
+   "how": "Apply quantization (16-bit to 4-bit), speculative decoding with a smaller draft model that the main model verifies in one pass, and KV-cache retention for long conversations to raise cache hit rate and speed up prefill.",
+   "when": "Long multi-turn sessions where prefill cost dominates and output quality cannot drop."
+  }
+ ],
+ "tools": [
+  "Whisper (large-turbo, fine-tuned)",
+  "speculative decoding",
+  "4-bit quantization",
+  "KV cache"
+ ],
+ "numbers": [
+  {
+   "claim": "Over 200 million clinical conversations; zero significant safety incidents (self-reported)",
+   "t": "0:08"
+  },
+  {
+   "claim": "Deployed in 60+ health systems, patient satisfaction 8.5 out of 10",
+   "t": "0:08"
+  },
+  {
+   "claim": "About 31 models run in parallel per conversation",
+   "t": "8:27"
+  },
+  {
+   "claim": "Over 30% word error rate on some Arabic drug names with off-the-shelf ASR (as stated)",
+   "t": "9:56"
+  },
+  {
+   "claim": "Medical word error reduced by over 50% vs standard off-the-shelf models; P99 latency claimed 3x faster than others",
+   "t": "12:20"
+  },
+  {
+   "claim": "Target accuracy of over 99% on lab-result checks and IVR navigation benchmarks",
+   "t": "7:09"
+  },
+  {
+   "claim": "Over 96% KV-cache hit rate on long conversations; prefill 18x faster",
+   "t": "16:05"
+  },
+  {
+   "claim": "10,000+ calls a day; a 1% error rate equals about 100 wrong appointments per day",
+   "t": "16:05"
+  },
+  {
+   "claim": "About 450 tests needed to be 99% sure of catching a 1% error rate; about 1,900 to see it 10 times",
+   "t": "17:12"
+  },
+  {
+   "claim": "Over 7,000 trained clinicians; close to 800,000 clinical conversations used for accuracy evaluation",
+   "t": "17:12"
+  },
+  {
+   "claim": "99.89% no-harm across five product generations (Polaris) vs about 81% for humans on the same rubric",
+   "t": "17:12"
+  }
+ ],
+ "hot_takes": [
+  "Most real-world voice-agent failures that look like reasoning errors are actually mishearing.",
+  "Latency savings should be spent on more safety checks, not banked as speed.",
+  "Safe is not enough: a clinical voice agent also has to be empathetic enough that people open up to it.",
+  "A 99% accuracy target is still too weak for high-volume scheduling; the 1% tail is the real problem."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The statistical sizing of eval sets for rare failures and the rubric-graded harm scoring map onto AgentOS's RAGAS-based evals and its guardrail goals. The parallel gate-then-speak pattern is also close to how a proxy-level guardrail could be structured.",
+   "action": "Before reporting any failure rate from AgentOS evals, compute how many test cases are needed to detect that rate at the chosen confidence, and add a severity-graded (not pass/fail) scoring field for guardrail outcomes."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Background verification of tool-call parameters, with some checks run offline and results corrected later, is a pattern ProsHarness could use for its loop and schedule steps.",
+   "action": "Consider an async verifier pass over ProsHarness tool-call arguments and results that runs after a step and flags mismatches for the next resume, rather than blocking the run."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Entity resolution and data quality work can borrow the idea of narrowing candidates to a finite, context-chosen list before matching, as the talk does for medication names.",
+   "action": "In entity resolution, try limiting candidate matches to a context-selected list (e.g., same country or record type) before fuzzy scoring, and measure the effect on error rate."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,36 @@
+# Connect any LLM to any MCP server without any MCP client.
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `QZ6AreMxMKA` · [watch](https://youtu.be/QZ6AreMxMKA) · **date:** 2025-11-02 · **length:** 6:12 · **format:** tutorial · **quality:** 2/5 · **depth:** intro
+- **speakers:** ? · **orgs:** LangChain, OpenAI, Anthropic, Cursor, Windsurf, Airbnb
+- **topics:** mcp-and-tools, agent-architecture, coding-agents · **tags:** mcp, python, langchain, agent, multi-server, cursor, gitingest, dotenv, airbnb-mcp, tutorial
+
+> A beginner walkthrough of a Python MCP client library that runs an agent over any LLM and any MCP server, so no desktop client is needed. Shows setup, a single-file Airbnb example, multi-server config and Cursor tips.
+
+## Summary
+The speaker presents a Python library that acts as an MCP client inside your own code, so an LLM can call MCP servers without a host app such as Cursor, Windsurf or Claude Desktop. The walkthrough covers installing it in a virtual environment, installing the LangChain integration package for the chosen provider, and storing only that provider's API key in a .env file. The example builds an agent from an MCP config file (an Airbnb server), an LLM and a step limit, then runs a prompt that filters listings by amenities and ratings. The video also covers multi-server config in one file, a service-manager option that lets the agent pick the right server, per-agent tool restrictions and localhost HTTP servers. Coding-assistant tips follow: index the library README as Cursor docs, or flatten the repo into text with gitingest by changing "hub" to "ingest" in the URL. The content is an introductory tutorial with little code shown on screen and no measurements.
+
+## Key ideas
+- **An MCP client can live inside your own code: a library builds an agent that talks to MCP servers, so you are no longer limited to clients such as Windsurf, Cursor or Claude Desktop.** — The speaker says the library works with any LLM the user prefers. Previously MCP needed a specific client app. The library is described as Python-based. ([0:00](https://youtu.be/QZ6AreMxMKA?t=0))
+- **Setup needs only the provider's integration package and that provider's key.** — Create and activate a virtual environment, then install the library with pip3. Add the LangChain OpenAI package for OpenAI or the LangChain Anthropic package for Anthropic. Other providers are listed in linked docs. Put only the matching API key in .env. ([1:22](https://youtu.be/QZ6AreMxMKA?t=82))
+- **The minimal app is four pieces: an MCP client built from a config file, an LLM, an agent with a step cap and a prompt, and a print of the result.** — The agent does the tool calling. The example config is for the Airbnb MCP server. The speaker says the same pattern supports modular apps and autonomous agents, for example a WhatsApp agent, and that the example run produced output even though an error was logged. ([2:45](https://youtu.be/QZ6AreMxMKA?t=165))
+- **Cursor needs the framework's context to write correct code for it.** — Add a Docs entry in Cursor that points at the library's GitHub README, which the speaker calls the full documentation, then reference that docs entry with @ when prompting. For questions about the repo, gitingest flattens it to text. ([3:48](https://youtu.be/QZ6AreMxMKA?t=228))
+- **Multi-server setups use one config file for several servers, and the agent can choose the server itself.** — Setting Use Service Manager to true lets the agent pick the right MCP server dynamically. Tool access per agent can be restricted. HTTP connections to localhost servers are supported. The speaker also mentions a Blender MCP server and Playwright as example servers. ([5:19](https://youtu.be/QZ6AreMxMKA?t=319))
+
+## Techniques
+- **Provider-agnostic MCP agent from a config file** — 1) Confirm Python 3 and create/activate a virtualenv (commands are shown on screen, not spoken). 2) pip3 install the library, plus langchain-openai (OpenAI) or langchain-anthropic (Anthropic); the speaker says 'LangChain OpenAI' and 'LangChain Anthropic'. 3) Create .env with only the chosen provider's API key. 4) Put MCP server definitions in a separate config file (the Airbnb server is the example). 5) In main.py: load_dotenv(), build the MCP client from the config, create the LLM, create an agent with the LLM, the client and a max-steps limit, pass a prompt, print the result. *When:* You want to drive MCP servers from your own script or app with any LLM, without installing a desktop MCP client.
+- **Cap agent steps and filter results in the prompt** — Set the agent's maximum step count when constructing it, so a tool-using loop cannot run forever. Put selection criteria in the prompt (the example filters Airbnb listings for a pool and good ratings) and let the model apply them to the tool output. *When:* The agent calls tools in a loop and you need bounded cost and steps, or you want the model to filter tool results against your criteria.
+- **Multi-server config with a service manager** — Define several MCP servers in one config file. Set 'Use Service Manager' to true so the agent selects the appropriate server per request. Restrict each agent's tool list to limit what it can call. Localhost HTTP servers are supported. *When:* You have more than one MCP server and do not want to hard-code which server answers each request.
+- **Give a coding assistant the library docs** — In Cursor, open Features > Docs, add a new doc, and paste the GitHub README link (not the repo root). Reference it in a prompt with @ and pick the docs entry so generated code follows the framework's API. *When:* You use an AI coding assistant to write code against a library it does not know well.
+- **Flatten a repo for LLM questions (gitingest)** — Take the GitHub repo URL and replace 'hub' with 'ingest' in the host path. This opens the repo in gitingest, which converts it to plain text you can paste into any LLM for questions. *When:* You want an LLM to answer questions about a whole repository and cannot index it directly.
+
+## Hot takes
+- The speaker calls it a 'solid framework' and says possibilities are 'endless', but the video shows one Airbnb run with no measured results.
+- One run logged an error, which the speaker waves off because output still appeared; the cause is not explained.
+- Claims that Blender MCP, Playwright and localhost HTTP servers work are asserted, not shown.
+- Mostly an install walkthrough with little code shown on screen. Substance is thin for a practitioner, so quality is capped at 2.
+
+## Tools mentioned
+MCP (Model Context Protocol), Python, pip3, LangChain, LangChain OpenAI integration, LangChain Anthropic integration, OpenAI, Anthropic, Cursor, Windsurf, Claude Desktop, Airbnb MCP server, Blender MCP server, Playwright, gitingest, WhatsApp MCP (referenced from an earlier video, not shown), Grok and Llama (named as other providers, no libraries shown)
+
+## Relevance to our work
+- **agentos** (1/3): AgentOS fronts agents with an OpenAI-compatible proxy, while this is a client-side MCP library. The provider-agnostic binding and step cap are a useful comparison point for AgentOS tool routing. → *Read the MCP client pattern from the library's docs and check whether AgentOS should expose MCP tools through the proxy, with a max-steps limit on agent loops.*

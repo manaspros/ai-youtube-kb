@@ -1,0 +1,166 @@
+{
+ "one_line": "Shlok Khemani traces how ChatGPT and Claude memory evolved from 2024 to 2026, and argues memory is a product and compute problem, not a RAG problem, with context as the real cap.",
+ "summary": "Shlok Khemani, an independent researcher, spent a year reverse-engineering consumer memory in ChatGPT, Claude, Gemini and Poke, and he has helped teams design their own memory. He walks through three years of evolution: ChatGPT's user-managed fact list (Feb 2024), its background-updated running profile (Apr 2025), Claude's search-only design (Aug 2025), Claude's visible, editable running profile (Sep 2025), and ChatGPT's partial convergence in 2026 (a conversation-search tool and a partly visible profile). His main lessons are that there is no single correct memory architecture, that memory cannot be outsourced and must be built alongside the product, and that memory is a trade-off between update compute and serving cost. He sees continual learning already happening outside the model weights through the profile loop, and questions whether it will move into weights for individuals. His final point is that memory is capped by how much context a product can gather, and that products do not reason over rich sources like email or calendar or notice conflicting facts. The talk is opinionated and anecdotal, with firsthand observations of product behavior rather than benchmarks.",
+ "speakers": [
+  "Shlok Khemani"
+ ],
+ "orgs": [
+  "OpenAI",
+  "Anthropic",
+  "Google"
+ ],
+ "format": "talk",
+ "topics": [
+  "memory",
+  "context-engineering",
+  "product-ux",
+  "agent-architecture"
+ ],
+ "tags": [
+  "consumer memory",
+  "running profile",
+  "dreaming",
+  "ChatGPT memory",
+  "Claude memory",
+  "Gemini memory",
+  "continual learning",
+  "staleness",
+  "context window",
+  "personalization"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Memory in consumer AI has moved away from RAG over embeddings toward a running profile plus on-demand search over past conversations.",
+   "detail": "The speaker says ChatGPT and Claude both evolved independently and neither works as chunk, embed and semantic search. ChatGPT now keeps a profile and gained a search-over-past-conversations tool. Claude's first version used only search tools (by topic and by time period) and had no profile.",
+   "t": "9:55"
+  },
+  {
+   "idea": "Early fact-list memory failed because the user had to manage it and facts went stale.",
+   "detail": "ChatGPT's first version (Feb 2024) stored user-requested facts that were added to every conversation, and the user had to create and delete them. Facts held true when written but not later, for example a trip the speaker never took still appeared.",
+   "t": "2:17"
+  },
+  {
+   "idea": "A background-updated running profile removes the user burden but brings its own accuracy problems.",
+   "detail": "ChatGPT's April 2025 version re-synthesizes a dense profile every few days from recent conversations, which the speaker calls dreaming. Facts stay clue-like and dense. Conflicting sources still leak through: two overlapping trips, one never taken, both appeared as 2025 travel.",
+   "t": "3:20"
+  },
+  {
+   "idea": "Memory should not be outsourced; every top consumer product builds it in-house and it evolves with the product.",
+   "detail": "The speaker argues that memory is part of the product and cannot be an afterthought. He cites several consumer products and agents (ChatGPT, Claude, Gemini, Claude Code, OpenClaw, Hermes), which all use different designs: markdown files, heartbeats, knowledge bases, skills.",
+   "t": "10:56"
+  },
+  {
+   "idea": "Memory is a function of compute: update frequency and profile length set maintenance cost and serving cost.",
+   "detail": "A longer profile costs more on every conversation because it sits in the context window. Frequent updates cost more to maintain. ChatGPT chose a longer profile updated every few days (about 4,000 tokens), and Claude chose a shorter one updated every 24 hours (about 1,000 tokens). The speaker frames these as opposite trade-offs under GPU limits.",
+   "t": "12:26"
+  },
+  {
+   "idea": "Continual learning already happens, but in the profile outside the weights, and the open question is whether it moves into weights for individuals.",
+   "detail": "The loop is: profile shapes conversations, conversations add new information, dreaming folds it back into the profile. The speaker questions whether individuals can afford per-person weight updates, since enterprise costs are shared across many users and individual costs are not.",
+   "t": "13:52"
+  },
+  {
+   "idea": "The real limit is the context a product can gather about a user, and this is a product problem more than a model problem.",
+   "detail": "Speaker example: a Thailand trip decided in person with a partner, with flight and hotel bookings in email. ChatGPT could not reason over the email or the conversation, and it did not notice the conflict or ask about it. He says the LLM could handle this, but products are not designed to fill those gaps.",
+   "t": "15:58"
+  },
+  {
+   "idea": "Users are stuck rebuilding context in every product because each product keeps its own memory of them.",
+   "detail": "The speaker's personal stack includes chatbots, vertical apps, agents and hardware, and none share memory. Rich sources like email, calendar and photos are not used for memory. He asks when personal AI will feel like personal AI.",
+   "t": "17:27"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Running profile with background re-synthesis (dreaming)",
+   "how": "Keep one compact profile of the user. On a schedule (ChatGPT every few days, Claude every 24 hours), an async job reads recent conversations, extracts what matters, and rewrites the profile. Inject the whole profile into every new conversation.",
+   "when": "Consumer or personal assistants where the user should not manage memory. Use it when a small, always-on profile is cheap enough and an update lag is acceptable."
+  },
+  {
+   "name": "Search tools over past conversations instead of stored facts",
+   "how": "Give the model tools to search past conversations by keyword or topic, and by time period (e.g. 'what did we discuss last week'). Nothing is loaded up front; the model retrieves on demand.",
+   "when": "When the model should keep context small by default and pull history only when it decides it needs it. Claude's V1 used this design alone."
+  },
+  {
+   "name": "User-visible and user-editable profile with re-synthesis on edit",
+   "how": "Show the raw profile in settings. Let the user request edits or delete outdated items; each edit triggers a re-synthesis of the profile rather than a raw patch.",
+   "when": "When trust matters and stale or wrong facts are likely. The speaker presents Claude's approach as the more transparent of the two."
+  },
+  {
+   "name": "Dense keyword-clue memory entries",
+   "how": "Pack many facts into each profile entry as short clues. The speaker says current frontier models infer context well from sparse cues, so this saves tokens.",
+   "when": "When the profile has a tight token budget and the model is strong at inference. The speaker observed this in ChatGPT's profile, where sections were about 4,000 tokens."
+  },
+  {
+   "name": "Timestamped memory entries",
+   "how": "Store creation and last-updated times with each memory, as the speaker says Gemini does. This gives the system a way to judge staleness and conflicting dates.",
+   "when": "When facts change over time, such as travel, jobs or preferences, and the system must choose between conflicting records."
+  }
+ ],
+ "tools": [
+  "ChatGPT",
+  "Claude",
+  "Gemini",
+  "Poke",
+  "Claude Code",
+  "OpenClaw",
+  "Hermes"
+ ],
+ "numbers": [
+  {
+   "claim": "ChatGPT memory V1 (fact list, user-managed) launched Feb 2024.",
+   "t": "2:17"
+  },
+  {
+   "claim": "ChatGPT memory V2 (running profile, updated every few days, 16 sections) launched Apr 2025; the profile is almost 4,000 tokens.",
+   "t": "3:20"
+  },
+  {
+   "claim": "Claude's first memory version (Aug 2025) used two search tools and no profile.",
+   "t": "6:20"
+  },
+  {
+   "claim": "Claude's profile added Sep 2025 is about 1,000 tokens and updates every 24 hours, versus ChatGPT's every few days.",
+   "t": "8:27"
+  },
+  {
+   "claim": "Speaker says ChatGPT added a conversation-search tool and a partly visible profile in 2026 (start of June), and deprecated its fact list.",
+   "t": "8:27"
+  },
+  {
+   "claim": "Speaker describes memory as a three-year-old field.",
+   "t": "18:33"
+  }
+ ],
+ "hot_takes": [
+  "Memory cannot be outsourced: serious teams build it in-house alongside the product.",
+  "There is no single way to do memory; RAG over chunked conversations is not what ChatGPT or Claude do.",
+  "The memory gap in consumer AI is a product problem, not an LLM capability problem.",
+  "Continual learning is already here, but it runs in the profile outside the weights.",
+  "The real ceiling on personal memory is the context a product can gather, not the memory architecture."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already plans tiered cross-session memory with conflict resolution and provenance; the talk shows two product designs (running profile and search tools) and names staleness and conflicting facts as the main failures.",
+   "action": "Compare MemoryMesh's tiered memory against a profile-plus-search-tool design. Add created/updated timestamps and a conflict check for stale facts (for example overlapping date ranges) before a fact enters the always-loaded tier."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The talk is about user personalization memory, not agent-run checkpoints. The only overlap is the idea of a compact, editable running summary that is re-synthesized over time.",
+   "action": "Low priority: if ProsHarness keeps cross-run state, consider a short, human-editable summary file that is rebuilt from run logs rather than only raw checkpoints."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Relevant to context engineering: the speaker's claim that memory cost is a serving-cost trade-off (profile length times conversation count) applies to any always-loaded context block.",
+   "action": "Measure the token cost of any always-loaded memory or CLAUDE.md-style block across a typical day of sessions, and compare it with an on-demand search tool."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

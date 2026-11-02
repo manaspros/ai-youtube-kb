@@ -1,0 +1,174 @@
+{
+ "one_line": "Better Stack runs three one-shot coding tasks (portfolio site, HN clone upgrade, three.js voxel game) through OpenCode on Z.ai's GLM 4.5 and Claude Sonnet 4; Claude wins two of three and GLM is pitched as close enough at $3/month.",
+ "summary": "The host compares GLM 4.5 (Z.ai) with Claude Sonnet 4 on three coding tasks of rising difficulty, all run in OpenCode because Claude Code does not switch providers easily. On the easy task (a portfolio site with a contact form and dark mode), both models one-shot a working site, GLM in about 2m20s for roughly $0.12, while Claude cost about three times as much but looked more polished. On the medium task (upgrading a React/Vite Hacker News clone with infinite scroll, caching, live comments and search), Claude produced the stronger result in 10m39s for $0.92, while GLM took 5m28s, failed on load until the console error was pasted back in, and still did not render comments. On the hard task (a three.js Minecraft-like voxel game), GLM produced a playable-ish game in about a minute for about $0.07 and fixed collision and added trees with one follow-up, while Claude's version had inverted, slanting mouse look and a shaking floor and was judged unplayable. The host concludes Claude is slightly better overall, but GLM's coding plan at about $3/month is close enough to recommend for cheap, fast coding; the main gap he names is that GLM 4.5 is not multimodal and the 4.5V variant reads images poorly in OpenCode. The sample is one run per model per task, and the cost figures come from OpenCode's estimates.",
+ "speakers": [
+  "Unnamed Better Stack host"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Z.ai",
+  "Anthropic"
+ ],
+ "format": "review",
+ "topics": [
+  "token-cost-efficiency",
+  "coding-agents",
+  "models-research"
+ ],
+ "tags": [
+  "glm-4.5",
+  "glm-coding-plan",
+  "claude-sonnet-4",
+  "model-comparison",
+  "cost-comparison",
+  "opencode",
+  "one-shot-generation",
+  "threejs",
+  "hands-on-test",
+  "cheap-models"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Z.ai's GLM coding plan is pitched as far cheaper than Claude Pro with more usage, aimed at Claude Code users; the host tests whether cheaper means worse.",
+   "detail": "Speaker's stated figures: about 7x cheaper than Claude Pro, about 3x the usage, roughly 20x cheaper overall. These are his claims and were not verified in the video.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Claude Code is not built to switch easily between model providers, so the comparison runs in OpenCode, which uses a single model per session and shows estimated cost.",
+   "detail": "The GLM family covers Air (106B parameters, with a free Flash variant), the main 355B model, and a cross-lingual variant. All are reasoning models with a 128k context window.",
+   "t": "0:00"
+  },
+  {
+   "idea": "On the easy portfolio task, both models one-shot a working site; GLM is much cheaper and faster, Claude looks better.",
+   "detail": "GLM finished in about 2m20s for about $0.12 and tested the page in a browser on its own. Claude cost about three times as much, had a gradient background, a hamburger menu on mobile and a View My Work button. Speaker gives the round to Claude.",
+   "t": "1:24"
+  },
+  {
+   "idea": "On the medium HN-clone task, Claude delivers a strong result in one pass, while GLM breaks on load and needs a pasted error to recover, and its comments still fail to render.",
+   "detail": "Claude: 10m39s, $0.92, with infinite scroll, live comments and instant search. GLM: 5m28s, initially a blank app because React Query was missing; the fix came from pasting the whole console error back into OpenCode. Comments still did not render.",
+   "t": "4:08"
+  },
+  {
+   "idea": "Cost comparison flips depending on whether the fix cycle is counted: the host first reads GLM as half the cost, then revises to about the same API cost once the extra fix prompts are included.",
+   "detail": "The host notes that estimated OpenCode cost for GLM after the fix round was about equal to Claude's on API pricing, so the apparent cost gap depends on how many repair prompts you need.",
+   "t": "5:35"
+  },
+  {
+   "idea": "On the hard three.js voxel task, GLM is fast and close to usable; Claude's output is judged unplayable because of inverted mouse look and floor shake, and the host says a restart would cost more than patching.",
+   "detail": "GLM: about one minute, about $0.07, walks through walls; one follow-up prompt fixes collision and adds trees (which hover). Claude asked clarifying questions first, took about 6.5 minutes (speaker says six times GLM's time), and added block placement that GLM did not. The host found the mouse behavior hard to describe in a fix prompt.",
+   "t": "7:01"
+  },
+  {
+   "idea": "Verdict: Claude is slightly better across the three tasks, but the host recommends GLM's coding plan at about $3/month as close to state-of-the-art performance for the price, with multimodality as its main gap.",
+   "detail": "Claude won tasks one and two; GLM won task three. GLM 4.5 is not multimodal, and the GLM 4.5V model did not read images well inside OpenCode.",
+   "t": "9:59"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Same-prompt head-to-head in one harness",
+   "how": "Give identical prompts to each model inside the same agent harness (here OpenCode), record time and estimated cost per run, and judge the result by running it. Use separate runs per model so the results do not leak across sessions.",
+   "when": "Choosing a cheaper coding model against a baseline without a formal benchmark, when you care about time, cost and whether the output runs."
+  },
+  {
+   "name": "Paste the runtime error back into the agent",
+   "how": "When a generated app fails to load, copy the full browser console error into the same agent session and ask it to fix that error. The host did this when the GLM build had a missing dependency and a blank page.",
+   "when": "Early failures on a one-shot build, where the error message is more useful to the agent than a description of the symptom."
+  },
+  {
+   "name": "Ask for clarifying questions before the build",
+   "how": "Put in the prompt that the agent should ask clarifying questions before it starts, if it has any. Answer them, then let it build. The host used this with GLM and Claude; Claude asked about texture choice and block placement.",
+   "when": "Specs that leave design choices open, such as art style, controls or rules, where one-shot output would otherwise guess."
+  },
+  {
+   "name": "Put the spec in a prompt .md file",
+   "how": "Store the task description in a markdown file and tell the agent to run that file as its prompt, instead of typing a long prompt inline. The host did this with Claude on the medium task.",
+   "when": "Reusing the same spec across models so the comparison stays fair, or keeping a task description you may rerun."
+  },
+  {
+   "name": "Targeted follow-up prompts for specific bugs, and restart when the bug is vague",
+   "how": "For a concrete bug such as collision or a missing feature, send a short follow-up naming that behavior; the host's GLM collision fix and tree addition worked this way. For bugs you cannot describe precisely (the slanting mouse look, shaking floor), the host advises regenerating from scratch instead of patching.",
+   "when": "Deciding between patching generated code and regenerating it, based on whether you can describe the bug in a way the agent can act on."
+  }
+ ],
+ "tools": [
+  "GLM 4.5 (Z.ai)",
+  "GLM 4.5 Air",
+  "GLM 4.5 Flash",
+  "GLM 4.5 355B",
+  "GLM 4.5V",
+  "Z.ai GLM coding plan",
+  "Claude Sonnet 4",
+  "Claude Pro",
+  "Claude Code",
+  "OpenCode",
+  "React",
+  "Vite",
+  "React Query",
+  "Three.js",
+  "WebSockets (mentioned in console debugging)"
+ ],
+ "numbers": [
+  {
+   "claim": "GLM coding plan claimed to be about 7x cheaper than Claude Pro, with about 3x the usage and about 20x cheaper overall (speaker's figures, not verified)",
+   "t": "0:00"
+  },
+  {
+   "claim": "GLM 4.5 Air has 106B parameters; the main GLM 4.5 has 355B; all are reasoning models with a 128k context window",
+   "t": "0:00"
+  },
+  {
+   "claim": "Portfolio site: GLM 4.5 finished in about 2m20s for about $0.12",
+   "t": "1:24"
+  },
+  {
+   "claim": "Portfolio site: Claude Sonnet 4 cost almost three times GLM's run",
+   "t": "2:44"
+  },
+  {
+   "claim": "HN clone upgrade: Claude Sonnet 4 finished in 10m39s for $0.92",
+   "t": "4:08"
+  },
+  {
+   "claim": "HN clone upgrade: GLM 4.5 finished in 5m28s, about half Claude's time (the host first said about half the cost, then revised to roughly equal API cost after fix rounds)",
+   "t": "4:08"
+  },
+  {
+   "claim": "Voxel game: GLM 4.5 finished in about one minute for about $0.07",
+   "t": "7:01"
+  },
+  {
+   "claim": "Voxel game: Claude Sonnet 4 took about 6.5 minutes, which the host called six times GLM's time",
+   "t": "8:29"
+  },
+  {
+   "claim": "GLM coding plan costs about $3 a month (just over two pounds, per the host)",
+   "t": "9:59"
+  }
+ ],
+ "hot_takes": [
+  "The title says the model 'outperforms Claude Sonnet 4', but in the video's own three-task test Claude wins two tasks and the host calls Claude 'slightly better' overall.",
+  "Each model ran once per task, so the verdicts rest on single runs. Cost figures come from OpenCode's estimates, not billed usage.",
+  "The 'about half the cost' claim for the HN task is later revised to about equal cost once the repair prompts are counted, so the headline cost gap is weaker than the early claim.",
+  "The 7x / 20x cost multiples are the speaker's figures from the plan pitch and are not checked in the video.",
+  "No sponsorship disclosure appears in the transcript, but the video promotes a specific paid plan, so the claims should be checked against Z.ai's pricing page."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Cheap-model comparison relevant to the cheap-model pipeline interest, but GLM is a hosted API and does not touch the local InferCraft or vLLM stack.",
+   "action": "Add GLM 4.5 Air as a candidate in a small eval with the same tasks and grader against Haiku before routing any AgentOS traffic to it."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The host notes Claude Code is not built to switch between providers, and ProsHarness wraps the Claude Code CLI, so multi-provider cheap steps would need another runner.",
+   "action": "If ProsHarness ever needs non-Claude models for cheap steps, check whether its runner can switch providers the way OpenCode does; otherwise keep it Claude-only and note the limit."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

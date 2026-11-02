@@ -1,0 +1,143 @@
+{
+ "one_line": "Allen Pike (Forestwalk Labs) on why voice input with visual output beats voice-to-voice for AI now, and the latency tactics (fast small model, eager short inference turns, stable prompt prefixes) that make it feel responsive.",
+ "summary": "Allen Pike argues that voice is a good input for AI but visual output is the better response channel, since current voice-in, voice-out systems feel slow and dumb. He describes a voice agent Forestwalk Labs runs inside its team calls, which acted on a request (filing a Linear issue) in about a second. The core problem is latency: full voice conversation needs roughly 200 ms, while a visual response that appears within about one second still feels seamless to the user. He reports that a small GPT-5 Mini had P95 latencies of 5 to 10 seconds, so he prefers a Haiku-class model with a latency-focused inference platform. The responding model should hand heavy work to a larger model asynchronously and interleave the results. Three practices make the loop work: a fast model with a short context, inference every one or two seconds while the user is still speaking, and a stable prompt prefix so provider prefix caching cuts cost and time. The talk is short, practitioner-level, and gives a few concrete numbers, with few specifics on architecture details.",
+ "speakers": [
+  "Allen Pike"
+ ],
+ "orgs": [
+  "Forestwalk Labs",
+  "Thinking Machines"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "infra-cost-scaling",
+  "product-ux"
+ ],
+ "tags": [
+  "voice-agents",
+  "latency",
+  "prompt-caching",
+  "visual-output",
+  "model-tiering",
+  "realtime",
+  "turn-taking",
+  "generative-ui"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Voice in, visuals out is the practical pattern now",
+   "detail": "Voice is a high-bandwidth input, but voice output is hard to get right. Visual output has a larger latency budget and can carry rich HTML, controls and illustrations, so the speaker favors it as the response channel.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Current voice interfaces feel slow and dumb",
+   "detail": "Most people's experience with voice assistants is poor. The speaker's view is that the problem is model speed and capability, not that speaking is a bad input.",
+   "t": "2:36"
+  },
+  {
+   "idea": "Latency budgets set the design",
+   "detail": "About 100 ms feels instant, about 1 s is the limit before users lose their train of thought, and full voice-to-voice conversation needs about 200 ms or less. Visual output within about a second is within the attention span and feels seamless.",
+   "t": "5:41"
+  },
+  {
+   "idea": "Use a fast small model, with an async handoff for heavy work",
+   "detail": "The real-time responder must be Haiku-class or a small open model on a latency-focused platform. Heavy reasoning goes to a larger model that runs asynchronously, and its results are interleaved back into the live session.",
+   "t": "8:31"
+  },
+  {
+   "idea": "Send inference eagerly while the user is still talking",
+   "detail": "Waiting for silence wastes most of the latency budget. Sending inference every one or two seconds during speech lets the agent act on partial, mid-sentence changes.",
+   "t": "9:59"
+  },
+  {
+   "idea": "Keep the prompt prefix stable to use prefix caching",
+   "detail": "If the first ~90% of each request is identical, providers can serve it from cache, which the speaker says can be up to 90% cheaper and faster. Only the final ~10% should change, and output tokens should be kept low. He applies the same rule to long-running and frequently running agents.",
+   "t": "11:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Two-tier model split (fast responder plus async thinker)",
+   "how": "A Haiku-class or small open model handles the live turn with a short context. It hands off heavier work as an async message to a larger model, then weaves the result into the live conversation when it arrives.",
+   "when": "Real-time voice or chat UIs where some requests need deep reasoning but the user must not wait on the reasoning."
+  },
+  {
+   "name": "Eager short-interval inference",
+   "how": "Instead of waiting for end-of-speech silence, run inference every one or two seconds while the user is speaking, and let the model update its action as the utterance changes.",
+   "when": "Voice turn-taking where silence detection adds seconds of latency and users revise mid-sentence."
+  },
+  {
+   "name": "Prefix-stable context layout for caching",
+   "how": "Keep the first ~90% of the prompt identical across requests (system prompt, tool definitions, stable context) and append the variable part at the end. Minimise output tokens.",
+   "when": "Any frequently running or long-running agent that calls a provider with prefix caching."
+  },
+  {
+   "name": "Visual response envelope",
+   "how": "Answer with on-screen visuals, such as generated HTML, interactive controls or illustrations, instead of spoken audio, since the visual only needs to appear within about a second.",
+   "when": "Products where the user can look at a screen and audio output would miss the ~200 ms conversational budget."
+  }
+ ],
+ "tools": [
+  "Linear",
+  "Slack",
+  "GPT-5 Mini",
+  "Haiku"
+ ],
+ "numbers": [
+  {
+   "claim": "Human-perceived instant response is about 100 ms; the limit before users lose their train of thought is about 1000 ms",
+   "t": "5:41"
+  },
+  {
+   "claim": "Full voice-in, voice-out conversation needs about 200 ms latency or less",
+   "t": "5:41"
+  },
+  {
+   "claim": "GPT-5 Mini P95 latencies of about 5000 to 10000 ms in the speaker's production use, despite being cheaper than the larger model",
+   "t": "8:31"
+  },
+  {
+   "claim": "Inference should run every 1 to 2 seconds while the user is speaking",
+   "t": "9:59"
+  },
+  {
+   "claim": "Prefix caching can make inference up to 90% cheaper and faster when the start of the context is unchanged",
+   "t": "11:20"
+  },
+  {
+   "claim": "Thinking Machines demoed a model doing continuous inference in 200 ms time slices (a few weeks before the talk)",
+   "t": "7:04"
+  }
+ ],
+ "hot_takes": [
+  "Voice as an AI input is controversial, but speaking is the most natural high-bandwidth channel, and the fix is latency rather than dropping voice.",
+  "Most voice assistant experiences today are both slow and dumb, and that combination is why people are down on voice input.",
+  "Voice-to-voice with novel architectures is not needed yet: voice in with visual out already lands inside the attention span.",
+  "Small cheap models are not enough for real-time voice; P95 latency is the deciding metric, and in the speaker's testing Haiku-class models beat a smaller GPT-5 variant."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "InferCraft serves models, and the talk's point that stable prompt prefixes drive provider caching applies to the proxy and memory layers. The talk gives no measurements for self-hosted vLLM.",
+   "action": "In the L1 proxy or L2A context assembly, check that the system prompt, tool schemas and retrieved memory are ordered stable-first so cached prefix hits are maximised; log cache hit rate per request."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs long Claude Code sessions and resumes them from checkpoints. Keeping the prefix stable across resumes would help caching, but the talk does not discuss checkpoint or resume architecture.",
+   "action": "Check whether checkpoint resume re-sends a changing preamble (timestamps, plan state) at the start of the prompt; move volatile content to the end so the cached prefix survives resumes."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The two-tier pattern (small fast model in the loop, larger model async for heavy work) and the prefix-caching rule both apply to cheap-model pipelines. The talk's latency numbers are anecdotal.",
+   "action": "Prototype a two-tier entity-resolution or extraction step: a Haiku-class model answers quick triage calls on the hot path and queues hard cases to a larger model, then measure P95 and cache hit rate."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

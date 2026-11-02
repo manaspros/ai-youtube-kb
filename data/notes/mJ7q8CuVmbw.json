@@ -1,0 +1,193 @@
+{
+ "one_line": "Temporal developer advocate Shy Ruparel argues agent reliability is a state and recovery problem, not a model problem, and demos durable execution resuming a crashed payout workflow with a human approval.",
+ "summary": "Shy Ruparel of Temporal presents survey data from 554 engineers actively using AI agents, framed around four gaps: usage vs production, trust vs reliability, prototype vs enterprise deployment, and seeing vs recovering. Most of the numbers come from Temporal's own State of Development Survey, so they are self-reported and vendor-run. The core argument is that agent failures are routine, so the goal is making failures cost nothing, which requires durable state rather than better observability alone. A live demo runs a nine-stage payout workflow with an LLM fraud investigation and a human approval, kills the worker mid-run, approves while no worker is alive, and resumes without re-running completed LLM or tool steps. The talk maps the seven top blockers respondents named (state, debugging, cost, retries, approvals, long-running work, crash recovery) onto Temporal primitives, and closes by claiming OpenAI Codex and Replit agents run on Temporal.",
+ "speakers": [
+  "Shy Ruparel"
+ ],
+ "orgs": [
+  "Temporal",
+  "KPMG",
+  "Keycard",
+  "OpenAI",
+  "Replit"
+ ],
+ "format": "review",
+ "topics": [
+  "agent-architecture",
+  "observability",
+  "token-cost-efficiency",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "durable-execution",
+  "temporal",
+  "human-in-the-loop",
+  "retries",
+  "crash-recovery",
+  "agent-reliability",
+  "state-management",
+  "survey",
+  "fintech",
+  "payments",
+  "live-demo"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent use is far ahead of agents in production. Daily agent use rose from about 47% (2025 survey) to 80.8%, but only 49.1% say they run agents in production or that agents are core to how they ship.",
+   "detail": "The speaker treats the roughly 30-point gap as the first blocker. Production adoption is the bottleneck, not usage.",
+   "t": "3:31"
+  },
+  {
+   "idea": "Trust is high but failures are frequent. 85.5% trust agent output at least somewhat, yet 41.1% hit agent issues daily or worse and 16.4% hit them hourly.",
+   "detail": "The speaker's conclusion is that failure has to be planned for, so the goal is making failures cost nothing rather than reaching zero failures.",
+   "t": "4:37"
+  },
+  {
+   "idea": "Experience and agent count do not fix reliability. Teams that called themselves successful were 1.7x more likely to report continuous issues, and agent count was not correlated with issue frequency.",
+   "detail": "The speaker guesses successful teams simply look for issues harder. He flags this as a question for next year's survey, so it is speculation.",
+   "t": "6:01"
+  },
+  {
+   "idea": "Respondents' top blockers are state, not models. Tracking state across services was the top blocker at 35.7%, debugging 30.9%, and 22.2% lose progress and redo work after crashes or restarts.",
+   "detail": "Observability tools tell you an agent failed. The gap is recovering from the failure, which in practice means a human reading traces and fixing state by hand.",
+   "t": "8:30"
+  },
+  {
+   "idea": "Durable execution splits deterministic workflow code from side effects. Workflow code decides the next step, while LLM calls, tool calls and bank API calls run as recorded activities, so completed work is not repeated after a crash.",
+   "detail": "Each AI step is its own activity with a stored result. If a worker dies mid-activity, only that activity is retried; earlier results are replayed from history.",
+   "t": "13:03"
+  },
+  {
+   "idea": "A human approval is modeled as a signal recorded in workflow history. It is captured even when no worker is running and processed when a worker comes back, so a long-running wait survives restarts.",
+   "detail": "The demo approves the transaction while all workers are stopped and the signal is still picked up on resume.",
+   "t": "15:30"
+  },
+  {
+   "idea": "The AI step is bounded. If the model fails, the payout continues without the brief, so a model outage does not block money movement.",
+   "detail": "The speaker says the same code could wait a year for human approval and resume correctly.",
+   "t": "19:16"
+  },
+  {
+   "idea": "Bad model output is treated as an activity failure. The speaker's pattern is to generate, validate, throw away bad output, and let the retry policy run the activity again.",
+   "detail": "Retries are declared once in configuration and apply to every call, with no retry loop in the business code.",
+   "t": "20:33"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Durable workflow with deterministic orchestration and recorded activities",
+   "how": "Keep the workflow function deterministic (it only decides what happens next, reading state from plain variables). Wrap every non-deterministic or side-effecting call (LLM call, agent tool call, bank or payment API) as an activity whose result is persisted in the event history. On crash, the platform replays history, so completed activities do not re-run and no tokens are re-spent. Only the in-flight activity is retried.",
+   "when": "Multi-step agent workflows that span minutes to days (payouts, loan origination, KYC, fraud review) where a crash must not repeat paid LLM calls or side effects."
+  },
+  {
+   "name": "Human approval as a signal with a long timer",
+   "how": "The workflow waits on an approval signal (in Temporal, an event sent to the workflow). The approval is recorded in history even when no worker is alive, and the workflow resumes from the last successful step when a worker starts. The wait can be arbitrarily long; the speaker says the same code could wait a year.",
+   "when": "Any agent action that needs a human decision before a side effect, such as a payout, a deploy or a destructive change."
+  },
+  {
+   "name": "Declare the retry policy once, not in loops",
+   "how": "Set a retry policy in configuration once; it applies to every activity in the workflow. For LLM steps, raise an activity failure when output is invalid so the same policy re-runs the call. The speaker's example shows no loop in the business code.",
+   "when": "Flaky model or tool calls where retries should be uniform and invisible to the business logic."
+  },
+  {
+   "name": "Degrade the AI step, not the transaction",
+   "how": "Make the AI investigation an optional, bounded step. If the model call fails or times out after its retries, the workflow proceeds without the AI output (the demo proceeds without the brief) instead of blocking the core process.",
+   "when": "Money-moving or critical paths where an AI enrichment step must never be a hard dependency."
+  },
+  {
+   "name": "One event history for both debugging and replay",
+   "how": "Use the same recorded history that the worker replays as the debugging record in the UI, rather than separate logs, traces and state tables that drift apart. The speaker's argument is that this closes the gap between seeing a failure and recovering from it.",
+   "when": "When you need to explain what an agent did, and resume it, from the same source of truth."
+  }
+ ],
+ "tools": [
+  "Temporal",
+  "Qwen (run locally as a 36B and a 9B model, per auto-captions)",
+  "OpenAI Codex (cited as running on Temporal)",
+  "Replit Agent (cited as running on Temporal)",
+  "Keycard (talk referenced, not described)"
+ ],
+ "numbers": [
+  {
+   "claim": "$3 trillion in corporate productivity gains in 2025, per a KPMG Agentic AI report cited by the speaker; financial services leads.",
+   "t": "0:08"
+  },
+  {
+   "claim": "94% of fintechs say AI is core to how the business operates; 62% of those teams lose measurable time or revenue to reliability issues.",
+   "t": "1:06"
+  },
+  {
+   "claim": "554 engineers and engineering leaders actively using agents surveyed (second year of the State of Development Survey); about two-thirds US, one-third UK and EMEA.",
+   "t": "2:11"
+  },
+  {
+   "claim": "Daily agent use: about 47.3% in the 2025 survey, 80.8% in the current one.",
+   "t": "3:31"
+  },
+  {
+   "claim": "49.1% run agents in production or say agents are core to how they ship.",
+   "t": "3:31"
+  },
+  {
+   "claim": "85.5% trust agent output at least somewhat; about a quarter trust it almost completely; almost none distrust it.",
+   "t": "4:37"
+  },
+  {
+   "claim": "41.1% hit agent issues daily or more; 16.4% hit them every hour.",
+   "t": "4:37"
+  },
+  {
+   "claim": "Teams calling themselves successful were 1.7x more likely to hit issues continuously; agent count and issue frequency were not correlated.",
+   "t": "6:01"
+  },
+  {
+   "claim": "About 40% of teams say security is what blocks them from autonomous agents (the speaker defers to a separate talk).",
+   "t": "6:01"
+  },
+  {
+   "claim": "51.3% can take an AI prototype to production-ready code in hours or faster; about 1 in 5 at companies with 5,000+ employees says it takes months, versus about 1 in 20 elsewhere.",
+   "t": "7:18"
+  },
+  {
+   "claim": "Top blockers: tracking state across services 35.7%, isolating and debugging issues 30.9%, losing progress and redoing work after crashes or restarts 22.2%.",
+   "t": "8:30"
+  },
+  {
+   "claim": "Only 13% are very confident they can observe and debug AI workflows at scale.",
+   "t": "9:50"
+  },
+  {
+   "claim": "80% say cost limits how they use agents.",
+   "t": "14:25"
+  },
+  {
+   "claim": "Demo payout is a nine-stage workflow for a $2,500 transfer, with an agent fraud investigation and a human approval step.",
+   "t": "10:53"
+  }
+ ],
+ "hot_takes": [
+  "Vendor talk: Temporal runs the survey, the sample is self-reported, and the demo is a Temporal workflow, so the case for Temporal is the conclusion. The survey data is useful but not independent; quality is capped at 3 for that reason.",
+  "The 1.7x 'successful teams hit more issues' finding is explained by the speaker's own guess (they look harder for issues). Treat it as a question, not a finding.",
+  "The claim that OpenAI Codex and Replit agents run on Temporal is asserted in passing with no source or detail in the talk.",
+  "The 'you can't skill your way out of this' line is the speaker's framing. The data shows agent count is uncorrelated with issues, which supports it only weakly.",
+  "Live demo was partly simulated: the speaker switched to a pre-recorded video for the approve-while-dead step after the live worker start lagged. The recording is what showed the behavior."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 3,
+   "why": "ProsHarness's checkpoint/resume of long Claude Code runs is the same problem: completed LLM and tool steps must not re-run after a crash, and approvals must survive worker restarts.",
+   "action": "Model each ProsHarness plan/critique/debate step as an activity with a persisted result and an idempotent resume path. Evaluate whether a durable-execution layer (Temporal or a similar design) fits the checkpoint design, and read Temporal's docs on the workflow-versus-activity split."
+  },
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS has human-in-the-loop and budget gating through the proxy, but no durable record of multi-step agent runs. The talk's bounded-AI-step pattern and recorded approval signals apply to its exec-gate guardrails.",
+   "action": "Design AgentOS's exec-gate approvals so the approval decision is stored as an event that survives a proxy restart, and make the AI enrichment step non-blocking when its model call fails."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

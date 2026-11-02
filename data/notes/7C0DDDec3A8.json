@@ -1,0 +1,212 @@
+{
+ "one_line": "Explainer on DeepSeek V4: how two new compressed attention mechanisms (CSA and HCA) cut long-context KV cache and compute, why that makes $0.435 per million input tokens possible, and what the 58-page report implies for other labs.",
+ "summary": "The video explains DeepSeek V4 (released late April 2026 with a free 58-page technical report) and argues its very low long-context price comes from architecture, not subsidy. The speaker walks through why standard attention makes 1M-token inference expensive (memory grows linearly, compute quadratically) and how V4 attacks both with two mechanisms: compressed sparse attention (CSA, 4 tokens per learned cache entry plus a lightweight block indexer) and heavily compressed attention (HCA, 128 tokens per entry, attended densely), alternated across layers with an uncompressed 128-token sliding window. Reported measurements at 1M tokens are KV cache at about 10% (Pro) and 7% (Flash) of V3.2, and per-token FLOPs at about 27% of V3.2 for Pro. Other training choices mentioned are the Muon optimizer for most weights, manifold-constrained hyperconnections, FP4 quantization-aware training on MoE experts, all run on Huawei Ascend 910C chips, and post-training via separate domain specialists distilled into one model. On benchmarks the speaker repeats the paper's own claims: V4 Pro Max is the strongest open-weights model on most evals, and it trails frontier closed models on reasoning by roughly 3 to 6 months. The speaker's closing thesis is that DeepSeek competes on cost per token rather than leaderboard scores.",
+ "speakers": [
+  "Kai Explains host (name not stated in transcript)"
+ ],
+ "orgs": [
+  "DeepSeek",
+  "Moonshot AI",
+  "Huawei",
+  "Google",
+  "OpenAI",
+  "Anthropic"
+ ],
+ "format": "news",
+ "topics": [
+  "models-research",
+  "inference-serving",
+  "token-cost-efficiency",
+  "training-finetuning-rl"
+ ],
+ "tags": [
+  "deepseek-v4",
+  "csa",
+  "hca",
+  "kv-cache",
+  "sparse-attention",
+  "mixture-of-experts",
+  "fp4",
+  "muon-optimizer",
+  "distillation",
+  "long-context",
+  "open-weights",
+  "pricing",
+  "huawei-ascend",
+  "reasoning-modes"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Long-context cost is a memory and compute problem, not just a feature",
+   "detail": "In standard attention every token attends to every other token, so memory grows linearly and compute grows quadratically with context. At 1M tokens the model scans a huge KV cache for every generated token, which is why most labs cap context or price it high.",
+   "t": "2:33"
+  },
+  {
+   "idea": "CSA compresses every four tokens into one learned cache entry",
+   "detail": "Instead of keeping one KV entry per token, each token emits a candidate and a weight, and the model learns what to keep. A lightweight indexer then selects only the most relevant compressed blocks for each query, so attention reads a subset rather than everything.",
+   "t": "5:09"
+  },
+  {
+   "idea": "HCA trades precision for a cheap dense global read",
+   "detail": "HCA compresses every 128 tokens into one entry (about 32x lighter than CSA), small enough to attend over densely. It is a cheap summary of the whole context rather than a tool for pulling one fact. Both branches keep the last 128 tokens uncompressed, and layers alternate between CSA and HCA.",
+   "t": "5:09"
+  },
+  {
+   "idea": "The savings are measured at 1M tokens and compound on both memory and compute",
+   "detail": "Per the paper, V4 Pro's KV cache is about 10% of V3.2's and Flash's about 7%. Against GQA (used in Llama 2 and 3) the cache reduction is roughly 34x for Pro and 49x for Flash. Pro's single-token FLOPs are about 27% of V3.2's. The speaker ties the $0.435 input price to these two drops together.",
+   "t": "6:36"
+  },
+  {
+   "idea": "The price is presented as a structural cost advantage, not a loss-leader",
+   "detail": "The speaker compares the budget for Claude Opus 5 over four months with V4 Pro over roughly five to seven years, considers subsidy versus architecture, and concludes it is the architecture. The pricing claim rests on the paper's numbers, which the speaker does not independently verify.",
+   "t": "1:19"
+  },
+  {
+   "idea": "Post-training with separate specialists, then distillation",
+   "detail": "Instead of running RL across all domains in one model, DeepSeek went back to the base checkpoint and trained specialists for math, coding, agent tasks and instruction following in parallel. A final model was then distilled from all of them, avoiding reward-signal conflicts between domains.",
+   "t": "8:02"
+  },
+  {
+   "idea": "FP4 quantization-aware training and non-NVIDIA hardware",
+   "detail": "FP4 behaviour was simulated during training on the MoE expert weights, so they survive low-precision serving without a post-hoc quality hit. Training ran on Huawei Ascend 910C chips rather than NVIDIA hardware, which the speaker says most write-ups skip.",
+   "t": "8:02"
+  },
+  {
+   "idea": "Cheap inference makes long thinking a default, not a luxury",
+   "detail": "V4 Flash (13B active parameters) is reported to match GPT 5.2 and Gemini 3.0 Pro on reasoning when given a larger thinking budget. The model has three modes: non-thinking, think high, and think max. The speaker argues this changes how you design apps because extra reasoning becomes affordable per query.",
+   "t": "10:51"
+  },
+  {
+   "idea": "The paper is candid about the gap to frontier closed models",
+   "detail": "V4 Pro Max is described as the strongest open-weights model on most benchmarks and, per the paper, beats Gemini 3.1 Pro on long-context academic benchmarks. On the hardest reasoning evals it trails GPT 5.4 and Gemini 3.1 Pro, by roughly 3 to 6 months according to the paper.",
+   "t": "9:22"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Learned KV compression over fixed token blocks (CSA)",
+   "how": "Group every 4 tokens into one cache entry. Each token emits a candidate vector and a scalar weight, and the entry is their weighted combination, so the model learns what to preserve. Add a lightweight indexer that scores compressed blocks against the current query and attends only to the top ones.",
+   "when": "Long-context serving where the KV cache, not the weights, is the memory bottleneck and you can afford to train the compression (or fine-tune into it). The video does not give implementation code."
+  },
+  {
+   "name": "Heavy block compression with dense attention for global context (HCA)",
+   "how": "Compress every 128 tokens into one summary entry and attend densely over all of them. This is a cheap global read rather than precise retrieval.",
+   "when": "When you need the model to be aware of the whole document cheaply and fine-grained recall is handled by another branch."
+  },
+  {
+   "name": "Three-timescale memory layout",
+   "how": "Keep the most recent 128 tokens uncompressed in a sliding window, use CSA blocks for mid-range context, and HCA summaries for long history. Alternate CSA and HCA layers through the model.",
+   "when": "Designing an attention stack for 1M-token contexts where recent tokens matter most for next-token prediction."
+  },
+  {
+   "name": "Specialist post-training then distillation",
+   "how": "Start from the base checkpoint and run RL separately per domain (math, coding, agents, instruction following). Distill all specialists into one student model.",
+   "when": "When multi-objective RL reward signals interfere with each other inside one model."
+  },
+  {
+   "name": "FP4 quantization-aware training on MoE experts",
+   "how": "Simulate FP4 numerics during training of the expert weights rather than quantizing after training, so the weights learn to tolerate low precision. Apply it to MoE expert weights, which dominate serving cost.",
+   "when": "Serving large sparse MoE models where expert weight movement and compute drive cost. Relevant to planned NVFP4 work."
+  },
+  {
+   "name": "Spend thinking tokens as a default when inference is cheap",
+   "how": "Use a non-thinking mode for direct answers, think-high for explicit reasoning, and think-max with longer context for hard queries. Set the budget per call rather than reserving extended reasoning for a premium tier.",
+   "when": "When per-token cost is low enough that a smaller model with a larger thinking budget beats a larger model without one."
+  }
+ ],
+ "tools": [
+  "DeepSeek V4 Pro (1.6T total / 49B active)",
+  "DeepSeek V4 Flash (284B total / 13B active)",
+  "DeepSeek V3.2",
+  "Kimi K3 (2.8T, July 2026)",
+  "Kimi K2.6",
+  "GLM 5.1",
+  "Claude Opus 5",
+  "GPT 5.4",
+  "GPT 5.2",
+  "Gemini 3.1 Pro",
+  "Gemini 3.0 Pro",
+  "Muon optimizer",
+  "AdamW (captioned as 'AtomW'; used for embeddings and prediction heads)",
+  "GQA (Llama 2 / Llama 3 attention)",
+  "FP4 quantization-aware training",
+  "Manifold-constrained hyperconnections (MHC)",
+  "Huawei Ascend 910C",
+  "Mixture-of-experts architecture"
+ ],
+ "numbers": [
+  {
+   "claim": "$0.435 per million input tokens for a 1.6T-parameter model with native 1M context (V4 Pro)",
+   "t": "0:00"
+  },
+  {
+   "claim": "V4 Pro: 1.6T total parameters, 49B active; Flash: 284B total, 13B active; both have native 1M context",
+   "t": "1:19"
+  },
+  {
+   "claim": "Kimi K3 (July 2026) at 2.8T parameters now holds the open-model size record",
+   "t": "1:19"
+  },
+  {
+   "claim": "Budget that runs Claude Opus 5 for four months runs V4 Pro for roughly 5 to 7 years (speaker's comparison)",
+   "t": "1:19"
+  },
+  {
+   "claim": "CSA compresses every 4 tokens into one entry; HCA compresses every 128 tokens, about 32x lighter than CSA",
+   "t": "5:09"
+  },
+  {
+   "claim": "Sliding window keeps the 128 most recent tokens uncompressed",
+   "t": "5:09"
+  },
+  {
+   "claim": "At 1M tokens, KV cache is about 10% of V3.2 for Pro and about 7% for Flash",
+   "t": "6:36"
+  },
+  {
+   "claim": "Versus GQA, KV cache reduction at 1M tokens is about 34x for Pro and 49x for Flash",
+   "t": "6:36"
+  },
+  {
+   "claim": "At 1M context, V4 Pro needs about 27% of V3.2's single-token inference FLOPs",
+   "t": "6:36"
+  },
+  {
+   "claim": "Per the paper, V4 Pro trails frontier closed models on Reasoning by roughly 3 to 6 months",
+   "t": "9:22"
+  },
+  {
+   "claim": "V4 Flash reportedly matches GPT 5.2 and Gemini 3.0 Pro on reasoning with a larger thinking budget",
+   "t": "10:51"
+  },
+  {
+   "claim": "A 75% permanent price cut is mentioned only in the closing recap, with no source or detail given",
+   "t": "13:25"
+  }
+ ],
+ "hot_takes": [
+  "The pricing is an architecture story, not a subsidy: the speaker's core claim, based on the paper's KV cache and FLOPs numbers.",
+  "DeepSeek is racing on cost per million tokens rather than on the hardest eval scores, and cost advantages compound more than eval wins.",
+  "Publishing a 58-page engineering spec for free is a sign of confidence, and the architectural ideas will spread to other labs within a year.",
+  "Inference got cheap enough that letting a model think longer should be a default optimization, not a premium option.",
+  "The paper's honesty about the reasoning gap (3 to 6 months behind frontier closed models) is unusual and more useful than most lab marketing."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft plans pluggable KV-cache strategies (H2O, CPU offload, LMCache) and NVFP4 quantization on one RTX 5090. V4's learned compression (CSA/HCA) and FP4 QAT are directly comparable designs for that layer.",
+   "action": "Read the DeepSeek V4 technical report sections on CSA, HCA and FP4 QAT, then add a KV-footprint-per-token-at-1M-context benchmark to InferCraft so a learned-compression strategy can be compared against H2O and offload."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The specialists-then-distill pattern and the idea of making extra reasoning cheap map loosely onto ProsHarness plan, critique and debate stages, but the video is about model training, not harness design.",
+   "action": "Optionally test whether cheap-model specialist subagents for plan and critique, with a merge step, match a single high-thinking-budget call in ProsHarness."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

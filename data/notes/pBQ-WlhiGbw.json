@@ -1,0 +1,127 @@
+{
+ "one_line": "Tutorial on two reusable wrapper functions for Next.js server actions: one validates FormData with Zod, the other also checks a Better Auth session before the action runs.",
+ "summary": "The presenter shows a middleware-style pattern for Next.js server actions that moves input validation and login checks out of each action body. A validatedAction wrapper takes a Zod schema and a handler, converts the incoming FormData to an object, runs safeParse, and returns the first error message on failure or calls the handler with the parsed data on success. A second wrapper, validatedActionWithUser, repeats this and adds a Better Auth session lookup via Next.js headers(); it throws an error when no user is found, which the presenter prefers so the attempt shows up in logs. The pattern is credited to the Next.js SaaS starter kit and to Lee Robinson. The demo converts a sign-up action to the wrapper, shows a password-length error surfacing in a useActionState form, then wraps a login action with the auth variant. The content is general web-development tooling with no AI or agent component.",
+ "speakers": [
+  "Unnamed Better Stack presenter"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools",
+  "security-guardrails"
+ ],
+ "tags": [
+  "nextjs",
+  "server-actions",
+  "zod",
+  "input-validation",
+  "authentication",
+  "better-auth",
+  "typescript",
+  "middleware-pattern",
+  "react-useActionState",
+  "dry"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Separate validation and auth from action bodies by wrapping each server action in a reusable higher-order function, so actions receive already-validated data.",
+   "detail": "The presenter says this is DRY: the action body only handles business logic, and the same wrapper is applied to every action that needs it. The pattern is credited to the Next.js SaaS starter kit and to Lee Robinson.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Name the helper file something other than middleware.ts to avoid confusion with Next.js route middleware.",
+   "detail": "The presenter says the starter kit calls it middleware.ts, but he prefers action-helpers because this wrapper is a separate concept from Next.js middleware.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Use one standard result type for every action so the client can read errors and success the same way.",
+   "detail": "ActionState has optional error and success strings, plus an index signature so an action can attach extra custom data such as field-level errors, loading flags or metadata without type complaints.",
+   "t": "2:07"
+  },
+  {
+   "idea": "Infer handler types from the Zod schema with generics rather than writing them by hand.",
+   "detail": "The wrapper is generic over the schema and the return type. The handler receives the schema-inferred data as its first argument and the original FormData as its second, so the action gets typed input.",
+   "t": "2:07"
+  },
+  {
+   "idea": "Validate inside the wrapper and return the first error message instead of throwing for normal input failures.",
+   "detail": "The wrapper turns FormData into a plain object with Object.fromEntries, calls the schema's safeParse, returns the first error message on failure, and otherwise calls the action with result.data plus the untouched FormData.",
+   "t": "4:50"
+  },
+  {
+   "idea": "Make the auth wrapper throw on a missing session, on purpose.",
+   "detail": "validatedActionWithUser reads the Better Auth session from Next.js headers() and throws a not-authenticated error when there is no user. The presenter prefers a throw so an unauthenticated call to a protected action shows clearly in logs, reasoning that a logged-in-only action should never be reached by a logged-out user.",
+   "t": "7:00"
+  },
+  {
+   "idea": "Adopting the pattern is a one-line change per action, and the front end keeps reading state.error from useActionState.",
+   "detail": "The presenter swaps the wrapper name in each action (validatedAction, or validatedActionWithUser for protected ones). Form UIs read state.error from the ActionState returned by useActionState and render it.",
+   "t": "5:54"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Validated server-action wrapper",
+   "how": "Define a shared ActionState type with optional error and success strings and an index signature. Write a generic validatedAction(schema, handler) that returns an async server action. Inside it, convert FormData to an object with Object.fromEntries, run schema.safeParse, return the first error message on failure, and otherwise call handler(result.data, formData). Keep the wrapper in its own helper file, for example action-helpers, not middleware.ts.",
+   "when": "Any Next.js app where several server actions take form input and need the same Zod validation, and you want action bodies to contain only business logic."
+  },
+  {
+   "name": "Auth-checked server-action wrapper",
+   "how": "Copy the validated wrapper into a validatedActionWithUser variant with a user argument in its handler type. In the wrapper, get the session from Better Auth using Next.js headers(), and throw a not-authenticated error if no user exists. Wrap protected actions with it, so user is available in the handler and typed.",
+   "when": "Server actions that should run only for logged-in users. The presenter's advice is to throw rather than return an error, because reaching these actions while logged out means something upstream is wrong and should show in logs."
+  },
+  {
+   "name": "Front-end consumption of ActionState",
+   "how": "Bind the server action with React's useActionState hook. The state it returns is the ActionState type. Check state.error before rendering, and print it under the form. The presenter says the error type can be changed to an object if per-field errors are needed.",
+   "when": "Forms that post to a server action and need to show validation errors returned from the server."
+  }
+ ],
+ "tools": [
+  "Next.js (server actions, headers())",
+  "Next.js SaaS starter kit",
+  "Zod",
+  "Better Auth",
+  "TypeScript",
+  "React useActionState hook"
+ ],
+ "numbers": [
+  {
+   "claim": "Three server actions live in actions.ts before the refactor: sign-up email, log-in email, and an auth action.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Demo password validation rule is a minimum of 8 characters; the demo error reads 'password must be at least eight characters'.",
+   "t": "8:19"
+  },
+  {
+   "claim": "Video length is 9:54.",
+   "t": "9:54"
+  }
+ ],
+ "hot_takes": [
+  "The pattern is framed as production-ready, but the video shows no tests, no error-path tests, and no role or permission checks beyond logged-in status.",
+  "Throwing on an unauthenticated call is presented as a logging decision, not a security decision; the transcript does not discuss what a client sees when the error is thrown.",
+  "No AI or agent content: this is general Next.js and TypeScript web tooling. It only fits the channel as dev-tools and auth-adjacent guidance, so quality is capped as off-topic for the knowledge base even though the pattern is solid.",
+  "The presenter states any validation library works, but the demo only uses Zod and the wrapper's safeParse call is Zod-specific."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Next.js server-action validation has no connection to the AgentOS proxy, memory, inference or storage layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The video does not cover Claude Code, checkpoint/resume, approvals, or credential handling.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

@@ -1,0 +1,175 @@
+{
+ "one_line": "A solo builder walks through a seven-step AI app workflow (idea, MVP, HTML prototype, design.json styling, SwiftUI conversion, Supabase backend, UI polish) for an iOS habit app, using Cursor and Claude Code.",
+ "summary": "The creator builds an iOS productivity app called Sage with AI tools and presents the process as a seven-step workflow. Ideation happens in a general chat model, then the MVP structure is saved to a structure.md file in a docs folder. The layout is locked first in a plain HTML prototype, and only then is visual style applied from a design.json generated from a reference image, with the layout explicitly frozen. The HTML is converted to SwiftUI using a conversion-rules file that a chat model wrote with web search enabled, placed into Cursor rules. Supabase is added through its MCP server, which the creator says handled project creation and auth setup in about 15 minutes. Most of the remaining time went into UI polish and animation, which he moved to Claude Code. The title and intro make strong productivity claims, but the only measurements are his own anecdotal time estimates.",
+ "speakers": [],
+ "orgs": [
+  "Cursor",
+  "Anthropic",
+  "OpenAI",
+  "Supabase",
+  "Apple"
+ ],
+ "format": "tutorial",
+ "depth": "intro",
+ "quality": 2,
+ "topics": [
+  "coding-agents",
+  "vibe-coding-app-building",
+  "context-engineering"
+ ],
+ "tags": [
+  "cursor",
+  "claude-code",
+  "html-prototype",
+  "design-json",
+  "swiftui",
+  "supabase",
+  "supabase-mcp",
+  "mvp",
+  "git-commits",
+  "ai-app-builder",
+  "image-generation",
+  "rules-files"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Lock the app structure in a plain HTML prototype before any styling. HTML needs no dependencies, and the creator says it is the easiest format for an LLM to output and revise.",
+   "detail": "He asks the coding agent to turn the MVP structure into an HTML prototype, then iterates on structure only (buttons vs. text vs. widgets vs. progress bars), using screenshots of what is wrong. Colors and design come later.",
+   "t": "4:46"
+  },
+  {
+   "idea": "Define the MVP as the smallest version that tests the core idea. He had the chat model draft three pages, then added login and a cover page, then removed elements it had added unprompted.",
+   "detail": "The final MVP outline is pasted into docs/structure.md in Cursor, and that file becomes the basis for the prototype.",
+   "t": "3:53"
+  },
+  {
+   "idea": "Style the locked layout from a generated design.json instead of hand-styling each component. The chat model turns a reference screenshot into a JSON file of visual tokens, which is placed in the project directory.",
+   "detail": "He says the prompt told the agent to apply design.json to the HTML prototype while forbidding any layout change, and the result matched the inspiration colors.",
+   "t": "5:57"
+  },
+  {
+   "idea": "Finalize colors and visual elements before the native port. He says skipping this cost him time: a redesign during the iOS build took 7 hours where he estimates 5 would have sufficed.",
+   "detail": "Effects and animations are deferred to later; the design pass is about how the app looks, not how it feels to use.",
+   "t": "6:30"
+  },
+  {
+   "idea": "Convert the HTML prototype to a native app using a rules file rather than a one-shot prompt. He asked a chat model (with web search on for less-known frameworks) to write conversion rules between the two formats, then loaded those rules into Cursor.",
+   "detail": "He reports the agent converted the prototype to SwiftUI with the same pages and mostly unchanged design, with only iOS-specific component differences.",
+   "t": "7:18"
+  },
+  {
+   "idea": "Backend setup can be delegated almost entirely to an MCP server. He says the Supabase MCP created the project, the schema and auth, and Cursor installed the SDK and integrated it in about 15 minutes.",
+   "detail": "He also wrote a data-structures doc and had Cursor scan the app to determine the tables. Supabase's free tier, with three projects, was the database choice.",
+   "t": "8:24"
+  },
+  {
+   "idea": "Polish takes the most time. He moved from Cursor to Claude Code for animations because he judged it better at complex reasoning. He says the UI has taken about 3 hours so far, and a polished version could take a week or more.",
+   "detail": "His claim is that single prompts do not yield good UI; the work is many small tweaks, animations and effects. The app icon was made with an image model by uploading the prototype icon and asking for improvements.",
+   "t": "9:26"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Stage-gated AI app build",
+   "how": "Run the work in fixed stages, each committed to git: (1) ideate in a chat model, (2) write the MVP page list to docs/structure.md, (3) build an HTML prototype and fix structure only, (4) apply a design.json for visuals with an explicit no-layout-change instruction, (5) convert to the target framework, (6) add backend, (7) polish. He says git commits per stage let him reproduce the build history.",
+   "when": "Greenfield single-developer app builds where you want a reviewable checkpoint at each stage and want to change one concern at a time."
+  },
+  {
+   "name": "Screenshot-driven correction loop",
+   "how": "When the agent's output has the right elements in the wrong form, attach a screenshot and state explicitly what is wrong and what it should be, e.g. a full widget rather than a small progress bar.",
+   "when": "Early prototype stage, when structure is right on paper but the rendered layout is not."
+  },
+  {
+   "name": "design.json from a reference image",
+   "how": "Give a chat model a UI inspiration image plus a prompt asking for a JSON file of visual data to reproduce the design. Save it in the project directory. Then prompt the coding agent to apply design.json to the HTML prototype while forbidding any change to the layout. He says he has tested this several times and it works.",
+   "when": "When you want a consistent visual style without hand-styling each component, and the layout is already frozen."
+  },
+  {
+   "name": "Rules-file-driven framework conversion",
+   "how": "Ask a chat model, with web search on for less-known frameworks, to write conversion rules from the source format to the target (here HTML to SwiftUI). Place those rules in the agent's rules file (Cursor rules) and set them to be followed, then reference the rules file at the top of the conversion prompt.",
+   "when": "Porting a working prototype to another stack where the target framework is unfamiliar to you or the agent."
+  },
+  {
+   "name": "MCP-based backend provisioning",
+   "how": "Add the Supabase MCP server to the coding agent. Write a data-structures document, have the agent scan the app to infer tables, then let the agent call the MCP to create the project, tables, auth, and install the SDK. Previously you wrote SQL and pasted it into the dashboard by hand.",
+   "when": "Adding Postgres and auth to a small app with a managed backend and no custom server."
+  },
+  {
+   "name": "Image model for app icon iteration",
+   "how": "Upload the current icon from the prototype to an image model and give specific improvement instructions. He also mentions adding dark-mode and tinted icon variants in Xcode's asset catalog.",
+   "when": "Producing an app icon without a designer."
+  },
+  {
+   "name": "Model switching by task",
+   "how": "Use Cursor for most edits and switch to Claude Code for animations and complex reasoning-heavy UI work.",
+   "when": "When the first tool stalls on a class of task, such as animation work."
+  }
+ ],
+ "tools": [
+  "Cursor",
+  "Claude Code",
+  "Claude (chat)",
+  "ChatGPT",
+  "OpenAI image generation model",
+  "Supabase",
+  "Supabase MCP server",
+  "Supabase SDK",
+  "SwiftUI",
+  "Swift",
+  "Xcode",
+  "Next.js (mentioned as an example template)",
+  "Git"
+ ],
+ "numbers": [
+  {
+   "claim": "The AI tools cost about $20 per month.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Supabase gives three free projects.",
+   "t": "8:24"
+  },
+  {
+   "claim": "Supabase MCP plus Cursor did database, auth and SDK integration in about 15 minutes.",
+   "t": "9:26"
+  },
+  {
+   "claim": "UI refinement so far has taken about 3 hours; a perfect app could take a week or more.",
+   "t": "10:32"
+  },
+  {
+   "claim": "Without AI, the creator estimates the build would have taken a month or two.",
+   "t": "10:32"
+  },
+  {
+   "claim": "The iOS redesign took 7 hours where 5 was expected, due to skipping the color/design finalization step.",
+   "t": "5:57"
+  },
+  {
+   "claim": "Habit rules: over 50% of points turns the progress bar blue; over 90% earns the purple achievement.",
+   "t": "1:27"
+  }
+ ],
+ "hot_takes": [
+  "The title claims 10x faster, but no baseline or measurement supports that beyond the creator's own rough estimate of one month or two without AI.",
+  "The 'zero work' Supabase setup claim covers only one 15-minute anecdote on a simple app.",
+  "The video is a generic AI-app-builder walkthrough with little that is specific to Cursor or Claude Code. Most of the value is the stage ordering (structure before style, style before port) rather than tool-specific technique.",
+  "Claims like 'can generate thousands' and 'apps that make real money' are unsupported."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Consumer-style app building with a managed backend. Nothing about inference, proxies, memory or observability.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Shows a staged, commit-per-stage Claude Code workflow and a rules file that an agent loads before a mechanical conversion. Only loosely related to ProsHarness checkpointing.",
+   "action": "Consider keeping a per-stage rules file for ProsHarness-driven runs, and check whether a checkpoint per stage matches the resume model."
+  }
+ ],
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

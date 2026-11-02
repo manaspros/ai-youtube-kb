@@ -1,0 +1,169 @@
+{
+ "one_line": "Walkthrough of Solid 2's breaking changes: async becomes part of the reactive graph, effects and JSX are reworked, a Rust compiler ships, and the Vite plugin's start mode makes Solid Start unnecessary.",
+ "summary": "The presenter walks through the Solid 2 release candidate, the largest Solid update in a while. The headline change is that async is part of the reactive graph: computations can return promises directly, createResource is removed, and Suspense, ErrorBoundary and SuspenseList are renamed to Loading, Erred and Reveal. Promises are consumed into the graph at creation, so downstream code reads plain values and loses the null/undefined checks, while the UI updates as data arrives. Writes get an action-based optimistic flow (createOptimistic, createOptimisticStore) with automatic rollback on error, and stores take drafts so produce and createMutable go away. Effects are split into a tracked compute function and an untracked apply function, cleanup is returned rather than registered, and writes commit on the next microtask (flush() forces them through). JSX moves closer to HTML (class accepts strings, objects or arrays, attr:/bool: prefixes and on:/on:capture are gone, index is replaced by keyed={false}, and a Repeat component renders by count). On tooling, a new Rust compiler built on Oxc is claimed to be much faster, and the Vite plugin gets a start mode that handles full app builds, optional SSR, server functions and file-system routing, which the presenter argues makes Solid Start redundant. The video ends with a recommendation to use the migration guide, possibly with a coding agent, and a short anecdote about Claude Code picking up the changes.",
+ "speakers": [
+  "Better Stack host (name not given in transcript)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Cloudflare",
+  "Netlify"
+ ],
+ "format": "review",
+ "depth": "practitioner",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "solidjs",
+  "solid-2",
+  "solid-start",
+  "reactivity",
+  "async",
+  "optimistic-updates",
+  "effects",
+  "jsx",
+  "vite",
+  "rust-compiler",
+  "ssr",
+  "migration",
+  "frontend"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Async becomes first-class in the reactive graph",
+   "detail": "createResource is removed. A computation such as createMemo can return a promise directly, and downstream code treats the result as an async memo. Suspense becomes Loading (fallback only when there is no data yet), with isPending to track refetches. ErrorBoundary becomes Erred and SuspenseList becomes Reveal. Presenter says this is more than renaming, since the promise is consumed into the graph rather than blocking UI at the consume site.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Consuming promises into the graph removes null/undefined checks",
+   "detail": "In Solid 1, resource values had loading and undefined states that had to be checked everywhere. In Solid 2 the promise enters the graph on creation, and downstream components only see plain values. Nested components can be presentational, and a Loading boundary decides when the UI shows. The presenter frames this as solving the old trade-off between developer experience and user experience.",
+   "t": "2:05"
+  },
+  {
+   "idea": "Optimistic updates use action plus optimistic stores with automatic rollback",
+   "detail": "The resource mutate function is replaced by createOptimisticStore and an action. The action writes the optimistic change, calls the save API, then refreshes from the server. Optimistic changes last only for the action's lifetime, so an error reverts the UI to the authoritative value without manual rollback code. Stores now hand out drafts, so produce and createMutable are removed (a path helper remains for the old behavior).",
+   "t": "3:25"
+  },
+  {
+   "idea": "Effects split into a tracked compute and an untracked apply",
+   "detail": "Solid 1 effects combined dependency tracking and side effects in one function. Solid 2 uses compute (tracked, returns a value) and apply (untracked, receives the value and does the work). This replaces on(), which becomes an option on the effect, including defer. createComputed is removed in favor of memo or a split effect. Cleanup is returned from apply instead of registered with onCleanup, and onMount becomes onSettled, which fires after async work under it resolves.",
+   "t": "3:25"
+  },
+  {
+   "idea": "Signal writes commit on a microtask and batch is gone",
+   "detail": "Writes are staged and committed on the next microtask, so reading a signal right after setting it returns the old value. flush() forces the update synchronously. batch is removed because consecutive writes already share a batch by default.",
+   "t": "4:32"
+  },
+  {
+   "idea": "JSX moves closer to HTML",
+   "detail": "classList is removed; class takes strings, objects or arrays, so conditionals are objects. The attr: and bool: prefixes are gone, booleans follow HTML presence rules, and on:/on:capture are replaced by camelCase event props (use ref callbacks plus addEventListener for native listener options). Directives become ref callbacks and directive factories, and ref accepts an array to stack directives. For lists, index is removed and keyed={false} gives index-style behavior. A new Repeat component renders by count and start index, and each row reads its own store slot.",
+   "t": "4:32"
+  },
+  {
+   "idea": "New Rust compiler on Oxc is the Vite plugin default",
+   "detail": "Solid 2 ships a Rust compiler toolchain built on Oxc (auto-captions say 'Box C'), and the Vite plugin uses it by default with no config change. The presenter cites vendor benchmarks, not independent measurements.",
+   "t": "5:56"
+  },
+  {
+   "idea": "Vite plugin start mode replaces Solid Start",
+   "detail": "The plugin can now run a full app build on plain Vite with no index.html or entry files. The default output is client-only static files. SSR can be enabled for a server bundle, use server is a core feature, and a router-neutral package adds file-system routing, code splitting and HMR. Deployment targets any platform that accepts a web-standard fetch handler (Cloudflare Workers, Netlify, Nitro, Bun, Deno), with no Solid-specific adapter. Solid Start 2 is still receiving maintenance updates.",
+   "t": "7:08"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Async data with an async memo and a Loading boundary",
+   "how": "Replace createResource(fetchUser) with createMemo(() => fetchUser(id)). The memo is async and downstream code reads a plain value. Wrap the consumer in <Loading fallback=...> so the fallback only shows before the first value. Use isPending to show refetch state. Keep children presentational with no undefined checks.",
+   "when": "Any component that reads async data in Solid 2, especially when you want reads to render as soon as each piece is ready instead of blocking on the parent."
+  },
+  {
+   "name": "Optimistic mutation with action and createOptimisticStore",
+   "how": "Create an optimistic store seeded from the server-fetched source of truth. In an action, write the new item to the optimistic store (it is a draft, so mutate directly), call the save API, then call refresh() from the server. If the API call throws, the optimistic override is discarded and the UI shows the authoritative value.",
+   "when": "Write paths where the UI should update instantly and roll back automatically on failure, replacing manual rollback logic from Solid 1 resource mutate."
+  },
+  {
+   "name": "Split effect into compute and apply",
+   "how": "Put reads in the tracked compute function that returns a value. Put side effects in the untracked apply function, which receives that value and returns its cleanup. Use the defer option for the old on(..., {defer: true}) behavior. Use onSettled for work that should run after async children resolve.",
+   "when": "Any side effect that depends on reactive state, to keep dependency tracking separate from the work done in response."
+  },
+  {
+   "name": "Read a just-written signal with flush()",
+   "how": "After a write, call flush() before reading if you need the new value in the same tick. Do not rely on reads immediately after writes, since commits are staged to the next microtask.",
+   "when": "Code that writes and then reads the same state synchronously, such as validation or DOM measurement."
+  },
+  {
+   "name": "Index-style list rendering and count-based Repeat",
+   "how": "Use <For> for identity-keyed lists (the default). Set keyed={false} for position-keyed behavior. Use <Repeat start={...} count={...}> when rendering N rows from store slots, so updating one row does not touch others.",
+   "when": "Lists where item identity or per-row store slots matter, such as large tables or grids."
+  },
+  {
+   "name": "Migrate with the official migration guide and a coding agent",
+   "how": "Give the Solid 1 to Solid 2 migration guide to a coding agent and ask it to migrate the codebase. The presenter reports Claude Code used the guide to pick up the API changes, but this is a single anecdote with no details shared.",
+   "when": "Upgrading a Solid 1 codebase with many API renames and removals, where the guide serves as the spec for a mechanical migration."
+  },
+  {
+   "name": "Deploy a Solid 2 app via the Vite start mode",
+   "how": "Build a client-only static site by default with the Vite plugin's start mode. To ship SSR, enable SSR in the plugin and deploy the server bundle, which exports a web-standard fetch handler. Deploy with the platform's own tooling (Cloudflare Workers, Netlify, Nitro, Bun, Deno) and no Solid-specific adapter. Config keys and exact plugin options are not shown in the video.",
+   "when": "New Solid 2 projects that do not need a meta-framework, or when moving off Solid Start."
+  }
+ ],
+ "tools": [
+  "Solid 2 (SolidJS)",
+  "Solid 1 (SolidJS, comparison)",
+  "Solid Start 2 / Solid Start",
+  "Vite plugin for Solid (the 'v plugin'; start mode)",
+  "Oxc-based Rust compiler toolchain (auto-caption 'Box C')",
+  "React (comparison: Suspense, use)",
+  "Svelte (comparison: await)",
+  "Claude Code (anecdote: used the migration guide)",
+  "Cloudflare Workers",
+  "Netlify",
+  "Nitro",
+  "Bun",
+  "Deno",
+  "Reddit (Brian's async diagram post)"
+ ],
+ "numbers": [
+  {
+   "claim": "Test project compile time drops from about 440 ms to 19 ms (vendor benchmark)",
+   "t": "7:08"
+  },
+  {
+   "claim": "Larger single-module (about 1 MB) compile drops from 25 s to 70 ms, about 355x faster (vendor benchmark)",
+   "t": "7:08"
+  },
+  {
+   "claim": "Rust compiler is described as over 20x faster than before",
+   "t": "0:00"
+  },
+  {
+   "claim": "Solid Start 2 was released a couple of weeks before this video",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Presenter calls Solid 2 'a real innovation in frontend frameworks', which is a strong claim for a release walkthrough.",
+  "Solid Start is described as no longer needed, and the presenter presents the start mode as the replacement.",
+  "Claude Code 'seemed to understand' the migration guide and pick up the changes, which is one anecdote with no before/after evidence.",
+  "Compiler speedups are vendor benchmarks on unnamed test projects, and the presenter does not verify them.",
+  "The talk is mostly API renames and removals, so the 'async is a different approach' framing rests on a Reddit diagram and a single Solid 1 vs 2 comparison."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Solid frontend framework release. No connection to the AgentOS proxy, memory, inference, or observability stack.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Mentions using a coding agent (Claude Code) guided by a migration guide to do a mechanical upgrade. Only loosely related to ProsHarness checkpoint/resume of long runs.",
+   "action": "If ProsHarness runs a long, mechanical migration with Claude Code, use the vendor's migration guide as the spec and checkpoint progress per file so the run can resume."
+  }
+ ],
+ "quality": 3,
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

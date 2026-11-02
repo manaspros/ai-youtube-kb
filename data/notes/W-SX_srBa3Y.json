@@ -1,0 +1,151 @@
+{
+ "one_line": "Bitly engineer Michael Richman presents Command & Control, his tool for monitoring and answering coding agents from a phone, web or watch, and frames the idle-agent problem as FOMAT.",
+ "summary": "Michael Richman, who leads engineering teams at Bitly, argues that coding agents spend a lot of time blocked waiting for a human, and calls this fear of missing agent time (FOMAT). He presents Command & Control, his own tool for running and supervising coding agents outside the terminal or IDE. Each agent platform gets a small daemon that reports lifecycle state (running, blocked, done) to a control plane, which aggregates sessions across machines and agent frameworks and serves a mobile, web or watch UI. The demo shows starting a session from a phone, replying to a session that is waiting, getting a push notification on completion, and resuming the same conversation in the CLI. Session management adds notification subscriptions, an \"On My Radar\" tier, a last-24-hours bucket, and an overview dashboard that summarizes each session from its last few messages. It is a product walkthrough of one tool with little implementation detail, so the evidence is anecdotal; the broader claim is that flow is shifting toward choreographing parallel agents and that time away from them is when good ideas come.",
+ "speakers": [
+  "Michael Richman"
+ ],
+ "orgs": [
+  "Bitly",
+  "Anthropic"
+ ],
+ "format": "demo",
+ "topics": [
+  "coding-agents",
+  "multi-agent",
+  "agent-architecture"
+ ],
+ "tags": [
+  "fomat",
+  "agent-supervision",
+  "push-notifications",
+  "session-management",
+  "remote-agent-control",
+  "mobile",
+  "claude-code",
+  "multi-agent-choreography",
+  "blocked-agents",
+  "control-plane"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Idle agent time is a real cost: an agent can stop after about two minutes to ask a question and then sit blocked until the developer returns.",
+   "detail": "Speaker frames this as fear of missing agent time. Agents are not as autonomous as hyped, and the wait window grows as tasks run for hours or days.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Developers cannot track more than two or three concurrent agent sessions, so they cannot tell which one is blocked or off track.",
+   "detail": "Across terminal tabs and several agent CLIs, the speaker loses track past four or five sessions. This motivates a single view with a needs-attention signal.",
+   "t": "4:10"
+  },
+  {
+   "idea": "Command & Control gives one interface for many agent platforms and machines.",
+   "detail": "It is built to be coding-tool agnostic (Claude Code, Codex, Gemini, Cursor, GitHub Copilot, OpenCode named). Sessions on a Mac and on a cloud VM appear in the same UI.",
+   "t": "11:44"
+  },
+  {
+   "idea": "Architecture: a daemon per agent platform watches lifecycle and reports to a control plane, and the UI reads from that control plane.",
+   "detail": "The control plane detects blocked state, aggregates all agents regardless of host or framework, and drives notifications. The daemon layer is described as open source.",
+   "t": "11:44"
+  },
+  {
+   "idea": "Session triage uses tiers: push-notify sessions, an On My Radar watch list, a recent (last 24 hours) bucket, and everything else.",
+   "detail": "Push is reserved for sessions the user subscribes to, so quieter tracking does not generate a notification per message. The list holds thousands of sessions.",
+   "t": "9:24"
+  },
+  {
+   "idea": "An overview dashboard gives a stand-up summary of recent sessions from their last several messages.",
+   "detail": "This lets the user triage many sessions without opening each one.",
+   "t": "10:20"
+  },
+  {
+   "idea": "Sessions resume identically across surfaces: a prompt sent from the phone shows up in the terminal session with full history.",
+   "detail": "The demo starts a Claude Code session from the app, then continues the same conversation in the CLI. The speaker often starts sessions from bed.",
+   "t": "6:59"
+  },
+  {
+   "idea": "The new flow is agent choreography: moving between parallel agents, unblocking one and redirecting another.",
+   "detail": "Speaker argues the cognitive load of many sessions is high, and that breaks away from agents are where best ideas come from, so systems should let you reach agents from anywhere.",
+   "t": "13:14"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Per-platform lifecycle daemon feeding a control plane",
+   "how": "Run a small daemon beside each agent CLI that watches session state (running, blocked on input, done). The daemon reports changes to a central control plane that aggregates all sessions. The UI reads only from the control plane and sends replies back through its API.",
+   "when": "You run several agent platforms or several machines and need one view plus a reliable blocked-on-human signal."
+  },
+  {
+   "name": "Tiered notification and watch lists",
+   "how": "Subscribe push notifications only to the few sessions you care about, put others on a quieter On My Radar list, and bucket the rest into recent (last 24h) and older.",
+   "when": "Many concurrent sessions where some need alerts but most only need occasional checks."
+  },
+  {
+   "name": "Overview summaries from the last few messages",
+   "how": "For each session, generate a short status from its last several messages and show these as a stand-up style overview.",
+   "when": "Triaging a large number of sessions quickly, to see which are finished, stuck or off track."
+  },
+  {
+   "name": "Start remotely, resume locally on the same session",
+   "how": "Launch or reply to a session from a phone or web UI, then resume that same session in the terminal so the full conversation history is present on both surfaces.",
+   "when": "You need to kick off or unblock agent work while away from the dev machine."
+  }
+ ],
+ "tools": [
+  "Command & Control (Cmd+Ctrl, speaker's own tool)",
+  "Claude Code (captioned as Cloud Code)",
+  "Codex / Codex CLI",
+  "Gemini (CLI)",
+  "Cursor (IDE)",
+  "GitHub Copilot",
+  "OpenCode",
+  "Anthropic remote control and teleportation (Claude Code features, mentioned)",
+  "Bitly MCP server (co-written by speaker, mentioned)",
+  "Agent Craft (gaming-based agent tool, mentioned as seen earlier that morning)"
+ ],
+ "numbers": [
+  {
+   "claim": "An agent stalled after about two minutes waiting on a question, and sat blocked for the entire gap the developer was away.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Typical coding tasks today run about 5 to 45 minutes; the speaker expects waits to grow as tasks run for five hours or five days.",
+   "t": "1:15"
+  },
+  {
+   "claim": "The speaker can keep track of only two or three concurrent sessions; at four or five they lose track.",
+   "t": "4:10"
+  },
+  {
+   "claim": "The session list holds thousands of sessions, grouped into push, On My Radar, a last-24-hours bucket, and the rest.",
+   "t": "9:24"
+  },
+  {
+   "claim": "Overview summaries are built from the last several messages of each session.",
+   "t": "10:20"
+  }
+ ],
+ "hot_takes": [
+  "Agents are far from maximally autonomous; in practice they need babysitting and the need for input is unpredictable.",
+  "Managing many concurrent agent sessions carries high cognitive load, and breaks away from agents are where the best ideas come from.",
+  "The new flow state is agent choreography across parallel sessions rather than solo focus on one task.",
+  "Product walkthrough of the speaker's own tool with thin architecture and no measured results; quality capped near 2 for that reason."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and plans phone-driven approvals and checkpoint/resume. This talk shows the same pattern: detect a blocked session, push a notification, answer from a phone, and resume in the CLI with full history.",
+   "action": "Prototype a blocked-on-human state for ProsHarness runs, detected when the CLI stops on a question, that triggers a push notification and a reply path back into the same session. Compare it against the approval flow already planned."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS observability (L4: Prometheus, OTel) tracks load and latency, but the talk points to idle, blocked-waiting time as a distinct and costly state that current metrics would not show.",
+   "action": "Add a blocked-on-human event or span type to the OTel traces so time spent waiting on human input is measured per agent session."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

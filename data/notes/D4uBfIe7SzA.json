@@ -1,0 +1,213 @@
+{
+ "one_line": "Warren from Better Stack walks through 12 rules for a CLAUDE.md file so agents can run longer without constant correction: a living failure log, TDD, clarifying questions, strict types, vetted packages, naming, testing, performance, error handling, and architecture notes.",
+ "summary": "The speaker argues that a good CLAUDE.md file is what lets Claude run for hours without constant check-ins, and that it should stay small, since its contents load into every prompt. He recommends treating the file as a living document that is updated automatically whenever the agent makes a mistake, and he cites Mitchell Hashimoto's AGENTS.md for Ghostty as a failure log. The rest of the list covers process rules (strict TDD, asking clarifying questions instead of assuming, enforcing strict type checking, installing only well-maintained packages, and enforcing naming conventions), testing rules (have an agent click through the app end to end, and take screenshots using realistic data), and quality rules (per-endpoint latency bounds, pushing work into the database, failing fast with clear errors, and an architecture guide with a lookup table). He suggests moving security reviews and code-quality checks into skills that run during PR review rather than into CLAUDE.md. The talk is short and mostly generic, with little measured evidence. Its main concrete claims are a self-set 500-line ceiling, a 200 ms example latency bound, and an unverified claim about a 46,000-test suite.",
+ "speakers": [
+  "Warren (Better Stack)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Anthropic",
+  "OpenAI",
+  "Ghostty"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "context-engineering",
+  "claude-code",
+  "testing-verification",
+  "coding-agents"
+ ],
+ "tags": [
+  "CLAUDE.md",
+  "AGENTS.md",
+  "agent rules",
+  "living document",
+  "failure log",
+  "TDD",
+  "clarifying questions",
+  "strict typing",
+  "package vetting",
+  "supply chain",
+  "naming conventions",
+  "project structure",
+  "end-to-end testing",
+  "UI screenshot testing",
+  "performance budgets",
+  "error handling",
+  "architecture lookup table",
+  "skills",
+  "context budget"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Keep CLAUDE.md small, around 500 lines at most, because it is loaded into every prompt and model performance degrades as context grows. Move detail into nested CLAUDE.md files or skills.",
+   "detail": "The speaker's own ceiling is about 500 lines. He says the file is added to every prompt, so bloat costs tokens and accuracy.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Treat CLAUDE.md as a living failure log. Each rule should come from a mistake the agent actually made, and the update should be automated through a skill rather than requested by hand.",
+   "detail": "He cites Mitchell Hashimoto's Ghostty AGENTS.md, where every line exists because the agent made that mistake at least once. He argues that Claude's built-in memory is global to the machine, is not tracked in the project, is Claude-specific, and does not share with teammates the way version-controlled rules do.",
+   "t": "1:03"
+  },
+  {
+   "idea": "Write the tests first and use them as the definition of done. Agents that iterate against a test suite produce better code than agents that declare their own work finished.",
+   "detail": "He presents strict TDD as the line between vibe coding and agentic engineering. As an example, he cites a Postgres-to-Rust rewrite that he says used a suite of 46,000 tests as a correctness gauntlet.",
+   "t": "2:17"
+  },
+  {
+   "idea": "Instruct the agent to ask clarifying questions rather than make assumptions. Ambiguity in a prompt is where the agent drifts, and the drift compounds.",
+   "detail": "The rule is meant to catch wrong assumptions early, because a perfect prompt or spec is never going to be written.",
+   "t": "2:17"
+  },
+  {
+   "idea": "Enforce strict type checking and forbid escape hatches such as any in CLAUDE.md. Type checks catch bug classes and enforce contracts without extra tests.",
+   "detail": "He states that AI performs better when type checking is possible. He also claims TypeScript recently became the most popular language on GitHub, without a source.",
+   "t": "3:28"
+  },
+  {
+   "idea": "Vet dependencies before the agent installs them. Prefer well-established packages over hand-rolled code, but only packages with real download counts and recent commits, given recent supply-chain attacks.",
+   "detail": "He suggests a practical bar of frequent pushes within at least the last few weeks. The same section covers naming conventions and a thin project-structure section, since the agent can infer most structure from the file tree.",
+   "t": "3:28"
+  },
+  {
+   "idea": "Have the agent test the app the way a human would, end to end and visually. Unit tests can pass while the UI is broken, and realistic data exposes layout breakage that lorem ipsum hides.",
+   "detail": "He describes Claude driving Chrome or an iOS simulator for click-through testing, without writing Playwright suites. He recommends screenshots with long, realistic text to catch overlap and clipping, and gives the example of a test suite that stays green while an element is hidden with opacity zero.",
+   "t": "5:28"
+  },
+  {
+   "idea": "Set hard latency bounds on every endpoint and push filtering into the database. Agents often pull a thousand rows and filter them in application code.",
+   "detail": "He gives 200 ms as an example bound and says he has seen queries improve up to 100x through a performance pass that includes index review. This is anecdotal, with no benchmark shown.",
+   "t": "6:18"
+  },
+  {
+   "idea": "Make errors fail fast and loud, and point CLAUDE.md at the project's error-handling conventions, including what to log in production.",
+   "detail": "He argues that swallowed errors are where bugs come from. He wants clear, useful messages returned to the client and an error-handling convention that the agent can read from a specific file.",
+   "t": "6:18"
+  },
+  {
+   "idea": "Describe the architecture and system design once, with a lookup table, so the agent does not re-explore the codebase in every session. Keep security reviews and code-quality checks in skills that run during PR review.",
+   "detail": "Repeated exploration costs tokens and reduces accuracy. The speaker suggests that CLAUDE.md should hold what the agent would otherwise rediscover every session, and that heavier review checks belong in skills.",
+   "t": "7:30"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Failure-log CLAUDE.md with an automated update skill",
+   "how": "Keep CLAUDE.md in version control. When the agent makes a mistake, add a rule that prevents it. Build a skill that drafts the new rule, so the user does not have to ask for each one. The file is shared with teammates and works with other agents, unlike global Claude memory.",
+   "when": "A project where the same agent mistakes recur across sessions, or a team that wants shared rules for all coding agents."
+  },
+  {
+   "name": "Size budget for CLAUDE.md, with nesting and skills",
+   "how": "Keep the root file under about 500 lines. Move subsystem detail into nested CLAUDE.md files in subdirectories, and move procedures such as security review or code-quality checks into skills run at PR review time.",
+   "when": "The root file grows past a few hundred lines, or content is only relevant to some tasks."
+  },
+  {
+   "name": "Tests as the definition of done",
+   "how": "State in CLAUDE.md that the agent writes or updates tests first (strict TDD) and iterates until the suite passes. Treat the suite as the gauntlet the agent must clear before it claims completion.",
+   "when": "Long-running agent loops where the agent would otherwise say the work looks great without checking."
+  },
+  {
+   "name": "Clarify-before-assuming rule",
+   "how": "Add a CLAUDE.md rule telling the agent to ask clarifying questions whenever the request is ambiguous, rather than guessing.",
+   "when": "Specs are informal, and wrong early assumptions would be expensive to unwind."
+  },
+  {
+   "name": "Strict type rules in CLAUDE.md",
+   "how": "Turn on strict type checking in the project and add notes to CLAUDE.md that forbid any and similar escape hatches, so the agent respects the types from the first edit.",
+   "when": "Typed languages such as TypeScript, where type checks can replace some tests."
+  },
+  {
+   "name": "Dependency vetting rule",
+   "how": "Tell the agent to install only packages with a substantial download count and recent commits, and to prefer an established library over custom code. Name the bar in CLAUDE.md, for example frequent pushes within the last few weeks.",
+   "when": "Agents are free to add dependencies, and supply-chain risk is a concern."
+  },
+  {
+   "name": "Human-style end-to-end and screenshot verification",
+   "how": "After a large feature, have the agent drive the app through Chrome or an iOS simulator, click through the flows, and take screenshots. Load realistic, long-text data instead of placeholder text so that overflow and clipping show up.",
+   "when": "Before declaring a UI feature done, especially when unit tests pass but the UI may be broken."
+  },
+  {
+   "name": "Endpoint latency budget and database-first queries",
+   "how": "Set a response-time bound for each endpoint (the speaker's example is 200 ms). Instruct the agent to do filtering, sorting and aggregation in the database rather than in application code, and to review indexes for the features it touches.",
+   "when": "The agent writes data-access code that over-fetches rows, or a service has strict latency targets."
+  },
+  {
+   "name": "Fail-fast error convention referenced from CLAUDE.md",
+   "how": "Document the error-handling approach in a file, and point CLAUDE.md to it. Tell the agent to surface errors immediately, return clear messages to the client, and log errors for production.",
+   "when": "Agent-written code tends to swallow errors or return vague failures."
+  },
+  {
+   "name": "Architecture lookup table in CLAUDE.md",
+   "how": "Write a short guide to the system design with a lookup table mapping common questions to the files or modules that answer them. The agent consults the table instead of exploring the repo each session.",
+   "when": "The agent spends many tokens re-discovering the same structure at the start of each session."
+  }
+ ],
+ "tools": [
+  "Claude",
+  "CLAUDE.md",
+  "AGENTS.md",
+  "Codex",
+  "Claude memory",
+  "Chrome",
+  "iOS Simulator",
+  "Playwright",
+  "PostgreSQL",
+  "Rust",
+  "TypeScript",
+  "GitHub",
+  "Ghostty",
+  "Terraform",
+  "Vagrant"
+ ],
+ "numbers": [
+  {
+   "claim": "Speaker's self-set ceiling for CLAUDE.md is about 500 lines, because the file is loaded into every prompt.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Rewrite of Postgres in Rust was done with agents against a suite of 46,000 tests (speaker's claim, not verified in the talk).",
+   "t": "2:17"
+  },
+  {
+   "claim": "Example endpoint latency bound: 200 ms.",
+   "t": "6:18"
+  },
+  {
+   "claim": "Queries reportedly improved up to 100x after a performance pass that fixes over-fetching and indexing (anecdote).",
+   "t": "6:18"
+  },
+  {
+   "claim": "TypeScript said to have recently become the most popular language on GitHub (unsourced).",
+   "t": "3:28"
+  },
+  {
+   "claim": "The talk lists 12 rules and runs 8:38.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Most of the 12 rules are generic best practice (tests, types, naming, error handling) that any experienced engineer would already expect from an agent, so the novelty is in framing them as CLAUDE.md rules rather than in the rules themselves.",
+  "The claim that Claude's built-in memory cannot be shared with teammates and is machine-global is a fair point for version-controlled CLAUDE.md, but the talk does not compare the two approaches in depth.",
+  "The 46,000-test Postgres-to-Rust example is cited as evidence for TDD without a source or detail on what the tests covered.",
+  "The 500-line budget and the 200 ms and 100x numbers are presented without measurement, so they are rules of thumb rather than findings.",
+  "The video has a lot of subscribe and engagement bait, including a line addressed to AI readers, which takes time from the content."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "CLAUDE.md-style agent rules and nested files are a context-engineering pattern that could apply to AgentOS repo instructions, but the talk is generic and does not cover self-hosted infra.",
+   "action": "Audit the AgentOS CLAUDE.md for size and move per-subsystem detail (Govrix, MemoryMesh, InferCraft) into nested CLAUDE.md files."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code and runs long checkpointed loops, so a failure-log CLAUDE.md and clarify-before-assuming rule fit, but the talk offers no harness mechanics.",
+   "action": "Consider having ProsHarness append a rule to CLAUDE.md after a checkpoint-resume failure, and check that the file stays under about 500 lines."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

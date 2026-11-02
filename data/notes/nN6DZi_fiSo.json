@@ -1,0 +1,200 @@
+{
+ "one_line": "AI LABS walks through about 19 Hermes agent config settings (context limits, compression, sub-agents, auxiliary models, quick commands, checkpoints, YOLO, isolation mode) that they changed to fix workflow problems, with defaults and new values.",
+ "summary": "The presenters say they hit recurring problems with their Hermes agent setup and found most fixes were existing config options rather than new tools. Hermes keeps each profile's settings in its own config.yaml under the .hermes folder, and changes made with the Hermes config command land in the active profile. The first group covers context and output limits: the tool-output cap (default 50,000 characters, raised for monitoring test runs), the file-read line limit (raised to 5,000 for large policy documents), and the per-line character limit (default 2,000). The second group covers compression: the default 50% threshold compressed too early on a 200k-context model, so they moved it to 0.75, and they kept the 20% target ratio that controls how much uncompressed tail survives. Sub-agent settings follow: max concurrent children raised from 3 to 5, max spawn depth (default 1) raised so sub-agents can spawn sub-agents, and auto-approve turned on so sub-agents are not stalled by permission prompts. The cost group recommends configuring cheaper auxiliary models for background subtasks and lowering the effort level or disabling thinking. The workflow group covers quick commands (exec and alias types), file checkpoints with rollback (off by default), background notifications, an ephemeral system-prompt variable, YOLO mode, an isolation mode that ignores user config, and a personality command. The video is a practical settings tour with concrete defaults and values, but it gives no benchmarks, and the one sponsored segment is excluded from the substance.",
+ "speakers": [],
+ "orgs": [
+  "AI LABS",
+  "Helix (sponsor)",
+  "OpenRouter"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "agent-architecture",
+  "context-engineering",
+  "token-cost-efficiency",
+  "multi-agent"
+ ],
+ "tags": [
+  "hermes",
+  "hermes-agent",
+  "config.yaml",
+  "context-compression",
+  "compression-threshold",
+  "target-ratio",
+  "sub-agents",
+  "auto-approve",
+  "auxiliary-models",
+  "effort-level",
+  "quick-commands",
+  "checkpointing",
+  "rollback",
+  "yolo-mode",
+  "ignore-user-config",
+  "system-prompt"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Hermes settings live in one config.yaml per profile, and the config command edits the active profile, so the profile must be checked before changing anything.",
+   "detail": "Multi-profile setups give each profile its own .hermes subfolder and config.yaml. The Hermes config command writes to whichever profile is active.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The default 50,000-character cap on tool output hides long test-run failures, so raise it.",
+   "detail": "Tool output beyond the cap is cut off. The presenters raised it while using Hermes to monitor test runs, where failures appeared past the limit.",
+   "t": "1:09"
+  },
+  {
+   "idea": "Compression at 50% of the context window fires too early for 200k-context models; they set the threshold to 0.75.",
+   "detail": "On a 1M-context model, a 50% threshold means compression at about 500k tokens, which is fine. On a 200k model it fires at about 100k, which breaks long runs. The speaker says Codex and Claude Code use about 75%, which is not verified in the video.",
+   "t": "2:37"
+  },
+  {
+   "idea": "The target ratio sets how much recent conversation stays uncompressed as the tail after compression, and the presenters kept the 20% default.",
+   "detail": "With a 1M window the tail is about 100k tokens. With 200k it is about 20k. Suggested range is 10% to 80%, where a higher value keeps more context but leaves less room to work.",
+   "t": "4:04"
+  },
+  {
+   "idea": "Sub-agent concurrency and nesting are capped by defaults the presenters changed: max concurrent children 3 to 5, and max spawn depth 1 to a higher value.",
+   "detail": "Spawn depth 1 blocks any sub-agent from creating its own sub-agents, which blocks nested-repo exploration. Concurrency is token-heavy, so the speaker warns about cost.",
+   "t": "4:30"
+  },
+  {
+   "idea": "Sub-agents only inherit the parent's permissions by default, so they stall on prompts unless auto-approve is set to true.",
+   "detail": "Auto-approve defaults to false. The video does not discuss the safety trade-off beyond the general YOLO advice.",
+   "t": "5:17"
+  },
+  {
+   "idea": "Auxiliary models handle background subtasks such as web search and compression, and the presenters set them to cheap models so the main model is not spent on trivial work.",
+   "detail": "When auxiliary models are left empty, Hermes falls back to the cheapest model in the config. In their OpenRouter setup that was Gemini Flash. Sub-agents can also be pointed at smaller models, including from another provider via the Hermes auth command.",
+   "t": "6:45"
+  },
+  {
+   "idea": "Effort level is a token lever: lower effort or disabled thinking reduces token use at the cost of output quality.",
+   "detail": "The presenters suggest low or minimum effort, or turning thinking off, for cost savings. They do not quantify the trade-off.",
+   "t": "7:53"
+  },
+  {
+   "idea": "Quick commands and checkpoints are the workflow fixes: exec commands run a shell sequence, aliases shorten built-in commands, and checkpoints allow rollback after a failed experiment.",
+   "detail": "Quick commands are defined in config.yaml. Checkpointing is off by default and is enabled in config, then used via the rollback command. Background process notifications can be set to all.",
+   "t": "9:00"
+  },
+  {
+   "idea": "YOLO mode and an isolation mode that ignores the user config are the escape hatches for debugging and speed.",
+   "detail": "YOLO can be enabled via a command or a launch flag and is described as the same as Claude Code's dangerously-skip-permissions. Isolation mode strips all .hermes configs so a user can tell whether the error comes from Hermes or from their own config.",
+   "t": "10:28"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Per-profile config tuning",
+   "how": "Open the active profile's config.yaml under the .hermes folder, or use the Hermes config command to write the same keys. Check which profile is active first, because the command writes only there. Set the tool-output cap, file-read line limit and per-line character limit for large documents.",
+   "when": "When the agent misses details in long test output, long files or long markdown lines."
+  },
+  {
+   "name": "Compression threshold and tail tuning",
+   "how": "Set the compression threshold to 0.75 for models with about 200k context, leaving the default for 1M-context models. Keep the target ratio at 0.2 (20%) and move it toward 10% to 80% depending on how much recent history you want kept after compression. Memory and user memory files have character limits that can also be raised.",
+   "when": "On long-running sessions where compression fires too early and drops the thread of the task."
+  },
+  {
+   "name": "Sub-agent concurrency, depth and permission settings",
+   "how": "Raise max concurrent children from 3 to 5. Raise max spawn depth above 1 only if nested sub-agents are needed. Set auto-approve to true for sub-agents so they do not stall on prompts. Change a sub-agent's model to a smaller one, and add other providers with the Hermes auth command.",
+   "when": "For broad, parallel tasks such as searching multiple nested repos or doing web searches, where the default limits slow the run."
+  },
+  {
+   "name": "Cheap auxiliary models and effort control",
+   "how": "Configure auxiliary models for background subtasks such as web search and compression, using a cheaper model than the main one. Lower effort to low or minimum, or turn thinking off, for routine work.",
+   "when": "When the main model is expensive, such as an Opus-class model, and most of the work is routine."
+  },
+  {
+   "name": "Exec and alias quick commands",
+   "how": "Define an exec quick command in config.yaml to run a shell sequence (for example a git routine) and place its output in context. Define an alias to rename a built-in command, such as a single-letter alias for compress. Aliases must be set in config.yaml, not via a simple command.",
+   "when": "For repeatable multi-step shell routines, or for shortening frequently used commands."
+  },
+  {
+   "name": "File checkpoints and rollback",
+   "how": "Enable checkpointing in config (it is off by default). Use the rollback command to restore the saved file state after an experiment breaks something.",
+   "when": "Before risky automated edits, so an experiment can be reverted quickly."
+  },
+  {
+   "name": "Ephemeral system-prompt variable",
+   "how": "Set the Hermes ephemeral system prompt environment variable in the terminal session to add instructions to the system prompt. The value applies only to that terminal session and is not persisted. The exact variable name is garbled in the captions, so check the Hermes docs.",
+   "when": "For one-off instructions that should not persist across sessions."
+  },
+  {
+   "name": "Isolation mode for config debugging",
+   "how": "Launch Hermes in ignore-user-config mode. It strips all .hermes configs and runs the agent in isolation. If the error disappears, the cause is in your config, and you can bisect from there.",
+   "when": "When an error might come from Hermes itself or from a local config change."
+  }
+ ],
+ "tools": [
+  "Hermes (agent, config.yaml, Hermes config / auth / personality / rollback commands)",
+  "Claude Code (compared; dangerously-skip-permissions mode compared to YOLO)",
+  "Codex (compared; compression threshold comparison)",
+  "OpenRouter (provider; default auxiliary model fallback)",
+  "Gemini Flash (auxiliary model used in their setup)",
+  "Opus (main model example)",
+  "Gemini (1M-token window model mentioned)",
+  "Slack (used to coordinate the team via Hermes)",
+  "Notion, Jira, Airtable (integrations named in the sponsor segment)",
+  "Helix (sponsor, not evaluated)"
+ ],
+ "numbers": [
+  {
+   "claim": "Default max tool output pulled into context is 50,000 characters.",
+   "t": "1:09"
+  },
+  {
+   "claim": "Default compression threshold is 50%. Set to 0.75 for 200k-context models; on a 1M model compression happens at about 500k tokens, versus about 100k on a 200k model at the default.",
+   "t": "2:37"
+  },
+  {
+   "claim": "Default target ratio is 20%, giving about 100k tokens of uncompressed tail on a 1M window and about 20k on a 200k window. Suggested range is 10% to 80%.",
+   "t": "4:04"
+  },
+  {
+   "claim": "Max concurrent children (sub-agents) default is 3, raised to 5 in the presenters' setup.",
+   "t": "4:30"
+  },
+  {
+   "claim": "Max spawn depth defaults to 1, meaning sub-agents cannot spawn more sub-agents.",
+   "t": "5:17"
+  },
+  {
+   "claim": "Auto-approve for sub-agents defaults to false.",
+   "t": "5:17"
+  },
+  {
+   "claim": "File-read line limit raised to 5,000 lines (the default is not stated; policy documents exceed 2,000 lines). Per-line character limit default is 2,000.",
+   "t": "1:09"
+  },
+  {
+   "claim": "Video title says 19 hidden features; the presenters cover about 19 settings across four categories.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Quality is capped at 2 because a sponsored segment for Helix runs around 6:00 to 6:45. The title's '19 hidden features' is mostly a list of documented config options, not hidden features.",
+  "No benchmarks back the cost or quality claims. The savings from cheap auxiliary models, lower effort and higher concurrency are asserted, not measured.",
+  "The claim that Codex and Claude Code compress at about 75% is the speaker's recollection, not checked in the video.",
+  "Auto-approve and YOLO mode are recommended for convenience with no real discussion of the permission trade-offs.",
+  "The useful part is the mental model: compression threshold, target ratio, sub-agent limits and tool-output caps are the same knobs that matter in any coding agent."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Concurrency caps, spawn-depth limits and per-subtask cheap-model routing are the same multi-agent knobs AgentOS would need, but only in a Hermes-specific form.",
+   "action": "Check whether AgentOS sub-agent spawning has explicit concurrency and depth caps, and whether background subtasks such as compression or search are routed to a cheaper model by default."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness already does checkpoint/resume around Claude Code. Hermes' file checkpoint and rollback and its compression-threshold tuning are a comparison point, not a new pattern.",
+   "action": "Compare ProsHarness checkpoint/resume with Hermes' file checkpoint and rollback, and check which compaction threshold ProsHarness uses for Claude Code, since this video suggests 75% without verification."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

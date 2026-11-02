@@ -1,0 +1,176 @@
+{
+ "one_line": "Sonar and Anthropic discuss verification as the bottleneck for agent-written code, covering layered checks, codified taste in CLAUDE.md/AGENTS.md, labeling agent PRs and the lights-on vs dark software factory spectrum.",
+ "summary": "A panel between Manish Kapoor (Sonar) and Addy Osmani (Anthropic) argues that writing code is now the cheap part and that verification is the real constraint on shipping agent-written code. Osmani says Anthropic's workflow starts with a Claude first-pass review that must exercise the product like a real user (browser runs, end-to-end checks, linting), with hooks on edits that feed diffs back into a correction loop. Teams are told to codify taste in CLAUDE.md or AGENTS.md so review agents can consult it, and to require verification evidence such as screenshots or click-through videos. Kapoor pitches a layered model: a deterministic layer for bugs and security patterns, an agentic layer for logic and intent, and a supply-chain layer for CVEs and malicious packages, run in every loop. The speakers frame a lights-on versus dark software factory spectrum, cite survey data that only about 5% of companies run factories today, and discuss governance concerns such as agent identity, permissions and sandboxing. They both support labeling agent-authored PRs for auditability while the human owner stays accountable. Several headline numbers are second-hand or vendor survey data.",
+ "speakers": [
+  "Manish Kapoor (Sonar, product and developer relations)",
+  "Addy Osmani (Anthropic, Claude Code developer experience)"
+ ],
+ "orgs": [
+  "Sonar",
+  "Anthropic",
+  "CircleCI"
+ ],
+ "format": "panel",
+ "topics": [
+  "pr-code-review",
+  "testing-verification",
+  "software-factory",
+  "governance-compliance"
+ ],
+ "tags": [
+  "software factory",
+  "dark factory",
+  "verification",
+  "layered verification",
+  "agent PR labeling",
+  "CLAUDE.md",
+  "AGENTS.md",
+  "hooks",
+  "guardrails",
+  "sandbox",
+  "agent identity",
+  "survey"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Code confidence is now the scarce resource. Once agents can write code cheaply, good tests, benchmarks and specs, and agent-generated checks of them, are what establish quality.",
+   "detail": "Speaker cites a claim that giving agents a way to verify their own work can markedly improve output quality. The multiplier in the transcript is garbled, so treat the exact figure as unverified.",
+   "t": "3:39"
+  },
+  {
+   "idea": "Anthropic's review loop starts with a Claude first-pass review that must exercise the change like a real user, then hooks on edits review the diffs so the PR gets corrected quickly.",
+   "detail": "Checks include end-to-end runs, opening the UI in a browser, running tools, linting and other checks. The speaker says the aim is to automate code review as much as possible.",
+   "t": "6:19"
+  },
+  {
+   "idea": "Codify team taste and best practice in CLAUDE.md or AGENTS.md so that agents consult it during review. Humans then check the agent's evidence rather than re-reading every line.",
+   "detail": "Evidence examples: a browser test of a UI, a video of the agent clicking through the flow, or screenshots at mobile and desktop widths.",
+   "t": "7:31"
+  },
+  {
+   "idea": "Verification should be layered and run in every loop: a deterministic layer for bugs and security patterns (e.g. SQL injection, buffer overflow), an agentic layer for logic and intent, and a supply-chain layer for CVEs and malicious packages.",
+   "detail": "Kapoor says each layer is tuned to a specific class of issue, and that the approach applies inside the agent loop, in CI and in code maintenance.",
+   "t": "12:33"
+  },
+  {
+   "idea": "Software factories sit on a spectrum from lights-on (humans at most steps, applying judgment) to dark (autonomous loops of scoping, building, checking and shipping, with humans setting intent and handling exceptions).",
+   "detail": "Both speakers agree most teams are somewhere in between. The more an agent can generate verification, the further a team can move toward dark.",
+   "t": "2:32"
+  },
+  {
+   "idea": "Enterprises worry about agent sprawl. Concerns named are control, permissions, agent identity, telemetry, and whether an agent escapes its sandbox. Sonar calls the answer guide rails rather than guard rails.",
+   "detail": "One anecdote describes an organisation with hundreds or thousands of agents that nobody could account for.",
+   "t": "13:55"
+  },
+  {
+   "idea": "Label agent-authored PRs, at least for the next 6 to 9 months, for auditability. The human who kicked off the agent still owns the change and must fix it if it breaks.",
+   "detail": "Speakers tie labeling to financial-sector audit needs and to knowing which extra checks to apply to agent code.",
+   "t": "15:54"
+  },
+  {
+   "idea": "Fast to write is not fast to ship. The closing takeaways are to verify everything, count what actually gets merged, and treat autonomy as something earned through independent automated verification inside each loop.",
+   "detail": "For the question of when an agent-opened PR is safe to merge, the answer given is when you have full confidence, or have mitigated the risk as far as possible.",
+   "t": "17:19"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Verification-first agent loop with a first-pass reviewer",
+   "how": "Have a Claude review agent check the change the way a real user would: open the app in a browser, run end-to-end tasks, run linters and any other project checks. Attach hooks that run on every edit, review the diff, and push corrections back into the PR loop.",
+   "when": "Use for agent-written PRs that touch user-facing behaviour, where unit tests alone would miss regressions."
+  },
+  {
+   "name": "Codify taste in CLAUDE.md or AGENTS.md for review agents",
+   "how": "Write the team's best practices, style rules and review expectations into CLAUDE.md or AGENTS.md so that the review agent can read them during code review. Keep the file updated as new standards are agreed.",
+   "when": "Use when several agents or humans review code and you want consistent standards without repeating them in every prompt."
+  },
+  {
+   "name": "Require verification evidence before human review",
+   "how": "Make the agent attach evidence to each PR: browser test results, a video of a click-through, or screenshots at the relevant widths (mobile and desktop). Reviewers check the evidence instead of re-deriving correctness from the diff.",
+   "when": "Use for UI changes and any change where a reviewer cannot easily confirm behaviour by reading code."
+  },
+  {
+   "name": "Layered verification stack",
+   "how": "Stack three independent checks: (1) deterministic static analysis for bugs and security patterns, (2) an agentic reviewer for logic and intent, (3) software supply-chain scanning for CVEs, malware and malicious packages. Run each layer in the agent loop, in CI and during maintenance.",
+   "when": "Use when agents produce code at volume and no single check (human or model) is trusted alone."
+  },
+  {
+   "name": "Label agent-authored PRs and keep a named human owner",
+   "how": "Add a label to PRs created by agents and record which human kicked off the work and remains accountable. Use the label to trigger extra checks for agent code.",
+   "when": "Use in regulated or audited environments, or while team confidence in agent output is still being built."
+  },
+  {
+   "name": "Agent guide rails and permission control",
+   "how": "Restrict each agent's paths, permissions and sandbox, track agent identity and telemetry, and keep a record of what each agent touched. The speakers describe this as guide rails rather than guard rails.",
+   "when": "Use before letting many agents act on production systems or sensitive data."
+  }
+ ],
+ "tools": [
+  "Claude Code (called 'Cloud Code' in the transcript)",
+  "Claude (claude.ai web product)",
+  "Opus 5.5 (Anthropic model, named as a reference point for model quality)",
+  "Anthropic code review product (named only as a product Anthropic offers)",
+  "CircleCI (cited statistic)",
+  "Sonar (verification vendor; survey and product referenced)",
+  "CLAUDE.md / AGENTS.md (agent instruction files)"
+ ],
+ "numbers": [
+  {
+   "claim": "CircleCI analysed 28 million CI workflows; throughput rose about 59%, yet about 3 in 10 attempts to merge into production fail (CircleCI figure cited by the speaker).",
+   "t": "1:09"
+  },
+  {
+   "claim": "Anthropic reportedly merges about 30,000 code changes per day, up from about 2,500 to 3,000 a few months earlier. The speaker attributes this to an Anthropic post he read the night before, so it is second-hand.",
+   "t": "4:56"
+  },
+  {
+   "claim": "Anthropic was merging about 2,500 changes back in May. The claude.ai refresh involved about 3,000 PRs merged in a short window, with engineers, product and designers contributing.",
+   "t": "6:19"
+  },
+  {
+   "claim": "Sonar survey (more than 1,000 developers): 85% of organisations already use coding agents; 76% of developers who generate AI code say it is produced faster than they can verify it.",
+   "t": "3:39"
+  },
+  {
+   "claim": "Sonar survey: 84% say AI gets features and fixes to production faster; pull requests are growing larger and more complex; the speaker reads the reviewed-share figure as only 31% more code reaching production without review (transcript wording ambiguous).",
+   "t": "8:55"
+  },
+  {
+   "claim": "Sonar survey: about 5% of companies operate software factories today, projected to rise to 34%. Financial services is cited at 39%.",
+   "t": "10:11"
+  },
+  {
+   "claim": "Sonar survey: 28% of companies have approved agents and shared controls; 5% operate software factories autonomously (transcript wording partly garbled).",
+   "t": "12:33"
+  },
+  {
+   "claim": "Lightning-round estimate: light factories with some dark corners for most teams by end of 2027. Anthropic could be there this year or next, according to the speaker.",
+   "t": "14:56"
+  }
+ ],
+ "hot_takes": [
+  "Kapoor is from Sonar and the talk pitches Sonar's multi-layer verification and survey report, with a booth plug at the end. Treat the survey and layered-verification framing as vendor positioning.",
+  "The title's headline figure (30,000 changes a day) is second-hand, cited from an Anthropic post rather than stated by Anthropic's speaker in this talk.",
+  "The claim that clear verification can lift output quality 2 to 3x is garbled in the transcript and is not reliable as stated.",
+  "Labelling agent PRs is presented as temporary, for 6 to 9 months, until teams are confident in their factories.",
+  "Both speakers say most teams are not yet running dark factories. The 5% figure in the survey suggests that the dark-factory framing is still aspirational."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Governance of agent-written code: AgentOS already plans sandboxed execution (Crucible), exec-gate guardrails and a Merkle audit log, and the talk argues for labeling agent authorship and keeping a named owner for auditability.",
+   "action": "Stamp agent-authored changes with agent identity and the human owner in the Govrix audit trail or Crucible exec gate, so that PRs or actions can be labelled and audited."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and could enforce a verification gate: a hook on edits, a first-pass review, and required evidence before a checkpoint counts as done.",
+   "action": "Prototype a post-edit hook in ProsHarness that runs lint and tests and records screenshots or test evidence before a checkpoint can be marked complete."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

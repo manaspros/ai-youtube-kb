@@ -1,0 +1,191 @@
+{
+ "one_line": "Walkthrough of Bun 1.4 (the Rust rewrite) and its built-in standard library: headless browser, image processing, markdown, pseudo-terminal, cron, parallel scripts and tar archives, each replacing an npm package.",
+ "summary": "The speaker walks through Bun 1.4 and frames the release as a standard library that replaces about 15 npm dependencies. The main additions are Bun.WebView (a headless browser that can use the system WebKit on macOS or Chrome elsewhere), an image library with chainable transforms and placeholder generation, and three markdown rendering APIs. Other additions are Bun.Terminal for pseudo-terminals via bun.spawn, bun.cron for in-process or OS-level scheduling, a parallel and sequential script runner, and a native tar/gzip archive API that can read files without extracting. The release also adds static file serving in Bun.serve, JSON5 and XML support, and terminal-width-aware string helpers. The speaker reports faster startup and CPU use and a binary about 17% smaller, plus a global virtual store for the isolated linker. The video is a feature tour with little benchmarking, and the speaker is explicit that BunWebView does not yet replace Playwright (no test runner or trace viewer).",
+ "speakers": [],
+ "orgs": [
+  "Bun"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "bun",
+  "bun-1.4",
+  "rust-rewrite",
+  "standard-library",
+  "dependency-reduction",
+  "headless-browser",
+  "image-processing",
+  "markdown",
+  "pseudo-terminal",
+  "cron",
+  "npm-scripts",
+  "tar",
+  "supply-chain"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Bun 1.4 is a Rust rewrite whose most useful part is a built-in standard library. The speaker frames it as a response to the lack of a JS standard library and to supply-chain risk, and says the video skips the rewrite debate.",
+   "detail": "Replaces about 15 npm packages in total. The speaker covers roughly half the release in this video.",
+   "t": "0:00"
+  },
+  {
+   "idea": "BunWebView replaces Playwright and Puppeteer for lightweight automation, but not for test suites.",
+   "detail": "Click, type, press and scroll dispatch native browser events so pages see a real user. On macOS it uses the system WebKit with nothing to install. On Windows or Linux a Chrome backend runs a headless Chrome subprocess or attaches to a running Chrome. Evaluate returns native JS values, and raw CDP is available as a fallback. The speaker says it has no test runner or trace viewer, so it is suited to scraping and computer-use scripts.",
+   "t": "0:00"
+  },
+  {
+   "idea": "A built-in image library covers the sharp use case, including low-quality placeholders for inlining before the real image loads.",
+   "detail": "Operations are chainable: resize, rotate, flip, flop, brightness, sharpness, and format conversion. Width, height and format can be read without decoding pixels. The speaker had deployment and build problems with sharp, so this is the feature they are most excited about.",
+   "t": "1:01"
+  },
+  {
+   "idea": "Bun.markdown replaces the marked package with three rendering targets.",
+   "detail": "Bun.markdown.html returns an HTML string. Bun.markdown.render calls custom callbacks per element, for custom classes or ANSI output. Bun.markdown.react renders React elements and accepts custom components per element. Options toggle GFM tables, autolinks, heading IDs and wiki links. HTML output is not sanitized, so user-authored markdown still needs sanitizing by the caller.",
+   "t": "2:07"
+  },
+  {
+   "idea": "Bun.Terminal adds a pseudo-terminal, which removes the need for node-pty in Electron-style apps.",
+   "detail": "It is passed as the terminal option to bun.spawn, so the subprocess sees a real TTY with colors, cursor movement and interactive prompts. The API can write, resize and close the terminal, and a terminal can be created separately and reused across subprocesses. The speaker suggests Claude Code would be a natural user of these features and wishes it were open source.",
+   "t": "2:07"
+  },
+  {
+   "idea": "bun.cron has two modes: an in-process callback on the event loop, or a registered OS-level job.",
+   "detail": "Passing a function runs it on the event loop with no system cron. Passing a script registers a job with crontab on Linux, launchd on macOS, or Task Scheduler on Windows. It takes standard cron syntax, including named days and helpers such as daily, and can parse an expression to return the next run date. Jobs use local time by default, with an option to set a different zone.",
+   "t": "3:10"
+  },
+  {
+   "idea": "bun run --parallel and --sequential replace concurrently and npm-run-all, and the speaker expects to use them most.",
+   "detail": "Output is prefixed by script name. Options include glob matching of script names, filtering packages within a workspace, and continuing when one script errors. The sequential mode uses the same output and filtering.",
+   "t": "4:09"
+  },
+  {
+   "idea": "Bun.Archive is a native tar and gzip implementation that can read an archive without extracting it.",
+   "detail": "An archive is built from an object mapping paths to contents, where contents can be a string, blob, array or ArrayBuffer. Compression is set with a gzip option at levels 1 to 12. Extraction supports glob patterns. The speaker reads lodash's package.json directly from the npm registry tarball with nothing extracted.",
+   "t": "4:09"
+  },
+  {
+   "idea": "Bun.serve can now serve static files, and the release adds JSON5, XML and terminal string helpers.",
+   "detail": "Static serving replaces serve-static for a public directory. JSON5 and XML can be imported, parsed and stringified natively. Bun.sliceAnsi, Bun.wrapAnsi and Bun.stringWidth are terminal-column-aware and replace slice-ansi, cli-truncate, wrap-ansi and string-width.",
+   "t": "4:09"
+  },
+  {
+   "idea": "Performance and install-side changes: faster startup and CPU use, a binary 17% smaller, and a global virtual store for the isolated linker.",
+   "detail": "With the isolated linker, packages are extracted once per machine and symlinked into each project's node_modules rather than copied per project. The speaker expects this to help with speed and disk use across many projects. No benchmark numbers beyond the binary size are shown.",
+   "t": "5:29"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Replace Playwright/Puppeteer for light scraping with BunWebView",
+   "how": "Use the Bun.WebView API to drive a page with click, type, press and scroll (native events). Set the backend option to Chrome on Windows and Linux to use a headless Chrome subprocess or attach to a running Chrome. Use evaluate to run JS and get native values back. Fall back to raw CDP commands for anything without a wrapper. The transcript shows no exact code for these calls.",
+   "when": "Scraping or computer-use scripts where the page must see real user input. Not for test suites, since there is no test runner or trace viewer."
+  },
+  {
+   "name": "Render markdown with Bun.markdown and sanitize it yourself",
+   "how": "Use Bun.markdown.html for an HTML string, Bun.markdown.render with per-element callbacks for custom classes or ANSI output, or Bun.markdown.react with per-element components. Toggle GFM tables, autolinks, heading IDs and wiki links through the options object. Sanitize HTML output before showing user-authored input.",
+   "when": "Replacing the marked package, or rendering markdown into terminal output or React trees."
+  },
+  {
+   "name": "Spawn a subprocess with a pseudo-terminal using bun.spawn",
+   "how": "Pass a terminal option to bun.spawn. The child gets a real TTY. Use the returned terminal to write input, resize it, or close it. Create a terminal separately to reuse it across subprocesses.",
+   "when": "Driving interactive CLIs or shells with colors, cursor movement and prompts, instead of node-pty. Relevant when wrapping an interactive CLI from JS."
+  },
+  {
+   "name": "Choose in-process cron or OS-level cron with bun.cron",
+   "how": "bun.cron(fn, expression) runs a function on the event loop. bun.cron(scriptPath, expression) registers a system job (crontab, launchd or Task Scheduler). Expressions use standard cron syntax with named days and helpers like daily. Parsing an expression returns the next run date. Local time is the default, and an explicit timezone can be set.",
+   "when": "Scheduled tasks in a Bun app. Use the in-process form while the process lives, and the OS form when the job must survive restarts."
+  },
+  {
+   "name": "Run package.json scripts in parallel or sequence with bun run",
+   "how": "Use bun run --parallel or --sequential. Pass a glob for script names, a workspace filter, and an option to keep running other scripts after a failure. Output is prefixed by script name.",
+   "when": "Monorepos or multi-package workspaces that currently use concurrently or npm-run-all."
+  },
+  {
+   "name": "Create, compress and partially read tar archives with Bun.Archive",
+   "how": "Build an archive from an object mapping paths to contents (string, blob, array or ArrayBuffer). Set compress to gzip with a level from 1 to 12. Extract with a glob to select files. Read a single file from an archive without extracting, such as package.json from an npm tarball.",
+   "when": "Packaging or inspecting tarballs in build or publish steps, or checking package metadata without writing to disk."
+  },
+  {
+   "name": "Enable the isolated linker with the global virtual store",
+   "how": "Turn on the isolated linker in Bun's install config. Packages are extracted once per machine and symlinked into each project's node_modules. The exact config key was not shown.",
+   "when": "Many projects on one machine where duplicate package copies waste disk space and install time."
+  }
+ ],
+ "tools": [
+  "Bun 1.4",
+  "BunWebView (Bun.WebView)",
+  "Bun.Image",
+  "Bun.markdown",
+  "Bun.Terminal",
+  "bun.spawn",
+  "bun.cron",
+  "bun run --parallel / --sequential",
+  "Bun.Archive",
+  "Bun.serve (static files)",
+  "Bun JSON5 and XML support",
+  "Bun.sliceAnsi / Bun.wrapAnsi / Bun.stringWidth",
+  "isolated linker (global virtual store)",
+  "Playwright (replaced)",
+  "Puppeteer (replaced)",
+  "sharp (replaced)",
+  "marked (replaced)",
+  "node-pty (replaced)",
+  "node-cron (replaced)",
+  "concurrently / npm-run-all (replaced)",
+  "tar library (replaced)",
+  "serve-static (replaced)",
+  "slice-ansi, cli-truncate, wrap-ansi, string-width (replaced)",
+  "Chrome / Chromium (backend)",
+  "system WebKit (macOS backend)",
+  "Claude Code (mentioned as a likely user of these features)"
+ ],
+ "numbers": [
+  {
+   "claim": "Bun 1.4 replaces about 15 npm packages in total; about 7 are covered by 4:09 and the speaker says about half the release is covered at the end of the video.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Bun's binary is 17% smaller than the previous release, with faster startup and lower CPU use (no per-feature benchmarks shown).",
+   "t": "5:29"
+  },
+  {
+   "claim": "Bun.Archive gzip compression level range is 1 to 12.",
+   "t": "4:09"
+  },
+  {
+   "claim": "Bun.markdown exposes three rendering targets (html, render, react).",
+   "t": "2:07"
+  },
+  {
+   "claim": "Demo: lodash's package.json is read from the npm registry tarball with no files extracted.",
+   "t": "4:09"
+  }
+ ],
+ "hot_takes": [
+  "BunWebView does not fully replace Playwright yet because it lacks a test runner and trace viewer; the speaker suits it to scraping and computer-use scripts.",
+  "Bun's standard library reduces supply-chain exposure, which the speaker frames as a response to weekly supply-chain attacks (an unsupported claim in the video).",
+  "Bun.markdown HTML output is not sanitized, so rendering user-written markdown is still the developer's problem.",
+  "The speaker thinks Bun.Terminal and related APIs are the kind of thing Claude Code would use, and wishes Claude Code were open source so these could be seen at scale (speculation).",
+  "The video is a feature tour of release notes with demo snippets, not a benchmark or a comparison."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI, which is interactive. Bun.Terminal and bun.spawn's terminal option give a PTY from Bun, and bun.cron could cover the loops/schedules feature. Only relevant if ProsHarness runs on Bun or uses node-pty.",
+   "action": "If ProsHarness runs on Node and uses node-pty to drive the Claude Code CLI, prototype the same interactive session with bun.spawn's terminal option under Bun 1.4 and compare resize and prompt handling."
+  },
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "AgentOS is a Rust proxy with Python and infra components. Nothing in this release touches its stack.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,180 @@
+{
+ "one_line": "Lyft's customer-support agent team on building offline simulation evals, calibrating LLM judges on hand labels, and closing the loop from error analysis to agent changes.",
+ "summary": "Nick Ung and Akshay Sharma from Lyft describe the eval pipeline for their multi-agent customer-support agent, split into offline evals before launch and online evals on production traces. Offline evals run simulated multi-turn conversations between the agent and an LLM user, graded by an LLM judge plus deterministic code assertions. Their first simulator was too polite, which inflated pass rates to about 90%, so they fine-tuned the user model on real Lyft user messages and added personas, which lowered scores as intended. They argue judges should be binary, task-based pass/fail rubrics tied to business outcomes, not generic metrics like helpfulness. Judges should be treated as classifiers: hand-label about 100 examples, split them into train, dev and test sets, and report precision and recall. Criteria evolve as the team reads data, and small score gaps on about 50 traces need confidence intervals before they mean anything. The loop is continuous error analysis on traces, with annotation queues for domain experts, and the next step is a config-driven eval harness that runs locally, pre-commit and in CI.",
+ "speakers": [
+  "Nick Ung",
+  "Akshay Sharma"
+ ],
+ "orgs": [
+  "Lyft"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "observability",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "customer-support-agent",
+  "llm-as-judge",
+  "user-simulator",
+  "offline-eval",
+  "online-eval",
+  "annotation-queue",
+  "precision-recall",
+  "confidence-intervals",
+  "eval-harness",
+  "criteria-drift",
+  "error-analysis",
+  "langgraph",
+  "langsmith",
+  "langfuse",
+  "deepeval"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Run offline multi-turn simulated conversations as a launch gate for agents.",
+   "detail": "Before shipping, the agent is run against a synthetic dataset representative of production traffic. A user LLM plays the customer, and an LLM judge grades each conversation. Live users are not used as test data.",
+   "t": "3:58"
+  },
+  {
+   "idea": "A judge score only matters if it gates a decision.",
+   "detail": "Speaker's first pitfall: judges that produce scores nobody uses for launch or regression gating are noise. Regression gates must have clear owners who act on the results.",
+   "t": "5:17"
+  },
+  {
+   "idea": "Simulated users that are too polite make evals look falsely good.",
+   "detail": "The first offline run gave 90%+ accuracy. Simulated users were patient and verbose, while real Lyft users are impatient and frustrated. The team judged the high score as too good to be true.",
+   "t": "13:49"
+  },
+  {
+   "idea": "Calibrate the user simulator on real user messages and personas, and expect scores to drop.",
+   "detail": "They fine-tuned the user LLM on real Lyft user verbatims and defined personas such as bypasser, refund seeker and AI skeptic. Lower scores after this change are the goal, because a too-easy eval gives no production signal.",
+   "t": "15:15"
+  },
+  {
+   "idea": "Generic judge metrics are not actionable; use binary task success or failure tied to business outcomes.",
+   "detail": "Pre-built DeepEval-style scores such as helpfulness at 0.5 give no next step. Each metric defines explicit pass and fail criteria for a task. Example: the agent escalates too soon, or tries too many times to educate the user.",
+   "t": "17:41"
+  },
+  {
+   "idea": "Treat the LLM judge as a classifier and validate it against hand labels.",
+   "detail": "Hand-label about 100 examples as pass or fail, then split them into train (few-shot examples for the prompt), dev (prompt iteration) and test (final check). Report precision and recall. The split informs the prompt; no model weights are trained.",
+   "t": "21:33"
+  },
+  {
+   "idea": "Evaluation criteria drift, so validate the validators continuously.",
+   "detail": "Criteria are discovered by reading data and grading outputs, and the team's sense of quality changes as they see more examples. Criteria and judges should be co-developed with the agent rather than fixed up front.",
+   "t": "23:00"
+  },
+  {
+   "idea": "Report confidence intervals and use paired designs, because small gaps are noise.",
+   "detail": "An 84% vs 88% gap on 50 traces is not evidence of a real difference. Bigger gains or paired comparisons need fewer samples. Reserve the heavier statistics for numbers that gate a ship decision or go to leadership.",
+   "t": "24:09"
+  },
+  {
+   "idea": "Error analysis on raw traces is a recurring loop, not a one-off audit.",
+   "detail": "Look at traces, name failure modes, keep only metrics that change a decision, re-create the eval, and repeat on a regular cadence such as weekly or biweekly. Ignoring the data is the root anti-pattern.",
+   "t": "27:13"
+  },
+  {
+   "idea": "Close the loop through model, context or harness changes.",
+   "detail": "Model learning means post-training. Context learning changes what the agent sees, such as documents, memories and outputs. Harness learning changes control flow, routing, retries and schemas. Error analysis guides which of these to change.",
+   "t": "30:08"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Simulated multi-turn offline eval",
+   "how": "Define the user intent, world state and persona for each case. A user LLM runs a full conversation with the agent graph. Grade with an LLM judge plus deterministic code checks, such as whether the agent's tool calls match an expected outcome (e.g. a concession was granted).",
+   "when": "Pre-launch testing of multi-turn, user-facing agents, especially customer support."
+  },
+  {
+   "name": "Mixed eval dataset from production samples plus mutations",
+   "how": "Do not ask an LLM to generate 50 test queries. Sample real production conversations, then mutate criteria to cover golden paths and edge cases.",
+   "when": "Building an offline eval set that should resemble real traffic."
+  },
+  {
+   "name": "User simulator realism calibration",
+   "how": "Fine-tune the simulated user model on real user messages. Add personas that match real behavior, such as impatient or skeptical users, then check that scores fall.",
+   "when": "Simulated users are too cooperative and the eval pass rate looks suspiciously high."
+  },
+  {
+   "name": "Binary task-outcome rubric per metric",
+   "how": "Each judge checks one task with explicit success and failure criteria. Map each failure to a business outcome. Drop generic metrics that do not change a decision.",
+   "when": "Designing LLM judges that someone must act on."
+  },
+  {
+   "name": "Judge calibration as a classifier",
+   "how": "Hand-label about 100 traces pass or fail. Split into train (few-shot prompt examples), dev (prompt iteration) and test (final check, to detect overfitting). Report precision and recall against the human labels.",
+   "when": "Before trusting any LLM judge score for a gate."
+  },
+  {
+   "name": "Confidence intervals and paired comparisons",
+   "how": "Attach a confidence interval to every alignment rate reported. Compare two evaluators on the same traces (paired design) so a small gap can be tested.",
+   "when": "Comparing judges or agent versions with modest sample sizes."
+  },
+  {
+   "name": "Annotation queue for domain experts",
+   "how": "Show traces in a simple labelling UI so domain experts never read raw JSON. Labels feed eval datasets and judge calibration. The speaker mentions LangSmith and Langfuse for tracing.",
+   "when": "Getting expert labels at scale for error analysis and judge validation."
+  },
+  {
+   "name": "Config-driven eval harness",
+   "how": "Store eval suites as YAML built from primitives: task, dataset, persona, LM adapter, evaluator. Support parallel runs for thousands of cases. Run the same config locally, at pre-commit and in CI as a regression or acceptance test.",
+   "when": "The eval suite has grown past ad-hoc notebooks and needs to be shared across contributors."
+  }
+ ],
+ "tools": [
+  "LangSmith",
+  "Langfuse",
+  "DeepEval",
+  "LangGraph",
+  "tau-bench (transcribed as CowBench, from Sierra)"
+ ],
+ "numbers": [
+  {
+   "claim": "First offline simulation run reported about 90%+ accuracy, which the team judged too good to be true.",
+   "t": "13:49"
+  },
+  {
+   "claim": "Judge calibration uses about 100 hand-labelled examples split into train, dev and test sets.",
+   "t": "21:33"
+  },
+  {
+   "claim": "Example: 84% vs 88% alignment on only 50 traces is too small a gap to call real without statistics.",
+   "t": "25:49"
+  },
+  {
+   "claim": "Error-analysis review cadence suggested as weekly or biweekly.",
+   "t": "28:35"
+  },
+  {
+   "claim": "The eval suite is expected to reach thousands, or tens of thousands, of examples, which requires parallel runs.",
+   "t": "34:01"
+  }
+ ],
+ "hot_takes": [
+  "Frontier-model user simulators are trained to be helpful, so an eval built on them is too easy. A very high offline pass rate is a warning sign.",
+  "Pre-built judge metrics such as helpfulness or conciseness are not actionable. Use them as a baseline only.",
+  "A judge score that gates nothing is noise, and LLM judges must be validated against human labels like any classifier."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS has RAGAS evals and an agent-facing proxy, and this talk gives a concrete method for calibrating judges and running simulated multi-turn evals.",
+   "action": "Add a judge-calibration step to AgentOS evals: hand-label about 100 traces, split train/dev/test, report precision and recall with confidence intervals, and only let judges gate releases after they pass."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs plan and critique loops, and binary pass/fail checks calibrated on labels may be more useful than free-form scores.",
+   "action": "Try binary pass/fail acceptance checks for ProsHarness checkpoints, calibrated on about 100 labelled runs before they gate a loop."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

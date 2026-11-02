@@ -1,0 +1,175 @@
+{
+ "one_line": "A 100-person Indian thermoforming-machine maker built a 36-agent go-to-market \"brain\" with layered memory and a nightly dream cycle, with no training and no framework. The talk is a company story with some architecture and cost claims.",
+ "summary": "Rushabh Doshi of Machinecraft, a 100-person factory in India, describes building an AI system that runs the company's go-to-market. The motivation was that company knowledge lived in three generations of people, and staff turnover kept losing it. The team ingested years of quotes, drawings, emails and payment records, chunked them, and stored them as vectors plus a relationship graph, using off-the-shelf models and no fine-tuning. The system is split into about 36 single-purpose agents (the title says 39), with an orchestrator that pulls in specialists who debate before giving one answer. Memory is layered, with a salience gate, and human corrections are treated as permanent and win conflicts. A nightly \"dream cycle\" replays the day, finds contradictions, prunes stale items, turns work into reusable skills, and writes a morning report. The speaker says a written rules file (the \"soul file\") acts as guardrails, and claims the build cost about 30k against a 230k agency quote, running at roughly a couple of thousand dollars a month. The talk ends by pitching BrainOS, a forkable version of the architecture. The speaker gives no evals, error rates or measured results, so the claims are unverified.",
+ "speakers": [
+  "Rushabh Doshi"
+ ],
+ "orgs": [
+  "Machinecraft",
+  "Cursor"
+ ],
+ "format": "talk",
+ "topics": [
+  "multi-agent",
+  "memory",
+  "skills-self-improvement",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "company-brain",
+  "knowledge-graph",
+  "vector-store",
+  "salience-gate",
+  "dream-cycle",
+  "soul-file",
+  "specialist-agents",
+  "go-to-market",
+  "BrainOS",
+  "no-fine-tuning",
+  "human-in-the-loop-drafts"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Company knowledge, not machines, is the real asset, and it had been held by three generations of people. Staff turnover was the risk the company wanted to fix.",
+   "detail": "The speaker framed the goal as a system that remembers what customers were quoted, why a machine was customised, and so on. Turnover was losing that knowledge each time someone left.",
+   "t": "0:00"
+  },
+  {
+   "idea": "No training was needed. Historical documents were chunked, passed through off-the-shelf models to extract facts, and stored as vectors plus a relationship graph.",
+   "detail": "The corpus was private company history (quotes, drawings, payment schedules, emails). The speaker presents retrieval-and-extraction as the whole approach, with no GPUs or fine-tuning.",
+   "t": "2:31"
+  },
+  {
+   "idea": "Many narrow agents beat one large prompt. Each agent has one job, and an orchestrator convenes specialists who argue and return a single answer.",
+   "detail": "Roles named in the talk include an orchestrator (Athena), a sales agent, a pricing agent, a machine-spec agent, a fact-checker, and a corrections guard. The speaker says one prompt doing everything performs badly.",
+   "t": "3:58"
+  },
+  {
+   "idea": "Human corrections are stored permanently and override other sources. The corrections agent is what keeps a fixed fact fixed.",
+   "detail": "On conflicts, the speaker says corrections win. The stated rule is that once a human fixes something, it stays fixed.",
+   "t": "6:26"
+  },
+  {
+   "idea": "Memory is built in layers with a gate, so the store does not fill with junk.",
+   "detail": "Layers named: working memory for the last few minutes, pinned facts about people, episodes (whole conversations as short stories), and relationship warmth that grows over time. A salience gate decides what is worth keeping.",
+   "t": "6:26"
+  },
+  {
+   "idea": "A nightly consolidation job is the main improvement loop. It replays the day, promotes useful items, flags contradictions, forgets stale ones, and distils skills, then writes a morning report for a human to read.",
+   "detail": "The speaker says the system gets smarter overnight. The dream report lists what was consolidated, what was dropped, and what was learned. No measured effect on quality is given.",
+   "t": "7:26"
+  },
+  {
+   "idea": "Behavioural rules are written as a single guardrail file taken from the company's family principles. The speaker says these rules are engineering constraints.",
+   "detail": "Examples given: cross-check before speaking, never state things absolutely, cite the document and date, stay in your own lane, and report uncomfortable truths. Each rule is meant to be enforced in production.",
+   "t": "7:26"
+  },
+  {
+   "idea": "Agents draft, humans send. Every outbound action is shown to a person before it goes out.",
+   "detail": "The speaker calls this the golden rule. It covers outbound emails, quotes, and replies, with human approval before anything is sent.",
+   "t": "5:27"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "One-job specialist agents with an orchestrator and debate",
+   "how": "Split the work into narrow agents (sales, pricing, specs, fact-check, corrections). An orchestrator pulls in the relevant specialists, they argue, and one answer comes out.",
+   "when": "When a single prompt is failing across many unrelated sub-tasks, and you need a checked answer rather than a fast one."
+  },
+  {
+   "name": "Layered agent memory with a salience gate and correction precedence",
+   "how": "Keep working memory for recent turns, pinned facts, episodic summaries, and per-contact relationship state. Gate writes so only salient items are stored. Let human corrections override conflicting stored facts.",
+   "when": "Long-lived assistants that talk to the same people across sessions and must not drift or re-learn corrections."
+  },
+  {
+   "name": "Nightly consolidation (dream cycle) job",
+   "how": "On a schedule, replay the day's activity, promote useful facts, detect contradictions, prune stale entries, convert repeated work into reusable skills, and write a report for a human to review in the morning.",
+   "when": "Agents that run daily and need continuity and skill growth without someone supervising each task."
+  },
+  {
+   "name": "Rules file as production guardrails",
+   "how": "Write a short set of behavioural rules (cross-check sources, avoid absolute claims, cite source and date) and load it into every agent as a constraint.",
+   "when": "Agents that make factual claims from several internal sources and must show where each claim came from."
+  },
+  {
+   "name": "Chunk-and-extract over a private corpus with no training",
+   "how": "Chunk historical documents, extract facts using off-the-shelf models, and store results as vectors plus a relationship graph, with a CRM alongside.",
+   "when": "A company with a large private document history and no ML team or training budget."
+  },
+  {
+   "name": "Draft-only outbound with human send",
+   "how": "Agents create drafts, quotes and replies, and a person approves before anything leaves the system.",
+   "when": "Any agent that writes to customers or external parties."
+  }
+ ],
+ "tools": [
+  "Cursor",
+  "vector database",
+  "graph database",
+  "CRM",
+  "Google Workspace integrations",
+  "document ingestion tooling",
+  "monitoring tooling"
+ ],
+ "numbers": [
+  {
+   "claim": "Company runs on about 36 agents. The title says 39, and the body says 36.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Roughly 100 people and no data science team or ML budget.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Hundreds of gigabytes of private history (quotes, drawings, payment schedules, emails) were ingested.",
+   "t": "2:31"
+  },
+  {
+   "claim": "One machine type serves seven different end markets.",
+   "t": "1:32"
+  },
+  {
+   "claim": "Nine daily go-to-market jobs run through the system.",
+   "t": "3:58"
+  },
+  {
+   "claim": "Three model providers are used, each chosen for a specific job.",
+   "t": "5:27"
+  },
+  {
+   "claim": "213 tools exposed over a single protocol.",
+   "t": "6:26"
+  },
+  {
+   "claim": "Speaker says an agency quoted 230k to build it, and it was built for around 30k.",
+   "t": "8:52"
+  },
+  {
+   "claim": "Speaker says it runs on a couple of thousand dollars a month, and that no training bill was incurred.",
+   "t": "8:52"
+  }
+ ],
+ "hot_takes": [
+  "The expensive part of company AI is not compute, but teaching the company to remember itself.",
+  "Biology and ancient philosophy are usable engineering blueprints for agent memory and guardrails.",
+  "A company's brain can be forked from a blank template, and each company should fill it with its own data."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Layered memory with a salience gate, correction precedence, and a nightly consolidation loop that turns daily work into skills. This overlaps MemoryMesh and SkillForge, but the talk offers no measured results.",
+   "action": "Read the dream-cycle design (replay, contradiction check, pruning, skill distillation, morning report) as prior art for SkillForge's skill-worthiness scoring. Do not copy its quality claims without measurement."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "A scheduled nightly job with a morning report and an overnight skill-promotion step is similar to ProsHarness loops and schedules. The specialist debate is also a loose match for plan, critique and debate.",
+   "action": "Consider a scheduled consolidation pass in ProsHarness that writes a morning report of skill and memory changes for review."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

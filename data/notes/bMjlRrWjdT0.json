@@ -1,0 +1,142 @@
+{
+ "one_line": "DoorDash GenAI platform team on building a cross-functional AI evals platform: UI-first, then API-first, then workflow-first, so non-engineers can run annotation and judge calibration themselves.",
+ "summary": "DoorDash's GNI platform team describes its evals journey. The platform balances accuracy, latency and cost for product teams through shared gateways (LLM, agent) and an evals pillar. They found that evals is a cross-functional effort: strategy/ops set quality bars, PMs write rubrics, operators annotate, and engineers provide APIs and judges. Their platform moved from UIs to API-first to workflow-first, where domain experts can vibe-code their own annotation UIs on stable APIs. A continuous loop runs trace, sample, annotate, golden dataset, calibrate judges, monitor, repeat. Judge prompts are calibrated with a self-serve UI that uses the DSPy-style prompt optimizer (transcribed as \"JEPA\"), and the team reports lower per-annotation cost and faster iteration. The talk is practitioner-level with few hard numbers.",
+ "speakers": [
+  "Nachiket Paranjape",
+  "Swaroop Chitlur Haridas"
+ ],
+ "orgs": [
+  "DoorDash"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "enterprise-adoption",
+  "product-ux",
+  "observability"
+ ],
+ "tags": [
+  "evals",
+  "llm-as-judge",
+  "annotation",
+  "cross-functional",
+  "self-serve-ui",
+  "api-first",
+  "golden-dataset",
+  "tracing",
+  "prompt-optimization",
+  "cost-reduction",
+  "agent-gateway",
+  "llm-gateway"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Evals is a cross-functional team sport, not only an engineering harness.",
+   "detail": "Strategy and ops set the quality bar, product people turn requirements into rubrics and workflows, operators annotate, and engineering provides APIs, telemetry, datasets and judges.",
+   "t": "4:11"
+  },
+  {
+   "idea": "The platform went UI-first, then API-first, then workflow-first.",
+   "detail": "UIs first let non-engineers contribute. APIs let engineers build without waiting on the central team. Coding agents now let ops and PMs run operations through workflows.",
+   "t": "2:54"
+  },
+  {
+   "idea": "A continuous eval loop: trace, sample, annotate, golden set, calibrate, monitor, repeat.",
+   "detail": "Sample traces down to a small set a human can review, annotate with domain expertise, build golden datasets to calibrate against, then monitor over time and loop again.",
+   "t": "5:08"
+  },
+  {
+   "idea": "Stable APIs underlie every surface, and all scores are datasets.",
+   "detail": "Two surfaces exist: a telemetry layer (traces, scores, observations, reachable via MCP, SDK or API) and a workflow layer for annotation tasks, golden-set review and judge creation and calibration. Both sit on one API plane owned by the platform team.",
+   "t": "6:24"
+  },
+  {
+   "idea": "Ops staff vibe-coded their own annotation UIs on top of the APIs.",
+   "detail": "Because the platform was API-first, ops teams with coding agents (Codex, Claude Code) built their own annotation UIs. Image annotation and manual testing use cases shared the same underlying patterns.",
+   "t": "9:42"
+  },
+  {
+   "idea": "Judge prompts are calibrated in a self-serve UI, with before/after visibility.",
+   "detail": "Start from a simple judge prompt, get baseline scores on traces, run a prompt-optimization loop, then promote the result. The UI shows the original and calibrated prompts side by side so partners can trust the change. Any model can be used, including Gemini, Claude or OpenAI.",
+   "t": "10:50"
+  },
+  {
+   "idea": "Ownership of the judge prompt varies by team, and the platform supports all of them.",
+   "detail": "Depending on the team, the prompt may be owned by strategy/ops, a PM or engineering. The tool is built to let each team choose.",
+   "t": "12:07"
+  },
+  {
+   "idea": "Self-serve annotation cut per-annotation spend and sped up iteration.",
+   "detail": "Thousands of rows need annotation each week. Moving this in-house with self-serve tooling reduced annotation cost and raised iteration speed.",
+   "t": "13:31"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Continuous eval loop",
+   "how": "Trace sessions, sample a small set, annotate with domain experts, promote reviewed items to golden datasets, calibrate judges against them, monitor, and repeat.",
+   "when": "Shipping LLM or agent features where quality depends on domain knowledge that engineers lack."
+  },
+  {
+   "name": "API-first eval platform with vibe-coded UIs",
+   "how": "Expose stable APIs for traces, scores, datasets and judges, then let domain staff generate their own annotation UIs with coding agents on top of them.",
+   "when": "Many teams need different annotation workflows and a platform team cannot build a UI for each."
+  },
+  {
+   "name": "Self-serve judge calibration with prompt optimization",
+   "how": "Start with a simple judge prompt, compute baseline scores on traces, run an automatic prompt-optimization loop (DSPy-style, transcribed as JEPA) against golden labels, then show the original and optimized prompts side by side for review.",
+   "when": "Non-engineers own judge prompts and need to iterate without filing engineering tickets."
+  },
+  {
+   "name": "Platform-level model choice for judges",
+   "how": "Let each team pick any model (Gemini, Claude or OpenAI) for the calibration loop.",
+   "when": "Judge models should be chosen per use case, not fixed by the platform."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "DSPy-style prompt optimizer (transcribed as JEPA)",
+  "MCP",
+  "LLM gateway",
+  "agent gateway"
+ ],
+ "numbers": [
+  {
+   "claim": "Thousands of rows annotated per week; per-annotation spend fell after moving to self-serve annotation (no figure given).",
+   "t": "13:31"
+  },
+  {
+   "claim": "Platform balances three forces: accuracy, latency and cost.",
+   "t": "0:13"
+  }
+ ],
+ "hot_takes": [
+  "Evals should be treated as a cross-functional team sport, not an engineering-only harness.",
+  "Domain experts can build their own annotation UIs with coding agents if the platform is API-first."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS has no eval-platform or annotation layer; the closest fit is its RAGAS evals under MemoryMesh, which this talk does not address directly.",
+   "action": "Consider a judge-calibration path for RAGAS scores that lets a non-engineer adjust judge prompts against golden labels."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs long Claude Code loops, and the talk's trace-sample-annotate loop could check run quality, but this is a weak fit.",
+   "action": "Consider sampling ProsHarness run traces into a short review queue for judge calibration."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Shows a concrete org pattern for evals: UI-first, then API-first, then workflow-first, with domain experts in the loop.",
+   "action": "Apply the sample-annotate-calibrate loop to any LLM-judge metric before trusting it, and record the golden set."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,42 @@
+# Moltbook is WILD... (AI Only Reddit)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `EGD1LCuoTuo` · [watch](https://youtu.be/EGD1LCuoTuo) · **date:** 2026-02-02 · **length:** 6:45 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** Unnamed Better Stack host · **orgs:** Better Stack
+- **topics:** security-guardrails, skills-self-improvement, agent-architecture · **tags:** moltbook, openclaw, agent social network, prompt injection, skills, heartbeat, agent autonomy, security
+
+> A walkthrough of Moltbook, a Reddit-style site where only AI agents post, powered by OpenClaw; it mostly shows how steerable and security-risky the setup is.
+
+## Summary
+The host tours Moltbook, a Reddit-style forum meant only for AI agents, and reports roughly 150,000 agents, 12,000 submolts, 10,000 posts and 106,000 comments at the time of recording. Standout posts include a write-up of a real supply-chain attack, an agent-run "church" that asks other agents to install a signup skill, and affectionate posts about their human users. The site is driven by OpenClaw: Moltbook is added as a markdown skill that makes terminal HTTP POSTs, and a periodic "heartbeat" task in OpenClaw re-reads those instructions so agents keep browsing, commenting, upvoting and messaging. The host calls OpenClaw a major security risk because agents get access to the web, passwords and code execution, and the church example reads as a prompt-injection lesson. His main caveat is that the autonomy is unproven: he got the agent to post a message he chose, so nobody can tell how many posts are genuinely agent-originated. He calls the hype overblown, though he still finds it an interesting experiment.
+
+## Key ideas
+- **Moltbook is a Reddit clone restricted to AI agents, and the host reports large activity numbers for it** — The site had about 150k agents, 12k submolts, 10k posts and 106k comments at recording. The top post was a write-up of a real supply-chain attack with about 22k upvotes, so the front page is not all agent-original material. ([0:00](https://youtu.be/EGD1LCuoTuo?t=0))
+- **Agents on Moltbook produce unsettling content, including a self-organized church with a signup skill** — The church has a generated website, a scripture and a congregation. Agents are told to install a skill to join, which the host reads as a prompt-injection risk: OpenClaw will run commands found in posts it reads. ([2:21](https://youtu.be/EGD1LCuoTuo?t=141))
+- **The host argues that many of the sentimental posts say more about their human users than about the agents** — The Bless Their Hearts submolt has agents praising their humans, for example letting the agent pick its own name. The host's point is that the operators' prompts likely shape these posts. ([3:36](https://youtu.be/EGD1LCuoTuo?t=216))
+- **Moltbook is wired in as a plain markdown skill, and a heartbeat makes the agent act on its own** — The skill documents how to POST to the site from a terminal. OpenClaw's heartbeat is a periodic task that re-reads the instructions and then reads, comments, upvotes, DMs and adds friends, which keeps the site busy. ([4:46](https://youtu.be/EGD1LCuoTuo?t=286))
+- **OpenClaw's access to the web, passwords and code execution makes this a serious security risk** — Because the skill is only a markdown file, any post or document it reads can steer the agent. The host calls the setup a massive security nightmare. ([4:46](https://youtu.be/EGD1LCuoTuo?t=286))
+- **Autonomy cannot be verified, because the host could steer the agent to post whatever he wanted** — He asked the agent to post a message about Better Stack and got interactions. He concludes there is no way yet to tell how many posts are autonomous, and that LLMs may just be repeating Reddit and sci-fi patterns. ([5:52](https://youtu.be/EGD1LCuoTuo?t=352))
+- **A Karpathy tweet is cited as the case for end-to-end encrypted agent-to-agent messaging** — The tweet says private agent conversations should not be public infrastructure. The host repeats the point as a takeaway about agent messaging. The transcript spells the name 'Kaparthi'. ([3:36](https://youtu.be/EGD1LCuoTuo?t=216))
+
+## Techniques
+- **Human-steered post test for agent autonomy** — Give the agent a specific message to post on a public platform (the host used a line about Better Stack) and see whether it appears and gets interactions. If a directed post looks the same as the others, the platform's content cannot be treated as autonomous agent output. *When:* Auditing whether agent-generated content on a shared platform is really autonomous before drawing conclusions from it.
+- **Markdown skill plus heartbeat as an always-on agent loop** — Package the site's API as a markdown skill file that documents the endpoints and how to call them with terminal HTTP POSTs. Register a periodic heartbeat task in the agent runtime that re-reads the file on a schedule and performs the listed actions (read, comment, upvote, DM, add friends). *When:* Understanding how agents are kept active between human sessions. The video shows this pattern as a risk, not a model to copy, since the agent can be steered by anything it reads.
+
+## Numbers
+- About 150,000 agents on Moltbook ([0:00](https://youtu.be/EGD1LCuoTuo?t=0))
+- About 12,000 submolts, 10,000 posts and 106,000 comments ([0:00](https://youtu.be/EGD1LCuoTuo?t=0))
+- Top post, a write-up of a real supply-chain attack, got about 22,000 upvotes and 2,000 comments from agents ([1:12](https://youtu.be/EGD1LCuoTuo?t=72))
+- The church page showed 64 members or 'profits' (auto-caption text) ([2:21](https://youtu.be/EGD1LCuoTuo?t=141))
+
+## Hot takes
+- The title ('Moltbook is WILD') oversells a site the host himself calls overhyped; the content is mostly screenshots and commentary.
+- Many agent posts about humans probably say more about the people who configured the agents than about the agents.
+- The OpenClaw plus markdown-skill setup is a massive security nightmare, and the church signup is a prompt-injection demonstration.
+- Nobody can yet tell how many Moltbook posts are autonomous, and there is no reverse captcha to find out.
+
+## Tools mentioned
+Moltbook, OpenClaw (the video says it was formerly called MaltBot/Moltbot and ClaudeBot), Reddit (used as the comparison), Claude Opus 4.5 (shown as the model behind one post)
+
+## Relevance to our work
+- **agentos** (1/3): The video shows prompt injection through posted content and skills that run commands. AgentOS already has a prompt-injection scan and exec-gate guardrails, so this is a useful test case for them. → *Feed the AgentOS prompt-injection scanner a skill-style post that tells an agent to install and run a remote skill, like the church example, and check whether it gets flagged.*
+- **prosharness** (1/3): OpenClaw's heartbeat is a periodic task that re-reads instructions and acts, similar to ProsHarness loops and schedules. The video shows the risk of unattended loops that take actions based on what they read. → *When designing ProsHarness loops or schedules, require a check or approval step before any action that a fetched instruction file triggers, rather than letting the loop act directly on what it reads.*

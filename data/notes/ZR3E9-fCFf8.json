@@ -1,0 +1,192 @@
+{
+ "one_line": "Kai works through the memory and dollar math for running GLM 5.3 locally: MoE active params don't reduce memory, quantization sets the footprint, and renting or the API beats buying hardware for most teams.",
+ "summary": "The speaker explains why a 743B-total, roughly 40B-active mixture-of-experts model needs all of its weights resident in memory, so the active count only sets speed. He lists the GLM weight footprints at BF16, FP8, INT4 and 2-bit dynamic quantization. He then walks through hardware options: a 512 GB Mac Studio M4 Ultra (solo use, 3 to 6 tokens/s), consumer GPUs with CPU offload (single-digit tokens/s), and H100, H200 and B200 nodes sized for INT4, FP8 and 1M context. Rental and purchase costs follow, with a break-even estimate of 150 to 200M output tokens per month for a team. He notes that GLM 5.3 weights were not yet public, with the API and GLM coding plan as the only access, and recommends a hybrid setup where local models handle private, high-volume work and frontier API calls handle heavy tasks. Most benchmark and price figures are quoted without sources, and the video ends with a consulting plug.",
+ "speakers": [
+  "Channel host (Kai Explains; not named in transcript)"
+ ],
+ "orgs": [
+  "Z.ai (ZAI, formerly Jipu AI, Tsinghua spin-out)",
+  "Unsloth",
+  "Hugging Face",
+  "AWS",
+  "Silicon Data",
+  "Apple",
+  "NVIDIA"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "glm-5.3",
+  "open-weights",
+  "moe-memory",
+  "self-hosting",
+  "gpu-sizing",
+  "quantization",
+  "cost-analysis",
+  "api-vs-self-host",
+  "mac-studio",
+  "h200"
+ ],
+ "key_ideas": [
+  {
+   "idea": "MoE active parameters set compute speed, not memory",
+   "detail": "Only about 39 to 40B of GLM 5.3's 743B parameters are active per token, but the router can pick different experts for every token, so all 743B must stay in memory. The speaker says he once misread the active count as the memory need.",
+   "t": "1:28"
+  },
+  {
+   "idea": "Quantization level determines the weight footprint",
+   "detail": "Weights for the 743B base come to about 1.5 TB in BF16, about 755 GB in FP8, about 372 GB in INT4, and about 239 GB at the most aggressive 2-bit dynamic quantization. GLM 5.3 reuses the 5.2 base, so these figures are expected to carry over until 5.3 checkpoints are published. KV cache and runtime overhead are not included.",
+   "t": "2:50"
+  },
+  {
+   "idea": "A 512 GB Mac Studio is the cheapest credible local option, with limits",
+   "detail": "A maximum-config M4 Ultra Mac Studio (512 GB unified memory, roughly $10k to $12k) fits the 2-bit quant at about 3 to 6 tokens per second, which the speaker compares to human reading speed. M2 and M3 Ultra machines and the 256 GB M4 Ultra are too small. He frames this as a solo-developer setup, not a team deployment.",
+   "t": "5:10"
+  },
+  {
+   "idea": "Consumer GPUs with CPU offload are impractical for this model",
+   "detail": "RTX 5090 (32 GB), 4090 (24 GB) and 3090 setups would need about four 3090s plus 192 GB of system RAM and MoE offload tuning for the 2-bit model. PCIe bandwidth limits output to single-digit tokens per second.",
+   "t": "6:32"
+  },
+  {
+   "idea": "GPU node sizing follows from the quantization footprint",
+   "detail": "Four H100s (320 GB) fall short of INT4 (372 GB), so at least five are needed before KV cache. Eight H100s (640 GB) give INT4 with some headroom but not the full 1M context. Eight H200s (1,128 GB) are the stated production minimum for FP8, and eight B200s (1,536 GB) are needed for the full 1M context.",
+   "t": "6:32"
+  },
+  {
+   "idea": "Rental and API costs favor renting or the API at normal volumes",
+   "detail": "An 8x H200 node at about $3.50 per GPU-hour is about $28/hour, or about $20k per month running 24/7, before networking, storage and engineering. Eight B200s at a roughly $8 midpoint come to about $46k per month. The speaker estimates self-hosting pays off only at about 150 to 200M output tokens per month for his team, assuming high utilization.",
+   "t": "7:49"
+  },
+  {
+   "idea": "Weights were withheld at launch, so the API is the way to evaluate now",
+   "detail": "Unlike GLM 5.2, which shipped MIT-licensed weights within days, GLM 5.3 was API and coding-plan only at launch. Z.ai cited cybersecurity capability and said weights would be staged after a safety review, about two weeks out. The speaker recommends testing through the API before planning hardware.",
+   "t": "10:28"
+  },
+  {
+   "idea": "Recommended end state is a hybrid of local and API models",
+   "detail": "Local models handle private, repetitive, high-volume work that should not leave the premises. Heavy frontier-scale tasks go to the API. The advice is to rent for a couple of weeks, run real workloads, measure, and only then consider buying.",
+   "t": "11:54"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Resident-memory estimate for MoE models",
+   "how": "Multiply total parameters (not active) by bytes per parameter for the chosen precision: 2 bytes BF16, 1 byte FP8, 0.5 byte INT4, about 0.3 bytes for 2-bit dynamic. Then add KV cache and runtime overhead on top. For GLM 5.x, 743B gives about 1.5 TB, 755 GB, 372 GB and 239 GB respectively.",
+   "when": "Before buying or renting hardware for any MoE model. Use it to rule out machines whose memory is below the weight footprint, even when the active-parameter count looks small."
+  },
+  {
+   "name": "GPU count from footprint with headroom",
+   "how": "Divide the weight footprint by per-GPU VRAM, round up, and add margin for KV cache and runtime. Example from the talk: 372 GB INT4 on 80 GB H100s needs at least 5 GPUs before overhead, so 8 GPUs (640 GB) is the practical minimum. Check context length separately, since long context needs more KV cache.",
+   "when": "When sizing a multi-GPU inference node for a given model, precision and context window."
+  },
+  {
+   "name": "Rent-before-buy evaluation with cost break-even",
+   "how": "1) Run the model through its API or coding plan on real tasks. 2) Measure tokens per month. 3) Compare API spend with monthly node cost (GPU hourly rate x GPU count x ~720 hours, plus networking, storage and engineering time). 4) Only buy if the break-even volume is within your real usage. The speaker's team break-even was about 150 to 200M output tokens per month.",
+   "when": "Before committing to local or self-hosted inference for a frontier-scale open-weight model, especially when utilization may be low."
+  },
+  {
+   "name": "Hybrid local-plus-API routing",
+   "how": "Route private, repetitive or high-volume requests to a local model. Send hard, frontier-level tasks to a hosted API. Keep the routing rule explicit so the local tier can be measured on its own.",
+   "when": "When some workloads must stay on-premises for data reasons, and others need the strongest available model and are low-volume."
+  }
+ ],
+ "tools": [
+  "GLM 5.3 (Z.ai)",
+  "GLM 5.2 (Z.ai)",
+  "GLM 5.1 (Z.ai)",
+  "GLM coding plan (Z.ai)",
+  "Terminal Bench 3 (benchmark, cited by speaker)",
+  "CyberGym (benchmark, cited by speaker)",
+  "ExploitBench (benchmark, cited by speaker)",
+  "Unsloth dynamic 2-bit quantization",
+  "GGUF (2-bit file format, mentioned)",
+  "Hugging Face (weight hosting)",
+  "Apple Mac Studio M4 Ultra (512 GB)",
+  "Apple Silicon unified memory",
+  "NVIDIA H100 (80 GB)",
+  "NVIDIA H200 (141 GB)",
+  "NVIDIA B200 (192 GB)",
+  "NVIDIA RTX 5090 (32 GB)",
+  "NVIDIA RTX 4090 (24 GB)",
+  "NVIDIA RTX 3090",
+  "PCIe (offload bottleneck)",
+  "Silicon Data Benchmark Index (H200 rate)",
+  "Official VLM recipe for GLM 5.2 (transcript wording, serving recipe)"
+ ],
+ "numbers": [
+  {
+   "claim": "GLM 5.3 is a 743B-total-parameter MoE with about 39 to 40B active per token; the same base as GLM 5.2",
+   "t": "1:28"
+  },
+  {
+   "claim": "Weight sizes for the 743B base: BF16 about 1.5 TB; FP8 about 755 GB; INT4 about 372 GB; 2-bit dynamic about 239 GB",
+   "t": "2:50"
+  },
+  {
+   "claim": "Mac Studio M4 Ultra 512 GB costs about $10k to $12k and runs the 2-bit quant at about 3 to 6 tokens/s",
+   "t": "5:10"
+  },
+  {
+   "claim": "Four H100s (320 GB) are short of INT4 (372 GB); eight H100s give 640 GB; eight H200s give 1,128 GB; eight B200s at 192 GB give 1,536 GB",
+   "t": "6:32"
+  },
+  {
+   "claim": "H200 market rate about $3.10 per GPU-hour (Silicon Data index); specialized clouds $2.60 to $3.99 per GPU-hour; AWS 8x H200 about $39 to $40 per hour",
+   "t": "7:49"
+  },
+  {
+   "claim": "8x H200 at $3.50 per GPU-hour is about $28/hour, about $20,160 per month 24/7 for GPU cost alone, and about $25k+ per month with networking, storage and engineering",
+   "t": "9:02"
+  },
+  {
+   "claim": "B200 rentals range $2.69 to $16.11 per GPU-hour; at about $8 midpoint, 8 GPUs cost about $64/hour or $46,080 per month",
+   "t": "9:02"
+  },
+  {
+   "claim": "GLM 5.2 API pricing about $1.40 per million input tokens and $4.40 per million output tokens",
+   "t": "9:02"
+  },
+  {
+   "claim": "Team self-hosting break-even estimated at about 150 to 200M output tokens per month, assuming perfect utilization",
+   "t": "9:02"
+  },
+  {
+   "claim": "Purchasing an 8x H200 node costs about $280,000 or more; renting one is about $20k per month; 8x B200 at 1M context is about $45k per month",
+   "t": "10:28"
+  }
+ ],
+ "hot_takes": [
+  "Local hosting of a frontier-scale MoE only makes sense at very high, steady token volume. For most teams the API or a short rental is the better choice.",
+  "The active-versus-total parameter confusion is the most common mistake when sizing local MoE hardware.",
+  "The Mac Studio is the cheapest credible local path for a large model, but it only suits a single developer with patience."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft targets vLLM on one RTX 5090 with quantized models. The talk's memory math (total-parameter residency, quant footprints, KV cache headroom) applies directly to sizing and to what InferCraft can and cannot host on one 32 GB card.",
+   "action": "Add a sizing helper to InferCraft that computes resident weight memory from total parameters and precision, then adds KV cache, so MoE models are checked against total rather than active parameters before a run."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The talk covers local model hardware and cost, with no coding-agent harness, checkpoint, or approval content relevant to ProsHarness.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "GLM 5.3 weights were not released at launch and the talk says benchmark and price claims are unverified. Re-checking availability and benchmarks before any hosting decision is worthwhile.",
+   "action": "Revisit once the GLM 5.3 weights are public and run the video's footprint math against the real checkpoint sizes, KV cache included."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

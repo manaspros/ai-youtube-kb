@@ -1,0 +1,150 @@
+{
+ "one_line": "Better Stack demo of a Doom-like raycasting game whose 3D rendering runs entirely as DuckDB SQL queries in the browser (WASM); a stunt that shows how far an embedded analytical DB can be pushed, not a practical recipe.",
+ "summary": "The presenter walks through a browser game, built by Patrick Traynor, where DuckDB (WASM build) handles the game state and the 3D raycasting, not just data storage. The game's index.html (about 654 lines) imports DuckDB from a CDN and renders a text frame buffer built from SELECTs over five tables (map, player, enemies, bullets, settings) and two views (Render3DFrame, ColumnDistances). The map is a 16x16 grid table of x, y and tile value, with walls as '#'. The 3D view uses a recursive common table expression: a seed row, then a recursive step that advances each ray until it hits a wall or exceeds a max step count. A setInterval re-runs the main query every 150 ms. A pixel function picks the character: blank for sky, a dot for floor, and a wall glyph whose opacity falls off with distance. The presenter then plays it (WASD to move, space to shoot; '@' player, 'E' enemies, '*' bullets). He frames it as a stress test of DuckDB and says he would not play a full game this way. The transcript has no benchmarks, and the presenter says some function/alias terms interchangeably.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools",
+  "data-engineering"
+ ],
+ "tags": [
+  "duckdb",
+  "duckdb-wasm",
+  "sql",
+  "recursive-cte",
+  "raycasting",
+  "embedded-database",
+  "browser",
+  "doom",
+  "demo"
+ ],
+ "key_ideas": [
+  {
+   "idea": "DuckDB is an analytical database that runs embedded in the host process, so it can be used as a library with no separate server or container.",
+   "detail": "Presenter contrasts it with ClickHouse and BigQuery as analytical engines, and says a Node.js app could install it as a library and it would feel like part of the same app.",
+   "t": "0:00"
+  },
+  {
+   "idea": "A full Doom-like game's rendering is done in SQL, not in JavaScript.",
+   "detail": "The DuckDB WASM build runs in the browser; the index.html is about 654 lines and imports DuckDB from a CDN. The screen element renders a frame buffer made of rows that come from SELECTs.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Game state lives in plain tables, and the frame is a view over them.",
+   "detail": "Tables: map, player, enemies, bullets, settings. Views: Render3DFrame and ColumnDistances. Each render tick is a set of SELECTs over these, so movement and rendering are both queries.",
+   "t": "1:19"
+  },
+  {
+   "idea": "The minimap is a 16x16 grid table with x, y and tile columns.",
+   "detail": "Wall tiles render as '#' and empty tiles as '.', with the minimap coloured via CSS. A separate minimap element renders it, distinct from the main screen element.",
+   "t": "2:44"
+  },
+  {
+   "idea": "3D raycasting is a recursive CTE: seed the ray, then step it until it hits a wall or the max step count is reached.",
+   "detail": "The recursion is per ray and is not applied to the whole statement. The presenter describes the query as building the row set once and then recursively updating it from what changed. Player and settings values determine the candidate rows and columns, trimmed to the screen size from settings.",
+   "t": "4:05"
+  },
+  {
+   "idea": "The whole render query re-runs on a timer, about every 150 ms.",
+   "detail": "A setInterval triggers the main SELECT each time, so every frame is a fresh full query over the state tables. The presenter notes that player movement is also computed via SQL, so these tables are queried heavily, which he says is what DuckDB is built for.",
+   "t": "5:28"
+  },
+  {
+   "idea": "The pixel function maps distance to glyph: sky is blank, floor is a dot, and walls are a rectangle whose opacity falls with distance.",
+   "detail": "Wall distance comes from the ray result, and wall height comes from a separate function. The presenter says the frame output is rows of characters that the browser shows as text.",
+   "t": "5:28"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Recursive CTE as a ray-march loop",
+   "how": "Write a seed row CTE for the first ray step, then a recursive CTE that advances each ray one step per iteration (position += direction) until a wall tile is hit or a max-steps bound is reached. Output the hit distance per ray. The video shows this with comments marking the seed and the recursive step. Use a step bound so recursion terminates.",
+   "when": "Iterative per-element computation (marching, path-stepping, simulation) that must run inside a SQL engine instead of application code."
+  },
+  {
+   "name": "Game state as tables, render as views",
+   "how": "Store map, player, enemies, bullets and settings as tables. Define view layers (Render3DFrame, ColumnDistances) over them. Each frame, SELECT the frame rows; the output is text rows that the browser renders into a screen element. The minimap is a separate SELECT over the map table.",
+   "when": "Prototyping an analytics-engine-backed app or a demo where you want the database to be the single source of state and the render path."
+  },
+  {
+   "name": "Timer-driven full-query refresh",
+   "how": "Wrap the main render SELECT in a setInterval with a 150 ms period. Each tick re-runs the full query and replaces the displayed frame.",
+   "when": "A low-frequency UI refresh where per-tick query cost is acceptable. The video does not measure cost."
+  },
+  {
+   "name": "Distance-based glyph shading",
+   "how": "Map ray distance to a character: nothing for sky, a dot for floor, and a wall glyph whose opacity or density falls off with distance, using a pixel function evaluated per cell.",
+   "when": "Text-mode or ASCII rendering where distance cues come from character choice."
+  },
+  {
+   "name": "Embedded DuckDB WASM from a CDN",
+   "how": "Import the DuckDB WASM build from a CDN in index.html, so the analytics engine runs in the browser with no backend. The video shows the import as the first line of the page's JavaScript.",
+   "when": "Running SQL-driven logic client-side with no server, or for local demos."
+  }
+ ],
+ "tools": [
+  "DuckDB",
+  "DuckDB WASM",
+  "SQL",
+  "Node.js",
+  "ClickHouse",
+  "BigQuery",
+  "Docker Compose",
+  "Cursor (editor)",
+  "CSS"
+ ],
+ "numbers": [
+  {
+   "claim": "index.html of the game is about 654 lines.",
+   "t": "1:19"
+  },
+  {
+   "claim": "The minimap is a 16x16 grid.",
+   "t": "2:44"
+  },
+  {
+   "claim": "The render query runs every 150 ms via setInterval.",
+   "t": "4:05"
+  },
+  {
+   "claim": "The game uses 5 tables (map, player, enemies, bullets, settings) and 2 views (Render3DFrame, ColumnDistances).",
+   "t": "1:19"
+  },
+  {
+   "claim": "Video length is 7:51. No performance or latency numbers are given.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Presented as a stress test of what an embedded analytical DB can do, not as a recommendation for game engines or for running games in SQL.",
+  "Presenter says he would not play a full-length game this way.",
+  "Benchmark-free: nothing shows the per-frame cost or whether 150 ms refresh is limited by the query."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS roadmap includes a Parquet + DuckDB archive and per-tenant DuckDB read tier. This video shows only embedded DuckDB usage, with no benchmarks or storage or query-performance data.",
+   "action": "If the DuckDB read-tier work starts, try DuckDB embedded against a Parquet export of agent telemetry to measure cold query latency; this video gives no numbers to use."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content on harnesses, Claude Code, checkpointing, plans or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "Entertainment demo; no transferable agent, eval or context-engineering technique.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

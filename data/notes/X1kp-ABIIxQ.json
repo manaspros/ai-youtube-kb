@@ -1,0 +1,144 @@
+{
+ "one_line": "Dan Farrelly (Inngest CTO) argues agent architectures decay fast unless the execution layer (durable state, retries, triggers, tracing) is separated from fast-changing context (prompts, models, tools) and compute (sandboxes).",
+ "summary": "Dan Farrelly, CTO of Inngest, argues that agent architectures have a half-life of about six months because teams couple fast-changing parts (prompts, models, frameworks) with slow-changing ones. He proposes three layers: execution (the brain: flow, state, durability, retries), context (models, prompts, tools, memory, which changes most), and compute (the hands: sandboxes, runtimes, browsers). His main claim is that the execution layer is the stable one to invest in, and it should hold durable external state so a failed step can resume without restarting the run. He lists the invocation patterns it must support (crons, events, APIs, human-in-the-loop, sub-agents, sync/async/delayed) and full-session tracing that includes non-LLM failures. He treats sandboxes as ephemeral and says using them for durability is an anti-pattern. He walks through a self-improving loop (cron health check, triage agent, weekly reviewer) and suggests scoring agents with outcome events such as \"PR opened\" instead of thumbs up/down. The talk is conceptual, with a short product pitch for Inngest at the end.",
+ "speakers": [
+  "Dan Farrelly"
+ ],
+ "orgs": [
+  "Inngest"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "sandboxing-execution",
+  "observability",
+  "evals"
+ ],
+ "tags": [
+  "durable-execution",
+  "execution-layer",
+  "architecture-layers",
+  "resumability",
+  "background-agents",
+  "loops",
+  "sandboxes",
+  "session-tracing",
+  "outcome-scoring",
+  "inngest"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Split agent systems into three layers: execution, context, and compute",
+   "detail": "Execution is the brain (flow, state, durability, retries). Context covers models, prompts, tools and memory, and changes most. Compute is the hands (sandboxes, runtimes, browsers). Keeping them separate lets one layer change without rewriting the others.",
+   "t": "2:21"
+  },
+  {
+   "idea": "Architecture half-life comes from coupling layers",
+   "detail": "Prompts last weeks, models months, execution years if built well. When layers are coupled, fast-changing parts drag the stable parts down, and this becomes technical debt under another name.",
+   "t": "3:50"
+  },
+  {
+   "idea": "Durable state must live outside the running work",
+   "detail": "A three-hour run cannot keep state in memory or on disk. If step 38 of a run fails, the system should retry from that step rather than restart and lose tokens, cost and time.",
+   "t": "6:22"
+  },
+  {
+   "idea": "The execution layer must support many invocation patterns natively",
+   "detail": "Crons, events, APIs, human-in-the-loop, sub-agents, and sync, async or delayed calls. Without these primitives, harness code absorbs queues, workers, polling, backoff and scheduling.",
+   "t": "7:48"
+  },
+  {
+   "idea": "Trace the whole session, not just LLM and tool calls",
+   "detail": "Traces should run from the trigger through the full stack, including database errors, permission issues and performance. Without that, debugging and improving the agent is hard.",
+   "t": "8:48"
+  },
+  {
+   "idea": "Sandboxes are ephemeral, so do not use them for durability",
+   "detail": "A sandbox is stateless by design. Durability, sequence and context should come from the execution layer, which hands the sandbox what it needs.",
+   "t": "9:50"
+  },
+  {
+   "idea": "Background agents and loops need execution awareness",
+   "detail": "Background agents may run for minutes or hours with hundreds of tool calls, and at least one failure is likely. A loop is a system that runs on a schedule, assesses state against goals, and decides what to do next. The example is a 30-minute health-check cron that feeds a triage agent, plus a weekly reviewer that checks whether the triage system is over- or under-reacting.",
+   "t": "11:21"
+  },
+  {
+   "idea": "Use the execution layer as the hub for scoring",
+   "detail": "User actions and session results all pass through the execution layer, so it is a natural place to attach scores. Scoring can run after the fact on the full trace, with inputs and outputs.",
+   "t": "15:36"
+  },
+  {
+   "idea": "Outcome events beat thumbs up/down",
+   "detail": "Attach real-world events to a session, such as a triage that led to an engineer action, a PR that was opened, or a research report that was saved. These become outcome-based scores.",
+   "t": "17:05"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Three-layer decomposition (execution / context / compute)",
+   "how": "Treat orchestration and durability as their own layer. Keep prompts, models and tools in a context layer, and sandboxes or browsers in a compute layer, with clean interfaces between them.",
+   "when": "When agent code is changing every few months and you need to swap models, frameworks or sandboxes without rewriting orchestration."
+  },
+  {
+   "name": "Externalised durable step state with resume-from-failure",
+   "how": "Persist each step's state outside the agent process. On failure, retry or continue from the failed step instead of restarting the whole run.",
+   "when": "For long-running agent tasks (hours, hundreds of tool calls) where restarts waste tokens, cost and time."
+  },
+  {
+   "name": "Cron-triggered health check, triage agent, and reviewer loop",
+   "how": "A scheduled job pulls system metrics and asks an LLM whether things are healthy. If not, it spawns a triage agent that gathers context and investigates. A periodic reviewer reads the history of triage runs and proposes prompt, metric or data changes.",
+   "when": "For autonomous monitoring or improvement loops that must be observable and inspectable after the fact."
+  },
+  {
+   "name": "Deferred outcome scoring from downstream events",
+   "how": "After a run, attach downstream events (PR opened, report saved, action taken by a team) to the session trace and score the run from those outcomes.",
+   "when": "When you need a success signal for agent runs that is more reliable than user thumbs up/down."
+  },
+  {
+   "name": "Ephemeral sandboxes with state kept in the orchestrator",
+   "how": "Create the sandbox per task and keep sequence, state and durability in the execution layer. Pass only what the sandbox needs.",
+   "when": "When sandboxes are used for code execution or browsing and must be disposable."
+  }
+ ],
+ "tools": [
+  "Inngest"
+ ],
+ "numbers": [
+  {
+   "claim": "Architecture half-life of about six months; prompts last weeks, models months, execution years when built well (speaker's estimate, not measured)",
+   "t": "3:50"
+  },
+  {
+   "claim": "Background agent runs can take minutes or hours with around 200 tool calls, and the speaker says at least one failure is nearly guaranteed",
+   "t": "11:21"
+  },
+  {
+   "claim": "Example health-check cron runs every 30 minutes; the reviewer loop runs weekly",
+   "t": "12:44"
+  }
+ ],
+ "hot_takes": [
+  "Most teams couple everything together, so one layer's half-life drags the others down.",
+  "Sandboxes are ephemeral and stateless by design, so using them for durability is an anti-pattern.",
+  "Frameworks from three months ago were not designed for background and loop agents, so you need to design the execution layer yourself.",
+  "Thumbs up/down is weaker than outcome events such as a PR being opened."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS's open SkillForge question is what success signal to use. The talk's outcome-event scoring (PR opened, report saved) is a concrete candidate. Its execution-layer framing also maps onto the L1 proxy and L2 pillars, though the talk does not address proxies.",
+   "action": "Prototype SkillForge success scoring by attaching downstream outcome events (for example, a PR merged or a saved artifact) to each agent session trace, and check whether they separate good runs from bad ones."
+  },
+  {
+   "project": "prosharness",
+   "score": 3,
+   "why": "ProsHarness does checkpoint/resume of long Claude Code runs and loops or schedules. The talk's core requirement is that durable state live outside the running work, with resume from the failed step. This directly tests whether ProsHarness's checkpoint design meets that bar.",
+   "action": "Audit ProsHarness checkpoint/resume: confirm state lives outside the Claude CLI process and sandbox, that resume starts from the failed step rather than the run start, and that scheduled loops are visible in one inspectable trace."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

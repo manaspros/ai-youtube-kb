@@ -1,0 +1,138 @@
+{
+ "one_line": "Ido Salomon demos AgentCraft, an RTS-style orchestrator for many coding agents, arguing the human is the bottleneck and offering visibility, campaigns, review bundles and shared workspaces as fixes.",
+ "summary": "The speaker argues that running 10 to 100 coding agents fails because the human operator is the bottleneck, not the agents. He presents AgentCraft, a free experimental orchestrator that shows live agent sessions (Cursor, Claude Code, Codex, OpenClaw) as units on a map. The map is a projection of the file system, so you can see which agent touches which file, build a lineage of changes, and show collision heat maps. He then describes moving the human out of the loop: agents generate their own missions (Quest), a broad campaign is decomposed by an agent in a container, and the human reviews plans and \"review bundles\" with diffs, rationale and screenshots or video. Shared workspaces let a teammate's agents be picked up and continued, and a soft chat lets humans and agents announce which files they are working on. The talk is mostly a product walkthrough with a call for feedback, so the reusable ideas are the visibility and review-surface patterns rather than measured results.",
+ "speakers": [
+  "Ido Salomon"
+ ],
+ "orgs": [],
+ "format": "demo",
+ "topics": [
+  "multi-agent",
+  "coding-agents",
+  "product-ux",
+  "pr-code-review"
+ ],
+ "tags": [
+  "orchestration",
+  "agent-ui",
+  "file-collision",
+  "review-bundles",
+  "campaign-mode",
+  "human-in-the-loop",
+  "collaboration",
+  "rts-metaphor"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The bottleneck in multi-agent work is the human operator, not spinning agents up.",
+   "detail": "Launching 10, 20 or 100 agents is easy. Attention, planning and babysitting are what break down, so the orchestrator must reduce human attention cost.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Managing many agents borrows skills from RTS games.",
+   "detail": "Juggling dozens of units maps to real-time strategy play. He uses muscle memory, hotkeys to cycle to agents waiting on approval or answers, and fast visual scanning.",
+   "t": "1:03"
+  },
+  {
+   "idea": "Visibility comes from projecting agent activity onto the file system.",
+   "detail": "Directories appear as map regions and files as runes. Each agent's touches, change lists and timing give full lineage. A heat map of overlapping activity can flag collisions before they happen.",
+   "t": "3:13"
+  },
+  {
+   "idea": "Remove the human from ideation with self-generated missions and campaigns.",
+   "detail": "A Quest feature has agents pick their own tasks. A campaign takes a broad goal, runs in a container, decomposes and plans the work, and presents a plan for approval, so the human owns planning and review rather than babysitting.",
+   "t": "5:58"
+  },
+  {
+   "idea": "Review bundles are the new review surface.",
+   "detail": "Each agent's output is grouped with its task list, rationale, and visual evidence such as screenshots and video, so reviewers do not have to reconstruct what happened from raw diffs.",
+   "t": "5:58"
+  },
+  {
+   "idea": "Cheap parallel attempts shift effort from planning to picking the best result.",
+   "detail": "If an agent can attempt the same task 10 times, the human spends less time perfecting the plan and more time choosing among outputs. This is his stated reason for moving effort to review.",
+   "t": "7:28"
+  },
+  {
+   "idea": "Shared workspaces let humans hand work between their agents and teammates' agents.",
+   "detail": "A designer's agent session can be picked up by an engineer's agents and continued. Soft coordination is a chat across humans and agents, where an agent that sees 'I'm also working on this' adjusts its next action and knows which files others are changing.",
+   "t": "7:28"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Filesystem-projected agent map with collision heat map",
+   "how": "Map each agent's file reads and writes onto the directory tree, keep a per-file change list with agent and timestamp, and render overlap density as a heat map to flag or prevent collisions.",
+   "when": "Several agents edit one repo in parallel and you need to see who is touching what before merge conflicts happen."
+  },
+  {
+   "name": "Hotkey cycling to agents that need attention",
+   "how": "Surface agents waiting on plan approval or a question, and let the operator cycle between them with a fixed key so triage is fast and muscle-memory driven.",
+   "when": "Many agent sessions run at once and each one occasionally blocks on the human."
+  },
+  {
+   "name": "Campaign mode: broad goal in a container, plan first",
+   "how": "Give a high-level goal, let an agent decompose and plan inside an isolated container, present the plan for approval, then let it run unattended with no babysitting.",
+   "when": "Long multi-step tasks where the human should approve the plan and review the result, not watch each step."
+  },
+  {
+   "name": "Review bundles with rationale and visual evidence",
+   "how": "Package each agent run as one reviewable unit: diff, task list, why the changes were made, and screenshots or video of the result.",
+   "when": "Reviewing many agent-produced PRs or branches and wanting to cut review time."
+  },
+  {
+   "name": "Best-of-N parallel attempts with human selection",
+   "how": "Run the same task several times with different agents and pick the most fitting output, instead of over-investing in one upfront plan.",
+   "when": "Outputs are cheap to generate and easy to compare, and the planning cost is higher than the review cost."
+  },
+  {
+   "name": "Soft coordination via shared human and agent chat",
+   "how": "Agents post what they are starting, humans reply to claim the work, and agents read these signals and each agent's file-change intent on their next turn.",
+   "when": "Several humans and their agents work on one codebase and need to avoid duplicate work without hard locks."
+  }
+ ],
+ "tools": [
+  "AgentCraft",
+  "MCPUI",
+  "MCP Apps",
+  "Cursor",
+  "Claude Code",
+  "Codex",
+  "OpenClaw",
+  "Git",
+  "Chrome"
+ ],
+ "numbers": [
+  {
+   "claim": "Example scale discussed: 10, 20 or 100 agents in parallel. This is illustrative, not a measured result.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Best-of-N example: an agent can attempt the same task 10 times, and the human picks the best. This is an illustrative argument, not a benchmark.",
+   "t": "7:28"
+  }
+ ],
+ "hot_takes": [
+  "The human operator, not the agents, is the bottleneck in multi-agent coding.",
+  "Orchestrating agents is the same skill set as playing RTS games.",
+  "Humans should spend their time on planning and review, and let agents spend their time on execution and retries."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Telemetry on which agent touches which file and when is a possible input for SkillForge's skill-mining signal, but the talk does not address skill mining.",
+   "action": "Consider logging per-file agent touch events as a candidate signal source for SkillForge's success and skill-worthiness scoring."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Its campaign flow (plan, human approval, unattended run, review) and review bundles overlap with ProsHarness's plan, critique and approval loop, and its file-collision view bears on running parallel harness loops.",
+   "action": "Try a review bundle per ProsHarness run (diff, plan, rationale, test or screenshot evidence) as the surface for phone-driven approval, and check whether file-touch collision detection is needed for parallel loops."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

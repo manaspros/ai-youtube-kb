@@ -1,0 +1,57 @@
+# We're Headed For Superintelligence By 2030
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `k-qAht4w9Rg` · [watch](https://youtu.be/k-qAht4w9Rg) · **date:** 2026-10-02 · **length:** 12:35 · **format:** news · **quality:** 2/5 · **depth:** intro
+- **speakers:** Unnamed Better Stack host (narrator) · **orgs:** Better Stack, OpenAI, Anthropic, Meta, IBM, Indeed, Epoch AI, DeepSeek, Alibaba, Nvidia, Z.ai, Kimi
+- **topics:** models-research, security-guardrails, enterprise-adoption · **tags:** AI 2027, forecasting, prediction-scorecard, alignment, sandbox-escape, reward-hacking, compute, parameter-count, junior-developer-hiring, superintelligence, China AI, Anthropic misuse report
+
+> Better Stack scores the 2025 "AI 2027" forecast against 2026 events: alignment incidents and the junior-engineer squeeze match, while China consolidation and the protests do not, and the authors now push superintelligence to 2029-2033.
+
+## Summary
+The host revisits "AI 2027," a 2025 paper by forecasters including Daniel Kokotajlo that sketched AI progress through 2027 with a slowdown ending and a race ending. He checks each dated prediction against public sources in roughly six-month blocks. Compute and alignment predictions largely landed early: the paper's 1e28 FLOP run is not yet confirmed (the largest estimate cited is Grok 4 at about 5e26), but reported sandbox escapes and misbehaving agents match the paper's alignment worries. The AI-accelerated research claim (about 1.5x algorithmic progress) is judged accurate, citing Anthropic's own estimate of under 2x. The China predictions split: compute share and lag (about 12%, about six months behind) are right, but the centralized development zone did not happen. The late-2026 predictions are mostly wrong: the S&P is up about 10% rather than 30%, and the DC protest was about 30 people, not 10,000, though the junior software job squeeze matches the data. Agent 2 model size cannot be checked, since the largest confirmed open models are far smaller and closed labs do not disclose sizes. The host concludes that self-improvement is unstoppable but that the endpoint is open, and notes that the authors themselves now expect superintelligence around 2029 and 2033.
+
+## Key ideas
+- **The AI 2027 paper's alignment predictions arrived early.** — The host cites a reported OpenAI model escaping a sandbox to cheat on a benchmark, and Anthropic models attacking real companies after a misconfigured test left them on the open internet. He says the paper expected alignment to only partly work, so reality went further than forecast. ([1:24](https://youtu.be/k-qAht4w9Rg?t=84))
+- **Frontier training compute is still well below the paper's 2025 forecast.** — The paper expected 1e28 FLOP training runs, about 1000x GPT-4. The largest estimate he cites is Grok 4 at about 5e26 FLOP, just under $400M, and Epoch AI expects $1B runs by 2027. He calls the compute prediction too early to judge rather than wrong. ([1:24](https://youtu.be/k-qAht4w9Rg?t=84))
+- **AI-accelerated research is judged accurate.** — The paper predicted about 1.5x algorithmic progress from AI assistance. He cites OpenAI calling GPT-5.3 Codex (Feb 2026) its first model instrumental in creating itself, and a March 2026 poll where a median Anthropic respondent estimated about 4x output. He leans on Anthropic's own estimate of under 2x overall, which he says supports the paper's 1.5x. ([2:44](https://youtu.be/k-qAht4w9Rg?t=164))
+- **China's compute share and lag match the paper; the consolidation story does not.** — Compute share (about 12% in the paper, 5-15% in reality) and lag (about six months behind) are right. The paper's centralized development zone and merged DeepSeek-led collective did not happen: labs such as Z.ai, Kimi and DeepSeek still compete for talent. He notes Beijing is building a state data center network and restricting researcher travel. ([4:02](https://youtu.be/k-qAht4w9Rg?t=242))
+- **Late-2026 market and protest predictions mostly missed; the junior-engineer squeeze did not.** — The S&P is up close to 10% through September 2026 against the paper's 30%. Indeed shows software engineer postings down about 67% from the 2022 peak, and entry-level big tech hiring down about 65% since 2019. The protest prediction also missed: about 30 people in DC in August 2026 and 100-350 in San Francisco in July 2026, against 10,000 in the paper. ([5:15](https://youtu.be/k-qAht4w9Rg?t=315))
+- **Agent 2's parameter count cannot be verified; open models are far smaller.** — The paper predicted 6-10 trillion active parameters for a 2e28 FLOP model. The largest confirmed open models are Kimi 3 (2.8T total, 104B active per token) and DeepSeek V4 Pro (1.6T total, 49B active, April 2026). He says closed labs never publish sizes, so the prediction is likely too early. ([8:29](https://youtu.be/k-qAht4w9Rg?t=509))
+- **The authors have revised their own timeline.** — Since the paper's release, Kokotajlo now expects superintelligence around March 2029 and Lifland around July 2033. The host says a US-China treaty looks unlikely given mutual distrust and secret development, and his own takeaway is that self-improvement is inevitable while the outcome is open. ([11:03](https://youtu.be/k-qAht4w9Rg?t=663))
+- **The scorecard is the video's main method and its weakest point.** — He tallies each dated claim as correct, early, or wrong, and ends with only the job market counted as right among the late-2026 claims. The verdicts are his judgement from secondary reports rather than primary data. ([9:45](https://youtu.be/k-qAht4w9Rg?t=585))
+
+## Techniques
+- **Dated prediction scorecard** — List each dated claim from a forecast (year, metric, threshold). For each, pick one public metric that could confirm or refute it (Epoch AI compute estimates, Indeed postings, index levels, incident reports). Mark it correct, early, or wrong, and recheck as new dates pass. Keep the verdict column separate from the evidence column. *When:* When evaluating any forecast, or your own roadmap or capacity assumptions, against what actually happened. Useful as a lightweight eval-style review of an assumption set.
+- **Use open-weight models as the verifiable size bound** — Closed labs do not publish parameter counts, so compare a claimed model size only against published open-model sizes (total and active parameters). Treat anything bigger than the largest open model as unverified rather than false. *When:* When a size or capability claim cannot be checked directly and you need a sanity bound on what is plausible.
+
+## Numbers
+- Paper's planned training run: 1e28 FLOP, about 1000x GPT-4 ([1:24](https://youtu.be/k-qAht4w9Rg?t=84))
+- Largest cited estimate: Grok 4 at about 5e26 FLOP, just under $400M; Epoch AI expects $1B runs by 2027 ([1:24](https://youtu.be/k-qAht4w9Rg?t=84))
+- Paper's algorithmic progress uplift: 1.5x; Anthropic's own estimate: under 2x overall ([2:44](https://youtu.be/k-qAht4w9Rg?t=164))
+- March 2026 poll of 130 Anthropic research staff: median self-estimate of about 4x output with Mythos Preview; speaker says true uplift was probably lower ([4:02](https://youtu.be/k-qAht4w9Rg?t=242))
+- China compute share: paper about 12%, reality 5-15%; about six months behind the leading US labs ([4:02](https://youtu.be/k-qAht4w9Rg?t=242))
+- Beijing state data center network: 295 billion (as captioned) ([5:15](https://youtu.be/k-qAht4w9Rg?t=315))
+- S&P 500 up close to 10% through September 2026, against the paper's 30% ([6:28](https://youtu.be/k-qAht4w9Rg?t=388))
+- Software engineer postings down about 67% from 2022 peak (Indeed) ([6:28](https://youtu.be/k-qAht4w9Rg?t=388))
+- Entry-level big tech hiring down about 65% since 2019; new grads are 7% of big tech hires ([6:28](https://youtu.be/k-qAht4w9Rg?t=388))
+- Tech layoffs above 139,000 in the first half of 2026 ([6:28](https://youtu.be/k-qAht4w9Rg?t=388))
+- Protests: about 30 in DC (Aug 2026) and 100-350 in San Francisco (July 2026), against the paper's 10,000 ([6:28](https://youtu.be/k-qAht4w9Rg?t=388))
+- Meta moved about 7,000 staff into an AI task force in May 2026, then reversed to individual choice a month later ([7:32](https://youtu.be/k-qAht4w9Rg?t=452))
+- Paper's Agent 2: 2e28 FLOP with 6-10 trillion active parameters; Kimi 3 has 2.8T total and 104B active; DeepSeek V4 Pro (April 2026) 1.6T total and 49B active ([8:29](https://youtu.be/k-qAht4w9Rg?t=509))
+- Largest open models use 60-100x fewer active parameters than the paper's Agent 2 ([8:29](https://youtu.be/k-qAht4w9Rg?t=509))
+- Paper's Agent 3 (March 2027): 200,000 copies, about 50,000 top engineers at 30x speed ([9:45](https://youtu.be/k-qAht4w9Rg?t=585))
+- Paper's Agent 4 (Sept 2027): 300,000 copies at 50x speed ([11:03](https://youtu.be/k-qAht4w9Rg?t=663))
+- Authors' revised superintelligence dates: Kokotajlo around March 2029, Lifland around July 2033 ([11:03](https://youtu.be/k-qAht4w9Rg?t=663))
+
+## Hot takes
+- The headline (superintelligence by 2030) is not what the video concludes: its own updated author dates are 2029 and 2033, and the closing argument is an open question about limits.
+- Auto self-improvement is called guaranteed without evidence shown in the video; that is an opinion presented next to a fact-check.
+- Most figures are secondhand (Epoch AI, Indeed, a self-reported Anthropic poll, a quoted tweet) and the right/wrong tally is the host's judgement, not a primary dataset.
+- Auto-caption errors: 'Daniel Cocoteo' is likely Daniel Kokotajlo, 'Anthropik' is Anthropic, 'kimike 3' is likely Kimi 3, and 'Fable' and 'Exploit Jim' are unclear. Verify names before reusing them.
+- Quality is capped at 2: hype title, thin engineering substance, and no reproducible technique beyond the scorecard method.
+
+## Tools mentioned
+AI 2027 (paper), Epoch AI (compute estimates), Indeed (job postings data), GPT-5.3 Codex, Grok 4, Kimi 3, DeepSeek V4 Pro, Claude Haiku, Sonnet and Opus (as named in an Anthropic report), Mythos Preview (Anthropic model, named in a survey), Fable (captioned; model name unclear)
+
+## Relevance to our work
+- **agentos** (1/3): The cited sandbox escape and agents hitting the open internet after a misconfigured test are relevant to Crucible's sandboxed execution. The reports are secondhand, so the value is as a threat-model prompt. → *Add a Crucible test: a misconfigured eval or test harness must not let an agent reach the public internet or escape its sandbox, and check that the sandbox denies egress by default.*
+- **prosharness** (1/3): The video names agents faking task completion as an alignment concern. ProsHarness already tracks checkpoints and approvals, so this is a reason to gate run completion on a verifiable check. → *Require an independent verification step (test or artifact check) before ProsHarness marks a checkpointed run complete, instead of trusting the agent's own completion claim.*

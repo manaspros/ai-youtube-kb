@@ -1,0 +1,187 @@
+{
+ "one_line": "AI LABS walks through a pre-build setup checklist for Claude Code: product-focused PRD, hand-written CLAUDE.md, agents and skills, spec-first tests, progress and learnings files, and load planning. Generic, sponsored, no benchmarks.",
+ "summary": "A 13-minute AI LABS checklist for setting up a Claude Code project before writing app code. The speaker argues that long-standing product-building process still matters because it now structures agent work. Steps: have a custom planner agent interview you and write a product-focused PRD in phases, instead of using Claude's technical planning mode. Hand-write a CLAUDE.md that links the PRD and holds only what the agent cannot infer, not the output of /init. Before building, connect MCPs (Supabase, shadcn/ui, Playwright), create agents (planner, commit, refactor, Playwright-based verification) and skills (e.g. a front-end skill), and add path-scoped rules. Add a docs file of negative constraints, because agents bias toward action. Keep a progress file and a learnings file that the agent updates, write tests from the PRD before implementation, and track issues in GitHub (or Notion/Trello for non-technical teammates) with conventional commits and worktrees. Finally, state the expected concurrent-user count so the agent writes load tests and a plan-mode scalability review. The advice is generic, with no benchmarks or measured results, and the video includes a mid-roll sponsor segment and a pointer to a paid tier for the agent and skill files.",
+ "speakers": [],
+ "orgs": [
+  "AI LABS",
+  "Anthropic",
+  "Supabase",
+  "shadcn/ui",
+  "Playwright",
+  "GitHub",
+  "Notion",
+  "Trello",
+  "Weigh In Video",
+  "OpenClaw"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "context-engineering",
+  "testing-verification",
+  "coding-agents"
+ ],
+ "tags": [
+  "CLAUDE.md",
+  "PRD",
+  "planner-agent",
+  "subagents",
+  "skills",
+  "MCP",
+  "Playwright",
+  "shadcn",
+  "Supabase",
+  "negative-constraints",
+  "path-specific-rules",
+  "progress-file",
+  "learnings-file",
+  "tdd",
+  "spec-driven-tests",
+  "git-worktrees",
+  "conventional-commits",
+  "load-testing",
+  "plan-mode"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Plan product requirements before any prompt, using a product-focused planner agent rather than Claude's technical planning mode",
+   "detail": "A custom planner agent keeps asking questions until the requirements are understood, including MVP scope and an 'anything else?' pass. It then saves a PRD to the project folder, divided into phases with the key design decisions.",
+   "t": "1:06"
+  },
+  {
+   "idea": "Write CLAUDE.md yourself and keep it to what the agent cannot figure out",
+   "detail": "Link the PRD instead of repeating requirements. Include conventions, rules and writing style, not project structure, which the agent can read. The speaker says /init generates the file from the existing code rather than from what the agent needs, and that the file is loaded once and stays in context, so it has to be kept lean and updated over time.",
+   "t": "2:33"
+  },
+  {
+   "idea": "Set up MCPs, agents and skills before building, with a clear split between them",
+   "detail": "MCPs connect external services (Supabase, shadcn/ui, Playwright). Agents get a dedicated context window for tasks like planning, committing with pre-checks and conventional messages, refactoring, and UI verification through the Playwright MCP. Skills cover repeatable workflows that need references or scripts, built with the skill-creator from an open-source repo.",
+   "t": "3:36"
+  },
+  {
+   "idea": "Add negative constraints because agents are biased toward action",
+   "detail": "Positive specs leave gaps that agents fill with extra features or experiments. A docs file listing what not to build or do, linked from CLAUDE.md, closes those gaps. Example: explicitly ban the default purple/blue/white palette rather than only describing the desired one.",
+   "t": "5:03"
+  },
+  {
+   "idea": "Use path-specific rules for parts of the app, linked from CLAUDE.md",
+   "detail": "Each rule file declares the paths it applies to and holds the instructions for that area. CLAUDE.md stays limited to broad principles and points to these rules. The speaker recommends a front-end skill for consistent UI guidelines.",
+   "t": "5:03"
+  },
+  {
+   "idea": "Keep a progress file and a learnings file that the agent updates during the build",
+   "detail": "The progress file gives one place to see what is done and what remains, so the agent does not have to reread the code and docs. The learnings file records each error, its cause and its fix, so the same mistake is not repeated. CLAUDE.md must tell the agent to keep both updated.",
+   "t": "7:32"
+  },
+  {
+   "idea": "Write tests from the PRD before implementation, not after",
+   "detail": "Tests derived from the spec check the required behavior. Tests written after the code tend to fit the implementation, including its gaps. The speaker says open-ended prompts like 'test the application' make the agent optimize for what was built.",
+   "t": "8:56"
+  },
+  {
+   "idea": "Track issues upfront, with GitHub for technical users and Notion or Trello for everyone else",
+   "detail": "Commit after every implementation with detailed conventional messages so the agent can track progress and revert breaking changes. Use git worktrees for isolated experiments. Connect the Notion or Trello MCP and state in CLAUDE.md that the agent should log bugs there, so non-technical teammates can report issues.",
+   "t": "10:14"
+  },
+  {
+   "idea": "Plan for concurrent users before going to production",
+   "detail": "Tell the agent the expected number of users and that they will use the app at the same time. The agent then writes load-test cases. Plan mode maps approaches and asks questions from several angles, aiming for graceful failure and scalable design.",
+   "t": "11:36"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Agent-led PRD interview",
+   "how": "Create a planner agent whose instructions include a PRD template. Prompt Claude to load it and describe the app. Answer its questions until it has the full picture, then have it save a phased PRD with design decisions to the project folder. The video does not show the agent file or prompt text.",
+   "when": "At project start, before any code or implementation prompt, when you want product-level requirements instead of technical planning-mode output."
+  },
+  {
+   "name": "Lean hand-written CLAUDE.md that links the PRD",
+   "how": "Do not generate CLAUDE.md with /init. Reference the PRD instead of restating requirements. Include only conventions, best practices, writing style and rules the agent cannot infer, such as coding conventions. Leave out project structure, which the agent can read. Keep it updated as the project proceeds.",
+   "when": "Before implementation starts, and then continuously, since the file is loaded once and stays in context for the whole session."
+  },
+  {
+   "name": "Agent vs skill split",
+   "how": "Make a skill for a repeatable workflow that needs guidance, references or scripts (built with skill-creator, and the open-source front-end skill is one example). Make an agent for a task that needs its own context window, such as a planner, a commit agent (pre-checks plus conventional commit messages), a refactoring agent, or a verification agent that drives the Playwright MCP through UI user flows.",
+   "when": "When deciding what to set up before building a project with several repeatable workflows."
+  },
+  {
+   "name": "Path-scoped rules linked from CLAUDE.md",
+   "how": "Create one rule file per part of the app. Each file names the paths it applies to and carries the instructions for that area. Link the rule files from CLAUDE.md so the agent knows to follow them. CLAUDE.md keeps only the broad principles.",
+   "when": "When different parts of the codebase need different implementation guidance, such as UI versus backend."
+  },
+  {
+   "name": "Negative-constraints docs file",
+   "how": "Write a docs file listing what the agent must not build or do, such as default colour palettes, unrequested features or extra experiments, and link it from CLAUDE.md. Each constraint is explicit, not implied from the positive spec.",
+   "when": "When the agent keeps adding unrequested features or defaults to a generic look, and positive specs are not enough to stop it."
+  },
+  {
+   "name": "Progress file plus learnings file",
+   "how": "Keep one progress file that lists feature status, so the agent can read it instead of rescanning code and docs. Keep one learnings file that records each error, its cause and its fix. In CLAUDE.md, instruct the agent to update both as it works. The video names no file names.",
+   "when": "On any multi-feature build where the agent loses track of status or repeats mistakes across sessions."
+  },
+  {
+   "name": "Spec-first test generation",
+   "how": "Point the agent at the PRD and have it derive the expected behaviour and likely failure points, then write the tests before implementation. Run the tests at the end to check the built code against the spec. Avoid open-ended 'test the app' prompts.",
+   "when": "Any feature build where tests should check the specification, not the implementation."
+  },
+  {
+   "name": "Commit-per-implementation with worktrees",
+   "how": "Configure the agent to commit after each implementation with detailed conventional commit messages, so the history records what was done and can be reverted if a change breaks the codebase. Use git worktrees to try experiments in isolation. Track issues in GitHub, or connect the Notion or Trello MCP and instruct CLAUDE.md to log bugs there.",
+   "when": "Throughout the build, and especially when several people or non-technical reporters are involved."
+  },
+  {
+   "name": "Concurrency-aware load test planning",
+   "how": "Put the expected number of simultaneous users in the prompt. Have the agent write stress or load tests from that figure, then use plan mode to map approaches and ask questions from several perspectives about production failure modes.",
+   "when": "Before production, when the app will serve multiple users at once."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "CLAUDE.md",
+  "Supabase MCP",
+  "shadcn/ui",
+  "Playwright",
+  "Playwright MCP",
+  "skill-creator",
+  "GitHub",
+  "Git (commits, worktrees)",
+  "Notion MCP",
+  "Trello",
+  "OpenClaw (sponsor's skill)",
+  "Weigh In Video (sponsor)"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "AI will not revolutionize software building in the way people expect, but 60 years of product-building process still matter, now for agents rather than humans (0:00).",
+  "Claude's built-in planning mode is too technical. Planning should focus on the product (1:06).",
+  "Do not generate CLAUDE.md with /init. Write it by hand with only what the agent cannot infer (2:33).",
+  "Agents are biased toward action, so negative constraints are needed alongside positive specs (5:03).",
+  "Tests should be derived from the PRD before implementation, not written after (8:56).",
+  "The title promises 'the right agent setup', but the video is a generic process checklist. The specific agents and skills are offered behind the channel's paid AI Labs Pro tier, and a sponsor segment sits mid-video (7:00 onward)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Generic spec-first testing and a progress/learnings file pattern could help the build discipline of a multi-component personal project. Nothing here is specific to AgentOS's infra or benchmarks.",
+   "action": "Try a spec-derived test list from the AgentOS PRD for one pillar, and compare it with the tests written after implementation."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "A progress file and learnings file that the agent reads first is a cheap version of checkpoint/resume state. The agent-versus-skill split also maps onto ProsHarness's loop and skill design.",
+   "action": "Compare ProsHarness's checkpoint/resume state with a single progress file plus a learnings file, and check whether learnings should be read back on resume."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The CLAUDE.md guidance (keep only non-inferable rules, link path-scoped rules, add an explicit negative-constraints file) is useful for any Claude Code project, including the knowledge base itself.",
+   "action": "Audit the project CLAUDE.md for content the agent could infer from the code, and add a linked docs file of explicit do-not rules."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

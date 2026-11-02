@@ -1,0 +1,161 @@
+{
+ "one_line": "Walkthrough of leaked system prompts from Cursor, Windsurf, Replit, Manus and others, with the host's takeaways on tool design, background execution, memory, sandboxing and a repo-to-text trick. Useful as prompt-design evidence, but the verdicts are overreaching.",
+ "summary": "The host reads leaked system prompts and tool lists from several AI coding and agent products (Cursor, Windsurf, Replit, Manus, Lovable, Devin, plus open-source Bolt and Roo Code) and summarizes what they reveal. For Windsurf's Cascade he argues it has a richer built-in toolset, persistent cross-session memory with semantic retrieval, and background command execution that Cursor's step-by-step loop lacks. For Manus he describes a full Ubuntu sandbox with port exposure and deployment, a six-layer agent loop, and a browser handled through native click, type, scroll and JavaScript functions rather than Selenium. He notes guardrails that keep the agent inside its sandbox and fallback behavior of asking the user or re-prompting itself when stuck. For Replit he describes a bespoke environment that forbids Docker, 17 specialized tools including a VNC-based GUI feedback tool, auto-prompts for missing API keys, and a mandatory post-edit error check. He also shows a trick for turning a GitHub subfolder into LLM-readable text. Most of the \"winner\" framing is his inference from prompt text, not measured product behavior.",
+ "speakers": [],
+ "orgs": [
+  "Cursor",
+  "Windsurf",
+  "Replit",
+  "Manus",
+  "Lovable",
+  "Devin",
+  "Netlify"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "context-engineering",
+  "agent-architecture",
+  "sandboxing-execution"
+ ],
+ "tags": [
+  "leaked-system-prompts",
+  "cursor",
+  "windsurf",
+  "cascade",
+  "replit",
+  "manus",
+  "bolt",
+  "roo-code",
+  "background-execution",
+  "persistent-memory",
+  "agent-sandbox",
+  "prompt-design"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Leaked system prompts give a concrete view of how coding agents are configured, including their tool lists.",
+   "detail": "The host says prompts and tool lists from many products leaked, and he treats them as authentic evidence of product behavior. The video does not verify that the leaked versions are current or complete.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Windsurf Cascade is argued to beat Cursor on built-in tools, persistent memory and background execution.",
+   "detail": "Per the host: built-in Live Browser Preview, one-click Netlify deploy, better project navigation; memory CRUD with semantic auto-retrieval after restarts; commands can run while files are being edited, with automatic process-status checks. He concludes Windsurf is the clear winner, which goes beyond what prompt text can show.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Manus runs in a full Linux sandbox with a six-layer agent loop and a browser driven through native functions.",
+   "detail": "It boots an Ubuntu environment, installs Python or Node packages, starts servers, exposes ports, pushes static sites or Next.js apps live, and clones git repos. The loop is: receive message, analyze, select tools, observe, re-plan, pick the next tool, while internal knowledge updates. The browser is a first-class tool with native click, type, scroll and JavaScript execution rather than Selenium.",
+   "t": "2:45"
+  },
+  {
+   "idea": "Sandbox-bounded guardrails and stuck-recovery are written into the system prompts.",
+   "detail": "Manus is told to act only inside its sandbox and not use external accounts. When stuck it either asks the user for input or re-prompts itself automatically.",
+   "t": "4:12"
+  },
+  {
+   "idea": "Replit forbids Docker and external virtual environments, and relies on a custom REPL environment plus a verification loop.",
+   "detail": "It has 17 specialized tools, including a VNC window feedback tool for testing GUI apps and tools for spinning up Postgres. It automatically asks for API keys before proceeding, and it must verify that no errors remain after each iteration. The host suggests this loop explains its low front-end error rate, which is a guess he does not test.",
+   "t": "5:26"
+  },
+  {
+   "idea": "Any GitHub subfolder can be turned into LLM-readable text by changing the URL.",
+   "detail": "The host swaps 'hub' for a converter domain in the GitHub link, which returns a text dump with the directory structure. He suggests a single folder, not the whole repo, because the full repo is too large. He estimates about 7,000 tokens for Cursor's agent-prompt folder. The converter itself is not named in the transcript.",
+   "t": "4:12"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Repo subfolder to LLM-readable text",
+   "how": "Take a GitHub URL for a single folder and replace 'hub' in the domain with the converter's domain (the host does not name the service). Copy the returned text, which includes the directory tree and file contents, and paste it into any LLM to ask questions about that folder. Scope it to a folder, because a whole large repo costs many tokens.",
+   "when": "Studying a competitor's or open-source agent's prompts or tool code without reading every file by hand. Expect roughly 7k tokens for a prompt-sized folder."
+  },
+  {
+   "name": "Post-edit verification loop",
+   "how": "After each code change, require the agent to check for errors (build, lint or run) before it moves on. The host describes this as Replit's built-in feedback loop and attributes its front-end quality to it. This is his interpretation, not a measured result.",
+   "when": "Agent-written code where broken iterations compound. Apply the check after every edit, not only at the end."
+  },
+  {
+   "name": "Background command execution with process status checks",
+   "how": "Let the agent start long-running commands in the background and keep editing files while they run. The agent then checks process status on its own rather than blocking and waiting after each edit. This is the Cascade pattern as the host describes it.",
+   "when": "Long test suites, dev servers or builds where the agent would otherwise sit idle between edits."
+  },
+  {
+   "name": "Persistent memory with semantic auto-retrieval",
+   "how": "Give the agent create, read, update and delete operations over stored memories covering preferences, snippets, API-key references and project milestones. On session start, retrieve memories that semantically match the current work. This is the Cascade memory design as described.",
+   "when": "Projects resumed after long gaps, where re-explaining context each session is costly."
+  },
+  {
+   "name": "Ask-for-secrets and stuck-fallback behavior",
+   "how": "When a required API key or input is missing, ask the user before continuing. When the agent is stuck, either ask for input or re-prompt itself, instead of looping. Both behaviors are written into the Replit and Manus prompts as the host describes them.",
+   "when": "Autonomous runs that would otherwise fail deep into a task on a missing credential or a repeated dead end."
+  },
+  {
+   "name": "Sandbox-scoped guardrails in the system prompt",
+   "how": "State explicitly that the agent works only inside its sandbox, does not use external accounts, and does not reach outside its environment. Manus's prompt is the example the host gives.",
+   "when": "Agents with shell or deploy access, to keep side effects inside a bounded environment."
+  }
+ ],
+ "tools": [
+  "Cursor",
+  "Windsurf (Cascade)",
+  "Replit",
+  "Manus",
+  "Lovable",
+  "Devin",
+  "Bolt",
+  "Roo Code (transcript: 'Rucode')",
+  "Netlify",
+  "Next.js",
+  "shadcn/ui (transcript: 'Shad CNUI')",
+  "PostgreSQL",
+  "VNC",
+  "Docker",
+  "Selenium",
+  "Ubuntu",
+  "ChatGPT (free tier, suggested for asking questions about prompts)"
+ ],
+ "numbers": [
+  {
+   "claim": "Replit agent has 17 specialized tools.",
+   "t": "5:26"
+  },
+  {
+   "claim": "Manus uses a six-layer agent loop.",
+   "t": "2:45"
+  },
+  {
+   "claim": "Estimated token count for the Cursor folder dump is around 7,000 tokens.",
+   "t": "4:12"
+  },
+  {
+   "claim": "Windsurf's Cascade memory retrieval is described as working after a week away, with no measured figure.",
+   "t": "1:18"
+  }
+ ],
+ "hot_takes": [
+  "Calling Windsurf the 'clear winner' over Cursor from reading system prompts overreaches. Prompt text shows intended features, not performance or reliability.",
+  "The '$10B' in the title has no basis in the video.",
+  "Calling the leaked material 'authentic' is asserted, not shown. Leaked prompts may be partial, outdated or from a different build.",
+  "Attributing Replit's front-end quality to the verification loop is speculation, offered without evidence.",
+  "Quality is capped at 2 because the title is hype-driven and the substance is mostly the host's read of prompts, with little verification. The prompt-level details are still worth checking against the raw text."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Manus's sandbox-scoped guardrails and Replit's bounded environment are a loose comparison point for the Crucible sandboxed-execution and exec-gate design.",
+   "action": "Compare Crucible's exec-gate guardrails against the sandbox-bounded policy wording in the Manus prompt, and check whether the same constraints are enforced in code rather than only stated."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Background command execution with process status checks and the ask-or-re-prompt fallback when stuck both map to ProsHarness's long-run checkpoint and loop design.",
+   "action": "Check whether ProsHarness's long-run loop handles 'stuck' by asking for approval or re-prompting with a cap, and whether background commands are polled for status rather than blocking."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

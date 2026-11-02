@@ -1,0 +1,242 @@
+{
+ "one_line": "AI Labs walks through 24 tactics for stretching Claude Code and Codex usage limits, from habits (clear, compact, rewind, one big prompt) to settings (model and effort, skill and CLAUDE.md size, memory, bundled skills, output caps, advisor).",
+ "summary": "The speaker argues that every message resends the whole conversation, so context length and idle time both drive token cost, and that $20 plans need stricter habits because the five-hour and shared weekly limits run out quickly. Level 1 covers habits: run clear between unrelated tasks, compact only when needed and before breaks (since the prompt cache expires), rewind instead of stacking corrections, batch work into one prompt, and turn off automatic recaps in Claude Code. Level 2 covers configuration: pick the cheapest model that can do the task, keep effort at medium by default, and keep always-loaded context small by keeping CLAUDE.md and SKILL.md under about 200 lines and moving detail into per-folder files and reference files. The speaker prefers a CLI over an MCP server when the CLI can do the job, because MCP tool schemas stay loaded in context. Level 3 covers defaults that quietly cost tokens: auto-memory, bundled skills, sub-agent workflows, unfiltered command output (cap at 10,000 characters and filter passing tests with a hook), and the built-in advisor, which the speaker replaces with a custom agent that runs only on request. Most numbers are the speaker's own and unmeasured; the video is a practitioner checklist with a community plug.",
+ "speakers": [],
+ "orgs": [
+  "AI Labs"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "token-cost-efficiency",
+  "claude-code",
+  "context-engineering",
+  "coding-agents"
+ ],
+ "tags": [
+  "usage-limits",
+  "context-window",
+  "compaction",
+  "prompt-caching",
+  "claude-md",
+  "skills",
+  "subagents",
+  "hooks",
+  "mcp-vs-cli",
+  "supabase",
+  "codex",
+  "advisor",
+  "memory",
+  "effort-level"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Every message resends the whole conversation, so the same prompt costs more later in a session.",
+   "detail": "Models keep no memory between turns; the full history plus the new prompt is sent each time, and tool reads and command runs also add to what is sent. Context windows are cited as Opus 1M tokens and GPT-5.6 Sol 272,000 tokens.",
+   "t": "1:17"
+  },
+  {
+   "idea": "Limits are a five-hour rolling window plus a weekly cap shared across all models.",
+   "detail": "The five-hour clock starts with the first message. Switching models does not restore weekly usage. The speaker says $20 plans (Claude Pro, ChatGPT Plus) need the strictest habits.",
+   "t": "2:45"
+  },
+  {
+   "idea": "Compacting is expensive and lossy, and prompt-cache timing decides when to do it.",
+   "detail": "Compaction reads the whole conversation (costing usage) and loses detail. Cached reads are said to cost about a tenth of normal, but the cache is discarded after an idle period, so compact before a break, not after returning. Always tell compact what to keep.",
+   "t": "3:44"
+  },
+  {
+   "idea": "Rewind removes a bad turn instead of layering a correction on top of it.",
+   "detail": "A correction in the next prompt leaves the mistake in context for every later message. Rewind (command in Claude Code, double-Esc in both tools) drops the turn entirely.",
+   "t": "3:44"
+  },
+  {
+   "idea": "One consolidated prompt beats several small ones.",
+   "detail": "Each tool read or command re-sends the conversation, so splitting work across prompts multiplies context. Bundling a set of website design fixes into one prompt cost noticeably fewer tokens than doing them one at a time (no figure given).",
+   "t": "5:12"
+  },
+  {
+   "idea": "Model and effort should match task difficulty; medium is the default.",
+   "detail": "Opus is for hard work; Sonnet is the day-to-day choice (Opus is recommended as the daily driver on the $100 plan). Codex effort levels are low, medium, high and extra high. Raise effort per task rather than globally.",
+   "t": "7:47"
+  },
+  {
+   "idea": "Always-loaded context is the hidden recurring cost: keep CLAUDE.md and skills short and split them.",
+   "detail": "CLAUDE.md and SKILL.md should stay under about 200 lines. Only skill names and descriptions load by default; detail goes in reference files pulled on demand. Specialized rules belong in skills, and large projects get per-folder CLAUDE.md files. An MCP server's tool schemas stay in context all session, while a CLI loads only when used.",
+   "t": "9:14"
+  },
+  {
+   "idea": "Turn off or replace the default-on features that burn tokens.",
+   "detail": "Auto-memory, bundled skills, sub-agent workflows and the built-in advisor all add cost. The speaker disables memory and bundled skills, turns workflows off or caps them, and replaces the advisor with a custom agent (same name) that runs only when asked, since the built-in one sends the full conversation to a stronger model with no cache.",
+   "t": "14:54"
+  },
+  {
+   "idea": "Command output is a silent context sink: filter it and cap it.",
+   "detail": "A hook keeps only failing test output so passing tests stop filling context. Claude Code's bash max output length is lowered from 30,000 to 10,000 characters. Codex has a tool output token limit covering all tools.",
+   "t": "16:21"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Clear between unrelated tasks",
+   "how": "Run the clear command (same in Claude Code and Codex) before starting a task that has nothing to do with the previous one, so the new prompt does not carry old context.",
+   "when": "Every task switch."
+  },
+  {
+   "name": "Compact with explicit keep-instructions, before breaks",
+   "how": "Run compact, and in the same command tell it which details must survive the summary. Run it before stepping away, because the cached copy of the conversation expires during idle time.",
+   "when": "Context is filling up and you need to continue the same task; avoid compacting repeatedly."
+  },
+  {
+   "name": "Rewind instead of correcting",
+   "how": "In Claude Code, run rewind or double-tap Escape; in Codex, double-tap Escape (no command). Then send the corrected instruction as the next prompt.",
+   "when": "The agent did something wrong and you want the bad turn gone from context."
+  },
+  {
+   "name": "Batch changes into one prompt",
+   "how": "Combine related edits (the speaker's example: remove gradients, remove glow, fix alignment) into a single prompt rather than queuing several.",
+   "when": "Several related changes to the same codebase."
+  },
+  {
+   "name": "Turn off automatic session recaps (Claude Code only)",
+   "how": "Open config, search for session recap, and switch it off; run the recap command manually when wanted. Codex has no equivalent.",
+   "when": "Running several sessions and you do not need recaps on every return."
+  },
+  {
+   "name": "Set model per task with /model and effort with /effort",
+   "how": "Run the model command (both tools) to switch models. In Codex, pick effort from low, medium, high or extra high after choosing the model. In Claude Code, run the effort command. Put the keyword ultrathink in a prompt to raise thinking for one task.",
+   "when": "Default to Sonnet (or GPT-5.6 Terra for Codex) and medium effort; escalate for hard problems."
+  },
+  {
+   "name": "Pin sub-agent model in the prompt, or route automatically with a skill",
+   "how": "Name the model in the prompt and the agent spawns a sub-agent on that model. For automatic routing, the speaker uses a custom Model Router skill that runs on every prompt; a CLAUDE.md rule is rejected because early instructions drift out of attention in long sessions.",
+   "when": "Mixed-difficulty work where you do not want to pick the model for each task."
+  },
+  {
+   "name": "Keep skills small with reference files",
+   "how": "Keep SKILL.md under about 200 lines. Put long detail in separate reference files next to it; the agent loads only what it needs. Skills load only when the task matches, so design rules do not load during database work.",
+   "when": "Authoring any skill that is more than a few paragraphs."
+  },
+  {
+   "name": "Write a lean CLAUDE.md and per-folder CLAUDE.md files",
+   "how": "Keep CLAUDE.md under about 200 lines and include only what the agent does not already know; do not let the agent auto-generate it (it adds things like how to run the app). Give each large folder its own CLAUDE.md, which loads only when a file in that folder is opened. Move specialized rules into skills.",
+   "when": "Large projects with many folders, or any project where CLAUDE.md is growing."
+  },
+  {
+   "name": "Check spend with the usage command",
+   "how": "Run the usage command to see 5-hour and weekly consumption and which skills, MCP servers and habits consume the most.",
+   "when": "Periodically, or when limits are hit sooner than expected."
+  },
+  {
+   "name": "Use a CLI instead of an MCP server when the CLI is enough (Supabase example)",
+   "how": "Install the Supabase CLI, log in with its login command, and let the Supabase skills teach the agent how to call it. The speaker's reasoning: MCP tool names and descriptions stay in context permanently, while the CLI runs through the terminal only when needed.",
+   "when": "A service offers both a CLI and an MCP server, and you do not need the MCP's always-on tool listing."
+  },
+  {
+   "name": "Turn off memory and bundled skills",
+   "how": "Run the memory command in Claude Code or Codex to stop saving and loading memories. For bundled skills, set the disable-bundled-skills setting to true in settings (exact key name not clearly spoken; check settings.json).",
+   "when": "Work is focused and past memories or review skills are not useful."
+  },
+  {
+   "name": "Disable or cap sub-agent workflows",
+   "how": "Run config, find workflows, and turn them off; if kept, set a maximum size (smaller on a $20 plan).",
+   "when": "Any Claude Code setup on a low-tier plan."
+  },
+  {
+   "name": "Filter passing tests out of tool output with a hook",
+   "how": "Ask Claude Code to write a hook that filters passing test results so only failures reach context. The hook is registered in settings.json inside the .claude folder, with its script in the hooks folder.",
+   "when": "Test suites where the agent only needs failing cases."
+  },
+  {
+   "name": "Cap bash output length",
+   "how": "In the .claude/settings.json file, reduce the bash max output length from 30,000 to 10,000 characters (spoken key name; verify). Codex equivalent: Tool Output Token Limit, which counts tokens across all tools.",
+   "when": "Commands with large logs or verbose output."
+  },
+  {
+   "name": "Replace the built-in advisor with a custom on-demand agent",
+   "how": "Disable the built-in advisor. Create your own agent with the same name so it replaces the built-in one; it calls a stronger model only when the main agent or user decides. For Codex, the speaker configures GPT-5.6 in its config file with reasoning set high (transcript wording garbled at this point; verify at 17:49).",
+   "when": "You want a stronger second opinion without paying for it on every call."
+  },
+  {
+   "name": "Message between Claude Code sessions with only the relevant part",
+   "how": "Name each open session and have one message another with only the necessary excerpt instead of the whole context.",
+   "when": "Running several sessions on related parts of a project."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "Claude Opus",
+  "Claude Sonnet",
+  "Claude Haiku",
+  "GPT-5.6 Sol (spoken as GPT 5.6 Soul)",
+  "GPT-5.6 Terra (spoken; name uncertain)",
+  "GPT-5.4 Mini",
+  "ChatGPT plans (Free, Go, Plus, Pro)",
+  "Claude Pro and Max plans",
+  "Supabase",
+  "Supabase CLI",
+  "Supabase MCP server",
+  "Supabase skills",
+  "Claude Code advisor (built-in, experimental)",
+  "Model Router (AI Labs custom skill, not publicly named)",
+  "CLAUDE.md",
+  "AGENTS.md",
+  "SKILL.md",
+  "ultrathink keyword"
+ ],
+ "numbers": [
+  {
+   "claim": "Opus context window is about 1 million tokens; GPT-5.6 Sol is 272,000 tokens (as stated).",
+   "t": "1:17"
+  },
+  {
+   "claim": "Plans: Claude Pro $20/month; Claude Max $100 or $200; ChatGPT Free, Go, Plus, Pro.",
+   "t": "1:17"
+  },
+  {
+   "claim": "Usage limit resets every five hours, with a separate weekly cap shared across all models.",
+   "t": "2:45"
+  },
+  {
+   "claim": "Cached reads cost about one tenth of normal input price (speaker's figure, unverified).",
+   "t": "3:44"
+  },
+  {
+   "claim": "Guideline: keep SKILL.md and CLAUDE.md under about 200 lines.",
+   "t": "9:14"
+  },
+  {
+   "claim": "Bash max output length reduced from 30,000 to 10,000 characters.",
+   "t": "16:21"
+  },
+  {
+   "claim": "Codex effort levels are low, medium, high and extra high.",
+   "t": "7:47"
+  }
+ ],
+ "hot_takes": [
+  "Compacting drops detail and lowers response quality, and the built-in advisor is expensive because it gets no cache; both are asserted, not measured.",
+  "The 'one tenth of the price' cache claim and the 'fewer tokens' result from batching the website fixes are unquantified.",
+  "Title promises the limits will never run out; the tips are incremental savings, not a fix.",
+  "Several tips are gated behind the channel's paid community (the Model Router skill and agent are in AI Labs Pro), and the video asks for subscribes and hype clicks.",
+  "Auto-captions garble several product names and settings (Claude Code, Supabase, GPT-5.6 Sol, .claude folder); a few setting names are spoken without exact keys, so verify them before copying."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI with long-running loops and schedules, which are where usage limits and always-on context costs compound. The video's settings-level tips (output caps, output-filter hook, disabling defaults, replacing the advisor) apply directly to that wrapper.",
+   "action": "Audit the Claude Code settings ProsHarness launches with: cap bash output at about 10k characters, add a hook that keeps only failing test output, confirm memory and bundled skills are off for loop runs, and check that no built-in advisor fires automatically."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Mostly about individual Claude Code and Codex sessions, not an infra design. One transferable idea: idle-time cache expiry and per-message resend cost are real inputs to token-budget accounting.",
+   "action": "When designing AgentOS L1 budget counters, model cost as input-size times turn count, with a discount for cache hits that expire after idle time; no code change needed yet."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

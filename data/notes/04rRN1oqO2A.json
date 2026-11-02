@@ -1,0 +1,133 @@
+{
+ "one_line": "Kai Explains walks through five foundational AI terms (tokens, context window, temperature, hallucination, RAG) for non-engineers, using plain analogies and personal anecdotes.",
+ "summary": "A Kai Explains explainer aimed at non-technical listeners, framed around a meeting where people nodded along to jargon. It covers five terms: tokens (text is read in chunks, which drive pricing and memory limits), context window (a fixed-size working memory where the oldest content is dropped first), temperature (a randomness dial where low is safe and bland and high is creative and risky), hallucination (models are next-token predictors that produce confident but invented output), and RAG (retrieve relevant chunks from a vector store and pass them to the model with the question). The speaker's main practical advice is to verify facts, keep long sessions in mind, and understand that \"knows your data\" usually means retrieval rather than training. The content is conceptual and accurate at a high level, with no code, benchmarks, or tool-specific steps. Relevance to our projects is low, mainly as background for onboarding teammates or for framing context-engineering and RAG explanations.",
+ "speakers": [
+  "Kai (Kai Explains host)"
+ ],
+ "orgs": [
+  "Kai Explains"
+ ],
+ "format": "review",
+ "topics": [
+  "context-engineering",
+  "rag-retrieval",
+  "local-ai"
+ ],
+ "tags": [
+  "tokens",
+  "context-window",
+  "temperature",
+  "hallucination",
+  "rag",
+  "vector-database",
+  "beginner",
+  "explainer",
+  "llm-basics"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Tokens are the chunks models read and are the unit for pricing and memory limits.",
+   "detail": "A sentence like 'I love pizza' is about three tokens; rarer words split into several. Providers count input and output tokens and bill per thousand, and tokens also determine how much the model can hold.",
+   "t": "1:16"
+  },
+  {
+   "idea": "The context window is a fixed-size whiteboard, and the oldest content is erased first.",
+   "detail": "Instructions, chat history, pasted documents and replies all share it. Once it fills, early turns get dropped, which explains why long sessions contradict earlier agreements. Early models had around 4,000 tokens, while later ones advertise 200k to 1M.",
+   "t": "2:39"
+  },
+  {
+   "idea": "A large context window does not guarantee reliable recall of distant content.",
+   "detail": "The speaker recounts pasting a full paper and getting a confident made-up answer about page one. His practical rule is to start fresh or restate critical context in long sessions.",
+   "t": "3:58"
+  },
+  {
+   "idea": "Temperature controls how predictable the next-word choice is.",
+   "detail": "Near zero gives consistent but bland output; high values give creative and sometimes off-the-wall output. Consumer apps usually fix a default, but APIs and playgrounds expose the setting.",
+   "t": "5:24"
+  },
+  {
+   "idea": "Hallucination is a property of next-token prediction, not a database lookup.",
+   "detail": "The model generates plausible text and does not signal uncertainty, so invented citations appear with the same confidence as correct facts. The speaker's rule is to treat output as a starting point and verify facts, statistics, citations and medical or legal details.",
+   "t": "6:43"
+  },
+  {
+   "idea": "Documents are not learned by the model; RAG retrieves them at question time.",
+   "detail": "Documents are chunked and stored in a vector database organized by meaning. At query time the system retrieves the top chunks and passes them with the question to the model. When retrieval misses, the model can still invent an answer, as with a legal-document example.",
+   "t": "9:26"
+  },
+  {
+   "idea": "Knowing these terms mainly changes how you use the tools, not your engineering ability.",
+   "detail": "The speaker's takeaway is that each concept maps to a practical habit: prompt design, session management, adjusting settings, verifying output, and reasoning about what a product's retrieval is doing.",
+   "t": "10:52"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Verify-before-trust workflow for AI output",
+   "how": "Treat model answers on facts, statistics, citations, or medical and legal topics as drafts. Check them against a primary source before using them.",
+   "when": "Any time a wrong answer has real cost, such as citations in a presentation."
+  },
+  {
+   "name": "Restate critical context in long sessions",
+   "how": "When a conversation runs long, start a new session or restate the key constraints and facts rather than relying on the model to remember early messages.",
+   "when": "Long back-and-forth sessions, or when the model contradicts earlier agreements."
+  },
+  {
+   "name": "Adjust temperature for the task",
+   "how": "Lower the temperature in APIs or playgrounds for accurate, consistent output. Raise it for creative or varied output. If output is weirdly creative, lower it; if it is dull, raise it.",
+   "when": "When exposed to the sampling setting through an API, developer tool or playground."
+  },
+  {
+   "name": "Mental model of RAG for debugging products",
+   "how": "When a product claims to know your documents, assume chunking, vector retrieval, then generation. If an answer cites something absent from the source, suspect retrieval failure.",
+   "when": "Evaluating or debugging a document-chat or support-bot product."
+  }
+ ],
+ "tools": [
+  "Claude",
+  "ChatGPT",
+  "Gemini"
+ ],
+ "numbers": [
+  {
+   "claim": "Early models had context windows of about 4,000 tokens; later models advertise 200,000 and 1,000,000 tokens.",
+   "t": "2:39"
+  },
+  {
+   "claim": "'I love pizza' is roughly three tokens; the word 'hallucination' may be three or four tokens.",
+   "t": "1:16"
+  },
+  {
+   "claim": "The video runs about 11 to 13 minutes (stated as 'about 11 minutes', length 13:05).",
+   "t": "12:13"
+  }
+ ],
+ "hot_takes": [
+  "Hallucination is not a flaw to work around but a property to build verification around.",
+  "The model does not learn your documents; a retrieval system feeds the relevant parts into the context window at question time."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Concepts map onto context budgeting and retrieval in MemoryMesh, but the video is beginner-level explanation with no implementation detail.",
+   "action": "Use the RAG and context-window framing as onboarding material when explaining MemoryMesh's retrieval path to non-engineers."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The context-window and restate-context advice is relevant to long checkpointed agent runs, but the video does not cover harnesses.",
+   "action": "Note the 'start fresh or restate critical context' advice when designing checkpoint and resume behavior for long runs."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Good low-jargon primer for teammates who are new to LLM basics.",
+   "action": "Optional: point non-engineering colleagues to this video as a first reading on tokens, context, and RAG."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

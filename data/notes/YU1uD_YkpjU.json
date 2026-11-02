@@ -1,0 +1,186 @@
+{
+ "one_line": "Ishveen Kaur (SoFi) walks through six ways an autonomous agent can lose money on x402 machine payments, with guards, a probation-list pattern, and a trace-one-payment-ID method for finding them.",
+ "summary": "The speaker frames x402 as a way for HTTP 402 \"payment required\" to finally carry real machine-payment semantics, with four roles: buyer, seller, facilitator, and chain. She argues that agents paying for micro-data (cents per call) is a new risk surface, and that on-chain settlement is used because card fees exceed tiny prices. She then demonstrates six attacks she reproduced in a safe testnet setup: price manipulation via changed 402 headers, duplicate or reused payment IDs, free access through settlement race or unprotected endpoints and public caches, a multi-page seller that accepts one payment for several pages, a malicious lookalike seller found in a discovery directory, and prompt injection via seller reply text that upsold a premium tier. Each attack is paired with a concrete guard (field comparison, shared payment-ID store, settlement-before-release where value is high, no-store caching, allow/block/probation lists, per-plan call caps). Her closing method is to trace one payment ID end to end, build a 20-25 case success/failure dataset, do error analysis, and then turn findings into guards, alerts and blocks, re-running the same traces. The talk is a single practitioner's demo with a companion handbook, not a sponsored pitch.",
+ "speakers": [
+  "Ishveen Kaur"
+ ],
+ "orgs": [
+  "SoFi",
+  "Cloudflare"
+ ],
+ "format": "talk",
+ "topics": [
+  "security-guardrails",
+  "governance-compliance",
+  "observability"
+ ],
+ "tags": [
+  "x402",
+  "agentic payments",
+  "HTTP 402",
+  "idempotency",
+  "prompt injection",
+  "allow list",
+  "probation list",
+  "budget guard",
+  "tracing",
+  "error analysis",
+  "Cloudflare pay per crawl"
+ ],
+ "key_ideas": [
+  {
+   "idea": "HTTP 402 was a placeholder for decades; x402 defines how a machine actually pays, which moves agents from allow/block decisions to paying for data.",
+   "detail": "Four roles: buyer (agent acting for you), seller (returns 402 with payment requirements), facilitator (verifies signature and settles), chain. Cloudflare pay-per-crawl is cited as a parallel.",
+   "t": "0:08"
+  },
+  {
+   "idea": "On-chain settlement is used because micropayments break card economics.",
+   "detail": "Card fees can exceed a 1-10 cent price; 10 cents x 10,000 agent calls is about $1,000 of machine-side spend, so payment volume scales with agent calls.",
+   "t": "2:34"
+  },
+  {
+   "idea": "Price manipulation: the quoted price lives in the 402 response header, not the directory listing, so it can change between listing and payment.",
+   "detail": "In her run, a $0.05 listing was paid at $0.50 with no guard. A guard comparing listed price and quoted price blocked it, but she notes network and wallet address can also rotate, so each field needs checking.",
+   "t": "3:50"
+  },
+  {
+   "idea": "Duplicate payments are not caught by signature verification; settlement rejects duplicate payment numbers, but the seller may already have released data.",
+   "detail": "Five requests with one payment number pass verification and deliver five times; only one settles. Fix: a shared store of payment numbers marked done or in progress. Retries must reuse the same payment number to avoid multiple charges.",
+   "t": "5:05"
+  },
+  {
+   "idea": "Free access comes from releasing data on a valid signal before settlement, from unprotected endpoints, and from public caches.",
+   "detail": "Waiting for settlement is safer for expensive, licensed, confidential or per-request data; sending on valid signal is acceptable for cheap data (about $0.001). Test that every paywalled endpoint returns 402. Cache paid responses behind a price check or use Cache-Control no-store.",
+   "t": "6:25"
+  },
+  {
+   "idea": "A seller with several paywalled pages must share the payment record across them, or one payment unlocks many pages.",
+   "detail": "Map each payment number to the page it was used for and return 409 Conflict for any other page request using that number.",
+   "t": "8:36"
+  },
+  {
+   "idea": "Discovery directories check that a service works, not who runs it or who owns the wallet, so lookalike sellers are a real risk.",
+   "detail": "Her proposed pattern: allow list for conservative enterprises, block list, and a probation list for newly discovered sellers with a human review window (she suggests 4-24 hours) and logged buyer intent, seller response and seller called.",
+   "t": "10:07"
+  },
+  {
+   "idea": "Prompt injection through seller reply text (an upsell to a premium tier) caused a second payment; filters miss soft hints and model judges miss some attacks, so a hard limit on calls per plan was the reliable fix.",
+   "detail": "A Llama 3.2 agent fetched a premium summary, turning a 5-cent purchase into 55 cents. Keyword filters over-match benign hints; a judge model is partial. Locking the plan to execute each endpoint once blocked the second payment even when the agent chose to pay.",
+   "t": "11:31"
+  },
+  {
+   "idea": "Method: trace one payment ID through the whole flow, build a 20-25 case success and failure set, do error analysis, then turn findings into guards, alerts and blocks, and rerun the same traces.",
+   "detail": "Her claim is that the payment can look valid while the outcome is wrong, so traces must capture buyer intent, seller response and which seller was called. She ties this to trace-by-trace evaluation.",
+   "t": "13:53"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Compare listed price against 402 quoted price, network and wallet before paying",
+   "how": "Buyer keeps the directory listing values and compares them with the payment requirements returned in the 402 response (amount, network, coin, payTo wallet). Reject on mismatch. Re-check on every call, since fields can change within seconds.",
+   "when": "Any agent that pays sellers discovered from a directory or listing."
+  },
+  {
+   "name": "Shared payment-number ledger on the seller side",
+   "how": "Seller stores every payment number with a state (in progress or done) and the resource it was used for. A repeat use for the same resource returns the saved result. The same number on a different resource returns 409 Conflict. Settlement uniqueness is the backstop, not the defence.",
+   "when": "Sellers with more than one paid endpoint, or any seller that can receive retries or parallel requests."
+  },
+  {
+   "name": "Buyer retries reuse one payment number",
+   "how": "Generate the payment number once per logical purchase and reuse it on every retry of that purchase, so a timed-out request settles at most once.",
+   "when": "Buyer retry logic on payment-gated calls."
+  },
+  {
+   "name": "Choose release timing by data cost",
+   "how": "For expensive, licensed, activation or per-request confidential data, release only after settlement succeeds. For very cheap data, releasing on a valid signal is an acceptable latency trade-off.",
+   "when": "Designing a seller's delivery path, or deciding how much latency to accept on paid calls."
+  },
+  {
+   "name": "Paywall test across all endpoints and no-store caching for paid output",
+   "how": "Call every endpoint expected to be paid and assert HTTP 402 on each. Put any cache of paid content behind a price check, or send Cache-Control: no-store for content generated per request or confidential.",
+   "when": "Seller hardening before launch, and any CDN or proxy caching in front of paid routes."
+  },
+  {
+   "name": "Allow list, block list and probation list for discovered sellers",
+   "how": "New sellers go to a probation list with a timed review window. Logs record buyer intent, seller reply and seller called. A human promotes them to the allow list or blocks them. Re-check allow-listed sellers, because honest sellers also rotate domains, wallets, price and network.",
+   "when": "Agents that discover and call new third-party tools or services at runtime."
+  },
+  {
+   "name": "Per-plan call cap against prompt injection",
+   "how": "Fix the plan at creation with a set number of calls per endpoint (her demo used one). Enforce it in the executor, not in the model's reasoning, so the agent cannot pay a second seller even if its reasoning picks one.",
+   "when": "Agents that read untrusted seller text that may suggest further paid actions."
+  },
+  {
+   "name": "Single-ID tracing with a 20-25 case dataset",
+   "how": "Choose one payment ID, log the full sequence diagram (buyer intent, seller response, seller called, facilitator verdict, settlement result). Add traces until that one ID explains the outcome. Build 20-25 labelled success and failure runs, classify failures, and map each to a guard, alert or block. Rerun the same set after each change.",
+   "when": "Building observability and evals for any agent that takes financial or irreversible actions."
+  }
+ ],
+ "tools": [
+  "x402 (HTTP 402 payment protocol)",
+  "Llama 3.2 (agent model in the prompt-injection demo)",
+  "Base Sepolia testnet (auto-caption reads 'Bayes Cipolia'; probably Base Sepolia)",
+  "x402.org facilitator (testnet)",
+  "Bazaar (x402 seller directory)",
+  "Ethereum and Solana (named as alternative chains)",
+  "Cloudflare pay-per-crawl (cited as a parallel)"
+ ],
+ "numbers": [
+  {
+   "claim": "Listed price $0.05 but agent paid $0.50 with no guard; a guard comparing listed and quoted price blocked it",
+   "t": "3:50"
+  },
+  {
+   "claim": "Micropayments of about 1 cent to 10 cents; 10 cents x 10,000 calls = $1,000 of machine spend",
+   "t": "2:34"
+  },
+  {
+   "claim": "Cheap data example where releasing on valid signal is acceptable: about $0.001",
+   "t": "7:35"
+  },
+  {
+   "claim": "Prompt-injection run: 5 cents became 55 cents total with no guard",
+   "t": "12:28"
+  },
+  {
+   "claim": "Duplicate payment test: 5 requests with the same payment number, 1 settles and 4 are rejected",
+   "t": "5:05"
+  },
+  {
+   "claim": "Retry example: retry limit of 3 with a new payment number each time means up to 3 charges for one result",
+   "t": "6:25"
+  },
+  {
+   "claim": "Probation list review window suggested at about 4 or 24 hours",
+   "t": "10:07"
+  },
+  {
+   "claim": "Error analysis dataset recommended at 20-25 success and failure cases; the talk covers 6 of 20 attacks she found",
+   "t": "13:53"
+  }
+ ],
+ "hot_takes": [
+  "Signature verification alone is not payment safety: a seller can release data on a request that verifies and still never settles, so settlement-state tracking is required.",
+  "Keyword filters for prompt injection over-match benign hints, and model-based judges miss some attacks, so a hard per-plan call limit is the more reliable control.",
+  "Directory services that check only that a service responds do not establish who runs it or who owns the wallet, so new sellers should sit on probation with human review.",
+  "Caching paid responses on a public URL gives them away for free; paid routes need either a price check before serving from cache or no-store."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The L1 proxy already has budgets and injection scanning. The talk's guards (quoted vs listed price check, payment-ID idempotency, per-plan call caps, and treating seller text as untrusted) map directly onto budget and injection enforcement at the proxy.",
+   "action": "Add an idempotency key and a per-run call cap to the budget path in the L1 proxy, and add a test that rejects a 402 whose amount, network or payTo differs from the registered endpoint values."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs long agent plans with checkpoints and approvals. Locking a plan to a fixed call budget at creation, enforced in the executor rather than the model, is a small addition to that approval model.",
+   "action": "Consider fixing the set of tool and paid calls at plan creation and enforcing the cap in the harness executor, not in the model's prompt."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

@@ -1,0 +1,158 @@
+{
+ "one_line": "Practical habits for managing Claude Code's context window (compaction, clear, rewind, sub-agents, recaps) to limit context rot and goal drift in long runs; mostly attributed advice with a sponsored segment.",
+ "summary": "The speaker argues that the 1M-token context window does not solve degradation in Claude Code, because \"context rot\" (performance dropping as the window fills with information) can begin well before the window is full, with a figure of roughly 300-400k tokens attributed to the Claude Code creator. He names four failure modes for long-running agents: context pollution, goal drift, memory corruption, and decision inaccuracy. The core advice is to choose deliberately after each task between continuing, compacting, clearing, a structured save-then-clear handoff, and rewinding. He recommends controlling compaction yourself with an explicit instruction rather than letting auto-compact fire mid-task, and clearing when switching to an unrelated task. He also suggests periodic recaps to push goals back into recent context, delegating research, refactoring, summarization and doc generation to sub-agents that return only final output, and rewinding (Esc twice or the rewind command) instead of correcting forward. Much of the framing is secondhand (an article by a Claude Code engineer and the creator's remarks), and the video includes a sponsor segment for Verdant.",
+ "speakers": [
+  "Unnamed host (AI LABS channel)"
+ ],
+ "orgs": [
+  "Anthropic",
+  "AI LABS",
+  "Verdant"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "context-engineering",
+  "multi-agent",
+  "agent-architecture"
+ ],
+ "tags": [
+  "context-rot",
+  "compaction",
+  "clear",
+  "rewind",
+  "sub-agents",
+  "structured-handoff",
+  "goal-drift",
+  "long-running-agents",
+  "1m-context-window",
+  "sponsored"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A 1M-token window does not remove degradation. Context rot can start well before the window is half full.",
+   "detail": "The speaker says the creator of Claude Code puts the onset around 300-400k tokens, and that a bloated window gives more distractors to interfere with reasoning. This is a secondhand, single-source figure.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Four failure modes for agents that manage context badly: context pollution, goal drift, memory corruption, decision inaccuracy.",
+   "detail": "Memory corruption example: the agent writes a file, a sub-agent outside its context modifies it, and the agent keeps acting on the stale version. Decision inaccuracy: inconsistent choices in near-identical situations, such as two different error-handling patterns.",
+   "t": "2:28"
+  },
+  {
+   "idea": "After a task finishes, pick the next move on purpose: continue, compact, clear, clear-plus-structured-save, or rewind.",
+   "detail": "Continuing is the default, but the speaker argues the choice should depend on whether the next prompt is part of the same flow.",
+   "t": "3:55"
+  },
+  {
+   "idea": "Auto-compaction is lossy and least reliable mid-task. Compact yourself at a chosen point and give it explicit instructions.",
+   "detail": "Compaction is a summary that drops details the model judges unimportant. Recency bias keeps recent work and can lose older mistakes or warnings. Tool-call history is not fully preserved. The speaker advises triggering compaction around 300-400k and listing decisions, constraints and discovered issues to carry forward.",
+   "t": "4:30"
+  },
+  {
+   "idea": "Clear to start fresh when switching to an unrelated task, so the earlier task does not bias the new one.",
+   "detail": "Example: after generating test cases, start a new session for debugging so the test-generation reasoning does not shape the debugging.",
+   "t": "6:50"
+  },
+  {
+   "idea": "Combine clear and compaction through a structured JSON state file.",
+   "detail": "A custom command has the agent write task, current state, constraints and discovered issues into a file in a fixed schema. Then clear the context and start a new session that reads the file. The speaker says a schema is stricter than prose, so the agent represents important state more consistently.",
+   "t": "8:17"
+  },
+  {
+   "idea": "Pause periodically to have the agent recap its work, constraints and goals, which moves them back into recent context.",
+   "detail": "This targets goal drift and decision inconsistency, since the recap sits in the recent part of the window that survives compaction better.",
+   "t": "8:17"
+  },
+  {
+   "idea": "Use sub-agents to keep raw intermediate work out of the main context. Only the final output comes back.",
+   "detail": "Each sub-agent has its own context window and tools. The test is whether you will need the intermediate steps again. Research (many pages, many sources) is the clearest case. The speaker says Claude Code can spawn sub-agents itself, but you can also ask for delegation explicitly.",
+   "t": "9:43"
+  },
+  {
+   "idea": "Rewind instead of correcting forward, so wrong turns leave the context entirely.",
+   "detail": "Rewinding removes the bad attempt, and summarizing from that point keeps only the correct state. This also gives sub-agents a cleaner starting context and avoids carrying the wrong approach into a later compaction.",
+   "t": "11:07"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Manual compaction with an explicit instruction",
+   "how": "Do not wait for auto-compact. At a reasonable point (the speaker suggests around 300-400k tokens), compact on purpose and give an instruction that lists the decisions, constraints and discovered issues to carry forward. The speaker says flags exist to control when auto-compaction fires but does not name them in the video.",
+   "when": "A long session where you want the previous task's context to carry into the next window, not a fresh start."
+  },
+  {
+   "name": "Clear on task switch",
+   "how": "Run the clear command when the next task is unrelated to the current one. Start a new session and give only the context the new task needs.",
+   "when": "Switching from generating tests to debugging, or any change of task where old reasoning would bias the new one. Not as a reflex when the window is only getting full mid-task."
+  },
+  {
+   "name": "Structured state handoff (save, clear, reload)",
+   "how": "Create a custom command that asks the agent to analyze the conversation and current application state, then write a JSON file with the full task, current state, constraints, discovered issues, and other relevant fields. After the file is saved, run clear. In the new session, tell the agent to read that file and continue from it. The speaker gives the field categories but not a full schema.",
+   "when": "Long-running work that must resume in a new session. Stricter than prose compaction because the structure is enforced."
+  },
+  {
+   "name": "Periodic recap to reinforce goals",
+   "how": "Stop during a long task and ask the agent to recap what it has done, the constraints, and the important factors before continuing.",
+   "when": "Long runs where the agent starts to drift or contradict earlier decisions."
+  },
+  {
+   "name": "Sub-agent isolation for raw-heavy subtasks",
+   "how": "Explicitly tell Claude Code to delegate the subtask to a sub-agent. The sub-agent works in its own context and returns only the final output to the parent. Decide by asking whether you will need the intermediate steps again.",
+   "when": "Research across many pages or sources, refactoring, summarization, or document generation, where only the synthesis matters."
+  },
+  {
+   "name": "Rewind, then re-prompt",
+   "how": "When the agent makes a mistake, rewind with the rewind command or by pressing Esc twice. Optionally summarize from that point so the correct earlier work is kept. Then give the corrected direction in a new prompt, instead of correcting forward.",
+   "when": "Any time the agent goes wrong. Prefer this to repeated corrections, which leave the failed attempt in context."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude (Opus 4.5 and later models, 1M context window)",
+  "CLAUDE.md",
+  "Verdant (sponsor)"
+ ],
+ "numbers": [
+  {
+   "claim": "Context window grew from about 200k tokens to 1M for models after Opus 4.5.",
+   "t": "1:00"
+  },
+  {
+   "claim": "Context rot reportedly begins around 300-400k tokens, per the Claude Code creator (secondhand).",
+   "t": "1:00"
+  },
+  {
+   "claim": "Recommended compaction trigger point is about 300-400k tokens.",
+   "t": "5:22"
+  },
+  {
+   "claim": "Sponsor offer: 100 credits and seven days of trial for Verdant.",
+   "t": "6:50"
+  }
+ ],
+ "hot_takes": [
+  "A sponsored segment for Verdant runs at about 6:50, so quality is capped at 2 under the rubric. The substantive tips are reasonable on their face, but the title oversells them.",
+  "The 300-400k rot threshold is a single attributed remark, not measured data in the video. Treat it as a hypothesis to test on our own runs.",
+  "Claims about internals are stated without evidence: that compaction prioritizes recent details (recency bias), that tool-call history is lost, and that Claude is least reliable during compaction.",
+  "The title 'Anthropic Team's Greatest Advice' suggests official guidance, but the content is a creator's summary of a Claude Code engineer's article plus the creator's remarks."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The four failure modes (goal drift, memory corruption, decision inaccuracy, context pollution) map to failure categories a long-running agent evaluation could check, though the video is a user-level workflow guide and not system design.",
+   "action": "Consider tagging AgentOS long-run eval cases by failure mode (goal drift, memory corruption, decision inaccuracy) when we test MemoryMesh or long agent runs."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness does checkpoint/resume of long Claude Code runs. The structured JSON handoff (task, state, constraints, discovered issues) and the clear-after-save pattern are close to that design, and the sub-agent isolation advice applies to its plan and critique steps.",
+   "action": "Compare ProsHarness's checkpoint format against the speaker's schema (task, current state, constraints, discovered issues), and check whether checkpoint resume starts from a clean context or inherits the failed attempt."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

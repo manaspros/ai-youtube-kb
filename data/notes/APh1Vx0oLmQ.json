@@ -1,0 +1,152 @@
+{
+ "one_line": "Nishant Gupta (Meta Superintelligence Labs) argues that agent reliability is an infrastructure problem: treat models as probabilistic, keep the platform deterministic, and let infrastructure validate and enforce what the model proposes.",
+ "summary": "The speaker says the challenge with autonomous agents has moved from model intelligence to reliability, because agents now plan tool calls and act on production systems. He argues cloud infrastructure was built for short, deterministic requests, while agents are stateful, long-running, and make decisions dynamically, which he calls the \"great mismatch.\" He names the failures he sees as mostly infrastructure failures, such as retry loops and retry amplification, context corruption, and memory poisoning, where a small model mistake becomes an outage. His main architecture rule is that the model only proposes actions, infrastructure validates them, a policy engine refines them, and an enforcement gateway applies them. He describes an emerging \"agentic control plane\" for scheduling, memory coordination, policy, and monitoring, and says traces must capture planning and tool-call decisions, not just logs. He also covers layered safety, keeping humans as exception handlers, and reusing distributed-systems patterns such as circuit breakers, rate limits, and quotas. The talk gives no benchmarks or measured results; it is a conceptual, practitioner-level framing.",
+ "speakers": [
+  "Nishant Gupta"
+ ],
+ "orgs": [
+  "Meta",
+  "Meta Superintelligence Labs"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "security-guardrails",
+  "observability",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "deterministic-infrastructure",
+  "agent-reliability",
+  "agentic-control-plane",
+  "retry-amplification",
+  "defense-in-depth",
+  "human-in-the-loop",
+  "distributed-systems",
+  "agent-tracing",
+  "shared-memory-consistency",
+  "circuit-breaker",
+  "rate-limits",
+  "cost-governance"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The challenge with agents is reliability, not intelligence, once they plan tool calls and affect production systems.",
+   "detail": "He says the field spent years on bigger models and better reasoning, but organisations moving from chatbots to autonomous agents now face a reliability problem. He describes agent systems as fundamentally probabilistic and says infrastructure is not allowed to be.",
+   "t": "0:03"
+  },
+  {
+   "idea": "The 'great mismatch': agents break the assumptions cloud infrastructure was built on.",
+   "detail": "Cloud systems assume short-lived requests, roughly deterministic services, known execution paths and bounded failures. Agents are stateful, long-running, make dynamic decisions and may take different paths for the same input. Production goals are reliability at scale, safe recovery, and acceptable cost and latency, not just capability in a demo.",
+   "t": "1:06"
+  },
+  {
+   "idea": "Most agent incidents are infrastructure failures that start from a model mistake.",
+   "detail": "He names recursive reasoning loops, retry amplification, context corruption and memory poisoning. His example: a tool returns an error, the agent sends a slightly different invalid request, and each retry consumes more compute until a minor API error becomes a compute incident. He says hallucinations are often the least interesting failure mode.",
+   "t": "2:06"
+  },
+  {
+   "idea": "Never let the model directly control production systems.",
+   "detail": "His strongest recommended principle: the model generates proposals, infrastructure validates them, a policy engine refines them, and an enforcement gateway enforces them. The model suggests, the platform decides. This keeps the system reliable even when the model stays probabilistic.",
+   "t": "2:06"
+  },
+  {
+   "idea": "An agentic control plane is the new layer, and traces must capture decisions, not just events.",
+   "detail": "He compares it to Kubernetes for containers and service meshes for microservices. It covers scheduling, memory coordination, policy enforcement, monitoring and workload routing. Logs show what happened; agent traces need to show why, including planning decisions, tool calls, memory lookups and state transitions.",
+   "t": "3:30"
+  },
+  {
+   "idea": "Shared agent memory brings consistency problems, and many multi-agent failures are really consistency failures.",
+   "detail": "Once several agents share state, stale reads, conflicting updates and context drift appear. He says this is harder when memory is probabilistic and retrieval-based, so failures that look like reasoning errors are often consistency errors.",
+   "t": "4:33"
+  },
+  {
+   "idea": "Use layered safety and keep humans as exception handlers.",
+   "detail": "Safety stack: prompt-level controls, tool permissions, policy validation, human approval and audit. Each layer catches a different failure class. He argues humans should stay in the loop permanently, handling ambiguous and novel cases and giving calibration signals, with attention spent where it adds the most value.",
+   "t": "4:33"
+  },
+  {
+   "idea": "Map classic distributed-systems patterns onto agents instead of inventing new ones.",
+   "detail": "Circuit breakers become tool isolation, rate limits become agent limits, controlled retry becomes controlled recovery, and resource quotas become cost governance. Observability becomes agent tracing. AI workloads also look like cluster scheduling, with variable reasoning depth and runtimes from minutes upward.",
+   "t": "5:36"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Propose, validate, enforce split",
+   "how": "The model only emits proposed actions. A validation layer checks them, a policy engine refines them, and an enforcement gateway applies them. The model never writes directly to production systems.",
+   "when": "Any agent that can change production state or call tools with side effects."
+  },
+  {
+   "name": "Tool isolation with circuit breakers",
+   "how": "Wrap each tool call in a circuit breaker so repeated failures isolate that tool instead of letting the agent keep retrying it.",
+   "when": "Agents that retry failing tool calls, where retries multiply compute and downstream load."
+  },
+  {
+   "name": "Controlled recovery instead of open retries",
+   "how": "Cap retries and recover in a bounded way, so an agent that keeps producing slightly different invalid requests stops before compute grows.",
+   "when": "Tool errors that make the agent regenerate near-identical invalid requests."
+  },
+  {
+   "name": "Decision-chain tracing",
+   "how": "Record planning decisions, tool calls, memory lookups and state transitions per run, and read the chain when debugging, not only the final output.",
+   "when": "Debugging long-running or multi-step agent workloads where the final output hides the cause."
+  },
+  {
+   "name": "Per-agent limits and cost quotas",
+   "how": "Apply rate limits per agent and resource quotas as cost governance, reusing standard distributed-systems controls.",
+   "when": "Multi-agent or high-volume agent workloads where one run can consume unbounded compute."
+  },
+  {
+   "name": "Layered defence for agent actions",
+   "how": "Combine prompt-level controls, per-tool permissions, policy validation, human approval and audit logging, expecting each layer to catch different failures.",
+   "when": "Agents with access to real systems where no single guard is enough."
+  },
+  {
+   "name": "Humans as exception handlers",
+   "how": "Route ambiguous or novel cases to a human, and feed those decisions back as calibration signals rather than treating human review as temporary.",
+   "when": "Agent systems where the cost of a wrong autonomous action is high."
+  }
+ ],
+ "tools": [],
+ "numbers": [
+  {
+   "claim": "No benchmarks, costs, latencies or adoption stats are given. The only figures are illustrative scale targets: a production system should run reliably '10,000 times, 100,000 times, a million times'.",
+   "t": "1:06"
+  },
+  {
+   "claim": "Retry amplification is described qualitatively as exponential resource growth: each retry consumes more compute and reasoning depth increases, with no measured figure.",
+   "t": "2:06"
+  }
+ ],
+ "hot_takes": [
+  "Hallucinations are the least interesting AI failure in production; infrastructure failures are the real problem.",
+  "Many multi-agent failures are consistency failures that look like reasoning failures.",
+  "The most successful agent systems will stay human-supervised, with humans acting as exception handlers rather than a temporary crutch.",
+  "Models and prompts are commoditising, so the competitive advantage is moving to infrastructure: the organisations with the most reliable systems will win, not those with the best prompts."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "L1 proxy already does budgets and PII/injection scanning. The propose-validate-enforce split and per-agent limits fit that path directly.",
+   "action": "In the L1 proxy, treat model-proposed tool calls as untrusted: check them against a policy step before forwarding, and add a per-agent retry cap that trips after repeated identical tool errors."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs long checkpointed agent loops with phone approvals. The talk's exception-handler framing and loop-control concerns apply directly.",
+   "action": "Add a loop guard to ProsHarness schedules: stop after N identical failed tool calls and send the run to phone approval instead of retrying."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Useful vocabulary (control plane, propose/validate/enforce) for writing up agent safety and orchestration design, but no concrete method or data was shown.",
+   "action": "Reuse the propose, validate, enforce split as the framing when writing up multi-agent designs."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

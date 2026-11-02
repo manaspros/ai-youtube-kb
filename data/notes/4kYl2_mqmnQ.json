@@ -1,0 +1,185 @@
+{
+ "one_line": "A KRAFTON engineer runs AI coding agents across three machines, organizes them as a hierarchy, keeps state in files, and lists the five failures and four open problems that followed.",
+ "summary": "Kyle Jaejun Lee describes running a daily fleet of AI coding agents on a MacBook and two headless Linux boxes. He found that he had become the scheduler, memory and reviewer for six contexts, so he built a hierarchy (CEO, VP, manager, worker) where each agent has scoped context and an approval boundary. Agent state lives in files on disk, not in the model's context window, so he resets the context and reloads handoff files instead of compacting. A review gateway blocks each plan until he approves it, and then a hook starts the work. Scaling to three machines brought five failures: agents doing work themselves, cramped tmux panes, out-of-memory swap, git credentials bound to the wrong workspaces, and laptop sleep killing jobs. The fixes were a boot command that restores state from files, git-based context sync with per-machine directories, one main gateway on an always-on box, and Discord as a single router. He closes with four unsolved problems and a plan to declare what each agent needs and let Kubernetes handle compute, secrets and tools underneath his own orchestration layer.",
+ "speakers": [
+  "Kyle Jaejun Lee"
+ ],
+ "orgs": [
+  "KRAFTON"
+ ],
+ "format": "talk",
+ "topics": [
+  "multi-agent",
+  "claude-code",
+  "context-engineering",
+  "coding-agents"
+ ],
+ "tags": [
+  "agent fleet",
+  "orchestration hierarchy",
+  "file-based state",
+  "context reset vs compaction",
+  "review gateway",
+  "human approval gate",
+  "git sync",
+  "tmux",
+  "discord router",
+  "kubernetes underlay",
+  "multi-machine",
+  "claude code"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The human becomes the bottleneck: one person acting as scheduler, memory and reviewer for six live contexts does not scale.",
+   "detail": "He says at six contexts he was no longer running agents, he was the scheduler, the memory and the reviewer. His fix was to model the agents as an organization so each layer sees only its slice.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Organize agents as a hierarchy with scoped context per layer.",
+   "detail": "CEO, VP, manager and worker are real entity types in his system, each with its own scoped context and approval boundary. Context flows down, results flow up, and he reviews only what reaches the top.",
+   "t": "1:22"
+  },
+  {
+   "idea": "Keep agent state in files on disk, not in the model's window.",
+   "detail": "Each entity has a workspace with its mission, current status and a handoff folder. Shared rules, machine-bound state and work products are kept apart, so the state survives context wipes and machine crashes.",
+   "t": "1:22"
+  },
+  {
+   "idea": "Reset and reload instead of compacting.",
+   "detail": "He says compaction is slow, he cannot choose what survives, and dropped content is gone. He clears the context, then the agent reads its own handoff and history files and continues.",
+   "t": "2:38"
+  },
+  {
+   "idea": "A review gateway blocks each plan until a human approves it.",
+   "detail": "Any layer that wants to act submits a plan and waits. A hook starts the work on approval. He says he never has to walk into the work windows anymore, and that an infra team of agents built this gateway.",
+   "t": "2:38"
+  },
+  {
+   "idea": "Multi-machine scaling exposed five concrete failures.",
+   "detail": "Orchestrators did the work themselves instead of delegating, so he forced dispatch through a CLI harness with skills. Panes got too small to read, memory ran out under Claude Code and MCP processes, git credentials bound to the wrong workspaces, and a laptop losing power killed in-flight jobs.",
+   "t": "4:05"
+  },
+  {
+   "idea": "Sync context across machines through git, and keep shared state behind pull requests.",
+   "detail": "Machines commit and push context files, then poke each other over SSH to pull. Shared directories conflicted, so machine-specific state moved to per-machine directories and shared state changes only through PRs.",
+   "t": "5:23"
+  },
+  {
+   "idea": "Centralize control and remove any single machine that can sleep.",
+   "detail": "Every machine sends review requests to one main gateway on an always-on Linux box. Discord, with one bot per machine, became the single router, so his phone is the remote control for the whole fleet.",
+   "t": "6:44"
+  },
+  {
+   "idea": "Declare what an agent needs, not where it runs, and stack Kubernetes underneath.",
+   "detail": "He lists four open problems: cross-machine consistency, local-only tools such as MCP servers and the browser, secure credential handoff, and resource management. He plans to reuse Kubernetes for compute, secrets and tools, and build only the task orchestration, review flow and context management on top.",
+   "t": "7:57"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Agent org hierarchy with scoped context",
+   "how": "Model orchestrators as layers (CEO, VP, manager, worker), each with its own context slice and approval boundary. Push tasks down, roll results up, and only review the top.",
+   "when": "When one human cannot hold the state of many concurrent agents and a flat pile of sessions drifts out of alignment."
+  },
+  {
+   "name": "File-backed agent state with handoff folders",
+   "how": "Store mission, status and handoff artifacts for each agent in a workspace on disk. On resume, the agent reads its own handoff and history files instead of relying on the window.",
+   "when": "For long-running agent work that must survive context resets, compaction loss, or machine crashes."
+  },
+  {
+   "name": "Clear-and-reload instead of compaction",
+   "how": "Wipe the context completely and rebuild it from the agent's own written handoff and history files, rather than asking the model to summarize the history.",
+   "when": "When the context window fills during long runs and summary-based compaction loses content you cannot choose."
+  },
+  {
+   "name": "Blocking review gateway with approval hook",
+   "how": "An agent submits its plan to a gateway and blocks. A human approves in one web inbox, and a hook then starts the work automatically.",
+   "when": "When plans drift down a delegation chain and you want one control point before any action runs."
+  },
+  {
+   "name": "Force delegation through a CLI harness",
+   "how": "Expose the dispatch path as CLI commands wrapped in skills, so the orchestrator can only delegate rather than do the task itself.",
+   "when": "When an orchestrator keeps doing worker tasks directly instead of dispatching them."
+  },
+  {
+   "name": "Git-based context sync with per-machine partitions",
+   "how": "Commit and push context files between machines and trigger pulls over SSH. Keep machine-specific state in per-machine directories and change shared state only through pull requests.",
+   "when": "When several machines must share agent context without silently diverging."
+  },
+  {
+   "name": "Single always-on control plane and chat router",
+   "how": "Send every machine's review requests to one gateway on an always-on host. Use one chat bot per machine so the phone can drive the whole fleet.",
+   "when": "When laptops sleep and no single machine should be the place where approvals or control live."
+  },
+  {
+   "name": "Boot command that restores the fleet from state files",
+   "how": "One command brings all agents back up after a crash or reboot, because all their state is already on disk.",
+   "when": "When machines can lose power or restart and in-flight jobs must resume without manual rebuilding."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "tmux",
+  "tmux capture-pane",
+  "SSH",
+  "Git",
+  "Discord",
+  "MCP servers",
+  "Kubernetes",
+  "Linux",
+  "macOS"
+ ],
+ "numbers": [
+  {
+   "claim": "Three machines (MacBook, Linux A for long-running coding, Linux B for short-lived side projects), all under one control plane.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Four to six live agent contexts in front of him before the design broke down, which he calls one human in three roles.",
+   "t": "1:22"
+  },
+  {
+   "claim": "Five named failures in the multi-machine move: orchestrator doing work itself, crowded panes, out-of-memory swap, git credential collisions, and laptop power loss.",
+   "t": "4:05"
+  },
+  {
+   "claim": "Four unsolved problems: cross-machine consistency, local-only tools, secure credential handoff, resource management.",
+   "t": "7:57"
+  },
+  {
+   "claim": "No benchmarks, latencies or cost figures are given. The talk is an experience report, and its numbers are counts only.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Compacting a long agent context is worse than resetting and reloading from files written by the agent, because you cannot control what survives compaction.",
+  "An agent's state should live in files, not in the model, so a crash or context wipe does not lose the work.",
+  "Infrastructure for agents should be built by agents: his review gateway was built by an agent team inside the fleet.",
+  "The controller must never sit on a machine that can sleep, so the approval point should be an always-on box.",
+  "Do not rebuild compute, secrets and tool placement for agents; stack Kubernetes underneath and build only the orchestration layer."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Speaker's per-machine placement and declare-needs-not-location idea touches AgentOS's self-hosted infra, but the talk gives no infra code or measurements.",
+   "action": "Skim the 'declare what an agent needs, let the scheduler place it' section (7:57) before designing multi-machine placement for AgentOS."
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "Not a project in the profile, so no action is scored.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 3,
+   "why": "ProsHarness wraps Claude Code for checkpoint/resume and phone-driven approvals. The talk covers the same ground: file-based state with reset-and-reload instead of compaction, a blocking approval gate, a boot command that resumes work after a crash, and Discord as a phone router.",
+   "action": "Test ProsHarness resume by clearing the context and restarting from only the handoff and history files, as described at 2:38, and check whether the checkpoint files alone are enough to continue."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

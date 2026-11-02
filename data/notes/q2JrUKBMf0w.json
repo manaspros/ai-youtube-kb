@@ -1,0 +1,121 @@
+{
+ "one_line": "Arize's founder argues that evals must add a third layer, agent-as-a-judge, that reads production traces, finds failure patterns, and can open fix PRs. It is a short vendor pitch with little method detail.",
+ "summary": "Aparna Dhinakaran of Arize AI argues that eval practice has to change as agents change. Early evals scored single prompt answers, but agents now use tool calls, reasoning, deep research and long-horizon sub-agents, so their failures are different. She says Arize's own agent, Alex, forgot context, did not know when a task was finished, and got stuck in loops, which fixed-rubric LLM-as-a-judge evals did not catch. She describes three eval types: deterministic checks, LLM-as-a-judge with a fixed rubric, and agent-as-a-judge with adaptive analysis. Her claim is that most teams do the first two and should add the third. She says Arize's agent, Signal, reads traces, finds patterns such as the same tool being called repeatedly, and can open a PR with a fix. The talk gives no methodology, benchmarks or failure-rate data, and most of it promotes the product.",
+ "speakers": [
+  "Aparna Dhinakaran"
+ ],
+ "orgs": [
+  "Arize AI",
+  "Anthropic",
+  "OpenAI",
+  "Uber",
+  "Snorkel"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "observability",
+  "agent-architecture"
+ ],
+ "tags": [
+  "agent-as-judge",
+  "llm-as-judge",
+  "trace-analysis",
+  "online-evals",
+  "failure-modes",
+  "stuck-loops",
+  "vendor-pitch",
+  "arize-signal"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent failures changed as agents changed",
+   "detail": "Evals built for single prompt answers miss failures from tool calls, reasoning, deep research and long-horizon sub-agent loops. The failures are more complex and less predictable.",
+   "t": "1:37"
+  },
+  {
+   "idea": "Fixed-rubric LLM-as-a-judge missed the failures Alex had",
+   "detail": "Alex forgot context, did not know when a task was done, and looped. Classic LLM-as-a-judge evals were not enough, because each run follows a different trajectory and a fixed rubric cannot describe it.",
+   "t": "2:37"
+  },
+  {
+   "idea": "Three eval layers instead of two",
+   "detail": "Deterministic checks, LLM-as-a-judge with fixed rubrics, and agent-as-a-judge with adaptive analysis. The speaker says most teams use the first two and should add the third.",
+   "t": "3:35"
+  },
+  {
+   "idea": "Evaluate production traces, not only offline test sets",
+   "detail": "The speaker says the useful data comes from evals run on live production traces, which show what works and what fails. That data then feeds continual-learning loops. Offline and online evals each have a place.",
+   "t": "0:12"
+  },
+  {
+   "idea": "An agent judge can find subtle loop failures and propose fixes",
+   "detail": "Signal found an inefficient trajectory in which the same tool was called many times in a row. Because it has this analysis, it can open a PR with a fix.",
+   "t": "4:53"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Agent-as-a-judge over traces",
+   "how": "Run a long-lived agent over logged traces to discover failure patterns that a fixed rubric cannot express, then have it summarise them or propose a code fix as a PR.",
+   "when": "When agent trajectories vary a lot between runs and fixed-rubric judges miss failures such as loops, wasted tool calls or lost context."
+  },
+  {
+   "name": "Three-layer eval stack",
+   "how": "Combine deterministic checks, LLM-as-a-judge rubric scoring, and an adaptive agent judge. Each layer catches a different kind of failure.",
+   "when": "When a team already runs basic evals and needs to catch failures that only appear across a whole trajectory."
+  },
+  {
+   "name": "Trace-driven online evals",
+   "how": "Attach evaluators to traces from the live agent and treat the scores as signal for what to fix, not only as a pre-release gate.",
+   "when": "When the agent runs in production and failures show up only with real user traffic."
+  },
+  {
+   "name": "Repeated-tool-call loop detection",
+   "how": "Look for the same tool called many times in one trajectory as a cheap signal of inefficiency or getting stuck. The speaker gives this as an example of what the agent judge found.",
+   "when": "For long-horizon agents that sometimes cycle without making progress."
+  }
+ ],
+ "tools": [
+  "Arize Signal",
+  "Agent as a Judge (Arize)"
+ ],
+ "numbers": [
+  {
+   "claim": "Arize runs over 100 million evals per month",
+   "t": "0:12"
+  },
+  {
+   "claim": "The average team runs about 12 different eval jobs, and the top teams run over 3,800 evaluators",
+   "t": "0:12"
+  }
+ ],
+ "hot_takes": [
+  "Most teams doing agent evals today only use deterministic checks and LLM-as-a-judge, and the third layer, agent-as-a-judge, is the future of evals.",
+  "Classic LLM-as-a-judge evals are not enough for agents whose trajectories differ on every run."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS has RAGAS evals and OTel observability. The talk suggests trace-level judging for loops and wasted tool calls, but gives no method.",
+   "action": "Add a loop/repeated-tool-call check over AgentOS run traces and compare it with the RAGAS scores, to see whether trace-level signals catch failures that RAGAS misses."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs long Claude Code sessions and checkpoints them. The talk's stuck-loop case matches that workload, but the talk offers no concrete design.",
+   "action": "Read the Arize Signal/agent-as-judge write-up or docs, if one exists, to see how a judge reads run traces and whether that pattern could flag stuck runs for checkpoint or resume decisions."
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "Vendor pitch with no methodology or data beyond a few usage counts.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

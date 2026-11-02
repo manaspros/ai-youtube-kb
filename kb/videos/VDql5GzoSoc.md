@@ -1,0 +1,44 @@
+# Time to UPGRADE… Unified AI Agents Are Finally Here
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `VDql5GzoSoc` · [watch](https://youtu.be/VDql5GzoSoc) · **date:** 2025-11-02 · **length:** 10:27 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** AI LABS host (unnamed) · **orgs:** ACI.dev, Google, Brave, Cursor
+- **topics:** mcp-and-tools, coding-agents, rag-retrieval · **tags:** ACI.dev, unified MCP server, agent playground, app store, OAuth, semantic tool search, Cursor, Google Calendar, self-hosting, tool routing
+
+> Walkthrough of ACI.dev, a hosted platform that connects apps to agents via an app store, an agent playground and a unified MCP server with search and execute tools; the hype title outruns the unbenchmarked speed claims.
+
+## Summary
+The host presents ACI.dev as a platform for building agents: you pick integrations from an app store, attach them to an agent, and the agent calls their functions. Integrations come in three auth types, none, API key and OAuth, and the demo uses an API-key search app and Google Calendar over OAuth through ACI's built-in OAuth app. A chat-style agent playground lets you choose which functions an agent may use, and the Calendar demo shows listing, inserting and (as delete plus re-insert) editing events. The host credits a vector database of MCP tool descriptions with semantic search as the reason tool selection is fast and accurate, though no benchmark is shown. For MCP clients such as Cursor, the unified MCP server exposes two tools, search and execute, and the agent chooses the tool. The host flags that OAuth on the hosted platform gives ACI access to personal data, and suggests self-hosting the open-source repo while noting that this means setting up your own OAuth apps and GCP credentials, which the video does not cover.
+
+## Key ideas
+- **ACI.dev is positioned as a hosted way to attach integrations to agents: browse an app store, connect apps, then assign apps and specific functions to an agent.** — The host shows the app store, an app-configuration page listing installed apps, a linked-accounts page and an agent playground. Three apps were installed in the demo. ([0:00](https://youtu.be/VDql5GzoSoc?t=0))
+- **Integrations fall into three auth tiers: none, API key, and OAuth. Each tier changes how much setup is needed.** — An app that needs no auth is confirmed and assigned an owner ID. A key-based app such as Brave Search asks for an API key during configuration. OAuth apps such as Google Calendar, YouTube, Google Maps and Gmail go through an OAuth flow; the demo uses ACI's built-in OAuth app rather than the user's own. ([2:05](https://youtu.be/VDql5GzoSoc?t=125))
+- **The agent playground exposes per-agent function selection, so one platform can host several agents with different tool sets.** — For each agent you choose an account ID and then which apps and functions it can use. The host says separate agents, for example a coding agent and a business agent, can each get their own tool set. ([3:13](https://youtu.be/VDql5GzoSoc?t=193))
+- **The demo agent handles calendar CRUD in plain language. The 'edit' was actually a delete followed by an insert.** — After a wrong attendee email, the agent deleted the original event and inserted a new one. A later query for upcoming meetings returned the new event. ([4:07](https://youtu.be/VDql5GzoSoc?t=247))
+- **The host attributes speed and accuracy to semantic search over a vector database of MCP tool descriptions. He frames this as RAG over tools.** — He says MCP tools are slow by themselves, and that embedding tool descriptions lets the system retrieve the right tool faster and more accurately than plain text search. No latency or accuracy numbers are shown to support this. ([4:07](https://youtu.be/VDql5GzoSoc?t=247))
+- **The unified MCP server exposes two tools, search and execute, and leaves tool choice to the client's agent instead of calling tools directly.** — The host says Cursor cannot handle more than about 40 tools well and that multiple MCP servers make the interface clunky. The unified server is presented as the fix. In Cursor, the two tools show up after the JSON config is pasted and the owner ID and API key are entered. ([7:54](https://youtu.be/VDql5GzoSoc?t=474))
+- **Hosted OAuth means the platform can reach your personal data. Self-hosting the open-source repo is the privacy-preserving option, but it needs your own OAuth apps and cloud credentials.** — The host says self-hosting is involved, especially on Google Cloud Platform, and offers a follow-up guide if viewers ask for one. The local setup is explicitly out of scope for this video. ([6:34](https://youtu.be/VDql5GzoSoc?t=394))
+- **Verification in the demo is done with ordinary queries: listing available tools, then checking the next calendar event, which returned the right attendee and meeting link.** — The 'what tools can I use right now' query returned Google Calendar, Brave Search and YouTube, which matched the agent's assigned apps. The final calendar lookup correctly identified the next meeting and its details. ([9:16](https://youtu.be/VDql5GzoSoc?t=556))
+
+## Techniques
+- **Attach apps to an agent in ACI's playground** — 1) Open the App Store and connect the integration. 2) On the app config page, confirm the auth step, pick the default agent and enter an owner ID (the host uses 'AI Labs'). 3) For a key-based app, paste the API key. For OAuth, start the flow and complete Google sign-in with ACI's built-in OAuth app (or your own OAuth app if self-hosting). 4) In the playground, choose the agent, choose the account ID, select the apps and functions the agent may call, then chat. *When:* Use it to get a no-code tool-using agent running quickly, or to prototype which functions an agent actually needs before wiring it into code.
+- **Unified MCP server in Cursor** — 1) Copy the agent's API key from the ACI.dev agent section. 2) Set the linked-account owner ID. 3) Copy the JSON MCP config from ACI and paste it into Cursor, remove unneeded fields, and fill in the owner ID and API key. 4) Confirm two tools (search and execute) appear. 5) Put the context snippet from ACI's docs into Cursor project rules set to always, so Cursor knows how to call the server. *When:* Use it when a client has many tools across several MCP servers, and you want one entry point that retrieves the right tool on demand.
+- **Separate agents with separate tool sets** — Create one agent per role (the host's example is a coding agent and a business agent). Give each its own owner ID and API key, and assign only the apps that role needs. Point each client at the matching key. *When:* Use it to keep tool scopes narrow per agent instead of exposing every integration to every client.
+
+## Numbers
+- Three apps installed and connected in the demo account ([1:05](https://youtu.be/VDql5GzoSoc?t=65))
+- Speaker says Cursor cannot handle more than about 40 tools effectively (unverified claim) ([7:54](https://youtu.be/VDql5GzoSoc?t=474))
+- Unified MCP server exposes two tools, search and execute, to the client ([7:54](https://youtu.be/VDql5GzoSoc?t=474))
+- No latency, token, or accuracy benchmarks are given for the claimed speed-up from semantic tool retrieval ([4:07](https://youtu.be/VDql5GzoSoc?t=247))
+
+## Hot takes
+- The title ('Finally Here', 'UPGRADE') and the opener ('the first platform that truly demonstrates this evolution') are hype with no comparison behind them. Quality is capped at 2 for that reason.
+- The claim that MCP is slow by itself, and that ACI's vector search makes it faster and more accurate than other platforms, is unbenchmarked. Treat it as a hypothesis to test.
+- The '40 tools in Cursor' limit is stated without a source or test.
+- The video is mostly a hosted-product walkthrough. Local setup, which the host admits is the privacy-preserving path, is explicitly skipped.
+- The host is candid that hosted OAuth gives the platform access to personal data. That caveat is the most useful part for a practitioner choosing between hosted and self-hosted.
+
+## Tools mentioned
+ACI.dev, ACI unified MCP server, ACI app MCP server, Agent Playground (ACI), Google Calendar, YouTube, Google Maps, Gmail, Brave Search, Archive (app named in video), Cursor, Claude Desktop, Claude Code, Google Cloud Platform, MCP (Model Context Protocol), vector database (unnamed)
+
+## Relevance to our work
+- **agentos** (1/3): Tool exposure through one meta-tool pair (search and execute) is a design alternative to listing every tool to the model, and the proxy layer could in principle host it. Nothing in the video touches the proxy's budgets, PII scan, or audit path. → *Read the ACI unified-server design as prior art for tool routing, then decide whether a search and execute meta-tool belongs in the proxy before any build work.*

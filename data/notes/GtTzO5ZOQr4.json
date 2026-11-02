@@ -1,0 +1,120 @@
+{
+ "one_line": "Better Stack walkthrough of llama-swap, a single Go proxy that exposes one OpenAI/Anthropic-compatible endpoint and starts, swaps and TTL-unloads local model backends based on the request's model field.",
+ "summary": "The host argues that once you outgrow Ollama or LM Studio and move to raw llama-server for control over flags and GPU layers, you end up killing and restarting servers and changing base URLs whenever you switch models. llama-swap puts one stable endpoint in front of several backends: the client changes only the model field, and the proxy waits for the right backend to be healthy, stops whatever must yield, and forwards the request. Each model in its YAML config has its own launch command, model file, context size and TTL, and an idle model is unloaded after its TTL so VRAM is freed. It is a single Go binary with a YAML config, proxies OpenAI- and Anthropic-compatible APIs, and can front llama.cpp, vLLM and TabbyAPI. The host is clear that it is not a model store, downloader or GUI, and that the setup (model files, backend knowledge, YAML, GPU flags) is heavier than Ollama. The video is a short, demo-level overview with no benchmarks, and the exact YAML keys are not shown on screen.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "llama-swap",
+  "llama.cpp",
+  "local-llm",
+  "model-swapping",
+  "ttl-unload",
+  "openai-compatible",
+  "anthropic-compatible",
+  "reverse-proxy",
+  "ollama",
+  "lm-studio",
+  "vllm",
+  "tabbyapi",
+  "cursor",
+  "open-webui"
+ ],
+ "key_ideas": [
+  {
+   "idea": "One stable endpoint, many local models: clients keep the same base URL and switch models by changing the model field in the request.",
+   "detail": "The proxy checks the model field, waits for that backend to be healthy, or starts it, and stops any model that must yield before forwarding.",
+   "t": "2:02"
+  },
+  {
+   "idea": "Raw llama-server tuning forces you to kill and restart servers and rewire clients on every model change, and that is the problem the proxy solves.",
+   "detail": "The host says the wait, reconnect or silent wrong-model failures are the real cost of bouncing between models, not the model choice itself.",
+   "t": "0:59"
+  },
+  {
+   "idea": "Per-model config holds the launch command, model file, context size and TTL, so the config remembers what should run.",
+   "detail": "An idle model past its TTL is unloaded to free VRAM, which matters when you have more models on disk than VRAM to hold them.",
+   "t": "2:02"
+  },
+  {
+   "idea": "TTL-based unloading addresses the case of many models on disk but only enough VRAM for one or two loaded at once.",
+   "detail": "Idle models are unloaded so the GPU is not stuck holding a model nobody is using.",
+   "t": "3:11"
+  },
+  {
+   "idea": "Positioning: llama-swap is server-first control, not a beginner tool. It is not a model store, downloader or GUI, unlike Ollama and LM Studio.",
+   "detail": "You bring your own llama.cpp build and flags. It fits a dev box, homelab, Docker or shared machine where tools need a stable API.",
+   "t": "4:19"
+  },
+  {
+   "idea": "The setup cost is real: you need model files, backend knowledge, YAML and GPU-appropriate flags.",
+   "detail": "The host recommends it for people who know exactly which model they want and are tired of rewiring, and for users of Cursor, Continue, custom agents or scripts.",
+   "t": "5:26"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Single front-door proxy for multiple local model servers",
+   "how": "Run the llama-swap binary with one YAML config. Each model entry gets its own launch command, model file, context size and TTL. Point every OpenAI-compatible or Anthropic-compatible client at the proxy's port and select a model by setting the model field in the request. The video does not show exact YAML key names or the port flag, so check the project README for those.",
+   "when": "You run several local models of different sizes (for example a large coding model and a small chat or embedding model) on one GPU and want clients to stay unchanged while you switch models."
+  },
+  {
+   "name": "TTL-based idle unloading",
+   "how": "Set a TTL on each model entry. When a model has been idle longer than its TTL, the proxy unloads it and frees its VRAM. The next request for that model starts it again and waits until it is healthy.",
+   "when": "Your models are on disk in larger number than your VRAM can hold, and bursts of use are separated by idle periods."
+  },
+  {
+   "name": "Per-model backend control",
+   "how": "Put the exact llama-server (or vLLM or TabbyAPI) command, flags, GPU layer placement and context size in each model's entry, rather than relying on a model store to choose them.",
+   "when": "You need precise control over how each model launches and do not want a GUI or an automatic downloader."
+  }
+ ],
+ "tools": [
+  "llama-swap",
+  "llama.cpp (llama-server)",
+  "Ollama",
+  "LM Studio",
+  "vLLM",
+  "TabbyAPI",
+  "Open WebUI",
+  "Cursor",
+  "Continue",
+  "Qwen coder (transcript: 'quen-coder')",
+  "small-lm2 (name as spoken in the config example)"
+ ],
+ "numbers": [
+  {
+   "claim": "Example config defines two models, each with its own command, model file, context size and TTL.",
+   "t": "2:02"
+  }
+ ],
+ "hot_takes": [
+  "The video is a short demo with no benchmarks, so swap or cold-start latency is not quantified.",
+  "The host says llama-swap is not for beginners, and the setup cost is high compared with Ollama or LM Studio.",
+  "The video runs about 6 minutes and shows the config at a high level only, without the exact YAML keys."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS's L2B InferCraft is a vLLM plus Ray Serve setup on one RTX 5090. llama-swap's single endpoint with per-model TTL unload is a local multi-model pattern worth comparing against that setup, but it does not change the design.",
+   "action": "Compare llama-swap's per-model TTL unload and single-endpoint model switching with the current vLLM and Ray Serve setup before adding any model-switching code."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI, not local model servers. Nothing in the video touches its checkpoint, planning or approval features.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

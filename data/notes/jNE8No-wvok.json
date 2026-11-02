@@ -1,0 +1,180 @@
+{
+ "one_line": "Meta's Aditya Gautam on using a multi-agent system of small domain-tuned VLMs to find intra-video policy anomalies and duplicate content in short-form video, with a production judge-and-human feedback loop.",
+ "summary": "The speaker describes two problems on Meta's short-form video surfaces: intramodality misalignment (an off-topic segment such as an ad or political clip inserted into an otherwise normal video) and originality attribution (detecting copied or AI-transformed re-uploads). Real data is messy, adversarial, multilingual, drifts month to month, and has no clear ground truth. The system splits the work across three agents: a Perceiver that decomposes video into clips and emits structured metadata, a Retriever that indexes signals and finds similar clips offline and online, and a Reviewer that reasons over both and makes the decision. Each agent runs on a small specialised VLM that is pre-trained or instruction-tuned on in-house data with JSON-schema outputs, then distilled and quantized for cost. Evaluation is meant to be per-node (retrieval recall and latency, reasoning quality, error rates per hook, token cost), not just precision and recall. Production runs a daily sample through an LLM judge trained on human labels, with a human review queue for weak cases that feeds retraining. Cost cuts come before inference: temporal frame compression, skipping cached near-duplicates, and pruning candidates by creator metadata. The talk gives no benchmark numbers for accuracy, latency or cost.",
+ "speakers": [
+  "Aditya Gautam"
+ ],
+ "orgs": [
+  "Meta"
+ ],
+ "format": "talk",
+ "topics": [
+  "multi-agent",
+  "voice-multimodal",
+  "evals",
+  "training-finetuning-rl"
+ ],
+ "tags": [
+  "short-form video",
+  "modality misalignment",
+  "originality detection",
+  "video VLM",
+  "LLM-as-judge",
+  "human review queue",
+  "distillation",
+  "quantization",
+  "metadata pruning",
+  "frame compression"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Real-world video data is messy and hard to label",
+   "detail": "Data is at 100M+ scale, viral, adversarial, multilingual on screen, and drifts as new AI tools appear. There is no clear ground truth, so the system has to be built and checked around that.",
+   "t": "1:09"
+  },
+  {
+   "idea": "Two distinct problems: intramodality misalignment and originality",
+   "detail": "Cross-modal matching (CLIP-style cosine similarity) is treated as the easy case. The hard case is finding a short off-topic segment inside a long video, which needs clip- and frame-level understanding. The second problem is detecting copied or transformed uploads and finding their source.",
+   "t": "2:31"
+  },
+  {
+   "idea": "Use multiple agents only when one LLM cannot do the job",
+   "detail": "A central orchestrator (Reviewer) calls a Perceiver for video decomposition and a Retriever for similarity search. The speaker says a single LLM should be used if it can solve the problem.",
+   "t": "3:48"
+  },
+  {
+   "idea": "Compress frames by temporal change, not a fixed frame rate",
+   "detail": "The Perceiver finds where content changes and merges similar frames. It outputs per-clip structured data (embeddings, tags, OCR, description, timestamps), and the Reviewer scans that JSON to locate where a topic shifts, such as sports changing to politics at a few seconds.",
+   "t": "5:01"
+  },
+  {
+   "idea": "Index each signal type in the store that fits it",
+   "detail": "Topics go to an inverted index, embeddings to a vector database, and extracted entities to a graph database. Offline clustering assigns cluster IDs, and online the Retriever reranks candidates and uses a spam or quality classifier to filter them.",
+   "t": "6:14"
+  },
+  {
+   "idea": "Pre-train and fine-tune on in-house data, with schema-constrained outputs",
+   "detail": "Public web-trained VLMs do not match user-generated, messy content, so the speaker pre-trains the vision encoder on in-house data, then instruction-tunes with a projector and outputs in a JSON schema. The labels include modality issues, chain-of-thought and the format a human reviewer would read.",
+   "t": "11:21"
+  },
+  {
+   "idea": "Production feedback loop: sample, judge, route failures to humans",
+   "detail": "A daily sample of production traffic is scored by an LLM judge trained on human labels. Failures go to a human queue, where traces across LLM calls, MCP tools and retrieval show which node broke. Those cases become positive and negative training pairs, and the target is around 95% per problem.",
+   "t": "13:53"
+  },
+  {
+   "idea": "Distill and quantize to fit a narrow internal problem",
+   "detail": "The speaker says frontier models are too costly for a narrow internal task that only needs to be right on one domain. The plan is on- and off-policy distillation, then quantization such as 4-bit, with a table of model size against quality and cost.",
+   "t": "16:32"
+  },
+  {
+   "idea": "Evaluate every node, not only the final label",
+   "detail": "The list covers retrieval latency and recall, reasoning quality and overthinking, an adaptive reasoning budget, error rates per tool or hook, and token cost per agent. The LLM judge is also checked for drift against the human queue.",
+   "t": "17:51"
+  },
+  {
+   "idea": "Cut work before the expensive models run",
+   "detail": "Three gates are described: compress similar frames, serve near-duplicate viral videos from cache and skip the pipeline, and prune candidates by topic and creator track record so high-quality creators are not re-checked.",
+   "t": "19:06"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Orchestrator plus specialist agents for video review",
+   "how": "A Reviewer agent calls a Perceiver (decomposes a video into clip-level structured JSON) and a Retriever (similarity search over indexed signals). The Reviewer does the final temporal reasoning and decision.",
+   "when": "When one check needs several specialised steps (decomposition, retrieval, reasoning) over large data. Keep a single LLM if it can do the whole task."
+  },
+  {
+   "name": "Change-based frame compression",
+   "how": "Find temporal boundaries with embeddings and simple change detection, then merge similar frames into one or two representative frames per segment instead of sampling at a fixed rate.",
+   "when": "Long videos at very large scale, where fixed-rate frame sampling wastes compute."
+  },
+  {
+   "name": "Per-signal index routing",
+   "how": "Store topics in an inverted index, embeddings in a vector database, and entities in a graph database. Run offline clustering to assign cluster and embedding IDs, then rerank candidates online with cheap classifiers such as a spam score.",
+   "when": "Retrieval over several kinds of metadata at once, where one store does not fit every signal."
+  },
+  {
+   "name": "Domain pre-training plus schema-constrained instruction tuning",
+   "how": "Continue pre-training the vision encoder on in-house data, add a projector to the LLM, then instruction-tune to emit a JSON schema with the reasoning and labels a reviewer needs.",
+   "when": "Public VLMs do not match the domain's data distribution, and the output must feed a structured pipeline."
+  },
+  {
+   "name": "Judge-plus-human-queue production loop",
+   "how": "Sample production traffic each day, score it with an LLM judge calibrated on human labels, send low-confidence or failed cases to human review with their full traces, and feed corrected pairs back into training.",
+   "when": "Continuous quality monitoring of an AI system where no ground truth exists and user-generated data drifts."
+  },
+  {
+   "name": "Distillation plus quantization sweep",
+   "how": "Run on- and off-policy distillation, then quantize (e.g. 4-bit). Tabulate size, quality and cost per variant and pick the point that meets the quality bar with the lowest cost.",
+   "when": "A narrow domain model must run at very high volume and cost matters more than general capability."
+  },
+  {
+   "name": "Node-level evaluation suite",
+   "how": "Measure each stage separately: retrieval recall and latency, reasoning quality and overthinking, error rate per tool or hook, and token cost per agent. Use an adaptive reasoning budget and check LLM-judge drift against human labels.",
+   "when": "A multi-agent pipeline where an end-to-end score hides which node is failing."
+  },
+  {
+   "name": "Pre-inference gating with cache and metadata",
+   "how": "Before the expensive pipeline, compare the input to cached similar items and return the cached result above a similarity threshold. Also prune candidates by creator or topic metadata that already predicts quality.",
+   "when": "Viral or repeated content makes up much of the traffic, and cheap signals can rule out most items."
+  }
+ ],
+ "tools": [
+  "CLIP",
+  "MCP",
+  "Ray",
+  "DPO",
+  "JSON schema",
+  "vector database",
+  "graph database",
+  "inverted index"
+ ],
+ "numbers": [
+  {
+   "claim": "Scale of 100 million plus videos in the data set",
+   "t": "1:09"
+  },
+  {
+   "claim": "Compute needs described at the scale of billions of frames",
+   "t": "7:28"
+  },
+  {
+   "claim": "Per-problem human-review target of about 95% before the system is considered good enough",
+   "t": "13:53"
+  },
+  {
+   "claim": "4-bit quantization (with bfloat-style formats) named as the quantization variant to test",
+   "t": "16:32"
+  }
+ ],
+ "hot_takes": [
+  "For a narrow internal problem, a small domain-tuned model beats a frontier-size VLM on cost and scalability; the speaker does not need general coding ability.",
+  "Use multi-agent systems only when a single LLM cannot solve the problem.",
+  "Decompose the problem only as far as needed, and treat adaptive optimization and cost as the main drivers of ROI."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "L4 observability and L2A evals are the only overlap: the talk's node-level eval list and per-hook error tracing are a checklist for AgentOS dashboards.",
+   "action": "Add per-node metrics (retrieval recall and latency, error rate per tool, token cost per agent) to the L4 Prometheus/Grafana setup, and log them per trace."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The adaptive reasoning budget idea maps to the plan, critique and debate phases in ProsHarness, which could each have a token cap.",
+   "action": "Log tokens and an overthinking signal per phase (plan, critique, debate) and test a per-phase budget against the checkpoint/resume runs."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The judge-plus-human-queue loop with drift checks is directly reusable for LLM-judged evals, including the entity-resolution and data-quality work.",
+   "action": "Calibrate any LLM judge against a small human-labelled queue, track its agreement over time as a drift metric, and send disagreements back to the labelled set."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,153 @@
+{
+ "one_line": "Tutorial that converts a two-container Docker Compose app to Kubernetes manifests with Kompose, runs it on a local kind cluster, and fixes two first-deploy failures (image pull policy and ClusterIP).",
+ "summary": "The speaker argues that a Compose app running on several servers should move to an orchestrator such as Kubernetes, and claims the conversion is quick. He converts a two-container Compose project (nginx in front of a Bun app) into Kubernetes manifests with Kompose, which writes Deployment, ConfigMap and Service files into a K8s folder. He then creates a local kind cluster from a config file that maps ports, loads the locally built Bun image into it, and applies the manifests with kubectl. The first apply shows two failures: an ImagePullBackOff on the :latest-tagged image and no reachable port. He fixes the pull policy, switches the nginx Service to NodePort 30000, and reaches the app at localhost:30000. Ingress, production clusters and multi-node setups are not covered. Sponsored plugs for Better Stack's newsletter and observability product take up two of the six minutes.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "kubernetes",
+  "docker-compose",
+  "kompose",
+  "kind",
+  "local-cluster",
+  "nodeport",
+  "imagepullpolicy",
+  "tutorial"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Compose files are for one host; a multi-server deployment needs an orchestrator such as Swarm, Nomad or Kubernetes",
+   "detail": "The speaker argues against running Compose in production across several servers. He claims a two-container app can be converted to Kubernetes in under 10 minutes with a converter, rather than a rewrite.",
+   "t": "0:00"
+  },
+  {
+   "idea": "A Kompose-style converter emits a folder of Kubernetes manifests from the Compose file",
+   "detail": "The output includes a Deployment, a ConfigMap and Services in a K8s folder. The Compose annotations only track the resources the tool created; the speaker keeps them, and says they can be removed without breaking anything (not tested in the video).",
+   "t": "1:26"
+  },
+  {
+   "idea": "kind nodes are Docker containers, so a local image has to be loaded into the cluster before pods can use it",
+   "detail": "The kind cluster is created from a config file that exposes ports. Public images such as nginx pull fine, but the locally built Bun image is not visible to the cluster until it is added with a separate command.",
+   "t": "2:40"
+  },
+  {
+   "idea": "The first apply fails with ImagePullBackOff because :latest-tagged images get a different default pull policy",
+   "detail": "Kubernetes tries the registry for the :latest image instead of the copy on the node. The speaker inspects the node's images with docker exec to confirm the Bun image is there, then sets an imagePullPolicy on the Deployment so the node's copy is used.",
+   "t": "3:54"
+  },
+  {
+   "idea": "A ClusterIP Service is not reachable from the host; NodePort plus a port that matches the kind port mapping makes the app reachable",
+   "detail": "The nginx Service is changed to type NodePort with nodePort 30000, matching the kind config. After applying, localhost:30000 serves the app, which is the only externally reachable path in the demo.",
+   "t": "5:20"
+  },
+  {
+   "idea": "Ingress and production use are explicitly left out of scope",
+   "detail": "The closing lines raise ingress and running in production as follow-up questions. The video does not cover ingress, persistent storage, secrets or multi-node scheduling.",
+   "t": "5:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Convert Compose to Kubernetes manifests with Kompose",
+   "how": "Run the converter from the project directory. It writes Kubernetes manifests into a K8s folder (Deployment, ConfigMap, Service). The exact command and flags are not spelled out in the transcript. Leave the Compose annotations in or delete them; the speaker says they only track resources.",
+   "when": "First pass when moving a single-host Compose app to Kubernetes. Expect to hand-edit the output."
+  },
+  {
+   "name": "Create a local kind cluster with exposed ports",
+   "how": "Create the cluster from a kind config file that maps host ports into the cluster. The speaker links the file in the description; its contents are not shown. Minikube or Docker Desktop's Kubernetes can be used instead.",
+   "when": "Testing manifests on a laptop before a real cluster."
+  },
+  {
+   "name": "Load a locally built image into kind",
+   "how": "Public images pull normally, but a locally built image has to be loaded into the kind cluster with a separate command (not spelled out in the transcript) before pods can start with it.",
+   "when": "Any local image that is not in a registry the cluster can reach."
+  },
+  {
+   "name": "Inspect a kind node's images with docker exec",
+   "how": "Because each kind node is a Docker container, run docker exec into the node container to list the images it holds. Confirm the local image is present and check its tag.",
+   "when": "Debugging ImagePullBackOff on a local cluster."
+  },
+  {
+   "name": "Fix pulls of :latest-tagged local images by setting imagePullPolicy",
+   "how": "Add an imagePullPolicy to the container spec in the Deployment manifest so the node's copy is used instead of the registry. The policy value is not named in the transcript. Re-apply the file with kubectl apply.",
+   "when": "A locally loaded image is tagged latest and pods stay in ImagePullBackOff."
+  },
+  {
+   "name": "Expose a Service on a fixed host port with NodePort",
+   "how": "Change the Service type from ClusterIP to NodePort and set nodePort to the port that the kind config maps (30000 in the video). Apply the manifest, then open localhost on that port.",
+   "when": "Reaching an in-cluster service from the host during local testing."
+  },
+  {
+   "name": "Check cluster state with kubectl get all",
+   "how": "After applying the manifest files with kubectl, run kubectl get all to see pods, services, deployments and replica sets. Look for pods that are not Running and for Services without a reachable port.",
+   "when": "Verifying a deploy and finding why pods or ports are not working."
+  }
+ ],
+ "tools": [
+  "Docker Compose",
+  "Kompose (auto-caption reads it as 'Compose')",
+  "kubectl",
+  "kind",
+  "Kubernetes",
+  "Docker",
+  "nginx",
+  "Bun",
+  "Minikube",
+  "Docker Desktop",
+  "Homebrew",
+  "Docker Swarm",
+  "Nomad"
+ ],
+ "numbers": [
+  {
+   "claim": "Claims a Compose-to-Kubernetes conversion takes under 10 minutes for a two-container app",
+   "t": "0:00"
+  },
+  {
+   "claim": "The converter run that produces the manifests takes a few seconds on screen ('Wow, that was quick')",
+   "t": "1:26"
+  },
+  {
+   "claim": "kubectl get all shows 2 pods, 3 services, several deployments and replica sets on the first apply, with 1 pod stuck in ImagePullBackOff",
+   "t": "2:40"
+  },
+  {
+   "claim": "Final access port is NodePort 30000, matching the kind port mapping",
+   "t": "5:20"
+  },
+  {
+   "claim": "Video length is 6:24",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The title ('STOP Using Docker Compose') and the opening claim overreach: the demo is a single laptop kind cluster, and the video never shows multi-node scheduling, ingress, storage or secrets, which the closing lines defer.",
+  "Sponsored plugs at 1:26 (the speaker's free newsletter) and 5:20 (Better Stack observability, 'costs nothing to get started') take a large share of a 6-minute video. Quality is capped at 2 for this reason.",
+  "The 'under 10 minutes' claim holds only because the converter output is used unmodified and cluster creation is fast-forwarded. The speaker says the Compose annotations can be removed and 'everything should work just fine' but does not test it.",
+  "The 'Compose' the speaker says is the Kompose converter, and the transcript never names Kompose; the tool name here comes from the speaker's phrasing and common usage."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS runs several services (Rust proxy, Postgres, Redis, Neo4j, Prometheus) on one RTX 5090 host. The video shows the Compose-to-Kubernetes first pass for a multi-service stack, but only covers two containers, local kind and NodePort, with no volumes, env handling or ingress.",
+   "action": "If AgentOS ever needs more than one host, run kompose convert on a copy of its compose file in a throwaway kind cluster to see what resources it generates, then check volumes and env by hand."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No overlap with checkpoint/resume, Claude Code CLI wrapping, approvals or credential handling.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

@@ -1,0 +1,194 @@
+{
+ "one_line": "Kai walks through running Qwen's 35B-total / 3B-active MoE coding model locally via Ollama, with hardware tiers, context-length and tool-calling gotchas, and an honest caveat on the SWE-bench headline.",
+ "summary": "The video explains Qwen's new local coding model, a mixture-of-experts design with 35B total parameters of which about 3B are active per token. The speaker separates the two numbers: total parameters set the VRAM you need up front, and active parameters set generation speed. He reports 73.4% on SWE-bench Verified but says that figure comes from Alibaba's internal scaffold, with public-harness reproductions typically 5 to 10 points lower, so the \"beats Claude\" title only holds for the proprietary cloud variant. He gives hardware tiers (24GB GPU or 32GB+ unified memory for the MoE, a 24GB Mac for the dense 27B, quantized 27B for 16GB) and a two-command Ollama setup. The practical gotchas are Ollama's 2048-token default context, which must be raised, and llama.cpp needing the Jinja flag or tool calls fail silently. The closing argument is cost and data locality under Apache 2.0, with the Qwen cloud free tier cut to 100 requests per day and then shut down.",
+ "speakers": [
+  "Kai Explains host (not named in transcript)"
+ ],
+ "orgs": [
+  "Alibaba",
+  "Ollama",
+  "Unsloth"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "models-research"
+ ],
+ "tags": [
+  "qwen",
+  "mixture-of-experts",
+  "ollama",
+  "gguf",
+  "swe-bench",
+  "tool-calling",
+  "context-window",
+  "kv-cache",
+  "apache-2-0",
+  "llama-cpp",
+  "lm-studio",
+  "mlx",
+  "rtx-4090",
+  "apple-silicon"
+ ],
+ "key_ideas": [
+  {
+   "idea": "MoE splits cost in two: total parameters determine VRAM before you start, active parameters determine per-token speed",
+   "detail": "The 35B model keeps all parameters in memory but only routes each token through about 3B, so you pay the memory cost up front and get the speed benefit per token. The speaker's analogy is a library of 35 specialists where only 3 wake up per question.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The SWE-bench headline is from an internal scaffold and is not a level comparison",
+   "detail": "The 73.4% SWE-bench Verified score is from Alibaba's internal agent harness. Third-party reproductions on the public harness typically land 5 to 10 points lower. The 78.8% figure belongs to the proprietary cloud Qwen 3.6-plus model, not the local one, and that model is what beats Sonnet 4.5 (77.2% on the public harness).",
+   "t": "1:23"
+  },
+  {
+   "idea": "Hardware tiers decide which variant to run",
+   "detail": "A 24GB GPU (RTX 4090 is the example) is the floor for the 35B-A3B MoE. A 16GB card falls into CPU offload and roughly halves generation speed. On a 24GB Mac, the dense 27B (about 22GB) can score higher on SWE-bench and run faster. For 16GB VRAM the advice is a quantized 27B.",
+   "t": "4:05"
+  },
+  {
+   "idea": "Context window is capped by KV-cache memory, not the model",
+   "detail": "The model supports 262K tokens natively and about 1M with YaRN extrapolation. At 262K on a 24GB card you are close to the memory edge because a larger context means a bigger KV cache next to the weights. Speed degrades under memory pressure.",
+   "t": "2:45"
+  },
+  {
+   "idea": "Ollama's default 2048-token context is unusable for agentic coding",
+   "detail": "Ollama defaults to a 2048-token context, which is too small for reading multiple files. The speaker says to set the context-length environment variable to at least 64000, even though the model supports 262K.",
+   "t": "5:27"
+  },
+  {
+   "idea": "Tool calling can fail silently under llama.cpp without the Jinja flag",
+   "detail": "Using llama.cpp directly requires the Jinja flag, or tool calls fail with no error and the agent just behaves badly, which looks like model weakness. Unsloth GGUF uploads ship with chat-template and tool-calling fixes. Direct Hugging Face downloads should be a build from after August 2025.",
+   "t": "5:27"
+  },
+  {
+   "idea": "Local model economics: no metered billing, data stays on the machine, Apache 2.0 license",
+   "detail": "The speaker contrasts local inference with usage-based billing and rate limits on agent loops. He says Qwen's cloud OAuth free tier went from 1,000 requests/day to 100 in mid-April 2026 and then shut down, which he presents as the reason a looping coding agent can run out of quota quickly.",
+   "t": "4:05"
+  },
+  {
+   "idea": "Use two local variants for different loop shapes",
+   "detail": "The speaker suggests the 35B-A3B for long-context agentic loops and the dense 27B for faster single-turn work, instead of choosing one model.",
+   "t": "4:05"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Serve a local coding model with Ollama behind an OpenAI-compatible endpoint",
+   "how": "Install Ollama, then run `ollama run qwen3.6:35BA3B` (spoken as 'qwen3.6 colon 35BA3B'; exact tag format not shown on screen). Ollama downloads the quantized GGUF and exposes an OpenAI-compatible API at localhost:11434. Point a coding agent at that endpoint (the speaker names Cline, which captions as 'Klein', and Continue.dev; a third tool captioned 'Wireader' is not identifiable from the transcript).",
+   "when": "You want a free, private coding-agent backend on a 24GB GPU or a 32GB+ unified-memory Mac."
+  },
+  {
+   "name": "Raise Ollama's context length before agentic use",
+   "how": "Set the Ollama context-length environment variable (captioned 'a llama context length'; OLLAMA_CONTEXT_LENGTH is the likely name, not spelled out in the transcript) to at least 64000. The default is 2048 tokens, and the model supports up to 262K.",
+   "when": "Any multi-file agentic coding session. The default context is too small to be useful."
+  },
+  {
+   "name": "Pass the Jinja flag when running llama.cpp directly",
+   "how": "Start llama.cpp with the Jinja flag so the chat template and tool-call formatting are applied. Without it, tool calls fail silently and the agent behaves oddly. Prefer Unsloth's GGUF builds, which include chat-template and tool-calling fixes, or a Hugging Face build from after August 2025.",
+   "when": "You bypass Ollama and run llama.cpp, or you see agent loops that look like model weirdness rather than errors."
+  },
+  {
+   "name": "Choose the model variant by VRAM and workload",
+   "how": "16GB VRAM: a quantized 27B dense (the MoE will not run cleanly). 24GB GPU or 32GB+ unified memory: the 35B-A3B MoE for highest local performance. 24GB Mac where SWE-bench score matters more than MoE efficiency: the dense 27B (about 22GB, quoted as 77.2% SWE-bench). Route long-context agent loops to the MoE and fast single-turn work to the dense 27B.",
+   "when": "Deciding which local coding model to load on a given machine."
+  },
+  {
+   "name": "Budget KV cache against context length",
+   "how": "Expect the KV cache to grow with context length next to the model weights. At 262K on a 24GB card you are near the limit, so reduce context or add VRAM headroom to avoid the slowdown from memory pressure.",
+   "when": "Sizing local inference for repo-scale context on limited VRAM."
+  }
+ ],
+ "tools": [
+  "Qwen 3.6 35B-A3B (MoE, 35B total / 3B active, Apache 2.0)",
+  "Qwen 3.6-plus (proprietary cloud model, not locally runnable)",
+  "Qwen dense 27B",
+  "Gemma 4 (dense 31B and a local model cited at 52% SWE-bench)",
+  "Claude Sonnet 4.5 (comparison, 77.2% on public harness)",
+  "Ollama",
+  "LM Studio",
+  "MLX",
+  "llama.cpp (Jinja flag)",
+  "Unsloth GGUF builds",
+  "Hugging Face",
+  "Cline (captioned 'Klein')",
+  "Continue.dev",
+  "YaRN (context extrapolation)",
+  "Q4_K_M quantization",
+  "SWE-bench Verified (captioned 'WEBench' in the first mention)",
+  "RTX 4090",
+  "M4 Max",
+  "M5 MacBook"
+ ],
+ "numbers": [
+  {
+   "claim": "Qwen 3.6 35B-A3B activates about 3B of 35B parameters per token; SWE-bench 73.4% (Alibaba internal scaffold) and about 17.4 for dense Gemma 4 31B on the same test (see hot takes: conflicts with the 52% figure given later)",
+   "t": "0:00"
+  },
+  {
+   "claim": "Public-harness reproductions typically 5 to 10 points below the internal-scaffold score",
+   "t": "1:23"
+  },
+  {
+   "claim": "Claude Sonnet 4.5: 77.2% SWE-bench on the public harness; proprietary Qwen 3.6-plus cloud: 78.8%",
+   "t": "1:23"
+  },
+  {
+   "claim": "Local throughput: about 120 tokens/s on a 24GB card at Q4_K_M; about 44 tokens/s on an M4 Max via MLX",
+   "t": "1:23"
+  },
+  {
+   "claim": "Minimum VRAM for the 35B MoE: 24GB (RTX 4090 example); 16GB cards drop to CPU offload and about half the generation speed",
+   "t": "1:23"
+  },
+  {
+   "claim": "Gemma 4 local model: 52% SWE-bench, versus Qwen at 73.4% (a 21-point gap)",
+   "t": "2:45"
+  },
+  {
+   "claim": "Context: 262,000 tokens native, about 1 million via YaRN; 1M tokens is roughly 2,000 pages",
+   "t": "2:45"
+  },
+  {
+   "claim": "Dense 27B fits in about 22GB and is quoted at 77.2% SWE-bench, a few points above the MoE's 73.4%",
+   "t": "4:05"
+  },
+  {
+   "claim": "Qwen cloud OAuth free tier: 1,000 requests/day cut to 100 in mid-April 2026, then shut down",
+   "t": "4:05"
+  },
+  {
+   "claim": "Ollama default context: 2048 tokens; recommended minimum 64000",
+   "t": "5:27"
+  },
+  {
+   "claim": "Speaker's claimed benchmark gap between best local and best API model: 30 points 18 months ago, now 4 to 10 points",
+   "t": "6:38"
+  }
+ ],
+ "hot_takes": [
+  "The 'Beats Claude' title is true only for the proprietary cloud Qwen 3.6-plus model, which is not locally runnable. The speaker himself says the local model is not clearly ahead on a level playing field.",
+  "Internal inconsistency on Gemma 4: the intro gives its dense 31B model 17.4 on the same SWE-bench test, while [2:45] says Gemma 4 scored 52%. The 'four times higher' claim depends on which one is right.",
+  "The 77.2% figure is used for both Sonnet 4.5 on the public harness and the dense 27B, but the 27B number is not tied to a stated harness. Comparing it with the 73.4% internal-scaffold score is not like-for-like.",
+  "The strongest part of the video is the practical gotchas (2048-token default context, silent tool-call failures without the Jinja flag). Those are reproducible and specific."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft runs vLLM plus Ray Serve on one RTX 5090 with KV-cache strategies. A MoE with 3B active parameters and a 262K context is a direct candidate for that stack, and the KV-cache memory point applies to it.",
+   "action": "Benchmark the Qwen 3.6 35B-A3B MoE against the dense 27B under InferCraft's vLLM setup on the RTX 5090, measuring tokens/s and KV-cache memory at 64K and 262K context. Use the same internal-vs-public-harness caveat when comparing SWE-bench numbers."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI and may need a local fallback or sub-agent model. The video's guidance on context-length defaults and chat-template tool calling is relevant only if such a fallback is added.",
+   "action": "If ProsHarness ever routes a sub-agent to a local model, verify context length is raised above the Ollama default and that tool calls round-trip before trusting the sub-agent's output."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

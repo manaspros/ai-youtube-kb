@@ -1,0 +1,140 @@
+{
+ "one_line": "Public-prefixed env vars (NEXT_PUBLIC_, VITE_, PUBLIC_) ship into the client bundle, so a private Supabase key behind one leaks to every visitor; the fix is server-side calls, bundle checks and CI guardrails.",
+ "summary": "A short Better Stack explainer on how private Supabase keys end up in front-end JavaScript. It cites a report that scanned about 20,000 indie apps and found one in nine exposing Supabase credentials in client code. The speaker explains that build tools inline any variable with a public prefix (Next.js, Vite, SvelteKit) into the client bundle, and that anon/publishable keys are meant to be public while service-role/secret keys bypass row-level security. A demo builds a small Next.js CRUD app with a private key behind NEXT_PUBLIC_, then finds it by searching the compiled bundle. The fix is to have the browser call its own server-side API, which holds the private key, then rebuild and confirm the key is gone. Guardrails proposed are CI secret scanning, a PR rule treating public-prefixed variables as public, and key rotation on any suspicion of exposure.",
+ "speakers": [],
+ "orgs": [
+  "Supabase"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "security-guardrails",
+  "dev-tools"
+ ],
+ "tags": [
+  "supabase",
+  "secrets",
+  "env-vars",
+  "next.js",
+  "vite",
+  "sveltekit",
+  "row-level-security",
+  "secret-scanning",
+  "client-bundle",
+  "key-rotation"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A public-prefixed env var is a shipping label, not a safety label",
+   "detail": "NEXT_PUBLIC_ (Next.js), VITE_ (Vite) and PUBLIC_ (SvelteKit) tell the build tool to inline the value into the client JavaScript bundle, so any visitor can download it.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Supabase keys split into public and private classes",
+   "detail": "The anon/publishable key is designed to be visible. The service-role/secret key bypasses row-level security, so if it reaches the browser, RLS policies stop mattering.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The leak is an accident, not a hack",
+   "detail": "The speaker's point is that the affected apps were not breached; the credentials were simply in the public JS that the app serves, readable by anyone who opens DevTools.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Reproduction: one private key behind a public prefix is enough",
+   "detail": "Demo: a Next.js CRUD app linked to Supabase, a private key placed behind NEXT_PUBLIC_, a production build, then a search of the compiled bundle that finds both the URL and the key.",
+   "t": "1:29"
+  },
+  {
+   "idea": "Fix by moving privileged calls to the server",
+   "detail": "The browser calls the app's own API route or server function; that server-side code holds the private key and calls Supabase. Rebuild and search the bundle again to confirm the key is gone.",
+   "t": "2:30"
+  },
+  {
+   "idea": "Fixing the key is not the whole job",
+   "detail": "Also enable RLS on user-facing tables, verify the policies do what you think, and test them, since the speaker says this step is often skipped.",
+   "t": "2:30"
+  },
+  {
+   "idea": "Guardrails stop the regression during a rushed release",
+   "detail": "Add secret scanning in CI so builds fail when a key appears where it should not, add a PR rule that treats public-prefixed variables as public by default, and rotate keys on any hint of exposure rather than waiting.",
+   "t": "3:54"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Audit the shipped build for secrets",
+   "how": "Build the app the way you ship it (the speaker runs npm run build), then search the output for Supabase, JWT, service, secret, and anything token-shaped. The video shows searching the compiled JS in Chrome DevTools; it does not name a build output directory. Treat any private-looking hit as compromised: rotate it and move the logic server-side.",
+   "when": "Before each release, and after adding or renaming any env var that uses a public prefix."
+  },
+  {
+   "name": "Proxy privileged calls through your own server",
+   "how": "Keep the service-role or secret key out of client code. The browser calls an app-owned API route or server function; that server code holds the private key and calls Supabase. Rebuild and confirm the key is absent from the bundle.",
+   "when": "Any operation that needs a private Supabase key (admin writes, RLS-bypassing reads) from a browser-facing app."
+  },
+  {
+   "name": "Enable and test RLS on user-facing tables",
+   "how": "Turn on row-level security for every user-facing table and check that each policy does what it is meant to do by testing it, not just reading it.",
+   "when": "Alongside any Supabase key change, since RLS is the backstop for the public anon key."
+  },
+  {
+   "name": "Review rule for public-prefixed variables",
+   "how": "In PR review, treat anything named NEXT_PUBLIC_, VITE_ or PUBLIC_ as public by default and question any secret placed behind those prefixes.",
+   "when": "Any PR that adds or changes environment variables in a front-end project."
+  },
+  {
+   "name": "CI secret scanning as a build gate",
+   "how": "Run a secret scanner in the pipeline so the build fails when a key appears in a place it should not. The video names no specific scanner.",
+   "when": "Every build pipeline that ships a browser bundle."
+  },
+  {
+   "name": "Rotate on suspicion",
+   "how": "If there is even a slight hint that a key was exposed, rotate it instead of waiting to see whether it is abused.",
+   "when": "Any private key found in a bundle, log, or repo."
+  }
+ ],
+ "tools": [
+  "Supabase",
+  "Next.js",
+  "Vite",
+  "SvelteKit",
+  "Chrome DevTools",
+  "npm"
+ ],
+ "numbers": [
+  {
+   "claim": "Report scanned about 20,000 indie apps; one in nine exposed Supabase credentials in front-end code",
+   "t": "0:00"
+  },
+  {
+   "claim": "Demo video length is about 4 minutes 16 seconds (the whole video)",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The one-in-nine figure is attributed only to an unnamed report from 'this month'; the video gives no methodology, and the speaker never names the source.",
+  "The core message is simple and correct: if a key is in the bundle, it is public. The video is thin on specifics beyond that (no CI tool named, no RLS policy examples)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS has a security-guardrails pillar (L1 PII/prompt-injection scan, L2C exec-gate). This video is about secret placement in client bundles, which is adjacent but not core.",
+   "action": "If AgentOS ever ships a browser-side UI, add a CI step that fails the build when provider or service keys appear in the built JS."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness emphasises zero-token credential handling. The video's rule that private keys stay server-side fits that principle.",
+   "action": "Apply the bundle-grep check to any browser-facing ProsHarness UI so credentials are not inlined into client assets."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Common failure mode for any team shipping a browser app with a backend service key, and cheap to guard against.",
+   "action": "Add a secret-scanning step to CI and a grep of the production build output for private-key patterns before release."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

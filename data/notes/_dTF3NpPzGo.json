@@ -1,0 +1,189 @@
+{
+ "one_line": "Louis-François Bouchard (Towards AI) releases ToneBench, an LLM-judged benchmark for whether models write like a specific author, and shares its method, judge-bias findings and costs.",
+ "summary": "The speaker defines \"slop\" as generic, repetitive, hallucinated, tone-less AI writing, and argues more training alone won't remove it. He introduces ToneBench, a benchmark measuring whether a model can write a video script that sounds like his own voice. Each model gets 10 hidden briefs, generates 5 drafts per brief, and the drafts are scored by four LLM judges on nine metrics grouped into tone, writing quality, instruction following, research accuracy and slop. He reports that judges prefer their own model family, so cross-family judging is needed, and that he calibrated against about 1,000 human A/B pairs. The talk gives concrete costs (about $500 of kickoff labor, months of subscription use, and $2,000+ to rerun after a rubric change) and a practical recipe for writing: a very long, example-rich prompt, one or more high-thinking review passes, and generating many cheap drafts that a strong judge merges. The benchmark is one author's subjective taste, so the findings are a signal rather than ground truth.",
+ "speakers": [
+  "Louis-François Bouchard"
+ ],
+ "orgs": [
+  "Towards AI"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "token-cost-efficiency",
+  "models-research"
+ ],
+ "tags": [
+  "slop",
+  "tonebench",
+  "llm-as-judge",
+  "judge-bias",
+  "creative-writing",
+  "benchmark",
+  "model-selection",
+  "eval-cost",
+  "variance",
+  "prompting",
+  "human-calibration"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Slop has six traits: overused stock words, generality, repetition, saying nothing, hallucination, and wrong or no tone. Better models have not made it go away.",
+   "detail": "Speaker argues that scaling models hasn't removed slop, so the first step is defining and measuring it. He frames the target as writing that he could read aloud without cringing.",
+   "t": "1:10"
+  },
+  {
+   "idea": "Measure a model's ability to write like a specific person, not generic slop-word counts. ToneBench is explicitly not a rebuild of EQBench's Slop Score.",
+   "detail": "The benchmark uses a brief plus research prompt and scores the final generated video script against rubrics. Motivation is the team's own heavy content output (hundreds of videos, thousands of articles, a book).",
+   "t": "2:10"
+  },
+  {
+   "idea": "Generate five drafts per brief per model to measure intra-model variance. Outlier drafts can make a strong model look average on a single run.",
+   "detail": "Speaker says a model's best single draft can match a top model while its other drafts are weaker, and the weaker the model, the wider the variance. Five drafts was the chosen middle ground between cost and variance measurement.",
+   "t": "8:05"
+  },
+  {
+   "idea": "Judges pick a category from six options first, then give a rating, instead of binary, categorical or percentage scores. Each score level has written examples.",
+   "detail": "Judges receive about 1,000 words of instructions per metric, the author's own script as a style guide, the brief and the research. Output is a per-metric score with a justification that cites an example.",
+   "t": "10:59"
+  },
+  {
+   "idea": "LLM judges show family bias. Judges prefer their own family, and the speaker reports OpenAI judges strongly favour all OpenAI models, not just one.",
+   "detail": "His advice is to use a judge from a different model family than the generator. He calls the Anthropic-OpenAI rivalry in judge results 'funny' but gives no quantitative breakdown.",
+   "t": "12:27"
+  },
+  {
+   "idea": "Calibrate automated judging with human pairwise comparisons. The team compared about 1,000 A/B pairs of generated script sections, with the author and three teammates judging.",
+   "detail": "Humans do the A/B comparisons on comparable chunks of two generations rather than full scripts, because full-script review does not scale. The speaker plans to open this to the community later.",
+   "t": "13:55"
+  },
+  {
+   "idea": "Cost of iterating on an LLM-judged creative benchmark is high. Changing one rubric line costs more than $2,000 to rerun, and changing one generation-prompt line costs more than $4,000.",
+   "detail": "Speaker says the build involved about $500 of labor for the 10 scripts, rubrics and examples, plus four months of iteration on four 20x subscriptions. He suggests budgeting for this before starting a similar benchmark.",
+   "t": "13:55"
+  },
+  {
+   "idea": "For creative writing, choose the model that is least annoying to iterate with, not the one with the best one-shot output. Cheap models can match expensive ones on this task.",
+   "detail": "Speaker claims GLM 5.3 Flash is about 50x cheaper than Opus 5.5 Extra High and gives similar results. He says Extra High is about 2.5x cheaper than Max Thinking with the same results, so Max is usually not worth it for writing.",
+   "t": "15:25"
+  },
+  {
+   "idea": "Writing recipe: a very long, example-rich prompt with negative examples and banned words, one to three high-thinking review passes, and many cheap drafts merged by a strong judge.",
+   "detail": "Speaker says a prompt cannot be too long and should include every example, every negative example and words to avoid. Generating about 10 drafts with a cheap model and having a high-thinking judge pick and merge the best parts is, in his view, cheaper and better than one Opus generation. He admits he has no quantitative data for the merge step.",
+   "t": "16:26"
+  },
+  {
+   "idea": "Human review is still required. The benchmark reflects one author's voice, so it is a strong signal for which models are less sloppy, not a ranking of the best model.",
+   "detail": "Speaker recommends building your own eval pipeline for your own voice and task, and says ToneBench is live with methodology and comparisons on its site.",
+   "t": "17:53"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Multi-draft variance measurement",
+   "how": "For each model and brief, generate about 5 independent drafts and score each one. Report the spread, not only the best draft. Use 5 as the cost-versus-variance compromise.",
+   "when": "Non-deterministic creative or open-ended tasks where one sample can mislead the model comparison."
+  },
+  {
+   "name": "Category-then-rating judge rubric",
+   "how": "Ask the judge to first pick one of six named categories for a metric, then output a rating. Include a written example for each score level and require a justification that cites the text.",
+   "when": "Qualitative judgments (tone, emotional flow) where binary pass/fail or a bare percentage gives weak signal."
+  },
+  {
+   "name": "Cross-family LLM judging",
+   "how": "Use judges from a different model family than the generator, or from several families, to avoid self-preference. Check each judge for family bias by comparing scores across generator families.",
+   "when": "Any LLM-as-judge eval used to pick a model, especially when the judge family is also in the comparison."
+  },
+  {
+   "name": "Blind judging with post-hoc attribution",
+   "how": "Strip model identity and length preference from the judge input (the judge does not know which model wrote the text). Attach the model name in code after scoring.",
+   "when": "Comparing models with LLM judges where the judge could recognize or favour a model by name or style."
+  },
+  {
+   "name": "Human pairwise calibration",
+   "how": "Have several reviewers compare comparable chunks of two generations in an A/B format (about 1,000 pairs in this talk). Use the results to check the automated judge.",
+   "when": "Validating an LLM judge on subjective quality where full manual review is too expensive."
+  },
+  {
+   "name": "Contaminated-eval guard",
+   "how": "Mix published and unpublished briefs and keep the benchmark briefs unlabelled, so you can check whether models were trained on the test set.",
+   "when": "Building a benchmark from your own content that might end up in training data."
+  },
+  {
+   "name": "Cheap-draft then strong-merge writing pipeline",
+   "how": "Generate roughly 10 drafts with a cheap model using a very long prompt containing examples and negative examples. Pass the drafts to a high-thinking model to pick and merge the best parts. Run one to three review passes with a high-thinking model; more loops made the text worse in the speaker's experience.",
+   "when": "Producing long-form writing at scale where one expensive generation is too costly, and where brand voice matters."
+  }
+ ],
+ "tools": [
+  "ToneBench (the speaker's new creative-writing benchmark, from Towards AI)",
+  "EQBench Slop Score (referenced as prior art; the speaker does not rebuild it)",
+  "Opus 5.5 (Extra High and Max Thinking modes, as named)",
+  "GLM 5.3 Flash",
+  "GPT 6.1 (named)",
+  "Grok 4.7 (transcribed as 'Gruk 4.7')"
+ ],
+ "numbers": [
+  {
+   "claim": "Benchmark covers about 120 models, each generating 5 drafts for each of 10 hidden briefs (about 6,000 generations).",
+   "t": "1:10"
+  },
+  {
+   "claim": "Each brief uses 10 scripts (some published, some unpublished) to check for contamination.",
+   "t": "6:39"
+  },
+  {
+   "claim": "Four LLM judges score each draft, with a fifth judge tested. Nine metrics are grouped into five aspects.",
+   "t": "8:05"
+  },
+  {
+   "claim": "Each judge receives a prompt of about 14,000 (unit not stated, probably tokens) with about 1,000 words of instructions per metric.",
+   "t": "9:30"
+  },
+  {
+   "claim": "Kickoff cost about $500 in labour to build 10 scripts, rubrics and examples. Four months of iteration on four 20x subscriptions.",
+   "t": "13:55"
+  },
+  {
+   "claim": "Rerunning after one rubric change costs more than $2,000. Changing one generation-prompt line costs more than $4,000.",
+   "t": "13:55"
+  },
+  {
+   "claim": "About 1,000 human A/B pairs were judged by the author and three teammates.",
+   "t": "13:55"
+  },
+  {
+   "claim": "GLM 5.3 Flash is said to be about 50x cheaper than Opus 5.5 Extra High with similar results. Extra High is said to be about 2.5x cheaper than Max Thinking (transcript garbled, figures as spoken).",
+   "t": "15:25"
+  },
+  {
+   "claim": "Recommended writing pipeline is about 10 cheap drafts plus one strong merge, which the speaker says is still much cheaper than one Opus 5.5 generation.",
+   "t": "16:26"
+  }
+ ],
+ "hot_takes": [
+  "Self-promotional launch of the speaker's own benchmark (ToneBench), with the same person as author, generator-of-briefs and judge calibrator. Treat the rankings as one voice's taste, which the speaker himself says.",
+  "Claim that judges prefer their own family, and especially OpenAI judges prefer all OpenAI models, is an observation with no quantitative breakdown in the talk.",
+  "The 'cheap draft then strong merge beats one expensive generation' claim is untested by the speaker's own admission (no quantitative metrics on the merge step).",
+  "Cost figures are self-reported, anecdotal and not normalised for model pricing changes.",
+  "The 'Anthropic and OpenAI are in a war' remark is a joke, not a finding, and should not be cited as evidence."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Its evals (RAGAS, LLM-as-judge on MemoryMesh or other pillars) would suffer the same self-preference bias if the judge shares a family with the generator. Variance across samples is also a gap a single-run eval would miss.",
+   "action": "When adding LLM-judge evals to AgentOS, use a judge from a different model family than the generator, and report the spread over about 5 samples per case, not one run."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Plan to critique to debate flow resembles draft then judge. Cross-family critique (a Codex critic for a Claude plan) matches the speaker's bias finding, and cheap-draft-plus-strong-merge is a pattern for plan generation.",
+   "action": "Try generating several cheap plan drafts and having a stronger critic merge the best parts, then measure whether the critic family changes the chosen plan."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

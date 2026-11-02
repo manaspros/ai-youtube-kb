@@ -1,0 +1,163 @@
+{
+ "one_line": "A walkthrough of building a macOS menu-bar Swift app by prompting Windsurf with a docs-first template and Gemini 2.5, after Claude failed on the same prompt; mostly process, with the prompt itself left in the video description.",
+ "summary": "The host tries to clone a paid macOS menu-bar focus-timer app using a coding agent in Windsurf. Claude 3.7 fails on Swift/menu-bar specifics (about 14-15 issues, none resolved), while Gemini 2.5 builds a working app in about 15 minutes with turbo mode on and no supervision. The workflow starts with a long prompt that asks the agent to write an implementation plan, project structure, page list, UX notes and a bug-tracking doc before any code, then creates an Xcode macOS App project inside the agent's workspace folder. Errors are fixed by relaying Xcode's build messages to the agent, which takes about five prompts for minor issues. Gemini 2.5 cannot accept image attachments, so visual errors go to Claude, and screenshots are sometimes OCR'd through ChatGPT first. The video ends with exporting a standalone .app via Xcode's Archive and Distribute flow. The prompt text is not shown on screen; the speaker says it is in the description, so the reader cannot reproduce it from the video alone.",
+ "speakers": [],
+ "orgs": [
+  "Windsurf",
+  "Cursor",
+  "Google",
+  "Anthropic",
+  "OpenAI",
+  "Perplexity",
+  "Apple"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "vibe-coding-app-building",
+  "coding-agents",
+  "context-engineering"
+ ],
+ "tags": [
+  "swift",
+  "macos",
+  "xcode",
+  "windsurf",
+  "cursor",
+  "gemini-2.5",
+  "claude-3.7",
+  "vibe-coding",
+  "docs-first-prompting",
+  "menu-bar-app",
+  "app-export",
+  "bug-tracking-doc"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Claude failed on a Swift macOS menu-bar app, even with the docs attached, while Gemini 2.5 worked.",
+   "detail": "The speaker says Claude could not get functionality right and could not change something as small as a menu's corner roundness. The menu-bar layer is presented as the extra knowledge LLMs lack. Single-anecdote evidence.",
+   "t": "0:00"
+  },
+  {
+   "idea": "A docs-first agent prompt is the core of the method.",
+   "detail": "The prompt includes the app description copied from the App Store page and tells the agent (Windsurf or Cursor) to create documentation before coding: an implementation plan, project structure, pages, UX and a bug-tracking file so the agent does not repeat solved bugs. The full prompt is said to be in the video description, not shown.",
+   "t": "1:17"
+  },
+  {
+   "idea": "Turbo mode let the agent build the app unattended in about 15 minutes.",
+   "detail": "The speaker walked away while the agent ran in Windsurf turbo mode. The prompt also asks the agent to check in after major changes, and the speaker replied 'continue' to resume it.",
+   "t": "1:17"
+  },
+  {
+   "idea": "Scaffold the native project in Xcode and put it inside the agent's workspace folder.",
+   "detail": "Create a macOS App project in Xcode with org and product names, then save it inside the folder the editor agent opened (the one holding the docs). Xcode's pre-configured template is compared to a Next.js starter. The agent then edits files that are mostly already in place.",
+   "t": "2:38"
+  },
+  {
+   "idea": "Minor build errors were resolved over about five follow-up prompts; Claude hit 14-15 issues at once.",
+   "detail": "Build errors appear in Xcode's issue panel after pressing run. The speaker reports the Gemini run had only minor, quickly fixed issues, while the Claude attempt had 14-15 that it could not resolve.",
+   "t": "3:36"
+  },
+  {
+   "idea": "Gemini 2.5 cannot take image attachments, so visual or UI errors need a different model.",
+   "detail": "Errors must be copied as text. The speaker used ChatGPT to OCR a screenshot. For visual errors he recommends switching to Claude, since the base app is already configured and the remaining UI issues are small.",
+   "t": "4:50"
+  },
+  {
+   "idea": "Export a standalone app with Xcode's Archive flow.",
+   "detail": "Product > Archive, then Distribute App. Choosing Custom and then Copy App produces a single .app file that can be dragged into Applications. The App Store upload path is also mentioned.",
+   "t": "6:34"
+  },
+  {
+   "idea": "Gemini 2.5 is recommended for lesser-known frameworks.",
+   "detail": "The speaker's conclusion is that Gemini 2.5 was the best choice for building from scratch in niche frameworks, and that UI work with screenshots needs a different model. The Gemini-vs-Claude comparison rests on this one test.",
+   "t": "7:24"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Docs-first agent prompt for a new app",
+   "how": "Paste the target app's description (e.g. from its App Store page), then tell the agent to write, before any code: an implementation plan, a project structure, a list of pages, UX notes, and a bug-tracking doc. Ask it to check in after major changes. The exact prompt is in the video description and is not shown on screen. Expected output includes the docs folder the agent works from.",
+   "when": "Greenfield app in a framework the model knows less well, where the agent needs a persistent plan and a record of solved bugs across a long unattended run."
+  },
+  {
+   "name": "Scaffold the native project and place it in the agent workspace",
+   "how": "In Xcode, choose macOS > App, enter organization and product names (the video uses 'New App'), save it, then move or save the project inside the folder the editor agent opened, next to the docs folder. Edit in the editor; build and run from Xcode. Build errors show in Xcode's issue panel.",
+   "when": "Native Apple-platform apps (Swift/SwiftUI on macOS) where the template gives the agent a configured starting point."
+  },
+  {
+   "name": "Relay errors as text, and switch models for visual bugs",
+   "how": "Copy build errors from Xcode into the agent as text. If the model cannot take images (Gemini 2.5 in this video), OCR a screenshot with another tool such as ChatGPT and paste the text. For visual or UI issues, switch to a model that accepts images, such as Claude.",
+   "when": "Iterating on build errors with a model that cannot accept screenshots, or when a UI issue needs visual context."
+  },
+  {
+   "name": "Turbo mode for unattended builds",
+   "how": "Enable Windsurf's turbo mode so the agent runs commands and edits without asking permission. The speaker left the machine alone for about 15 minutes and resumed the agent with 'continue' when it checked in.",
+   "when": "Well-scoped build tasks where the agent's checkpoints are enough to review progress afterwards."
+  },
+  {
+   "name": "Export a standalone macOS app from Xcode",
+   "how": "Product > Archive. When the archive finishes, choose Distribute App. For a local .app, choose Custom, then Copy App, and export. Drag the resulting .app into the Applications folder. For sharing through the store, choose the App Store distribution option.",
+   "when": "Packaging a finished macOS app for personal use or distribution."
+  }
+ ],
+ "tools": [
+  "Windsurf",
+  "Cursor",
+  "Gemini 2.5",
+  "Claude 3.7",
+  "Claude",
+  "ChatGPT",
+  "Xcode",
+  "Swift",
+  "SwiftUI",
+  "Taskmaster (mentioned, as needing Claude and Perplexity API keys)",
+  "Perplexity API (mentioned)",
+  "Next.js (analogy only)"
+ ],
+ "numbers": [
+  {
+   "claim": "Full build by Gemini 2.5 in Windsurf turbo mode took about 15 minutes, unattended.",
+   "t": "1:17"
+  },
+  {
+   "claim": "Gemini 2.5 uses the same credits as Claude 3.7 in Windsurf.",
+   "t": "1:17"
+  },
+  {
+   "claim": "Claude attempt hit about 14-15 issues at once, none resolved.",
+   "t": "3:36"
+  },
+  {
+   "claim": "Minor Gemini issues were resolved over about five follow-up prompts.",
+   "t": "3:36"
+  },
+  {
+   "claim": "Video length 8:12.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Claude is said to 'completely' fail on Swift and macOS menu-bar work, and Gemini 2.5 is recommended for lesser-known frameworks. The basis is one app, one prompt, and one run per model.",
+  "The video frames cloning a paid App Store app from its description as the normal way to build with AI ('we don't really need to pay for apps anymore'). The speaker presents this without addressing IP or licensing.",
+  "The title promises people 'getting rich', but no revenue, users or distribution results are shown.",
+  "The claim that Taskmaster requires paid Claude and Perplexity API keys while this method is free is unverified in the video."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "A single-app build tutorial with no infra, routing, memory, or evaluation content.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The docs-first pattern (plan, structure, and bug log the agent rereads) is a light context-persistence idea that could support checkpoint/resume of long Claude Code runs. Otherwise unrelated.",
+   "action": "Try a plan-and-bug-log file pattern in one long ProsHarness run: have the agent write a plan and a solved-bugs file it rereads after each resume, then check whether it repeats fixes."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

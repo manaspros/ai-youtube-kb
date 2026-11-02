@@ -1,0 +1,152 @@
+{
+ "one_line": "Google DeepMind's Omar Sanseviero introduces Gemma 4, a family of open models from 2B to 32B parameters, and argues that small open models can now do multimodal and agentic work on-device.",
+ "summary": "The speaker presents Gemma 4, released about a week before the talk, as Google's most capable open model family, spanning roughly 2B to 32B parameters. He covers the model lineup: small E2B/E4B models for phones and even a Raspberry Pi, a mixture-of-experts model for low latency, and a 31B dense model that still fits on a consumer GPU. The license moved to Apache 2.0, and the E-prefixed models use per-layer embeddings that can be offloaded to CPU or disk to reduce GPU memory. The small models support image, video, and audio input, and the tokenizer (shared with Gemini) was built for 140+ languages, which helps fine-tuning for low-resource languages. He reports ecosystem uptake (10M Gemma 4 downloads in a week, 1,000+ derivatives, 500M family downloads) and integrations with llama.cpp, MLX, Ollama, Hugging Face, vLLM, SGLang, and Android Studio's offline agent mode. He also lists official variants (ShieldGemma for safety classification, MedGemma for medical multimodal) and community efforts (AI Singapore, Sarvam). He closes by urging viewers to try on-device open models while still using API models for the highest raw capability.",
+ "speakers": [
+  "Omar Sanseviero"
+ ],
+ "orgs": [
+  "Google DeepMind",
+  "Google"
+ ],
+ "format": "talk",
+ "topics": [
+  "models-research",
+  "local-ai",
+  "inference-serving"
+ ],
+ "tags": [
+  "gemma",
+  "open-weights",
+  "on-device",
+  "llama.cpp",
+  "per-layer-embeddings",
+  "multilingual-tokenizer",
+  "apache-2",
+  "fine-tuning",
+  "shieldgemma",
+  "medgemma",
+  "android-studio"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Open models are the point: download, run on your own infra or device, and fine-tune",
+   "detail": "Gemma is positioned as a family of open weights, not an API. The speaker frames the value as control over where the model runs and what data it sees.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Gemma 4 covers phone-sized to single-consumer-GPU sizes",
+   "detail": "Lineup runs from about 2B to 32B parameters. Small models target phones and Raspberry Pi and are multimodal with reasoning. A MoE model is for low latency and a 31B model for maximum quality, and the 31B still runs on a consumer GPU.",
+   "t": "1:08"
+  },
+  {
+   "idea": "E-prefixed models hold more parameters than their compute cost suggests",
+   "detail": "E2B is described as effectively 2B in compute but around 4B total parameters. Per-layer embeddings act like a lookup table rather than matrix multiplication, so they can sit on CPU or disk while the transformer compute stays on GPU.",
+   "t": "5:09"
+  },
+  {
+   "idea": "Small models are multimodal, including audio",
+   "detail": "The smallest models handle image, video, and audio, including speech recognition and speech translation. The larger model does finer-grained vision tasks such as pointing and object detection.",
+   "t": "6:32"
+  },
+  {
+   "idea": "Tokenizer choice matters for low-resource languages",
+   "detail": "The tokenizer is shared with Gemini and was designed for multilingual use across 140+ languages. The speaker argues that fine-tuning for an under-resourced language tends to work better out of the box because of this tokenizer, independent of raw model capability.",
+   "t": "7:53"
+  },
+  {
+   "idea": "Adoption is driven by the community ecosystem and day-one tool support",
+   "detail": "The speaker stresses that tools like llama.cpp, MLX, Ollama, Hugging Face Transformers, vLLM, and SGLang should work with Gemma immediately, so users do not need to switch frameworks (for example to Keras) to fine-tune.",
+   "t": "8:54"
+  },
+  {
+   "idea": "Use open models on-device, keep API models for peak capability",
+   "detail": "The speaker's closing advice: use API models when you need the most raw intelligence, and use open models for offline, private, or on-device agentic work. He expects on-device capability to keep improving.",
+   "t": "13:33"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Offload per-layer embeddings to CPU or disk",
+   "how": "In llama.cpp, use the override-tensor flag to move the per-layer embedding tables off GPU. Only the transformer weights that need matrix multiplication stay in VRAM.",
+   "when": "Running an E2B/E4B-class model on a memory-constrained phone or laptop where the full parameter count does not fit in GPU memory."
+  },
+  {
+   "name": "Parallel local generation on one machine",
+   "how": "Run about 10 Gemma instances at once through llama.cpp on a single laptop, each generating a different output (the demo generated SVGs).",
+   "when": "Batch-generating many candidate artifacts locally without API calls or network access."
+  },
+  {
+   "name": "Pick the model by tokenizer for low-resource language fine-tuning",
+   "how": "Start from a model whose tokenizer was built for multilingual coverage, then fine-tune on the target-language data.",
+   "when": "Adapting a model to a language with little digital data, such as an indigenous language."
+  },
+  {
+   "name": "Stay on the framework the team already uses",
+   "how": "Use Hugging Face Transformers, Keras, or the serving stack of your choice. The speaker says the models are meant to load in these tools without conversion.",
+   "when": "Fine-tuning or serving an open model inside an existing Python or GPU stack."
+  }
+ ],
+ "tools": [
+  "Gemma 4",
+  "llama.cpp",
+  "MLX",
+  "Ollama",
+  "Hugging Face Transformers",
+  "vLLM",
+  "SGLang",
+  "Keras",
+  "Android Studio",
+  "ShieldGemma",
+  "MedGemma",
+  "LM Arena"
+ ],
+ "numbers": [
+  {
+   "claim": "Gemma 4 model family spans about 2B to 32B parameters; the E2B model has roughly 4B total parameters",
+   "t": "1:08"
+  },
+  {
+   "claim": "Demo: 10 Gemma instances running in parallel on one laptop via llama.cpp, at about 100 tokens per second (as stated, unverified)",
+   "t": "2:33"
+  },
+  {
+   "claim": "Gemma 4 trained on 140+ languages",
+   "t": "6:32"
+  },
+  {
+   "claim": "Gemma 4 reached 10 million downloads within about a week of release",
+   "t": "8:54"
+  },
+  {
+   "claim": "Over 1,000 community Gemma 4 derivatives (quantizations and fine-tunes) within days",
+   "t": "8:54"
+  },
+  {
+   "claim": "Whole Gemma family: over 500 million downloads; Gemmaverse over 100,000 models",
+   "t": "9:49"
+  }
+ ],
+ "hot_takes": [
+  "Open models can now do highly agentic, complex tasks entirely on device.",
+  "Open model licensing (Apache 2.0) matters as much as benchmark scores for adoption.",
+  "Small models keep getting more capable without getting bigger, so capable models on personal devices are coming within a year or two."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "InferCraft serves local models with vLLM and llama.cpp-style setups on one RTX 5090. A small, multimodal, Apache-2.0 open model that runs on-device is a possible cheap local tier, but the talk gives no serving benchmarks.",
+   "action": "Read the Gemma 4 model card and benchmark E4B or the MoE model under llama.cpp next to our current InferCraft local model, to decide whether it belongs in the local tier."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The talk is about open model weights and on-device inference. It does not touch Claude Code CLI harnessing, checkpoint/resume, planning, or approvals.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

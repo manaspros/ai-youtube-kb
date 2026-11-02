@@ -1,0 +1,211 @@
+{
+ "one_line": "Paul Bakaus (Impeccable) on building production agent skills as harness extensions: blind sub-agents, forced divergence, scripts, hooks and per-model builds, rather than prose alone.",
+ "summary": "Paul Bakaus, author of the open-source Impeccable design skill, walks through what he learned by growing a single prompt-style skill into a multi-file, cross-harness skill system. His thesis is that a skill is an extension of the coding harness (like MCP), so it should use scripts, hooks, sub-agents and harness features, not just prose rules. He argues that prose rules only move the model to the next common output (\"the median is the model's gravity\"), so he uses seeded randomness and sub-agent ranking to force divergence. For review tasks he runs two blind sub-agents (a design-judge LLM and a deterministic detector) and merges their results, which avoids self-rating and anchoring. He covers routing between sub-skills, memory across sessions, scripts whose stdout instructs the model, pre/post-tool hooks, and a live-browser mode that uses no MCP. The second half lists harness and model differences (sub-agent permissions, ask-user tools, background-task wake-up, per-model overfitting) and how he handles them with per-harness builds, unskippable gates and ablation-tested rules. Evals are an LLM-driven harness over several models plus a design judge, with a caveat that taste is hard to evaluate automatically.",
+ "speakers": [
+  "Paul Bakaus"
+ ],
+ "orgs": [
+  "Renaissance Geek",
+  "Anthropic",
+  "Cursor",
+  "Google"
+ ],
+ "format": "talk",
+ "topics": [
+  "skills-self-improvement",
+  "coding-agents",
+  "context-engineering",
+  "evals"
+ ],
+ "tags": [
+  "skill-engineering",
+  "sub-agents",
+  "adversarial-critique",
+  "forced-divergence",
+  "hooks",
+  "cross-harness",
+  "per-model-overfitting",
+  "ablation-testing",
+  "design-linting",
+  "prompt-caching",
+  "live-browser",
+  "llm-as-judge"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Prose rules do not fix convergence",
+   "detail": "Banning a common choice (for example a font) only moves the model to the next most common option. The speaker treats prompting as the starting level and harness engineering as the goal.",
+   "t": "3:45"
+  },
+  {
+   "idea": "Blind sub-agents beat self-review",
+   "detail": "A model asked to grade its own work rates it very high. Two sub-agents that never see each other's output, one acting as a design judge and one running a deterministic linter with browser evidence, give a more balanced critique when the main thread merges them.",
+   "t": "8:09"
+  },
+  {
+   "idea": "Sub-agent permission differs by harness",
+   "detail": "Claude Code can spawn sub-agents programmatically. Codex needs the user to ask for them, so the skill must tell the model to stop and ask, and to state that it is giving a degraded experience if it cannot spawn them. Otherwise Codex takes the easier path and skips them.",
+   "t": "13:31"
+  },
+  {
+   "idea": "Seed randomness to force divergence",
+   "detail": "Three ways to escape the model's usual outputs: exclude its top-three picks, generate many ideas and have a fresh sub-agent rank them (the sub-agent has no session context), or seed creativity from a script that outputs a random starting point such as a color from a list of about 100.",
+   "t": "17:35"
+  },
+  {
+   "idea": "Route between sub-skills by register",
+   "detail": "A large skill acts like a mixture of experts. Based on the brief, it loads different rule files for brand work (attention-grabbing pages) and product UI work (native-feeling, system fonts), since one general file blurs the instructions.",
+   "t": "21:51"
+  },
+  {
+   "idea": "Persist state in the skill folder to make runs compound",
+   "detail": "Save each critique as a file in a project folder (git-ignored). Later sessions read the prior files to see progress and user preferences, and multi-session refactors can work one file at a time.",
+   "t": "23:20"
+  },
+  {
+   "idea": "Scripts that print instructions are followed more reliably than prose",
+   "detail": "A script run at skill start (context.mjs) gathers project files and, when something is missing, prints structured JSON with the exact next step. The model follows stdout instructions more than rules buried in the prompt. The cost is that dynamic output breaks prompt caching for that part.",
+   "t": "26:16"
+  },
+  {
+   "idea": "Use hooks as passive guardrails, with pre-tool blocking for weaker models",
+   "detail": "A design linter runs as hooks in Claude Code, Cursor, Codex and Copilot on every edit. Post-tool hooks report violations after a write, but weaker models ignore them, so pre-tool hooks block the write. Ignore rules are needed to handle false positives.",
+   "t": "28:00"
+  },
+  {
+   "idea": "Live-browser mode with no MCP",
+   "detail": "A small local server injects a script into the dev server. The user's clicks and comments are sent over server-sent events to a poller. The poller exits with a stdout message, which wakes the model to act on the selection, so the in-app browser and the chat thread work as one loop.",
+   "t": "34:00"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Blind adversarial critique",
+   "how": "Run two or more sub-agents that never see each other's output (for example a judge and a deterministic checker), then have the main thread synthesize one result.",
+   "when": "Code review, design critique, security audits, plan/RFC review, or ranking outputs, where self-grading anchors on the model's own work."
+  },
+  {
+   "name": "Anti-attractor divergence",
+   "how": "Inject randomness from user input or a script, exclude the model's top-N picks, or have a fresh sub-agent rank a large batch of generated ideas.",
+   "when": "Generating many distinct options (themes, shaders, palettes) where the model keeps returning the same few."
+  },
+  {
+   "name": "Register routing inside one skill",
+   "how": "Classify the request early and load different rule files per mode, instead of one long file with if/else branches.",
+   "when": "A skill covers several audiences or job types that need conflicting rules."
+  },
+  {
+   "name": "Cross-session skill memory",
+   "how": "Save each run's output to a git-ignored folder in the repo and have later runs read them as history and user preferences.",
+   "when": "Resumable, multi-session refactors or migrations, and skills that should learn a user's preferences."
+  },
+  {
+   "name": "Scripts that print next-step instructions",
+   "how": "Run a script inline at skill start and have it emit structured JSON or text saying exactly what to do next (for example, missing files, update prompts).",
+   "when": "Setup, onboarding, environment checks, or adaptive flows where the model must follow exact steps. Accept the loss of prompt caching for that part."
+  },
+  {
+   "name": "Pre-tool-use blocking hooks for weaker models",
+   "how": "Use pre-tool hooks that block a bad write, instead of post-tool hooks that only warn, and add per-file or per-rule ignore rules for false positives.",
+   "when": "Shipping enforcement to models that do not reliably act on post-write feedback."
+  },
+  {
+   "name": "Hook-driven feedback loop from a skill",
+   "how": "Ship hooks with the skill that validate each edit against the skill's rules, so the agent fixes violations without being asked.",
+   "when": "Design systems, lint-like style rules, or team conventions that should hold even when the agent forgets to call the skill."
+  },
+  {
+   "name": "Unskippable gates with logged results",
+   "how": "Split the procedure into numbered gates, require the model to log each one's pass result, and say that skipping one is not allowed.",
+   "when": "Long procedures where the model is known to skip or compress steps, such as GPT-family models with a Codex harness."
+  },
+  {
+   "name": "Per-harness and per-model builds",
+   "how": "Compile one skill source into several variants: substitute the harness's ask-user tool, add model-specific guard text, and install each variant to its own directory.",
+   "when": "Distributing a skill to several harnesses and models, where symlinks or a generic package installer will not work."
+  },
+  {
+   "name": "Ablation testing of rules",
+   "how": "Tag each rule with a unique ID, remove it, run evals across models, and check the result with a deterministic detector. Keep the rule only if the check changes.",
+   "when": "Large rule sets where you need to know which lines actually change behavior."
+  },
+  {
+   "name": "LLM-as-user with a judge panel",
+   "how": "Reproduce each target harness's tools and a simulated user that answers the skill's questions, then score the outputs with several judges across many niches and models.",
+   "when": "Regression testing a skill release across models and harnesses."
+  },
+  {
+   "name": "Inverted judges",
+   "how": "When a judge model shows a known bias (for example, rating crammed first viewports higher), invert its score for that criterion.",
+   "when": "Judges with a documented, consistent bias that is easier to flip than to fix."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Codex",
+  "Cursor",
+  "GitHub Copilot",
+  "Gemini",
+  "Playwright",
+  "skills.sh",
+  "npx skills"
+ ],
+ "numbers": [
+  {
+   "claim": "The first design skill was about 55 lines of named rules with no scripts; he later calls 250 lines of prose insufficient to change model defaults.",
+   "t": "3:45"
+  },
+  {
+   "claim": "Pre-written color palettes used as a random seed: over 100 hand-picked primary colors.",
+   "t": "19:00"
+  },
+  {
+   "claim": "A shader library target of about 100 shaders, produced by generating ideas and having a sub-agent rank them.",
+   "t": "17:35"
+  },
+  {
+   "claim": "Eval matrix per release: about 20 niches, GPT-5.5, Opus and Sonnet, 5 to 10 runs per combination, plus comparison against the Anthropic front-end design skill.",
+   "t": "54:06"
+  },
+  {
+   "claim": "Codex design-review gate list has eight gates that must each be logged.",
+   "t": "47:07"
+  },
+  {
+   "claim": "Every rule in Impeccable is ablation-tested across models.",
+   "t": "44:42"
+  }
+ ],
+ "hot_takes": [
+  "Prompting is the starter level, and the goal is harness engineering.",
+  "Slop is a moving target: each ban just pushes the model to the next cluster (Claude beige replaced purple gradients).",
+  "If a gate can be skipped, the model will skip it.",
+  "Taste cannot be solved at the model level, and models are bad at judging it.",
+  "Most distributed skills should be written by the people who use them, and skill authors should battle-test more before shipping.",
+  "Symlinking one instruction file across harnesses is fine for a personal skill but not for shipping to many users."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "SkillForge mines telemetry into governed skills and asks how to score skill-worthiness. The talk's ablation testing and per-run skill memory offer a loose way to test which skill rules matter.",
+   "action": "When drafting SkillForge's skill-worthiness scoring, try an ablation pass: tag each rule in a mined skill with an ID, remove it, rerun the eval, and keep the rule only if the deterministic check changes."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and runs plan, Codex critique and debate steps, so the blind-sub-agent critique and the Codex sub-agent permission gotcha apply directly. Hooks and the background-task wake-up difference also bear on loops and schedules.",
+   "action": "Make the plan critique step run two blind sub-agents (a judge and a deterministic checker) that never see each other's output, then merge the results, and test it in both Claude Code and Codex, since Codex needs explicit permission to spawn sub-agents."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Matches recurring interests in context engineering, subagents and evals: per-model overfitting, unskippable gates, persisted run history and ablation tests for prompt rules.",
+   "action": "For any shipped skill, keep a per-model list of known overfits and tag each rule with an ID so it can be ablation-tested against the deterministic check."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

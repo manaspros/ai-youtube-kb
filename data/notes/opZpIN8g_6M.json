@@ -1,0 +1,146 @@
+{
+ "one_line": "Walkthrough of Anthropic's paper on running MCP servers as code files instead of direct tool calls, to cut context bloat; no implementation shown.",
+ "summary": "The speaker explains why MCP tool definitions and tool-call results both consume context window even when unused, using a measurement of three connected MCP servers that took about 10% of the window before any messages. He then summarizes Anthropic's proposed fix: expose each MCP server as a folder of code files (one file per tool, plus an index file) that the agent navigates and loads on demand. The claimed benefits are progressive disclosure, shaping large results in code before they reach the model, control flow in code instead of model-sequenced calls, privacy by returning placeholder values, and file-based state through the memory tool. He notes the trade-off: agent-generated code needs sandboxing, resources and monitoring, so token savings are paid for with infrastructure complexity. He credits Cloudflare's earlier \"code mode\" as the same idea. The video gives no commands or config, and the last part is an unrelated AI Labs hackathon recap.",
+ "speakers": [],
+ "orgs": [
+  "Anthropic",
+  "Cloudflare"
+ ],
+ "format": "review",
+ "topics": [
+  "mcp-and-tools",
+  "context-engineering",
+  "token-cost-efficiency",
+  "sandboxing-execution"
+ ],
+ "tags": [
+  "MCP",
+  "MCP as code",
+  "context window",
+  "progressive disclosure",
+  "tool definitions",
+  "code execution",
+  "sandboxing",
+  "memory tool",
+  "skills",
+  "Cloudflare code mode"
+ ],
+ "key_ideas": [
+  {
+   "idea": "MCP tool definitions occupy context even when no task uses them",
+   "detail": "Each connected MCP's tools stay exposed to the model from the start. In the speaker's test, three MCPs used about 10% of the window with zero tokens of messages, and he expects it to grow with more servers.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Tool-call results also stay in context and bloat it",
+   "detail": "Results from MCP calls remain in the window after the call, so large outputs add up. The speaker says this can take more space than the user's actual messages.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Anthropic's proposed fix is to present MCP servers as code files",
+   "detail": "Instead of direct tool calls, each MCP server becomes a folder of code files in a servers directory, with one file per tool and an index file listing what is available. The agent reads files on demand rather than carrying every schema.",
+   "t": "1:23"
+  },
+  {
+   "idea": "Progressive disclosure: the agent loads only the tool files it needs",
+   "detail": "The agent uses the file tree and file names to find the right tool, reads index.ts for the catalogue, and loads only the specific tool file. The speaker notes Cloudflare proposed a similar idea earlier, which it called code mode, converting MCP tools to a TypeScript API.",
+   "t": "2:32"
+  },
+  {
+   "idea": "Shape large tool results in code before the model sees them",
+   "detail": "Code can transform or aggregate a large response and return only the needed slice. His example is a 10,000-row spreadsheet read, where only the first five rows go to the model.",
+   "t": "3:39"
+  },
+  {
+   "idea": "Move control flow out of the model and into code",
+   "detail": "Today the model sequences tool calls one by one. With code, conditionals, checks and loops run in the script, which avoids chaining model turns. The speaker claims this also reduces hallucinations, without evidence in the video.",
+   "t": "3:39"
+  },
+  {
+   "idea": "Privacy: the model only sees what the code logs or returns",
+   "detail": "Sensitive data can stay in the execution environment. The code can return generic or placeholder values so the agent can work without the raw database contents.",
+   "t": "5:02"
+  },
+  {
+   "idea": "State persists as files, similar to Claude skills",
+   "detail": "With the memory tool, the agent can save working code and intermediate results to files and resume where it stopped. The speaker compares this to skills, which are also file-based and loaded on demand, though skills hold broader multi-resource bundles.",
+   "t": "5:02"
+  },
+  {
+   "idea": "The trade-off is token savings versus sandboxing and infrastructure complexity",
+   "detail": "Running agent-generated code needs a secure sandbox with resource limits and monitoring. Lower token cost and latency come with this operational burden, which he frames as a choice.",
+   "t": "6:13"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Filesystem-based MCP tool catalogue with progressive disclosure",
+   "how": "Generate a servers/<mcp-server>/ folder with one code file per tool and an index file that exposes every tool name and definition. The agent reads the index, then loads only the tool file it needs. The video does not show code or config.",
+   "when": "Use when several MCP servers are connected and their tool schemas dominate the context window before any work starts."
+  },
+  {
+   "name": "Result shaping inside the execution script",
+   "how": "Have the code call the tool, then filter, aggregate or slice the output (for example, first N rows or a summary) and return only that to the model, so the full payload never enters context.",
+   "when": "Use when a tool returns large data such as tables, query results or logs that the model only needs to inspect in part."
+  },
+  {
+   "name": "Code-owned control flow between tool calls",
+   "how": "Write conditionals, loops and checks in the generated code that calls several tools in sequence, so the model is not asked to decide each step.",
+   "when": "Use for deterministic multi-step pipelines where the branching logic is known in advance and each model turn is expensive."
+  },
+  {
+   "name": "Placeholder returns for sensitive data",
+   "how": "Make the code log or return only generic or redacted values, so the agent sees the shape of the result but not the underlying records.",
+   "when": "Use when the agent works against a database or other source that holds private data it should not read directly."
+  },
+  {
+   "name": "File-based state for resumable runs",
+   "how": "Use the memory tool to save working code and intermediate outputs as files, so the agent can resume a task from the saved state rather than replaying the whole conversation.",
+   "when": "Use for long multi-step tasks where a context reset or interruption would otherwise lose progress."
+  }
+ ],
+ "tools": [
+  "MCP (Model Context Protocol)",
+  "Claude",
+  "Claude skills",
+  "Memory tool",
+  "Cloudflare code mode",
+  "TypeScript",
+  "index.ts (file convention from the paper)"
+ ],
+ "numbers": [
+  {
+   "claim": "Three connected MCP servers consumed about 10% of the context window before any user messages (messages were 0%).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Example: a Google Sheets tool call returning 10,000 rows, where the code would pass only the first 5 rows to the model.",
+   "t": "3:39"
+  }
+ ],
+ "hot_takes": [
+  "The title, 'Claude Just Solved Their Biggest Problem', overstates it: this is a summary of an Anthropic write-up on an approach, with no benchmark and no implementation.",
+  "The speaker's 10% figure comes from his own setup with three MCPs and is not a general measurement.",
+  "He states that code-based control flow reduces hallucinations, but offers no evidence for that.",
+  "He credits Cloudflare with the same idea earlier, so the 'new' part is mostly the framing.",
+  "The final 2 minutes are an unrelated AI Labs hackathon recap."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Crucible already plans opt-in sandboxed code execution, which the MCP-as-code approach requires. The Scout proxy is also a natural place to measure per-request context and tool-definition tokens.",
+   "action": "Prototype MCP-as-code for two MCP servers in Crucible's sandbox, then compare tool-definition tokens per request with and without the file-tree approach through the Scout proxy."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code and checkpoints long runs. MCP tool definitions and results inflate those checkpoints, but the video gives no implementation details.",
+   "action": "Measure how much context MCP tool definitions take in a long ProsHarness run before checkpointing, and consider deferring servers the run does not use."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

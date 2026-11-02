@@ -1,0 +1,156 @@
+{
+ "one_line": "Google Chrome DevRel on WebMCP, a proposed browser standard that lets a website expose its actions as structured tools for in-browser AI agents, with declarative and imperative APIs and an early-preview setup guide.",
+ "summary": "Tara Agyemang from the Google Chrome team argues that agents currently scrape the DOM, accessibility tree and screenshots to act on websites, which is slow, token-heavy and brittle. She says sites should first fix semantic HTML, accessibility and Core Web Vitals, then add WebMCP, a proposed standard where a page registers its capabilities as tools an agent can call. She compares it to MCP: WebMCP is the tools part of MCP running client-side in the browser, so the tab must be open and no server is needed. Two APIs are shown: a declarative one that turns annotated HTML forms into tools with an auto-generated JSON schema, and an imperative registerTool API for multi-step UI flows, which she says is the more-used of the two. Live demos (a maze game and a vibe-coded concert ticket site) show the agent calling tools and the UI updating in step with them. The API is in early preview in Chrome 146+ behind a flag, and the speaker asks for feedback and points to an evals CLI for testing a site's tools.",
+ "speakers": [
+  "Tara Agyemang"
+ ],
+ "orgs": [
+  "Google",
+  "Google Chrome",
+  "Google DeepMind"
+ ],
+ "format": "talk",
+ "topics": [
+  "mcp-and-tools",
+  "voice-multimodal",
+  "product-ux"
+ ],
+ "tags": [
+  "WebMCP",
+  "browser agents",
+  "Chrome",
+  "declarative API",
+  "imperative API",
+  "registerTool",
+  "structured tools",
+  "accessibility",
+  "semantic HTML",
+  "early preview",
+  "evals CLI",
+  "model context tool inspector"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Browser agents waste effort reverse-engineering pages",
+   "detail": "Agents pass the full DOM, read the accessibility tree, take screenshots and estimate click coordinates. The speaker says this is long, brittle and token-expensive, and an ad loading late can still break the click.",
+   "t": "1:10"
+  },
+  {
+   "idea": "Fix web foundations before adding WebMCP",
+   "detail": "Semantic HTML, robust accessibility, fast load times (Core Web Vitals) and clean UX flows make a site agent-ready by default. She says WebMCP only makes sense after these are in place.",
+   "t": "1:10"
+  },
+  {
+   "idea": "WebMCP lets a site publish its actions as tools",
+   "detail": "Instead of an agent guessing what a site does, the site gives the agent a menu of named, described actions. The speaker says this improves agent speed and reliability on the site, but gives no measured figures.",
+   "t": "3:46"
+  },
+  {
+   "idea": "WebMCP is client-side; MCP is server-side",
+   "detail": "MCP connects agents to a server you run, reachable at any time. WebMCP tools live in the open browser tab and only work while the user is on the page. The speaker calls the two complementary.",
+   "t": "10:54"
+  },
+  {
+   "idea": "Declarative API for plain forms",
+   "detail": "Adding a tool name and description to a standard HTML form makes the browser generate a JSON schema from the form fields. Extra attributes can mark whether an agent or a human filled the form.",
+   "t": "12:23"
+  },
+  {
+   "idea": "Imperative API for complex flows",
+   "detail": "registerTool takes a name, a description the agent uses to decide when to call it, a hand-written schema and an execute function. Execute can wrap existing JavaScript, validate input and return a result the agent reads for its next step. The speaker says this is the API most people use.",
+   "t": "13:48"
+  },
+  {
+   "idea": "Keep the UI in sync with tool calls",
+   "detail": "In the concert demo each tool call updates the visible page (selected VIP, quantity, a notice), so the user can follow what the agent did. The speaker recommends leaving the final checkout step to the human.",
+   "t": "16:34"
+  },
+  {
+   "idea": "Prompt specificity changes agent efficiency",
+   "detail": "In the maze, a vague prompt made the agent backtrack. Telling it the exit is bottom-right made its route more direct. Tool descriptions and user prompts both shape the path the agent takes.",
+   "t": "8:09"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Declarative tool exposure from HTML forms",
+   "how": "Add tool name and tool description attributes to an existing form. The browser builds the JSON schema from the form fields. Use agent-invoked attributes to tell agent-filled submissions from human ones.",
+   "when": "A standard form already does the job and you want an agent to fill it in with no extra JavaScript."
+  },
+  {
+   "name": "Imperative registerTool for multi-step UI",
+   "how": "Call registerTool with a name, a detailed description, a manual JSON schema and an execute function. Wrap existing JS functions, validate and trim inputs, update the DOM, and return a structured result the agent can act on.",
+   "when": "The flow spans several steps or needs custom logic that a plain form cannot express."
+  },
+  {
+   "name": "Mirror tool calls in the visible UI",
+   "how": "Have each tool update the on-screen state (selections, quantities, confirmations) so the user sees what the agent did and can take over at any point.",
+   "when": "Agents act on a page a human is watching, or hand control back and forth with the user."
+  },
+  {
+   "name": "Hybrid browse-then-delegate flow",
+   "how": "Let the user browse normally, hand a task to the agent, and take control back at any time. The page must support both the UI path and the tool path.",
+   "when": "Complex sites where users want to start manually and let the agent finish a sub-task."
+  },
+  {
+   "name": "Test tools with an inspector and evals CLI",
+   "how": "Use the model context tool inspector extension to list tools and call them directly or via prompt. Use the evals CLI from the GitHub repo to test your own site's tools.",
+   "when": "Before shipping WebMCP tools, to check that the agent selects and calls them correctly."
+  }
+ ],
+ "tools": [
+  "WebMCP",
+  "Chrome Canary",
+  "Model Context Tool Inspector (Chrome extension)",
+  "Gemini",
+  "Chrome DevTools-style flag (WebMCP testing flag)",
+  "WebMCP evals CLI"
+ ],
+ "numbers": [
+  {
+   "claim": "WebMCP is enabled in Chrome 146 and later, behind a testing flag, and the speaker recommends Chrome Canary",
+   "t": "17:58"
+  },
+  {
+   "claim": "The repo has about six or seven demos and an evals CLI for testing your own site's tools",
+   "t": "19:21"
+  },
+  {
+   "claim": "Demo purchase: two VIP tickets, with the agent's three tool calls (search concerts, open concert page, purchase ticket) completing the order; the notice shows about 356 pounds spent (demo data, not a measurement)",
+   "t": "16:34"
+  },
+  {
+   "claim": "Speaker says WebMCP 'significantly improves' agent performance and reliability, but shows no benchmark numbers",
+   "t": "3:46"
+  }
+ ],
+ "hot_takes": [
+  "WebMCP is the 'USB-C of AI agent interactions'",
+  "Every website can become a high-performance API for agents",
+  "Agents should not have to settle for token-heavy screen scraping"
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "AgentOS is a server-side proxy and infra stack. WebMCP is in-browser client-side tooling, which is outside the current scope.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness drives the Claude Code CLI and does not act on browser pages. The talk gives nothing for checkpoints, planning or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The talk's main claim, that semantic HTML and accessibility make a site usable by agents, is a cheap general check for any web-facing agent work.",
+   "action": "Read the WebMCP early-preview docs and the GitHub demo repo only if browser-agent tool design comes up again."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

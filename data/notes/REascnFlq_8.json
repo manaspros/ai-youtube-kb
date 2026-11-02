@@ -1,0 +1,148 @@
+{
+ "one_line": "Jean-Denis Greze (Town CTO) reframes agent-to-agent work as a context-window search problem and compares five ways to get cross-silo data into an LLM call safely.",
+ "summary": "Greze argues that most LLM systems are really search problems: the goal is to get the right information into the context window before a response or tool call. He uses an ideal single agent with access to all data as the benchmark, and says a multi-agent design is good to the extent it approximates that ideal while respecting privacy. He walks through five approaches: a shared agent inside a trust boundary, custom privacy-preserving tools that return derived results (such as a relationship score), shared company wikis filled by a per-silo \"sweeper\" agent, humans relaying requests between agents, and a black-box agent that asks data owners for approval only at the write or share step. He flags risks in each: poisoned or stale shared memory, nothing being reversible or auditable, and inference leaks in the black-box approach. He ends by suggesting teams start with a low-sensitivity zone where the LLM decides alone, then widen it as models improve, and he mentions cross-company silo sharing among investment banks as an open direction. Most of the talk is conceptual, and the examples are hypothetical or from his own products.",
+ "speakers": [
+  "Jean-Denis Greze"
+ ],
+ "orgs": [
+  "Town",
+  "Plaid",
+  "Dropbox"
+ ],
+ "format": "talk",
+ "topics": [
+  "multi-agent",
+  "security-guardrails",
+  "rag-retrieval",
+  "context-engineering"
+ ],
+ "tags": [
+  "agent-to-agent",
+  "cross-silo data",
+  "privacy",
+  "agentic search",
+  "human-in-the-loop",
+  "shared memory",
+  "auto mode",
+  "approvals",
+  "trust boundary"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Reframe agent systems as search: the job is making sure the context window holds the right information right before a response or tool call.",
+   "detail": "The speaker traces the evolution from manual context filling, to RAG over a search tool, to agentic search where the agent has many tools and searches all content. In his framing, one LLM call matters most, and the engineering task is to make that call's context right.",
+   "t": "1:13"
+  },
+  {
+   "idea": "Use an ideal single agent with all data in one context window as the benchmark for multi-agent designs.",
+   "detail": "He borrows the Coase theorem idea: with full information and no transaction costs, negotiation reaches the ideal outcome. A multi-agent system is judged by how closely it gets the same data into the window, given privacy and security limits.",
+   "t": "2:41"
+  },
+  {
+   "idea": "A shared agent scoped to a trust boundary works now but does not improve as models improve.",
+   "detail": "Giving one agent access to a group's data, like an HR team agent or a household agent, is popular with IT and security teams. The speaker says it still needs humans to scope the data and tends to create a new silo, so it does not get less human-heavy over time.",
+   "t": "4:06"
+  },
+  {
+   "idea": "Build tools that trade power for privacy by returning a derived result instead of raw data.",
+   "detail": "His example is a tool that reads everyone's email but returns only a relationship-strength score for a target company. The agent then asks the connected person for permission to make the intro. The idea is privacy-preserving and useful enough that users accept it, but it is still manual because humans have to design each tool.",
+   "t": "7:00"
+  },
+  {
+   "idea": "Shared company silos can fill automatically through a per-silo sweeper agent that follows a policy.",
+   "detail": "Each private silo has an agent with a written policy on what must stay private and a catalogue of shared spaces. At the end of the day it moves allowed new information into shared spaces. He says the open question is who picks what is safe to share: either ask the human each time or have the LLM enforce a written policy. He expects the second approach to spread first in small, high-trust companies, where finance and HR data are clearly off-limits.",
+   "t": "9:31"
+  },
+  {
+   "idea": "A black-box cross-silo agent can fan out reads automatically and ask owners only at the write or share step.",
+   "detail": "The query runs over everyone's silos without human approval, the agent ranks the candidates, and then it asks only the one person whose information it would share. This avoids spamming everyone with approval requests. The trade-off is that the system must be trusted, because it can still leak inferences, such as a recruiter link that reveals a job search.",
+   "t": "12:18"
+  },
+  {
+   "idea": "Shared memory has hard failure modes: poisoning, stale facts, and no audit or reversal.",
+   "detail": "One wrong entry in a shared wiki can spread and stay there. He gives a personal example where an agent kept an old name after a rename. He asks who approves what, what is logged, and what can be reversed, and says someone with full access, such as a security lead, will need to audit the black box.",
+   "t": "16:33"
+  },
+  {
+   "idea": "Adopt tiered autonomy: let the LLM decide in a low-sensitivity zone and keep humans on the rest, then widen the zone as models get better.",
+   "detail": "He compares this to coding agents moving from approving every action to a YOLO mode and then to an auto mode that flags risky actions. In his example, an LLM can share weekly supplier-call notes with a user based on the user's role and risk judgment. He says a system designed this way should grow with model capability.",
+   "t": "17:50"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Benchmark against an ideal single-context agent",
+   "how": "Describe the best case where one agent sees all data, then measure each multi-agent design by how closely it gets the needed data into the same call under privacy limits.",
+   "when": "When designing or comparing multi-agent or cross-team agent systems and you need a principled target."
+  },
+  {
+   "name": "Privacy-preserving derived tool",
+   "how": "Give a tool privileged access to raw sources but have it return only a computed, low-sensitivity result, such as a score, count, or yes/no. Use that output in the agent's context instead of raw data.",
+   "when": "When a cross-silo question is useful to answer but raw data should not reach the agent or the user."
+  },
+  {
+   "name": "Per-silo sweeper agent",
+   "how": "Give each private silo an agent with a written sharing policy and a description of the shared spaces. Run it on a schedule, and have it copy only policy-allowed new information into shared spaces.",
+   "when": "When you want company-wide shared knowledge such as wikis or shared skills to build up without manual curation."
+  },
+  {
+   "name": "Write-step-only approval for cross-silo queries",
+   "how": "Let the agent read across silos without asking. Before any write or share step, identify which owner's data the output depends on and ask only that owner, with a specific yes or no request.",
+   "when": "When many people could hold the answer and asking everyone would be too noisy."
+  },
+  {
+   "name": "Tiered autonomy by sensitivity",
+   "how": "Define a low-sensitivity zone, such as role-based sharing of routine notes, where the LLM decides alone. Route everything else to human review, and log decisions so the zone can be widened later.",
+   "when": "When rolling out agent autonomy over sensitive data and you want the scope to grow as trust and model quality improve."
+  }
+ ],
+ "tools": [
+  "Gmail",
+  "Slack",
+  "Airtable",
+  "LinkedIn"
+ ],
+ "numbers": [
+  {
+   "claim": "Five strategies for getting cross-silo data into an LLM call: trust boundary, custom tools, shared silos, human relay, and black-box with approval.",
+   "t": "19:05"
+  },
+  {
+   "claim": "Illustrative example: a 100-person company where a single question would ping about 100 people on Slack, which he calls inefficient.",
+   "t": "12:18"
+  },
+  {
+   "claim": "Illustrative example: the black-box agent narrows about 20 candidate connections to one person and asks only that person for approval.",
+   "t": "13:42"
+  },
+  {
+   "claim": "Prediction: in the next six months, smaller companies will run systems where an LLM is trusted with a policy to surface more private information into shared spaces.",
+   "t": "10:52"
+  }
+ ],
+ "hot_takes": [
+  "A trust-boundary-only approach to AI will leave teams in trouble within a couple of years because it needs humans to scope the data and creates new silos.",
+  "Agent-to-agent is the wrong concept; the real problem is search and what goes into the context window.",
+  "The black-box cross-silo approach is the most promising, but it cannot truly be a black box because auditors need access.",
+  "The first cross-company silo-sharing use case, such as investment banks sharing private company data for lending, could be a beachhead for wider adoption.",
+  "Trusting LLMs to decide what is safe to share is the direction things are heading, for better or worse."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "",
+   "action": "Add a correction and retraction path with provenance checks to MemoryMesh shared buckets, so one wrong fact can be overwritten and its downstream uses traced. Write a test that injects a bad entry and checks it is detected or reversed."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness has phone-driven approvals, and the write-step-only approval idea could cut down how many approvals a user receives.",
+   "action": "Compare the current approval triggers with the write-or-share-only rule and test whether reads can run without approval while writes still pause."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

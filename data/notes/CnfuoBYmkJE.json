@@ -1,0 +1,187 @@
+{
+ "one_line": "Explainer arguing agents should route high-stakes facts to a curated, Git-versioned markdown knowledge bundle (Google's OKF) and open-ended queries to RAG; a thin router decides per query.",
+ "summary": "The host argues that plain RAG can return confident, wrong answers because chunking and fuzzy vector search break the structure of a source document, using a refund-window example (30 days from RAG versus 14 days from a curated file). He presents Google Cloud's Open Knowledge Format (OKF), which he says shipped in June 2026, as a bundle of markdown files with YAML front matter, one concept per file, and links between concepts, where retrieval is deterministic and every change is a Git diff. He then recommends a hybrid: a router sends canonical, high-stakes questions to OKF and open-ended ones to RAG, with OKF acting as ground truth over retrieved chunks. He also covers the economics (OKF is just text, while RAG pays for embedding and a vector database that always runs) and two myths (OKF does not replace RAG, and a huge context window does not replace selective retrieval). The video has no code, benchmarks or eval results; the central example is a single illustrative anecdote, and the 80/20 split is a heuristic.",
+ "speakers": [
+  "Kai Explains host (name not stated in transcript)"
+ ],
+ "orgs": [
+  "Google Cloud",
+  "Anthropic",
+  "OpenAI",
+  "Google",
+  "Pinecone",
+  "Weaviate",
+  "Qdrant",
+  "Milvus",
+  "Chroma",
+  "PostgreSQL (pgvector)",
+  "LangChain",
+  "LlamaIndex"
+ ],
+ "format": "review",
+ "topics": [
+  "rag-retrieval",
+  "context-engineering",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "okf",
+  "open-knowledge-format",
+  "rag",
+  "hybrid-retrieval",
+  "markdown-knowledge-base",
+  "vector-database",
+  "agent-knowledge",
+  "query-routing",
+  "grounding",
+  "hallucination"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Plain RAG can confidently return wrong facts: chunking shreds structured documents, and the retriever returns the most similar fragments rather than the authoritative answer.",
+   "detail": "Illustrative refund-window example: RAG answers 30 days, while the curated policy file gives 14 days with a link to the source. This is a single demo, not a measured error rate.",
+   "t": "0:00"
+  },
+  {
+   "idea": "OKF (Open Knowledge Format) is a curated knowledge bundle of plain markdown files with YAML front matter; the speaker says Google Cloud shipped it in June 2026.",
+   "detail": "Each file is one concept. Front matter has a required type field plus optional title, description, tags, a timestamp, and a resource field linking to the underlying asset. Concepts link to each other with ordinary markdown links, forming a graph.",
+   "t": "4:07"
+  },
+  {
+   "idea": "Vector RAG has structural costs: chunk boundaries split tables and procedures, retrieval is probabilistic, and any policy change means re-running ingestion.",
+   "detail": "Stale chunks can stay in the index after the source changes, and the index cannot be diffed in a pull request or audited easily. Typical chunks are a few hundred tokens with some overlap, stored with source, page and title metadata.",
+   "t": "1:25"
+  },
+  {
+   "idea": "The recommended architecture is hybrid: a router sends high-stakes canonical queries to OKF for exact, cited answers and open-ended queries to RAG for the long tail.",
+   "detail": "The speaker frames this as an 80/20 split: OKF is the curated spine and RAG is the reach. Data owners curate the bundles, engineers run ingestion, and frameworks such as LangChain or LlamaIndex wire the two together.",
+   "t": "5:31"
+  },
+  {
+   "idea": "OKF content is governed like code: Git gives diffs, PR review, an owner per fact, and one-command rollback. The speaker equates this with a hand-written context file, and with the LLM-wiki pattern he attributes to Andrej Karpathy.",
+   "detail": "The transcript auto-caption garbles the name of the context file as 'sludes.md'; treat that name as unverified. Retrieval is deterministic, so the developer decides exactly what the model sees.",
+   "t": "5:31"
+  },
+  {
+   "idea": "The two layers reinforce each other: a curated concept overrides a fuzzy retrieved chunk, OKF index files act as a map for progressive disclosure, and semantic search can index the bundle itself.",
+   "detail": "Example: a billing-bug question goes to RAG over about 40,000 old support tickets, while a refund question goes to OKF. The speaker says the single rule of trusting curated concepts makes a measurable dent in hallucinations, but gives no numbers.",
+   "t": "6:58"
+  },
+  {
+   "idea": "A single retrieval interface, such as one MCP server, can hide the routing so the model just asks for knowledge.",
+   "detail": "The speaker suggests putting the OKF bundle inside the vector index behind one retrieval interface. He does not show an implementation.",
+   "t": "6:58"
+  },
+  {
+   "idea": "Economics: an OKF bundle is text and costs little to change, while RAG has ongoing costs for embedding, re-embedding on change, and a vector database that always runs.",
+   "detail": "Practical rule of thumb: small, high-stakes knowledge goes to OKF alone; a large messy corpus goes to RAG alone; production systems use both with a router.",
+   "t": "8:20"
+  },
+  {
+   "idea": "Two myths: OKF does not make RAG obsolete once a corpus is too large to curate, and a huge context window does not replace selective retrieval because irrelevant context degrades answers and costs tokens.",
+   "detail": "The speaker says selective routed retrieval still beats brute force even at a million tokens of context. No experiment is shown.",
+   "t": "9:45"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Curated-first hybrid routing",
+   "how": "Put a thin router in front of two sources. Canonical, high-stakes questions (for example, policy values or exact prices) go to a curated markdown bundle that returns a cited answer. Open-ended questions go to vector RAG over the full archive. When a curated concept exists for a question, trust it over any retrieved chunk. The speaker does not describe how to classify queries.",
+   "when": "A mixed corpus where a small set of facts must be exact and auditable, and the rest is too large or messy to hand-curate."
+  },
+  {
+   "name": "OKF-style concept files",
+   "how": "One concept per markdown file. YAML front matter with a required type field and optional title, description, tags, timestamp, and resource (a link to the real underlying asset). Express relationships as ordinary markdown links, for example a table linking to its dataset, or a playbook linking to the table it repairs. Add index files that list what knowledge exists so the agent can drill down progressively.",
+   "when": "Authoring a small, high-trust knowledge base that a human owns, where facts need owners and reviewable history."
+  },
+  {
+   "name": "Governing knowledge in Git",
+   "how": "Store the curated bundle in a repository. Review changes in pull requests, assign an owner to each fact, and roll back a bad edit with a single revert.",
+   "when": "Any knowledge base that must be auditable and changed by a process people already trust."
+  },
+  {
+   "name": "Single retrieval facade",
+   "how": "Expose both the curated bundle and the vector index behind one retrieval interface (the speaker suggests a single MCP server), and index the bundle inside the vector store so semantic search can also reach it.",
+   "when": "You want the model to ask for knowledge without knowing which store answered."
+  },
+  {
+   "name": "Baseline RAG ingestion",
+   "how": "Split documents into chunks of a few hundred tokens with small overlap. Embed each chunk, and store it with metadata such as source document, page, and title so answers can cite their source. At query time, embed the question, run approximate nearest-neighbour search (cosine similarity or dot product), and inject the top chunks into the prompt.",
+   "when": "Open-ended search over a large, changing corpus where fuzzy matching by meaning is acceptable."
+  }
+ ],
+ "tools": [
+  "Google Cloud OKF (Open Knowledge Format, June 2026 per speaker)",
+  "RAG (retrieval-augmented generation)",
+  "Pinecone",
+  "Weaviate",
+  "Qdrant",
+  "Milvus",
+  "Chroma",
+  "PostgreSQL with pgvector",
+  "LangChain",
+  "LlamaIndex",
+  "MCP (Model Context Protocol)",
+  "Claude",
+  "ChatGPT",
+  "Gemini",
+  "Markdown with YAML front matter",
+  "Git"
+ ],
+ "numbers": [
+  {
+   "claim": "Illustrative refund-window answer: RAG says 30 days (wrong), OKF says 14 days with a source link. Single demo, not measured.",
+   "t": "0:00"
+  },
+  {
+   "claim": "OKF is described as shipped by Google Cloud in June 2026, weeks old at video time, with thousands of GitHub stars (speaker's claim).",
+   "t": "0:00"
+  },
+  {
+   "claim": "RAG chunks are usually a few hundred tokens each, with some overlap between neighbours.",
+   "t": "1:25"
+  },
+  {
+   "claim": "Vector databases search billions of embeddings in milliseconds using approximate nearest-neighbour indexes (speaker's claim).",
+   "t": "2:47"
+  },
+  {
+   "claim": "Hypothetical support corpus of 40,000 old tickets searched by RAG.",
+   "t": "6:58"
+  },
+  {
+   "claim": "Selective routed retrieval is said to beat brute force even at a million tokens of context (no experiment shown).",
+   "t": "9:45"
+  },
+  {
+   "claim": "Video length 10:47.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The hybrid of curated markdown plus RAG is presented as the winning architecture, but no benchmark or eval supports it.",
+  "The 30-versus-14-day refund example is a single anecdote used as the core demonstration.",
+  "The 80/20 split between curated and retrieved knowledge is a heuristic with no measurement behind it.",
+  "Predicts that agents will increasingly write OKF bundles themselves, which is speculation.",
+  "No code, commands or config are shown, so there is no reproducible tutorial. The title ('The Ultimate AI Agent Architecture') is hype relative to the content.",
+  "Quality is capped at 2 because the title is hype and the substance is a conceptual primer with one anecdote and no data."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already does hybrid retrieval (BM25 plus pgvector) and GraphRAG, but has no curated, deterministic tier with owners and cited facts. The router-plus-curated-spine pattern maps directly onto that gap.",
+   "action": "Prototype a curated-first tier in MemoryMesh: Git-tracked markdown concept files with type and resource front matter, checked before BM25+pgvector retrieval. Measure against the current hybrid path on canonical factual questions with RAGAS."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The harness relies on plans and standing instructions for checkpointed runs. Keeping those as versioned, curated markdown rather than retrieved chunks would make them diffable and reviewable.",
+   "action": "Keep the harness's standing instructions and plan templates as small curated markdown files in Git, with a type field, instead of retrieved context. No runtime change is needed."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

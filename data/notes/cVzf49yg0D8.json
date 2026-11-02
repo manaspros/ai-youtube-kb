@@ -1,0 +1,214 @@
+{
+ "one_line": "Google DeepMind hands-on workshop on building agents with the Gemini Interactions API (server-side state, background runs, skills) and the Live API (native-audio voice agents), with live demos that partly failed.",
+ "summary": "Two Google DeepMind developer-experience speakers ran a 1h47m hands-on workshop. Part one introduced the Interactions API, which keeps conversation state on the server through a previous-interaction ID, supports background runs for long tasks, and works for both models and built-in agents such as Deep Research. The speakers then built a small coding agent step by step (read/write file tools, a bash tool, and a loop that runs until the model stops calling tools), using a Gemini skill installed into the coding agent as the main source of current API knowledge. Part two covered the Live API, a stateful WebSocket API with native-audio models, tool calling, and Google Search grounding, plus three ways to connect it (server proxy, ephemeral tokens, or a partner WebRTC layer). The live demos repeatedly failed, including grounding and tool calls. Q&A admitted that native-audio agents still lack per-step observability, so cascaded pipelines remain the safer choice for many business uses.",
+ "speakers": [
+  "Thor Schaeff",
+  "Philipp Schmid"
+ ],
+ "orgs": [
+  "Google DeepMind",
+  "Google AI Studio",
+  "Shopify",
+  "Waymo",
+  "LiveKit",
+  "Pipecat",
+  "Vision Agents",
+  "Fishjam",
+  "Vox Implant",
+  "Hey Addo",
+  "Context7",
+  "skills.sh"
+ ],
+ "format": "workshop",
+ "topics": [
+  "voice-multimodal",
+  "agent-architecture",
+  "mcp-and-tools",
+  "context-engineering"
+ ],
+ "tags": [
+  "gemini-interactions-api",
+  "gemini-live-api",
+  "server-side-state",
+  "implicit-caching",
+  "agent-skills",
+  "coding-agent",
+  "native-audio",
+  "ephemeral-tokens",
+  "context-window-compression",
+  "background-execution",
+  "google-search-grounding",
+  "system-instructions"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Server-side state removes the client loop bookkeeping",
+   "detail": "With the Interactions API you pass the previous interaction ID and send only the new input. The server holds the history, so the client does not resend or append turns. The speakers say this also simplifies agent loops.",
+   "t": "11:30"
+  },
+  {
+   "idea": "Long agent runs should be async, not held-open HTTP",
+   "detail": "Agent calls can take minutes. The speaker says keeping connections open for more than about 10 seconds is poor practice. Background mode returns immediately, and the client polls or gets a webhook when the work is done.",
+   "t": "12:34"
+  },
+  {
+   "idea": "Server-held history helps cache hit rate",
+   "detail": "Stripping whitespace or editing history on the client breaks implicit caching. Letting the server keep the context keeps the prefix stable. The speakers say startups using it see two to three times better cache rates. They also admit small prompt edits can still break the cache.",
+   "t": "13:42"
+  },
+  {
+   "idea": "Put what the model cannot know in the skill, and link to the rest",
+   "detail": "The skill tells the agent which Gemini models exist, since the agent otherwise defaulted to an old model. Full API docs are not inlined. The skill links to Markdown docs that the agent fetches, so the skill does not need an update each time the API changes.",
+   "t": "23:40"
+  },
+  {
+   "idea": "Tool loop: run until the model stops requesting tools",
+   "detail": "The loop checks the interaction outputs for function calls, runs matching tools, sends the results back as a new interaction, and recurses. It stops when the model returns text. Thought signatures from reasoning models must be passed back in the same format.",
+   "t": "31:51"
+  },
+  {
+   "idea": "A system instruction fixed a tool-calling failure",
+   "detail": "The agent did not use its write-file tool until the speakers added a system instruction describing it as a coding agent with local file access. Explicit role and tool-use framing solved it. The speaker also says hallucinated weather answers are mostly a system-prompt problem.",
+   "t": "34:18"
+  },
+  {
+   "idea": "Native-audio Live API has few observability hooks",
+   "detail": "The model goes audio-token to audio-token rather than through a text pipeline, which gives low latency and natural barge-in. But transcripts and per-step rewrites are not exposed. The speaker says a cascaded pipeline is better for business use cases today.",
+   "t": "1:29:29"
+  },
+  {
+   "idea": "Ephemeral tokens let the browser connect directly",
+   "detail": "The server mints a short-lived token with the real API key and returns it to the client. The client opens the Live WebSocket itself, which avoids the extra hop through the server. Ephemeral tokens currently use the v1alpha API.",
+   "t": "1:14:03"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Chained interactions via previous ID",
+   "how": "Store the returned interaction ID and pass it as previous_interaction_id on each next call, so the server holds the history. Use interactions.get to walk back through the chain or branch from any earlier ID.",
+   "when": "Multi-turn agents where you want less client state handling and better cache hits. Be aware the free tier keeps interactions about one day and paid keeps them 55 days, and that context has no automatic compaction yet."
+  },
+  {
+   "name": "Async background runs with polling or webhooks",
+   "how": "Start the long agent task with background set to true, then poll for the result or subscribe to a webhook (the speaker says webhooks are coming).",
+   "when": "Agent or deep-research tasks that take minutes, where holding an HTTP connection is unreliable."
+  },
+  {
+   "name": "Skill that links to live docs",
+   "how": "Write a skill that covers only the model list, high-level behavior and gotchas, and points to a Markdown version of the docs that the agent fetches with web fetch or a file read.",
+   "when": "Packaging API knowledge for a coding agent when the API changes faster than the skill can be republished."
+  },
+  {
+   "name": "Tool loop with recursion",
+   "how": "Build tool definitions as JSON schemas, then for each output of type function call, execute the local function and send the result back. Recurse until there are no function calls.",
+   "when": "Any custom-tool agent on the Gemini API. Check that the model's tool names match your tool map to catch hallucinated tools."
+  },
+  {
+   "name": "Server-to-server Live proxy",
+   "how": "A backend (FastAPI in the example) holds the API key, opens the Live WebSocket to Gemini, and relays audio and video frames from the browser.",
+   "when": "When the API key must stay on the server. Accept the added hop latency."
+  },
+  {
+   "name": "Ephemeral token for direct browser connection",
+   "how": "The server calls the token endpoint with the real key and sends a short-lived token to the client. The client connects to the Live WebSocket directly with the token, and sends the setup message with model, tools and system instructions.",
+   "when": "Low-latency browser voice where you do not want the long-lived key on the client."
+  },
+  {
+   "name": "Context window compression for long Live sessions",
+   "how": "Enable the sliding-window context compression option so the session does not hit the time limit. Older context is dropped as the session goes on.",
+   "when": "Any Live session longer than the limits noted in the numbers section."
+  },
+  {
+   "name": "Voice persona through system instructions",
+   "how": "Set the accent and persona in the system instruction, for example asking for a friendly Irish accent on a fixed base voice. The model follows it because of its audio understanding.",
+   "when": "When the base voice list is too limited for the brand or persona."
+  },
+  {
+   "name": "Send a single image and then audio",
+   "how": "Send one image in real time, then stream audio. Do not stream frames that do not change.",
+   "when": "Voice coding or support assistants that look at one screen state at a time. The speaker estimates about 1,200 tokens per image."
+  }
+ ],
+ "tools": [
+  "Gemini Interactions API",
+  "Gemini Live API",
+  "Google AI Studio",
+  "Gemini 3 Flash / 3.1 Flash Live",
+  "Lyria 3",
+  "Nano Banana",
+  "Google Search grounding",
+  "uv",
+  "FastAPI",
+  "Context7",
+  "skills.sh",
+  "Antigravity",
+  "NVIDIA Parakeet"
+ ],
+ "numbers": [
+  {
+   "claim": "Cached input tokens are about 90% cheaper than uncached ones (speaker's figure for cache requests).",
+   "t": "13:42"
+  },
+  {
+   "claim": "Startups using the Interactions API report two to three times better implicit cache hit rates.",
+   "t": "13:42"
+  },
+  {
+   "claim": "Interaction storage: free tier keeps state about one day, paid tier keeps it 55 days.",
+   "t": "43:07"
+  },
+  {
+   "claim": "Without context compression, Live audio-only sessions are limited to about 15 minutes; audio-video sessions to about 2 minutes.",
+   "t": "1:25:28"
+  },
+  {
+   "claim": "Live API video input is capped at one frame per second.",
+   "t": "55:01"
+  },
+  {
+   "claim": "Gemini Live supports about 97 languages in preview, and handles code-switching such as Denglish.",
+   "t": "57:37"
+  },
+  {
+   "claim": "One image is about 1,200 tokens.",
+   "t": "1:38:28"
+  },
+  {
+   "claim": "The native voice set has about 30 voices.",
+   "t": "1:00:15"
+  },
+  {
+   "claim": "Speaker says keeping an HTTP connection open for more than about 10 seconds is poor practice.",
+   "t": "12:34"
+  }
+ ],
+ "hot_takes": [
+  "For many business voice use cases today, a cascaded STT-LLM-TTS pipeline is still the better bet because native audio gives little observability.",
+  "Skills should hold model lists and gotchas, and link to docs instead of copying them, since agents can fetch Markdown on demand.",
+  "Client-side context editing (stripping whitespace, trimming history) breaks implicit caching, so server-held state is the cheaper default."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The caching argument (server-held state gives better cache hits) is relevant to a cost-control layer in front of model calls, but it is a Gemini API point and not an AgentOS feature.",
+   "action": "Measure cache hit rate in the AgentOS proxy when a client resends full history versus sending a stable prefix, before adding any state-holding logic."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The skill-links-to-live-docs pattern and the step-by-step agent loop touch ProsHarness skill design, but the talk does not cover checkpointing or plans.",
+   "action": "Read the skill section at 23:40 and check whether any ProsHarness skill file copies docs that could be linked instead."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Directly relevant to context engineering: what belongs in a skill versus fetched docs, system-instruction framing that fixes tool use, and how history handling affects cache hits.",
+   "action": "Audit CLAUDE.md and skill files for copied reference docs and move them to linked sources, and check that the stable prefix is not edited between turns."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

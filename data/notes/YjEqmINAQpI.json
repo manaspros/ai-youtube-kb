@@ -1,0 +1,170 @@
+{
+ "one_line": "Tutorial on Winston, the Node.js logging library: levels, transports, JSON and printf formats, child and named loggers, error stacks, startTimer profiling, and shipping logs to Better Stack.",
+ "summary": "The unnamed Better Stack presenter walks through Winston, a Node.js logging library, starting from an empty npm project in VS Code. The video covers log levels (the default level is info, and less severe entries are dropped), transports (console, file, and remote), and per-transport levels. It then shows the JSON and cli formats, a custom printf format that needs the timestamp format, and how to attach key-value metadata with child loggers. Further sections cover error stack traces, named loggers with defaultMeta for separate services, and basic profiling with startTimer and done. The last section adds the community Better Stack (Logtail) transport and demonstrates live tail and a numeric search over an indexed duration key. The content is a clear, practitioner-level how-to. It is a tool walkthrough with light vendor promotion for Better Stack, and the hard-coded token is shown only for the demo.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "demo",
+ "topics": [
+  "observability",
+  "dev-tools"
+ ],
+ "tags": [
+  "winston",
+  "nodejs",
+  "logging",
+  "structured-logging",
+  "log-levels",
+  "transports",
+  "child-logger",
+  "defaultMeta",
+  "error-stack",
+  "profiling",
+  "log-centralisation",
+  "better-stack"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Each Winston logger can have several transports (console, file, remote service, database), and each transport can have its own level.",
+   "detail": "Example: error-only output to a file while info and debug also go to the console. Winston ships with community transports for MongoDB, Syslog, Telegram, MySQL and Better Stack.",
+   "t": "1:19"
+  },
+  {
+   "idea": "Level filtering happens at the logger and at the transport. Entries less severe than the configured level are discarded.",
+   "detail": "The default level is info. Levels run error, warn, info, http, verbose, debug, silly, with lower numbers meaning more severe.",
+   "t": "5:09"
+  },
+  {
+   "idea": "The default output is JSON. The cli format suits the console, and printf gives a custom string but needs the timestamp format added to combine, or the timestamp prints as undefined.",
+   "detail": "Formats are composed with winston.format.combine, using timestamp, printf, prettyPrint and json.",
+   "t": "8:59"
+  },
+  {
+   "idea": "Key-value context can be attached once with logger.child(...) so every entry from that child carries the fields without passing them to each call.",
+   "detail": "The demo uses an HTTP-style request object with method and an authenticated boolean.",
+   "t": "12:55"
+  },
+  {
+   "idea": "The errors format with stack: true adds stack traces to error entries.",
+   "detail": "It is applied inside format.combine on the logger.",
+   "t": "15:25"
+  },
+  {
+   "idea": "Named loggers created with winston.loggers.add and fetched with winston.loggers.get give each service its own config. defaultMeta tags every entry with a service key.",
+   "detail": "The demo has an order logger with a file and console output, and a payment logger that writes JSON only to a file.",
+   "t": "16:43"
+  },
+  {
+   "idea": "Profiling uses logger.startTimer(), then profiler.done({message}). The output includes a duration in milliseconds.",
+   "detail": "It works with any Winston logger, and the demo measures a simulated request handler.",
+   "t": "22:44"
+  },
+  {
+   "idea": "Centralisation uses the Better Stack community transport. The presenter says the token should come from process.env in production, not be hard-coded as in the demo.",
+   "detail": "A source is created in the Better Stack UI as a Node.js platform, which gives a source token, and the transport is added alongside the file transport.",
+   "t": "25:14"
+  },
+  {
+   "idea": "Once logs are centralised and keys are indexed, numeric comparisons such as duration greater than 500 can find slow requests and feed charts, dashboards and alerts.",
+   "detail": "A 975.4 ms request matched the greater-than-500 search, and a threshold of 1000 returned no matches.",
+   "t": "28:54"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Basic Winston logger with console and file transports",
+   "how": "npm init -y; npm install winston. Then const winston = require('winston'); const logger = winston.createLogger({ level: 'debug', format: winston.format.json(), transports: [ new winston.transports.Console(), new winston.transports.File({ filename: 'app.log' }) ] }); then logger.info('...') and logger.error('...').",
+   "when": "Starting any Node.js service that needs structured logs in both the terminal and a file."
+  },
+  {
+   "name": "Per-transport level",
+   "how": "Pass level on the transport: new winston.transports.File({ filename: 'app.log', level: 'error' }). The logger's own level still applies first.",
+   "when": "Sending only errors to a file, or sending everything to the console."
+  },
+  {
+   "name": "Readable console output and a custom timestamped line",
+   "how": "Use the cli format on the console, or winston.format.combine(winston.format.timestamp(), winston.format.printf(info => `${info.timestamp} ${info.level} ${info.message}`)). Add winston.format.prettyPrint() to the combine call for indented JSON in the terminal. Keep JSON for files and aggregators.",
+   "when": "Local development where people read the console, while files stay machine-parseable."
+  },
+  {
+   "name": "Child logger for request-scoped fields",
+   "how": "const child = logger.child({ method: 'GET', isAuthenticated: false }); then call child.info('...') and child.error('...') with no extra object argument.",
+   "when": "Many log calls in one request or component share the same context fields."
+  },
+  {
+   "name": "Stack traces for errors",
+   "how": "Add winston.format.errors({ stack: true }) to format.combine, then log the Error object through logger.error.",
+   "when": "You want stack traces in error entries, for example on 5xx responses."
+  },
+  {
+   "name": "Named loggers per service",
+   "how": "winston.loggers.add('orderLogger', { level, format, transports: [...], defaultMeta: { service: 'order service' } }). Fetch with const orderLogger = winston.loggers.get('orderLogger'). Use a different file per logger, such as orders.log and payments.log.",
+   "when": "Separate service boundaries need different outputs, severity levels or metadata."
+  },
+  {
+   "name": "Timing a block of code",
+   "how": "const profiler = paymentLogger.startTimer(); ...work...; profiler.done({ message: `request ${path} processed` }). The entry gets a duration field in milliseconds.",
+   "when": "Adding latency measurements to request handlers without a separate metrics library."
+  },
+  {
+   "name": "Shipping logs to Better Stack with the Winston transport",
+   "how": "Create a source on the Better Stack logs page (platform: JavaScript / Node.js) and copy its source token. Install the packages named in the Better Stack Winston docs (the names are not spoken in the video). Create a Logtail client with the token, then new Logtail transport with that client, and add it to the transports array. Read the token from process.env in production, as the presenter advises.",
+   "when": "You need a hosted search, live tail and alerts over structured logs."
+  }
+ ],
+ "tools": [
+  "Winston (Node.js logging library, version not stated)",
+  "Node.js",
+  "npm",
+  "VS Code",
+  "GitHub (Winston readme)",
+  "Better Stack (log service, with its Winston/Logtail transport)",
+  "Winston community transports: MongoDB, Syslog, Telegram, MySQL"
+ ],
+ "numbers": [
+  {
+   "claim": "Video length 30:28. Default Winston logger level is info.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Log levels in order of severity: error, warn, info, http, verbose, debug, silly.",
+   "t": "2:35"
+  },
+  {
+   "claim": "Data retention on the free Better Stack plan is three days by default.",
+   "t": "25:14"
+  },
+  {
+   "claim": "Profiling demo loops 0 to 1 billion, multiplying each value by 2, to simulate latency.",
+   "t": "22:44"
+  },
+  {
+   "claim": "Profiled request took 975.4 ms. A greater-than-500 search matched it, and a greater-than-1000 search returned nothing.",
+   "t": "28:54"
+  }
+ ],
+ "hot_takes": [
+  "Better Stack promotes its own hosted log service in a tutorial that is framed as generic Winston instruction. The Better Stack transport and source setup are shown as the main next step.",
+  "The presenter warns against hard-coding tokens, but the demo does it anyway, so the warning matters more than the example.",
+  "The video reads as a solid intro to Winston. It does not cover log rotation, performance cost, or sampling, and the presenter says those may come later."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Structured JSON logs with per-request context and duration fields are a useful pattern for the L4 observability stack, but this video is a Node.js-only logging introduction and gives no distributed-systems or benchmark content.",
+   "action": "If any AgentOS service is Node.js, add a child logger with a request id and a startTimer duration to a single handler, then check that the JSON entries can be queried in the existing observability stack."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI, and this Node.js logging tutorial does not address checkpoint, plan or approval flows.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

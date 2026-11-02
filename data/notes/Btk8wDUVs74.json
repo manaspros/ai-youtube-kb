@@ -1,0 +1,147 @@
+{
+ "one_line": "monday.com's Omri Bruchim and Tomer Ast argue agents fail because they lack understanding, not data, and describe a two-speed \"world model\" of the user (slow learned profile plus fast live signals) built ahead of time.",
+ "summary": "The speakers, both engineering managers at monday.com, argue that AI assistants already have access to the user's data (boards, tasks, email, Slack) but lack understanding of how those items connect and what matters now. They frame the shift as moving from a system of record to a system of context. Their proposed fix is the \"Monday World Model\": meaning and relationships are computed ahead of time, not at query time. The model has three parts: how the user's work is structured, a live snapshot of urgent signals, and a durable profile learned over time. A slow engine over weeks of activity builds the profile, while a fast engine over a recent window computes live signals, a split they tie to complementary learning systems and lambda architecture. At serve time only a thin slice is recomputed and checked against live data, and anything unverified falls back to the last verified context, with isolated sources so one bad feed cannot break the rest. The talk ends with a \"what should I focus on today\" example built from breadcrumbs, and the speakers admit the model trails the live world, struggles with cold-start users, and has to separate signal from noise. No benchmarks or evals are shown.",
+ "speakers": [
+  "Omri Bruchim",
+  "Tomer Ast"
+ ],
+ "orgs": [
+  "monday.com"
+ ],
+ "format": "talk",
+ "topics": [
+  "memory",
+  "context-engineering",
+  "data-engineering",
+  "product-ux"
+ ],
+ "tags": [
+  "world-model",
+  "system-of-context",
+  "monday-sidekick",
+  "two-speed-data-model",
+  "lambda-architecture",
+  "user-profile",
+  "proactive-agents",
+  "graceful-degradation",
+  "precompute",
+  "personal-assistant"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents fail on focus questions because they lack understanding, not data or retrieval.",
+   "detail": "Assistants can reach every board, task, email and Slack message, yet give generic answers. The speakers call the gap missing understanding and say retrieval is not the fix.",
+   "t": "1:12"
+  },
+  {
+   "idea": "Three causes of the gap: agent gap, records without meaning, and meaning built too late.",
+   "detail": "The agent is good at tasks but does not know the user's priorities. Logs record what happened but not why. Meaning has to be built ahead of time, because building it at question time is too late.",
+   "t": "5:31"
+  },
+  {
+   "idea": "The world model has three parts: work structure, live snapshot, and a learned user profile.",
+   "detail": "Structure covers entities and dependencies (who blocks whom, how a Slack message links to a task). The snapshot holds live signals such as overdue or urgent items and recent collaborators. The profile holds decisions, outcomes, rhythms and goals distilled over time.",
+   "t": "7:28"
+  },
+  {
+   "idea": "Two engines on different clocks: slow for the user, fast for the day.",
+   "detail": "The slow engine reads weeks of activity and reinforces patterns each time they hold. The fast engine reads a short recent window and recomputes live signals often. The speakers tie this split to complementary learning systems in neuroscience and to lambda architecture in data systems.",
+   "t": "8:50"
+  },
+  {
+   "idea": "Compute offline, serve a thin slice, and fall back to verified context when live data is missing.",
+   "detail": "Both engines precompute ahead of time. At serve time only recent activity is recomputed and checked against live data. Unverified parts fall back to the last verified context, so the system degrades instead of failing.",
+   "t": "11:09"
+  },
+  {
+   "idea": "The model compounds with use, but it has real limits.",
+   "detail": "Each day of data sharpens the profile and new sources are cheap to add. The speakers admit the model always trails the live world, new users have no data to reason from, and signals carry bias, so separating important items from noise is the hardest part.",
+   "t": "12:30"
+  },
+  {
+   "idea": "Worked example: answering 'what should I focus on right now' from breadcrumbs.",
+   "detail": "Calendar patterns, recent Slack messages, meeting action items and emails are processed offline. The slow layer gives a profile (role, projects, working hours). The fast layer finds open commitments, such as an unanswered VP email, from the last day or few days.",
+   "t": "13:55"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Two-speed user model (slow profile + fast signals)",
+   "how": "Run a slow batch job over weeks of activity to build a durable user profile with reinforcement, and a fast job over a short window to compute live urgency and commitments. Merge both into one served context view.",
+   "when": "When an assistant must know a user's stable habits and also what matters today, and recomputing everything on each request is too slow or too costly."
+  },
+  {
+   "name": "Precompute meaning ahead of time, recompute a thin slice at serve time",
+   "how": "Build entities, relationships and snapshots offline. At request time, recompute only recent activity and verify key facts against live sources before handing context to the agent.",
+   "when": "When the answer needs cross-source understanding and runtime retrieval alone would be too late or too shallow."
+  },
+  {
+   "name": "Source isolation with fallback to last verified context",
+   "how": "Keep each data source in its own pipeline so one bad feed cannot break others. If a live check fails, serve the last verified version of that context.",
+   "when": "When many connectors feed one model and partial staleness is acceptable but total failure is not."
+  },
+  {
+   "name": "Urgency gating for proactive notifications",
+   "how": "Score the fast-layer signals for urgency, then notify only above a threshold and stay silent otherwise.",
+   "when": "When an agent can interrupt the user and noisy alerts would erode trust."
+  }
+ ],
+ "tools": [
+  "monday.com Sidekick",
+  "Monday Vibe",
+  "Monday Agent",
+  "Monday Workflows",
+  "Slack",
+  "Claude",
+  "Gemini",
+  "GPT"
+ ],
+ "numbers": [
+  {
+   "claim": "monday.com platform used by hundreds of thousands of teams (scale claim, not a benchmark).",
+   "t": "2:42"
+  },
+  {
+   "claim": "The data model collects thousands of data points per user (item status changes, activity logs, messages, meetings).",
+   "t": "7:28"
+  },
+  {
+   "claim": "Slow engine works over a long window of weeks of activity; fast engine works over a short window of about a day or a few days.",
+   "t": "8:50"
+  },
+  {
+   "claim": "Anecdote only: a generic assistant suggested the speaker go to the gym when asked what to focus on. No measured results are given.",
+   "t": "1:12"
+  }
+ ],
+ "hot_takes": [
+  "The bottleneck was never data or retrieval; it is understanding, and most people confuse the two.",
+  "Context must be built ahead of time, because building meaning at question time is too late.",
+  "The most capable model in the world does not understand you without offline processing of your work data.",
+  "A bigger prompt or a longer context window is not the answer."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The two-speed split (slow profile, fast recent signals) and serve-time fallback map directly onto MemoryMesh's tiered cross-session memory, though the talk gives no implementation detail.",
+   "action": "Prototype MemoryMesh's cross-session tier as a slow batch-built profile plus a fast recent-window layer. Recompute only the fast layer per request and fall back to the last verified profile when a source is stale."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The urgency gate for proactive notifications (notify only above a threshold, stay silent otherwise) could inform phone-driven approval pings.",
+   "action": "Add an urgency score to ProsHarness approval requests and send a phone push only above a threshold."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The core argument, that meaning should be precomputed rather than stuffed into runtime prompts, bears directly on context-engineering choices such as CLAUDE.md and spec design.",
+   "action": "Read the 'build meaning ahead of time' section (about 5:31 to 7:28) and compare it with how we currently load project context into Claude Code sessions."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

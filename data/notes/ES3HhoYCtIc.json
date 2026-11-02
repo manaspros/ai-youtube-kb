@@ -1,0 +1,153 @@
+{
+ "one_line": "Better Stack hands-on test of TEN Framework, an open-source runtime for real-time voice agents built as graphs of extensions, focused on whether interruptions (barge-in) work.",
+ "summary": "The presenter tests TEN Framework, an open-source runtime for real-time multimodal voice agents, with interruption (barge-in) as the main check. TEN models an agent as a graph of extensions (STT, LLM, TTS, VAD, memory, tools) instead of a linear STT to LLM to TTS chain, so audio can keep streaming while the model thinks and the agent can stop speaking, cancel generation, or run tools in parallel. Setup needs API keys for Agora (real-time audio), Deepgram (speech recognition), an LLM (OpenAI in the demo), and ElevenLabs (voice), then a single docker compose up; the first run takes a few minutes. In the demo the agent stopped when interrupted, but its answers were off-topic (it confused \"TEN\" with TensorFlow), and the presenter says the Deepgram preset was best while the XAI presets were weaker. The TEN Manager graph designer lets you click into each node to see how data flows, which the presenter values for debugging real-time pipelines. The verdict is that TEN suits production or serious prototypes that need natural turn-taking, low latency, multimodal input or flexible deployment, but is too heavy for a simple text agent, and LiveKit Agents or Pipecat will get a basic voice prototype running faster.",
+ "speakers": [
+  "Unnamed Better Stack presenter"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Agora",
+  "Deepgram",
+  "OpenAI",
+  "ElevenLabs",
+  "xAI",
+  "LiveKit",
+  "Pipecat"
+ ],
+ "format": "review",
+ "topics": [
+  "voice-multimodal",
+  "agent-architecture"
+ ],
+ "tags": [
+  "TEN Framework",
+  "voice agents",
+  "barge-in",
+  "interruptions",
+  "turn detection",
+  "VAD",
+  "graph of extensions",
+  "Docker Compose",
+  "Agora RTC",
+  "Deepgram",
+  "ElevenLabs",
+  "TEN Manager",
+  "LiveKit Agents",
+  "Pipecat",
+  "open source"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Interruption handling is the real test of a voice agent. The presenter starts speaking mid-answer to see whether the agent stops and listens or keeps talking.",
+   "detail": "The demo judges TEN mainly on barge-in. The agent did cut off when interrupted, but its content was poor in the first run.",
+   "t": "0:00"
+  },
+  {
+   "idea": "TEN models an agent as a graph of extensions rather than a linear pipeline. Each extension does one job: STT, LLM, TTS, VAD, memory, tools.",
+   "detail": "Extensions can be written in Python, C++, Go, Rust or TypeScript. The graph lets pieces run concurrently, which matters when audio keeps streaming while the model is thinking.",
+   "t": "1:09"
+  },
+  {
+   "idea": "A linear STT to LLM to TTS chain breaks on real conversation. Users interrupt, so the agent may need to stop speaking, cancel generation, detect silence, or call tools in parallel.",
+   "detail": "The presenter argues this is why TEN treats agents as graphs. The claim is architectural reasoning, not a benchmark.",
+   "t": "1:09"
+  },
+  {
+   "idea": "Bring-up needs four external services and one Docker command. Keys are needed for Agora, Deepgram, an LLM and ElevenLabs.",
+   "detail": "TEN ships with several preset configurations. The presenter picks the Deepgram TTS preset and connects from the browser. The first Docker run takes a few minutes.",
+   "t": "2:32"
+  },
+  {
+   "idea": "Output quality is the weak spot in the demo. The agent answered a question about TEN with TensorFlow, then apologized and stopped after being cut off.",
+   "detail": "The presenter says the voice stack works but conversation quality is uneven. He blames the preset and the model choice, and ranks the XAI presets below Deepgram.",
+   "t": "2:32"
+  },
+  {
+   "idea": "The TEN Manager graph designer shows the extension graph and lets you open each node, such as the Agora audio-frame node, to inspect data flow.",
+   "detail": "The presenter values this for debugging real-time systems, where it helps locate where data flows and where latency builds. He says it is not needed for drag-and-drop building.",
+   "t": "4:01"
+  },
+  {
+   "idea": "VAD and turn detection make the biggest difference to perceived conversation quality. Users judge the agent by whether it listens and answers at the right time, not by the architecture.",
+   "detail": "The presenter's own experience with the demo supports this, but it is one anecdotal run.",
+   "t": "5:07"
+  },
+  {
+   "idea": "TEN fits production or serious prototypes that need interruptions, low latency, multimodal input or flexible deployment. It is too much setup for a simple text agent or a quick voice prototype.",
+   "detail": "The presenter's alternatives for a fast prototype are LiveKit Agents and Pipecat.",
+   "t": "7:22"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Graph-of-extensions voice agent",
+   "how": "Split the agent into separate extensions (speech recognition, VAD, LLM, TTS, memory, tools) and wire them as a graph, rather than a single STT to LLM to TTS chain. Let audio stream in while the LLM runs, so the agent can cancel generation or stop speaking when the user talks.",
+   "when": "Real-time voice agents where users interrupt, tools run in parallel, or the stack has several swappable models."
+  },
+  {
+   "name": "Barge-in test for voice agents",
+   "how": "Start a conversation, let the agent begin a long answer, then interrupt mid-sentence. Check whether it stops and listens, whether the next turn works, and whether the reply stays relevant. Repeat with several presets.",
+   "when": "Before trusting any voice stack. Interruption behavior is the first thing to test, before features or setup."
+  },
+  {
+   "name": "Local TEN bring-up with Docker Compose",
+   "how": "Add API keys for Agora (real-time audio), Deepgram (speech recognition), an LLM provider (OpenAI in the demo) and ElevenLabs (voice). Start everything with a single docker compose up from the TEN repo, wait a few minutes on the first run, then open the web UI and pick a preset. The video does not show the repo URL, key file names or compose flags.",
+   "when": "Quick evaluation of TEN on a dev machine. Check the repo README for the exact key and config file names."
+  },
+  {
+   "name": "Graph-based debugging in TEN Manager",
+   "how": "Open the TEN Manager designer during a live session. Click each node (for example the Agora audio-frame node) to see what flows through it and where it slows down.",
+   "when": "Diagnosing latency, dropped audio or wrong turn-taking in a real-time pipeline."
+  }
+ ],
+ "tools": [
+  "TEN Framework (open-source real-time voice agent runtime, version not stated)",
+  "TEN Manager (visual graph designer)",
+  "Agora (real-time audio / RTC)",
+  "Deepgram (speech recognition and TTS preset)",
+  "OpenAI (LLM in the demo)",
+  "ElevenLabs (TTS)",
+  "XAI (alternative preset)",
+  "Docker Compose",
+  "LiveKit Agents (alternative, named by presenter)",
+  "Pipecat (alternative, named by presenter)",
+  "Python, C++, Go, Rust, TypeScript (extension languages)",
+  "SIP telephony, ESP32 hardware, speaker diarization (example configs named)"
+ ],
+ "numbers": [
+  {
+   "claim": "First docker compose up run takes a few minutes; no latency, interruption timing or accuracy numbers are shown.",
+   "t": "2:32"
+  }
+ ],
+ "hot_takes": [
+  "Turn detection and VAD matter more to conversation quality than the architecture (anecdotal, one demo run).",
+  "A graph-based runtime is worth its setup cost only once an agent gets complex. For a simple voice or text agent it is overkill.",
+  "For a fast voice prototype, LiveKit Agents or Pipecat will get there faster than TEN.",
+  "The Deepgram preset is the best of the bundled configs; the XAI presets are weaker for this use case (single-run impression)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "TEN's extension-graph design resembles AgentOS's manifest-toggled pillars, but voice and realtime audio are outside the current AgentOS scope.",
+   "action": "Only if realtime voice traffic enters AgentOS scope, compare TEN's graph-of-extensions with the pillar manifest to see whether the pattern transfers."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness plans phone-driven approvals, and TEN's cancel-on-interrupt model is a relevant pattern if approvals ever become voice-based.",
+   "action": "If ProsHarness adds voice or phone approvals, study how TEN cancels in-flight generation when the user speaks."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Useful reference for how production voice agents handle barge-in, VAD and turn detection, a pattern that comes up across agent designs.",
+   "action": "Skim the TEN repo's VAD and turn-detection docs before designing any voice-agent feature."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

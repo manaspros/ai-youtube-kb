@@ -1,0 +1,143 @@
+{
+ "one_line": "shadcn's new agent-first linter for Tailwind v4 design systems. It turns design-system rules into lint errors that AI agents can fix against, which the presenter says cut violations to zero in his eight-task test.",
+ "summary": "The video walks through shadcn's new linter, a plugin for Oxlint or ESLint that enforces a Tailwind v4 design system on code written by AI agents. The presenter argues that Tailwind class names are plain strings, so TypeScript never flags a padding override, a raw color, or an off-scale value, and that markdown rule files are too weak to stop agents drifting off-system. In his own test of eight tempting tasks, every model he ran produced design-system violations, and with the linter enabled the count dropped to zero. The linter ships six rules (no-restyle with layout allowed, no raw colors, no arbitrary values, no inline styles, no unknown classes, static classes only). Its error messages read the actual CVA variants and theme tokens, so the agent gets a specific fix instead of having to load the full design docs. Per-component \"contracts\" selected by a regex on the component name allow finer control, such as changing a card title's size but not its weight, and custom messages can carry project guidance. Limits: it does not check plain CSS, does not trace parent selectors more than one hop, cannot judge whether a new theme token belongs, needs a component API with real variants, and has no Biome plugin yet.",
+ "speakers": [],
+ "orgs": [
+  "shadcn",
+  "Tailwind CSS",
+  "Oxlint",
+  "ESLint",
+  "Biome"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "dev-tools",
+  "vibe-coding-app-building"
+ ],
+ "tags": [
+  "shadcn",
+  "tailwind",
+  "linter",
+  "oxlint",
+  "eslint",
+  "design-system",
+  "agent-guardrails",
+  "cva",
+  "design-tokens",
+  "biome"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Tailwind class names are plain strings, so nothing in TypeScript stops an agent from overriding a component's padding, adding a raw color, or using an off-scale value.",
+   "detail": "Violations like pink-500 on a themed component or 13px padding on a 12-16 spacing scale compile and run without errors, and today are caught only by human review or by markdown rules an agent may ignore.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Markdown design rules are weaker than a linter for enforcement.",
+   "detail": "The presenter ran eight tasks designed to tempt agents off-system (add a delete button in pink with pill corners, match a stats card mock with 13px padding and 10px radius, make the pricing card pop). Every model he tested violated the system; with the linter on, violations went to zero. The test set and models were not named in the video.",
+   "t": "0:53"
+  },
+  {
+   "idea": "The linter's error messages come from the project's own config, not hard-coded lists, so the agent gets a specific fix.",
+   "detail": "For example, a restyle error on a button points to the size variants defined in the component's CVA setup, and a non-theme color error lists the allowed theme colors. Presenter says this also saves tokens, because the agent does not have to load the full design markdown.",
+   "t": "2:00"
+  },
+  {
+   "idea": "Arbitrary values are mapped to the nearest theme token.",
+   "detail": "13px padding is flagged with a suggestion to use the p-3.25 token; rounded-[10px] is flagged with a suggestion to use rounded-lg. For an off-palette background color, the error names the closest theme token.",
+   "t": "3:21"
+  },
+  {
+   "idea": "Contracts give per-component control, and custom messages carry project guidance.",
+   "detail": "A contract is a per-component rule matched by a regex on the component name, e.g. allow a card title's size but not font family or weight, and allow a content block's spacing but not its typography. Messages support placeholders filled from code (such as the button's size list) and a global note can point to design docs.",
+   "t": "4:29"
+  },
+  {
+   "idea": "Important limits: the linter checks rules, not whether a change is good design.",
+   "detail": "It cannot see plain CSS or @apply in global stylesheets, follows class values only one hop within a file, and treats a brand-new theme token as valid, so a newly invented color passes. Human review of tokens and variants is still needed. It also needs a component API with real variants, and it currently runs only on Oxlint and ESLint (a Biome plugin is an open issue).",
+   "t": "5:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Lint the design system instead of prompting it",
+   "how": "Install the shadcn linter as a plugin for Oxlint or ESLint on a Tailwind v4 project (not limited to shadcn). Enable the no-restyle rule with layout allowed so pages can set margin, width, flex and hidden but not padding, color, typography, shape, effects or motion. Add the remaining rules as needed: no raw colors, no arbitrary values, no inline styles, no unknown classes, and static classes only. Config key names are not shown on screen.",
+   "when": "When AI agents are writing UI code and you need design-system drift to fail deterministically, not rely on a markdown rules file the agent can ignore."
+  },
+  {
+   "name": "Use lint messages as the agent's fix instructions",
+   "how": "Let error text carry the fix: name the allowed variants (read from CVA), the nearest theme token for an arbitrary value, or the allowed theme colors. The agent then fixes the code from the message and does not need the full design doc in context.",
+   "when": "When the agent's context is expensive or the design docs are long, and you want cheaper, more targeted corrections."
+  },
+  {
+   "name": "Per-component contracts",
+   "how": "Define contracts that match component names with a regex. Each contract lists which style categories are allowed or blocked for that component, e.g. allow text size on a card title but block font family and weight, or allow spacing on a content block but block typography.",
+   "when": "When some components need controlled exceptions and a blanket rule is too strict or too loose."
+  },
+  {
+   "name": "Custom messages and a global note",
+   "how": "Attach a message with placeholders to each rule or contract, filled from code (such as the button size list or the parent layout hint). Add a global note that is appended to every finding, e.g. a link to the design guidelines.",
+   "when": "When you want the agent to get project-specific guidance inside the error itself."
+  },
+  {
+   "name": "Strict component APIs as a prerequisite",
+   "how": "Build components with real variants (CVA or similar) so the linter has options to suggest. A component that accepts any className with no variants gives the linter nothing to recommend.",
+   "when": "Before adopting the linter, check that your component APIs are strict enough to enforce against."
+  }
+ ],
+ "tools": [
+  "shadcn linter (shadcn's new Tailwind design-system linter, no version stated)",
+  "Oxlint",
+  "ESLint",
+  "Tailwind CSS v4",
+  "shadcn/ui",
+  "CVA (class-variance-authority, read by the linter for variant lists)",
+  "Biome (no plugin yet; open GitHub issue)",
+  "Starlex (transcribed name; presenter cites it as the alternative people switch to)"
+ ],
+ "numbers": [
+  {
+   "claim": "Eight tasks designed to tempt agents off the design system; every model tested produced violations without the linter and zero with it. Models and exact counts are not shown.",
+   "t": "0:53"
+  },
+  {
+   "claim": "Linter ships six rules: no-restyle (with layout allowed), no raw colors, no arbitrary values, no inline styles, no unknown classes, and static-class enforcement.",
+   "t": "2:00"
+  },
+  {
+   "claim": "Example token mappings: 13px padding maps to p-3.25 (the scale is cited as running 12 to 16), and 10px radius maps to rounded-lg.",
+   "t": "3:21"
+  }
+ ],
+ "hot_takes": [
+  "The zero-violation claim comes from one unnamed eight-task test run by the presenter, with no models, counts or method published in the video, so treat it as anecdotal.",
+  "Markdown design rules alone are not enough for agents. Deterministic linting with agent-readable error messages is a better guardrail than prompt-only rules.",
+  "The linter checks conformance, not taste: it cannot decide whether a new color or variant belongs in the system, so human review of tokens is still required.",
+  "The linter only helps if the design system already exists with strict, variant-based component APIs. Teams without that get little from it."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The lesson that deterministic checks with agent-readable error messages beat prompt-only rules maps to AgentOS exec-gate guardrails. This is a general pattern, not a direct feature.",
+   "action": "Check whether Crucible's exec-gate guardrails return error messages that name the allowed options, so the agent can self-correct without loading policy docs."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The video is about UI code linting. It has no bearing on ProsHarness checkpoints, critique, scheduling or credential handling.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Lint-style error messages that name the allowed values can replace loading long style docs into agent context. This is a cheaper pattern for agent-written code in any repo.",
+   "action": "When writing repo rules for coding agents, prefer a linter or check script whose error text lists the allowed options over a long markdown style guide."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

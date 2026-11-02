@@ -1,0 +1,254 @@
+{
+ "one_line": "Compares hardware routes to 512GB for local LLMs, arguing KV-cache bytes per token, not file size, decides whether full context fits, with cost, speed and API break-even math.",
+ "summary": "The video takes the \"512GB for local AI\" headline and tests it against full context. The key argument is that a model's download size is only part of its runtime memory: the KV cache grows with every token in the conversation and lives in the same fast memory, and its size per token varies about 100x across the models discussed. Using that, the speaker prices and benchmarks each route: Apple Mac Studio (M5 Ultra, M3 Ultra), four NVIDIA DGX Sparks, four RTX Pro 6000 cards (buy or rent), DIY CPU-RAM builds, used AMD MI50 cards, and AMD Strix Halo mini PCs. DeepSeek V4.1 Flash is the only model the 512GB headline mostly covers at full context, partly because its 196B-parameter Engram lookup table can stay on SSD. GLM 5.3 and Meta's Muse Spark do not fit comfortably at 1M context in 512GB. The closing section does API-versus-owned break-even math (about 17 years for four Sparks at one user, about 4.3 years at 16 sessions) and concludes that owning hardware pays off mainly for private, busy workloads. Many figures are the speaker's estimates or pre-release pricing, and several are from owner reports rather than the speaker's own tests.",
+ "speakers": [
+  "Kai (channel host, not named in transcript)"
+ ],
+ "orgs": [
+  "Meta",
+  "DeepSeek",
+  "Apple",
+  "NVIDIA",
+  "AMD",
+  "Mia AI Lab",
+  "Local Inference Lab",
+  "Hugging Face",
+  "RunPod",
+  "OpenCode",
+  "MiniForum"
+ ],
+ "format": "review",
+ "topics": [
+  "inference-serving",
+  "local-ai",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "kv-cache",
+  "context-window",
+  "vram-budgeting",
+  "local-llm",
+  "deepseek-v4",
+  "glm-5.3",
+  "muse-spark",
+  "dgx-spark",
+  "mac-studio",
+  "rtx-pro-6000",
+  "prompt-caching",
+  "api-vs-owned-break-even",
+  "engram",
+  "dwarfstar"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Model file size is not runtime memory. The KV cache grows with every token of context and lives in the same fast memory as the weights, so full context has to be priced separately.",
+   "detail": "The speaker says the 512GB headline counts the download, and that a 476GB figure reported for a DGX Spark setup is the download size, not what the model needs during a real conversation.",
+   "t": "2:36"
+  },
+  {
+   "idea": "KV-cache bytes per token varies about 100x between models, and that sets the memory budget more than the weights do.",
+   "detail": "DeepSeek V4.1 Flash is about 890 bytes per token (under 1GB at 1M tokens). Muse Spark Open is about 64KB per token (about 69GB at 1M). GLM 5.3 at 16-bit is about 88KB per token (about 94GB at 1M).",
+   "t": "3:46"
+  },
+  {
+   "idea": "DeepSeek's Engram lookup table can stay on disk, so resident memory drops to the main weights plus context.",
+   "detail": "The speaker says the model card splits the download into roughly 552B main parameters and 196B Engram parameters. A 4-bit build keeps about 294GB of main weights, and about 295GB total with a 1M-token context. Engram is read row by row from SSD by the DwarfStar engine.",
+   "t": "6:03"
+  },
+  {
+   "idea": "On a Mac, the GPU's default memory allowance is about three quarters of total RAM, and the override resets on reboot.",
+   "detail": "A 512GB Mac gets about 384GB by default. GLM 5.3 at 4-bit (435GB) and Muse (471GB) do not load without raising the limit from a terminal, which the speaker says resets on every restart. DeepSeek (294GB) fits under the default.",
+   "t": "7:18"
+  },
+  {
+   "idea": "Prefill cost is the hidden latency. Prompt caching pays it once per session, but any change to the context pays it again.",
+   "detail": "On an M3 Ultra, a 62k-token prompt read at about 813 tok/s, so a 1M-token prompt takes about 22 minutes before the first output token. Follow-ups hit the server's cache: 21s for a 16k first read, then 3s.",
+   "t": "8:25"
+  },
+  {
+   "idea": "Compressing the KV cache can cost quality, and the speaker treats it as a risk to measure, not a free saving.",
+   "detail": "A GLM 5.2 owner on four Sparks ran 32k tokens at 16-bit notes, 64k at 8-bit, and 100k at 4-bit. At 100k, TerminalBench 2.1 scored 70.8%, against 81 for the full model. The gap mixes weight and KV compression, so the speaker says it cannot be isolated.",
+   "t": "17:09"
+  },
+  {
+   "idea": "Owning hardware only beats API pricing when it runs private workloads near full utilization.",
+   "detail": "Four DGX Sparks ($27,800) at 87.7 tok/s for one user would write about 2.77B tokens a year. At the quoted DeepSeek API price that is about $1,659 a year, plus about $1,122 a year in electricity, so payback takes about 17 years. Running all 16 sessions shortens payback to about 4.3 years.",
+   "t": "19:53"
+  },
+  {
+   "idea": "Decision order: pick the model first, then compute its context cost, then size the hardware. Ask any vendor for the KV-cache bytes per token.",
+   "detail": "The speaker's rule of thumb is that a box quote without a KV-cache figure has not done the math. For GLM 5.3 the speaker suggests the 320B Flash variant or a shorter context, and for Muse the API until hardware prices fall.",
+   "t": "21:01"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Memory budget formula for local serving",
+   "how": "Budget = resident weights + (KV bytes per token x context tokens) + runtime overhead + headroom. Example from the video: GLM 5.3 4-bit weights (435GB) plus 1M tokens at 16-bit notes (about 88GB) is about 523GB, which already exceeds 512GB before the engine's own overhead. Look up the KV bytes per token in the model card before buying.",
+   "when": "Before choosing a model or hardware for a target context length, and when someone claims a box runs a model at full context."
+  },
+  {
+   "name": "Keep a lookup-table component on SSD (Engram-style)",
+   "how": "Mia AI Lab's recipe for DeepSeek across four DGX Sparks keeps the roughly 189GB Engram table on NVMe and never loads it into RAM. The DwarfStar engine reads only the rows each token needs, like an index at the back of a book, so the table never sits in fast memory.",
+   "when": "When a model ships a large, sparsely accessed table (lookup or Engram-style memory) that would otherwise take up VRAM or RAM."
+  },
+  {
+   "name": "Leave allocation headroom on unified-memory nodes",
+   "how": "The Spark owner's rule: do not push allocation above about 92% of memory (about 117GB of a 128GB box), or the setup crashes or hangs.",
+   "when": "When sizing per-node memory for a multi-node model deployment on DGX Spark-class hardware."
+  },
+  {
+   "name": "Raise the Mac GPU memory limit, and re-check after reboots",
+   "how": "On macOS, the GPU defaults to about three quarters of unified memory. The speaker raises it with a terminal command (the command is not named in the transcript). The change resets on every restart, so re-check it after reboots.",
+   "when": "When a model above the default GPU allowance (for example GLM 5.3 4-bit on a 512GB Mac) must run on Apple Silicon."
+  },
+  {
+   "name": "Break-even check: owned hardware vs API",
+   "how": "Annual tokens = tokens/sec x seconds of use. Annual API cost = tokens x price per million (split into read, write and cached rates). Payback = hardware cost / (API cost - electricity). Run it at realistic utilization (one session versus 16 concurrent sessions).",
+   "when": "Before buying GPU hardware for an agent or coding workload, especially when data cannot leave the premises."
+  },
+  {
+   "name": "Rent before buying",
+   "how": "Compare the hourly rental rate against the hardware price. The speaker's example: four RTX Pro 6000 cards at $2.49/hr each (about $9.96/hr) against a $64,000 purchase is about 6,400 hours, or roughly 268 days of 24/7 use.",
+   "when": "When the usage level is uncertain, or when GPU prices are rising quickly."
+  }
+ ],
+ "tools": [
+  "Muse Spark Open (Meta, 816B parameters)",
+  "DeepSeek V4.1 Flash",
+  "DeepSeek API",
+  "GLM 5.3 (4-bit build)",
+  "GLM 5.2",
+  "Kimi K3 (1.56TB download)",
+  "DwarfStar (inference engine, originally by antirez)",
+  "Apple Mac Studio M5 Ultra",
+  "Apple Mac Studio M3 Ultra",
+  "NVIDIA DGX Spark (GB10, 128GB)",
+  "NVIDIA DGX Spark 64GB unit",
+  "NVIDIA RTX Pro 6000 Blackwell Max-Q (96GB)",
+  "NVIDIA RTX 5090",
+  "AMD Instinct MI50 (32GB)",
+  "AMD EPYC",
+  "AMD Strix Halo (MiniForum MSS1 Max, Gorgon Halo)",
+  "TerminalBench 2.1",
+  "RunPod",
+  "OpenCode",
+  "Thunderbolt 5",
+  "Mia AI Lab DeepSeek recipe",
+  "Local Inference Lab benchmarks"
+ ],
+ "numbers": [
+  {
+   "claim": "Meta's model card specifies two Mac Studio M5 Ultra 512GB units for Muse Spark Open (816B parameters); not yet on sale at the time of the video.",
+   "t": "1:23"
+  },
+  {
+   "claim": "DeepSeek V4.1 Flash download is about 510GB. GLM 5.3 4-bit download is 467GB (435GB in a later figure).",
+   "t": "2:36"
+  },
+  {
+   "claim": "KV cache per token: DeepSeek V4.1 Flash about 890 bytes (under 1GB at 1M tokens); Muse Spark Open about 64KB (about 69GB at 1M); GLM 5.3 at 16-bit about 88KB (about 94GB at 1M). Stated as roughly 100x spread.",
+   "t": "3:46"
+  },
+  {
+   "claim": "DeepSeek split: about 552B main parameters and 196B Engram parameters. Mia AI Lab puts about 189GB of Engram on SSD. 4-bit main weights about 294GB; about 295GB total at 1M context.",
+   "t": "5:05"
+  },
+  {
+   "claim": "Mac Studio M5 Ultra memory bandwidth 1.2 TB/s. 512GB config estimated around $17,200 (96GB base $6,799; +$4,000 for 256GB). Default GPU allowance about 384GB of 512GB.",
+   "t": "7:18"
+  },
+  {
+   "claim": "M3 Ultra 512GB: DeepSeek V4.1 Flash read a 62k-token prompt at 813 tok/s, so a 1M-token prompt needs about 22 minutes before the first output token.",
+   "t": "8:25"
+  },
+  {
+   "claim": "M5 Ultra 256GB: 16k-token first read 21s, cached follow-up 3s. Two 256GB M5 Ultras over Thunderbolt 5 cost $18,998 to $21,598.",
+   "t": "8:25"
+  },
+  {
+   "claim": "Four DGX Sparks cost $27,800 at $6,950 each (NVIDIA raised the price 74% from launch in early October). Partner network switches $7,000 to $9,000. Eight 64GB Sparks at $4,999 each total $39,992.",
+   "t": "9:38"
+  },
+  {
+   "claim": "Mia AI Lab recipe on four Sparks: 87.7 tok/s for one user, about 5,000 tok/s prefill, 342.7 tok/s total across 16 users, 8M-token cache pool; a 1M-token prompt reads in about 3.5 minutes.",
+   "t": "9:38"
+  },
+  {
+   "claim": "Memory ceiling of about 92% (about 117GB per 128GB Spark) before crashes or hangs, per an owner.",
+   "t": "10:57"
+  },
+  {
+   "claim": "Four RTX Pro 6000 Max-Q (384GB total): 249.1 tok/s for one user; 17,982 tok/s prefill on a 32k prompt (1M prompt in about 1 minute); 4.7M-token cache pool. Launch price $8,565 (March 2025); about $16,000 each since August, so $64,000 for four. RunPod secure cloud $2.49/hr per card.",
+   "t": "12:15"
+  },
+  {
+   "claim": "Eight RTX Pro 6000 (768GB VRAM) running GLM 5.2: 48 tok/s, 49,600-token context, 738 of 784GB used.",
+   "t": "12:15"
+  },
+  {
+   "claim": "Jan 2025 DIY build: 768GB, two AMD EPYC CPUs, about $6,000 total, 6 to 8 tok/s on DeepSeek R1 at 8-bit. Memory alone for a similar build now about $31,200 (24 x $1,299.99 sticks). A 512GB build from larger DIMMs quoted at $17,960 (stick size garbled in captions).",
+   "t": "13:39"
+  },
+  {
+   "claim": "Desktop DDR5 system RAM with an RTX 5090: a 500,000-token prompt took 40 minutes 30 seconds to load; cached follow-up 3.9 seconds.",
+   "t": "14:50"
+  },
+  {
+   "claim": "16 used AMD MI50 cards (32GB each, $180 to $460 each, about $2,900 to $7,400 total) across two machines on 10GbE: GLM 5.2 4-bit at 12.2 tok/s, prompt reads about 200 tok/s; 128k tokens about 11 minutes; 1M tokens about 1.5 hours.",
+   "t": "14:50"
+  },
+  {
+   "claim": "Two MiniForum MSS1 Max (128GB each, $3,879 each, $7,758 total for 256GB): DeepSeek V4.1 Flash at 2-bit, 14 to 15 tok/s, prompt reads about 430 tok/s, about 41 minutes for 1M tokens. Gorgon Halo 192GB at $7,399.",
+   "t": "16:12"
+  },
+  {
+   "claim": "GLM 5.3 4-bit (435GB) plus 1M-token 16-bit KV (about 88GB) is about 523GB, more than 512GB before engine overhead. Muse 4-bit plus 1M context is about 535GB.",
+   "t": "17:09"
+  },
+  {
+   "claim": "GLM 5.2 on four Sparks: 32k tokens with 16-bit notes, 64k at 8-bit, 100k at 4-bit. TerminalBench 2.1 at 100k scored 70.8% versus 81 for the full model at full precision.",
+   "t": "17:09"
+  },
+  {
+   "claim": "Two 512GB M5 Ultras about $34,400 (estimate); four 256GB M5 Ultras $38,824.",
+   "t": "18:28"
+  },
+  {
+   "claim": "Kimi K3 download is about 1.56TB, about three times 512GB.",
+   "t": "18:28"
+  },
+  {
+   "claim": "DeepSeek API pricing cited: 15 cents per million tokens read (uncached), 60 cents per million written, about a third of a cent per million on cache hits. OpenCode made DeepSeek access free as of October 15.",
+   "t": "18:28"
+  },
+  {
+   "claim": "Four Sparks at 87.7 tok/s for one user write about 2.77B tokens a year, worth about $1,659 at API prices. Electricity about $1,122 a year. Payback about 17 years; with all 16 sessions, API-equivalent about $6,485 a year and payback about 4.3 years.",
+   "t": "19:53"
+  }
+ ],
+ "hot_takes": [
+  "The 512GB number in the title is mostly true only for DeepSeek V4.1 Flash; for GLM 5.3 and Muse Spark, 512GB does not comfortably hold both the model and a 1M-token context.",
+  "Quoting a model's download size as its memory requirement is a common mistake; the context (KV cache) is the bigger unknown.",
+  "Owning GPU hardware for coding or agent workloads only pays off when it is private and kept busy; for one personal user, the API is far cheaper.",
+  "Many figures are vendor pricing or estimates (Apple's 512GB price, DGX Spark price increases) and some come from owner reports, not the speaker's own tests."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft runs vLLM on one RTX 5090 with pluggable KV-cache strategies (H2O, CPU offload, LMCache). The video's bytes-per-token budget and its warning about quality loss from KV compression are directly useful for InferCraft's capacity planning and evals.",
+   "action": "Add a KV-bytes-per-token column (weights + bytes/token x context + headroom) to InferCraft's capacity planner, and benchmark quality (not just speed) before enabling any KV compression, since one owner saw about 10 points lost on TerminalBench 2.1 at 4-bit KV."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs Claude Code, which is API-hosted. The API-versus-owned break-even method may matter if long loops are ever routed to local models.",
+   "action": "Reuse the break-even calculation (annual tokens x API price vs amortized hardware plus power) before proposing a local-model route for ProsHarness loops."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

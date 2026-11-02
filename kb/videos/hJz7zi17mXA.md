@@ -1,0 +1,53 @@
+# Nokia Just Released a Free Jev Alternative (AnyJev)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `hJz7zi17mXA` · [watch](https://youtu.be/hJz7zi17mXA) · **date:** 2026-10-19 · **length:** 15:40 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Andrus (Better Stack host, name as captioned) · **orgs:** Better Stack, Nokia, TypeSafe, Kaggle, The Onion, Huffington Post
+- **topics:** evals, local-ai, models-research · **tags:** anyjev, jev, decision-models, logprobs, position-bias, label-bias, calibration, llm-as-classifier, qwen3, llama-cpp, local-inference, satire-detection
+
+> Better Stack tests Nokia's AnyJEV, a training-free library that turns open models into probability-based classifiers; it fixes order bias but trails hosted JEV on accuracy and calibration.
+
+## Summary
+The host introduces AnyJEV, a Python library from Nokia's applied research team that adds a "decision model" layer to any open-weight model without training or labeled data. Instead of generating text, the model is scored on the probability of each answer-option letter, so no output parsing is needed. The library's L0 mode averages over all option orderings and divides out the model's label lean, using either a batch-derived prior or a content-free prior. The host benchmarks raw Qwen3 8B, AnyJEV-wrapped Qwen3 8B, and hosted JEV on 500 satire/real headlines from a Kaggle sarcasm dataset. Hosted JEV wins on accuracy (80% vs about 68%) and calibration, while AnyJEV removes order flips and costs nothing beyond local compute. Small follow-up rounds of 10 headlines give mixed results, and the host concludes that the training-free approach is not yet convincing on an 8B model.
+
+## Key ideas
+- **A decision model scores options instead of generating text** — The model is shown the state, the question and lettered options, and the probability of each letter as the next token is read out. There is no text to parse, so the answer cannot fail to parse. ([0:59](https://youtu.be/hJz7zi17mXA?t=59))
+- **AnyJEV wraps open-weight backends with a decision layer** — It is an Apache 2.0 Python library that works with Hugging Face Transformers, vLLM, SGLang and llama.cpp. The host contrasts it with hosted JEV, which is closed source and billed per token. ([1:56](https://youtu.be/hJz7zi17mXA?t=116))
+- **Raw open models have position and label bias that flips answers** — Swapping the two option orders changed raw Qwen3 8B's answer on 20 of 500 headlines (4%). With L0 the host recorded zero flips, and hosted JEV flipped 18 times, but only by about 3 points on average. ([3:21](https://youtu.be/hJz7zi17mXA?t=201))
+- **L0 debiases by averaging over orderings and dividing out the label prior** — It asks once per option ordering, averages the results, then estimates the model's lean toward each label and divides it out. No labels are needed. The default batch prior is estimated across a batch, and the content-free prior is estimated from an input with no content, which is required for single-item judgments. ([4:19](https://youtu.be/hJz7zi17mXA?t=259))
+- **Raw Qwen3 8B over-predicts satire and its confidence is nearly useless** — It labeled about 69% of headlines as satire when the true share was 50%, getting 87% of satire right but splitting real headlines roughly 50/50. 87% of its answers came with 99%+ confidence, and it was wrong on 30% of those. ([7:56](https://youtu.be/hJz7zi17mXA?t=476))
+- **Headline benchmark: hosted JEV leads, and the content-free prior costs accuracy** — On 500 Kaggle headlines, hosted JEV scored 80.0%, raw Qwen3 8B 68.4%, L0 with the batch prior 68.6%, and L0 with the content-free prior 66.6%. Accuracy was about the same for L0 and raw Qwen, but L0 removes the lean. ([6:34](https://youtu.be/hJz7zi17mXA?t=394))
+- **L0 does not fix calibration; hosted JEV is much better calibrated** — The host reports a calibration error of about 0.07 for JEV versus about 0.3 for both raw Qwen and L0. The docs describe L0 as removing bias rather than calibrating confidence, and the higher levels need a few hundred labeled examples, which were not tested. ([9:15](https://youtu.be/hJz7zi17mXA?t=555))
+- **Small rounds show that debiasing can overshoot in either direction** — In a 10-headline round of real headlines that sound like satire, AnyJEV fixed four errors from raw Qwen and broke one. In a later round of 10 mixed recent headlines, it broke two satire answers that raw Qwen had gotten right and fixed none. The host notes that the benefit depends on the answer mix in your data. ([11:02](https://youtu.be/hJz7zi17mXA?t=662))
+
+## Techniques
+- **Decision-model setup (AnyJEV flow)** — Pick an open-weight backend (HF Transformers, vLLM, SGLang or llama.cpp), wrap it in a decider, choose a level (raw, or L0 for the bias fix), define the question with lettered options such as A for satire and B for real news, and call the decider with the state text. It returns a probability per option plus the level used. The video does not show exact class or method names on screen. *When:* Classification, yes/no or scoring tasks where you need probabilities and want to avoid parsing generated text, and where you can run an open model locally.
+- **Order-swap flip test** — Run each item twice with the option order reversed and count how often the answer changes. The host used the same 500 headlines with the two options swapped. Raw Qwen3 8B flipped 20 of 500 (4%); L0 flipped none. *When:* Before trusting any LLM judge or classifier, especially one that picks between labeled options.
+- **L0 debiasing without labels** — Average the probabilities over all permutations of the option order, then estimate each label's prior and divide it out. Use the batch prior (default) when you can score a batch of inputs, and the content-free prior when each call judges a single input. *When:* You have a model that exposes next-token probabilities, no labeled data, and suspect label or position bias.
+- **Confidence reliability check** — Bin predictions by stated confidence, compare each bin's accuracy against the confidence value, and plot the results against the diagonal. Also check what share of answers sit at the extremes (99%+), since this shows whether confidence can be thresholded. *When:* Deciding whether a classifier's score can be used as a threshold or to route cases to review.
+- **Local throughput budgeting for debiased runs** — Expect L0 to roughly halve throughput because each input is read twice. On an M2 Max MacBook Pro with Qwen3 8B via llama.cpp, the host measured about 5.5 headlines/s raw versus under 3/s with L0, and about 4 min 36 s for 500 headlines. *When:* Estimating batch runtime for local classification jobs before choosing raw or debiased mode.
+
+## Numbers
+- Hosted JEV costs 4.2 cents per million input tokens, output is free, and each call is about 310 tokens (about 1 cent per 1,000 calls) ([1:56](https://youtu.be/hJz7zi17mXA?t=116))
+- Throughput: JEV about 10 headlines/s including network latency; raw Qwen3 8B about 5.5/s; AnyJEV L0 under 3/s (reads each input twice); full local run 4 min 36 s ([6:34](https://youtu.be/hJz7zi17mXA?t=394))
+- Accuracy on 500 headlines: JEV 80.0%, raw Qwen3 8B 68.4%, L0 with batch prior 68.6%, L0 with content-free prior 66.6% ([6:34](https://youtu.be/hJz7zi17mXA?t=394))
+- Order swap: raw Qwen changed on 20 of 500 headlines (4%), JEV on 18 (average move about 3 points), L0 on 0 ([4:19](https://youtu.be/hJz7zi17mXA?t=259))
+- Raw Qwen labeled about 69% of headlines as satire vs a true share of 50%; 87% satire recall and roughly 50/50 on real headlines ([7:56](https://youtu.be/hJz7zi17mXA?t=476))
+- Raw Qwen: 87% of answers at 99%+ confidence, wrong on 30% of those ([9:15](https://youtu.be/hJz7zi17mXA?t=555))
+- Calibration error: JEV about 0.07, raw Qwen about 0.3, L0 about 0.3 ([9:15](https://youtu.be/hJz7zi17mXA?t=555))
+- Dataset: 28,619 headlines; the test sampled 500 (half satire, half real); the host notes the data is from 2019 and may be in training data ([5:35](https://youtu.be/hJz7zi17mXA?t=335))
+- Round 2 (10 headlines, content-free prior required): JEV 50%, raw Qwen 40%, AnyJEV reported as 70% in the transcript (wording unclear) ([11:02](https://youtu.be/hJz7zi17mXA?t=662))
+- Round 3 (10 recent headlines): JEV 90%, raw Qwen 80%, AnyJEV 60% ([12:30](https://youtu.be/hJz7zi17mXA?t=750))
+
+## Hot takes
+- The host is disappointed: on an 8B model the training-free approach did not catch up with hosted JEV, and he is 'not sold on it yet'.
+- The title ('Free JEV alternative') is hype, but the body contains honest negative results and a real 500-headline test, so the quality rating reflects the data rather than the title.
+- The benefit of AnyJEV is privacy and cost (data stays local), not accuracy. The host says it does not make the model smarter.
+- Evidence is thin: a single run on one model, one 2019 dataset that may be contaminated, and 10-headline follow-up rounds with no confidence intervals.
+- Nokia's 'no training, no labels' claim is tested only in the default mode. The higher calibrating levels were not tested.
+
+## Tools mentioned
+AnyJEV (Nokia applied research, Python, Apache 2.0), JEV decision model (hosted API via TypeSafe, v1.13), Qwen3 8B (run locally via llama.cpp on an M2 Max MacBook Pro), Hugging Face Transformers, vLLM, SGLang, llama.cpp, Kaggle News Headlines Dataset for Sarcasm Detection (28,619 headlines), Small demo app published by the host on GitHub
+
+## Relevance to our work
+- **agentos** (1/3): L1 Govrix Scout runs PII and prompt-injection scanning, which is a classification decision that could be made by scoring label probabilities on a local open model. The order-bias and calibration findings apply directly to any such classifier. → *Prototype logprob-based label scoring (single-token A/B) for the PII/prompt-injection scanner on a local open model, and measure its order-swap flip rate and calibration against the current scanner before trusting either.*
+- **prosharness** (1/3): The plan, critique and debate steps may rely on an LLM choosing between options. Order bias could silently shift those verdicts. → *Add an order-swap check to any ProsHarness plan-critique step that returns a choice, and log the flip rate before relying on the verdict.*

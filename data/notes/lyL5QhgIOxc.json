@@ -1,0 +1,164 @@
+{
+ "one_line": "How Hugging Face scaled its Hub search, MongoDB read path and Kubernetes autoscaling to 3M public models; main lesson is precomputed read copies, read-replica routing, and scaling on workload signals.",
+ "summary": "Arek Borucki, a Hugging Face ML platform and database engineer, describes how the Hub grew from about 20,000 models to 3 million public models and 14 million users. The talk focuses on search latency, since at this size tail (P99) latency hurts many users. Model names are tokenized at insert time into a denormalized read-only MongoDB collection, and search moved from regex scans to Atlas Search, which wraps Apache Lucene. Reads are spread across a 7-node cluster: the primary handles writes and strongly consistent reads, secondaries take the rest, and a hidden replica takes reporting and heavy queries. Sharding is the next planned step, with the shard key left out of scope. On the compute side, the Hub runs an HPA scaling 10 to 500 pods, Cast.ai adds nodes when pods are pending, and a move to KEDA is planned so scaling follows request rate or queue depth rather than CPU alone. The talk is a practitioner account with concrete patterns and few hard benchmark numbers.",
+ "speakers": [
+  "Arek Borucki"
+ ],
+ "orgs": [
+  "Hugging Face",
+  "MongoDB",
+  "Cast.ai",
+  "AWS",
+  "Kubernetes"
+ ],
+ "format": "talk",
+ "topics": [
+  "infra-cost-scaling",
+  "rag-retrieval",
+  "data-engineering"
+ ],
+ "tags": [
+  "hugging-face",
+  "mongodb",
+  "atlas-search",
+  "lucene",
+  "read-replicas",
+  "sharding",
+  "kubernetes",
+  "hpa",
+  "keda",
+  "cast-ai",
+  "autoscaling",
+  "p99-latency",
+  "denormalization",
+  "change-streams"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Scale is the reason to rethink search: a query that is fast at 20k models breaks at 3M.",
+   "detail": "The speaker says that at 20,000 models any query was fast even without an index, and that the same approach fails at 3 million. Slow search costs users, so the team tunes for P99 rather than P50.",
+   "t": "3:40"
+  },
+  {
+   "idea": "Keep metadata and binary artifacts apart.",
+   "detail": "MongoDB Atlas holds all metadata (users, repos, orgs, billing, access control). Model weights, tokenizer files and configs live in object storage such as S3. This lets metadata, binaries and compute each scale on their own.",
+   "t": "5:54"
+  },
+  {
+   "idea": "Use a denormalized read copy with search tokens computed at insert time.",
+   "detail": "A separate collection holds only what listing and search need. Model IDs like meta-llama/Llama-3.1-8B are split into tokens at write time and stored in an array, so no tokenization happens at query time.",
+   "t": "8:01"
+  },
+  {
+   "idea": "Regex over token arrays stopped scaling, so search moved to a Lucene index.",
+   "detail": "The old query was a regex match over the token arrays, sorted by a trending score refreshed every five minutes. It got slower as data grew. Atlas Search (Lucene behind a wrapper process) gives autocomplete over the tokens with the same trending sort, and the speaker reports latency issues gone.",
+   "t": "10:38"
+  },
+  {
+   "idea": "Route reads by consistency need and workload type.",
+   "detail": "Only queries that need strong consistency run on the primary. Non-urgent reads, heavy aggregations and change-stream consumers go to secondaries. Ad hoc and reporting queries go to a hidden replica that the driver never routes production traffic to. The stated rule is that the primary does only what only the primary can do.",
+   "t": "13:00"
+  },
+  {
+   "idea": "Sharding is the next step once one replica set is no longer enough.",
+   "detail": "A replica set keeps the full data set on every node. A sharded cluster splits the data across shards, each with its own replicas, and the balancer spreads data as shards are added. The talk says choosing the shard key is hard and does not cover it.",
+   "t": "17:12"
+  },
+  {
+   "idea": "Scale on workload signals, not CPU alone.",
+   "detail": "HPA scales on CPU and memory, so a pod with low CPU but a long request queue is not scaled. Moving to KEDA lets scaling use request rate or event-loop utilization. A second layer, Cast.ai, adds nodes when pods are pending.",
+   "t": "18:45"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Insert-time search tokens in a denormalized read collection",
+   "how": "Store a separate read-only document per model with pre-split name tokens in an array. Project only that array for search and listing. The main collection stays the source of truth.",
+   "when": "Listing and autocomplete queries are read-heavy and the canonical document shape is too costly to query directly."
+  },
+  {
+   "name": "Lucene-backed autocomplete instead of regex scans",
+   "how": "Create a search index on the token array and query it with the $search aggregation stage, keeping the existing business sort (trending score) after the match.",
+   "when": "Regex or prefix scans over a growing collection have rising P99 latency."
+  },
+  {
+   "name": "Read-replica routing by consistency class",
+   "how": "Send strongly consistent reads and all writes to the primary. Send stale-tolerant reads, heavy aggregations and change-stream consumers to secondaries. Send ad hoc and reporting queries to a hidden, non-routable replica member.",
+   "when": "One primary is taking reads that do not need it, and analytic queries are affecting production latency."
+  },
+  {
+   "name": "Hidden analytics replica",
+   "how": "Add a replica set member that replicates the primary but is excluded from the driver's read routing. Connect to it directly for reports and expensive queries.",
+   "when": "Heavy or exploratory queries must not share capacity with user-facing traffic."
+  },
+  {
+   "name": "Two-layer autoscaling with event-driven pod scaling",
+   "how": "Let the pod autoscaler add pods on load, let a node autoscaler add nodes when pods stay pending, and move the pod signal from CPU/memory to app metrics such as request rate or queue depth via KEDA.",
+   "when": "CPU does not track real load, so latency or 503s build up while the autoscaler sees no pressure."
+  }
+ ],
+ "tools": [
+  "MongoDB Atlas",
+  "Atlas Search",
+  "Apache Lucene",
+  "Kubernetes",
+  "Horizontal Pod Autoscaler",
+  "KEDA",
+  "Cast.ai",
+  "AWS S3",
+  "AWS Redshift"
+ ],
+ "numbers": [
+  {
+   "claim": "Hugging Face serves more than 14 million users.",
+   "t": "1:23"
+  },
+  {
+   "claim": "3 million public models, 1 million datasets, 50,000 organizations; over 30% of Fortune 500 companies use the Hub.",
+   "t": "1:23"
+  },
+  {
+   "claim": "Public models grew from about 20,000 to 3 million, roughly a 150x increase in a few years.",
+   "t": "2:32"
+  },
+  {
+   "claim": "Datasets: about 10K in 2022, 100K in 2024, 500K a year before the talk, 1M at the time of the talk.",
+   "t": "3:40"
+  },
+  {
+   "claim": "At 14 million users, 1% is about 140,000 people hitting slow search.",
+   "t": "4:44"
+  },
+  {
+   "claim": "The metadata cluster handles about 1 million queries with a 7-node MongoDB cluster.",
+   "t": "13:00"
+  },
+  {
+   "claim": "The hub deployment autoscales between 10 and 500 pods.",
+   "t": "18:45"
+  }
+ ],
+ "hot_takes": [
+  "At 20,000 models any query is fast even without an index; at 3 million the same approach breaks.",
+  "At scale, P99 latency matters more than P50, because even 1% of users is a very large number of people.",
+  "The primary should only do what only the primary can do; everything else should move to other machines."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The L3 roadmap includes a per-tenant DuckDB read tier. The talk's hidden-analytics-replica pattern shows how to keep heavy reads away from the hot path.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No overlap with the harness, checkpointing, or Claude Code CLI work.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

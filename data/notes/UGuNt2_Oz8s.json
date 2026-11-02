@@ -1,0 +1,200 @@
+{
+ "one_line": "A vendor-led workshop on closing an agent self-improvement loop: scheduled trace review, failure datasets, evals, replay experiments, and human checkpoints at the high-leverage points.",
+ "summary": "Fuad Ali (product manager at Arize AI) runs a workshop on a loop where an agent's production traces are reviewed automatically, failures become a growing dataset, evals score them, a coding agent proposes a fix, and an experiment replays the failures to prove the fix before a human merges it. The demo agent is \"Wonder Toys,\" a shopping assistant with a planted bug: a case-mismatch filter causes redundant search retries and 14-17 second latency. Arize's Signal agent reads traces every six hours by default, clusters issues into one ticket per problem, reads the connected GitHub repo, and opens a PR. The talk argues that humans should own the high-leverage checkpoints (PR review, dataset curation, eval design, low-confidence routing) rather than reading traces. It covers three evaluator types (code checks, LLM-as-judge, agent-as-judge) and the cost trade-off of running them on all traffic versus a sample. Most of the content is a product walkthrough, but the eval-economics and human-checkpoint framing is practical.",
+ "speakers": [
+  "Fuad Ali"
+ ],
+ "orgs": [
+  "Arize AI"
+ ],
+ "format": "workshop",
+ "topics": [
+  "evals",
+  "observability",
+  "skills-self-improvement",
+  "pr-code-review"
+ ],
+ "tags": [
+  "self-improvement loop",
+  "trace review",
+  "regression fixtures",
+  "living datasets",
+  "llm-as-judge",
+  "agent-as-judge",
+  "decision models",
+  "confidence routing",
+  "replay experiments",
+  "eval cost",
+  "human-in-the-loop",
+  "arize",
+  "signal",
+  "wonder toys",
+  "github prs"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Build the loop as a chain: trace, then Signal reviews, then dataset of failures, then eval, then fix, then experiment, then human review and merge.",
+   "detail": "Each step adds context that feeds the next run. The speaker frames the goal as a self-improvement loop where human judgment, eval scores and trace evidence are kept in one place.",
+   "t": "7:37"
+  },
+  {
+   "idea": "An always-on reviewer reads traces on a schedule and turns clusters into one ticket per problem.",
+   "detail": "Signal defaults to every six hours and can also run on an alert, such as latency above 10 seconds. It clusters issues, writes an analysis, and de-duplicates tickets. In the demo it found the planted bug and opened a PR after about six minutes of work.",
+   "t": "12:03"
+  },
+  {
+   "idea": "Failures should be saved as a living regression fixture, not fixed once and forgotten.",
+   "detail": "Each failing trace is added to a dataset that grows over time. Future runs are checked against it, so the same failure mode is caught again. The speaker compares this to test cases written before shipping code.",
+   "t": "18:20"
+  },
+  {
+   "idea": "Evaluators come in three forms with different cost profiles: code checks, LLM-as-judge, and agent-as-judge.",
+   "detail": "Code checks are cheap and deterministic, such as a JSON validity test or whether a filter was applied. LLM-as-judge handles qualitative scoring at higher cost, and sampling can reduce that cost. Agent-as-judge is the most expensive because it makes several model calls. Decision models are cheap classifiers that return a label or a confidence score.",
+   "t": "21:14"
+  },
+  {
+   "idea": "A concrete eval prompt for the planted bug flags repeated search calls within one trajectory.",
+   "detail": "The judge inspects the full trajectory, including tool calls, flags any unnecessary call, and writes a score and classification choice onto the trace. The eval can then run on incoming traces and be retired once it is healthy to save cost.",
+   "t": "25:08"
+  },
+  {
+   "idea": "Prove a fix with a replay experiment that also checks for regressions in other evals.",
+   "detail": "The failure dataset is replayed through the agent with the proposed fix and scored. The speaker shipped at an 88.9% pass rate and checked three other evals to make sure they did not regress. Replay also re-measured latency and retry counts.",
+   "t": "28:43"
+  },
+  {
+   "idea": "Keep humans at the high-leverage checkpoints, not on trace reading.",
+   "detail": "The speaker names four places: validating the PR, curating which findings enter the dataset, designing evals (where judgment is encoded), and reviewing low-confidence outputs. Automation should inform the reviewer rather than replace them.",
+   "t": "23:39"
+  },
+  {
+   "idea": "Route low-confidence model outputs to human annotation queues using thresholds.",
+   "detail": "In a spam example, the speaker said about 4.6% of cases scored between 0.3 and 0.7 confidence and were sent to people, while the rest were reported at 99.5% accuracy. The threshold depends on the use case.",
+   "t": "33:08"
+  },
+  {
+   "idea": "Eval cost is an ROI decision: put cheap checks in CI and sample production traffic.",
+   "detail": "Run fixture-based regression evals on every push or before merge, and run sampled evals on production traffic. The speaker treats 100 percent production evaluation and development-only testing as the two extremes.",
+   "t": "41:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Trace-to-fixture pipeline",
+   "how": "Flag failing sessions or traces, add them to a dataset with their evidence (inputs, tool calls, outputs), and keep the dataset growing. Run the dataset as a regression suite on every change. The speaker used Arize's add-to-dataset action, but the pattern is provider-agnostic.",
+   "when": "Use once an agent has production traffic and failures recur. Build fixtures from real failures, not invented cases."
+  },
+  {
+   "name": "Trajectory-level LLM-judge eval",
+   "how": "Write a judge prompt that reads the full trajectory, including tool calls, and returns a classification choice and a score. The demo prompt was: act as a checker for redundant search-product retries, inspect the complete trajectory, and return a redundant-retry label when search_product is called more than once. Attach the label and score to the trace, then sample it on live traffic.",
+   "when": "Use for qualitative or multi-step failure modes that deterministic checks cannot express. Keep the rule tight, because the prompt is the spec."
+  },
+  {
+   "name": "Cheap-first evaluator stack",
+   "how": "Start with deterministic code checks (field present, valid JSON, expected tool arguments). Add LLM-judge or decision-model evals only where needed. Use sampling on production traffic. Retire evals that are healthy and no longer need token spend.",
+   "when": "Use to keep eval cost proportional to risk. The speaker's rule of thumb is that anything catchable in CI should be checked there."
+  },
+  {
+   "name": "Replay-based fix validation",
+   "how": "Take the dataset of failing cases, run the agent with the proposed fix on those cases, score the results, and set a pass threshold you choose (the speaker used 88.9%). Also run your other evals to confirm they do not regress. The speaker ran this through the AX CLI, with the coding agent doing the replay.",
+   "when": "Use before merging any agent change, especially prompt or tool changes whose side effects are hard to predict."
+  },
+  {
+   "name": "Confidence-threshold human routing",
+   "how": "Use a judge that returns a calibrated confidence score. Set a threshold per use case, route low-confidence outputs to an annotation queue, and check the threshold against labeled samples. Do not assume 80 percent is the right cutoff.",
+   "when": "Use for classification-style decisions where a small fraction of cases is uncertain and a human can label them cheaply."
+  },
+  {
+   "name": "Session-level eval signals",
+   "how": "Score the whole user session rather than one turn. Useful signals include whether the user asked again, how many follow-up filters they created, and whether they were satisfied. Combine these with hand annotations by a domain expert to write the eval template.",
+   "when": "Use when a single turn has no clear right answer, such as an AI-generated search filter."
+  },
+  {
+   "name": "Stop criteria for eval depth",
+   "how": "Stop adding evaluation layers once you only have proxy metrics, such as PR merge rate or session handoff, and no ground truth. Treat that point as diminishing returns.",
+   "when": "Use when deciding how far to push eval investment for an agent with a small user base or unclear outcomes."
+  }
+ ],
+ "tools": [
+  "Arize AX (tracing and evals platform)",
+  "AX CLI",
+  "Arize Signal (always-on trace-review agent)",
+  "Arize Alex (in-house agent)",
+  "Phoenix (mentioned, not demonstrated)",
+  "Arize managed sandboxes",
+  "GitHub",
+  "Codex",
+  "Cursor",
+  "Claude Code",
+  "OpenCode",
+  "Modal",
+  "Daytona",
+  "E2B",
+  "Datadog (skill example)",
+  "FastAPI",
+  "Next.js",
+  "ChromaDB",
+  "OpenAI API",
+  "Anthropic API",
+  "Wonder Toys (demo repo)"
+ ],
+ "numbers": [
+  {
+   "claim": "Signal's default review schedule is every six hours.",
+   "t": "12:03"
+  },
+  {
+   "claim": "The planted search bug caused latency spikes of about 14-17 seconds and three sequential LLM calls.",
+   "t": "15:55"
+  },
+  {
+   "claim": "A latency alert threshold of 10 seconds was used to auto-trigger an investigation agent.",
+   "t": "16:54"
+  },
+  {
+   "claim": "Signal took about six minutes to find the root cause of the planted bug and open a PR.",
+   "t": "14:56"
+  },
+  {
+   "claim": "Replay experiment on the failure dataset shipped at an 88.9% pass rate, with three other evals checked for regression.",
+   "t": "28:43"
+  },
+  {
+   "claim": "In a spam example, about 4.6% of cases fell in the 0.3-0.7 confidence band and were routed to humans, with the remainder reported at 99.5% accuracy.",
+   "t": "33:08"
+  },
+  {
+   "claim": "Five failing traces were included in the PR description as evidence.",
+   "t": "36:00"
+  },
+  {
+   "claim": "The speaker's example cost comparison was an $8 shopping-assistant agent versus $20 to improve it through the loop. He did not give a general budget rule.",
+   "t": "50:27"
+  }
+ ],
+ "hot_takes": [
+  "Vendor-led workshop: most of the runtime is an Arize product tour, and the self-improvement claims depend on Arize tooling. The speaker says so.",
+  "The 88.9% pass threshold was a judgment call for a toy demo, not a validated benchmark.",
+  "The speaker admits that beyond PR merge rate and session handoff, there is no ground truth for judging agent quality, so further eval investment has diminishing returns.",
+  "The 99.5% spam accuracy and 4.6% routed figures come from a single example and are not generalizable.",
+  "Strongest practical point: put cheap deterministic checks in CI and sample LLM judges on production traffic, rather than running expensive judges on everything."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Maps directly to L2D SkillForge's open questions about a success signal and skill-worthiness, and to the L4 observability and RAGAS evals. The living-fixture plus replay-experiment loop is a concrete pattern for turning Govrix/InferCraft failures into governed regression checks.",
+   "action": "Prototype a failure-to-fixture pipeline: persist production failing traces from the L1 proxy as replayable dataset cases, and gate changes on replay plus regression evals before merge."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Replay of saved failing runs against a fix could complement checkpoint/resume, but the talk does not address plan, critique or debate loops.",
+   "action": "Consider a replay-validation step for ProsHarness: after a fix, re-run saved failing checkpoints and confirm other checks do not regress."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

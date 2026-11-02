@@ -1,0 +1,158 @@
+{
+ "one_line": "Crusoe engineers explain how they run Slurm on Kubernetes so failed GPU nodes are cordoned, replaced and the training job resumes from checkpoint with no user action, with a live demo.",
+ "summary": "Three Crusoe speakers argue that GPU failures are unavoidable at thousands-of-GPU scale, so manual remediation does not work. They say classic Slurm is strong for multi-node training (gang scheduling, topology awareness, prolog/epilog) but static and burdensome for health checks, draining and observability. Crusoe's managed Slurm runs on its managed Kubernetes service through a Slurm operator built on SchedMD's Slinky project, so teams keep one infrastructure stack for training and inference. Their AutoClusters system detects a critical error (XID79 in the demo), marks the Slurm node down, sends SIGTERM with a two-minute window to save checkpoints, cordons and drains the Kubernetes node, swaps in a spare node, and requeues the job to resume from checkpoint. In the demo the full loop took about five minutes to get a healthy node back and just under 15 minutes end to end, mostly application startup. They also announced \"one-click Slurm\", which provisions the cluster, controller, login nodes and storage with one command, with AutoClusters on by default.",
+ "speakers": [
+  "Connor",
+  "Young",
+  "Nikhil"
+ ],
+ "orgs": [
+  "Crusoe",
+  "SchedMD",
+  "NVIDIA",
+  "AMD"
+ ],
+ "format": "talk",
+ "topics": [
+  "infra-cost-scaling",
+  "training-finetuning-rl",
+  "inference-serving"
+ ],
+ "tags": [
+  "slurm",
+  "kubernetes",
+  "gpu-failure",
+  "auto-remediation",
+  "checkpointing",
+  "training-infra",
+  "inference-training-colocation",
+  "xid-error",
+  "vendor-talk"
+ ],
+ "key_ideas": [
+  {
+   "idea": "GPU failures are assumed, not exceptional",
+   "detail": "At thousands-of-GPU scale, failures are inevitable and manual node remediation is unsustainable, so the platform must handle them automatically.",
+   "t": "0:14"
+  },
+  {
+   "idea": "Slurm is strong for training but static and operationally heavy",
+   "detail": "Gang scheduling, topology awareness and prolog/epilog suit multi-node training. But partitions are static, health checks and drain/requeue are manual or scripted, and Slurm knows a job failed without knowing why.",
+   "t": "2:45"
+  },
+  {
+   "idea": "Run Slurm on Kubernetes to avoid two infrastructure stacks",
+   "detail": "Teams often start on inference on Kubernetes or training on Slurm and end up running two stacks. Crusoe's operator puts Slurm inside the Kubernetes cluster so Slurm users just get an IP and SSH, and platform teams get one set of observability, runbooks and on-call.",
+   "t": "6:31"
+  },
+  {
+   "idea": "One stack lets GPUs move between training and inference",
+   "detail": "When inference traffic spikes, nodes can move from training to inference, and when load drops, idle GPUs can go to a larger training or hero run. The speakers say this is only practical when both share one stack.",
+   "t": "9:07"
+  },
+  {
+   "idea": "The remediation loop is detect, isolate, drain, replace, requeue, resume",
+   "detail": "After a critical error the user is notified and the Slurm node is set to down with its jobs cancelled. The process gets SIGTERM with up to two minutes to save checkpoints or flush logs. Then the Kubernetes node is cordoned, drained and swapped for a spare node, the job is requeued, and training reloads the checkpoint.",
+   "t": "10:36"
+  },
+  {
+   "idea": "Live demo: about 5 minutes to a healthy node, under 15 minutes total",
+   "detail": "An XID79 error was injected into a two-A100-node pool with sbatch running a PyTorch job. GPU utilization dropped right away, node replacement began, and the job resumed from its checkpoint. The speakers attribute most of the remaining time to application-level code.",
+   "t": "12:06"
+  },
+  {
+   "idea": "GPU nodes are Kubernetes nodes first, with Slurm as one workload",
+   "detail": "When a Slurm job ends, the same nodes can take inference pods immediately, because the platform treats them as nodes in a pool. Researchers never need to touch pods or containers.",
+   "t": "15:37"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Automated GPU failure remediation loop",
+   "how": "On a critical GPU error (e.g. XID79): mark the scheduler node down and cancel its jobs, send SIGTERM with a grace window (two minutes in the talk) so the app can save checkpoints, cordon and drain the Kubernetes node, remove it from the pool, add a healthy spare, log the alert, then requeue the job so it resumes from its checkpoint.",
+   "when": "Long multi-node training runs on a large GPU fleet where failures are expected and engineers should not be paged to fix nodes by hand."
+  },
+  {
+   "name": "Opt-out label check before node replacement",
+   "how": "Before replacing a node, the automation checks whether any pod on it has a label that disables automatic replacement. If one does, replacement does not proceed.",
+   "when": "When some workloads need a human to look at the node before it is swapped out."
+  },
+  {
+   "name": "Checkpoint on SIGTERM grace window",
+   "how": "The training app handles SIGTERM by saving its checkpoint and flushing logs before the node is removed, and reloads that checkpoint when the requeued job starts.",
+   "when": "Any job that can be preempted or lose a node and must resume without losing progress."
+  },
+  {
+   "name": "Slurm operator on Kubernetes (Slinky pattern)",
+   "how": "Run Slurm as a workload on a managed Kubernetes cluster with an operator that syncs node health from Kubernetes into Slurm, so a cordoned node's signal reaches the scheduler.",
+   "when": "When you want Slurm's scheduling for training alongside Kubernetes' health, autoscaling and observability in one stack."
+  },
+  {
+   "name": "Shared GPU pool across training and inference",
+   "how": "Keep all GPUs in one Kubernetes node pool. Move nodes to inference pods when a Slurm job ends or load spikes, and move them back to training when inference load drops.",
+   "when": "When GPU capacity is limited and inference and training demand vary over time."
+  }
+ ],
+ "tools": [
+  "Slurm",
+  "Kubernetes",
+  "Slinky (SchedMD)",
+  "sbatch",
+  "srun",
+  "PyTorch",
+  "Crusoe Managed Kubernetes (CMK)",
+  "Crusoe AutoClusters",
+  "Crusoe Slurm operator"
+ ],
+ "numbers": [
+  {
+   "claim": "Full remediation (detect a critical error to a healthy replacement node in the pool) takes roughly 5 minutes",
+   "t": "12:06"
+  },
+  {
+   "claim": "Demo end-to-end downtime was just under 15 minutes, with most of the time in application-level code",
+   "t": "12:06"
+  },
+  {
+   "claim": "SIGTERM grace window of up to 2 minutes to save checkpoints before the node is removed",
+   "t": "10:36"
+  },
+  {
+   "claim": "Demo used a node pool of two A100 nodes and an injected XID79 error (GPU unusable)",
+   "t": "12:06"
+  },
+  {
+   "claim": "Slurm has been used for HPC for over 20 years",
+   "t": "2:45"
+  }
+ ],
+ "hot_takes": [
+  "Kubernetes is the OS of the cloud.",
+  "Slurm, built for HPC over 20 years ago, translates very well to modern AI training.",
+  "Failures are inevitable, so infrastructure should handle critical errors autonomously and engineers should not have to debug nodes at night."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "InferCraft runs vLLM and Ray Serve on one RTX 5090 with a 4-class priority scheduler and preemption. The talk's SIGTERM-grace checkpoint and requeue pattern is a relevant reference for how preemption should behave, though the scale is far larger.",
+   "action": "When designing InferCraft preemption, specify a SIGTERM grace window and a checkpoint or flush step for preempted jobs, and check that the requeue path resumes cleanly."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness does checkpoint and resume for long agent runs. The talk's grace-window checkpoint on a termination signal and automatic requeue are a comparable pattern for long runs.",
+   "action": "Consider a termination-signal hook in ProsHarness that flushes a checkpoint before a run is stopped, then resumes from it on restart."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Clear example of platform-level failure handling for long-running jobs, with a real timing breakdown. Useful background, not an actionable change.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

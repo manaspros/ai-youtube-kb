@@ -1,0 +1,128 @@
+{
+ "one_line": "Quick tour of React 19.2's six new features: Activity for state-preserving hide/show, useEffectEvent, cache signal for aborting renders, performance tracks in Chrome DevTools, partial pre-rendering in react-dom, and an upgraded ESLint plugin.",
+ "summary": "A five-minute Better Stack walkthrough of React 19.2's headline features, presented as a changelog-style explainer with small live demos. The speaker shows the Activity component as a replacement for conditional rendering so that hidden components keep their state and can pre-fetch data, with effects unmounted and updates deferred while hidden. He then covers the useEffectEvent hook for reading the latest props and state from inside an effect without re-triggering it, and the cache signal API for aborting async work when React abandons a render. The remaining items are React performance tracks in Chrome DevTools, partial pre-rendering built into react-dom (static prelude plus resume), and an ESLint plugin update with flat-config support and opt-in React Compiler rules. Coverage is brief and surface-level; it is useful as a release digest rather than as a deep reference. The channel is primarily AI engineering, so this is off-topic for the knowledge base's core focus.",
+ "speakers": [],
+ "orgs": [],
+ "format": "news",
+ "topics": [
+  "dev-tools",
+  "observability"
+ ],
+ "tags": [
+  "react",
+  "react-19.2",
+  "activity",
+  "useEffectEvent",
+  "cache-signal",
+  "server-components",
+  "performance-tracks",
+  "partial-prerendering",
+  "eslint",
+  "react-compiler",
+  "frontend"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Activity replaces conditional rendering for hide/show and keeps state",
+   "detail": "Wrapping a panel in Activity with mode=\"visible\"|\"hidden\" instead of a conditional preserves uncontrolled input text and useState values across close/reopen. Conditional rendering unmounts and loses everything. Hidden content is set to display:none, not removed, and its effects are unmounted and updates are deferred for performance.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Hidden Activity trees can still fetch data for pre-rendering",
+   "detail": "Because a hidden Activity renders without running effects, data fetching that starts during render can still happen before the user opens the tab. The speaker shows a slow-load tab that is fetched before click when wrapped in Activity. He notes he had covered Activity in an earlier video when it was experimental.",
+   "t": "1:08"
+  },
+  {
+   "idea": "useEffectEvent solves the stale-value problem inside effects",
+   "detail": "When an effect needs the latest counter but must only re-run on URL change, adding the counter to the dependency array restarts the timer on every update, and omitting it captures a stale value. Moving the logic into a useEffectEvent and calling it from the effect lets it read current props and state without being a dependency. The speaker's rule of thumb: use it for logic that is triggered by an effect rather than by a user event.",
+   "t": "1:08"
+  },
+  {
+   "idea": "cache signal lets async work stop when React abandons a render",
+   "detail": "Server-side cache() memoizes a function within one render. The new cache signal is an AbortSignal that flips to aborted once React finishes the render, whether it was cancelled (for example, user navigated away or an error) or completed successfully. Pass it into fetch or DB calls so work nobody needs is cancelled.",
+   "t": "2:17"
+  },
+  {
+   "idea": "Performance tracks show React work in Chrome DevTools without React DevTools",
+   "detail": "React adds custom tracks to Chrome Performance profiles. The Scheduler track shows work by priority (blocking for user input, transitions inside startTransition). The Components track shows the component tree being rendered or running effects, with labels such as mount and blocked for yielding to work outside React.",
+   "t": "3:30"
+  },
+  {
+   "idea": "react-dom partial pre-rendering and an ESLint plugin upgrade round out the release",
+   "detail": "react-dom now supports partial pre-rendering: return the prelude (static shell) to the client, then call resume to render the rest. The speaker expects mainly framework authors to use it. The eslint-plugin-react-hooks update supports flat config and opt-in React Compiler rules, which the speaker recommends enabling so the codebase can use the compiler.",
+   "t": "3:30"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Keep component state across hide/show with Activity",
+   "how": "Replace {open && <Sidebar />} with <Activity mode={open ? \"visible\" : \"hidden\"}><Sidebar /></Activity>. The Sidebar component itself needs no changes. Hidden content stays mounted, gets display:none, and keeps useState and uncontrolled input values.",
+   "when": "Panels, tabs or sidebars where users expect state to survive closing and reopening, or where you want data fetched before the user navigates to the tab."
+  },
+  {
+   "name": "Read latest state inside an effect with useEffectEvent",
+   "how": "Move the side-effect body that needs current values (for example, logging the counter) into a function wrapped in useEffectEvent, accept the changing trigger value (URL) as an argument, and call that function from useEffect. Leave the effect's dependency array limited to the real trigger, such as the URL.",
+   "when": "An effect must re-run only on specific dependencies (for example, a timer started on URL change) but also needs the most recent props or state, and adding those values as dependencies would reset the effect."
+  },
+  {
+   "name": "Cancel wasted server work with cache signal",
+   "how": "In a server-component cache()-wrapped async function, read the signal exposed by the new cache signal API and pass it to fetch or a database client. The signal aborts when React finishes or abandons the render. The speaker does not show the exact call signature.",
+   "when": "Server rendering may be cancelled by navigation or errors and expensive async calls (fetch, DB queries) should stop when their result is no longer needed."
+  },
+  {
+   "name": "Profile React in Chrome DevTools using the built-in tracks",
+   "how": "Record a Performance profile in Chrome while exercising the app, then look at the Scheduler track for priority lanes (blocking, transitions) and the Components track for mount, effect and blocked labels. No React DevTools extension needed.",
+   "when": "Diagnosing slow renders, transition timing or effect cost in a React 19.2 app."
+  },
+  {
+   "name": "Enable React Compiler lint rules via the updated ESLint plugin",
+   "how": "Use the react-hooks ESLint plugin with flat config and opt into the React Compiler-powered rules. The speaker's advice is to follow these rules so the codebase stays compatible with the compiler. He does not show the config file.",
+   "when": "Preparing a React codebase to adopt the React Compiler, or enforcing rules-of-hooks style discipline in a flat-config project."
+  }
+ ],
+ "tools": [
+  "React 19.2",
+  "React DOM",
+  "Chrome DevTools (Performance profiles)",
+  "React DevTools (mentioned as unnecessary for the performance tracks)",
+  "ESLint (react-hooks plugin, flat config)",
+  "React Compiler"
+ ],
+ "numbers": [
+  {
+   "claim": "Six new features are listed in React 19.2 (Activity, useEffectEvent, cache signal, performance tracks, partial pre-rendering, ESLint plugin).",
+   "t": "0:00"
+  },
+  {
+   "claim": "The useEffectEvent demo uses a 3-second delay before logging the counter.",
+   "t": "1:08"
+  },
+  {
+   "claim": "Video length is 4:59.",
+   "t": "4:51"
+  }
+ ],
+ "hot_takes": [
+  "React 19.2 features are covered at release-digest depth only; the sidebar and counter demos are short and assume familiarity with hooks.",
+  "The speaker frames the release as a reason to learn these features because Claude Code will not know them yet. This is an unsupported aside, not something demonstrated in the video.",
+  "The video is a React changelog on a channel mainly about AI engineering, so it has little bearing on AgentOS, the gateway, or ProsHarness."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "React frontend features with no connection to AgentOS's proxy, memory, inference, or sandbox layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI and does not build a React UI in the material described. Nothing here changes what it builds.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

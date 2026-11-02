@@ -1,0 +1,142 @@
+{
+ "one_line": "Hands-on test of Supertonic 3, a 99M-parameter local TTS model: fast and easy to deploy, but it mangles prices, dates and expression tags, so test your own app text first.",
+ "summary": "The Better Stack presenter argues that cloud TTS has three hidden costs (per-call money, network latency, and privacy because text leaves the device) and that earlier local TTS models are often too big, need a GPU, start slowly, or break on real app text. He runs Supertonic 3, a local on-device TTS model from Supertone, through a small Python harness. Normal English and sample Arabic, French and Korean sound clean, and local generation is very fast, though no timings are shown. Numbers are the failure case: a sentence with an invoice total, decimal prices and a June 2026 date reads badly, and expression tags (laugh, breath, sigh) are only available through a paid API key. Deployment is the strength: pip install, a Python SDK, a CLI, and a local HTTP server with an OpenAI-compatible speech endpoint, so an app that already speaks the OpenAI speech API can be pointed at it. His verdict is to try it for local voice agents and private desktop apps, but skip it for expressive narration or easy voice cloning, and run your own tests on invoices, tickets, markdown and long paragraphs.",
+ "speakers": [
+  "Better Stack presenter (unnamed)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Supertone",
+  "ElevenLabs",
+  "OpenAI"
+ ],
+ "format": "review",
+ "topics": [
+  "voice-multimodal",
+  "local-ai"
+ ],
+ "tags": [
+  "text-to-speech",
+  "local-inference",
+  "onnx-runtime",
+  "voice-agents",
+  "openai-compatible-api",
+  "supertonic",
+  "python",
+  "cpu-inference"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Cloud TTS has three hidden costs: money per call, latency, and privacy",
+   "detail": "Every request sends text off the device, every user action becomes an API call, and the speech bill grows with the app. The presenter says this matters most for voice agents that send text to a third-party server.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Earlier local TTS models tend to fail on real app text",
+   "detail": "He lists the problems: huge files, a need for a GPU, slow starts, and models that sound fine on clean demo sentences but break on money, dates, phone numbers, times and odd formatting.",
+   "t": "1:11"
+  },
+  {
+   "idea": "Supertonic 3 fails the messy-text test on numbers",
+   "detail": "A test sentence with an invoice total, decimal prices and a June 2026 date was read badly. He calls the local version's handling of prices and numbers bad, and says it was the failure that mattered most to him.",
+   "t": "2:25"
+  },
+  {
+   "idea": "Supertonic 3 is small and CPU-only, with broad language coverage",
+   "detail": "The model has about 99M parameters, runs on CPU through ONNX Runtime with no GPU, cloud server or API key, and supports 31 languages. The Arabic, French and Korean samples sounded clean to a presenter who does not speak them.",
+   "t": "3:29"
+  },
+  {
+   "idea": "Expression tags are paywalled",
+   "detail": "Version 3 supports style tags such as laugh, breath and sigh, but they require a paid API key, so the free local version does not give expressive speech.",
+   "t": "4:37"
+  },
+  {
+   "idea": "Deployment is the real strength: an OpenAI-compatible local server",
+   "detail": "The package offers a Python SDK, a CLI and a local HTTP server with an OpenAI-compatible v1 audio speech alias. An app that already expects the OpenAI speech API can be pointed at the local server without redesigning its client code. Example clients are included for browser, Java, C++ and C#.",
+   "t": "5:35"
+  },
+  {
+   "idea": "Verdict: good for local voice agents, not for expressive narration",
+   "detail": "He suggests it for local voice agents, desktop apps and cached local setups. He would skip it for narration that needs emotion or for easy voice cloning, and says to test your own invoices, tickets, markdown and long paragraphs before committing.",
+   "t": "6:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Stress-test TTS with production-shaped strings",
+   "how": "Build a fixed set of strings like the app would produce: currency with cents, a due date, a phone number, a clock time, and a short invoice sentence. Synthesize each one and listen for mispronounced numbers and dates. Run the same set against every candidate model before choosing one. The video shows a simple balance-due sentence and a multi-number invoice sentence as the test cases.",
+   "when": "Before picking any TTS model for an app that speaks data (billing, notifications, support replies) rather than prose."
+  },
+  {
+   "name": "Side-by-side demo harness for a TTS model",
+   "how": "Install with pip install supertonic. Create a TTS object, put the voice and voice-style settings and the demo texts into plain Python data structures, and pass each demo's keyword arguments to the TTS object's synthesize method. Run the demos in a loop. The video does not show the exact API names or arguments on screen.",
+   "when": "Quick local evaluation of a TTS model across languages, voices and tricky input before wiring it into an app."
+  },
+  {
+   "name": "Point an OpenAI-style speech client at a local server",
+   "how": "Run the local HTTP server that ships with the package. It exposes an OpenAI-compatible v1 audio speech alias, so an existing client using the OpenAI speech API only needs its base URL changed. The video does not show the exact command, port or model name.",
+   "when": "Moving an app that already calls a cloud speech API onto a local model for testing or privacy, without rewriting the client."
+  }
+ ],
+ "tools": [
+  "Supertonic / Supertonic 3 (Supertone, on-device TTS, 99M parameters, 31 languages)",
+  "supertonic (pip package: Python SDK, CLI, local HTTP server)",
+  "ONNX Runtime (CPU inference)",
+  "Python",
+  "OpenAI audio speech API (compatible local endpoint; cloud comparison)",
+  "ElevenLabs (\"11 Labs\" in the transcript; cloud comparison)",
+  "Java, C++, C# and browser example clients"
+ ],
+ "numbers": [
+  {
+   "claim": "Supertonic 3 model size is about 99 million parameters",
+   "t": "3:29"
+  },
+  {
+   "claim": "Supertonic 3 supports 31 languages and runs on CPU through ONNX Runtime, with no GPU or API key needed for basic speech",
+   "t": "3:29"
+  },
+  {
+   "claim": "Test sentence for a balance due: $12,575 due June 15th, call by 5:30 PM",
+   "t": "1:11"
+  },
+  {
+   "claim": "Invoice test sentence: $12,000 for $58.75 due June 15, 2026, which the presenter says read badly",
+   "t": "2:25"
+  },
+  {
+   "claim": "Local generation is described as very fast, but no latency or real-time-factor figures are given",
+   "t": "3:29"
+  },
+  {
+   "claim": "Video runtime is 7:58; the presenter gives no benchmark, cost or accuracy numbers",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The presenter calls the paywalled expression tags a dealbreaker, saying the API key is what turns him off.",
+  "A fast, CPU-only model that handles normal text well still fails the numbers test, which is the case that matters most for app-generated speech.",
+  "Local TTS is practical for voice agents and privacy-first desktop apps, but its quality cannot be judged from demo sentences. The author's own verdict is to test your own ugly text first.",
+  "Claims about speed are qualitative only (\"insanely fast\"), with no timings, so the speed claim cannot be checked from the video.",
+  "Not sponsored; the subscribe prompts are light. The value is one hands-on test with honest negatives, but there is no methodology or repeated trials."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS is an OpenAI-compatible proxy for self-hosted agents, so a local OpenAI-style speech endpoint would fit the same pattern. Voice is not on the current roadmap, and the video shows that the number-reading failures are unresolved.",
+   "action": "Only if voice agents come into scope: test a local OpenAI-style speech server against production-shaped strings (currency, dates, phone numbers) before routing audio through the proxy."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness covers checkpointing, planning, loops, skill ranking and phone approvals. Spoken approvals could use TTS, but the video does not discuss that use, so the link is speculative.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

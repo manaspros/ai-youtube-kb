@@ -1,0 +1,139 @@
+{
+ "one_line": "Better Stack walks through switching a Next.js app from tRPC to oRPC, covering the same procedure/router/client setup and what oRPC adds: first-party OpenAPI with Scalar docs, typed error classes, and contract-first APIs.",
+ "summary": "The presenter migrates a small Next.js demo from tRPC to oRPC and shows that the core developer experience (procedures, a router object, a catch-all route handler, a typed client with autocomplete) is nearly identical. The main differences he highlights are first-party OpenAPI generation with a Scalar interactive reference UI, a typed error system (a specialized error class plus per-procedure error definitions and a safe() wrapper that returns a tuple), and contract-first design where you define input/output contracts before implementing them. He also mentions built-in plugins for caching, batching, retries and rate limiting, plus TanStack Query support beyond React (Vue, Svelte, Solid). The talk is a concise code walkthrough with no benchmarks; its tone is enthusiastic and it leans on \"absolute must switch\" framing, though the code shown is concrete. He admits he rarely uses the contract-first approach himself.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "Scalar"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "trpc",
+  "orpc",
+  "typescript",
+  "end-to-end-type-safety",
+  "openapi",
+  "nextjs",
+  "zod",
+  "error-handling",
+  "contract-first",
+  "tanstack-query"
+ ],
+ "key_ideas": [
+  {
+   "idea": "oRPC is a near drop-in mental model for tRPC users",
+   "detail": "Procedures, a plain-object router, a handler, and a typed client with autocomplete map one-to-one, so a tRPC user can port quickly. The presenter says the setup differs mainly per integration (he uses Next.js).",
+   "t": "0:00"
+  },
+  {
+   "idea": "Next.js wiring is a catch-all API route plus an RPC link",
+   "detail": "A single RPC handler receives the router and forwards GET/POST/PUT/PATCH/DELETE requests with a prefix option (he uses /rpc). The client uses an RPC link pointed at the server URL, and the client is typed from the router's type.",
+   "t": "0:52"
+  },
+  {
+   "idea": "Builder pattern for public vs. protected procedures",
+   "detail": "A base procedure carries database middleware, and a protected procedure extends it with authentication middleware, so every procedure built on it is authenticated.",
+   "t": "2:02"
+  },
+  {
+   "idea": "First-party OpenAPI is the main differentiator",
+   "detail": "Procedures can be exposed as REST-style endpoints with a route method/path, summary and tags, and output schemas drive spec generation. A Scalar block on a Next.js route gives an interactive reference with a built-in test client. He says the older tRPC OpenAPI route was an unmaintained plugin.",
+   "t": "3:28"
+  },
+  {
+   "idea": "Typed errors on both server and client",
+   "detail": "Throwing a specialized oRPC error with a code is the baseline. Declaring errors per procedure with a data schema makes the server throw side typed, and the client's safe() wrapper infers the error union so narrowing on error.code gives typed data (e.g. retryAfter as a number).",
+   "t": "4:41"
+  },
+  {
+   "idea": "Contract-first is available only in oRPC",
+   "detail": "You define contracts (inputs, outputs, errors, constraints) with the contract builder and no implementation, then implement them with the implement function. A mismatch between implementation and contract becomes a type error. The presenter says he seldom uses this pattern himself.",
+   "t": "7:09"
+  },
+  {
+   "idea": "Built-in plugins and broader query-library support",
+   "detail": "He lists plugins for caching, batching, retrying and rate limiting, and TanStack Query integration for Vue, Svelte and Solid as well as React. He mentions Pinia Colada for Vue but gives no detail.",
+   "t": "8:33"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Minimal oRPC procedure with Standard Schema input validation",
+   "how": "Import os from the orpc server package, then .input() with a Zod schema (any Standard Schema library such as Valibot or ArkType also works) and .handler() containing business logic. The handler receives the validated input.",
+   "when": "Replacing a tRPC procedure with a typed endpoint where you already use Zod or another Standard Schema library."
+  },
+  {
+   "name": "Router as a plain object and Next.js catch-all route",
+   "how": "Build a router object mapping names to procedures (e.g. hello -> helloProcedure). Create an RPCHandler with the router, then in a Next.js catch-all route under app/rpc call handler.handle(request, { prefix: '/rpc' }) for each HTTP method (GET, POST, PUT, PATCH, DELETE).",
+   "when": "Standing up oRPC in a Next.js app router; the prefix must match the client URL."
+  },
+  {
+   "name": "Typed client via RPC link",
+   "how": "Create an RPC link from the fetch client pointed at the server URL (http://localhost:3000/rpc in the demo). Create a client typed with the router client type, and use the router's type for the generic. Call procedures as methods on the client with the input object.",
+   "when": "Calling server procedures from the frontend with full autocomplete and inferred return types."
+  },
+  {
+   "name": "Public/protected procedure chain",
+   "how": "Define a base public procedure with database middleware attached. Derive a protected procedure from it by adding authentication middleware. Use the protected procedure for every endpoint that needs auth.",
+   "when": "Enforcing auth and shared context (DB handle) across many procedures without repeating middleware."
+  },
+  {
+   "name": "OpenAPI route metadata and Scalar reference",
+   "how": "Call .route({ method, path, summary, tags }) on each procedure and declare an output schema so the spec can be generated. Attach the Scalar reference block to a Next.js route (the demo serves it at /api). Use the Zod smart-coercion plugin so inputs are coerced without .coerce() on every field.",
+   "when": "Publishing a public REST-style API with generated OpenAPI docs and an interactive test client from the same procedures."
+  },
+  {
+   "name": "Typed error definitions",
+   "how": "Throw new ORPC error with a code (e.g. NOT_FOUND) and a message for ad hoc errors. For typed errors, declare them on the procedure with .errors({ CODE: { message, data: zodSchema } }), then in the handler throw errors.CODE({...}) for autocomplete and checked data. On the client, wrap the call in safe(), which returns a tuple, check isDefined or narrow on error.code, and read the typed data.",
+   "when": "Expressing expected failures (not found, rate limited) that clients must handle with type-checked fields instead of catching untyped exceptions."
+  },
+  {
+   "name": "Contract-first definition",
+   "how": "Define each route as a contract using the oc builder from the contract entry point, listing only input, output and errors. Group contracts in a router-shaped object. Implement with os.<group>.<contract>.handler(...) using the implement function from the server entry point, then assemble the implementations into a router. Mismatched outputs raise a type error.",
+   "when": "Freezing a shared API interface between separately developed client and server code, or when you want TDD-style API design."
+  }
+ ],
+ "tools": [
+  "oRPC (orpc)",
+  "tRPC",
+  "Next.js",
+  "Zod",
+  "Standard Schema (Valibot, ArkType mentioned)",
+  "Scalar (OpenAPI reference UI)",
+  "OpenAPI",
+  "TanStack Query",
+  "Vue",
+  "Svelte",
+  "Solid",
+  "Pinia Colada",
+  "Zod smart coercion plugin",
+  "tRPC OpenAPI plugin (name garbled in captions, probably trpc-openapi; described as unmaintained)"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Framed as an \"absolute must switch\" and a recommendation to replace tRPC; the evidence is a feature checklist on one demo app with no benchmarks or migration cost.",
+  "Claims the tRPC OpenAPI plugin is unmaintained and that oRPC is the only option with first-party OpenAPI and contract-first; not verified in the video.",
+  "Says he rarely uses the contract-first approach, which he presents as a headline differentiator."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "AgentOS is a Rust proxy plus Python/infra stack; a TypeScript RPC library has no clear place in it.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI; nothing in the video touches agent runs, checkpoints, or approvals.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

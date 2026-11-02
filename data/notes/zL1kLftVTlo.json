@@ -1,0 +1,166 @@
+{
+ "one_line": "Ronak Malde (Trajectory) on scaling continual learning: on-policy self-distillation with privileged hints as a step past GRPO, plus fixes for long tool-calling runs (step-level weighting, hint-leakage control).",
+ "summary": "The speaker argues that benchmark-driven RL is getting slower and more expensive, while production traffic already produces failure data worth training on. He walks through the trade-offs of SFT, DPO/RLHF and GRPO across four criteria: task distribution, on-policy sampling, parallelism and reward granularity. His proposed method, on-policy self-distillation (OPSD), samples one rollout from the student, gives the same model a hint in its prompt as a teacher, and fits the student's per-token distribution to that teacher. He reports this works on short tasks, including better LiveCodeBench results than GRPO, but breaks down at around 120B parameters with 50 to 100 tool calls, where hedging words (\"wait\", \"maybe\") take over and run-to-run variance rises. His fixes are per-step KL weighting for long trajectories, an LLM filter or residual (partial-hint) guidance to prevent hint leakage, and a reported 120B result on Mercor APEX-Agents. The talk closes with a pitch for Trajectory's platform and a Q&A admitting the field is still in \"pseudo-continual learning\" with batch updates.",
+ "speakers": [
+  "Ronak Malde"
+ ],
+ "orgs": [
+  "Trajectory",
+  "Windsurf",
+  "Google DeepMind",
+  "Harvey",
+  "Dekagon",
+  "Rogo"
+ ],
+ "format": "talk",
+ "topics": [
+  "training-finetuning-rl",
+  "agent-architecture",
+  "skills-self-improvement"
+ ],
+ "tags": [
+  "continual-learning",
+  "on-policy-distillation",
+  "self-distillation",
+  "OPSD",
+  "GRPO",
+  "hint-leakage",
+  "long-horizon-tool-calling",
+  "token-efficiency",
+  "production-traces"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Benchmark-driven RL is getting slower and more expensive",
+   "detail": "Benchmarks saturate within months, and some take 4, 6, 24 hours or several days to build. The speaker argues they are also not tied to real-world use, while production inference already generates failure data that could be trained on.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Four criteria explain the progression from SFT to GRPO",
+   "detail": "The criteria are task distribution (online vs fixed), on-policy sampling, parallelism (how many rollouts and environment copies are needed), and reward granularity (per-token vs sequence). Each method trades some of these off. GRPO gives on-policy learning but needs heavy parallel environment infrastructure and a sequence-level reward.",
+   "t": "2:43"
+  },
+  {
+   "idea": "On-policy self-distillation uses the model as its own teacher through a hint",
+   "detail": "The student rolls out on its own task. The same model, given privileged information (a hint, or a golden solution) in its prompt, acts as the teacher. The student's per-token log-probs are fitted to the teacher's. This needs one rollout per example, not a group.",
+   "t": "7:49"
+  },
+  {
+   "idea": "Match the full vocabulary distribution, not only the sampled token",
+   "detail": "The speaker says the update touches the whole distribution over roughly a 65K-token vocabulary at each step, which shifts whole distributions rather than sharpening the sampled choice as RL does. He reports that GRPO plateaus near Sonnet-level on LiveCodeBench while this approach reaches further.",
+   "t": "10:23"
+  },
+  {
+   "idea": "Long tool-calling runs expose failure modes that short tasks hide",
+   "detail": "At around 120B parameters with 50 to 100 tool calls, eval accuracy and run-to-run variance get high and tool-call format errors appear. The teacher keeps correcting the drifting student, which leads to a local optimum full of hedging words, with the student stuck between two divergent distributions.",
+   "t": "13:08"
+  },
+  {
+   "idea": "Weight each step by how far the student has drifted from the teacher",
+   "detail": "Per-step KL between student and teacher is used as a token weight instead of a KL penalty. Steps that diverge heavily are down-weighted, while steps that get back on track regain weight later in the trajectory.",
+   "t": "14:35"
+  },
+  {
+   "idea": "Hint leakage is the OPSD version of reward hacking",
+   "detail": "The student can learn to act as if it knows the hidden answer (the speaker's example: it reasons its way to the zeros in a last-three-digits problem). Two mitigations are named: an LLM that rewrites the hint into something the student could plausibly have known, and residual guidance that mixes the partial-hint and full-hint teacher log-probs to control how far the update moves.",
+   "t": "15:57"
+  },
+  {
+   "idea": "Q&A: the field is still in pseudo-continual learning",
+   "detail": "Current systems do offline batch updates and re-upload the model. Merging the rollouts from many users is partly an infrastructure problem. The speaker calls the joint updating of model and harness, which he says is underexplored, one of the most exciting open questions.",
+   "t": "21:28"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "On-policy self-distillation (OPSD)",
+   "how": "Sample one rollout from the student on its own task prompt. Re-score the same rollout with the same model given a privileged hint in the prompt (the teacher). Train the student to match the teacher's per-token distribution over the full vocabulary.",
+   "when": "When no stronger teacher model exists and you want on-policy, single-rollout, per-token training on a fixed or online task distribution."
+  },
+  {
+   "name": "Step-level divergence weighting for long trajectories",
+   "how": "Compute the KL between student (no hint) and teacher (with hint) at each step of a tool-calling trajectory. Use that KL as the token weight for the step, not as a penalty. Steps that diverge are down-weighted and steps that re-align count again.",
+   "when": "When OPSD works on short tasks but degrades on long multi-tool-call runs (around 50 or more calls)."
+  },
+  {
+   "name": "Residual guidance via linear combination of hint strengths",
+   "how": "Get teacher log-probs from a partial hint (about half the hint) and from the full hint. Take a linear combination of the two so the target sits between them, which limits how far the student moves out of its own distribution.",
+   "when": "When the full hint is far out of distribution for the student and a full-hint update shifts the model into unknown territory."
+  },
+  {
+   "name": "LLM-filtered hints to prevent leakage",
+   "how": "Have an LLM turn a hint built from logs or the solution into a form the student could plausibly have known. The speaker's example: an expired SSO token found in the logs becomes a reasonable diagnostic clue, not the answer.",
+   "when": "When hints contain information the student could not know at inference time, and you need to avoid shortcut reasoning."
+  },
+  {
+   "name": "Inspect rollouts for hint leakage",
+   "how": "Read rollouts for signs that the student refers to the hidden answer or skips steps it could not know, as in the speaker's last-three-digits example.",
+   "when": "Whenever you design hints for OPSD, before relying on the training signal."
+  }
+ ],
+ "tools": [
+  "GRPO",
+  "OPSD",
+  "OpenClaw RL",
+  "LiveCodeBench",
+  "Mercor APEX-Agents"
+ ],
+ "numbers": [
+  {
+   "claim": "Some benchmark tasks take 4 hours, 6 hours, 24 hours or several days to scale up",
+   "t": "0:08"
+  },
+  {
+   "claim": "Labs are spending hundreds of trillions of tokens per day on inference (speaker's figure)",
+   "t": "1:18"
+  },
+  {
+   "claim": "GRPO uses a group of about 8 parallel rollouts per example, which OPSD avoids",
+   "t": "9:08"
+  },
+  {
+   "claim": "Vocabulary of about 65K tokens that OPSD optimizes over at each token",
+   "t": "10:23"
+  },
+  {
+   "claim": "GRPO saturates around Sonnet-level performance on LiveCodeBench (speaker's observation)",
+   "t": "10:23"
+  },
+  {
+   "claim": "Scaled tests ran on 120B, 500B and 1 trillion parameter models",
+   "t": "11:43"
+  },
+  {
+   "claim": "Breakdown appears around 120B parameters with 50 to 100 tool calls, with high eval variance and tool-call format errors",
+   "t": "11:43"
+  },
+  {
+   "claim": "A 120B model reportedly reaches results on Mercor APEX-Agents, a task that needs 100+ tool calls (no score given in talk)",
+   "t": "18:40"
+  }
+ ],
+ "hot_takes": [
+  "Benchmark-based RL scaling is becoming too slow and expensive, and production traces are the better training signal.",
+  "On-policy self-distillation with a hint can surpass RL on some long-horizon agentic tasks (speaker's claim, no numbers in talk).",
+  "Continual learning for agents needs the model and the harness updated together, and this joint update is underexplored.",
+  "Per-token dense reward is more useful than one scalar reward per rollout for messy real-world data."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The SkillForge / EvolveCraft goal of turning agent telemetry into learning signal overlaps with using production traces as per-token training data, though the talk is about model weights, not skills.",
+   "action": "Read the OPSD and step-level divergence ideas as a possible signal design for EvolveCraft, and check hint leakage before any use on real traffic."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The speaker's point that run-to-run variance at 100+ tool calls can dominate results matters for any long-run harness that is checkpointed and resumed.",
+   "action": "When ProsHarness evaluates long runs, record variance across reruns of the same plan, not a single pass."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

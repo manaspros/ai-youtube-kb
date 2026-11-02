@@ -1,0 +1,44 @@
+# The Next Trillion Internet Users Still Don’t Have an Identity — Adi Singh, AgentMail
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `mBNVKkyfnE0` · [watch](https://youtu.be/mBNVKkyfnE0) · **date:** 2026-10-12 · **length:** 17:03 · **format:** talk · **quality:** 3/5 · **depth:** intro
+- **speakers:** Adi Singh · **orgs:** AgentMail, Telnyx, Anthropic, IBM, Google
+- **topics:** security-guardrails, mcp-and-tools, product-ux · **tags:** agent-identity, email-inbox-api, agent-signup, trust, mcp, agent-to-agent, skill-md, adoption, agentmail
+
+> Adi Singh (AgentMail) argues agent identity will be accumulated from existing human-facing surfaces like email and Slack rather than issued from scratch, and that over-tight key-card style security specs hurt adoption.
+
+## Summary
+Adi Singh, co-founder of AgentMail (an email inbox API for coding agents), opens with an experiment: in January 2026 he told an agent to sign up for AgentMail unsupervised, and the agent's posts on an AI-agent social site (Clawk, as transcribed) were philosophical about persistent identity and memory. He argues identity is formed through accumulated trust, error history, and fallbacks rather than issued. He uses MCP's viral early use case and email's 50-year trust infrastructure (SPF, DKIM, DMARC, audit history) as evidence that adoption follows existing surfaces. He says agent identity specs (agent cards, passports, DIDs) focus on security and short-lived scoped credentials, which can reduce adoption. His partner example is Telnyx, where a skill.md signup flow was changed to call AgentMail's API to give the agent an inbox, after which the inbox became the contact point for account and billing events. He closes that the field is very early, that existing surfaces will strain under agent load, and that teams should design for the next trillion users by starting from use cases. The talk is partly a product pitch, but it has a concrete integration pattern.
+
+## Key ideas
+- **Agent identity is accumulated, not issued** — Speaker argues today's identity systems work because of trust built up across nodes, past errors, and fallbacks. Agent identity may follow the same path: it is accumulated over time. ([3:47](https://youtu.be/mBNVKkyfnE0?t=227))
+- **Adoption follows existing surfaces (horseless carriage)** — New agent products should run on surfaces people already use (email, Slack, browser). MCP spread because it plugged tools into existing surfaces. Building for the end state first is the trap. ([5:14](https://youtu.be/mBNVKkyfnE0?t=314))
+- **Security-first key-card specs can choke adoption** — Agent cards, passports, and DIDs focus on scoping tightly, expiring fast, and revoking early. Speaker says these can cut adoption, so security and adoption need to be balanced. ([9:01](https://youtu.be/mBNVKkyfnE0?t=541))
+- **Give the agent an inbox through the signup flow** — Telnyx changed its agent signup skill.md so the agent can call an API to get an email address. The agent then verifies, gets an API key, and keeps the inbox as its permanent contact point. ([11:26](https://youtu.be/mBNVKkyfnE0?t=686))
+- **The agent's inbox becomes the business contact point** — Once the agent has an inbox, providers reach it for low balance, suspension, support, failures, and recoveries. Refunds, disputes, and receipts also need an audit trail of who the agent is and what it signed up for. ([12:20](https://youtu.be/mBNVKkyfnE0?t=740))
+- **Node is both trust surface and attack surface** — Email brings built-in trust (DNS records, audit history, 5 billion users) but also phishing and prompt injection risk. Speaker says you do not get the trust without owning the risk. ([8:00](https://youtu.be/mBNVKkyfnE0?t=480))
+- **Do not hand agents your own accounts** — Giving an agent your personal inbox or WhatsApp creates a large blast radius for wrong messages sent or received. Dedicated agent identities limit that. ([13:47](https://youtu.be/mBNVKkyfnE0?t=827))
+
+## Techniques
+- **skill.md signup flow with inbox provisioning API** — In the agent's signup skill file, add an API call that returns a ready email address, so the agent does not need to invent one. The agent then receives the verification code, completes signup, and stores the API key. *When:* When you ship a service that autonomous agents must sign up for, and their signup flow currently assumes a human already has an email.
+- **Dedicated per-agent inbox as the identity and contact point** — Give each agent its own email inbox scoped to the service it signed up for. Route provider notices (billing, suspension, support) to that inbox so the agent keeps the context. *When:* When agents must receive notices, handle disputes or refunds, or be reachable by external parties over time.
+- **Use existing surfaces as the bridge for new agent identity** — Build on what humans already use (email, Slack, browser checkout) and layer agent-specific identity on top, instead of starting with a new network or spec. *When:* When designing agent identity or agent-facing products, and when adoption matters more than the perfect spec.
+
+## Numbers
+- Email has been around since 1971 and is used by about 5 billion people (speaker's figure). ([2:41 / 8:00](https://youtu.be/mBNVKkyfnE0?t=0))
+- Coding agents can access 50 to 60 integrations, each with its own permissions. ([6:33](https://youtu.be/mBNVKkyfnE0?t=393))
+- Speaker's company has been building AgentMail since 2024. ([5:14](https://youtu.be/mBNVKkyfnE0?t=314))
+- Agent experiment run in January 2026, unsupervised. ([1:10](https://youtu.be/mBNVKkyfnE0?t=70))
+
+## Hot takes
+- Agent identity is accumulated through trust and mishaps, not issued from scratch.
+- 2024 multi-agent and swarm ideas felt more futuristic than what exists now.
+- Overly tight, fast-expiring agent credentials can reduce adoption.
+- Do not give agents your own personal email or WhatsApp account.
+
+## Tools mentioned
+AgentMail, Telnyx, Clawk, OpenClaw, MCP, DKIM/SPF/DMARC, DIDs, agent cards, skill.md
+
+## Relevance to our work
+- **agentos** (2/3): Agent identity and per-agent inboxes fit AgentOS security and governance pillars (Govrix audit log, exec-gate guardrails), and the trust/adoption tension applies to the AgentOS scope model. → *Look at whether AgentOS should issue per-agent scoped identities and audit trails with rotation and revocation, and test how tight scopes affect agent adoption.*
+- **prosharness** (1/3): Phone-driven approvals and credential handling touch on agent identity, but the talk does not cover the Claude Code harness. → *Note the per-agent inbox idea for approval routing, with no change planned yet.*
+- **general** (1/3): Useful background on agent identity specs and the security-versus-adoption tradeoff. → *Read the agent identity spec discussion (agent cards, passports, DIDs) before designing any agent auth.*

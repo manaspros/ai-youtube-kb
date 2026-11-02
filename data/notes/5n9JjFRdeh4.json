@@ -1,0 +1,132 @@
+{
+ "one_line": "Better Stack demos Foresight.js, a 5KB framework-agnostic library that preloads links and images from predicted mouse movement, then argues it should come only after cheaper performance fixes.",
+ "summary": "The presenter demos Foresight.js, a roughly 5KB framework-agnostic library that predicts which element a user will interact with from mouse trajectory and preloads it before the click. In a side-by-side image gallery under throttled 4G, Foresight-driven preloading showed images instantly while hover-based preloading produced visible pop-in, though this is one informal demo rather than a measured benchmark. The walkthrough covers the hit-slop hitbox expansion, the trajectory prediction time setting (tuned from 50 ms to 300 ms in the debugger), and the register/unregister API with per-element hit-slop overrides. Limits named in the video: no support for touch or mobile devices, and no ready-made docs for TanStack Router, which has its own prefetch plans, while Next.js and React Router are covered. The presenter's verdict is to reach for it only after lazy loading, progressive image loading, chunking and smaller images have been exhausted. The title oversells the content; the library is a niche tool for mouse-driven desktop prefetching.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "web-performance",
+  "prefetching",
+  "predictive-preloading",
+  "foresight-js",
+  "frontend",
+  "image-loading",
+  "network-throttling",
+  "mouse-trajectory"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Foresight.js predicts intent from mouse trajectory and preloads before the click, unlike plain preload-on-hover or preloading every link.",
+   "detail": "Described as a 5KB, framework-agnostic library. The presenter says the ball-like debugger cursor 'latches onto' a target the user seems about to click, and that element's content is preloaded.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Hit slop enlarges an element's hover hitbox so prediction fires earlier.",
+   "detail": "Blue boxes in the debugger show the expanded hitbox. Slow mouse movement over that enlarged area triggers preloading before the real hover.",
+   "t": "1:23"
+  },
+  {
+   "idea": "In the demo, intent-based preloading beat hover-based preloading for large images on a throttled connection.",
+   "detail": "Thumbnails were about 20KB. The presenter estimates full-size images at 4-8MB and throttles to slow 4G. Hover preloading showed pop-in after scrolling and clicking; Foresight displayed the image instantly. Single informal run, no measurements beyond the Network tab.",
+   "t": "1:23"
+  },
+  {
+   "idea": "Trajectory prediction time controls how far ahead the mouse path is extrapolated.",
+   "detail": "Set in milliseconds. At about 50 ms the prediction circle barely leads the cursor; at about 300 ms predictions are 'wilder' and reach further ahead. Tunable live in the Foresight debugger.",
+   "t": "4:05"
+  },
+  {
+   "idea": "Integration is a per-element register with a callback, plus unregister for cleanup.",
+   "detail": "setupForesightForItem registers an image element; the callback preloads the image and updates a metrics value. Per-element hit slop overrides the global default. Unregister is wired to the popup close handler.",
+   "t": "5:22"
+  },
+  {
+   "idea": "The presenter's bottom line: this is a late-stage optimization, not a first step.",
+   "detail": "Only after lazy loading, progressive image loading, chunking and image size reduction are done and the site is still too slow. No touch or mobile support, since it relies on cursor movement. TanStack Router reportedly has its own predictive prefetch in progress.",
+   "t": "5:22"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Intent-based preload via register/unregister",
+   "how": "Initialize Foresight with optional defaults (global hit slop, trajectory prediction time in ms; initialization can be skipped to use defaults). For each image or link element, call the instance's register method with the element and a callback that performs the preload and updates metrics. Set a per-element hit slop to override the global value. Call unregister on cleanup, e.g. when a lightbox or popup closes.",
+   "when": "Image galleries or lightboxes where the target asset is large and the user's next click is predictable from cursor movement, on desktop only."
+  },
+  {
+   "name": "Tune trajectory prediction live in the debugger",
+   "how": "Open the Foresight debugger in the browser (minimizable, controlled by its settings panel) and change the trajectory prediction time. Shorter values (about 50 ms) keep predictions close to the cursor; longer values (about 300 ms) predict further ahead and fire more speculatively.",
+   "when": "Before committing to a config, to balance wasted bandwidth against how early the preload starts."
+  },
+  {
+   "name": "Enlarge hit slop for early triggering",
+   "how": "Increase the hitbox around an element (globally, or per element to override) so that the intent prediction fires before the cursor reaches the element.",
+   "when": "Targets are small or sit far from the cursor's likely path, and you want preloads to finish before hover."
+  },
+  {
+   "name": "Compare preload strategies under throttled network",
+   "how": "Throttle the browser network to slow 4G, then test each strategy (hover preload vs. intent preload) by scrolling, waiting, and clicking. Watch the Network tab to see when the full-size request starts relative to the click, and check for visible pop-in.",
+   "when": "Validating any prefetching change against slow connections, not just on a fast local network."
+  },
+  {
+   "name": "Performance ordering",
+   "how": "The presenter's order of operations before predictive prefetching: lazy loading, progressive image loading, code chunking, and reducing image sizes. Add intent-based preloading only if the site is still too slow for users.",
+   "when": "Deciding whether a predictive prefetch library is worth the added dependency on a site."
+  }
+ ],
+ "tools": [
+  "Foresight.js",
+  "TanStack Router",
+  "Next.js",
+  "React Router",
+  "React",
+  "Vue",
+  "Svelte"
+ ],
+ "numbers": [
+  {
+   "claim": "Foresight.js is about 5KB and framework-agnostic.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Thumbnails in the demo gallery are about 20KB; the full-size images are estimated at roughly 4-8MB each.",
+   "t": "1:23"
+  },
+  {
+   "claim": "A throttled slow 4G connection was used for the comparison. The on-screen image size went from 0 to 21KB while loading the thumbnail.",
+   "t": "1:23"
+  },
+  {
+   "claim": "Trajectory prediction time was shown at about 50 ms (short) and about 300 ms (long), with visibly different prediction reach.",
+   "t": "4:05"
+  }
+ ],
+ "hot_takes": [
+  "The title ('Made Every Other Performance Optimization Obsolete?') overstates the content; the presenter's own conclusion is that it is a late-stage option, not a replacement.",
+  "The side-by-side comparison is a single informal demo with no repeated runs or timing numbers, so the 'instant' claim is anecdotal.",
+  "No mobile or touch support, since it depends on cursor movement, so it does not help a large share of web traffic.",
+  "The presenter notes that the blue hit-slop boxes in one screen recording looked like a debugger bug, so the visual tooling is not fully polished."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Browser-side image prefetching has no bearing on the AgentOS proxy, memory, serving or observability stack.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No overlap with the Claude Code harness, checkpoints or approval flows.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

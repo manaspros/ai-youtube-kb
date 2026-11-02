@@ -1,0 +1,116 @@
+{
+ "one_line": "Walks through React's experimental Activity component, which hides a subtree while keeping its state and pre-rendering it, compared with conditional rendering and CSS hiding. Practical for tab UIs, with caveats.",
+ "summary": "The video explains React's experimental Activity component, which toggles a subtree between visible and hidden modes. The demo uses a three-tab UI where each tab fetches its own data with an artificial two-second delay. With conditional rendering, switching tabs unmounts the component, refetches data and wipes form input. Hiding the tabs with CSS keeps state but mounts everything up front and cannot pause side effects. Activity combines the two: hidden children are pre-rendered at lower priority, their state is kept, and their effects are cleaned up while hidden. A second demo with two videos shows that Activity lets a hidden video pause and resume from where it left off. The speaker notes the API is only on the experimental React build under an unstable_ import name, so it is not for production yet.",
+ "speakers": [],
+ "orgs": [],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "react",
+  "activity",
+  "unstable_Activity",
+  "conditional-rendering",
+  "state-preservation",
+  "effects",
+  "strict-mode",
+  "tabs",
+  "frontend-performance",
+  "experimental-api"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Conditional rendering unmounts a tab on every switch, so each tab refetches its data and a half-filled form is wiped when you come back.",
+   "detail": "The demo has about, post and contact tabs, each with a two-second fake data delay. Each switch re-runs the fetch, and the contact form resets to defaults.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Hiding tabs with CSS keeps state and avoids refetching, but every tab mounts on load and nothing pauses when hidden.",
+   "detail": "Loading all components up front means the hidden tabs' data arrives immediately, and the form survives tab switches. The speaker says that setup gives you no way to stop hidden side effects, such as video playback.",
+   "t": "1:10"
+  },
+  {
+   "idea": "Activity with mode set to visible or hidden gives the CSS behaviour plus performance benefits, because hidden children are pre-rendered at lower priority than visible ones.",
+   "detail": "Visible content renders first. In the demo, the post tab's data call fires before the about call once Activity is in use. Pre-rendering means switching to a hidden tab shows its content immediately.",
+   "t": "2:11"
+  },
+  {
+   "idea": "When an Activity is hidden, its effects are destroyed and cleanup runs, but its React and DOM state is kept and reused when it becomes visible again.",
+   "detail": "This is why form input survives. The speaker flags this as a foot gun: effects do not run while hidden, so the work in them must be designed around that.",
+   "t": "3:26"
+  },
+  {
+   "idea": "Use effects for play and pause so that hiding an Activity runs cleanup and resuming it runs the effect again.",
+   "detail": "In the two-video demo, conditional rendering resets playback to the start on every switch. With Activity, the hidden video pauses through cleanup and the visible one resumes from its saved position, with no reload.",
+   "t": "5:47"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Replace conditional rendering with Activity for tab-like UIs",
+   "how": "Wrap each tab's component in Activity and set mode per tab, e.g. mode is visible when the active tab matches and hidden otherwise. Keep each tab's data fetching and form state inside its own component, since Activity preserves them. Import from the experimental React build as unstable_Activity (speaker's wording: 'import unstable activity'); the exact import line is not shown on screen.",
+   "when": "Tabs or panels whose inner state or data should survive switching, and where the first-visit wait should be hidden by pre-rendering. Only in experimental builds, not production."
+  },
+  {
+   "name": "Put media playback in an effect with cleanup",
+   "how": "Start playback in a useEffect and pause it in the cleanup. Under Activity, hiding the panel runs the cleanup, and showing it runs the effect again. Keep the playback position in the preserved state so it resumes where it stopped.",
+   "when": "Several media players in tabs or panels where only the visible one should play and it should resume rather than restart."
+  },
+  {
+   "name": "Compare the three approaches before choosing",
+   "how": "(a) Conditional rendering: unmounts, state lost, refetch on every switch. (b) CSS display toggle: state kept, all children mounted up front, no cleanup on hide. (c) Activity: state kept, hidden children pre-rendered at lower priority, effects cleaned up while hidden. Pick based on whether you need preserved state, background data loading, or pause-on-hide.",
+   "when": "Deciding how to structure stateful tabs, or when a bug report says state or data reloads on tab switch."
+  }
+ ],
+ "tools": [
+  "React",
+  "React Activity (unstable_Activity, experimental React build)",
+  "React Strict Mode",
+  "CSS (display toggling)",
+  "Cursor"
+ ],
+ "numbers": [
+  {
+   "claim": "Each tab's data call has an artificial delay of two seconds, used to show the reload cost of conditional rendering.",
+   "t": "0:00"
+  },
+  {
+   "claim": "With conditional rendering the video demo's mount count stays at two under React Strict Mode and does not grow as tabs are switched.",
+   "t": "4:45"
+  },
+  {
+   "claim": "The demo has three tabs (about, post, contact) and two videos (Big Buck Bunny, Elephant's Dream).",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The API is available only on the experimental React build under an unstable_ name, and the speaker says that signals it should not be used in production yet.",
+  "The speaker frames Activity as a more efficient CSS toggle, but its effect cleanup and pre-rendering trade-offs are not benchmarked. The demos are console logs and visual timings only.",
+  "The speaker closes by asking whether this is React fixing its past mistakes or a welcome addition for performance, which signals an opinion without giving one."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "A React tab-state pattern has no bearing on AgentOS's Python or Rust proxy, memory or inference layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness is a CLI harness around Claude Code, with no React UI described in the profile.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Only relevant if we build a React UI over our data, such as a KB or trace dashboard with tabs whose state should survive switching.",
+   "action": "If a React dashboard is built, keep tab state with conditional rendering for now; revisit Activity once it leaves experimental, and test that effect cleanup behaves as expected."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

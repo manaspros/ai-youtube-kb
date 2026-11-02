@@ -1,0 +1,172 @@
+{
+ "one_line": "Qodo's CEO argues human code review will become optional only once teams codify tribal knowledge into a context engine that serves both humans and agents, with per-rule analytics and graduated auto-approve/block.",
+ "summary": "Itamar Friedman, CEO of Qodo, argues that code review still has two jobs (quality/architecture checks and alignment/teaching) and asks whether human review can stop being mandatory. He says models are no longer the bottleneck: code-review benchmarks barely moved across recent model releases, and the missing piece is context. Today that context is scattered across AGENTS.md, CLAUDE.md and skill files with conflicting standards, and much of it lives in developers' heads and Slack. He proposes a context engine that collects rules, history, accepted and rejected comments, and service contracts, and presents them to humans (links to the rules applied) and to agents (PR comments that stop repeated findings). He describes moving from file-level review to graph-level review of cross-service contracts, and then to semantic approve/block rules added step by step. The talk is largely a product pitch for Qodo, and the concrete numbers are thin: the \"100 PRs\" threshold and the 2027 zero-critical-bugs goal are his own targets, not measured results.",
+ "speakers": [
+  "Itamar Friedman"
+ ],
+ "orgs": [
+  "Qodo"
+ ],
+ "format": "talk",
+ "topics": [
+  "pr-code-review",
+  "context-engineering",
+  "governance-compliance",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "code-review",
+  "trust",
+  "tribal-knowledge",
+  "context-lake",
+  "rules-and-standards",
+  "auto-approve",
+  "auto-block",
+  "service-contract-graph",
+  "agent-facing-comments",
+  "rule-analytics",
+  "artificial-wisdom"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Code review has two jobs: validating quality and architecture, and alignment/teaching by senior developers. Automating review means keeping both jobs, not only speeding up the PR step.",
+   "detail": "The speaker frames the question as whether the PR process can still do these two things once AI writes much of the code, and whether human review is still optional by end of 2026.",
+   "t": "1:11"
+  },
+  {
+   "idea": "Teams split into two philosophies: every line is human-reviewed for trust, or bugs are accepted and fixed after release for speed. Pick a position before choosing tools.",
+   "detail": "His view is that the chosen philosophy determines which milestones and tools are needed to earn enough confidence to skip human PR review.",
+   "t": "3:56"
+  },
+  {
+   "idea": "Models are not the barrier. Code-review benchmarks barely changed across recent model releases, and context decides review quality.",
+   "detail": "Without the right context, even strong models give generic findings such as asking whether error handling was considered, which may or may not matter for that change.",
+   "t": "5:12"
+  },
+  {
+   "idea": "Context is fragmented and inconsistent. Agent instruction files, skill files and team habits each carry different standards, and nothing governs code produced outside the PR flow.",
+   "detail": "He says a growing share of shipped lines comes from IDE or CLI agents rather than from the PR pipeline, and most tools lack a governance layer over it, including MCP and RAG context.",
+   "t": "6:23"
+  },
+  {
+   "idea": "Tribal knowledge must be codified into a shared context engine that works for humans and agents, not a single format.",
+   "detail": "Rules and standards should be visible to people through links in the review, while agents get machine-oriented comments. Knowledge sits in heads, docs and chat, so it has to be pulled out and organised.",
+   "t": "8:57"
+  },
+  {
+   "idea": "Agent-facing review comments can prevent repeated findings. A PR comment addressed to the next agent summarises what was already found and fixed, so the next review does not raise it again.",
+   "detail": "In his example, the review tool had already spawned a background fix run, and the next agent reads that history on the PR.",
+   "t": "14:20"
+  },
+  {
+   "idea": "Automation readiness is judged by how often humans still comment and whether review can run without them, not by a fixed rule. He suggests roughly 100 PRs with no human review as a signal.",
+   "detail": "This is his heuristic, not a measured result, and it is presented as a sign that the team is ready to automate more of the review.",
+   "t": "11:28"
+  },
+  {
+   "idea": "Next layer: architecture-level context. A graph of services and repos, their contracts and past incident discussions lets the tool judge how a PR affects other services, and approve or block using semantic rules.",
+   "detail": "He gives the example of a microservice changing its contract and breaking another. Approve/block rules should be written by people and added gradually.",
+   "t": "12:37"
+  },
+  {
+   "idea": "Governance means per-rule analytics: how often each rule fires, whether it is used, and whether it is useful, so bad rules get fixed. Context should learn from accepted and rejected comments and from production incidents.",
+   "detail": "He describes a visualisation of the software graph and PR status, and says auto-approve and auto-block should be added step by step rather than switched on at once.",
+   "t": "15:05"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Rule-linked review comments",
+   "how": "Each review finding lists which codified rules or standards it applied (for example, 4 of many rules violated) and links to the rule text, so a human can check and trust the finding.",
+   "when": "When a team wants to audit automated review output and build trust in it."
+  },
+  {
+   "name": "Agent-directed PR summary comments",
+   "how": "Post a comment addressed to the next agent on the PR listing the issues already found and any fix PR already opened, so later review passes skip those points.",
+   "when": "When review bots and coding agents run repeatedly on the same PR and re-raise old issues."
+  },
+  {
+   "name": "Per-rule analytics for review standards",
+   "how": "Track each rule or skill for how often it is caught, how often it is used in review, and whether developers accept the finding. Update or drop rules that are noisy or unused.",
+   "when": "When review rules have accumulated and nobody knows which ones still earn their place."
+  },
+  {
+   "name": "Learning context from accept/reject history",
+   "how": "Feed accepted and rejected review comments, PR discussions and past production breaks back into the context store so the rules improve over time.",
+   "when": "When standards exist only in people's heads and in past PR threads."
+  },
+  {
+   "name": "Graduated auto-approve and auto-block",
+   "how": "Start with humans reviewing everything, then add explicit semantic approve and block rules one at a time, based on accumulated evidence, instead of automating review in one step.",
+   "when": "When a team wants to remove human review gradually and keep it auditable."
+  },
+  {
+   "name": "Service-contract graph for PR impact",
+   "how": "Build a graph of repos, services and their contracts, and attach history and discussion links to each edge. Use it to flag PRs that break a contract or collide with another in-flight PR.",
+   "when": "When changes in one service can break others and a file-level diff review misses it."
+  }
+ ],
+ "tools": [
+  "Qodo",
+  "Claude Code",
+  "AGENTS.md",
+  "CLAUDE.md"
+ ],
+ "numbers": [
+  {
+   "claim": "Talk length 18:54.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Code-review benchmark results did not change much across recent model releases, according to the speaker's observation at a leading lab.",
+   "t": "5:12"
+  },
+  {
+   "claim": "Example output: review applied many rules, 4 of them violated, with a link to each rule.",
+   "t": "10:20"
+  },
+  {
+   "claim": "Example output: review found 5 issues on a PR, and a background fix run followed.",
+   "t": "14:20"
+  },
+  {
+   "claim": "Speaker's readiness heuristic: after about 100 PRs with few or no human comments, automate more review. This is a rule of thumb, not measured data.",
+   "t": "11:28"
+  },
+  {
+   "claim": "Speaker's target for 2027: zero outages and zero critical or high production bugs. This is an aspiration, not a result.",
+   "t": "17:33"
+  }
+ ],
+ "hot_takes": [
+  "Models are no longer the barrier to automated code review; context is.",
+  "Human code review will become optional only after the org codifies tribal knowledge into a context engine.",
+  "Shipping AI-generated code faster than humans can review puts a team in the problem, not ahead of it.",
+  "The developer, not the AI tool, holds the judgment today; codifying that judgment is what he calls artificial wisdom.",
+  "Code-review governance will move from reviewing single PRs to reviewing the whole software graph of contracts."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "L2D SkillForge has an open question about skill-worthiness and a success signal. The talk's accept/reject and per-rule usefulness tracking is a related signal, though it is about code review, not skill mining.",
+   "action": "Read the talk's per-rule analytics idea (catch, use, usefulness per rule) and compare it with SkillForge's open success-signal question before choosing a metric."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs plan, critique and debate steps, which is a review gate on agent-written work. The talk's point about rules and per-rule usefulness applies to that gate, but the talk gives no mechanism for it.",
+   "action": "Consider logging, for each critique finding, which rule it applied and whether it was accepted, so bad critique rules can be tuned later."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Directly relevant to context engineering: CLAUDE.md, AGENTS.md and skills carry conflicting standards, and the speaker argues context quality, not the model, drives review quality.",
+   "action": "Audit this repo's CLAUDE.md and skill files for conflicting standards, merge them into one source, and measure whether review output improves before changing models."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

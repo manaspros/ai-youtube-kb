@@ -1,0 +1,160 @@
+{
+ "one_line": "BMAD Method tutorial: role-based agents (PO, scrum master, dev, QA) shard a PRD and architecture doc into epics and stories with approval gates, run in Cursor or Claude Code.",
+ "summary": "The host walks through the BMAD Method (Breakthrough Method for Agile AI-Driven Development), an agile workflow packaged as IDE rule files that assign roles such as product owner, scrum master, developer and QA. He first brainstorms and writes a PRD and an architecture doc in a general chat model, using a bundled team file from the BMAD repo, then drops both into a docs folder. The PO agent shards these documents into chunks, and the scrum master generates epics and stories, each starting in draft status. A human manually changes a story to approved, the dev agent implements it and marks it ready for review, and a QA agent flips it to done. He runs each agent in a fresh chat to limit context growth and shows how the scrum master builds a story packet with insights from the previous story. The video ends with the per-project npx installer and its choices. The demo is a single to-do style iOS productivity app, built as 4 epics and 16 stories.",
+ "speakers": [
+  "AI LABS host (unnamed)"
+ ],
+ "orgs": [
+  "AI LABS",
+  "BMAD Code"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "context-engineering",
+  "multi-agent",
+  "coding-agents"
+ ],
+ "tags": [
+  "bmad",
+  "agile",
+  "prd",
+  "architecture-doc",
+  "sharding",
+  "role-agents",
+  "story-lifecycle",
+  "approval-gate",
+  "fresh-chat-per-agent",
+  "gitingest",
+  "cursor",
+  "claude-code",
+  "windsurf"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Skipping the development process (prompting an IDE straight to build an app) produces demos, not production software; the host frames the BMAD workflow as the next step beyond vibe coding and into context engineering.",
+   "detail": "Speaker's core motivation for the workflow. Framing is hype-leaning ('ultimate', 'no matter how big'), but the argument is that structure comes from documents and handoffs.",
+   "t": "0:00"
+  },
+  {
+   "idea": "BMAD is a small-chunk agile loop: PRD first, then break into tasks, build one chunk, test it, ship incrementally.",
+   "detail": "BMAD = Breakthrough Method for Agile AI-Driven Development. The PRD lists features without technical detail; the workflow mirrors how real agile teams operate.",
+   "t": "1:05"
+  },
+  {
+   "idea": "Requirements are produced in a chat LLM before any code is written: a brainstorm step, a five-stage PRD workflow, then an architecture workflow, with the team file uploaded and the model told to stay in character.",
+   "detail": "He used a team file from the repo's dist folder with ChatGPT, Claude or Gemini (Gemini recommended as most cost-effective). Outputs: a brainstorm markdown, prd.md and architecture.md.",
+   "t": "3:24"
+  },
+  {
+   "idea": "Each role is a separate agent with its own rule file, and each hands off through files on disk. The PO shards the docs, the scrum master drafts epics and stories, the dev implements, and QA reviews.",
+   "detail": "The PO shards the PRD and architecture into index chunks. The scrum master detects missing epics and offers to create them. Stories are only worked on when their status allows it.",
+   "t": "6:05"
+  },
+  {
+   "idea": "Story status is the coordination protocol. Stories go draft -> approved (human edit) -> ready for review (dev) -> done (QA agent).",
+   "detail": "Dev agent picks only approved stories. QA marks done after checking the story's items in the codebase and autofixing repetitive code. The human approval step is manual, by typing the status into the file.",
+   "t": "8:16"
+  },
+  {
+   "idea": "Each agent runs in a fresh chat, and the scrum master assembles a story packet from the previous story's insights plus architecture context, so the next dev run starts clean.",
+   "detail": "Speaker says the large doc files consume context and mixing agents in one chat causes confusion. The story packet is the handoff artifact.",
+   "t": "10:45"
+  },
+  {
+   "idea": "Installation is per project via the npx command from the repo README, with a few prompts: project path, install the Agile Core System, shard PRD and architecture (yes/yes), choose target IDEs, skip pre-built web bundles.",
+   "detail": "Creates a .bmad core folder plus IDE-specific rule folders (for example .claude and .cursor) containing role files such as pm.mdc. He selected Cursor, Claude Code and Windsurf, and noted the IDE may need a restart.",
+   "t": "11:36"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Two-document spec bootstrap",
+   "how": "Brainstorm in a general chat model, then run the PRD and architecture workflows (five PRD stages; interactive architecture doc). Save outputs as docs/prd.md and docs/architecture.md (the one manual folder step). Start from the team file in the BMAD repo's dist/teams folder (teamfullstack.txt), uploaded to the chat with an instruction to stay in character.",
+   "when": "Before any code, when you want features, stack and components written down so the agents have an explicit spec to shard."
+  },
+  {
+   "name": "Shard then epic/story decomposition",
+   "how": "Activate the PO agent (Cursor: type PO and select it; Claude Code: slash command), run its shard command with the paths to prd.md and architecture.md. Then in the scrum master role, run draft; if epics are missing, accept the suggested epic generation by typing 1. Stories are numbered by epic, for example 1.1, 1.2; he ended with 4 epics and 16 stories.",
+   "when": "When a PRD is large enough that one agent session cannot hold all of it; sharding makes it feasible to work one piece at a time."
+  },
+  {
+   "name": "Manual approval gate via story status field",
+   "how": "Stories are created with status draft. A human edits the status line in the story file to approved. The dev agent only builds approved stories and sets status to ready for review on completion. A review/QA agent checks the story's required items in the code and changes the status to done.",
+   "when": "When you want a human checkpoint before an agent starts a unit of work, and a separate verifier (not the builder) to decide it is complete."
+  },
+  {
+   "name": "Fresh chat per agent role",
+   "how": "Open a new chat for each agent (PO, scrum master, dev, QA) and for each story, so large spec files do not accumulate in one context.",
+   "when": "Any time agents load big shared docs; the speaker argues this avoids confusion and context-length problems."
+  },
+  {
+   "name": "Story packet handoff",
+   "how": "When drafting the next story, the scrum master collects insights from the previous completed story plus architecture context into one packet, which the next dev session receives.",
+   "when": "Sequential story implementation where later stories depend on decisions made in earlier ones."
+  },
+  {
+   "name": "Learn an unfamiliar repo by feeding it to an LLM",
+   "how": "Take the GitHub repo URL and replace github with gitingest (the speaker's wording); download the text rendering; upload it to Claude and ask how the workflow runs.",
+   "when": "When you want a quick, step-by-step explanation of a framework before installing it."
+  },
+  {
+   "name": "Per-project install with npx",
+   "how": "Copy the npx command from the BMAD GitHub README and run it in the terminal of each project. Answer prompts: project full path; option 1 Install BMAD Agile Core System (creates .bmad core); shard PRD = yes; shard architecture = yes; select IDEs (speaker chose Cursor, Claude Code, Windsurf); pre-built web bundles = no. Restart the IDE if rule files do not show up.",
+   "when": "To add the workflow to a specific project; it is not a global install, so repeat it per project."
+  },
+  {
+   "name": "Asterisk commands and role switching",
+   "how": "Inside an agent session, an asterisk prefix triggers built-in commands for the agent (for example the brainstorm command). Role commands switch personas, such as PM for the product manager, then create doc for the PRD workflow. Exact command names are partly garbled in the captions.",
+   "when": "Driving each BMAD role in order during the planning phase."
+  }
+ ],
+ "tools": [
+  "BMAD Method (BMAD Code's agile workflow; version not stated)",
+  "Cursor",
+  "Claude Code",
+  "Windsurf",
+  "ChatGPT",
+  "Claude",
+  "Gemini",
+  "GitIngest",
+  "npx (BMAD installer)"
+ ],
+ "numbers": [
+  {
+   "claim": "Demo project decomposed into 4 epics and 16 stories (4 per epic), with story IDs like 1.1 through 4.4.",
+   "t": "7:11"
+  },
+  {
+   "claim": "Gemini recommended as the most cost-effective model for the brainstorm and planning chat; ChatGPT described as also working.",
+   "t": "3:24"
+  },
+  {
+   "claim": "Installer prompts: 2 shard options answered yes (PRD and architecture); 3 IDEs selected (Cursor, Claude Code, Windsurf); web bundles declined.",
+   "t": "11:36"
+  }
+ ],
+ "hot_takes": [
+  "The 'ultimate' title and 'works across all IDEs, no matter how big' claims are hype: the only demo is one small iOS to-do style app, and only Cursor is shown running the workflow.",
+  "The real value shown is the process: document handoffs, a status field as the coordination protocol, and fresh contexts. The tooling itself is less important than the discipline.",
+  "The human still has to approve each story by hand, so the workflow is semi-autonomous; the narrator presents it as the entire process being 'handled by AI agents'.",
+  "The speaker says BMAD fixed the lack of documentation in his earlier Claude Code framework, which is a fair point about docs but says nothing about outcome quality."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Staged gates (draft, human approval, ready for review, done) and a separate verifier agent that flips completion map onto ProsHarness's plan -> critique -> debate flow and checkpoint/resume. Fresh-context-per-stage also matches its long-run design.",
+   "action": "Compare BMAD's status-field handoff (draft -> approved -> ready-for-review -> done) with ProsHarness's plan/critique stages; consider making a human approval a persisted checkpoint and having a separate verifier, not the builder, set completion."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The workflow is a developer tool, not infra, but its story-packet handoff (previous-story insights plus architecture context) is a context-passing pattern relevant to multi-agent orchestration in AgentOS.",
+   "action": "Read the story-packet idea as a reference for structured inter-agent context handoff; no direct change proposed."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

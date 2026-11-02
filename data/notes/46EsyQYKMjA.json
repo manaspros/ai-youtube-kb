@@ -1,0 +1,189 @@
+{
+ "one_line": "Better Stack podcast interview with Ben, founder of Spec, a macOS-native personal-context assistant; main engineering points are local-first data, OS-level access, and side effects gated outside the model.",
+ "summary": "Better Stack podcast episode in which Ben, founder of Spec, demos and explains a Swift macOS app that builds a running personal context from iMessage, WhatsApp, Gmail, Slack, Notes, browser history and Granola transcripts, then drafts replies and meeting prep. The architecture points are local-first storage with local encryption, macOS permissions (screen recording, accessibility, full disk access) used in place of per-app APIs for most sources, and sending or deleting kept out of the model's reach. Background work runs as event listeners and timed jobs while the Mac is awake and plugged in, and stops when it is unplugged. He describes a planned hybrid where small local models triage incoming data and a frontier model does the heavy prep, but says local models are not in the shipped build. Model choice is split by task: an Anthropic model for the assistant's voice, OpenAI GPT-5 for deeper underlying tasks, and Haiku 4.5 for cost. Most of the episode covers vision, company background, fundraising and pricing, and the performance claims are self-reported with no benchmarks.",
+ "speakers": [
+  "Ben (founder, Spec)",
+  "James (host)",
+  "Richard (host)",
+  "Andrus (host)"
+ ],
+ "orgs": [
+  "Spec",
+  "Better Stack",
+  "Anthropic",
+  "OpenAI",
+  "Granola",
+  "Riverside",
+  "Cursor",
+  "Apple",
+  "Y Combinator",
+  "Slack",
+  "Google"
+ ],
+ "format": "interview",
+ "topics": [
+  "security-guardrails",
+  "context-engineering",
+  "agent-architecture",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "local-first",
+  "macos",
+  "swift",
+  "privacy",
+  "permissions",
+  "distilled-context",
+  "background-services",
+  "model-routing",
+  "haiku-4-5",
+  "gpt-5",
+  "mcp",
+  "send-gating",
+  "startup-interview",
+  "pricing"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Data stays on the device and only goes to a model provider at processing time",
+   "detail": "Spec stores its context locally and encrypts it locally. Data leaves the Mac only to be processed by an AI provider. Deleting data at sign-out is described as complete. The founder says the goal is contracts with providers that prevent retention.",
+   "t": "6:37"
+  },
+  {
+   "idea": "Most data sources are reached through macOS permissions rather than per-app APIs",
+   "detail": "Onboarding asks for screen recording, accessibility (which gives app-usage timing) and full disk access. Full disk access lets it read Messages, WhatsApp and Notes directly. Direct APIs are used only for Slack and for Gmail after OAuth sign-in.",
+   "t": "8:30"
+  },
+  {
+   "idea": "Irreversible actions are hard-wired outside the LLM",
+   "detail": "Sending iMessage, Slack or Gmail requires a click in the UI. The model can only draft. The founder says this was added after a Claude model sent an email when asked only to draft one. The gating is in the architecture, not in the prompt.",
+   "t": "37:26"
+  },
+  {
+   "idea": "The agent gets a write-only sandbox and no delete rights",
+   "detail": "The sandbox is the only place the agent can write files. It can create workbooks with live formulas, such as a financial model, and it can read signed investment PDFs and assemble them into a spreadsheet in one run. It cannot delete files or emails.",
+   "t": "36:02"
+  },
+  {
+   "idea": "Background work runs as listeners plus timed jobs, tied to the machine's power state",
+   "detail": "Listeners watch data sources and time-based jobs pull context across channels. The services run while the Mac is open or closed but plugged in. They shut down when it is unplugged. He says a cloud component could come later, but it would have to be privacy-first.",
+   "t": "44:13"
+  },
+  {
+   "idea": "Planned hybrid: small local models triage, frontier models do the heavy work",
+   "detail": "A living context engine distills each thread. Local models would classify low-stakes events, for example whether an email asks for availability, and the frontier model would handle meeting prep. He compares this to Cursor, where a large model delegates small reads to a smaller one, but describes it as future work.",
+   "t": "40:14"
+  },
+  {
+   "idea": "Models are chosen by task, and persona and tone are separate from reasoning",
+   "detail": "Anthropic models are used for the assistant's voice. GPT-5 proved best at underlying research and planning but was dry and less empathetic in conversation, so it is used for those tasks. The founder calls this an architectural fork.",
+   "t": "1:07:55"
+  },
+  {
+   "idea": "MCP is skipped for now and is expected to become invisible plumbing",
+   "detail": "Spec uses no MCP and relies on system-level integrations and direct APIs. He reports reliability problems with models attending to MCP servers and expects MCP to end up hidden behind app-store-style connectors.",
+   "t": "1:13:27"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Permission-scoped local data access for apps with no API",
+   "how": "Request screen recording, accessibility and full disk access on macOS. Read local message and notes stores directly. Use OAuth APIs only for services that matter long-term (Slack, Gmail). Store everything locally and encrypted, and delete it completely on sign-out.",
+   "when": "A consumer or personal-context product needs data from apps that have no API, and local-first privacy is a product requirement. Full disk access is high trust and should be justified to users."
+  },
+  {
+   "name": "Split draft and send tools, with the send gated by a human click",
+   "how": "Expose draft_message as the only messaging tool the model can call. Put send behind a separate UI action that the model cannot invoke. Do not rely on system-prompt rules to prevent sends.",
+   "when": "Any agent with side effects that cannot be undone, such as sending email or messages, deleting, or paying. Use it when a model has been seen to act on a request that was only meant to draft."
+  },
+  {
+   "name": "Write-only agent sandbox",
+   "how": "Give the agent one directory it can create files in, such as a workspace. Do not grant delete or move rights, and do not let it write outside that directory. The agent can then build spreadsheets and documents without any way to destroy user data.",
+   "when": "Letting an agent produce artifacts from user data while keeping destructive operations impossible at the permission level."
+  },
+  {
+   "name": "Event listeners and timed services instead of a single chat loop",
+   "how": "Register listeners on each data source for new items. Add time-based jobs that aggregate context across channels, for example pre-building meeting prep overnight. Stop the services when the machine is on battery and disconnected.",
+   "when": "A local always-on assistant that acts before the user asks, where the lifecycle must match when the host is actually running."
+  },
+  {
+   "name": "Living context with distilled per-thread summaries as the trigger input",
+   "how": "Keep a running context store and distill each thread into a short summary. Attach the relevant summary to a new event, such as an incoming email, and send only that to the model. Use a small local model for yes/no or category decisions.",
+   "when": "Triage over many high-volume messages where sending raw history to a large model for each event is too costly or too slow. The talk describes this as planned, not shipped."
+  },
+  {
+   "name": "Route models by task type, separating persona from reasoning",
+   "how": "Use one model for the user-facing voice and tone. Use a different model for research and multi-step reasoning. Use a cheap, fast model for high-volume background work. Re-check the routing whenever a new model ships.",
+   "when": "A product where tone matters to users but the underlying work is harder or cheaper to run on other models. The founder re-evaluated after GPT-5 and Haiku 4.5 shipped."
+  }
+ ],
+ "tools": [
+  "Spec (macOS/iOS app, Swift)",
+  "Swift",
+  "Granola",
+  "Riverside",
+  "Claude Opus 4",
+  "Claude Sonnet 4",
+  "Claude Sonnet 4.5",
+  "Claude Haiku 4.5",
+  "GPT-5",
+  "GPT-OSS",
+  "Gemini 2.5",
+  "MCP",
+  "Cursor",
+  "Excel",
+  "Apple on-device speech SDK",
+  "Slack API",
+  "Gmail API",
+  "iMessage",
+  "WhatsApp",
+  "Superhuman"
+ ],
+ "numbers": [
+  {
+   "claim": "Haiku 4.5 is about the same fidelity as Sonnet 4 or 4.5 on Spec's tasks at about one-third the cost, per the founder.",
+   "t": "1:07:55"
+  },
+  {
+   "claim": "Planned pricing: a lower tier around $20 to $30 per month, a higher-usage tier, and a free tier that runs only local models. Not final.",
+   "t": "1:09:16"
+  },
+  {
+   "claim": "The product was rebuilt from a VM prototype starting in June 2025, and the founder says nearly everything shown was built since then.",
+   "t": "17:37"
+  },
+  {
+   "claim": "The team is two full-time people, with part-time design and branding help.",
+   "t": "28:23"
+  },
+  {
+   "claim": "The founder claims one agent run turned signed investment documents from email into a single Excel workbook with formulas, with no per-file steps.",
+   "t": "36:02"
+  }
+ ],
+ "hot_takes": [
+  "Products should not launch before they work. Overpromising AI capabilities has damaged the industry, and the first-use experience decides whether users return.",
+  "The term 'vibe coding' is unhelpful. Directing Cursor or Claude Code to write large amounts of code is the new normal engineering workflow, not vibe coding.",
+  "MCP reliability is poor today, and it will become hidden infrastructure like an app store, not something end users configure.",
+  "Prompting should mostly go away, and the best interface is proactive suggestions shown in context rather than a text box.",
+  "Caution on the claims: this is a founder pitch with no benchmarks or independent evaluation. The host's praise for Better Stack is about its telemetry tooling. No sponsored segment was identified."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The draft-versus-send split and the write-only sandbox are general guardrail patterns. They bear on exec-gate design in Crucible but do not change the proxy or infra work directly.",
+   "action": "In the Crucible exec-gate, enforce human confirmation for send-, delete- and pay-class tool calls outside the model, not through prompt rules."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Split draft and execute tools, human-approved side effects, and lifecycle-bound background listeners map onto ProsHarness approvals, loops and schedules.",
+   "action": "Route ProsHarness side-effecting Claude Code actions through a separate approval step on the phone, and suspend scheduled loops when the machine sleeps or goes on battery."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

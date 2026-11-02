@@ -1,0 +1,187 @@
+{
+ "one_line": "Walkthrough of Microsoft's Token Economizer, a Claude Code plugin that learns per-project token waste (repeated mistakes, unused tools, stuck loops) and cuts it; reports 21-31% savings and a cold-start caveat.",
+ "summary": "AI LABS presents Microsoft's Token Economizer, a plugin for Claude Code, Codex and other agents that reduces per-request token cost by learning from each project's past sessions rather than building a file map like tools such as Graft. It targets three sources of waste: repeated mistakes (saved as \"micro skills\" facts injected at session start), tools that go unused (turned off per project after 10 unused messages across at least two sessions), and agents stuck in loops (a model checks for stuckness, nudges once, then asks the user to press Escape). Microsoft's own benchmark (277 bugs across six GitHub projects, five setups) reports lower cost on every setup, for example 23.6% for Sonnet 5 and 30.9% for Opus 4.8 on Claude Code, with no loss in task performance. The speaker's own tests show the tool costs more in early sessions because it has nothing to learn from, so they modified it to seed its state from existing .claude session history. On their demo project, per-message tokens fell from about 34,300 to 24,400, and in a second app a three-task run took 79 steps instead of 99 (about 21% cheaper). Micro skills are off by default because they spend some of the user's limit and because facts derived from command output can carry prompt injection. A sponsored segment (Data Impulse) appears mid-video.",
+ "speakers": [],
+ "orgs": [
+  "Microsoft",
+  "AI LABS",
+  "Anthropic",
+  "OpenAI",
+  "GitHub",
+  "Data Impulse"
+ ],
+ "format": "review",
+ "topics": [
+  "token-cost-efficiency",
+  "claude-code",
+  "skills-self-improvement",
+  "context-engineering"
+ ],
+ "tags": [
+  "token-economizer",
+  "micro-skills",
+  "tool-pruning",
+  "stuck-detection",
+  "claude-code-plugin",
+  "hooks",
+  "cold-start",
+  "prompt-injection",
+  "sponsored",
+  "tool-definition-overhead"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Learns from your own sessions instead of mapping the project",
+   "detail": "Unlike map-based token savers (the speaker names Graft), Token Economizer watches each session and the commands the agent runs, tracks where tokens are wasted, and cuts that waste from later sessions. The speaker claims savings grow with use.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Four kinds of per-request waste: instructions, tool list, MCP/skills, and history",
+   "detail": "Every request re-sends standing instructions, the full tool list, MCP tools and skills, and the whole conversation. The speaker argues much of this is unneeded on repeat work in the same project, and that agents re-learn the same failures each session.",
+   "t": "2:15"
+  },
+  {
+   "idea": "Repeated mistakes become per-project micro skills",
+   "detail": "When the same failing command recurs, the tool writes it down as a project fact. Once a few more sessions confirm it, the fact is saved and handed to the agent at the start of each new session so it stops retrying the failing command.",
+   "t": "3:38"
+  },
+  {
+   "idea": "Unused tools are switched off silently",
+   "detail": "A tool not used across 10 messages spanning at least two sessions is disabled for that project. The speaker says this is Microsoft's largest saving because it shrinks the tool list sent on every turn. It happens without notice, so a prune command is provided to inspect and restore.",
+   "t": "3:38"
+  },
+  {
+   "idea": "Stuck detection escalates in two steps",
+   "detail": "When a run goes on much longer than the agent's usual response time, the tool asks a model whether Claude is really stuck. If so, it tells Claude once to try something different. If it is still stuck, it tells the user to press Escape. It never stops the agent itself.",
+   "t": "4:43"
+  },
+  {
+   "idea": "Hook-based architecture: start, per-tool, and end",
+   "detail": "A session-start hook injects micro skills, a hook after each tool use runs the stuck check, and a session-end hook reviews the whole transcript to learn new facts and count unused tools.",
+   "t": "6:06"
+  },
+  {
+   "idea": "Micro skills are off by default for two reasons",
+   "detail": "They cost limit, since a model reads recent sessions every three sessions. They are also a prompt-injection path: a malicious project's command output could insert instructions that Claude treats as facts in every session. The speaker advises enabling them only for projects you wrote.",
+   "t": "7:33"
+  },
+  {
+   "idea": "Cold start makes it cost more at first",
+   "detail": "In Microsoft's tests almost every project cost more with the plugin until about the sixth task, because state is per project and starts empty. The speaker's fix is to have Claude Code modify the plugin so the first session after install reads prior session history from the .claude folder (30-day retention) as its starting state.",
+   "t": "8:42"
+  },
+  {
+   "idea": "Measure before trusting the savings",
+   "detail": "Run status, microskills, tool prune and tool prune measure to see what was learned, what facts are injected, which tools are off and why, and the per-message token delta. The speaker's demo project went from about 34,300 to 24,400 tokens per message.",
+   "t": "10:09"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Install the plugin for your agent",
+   "how": "Open the GitHub repo for Token Economizer, scroll to the install section, copy the install command for your agent (Claude Code, Codex, etc.), and run it in the terminal. Then open Claude Code and run the plugin command to confirm Token Economizer is listed; it adds commands and hooks. The video does not show the repo name or the exact install string, so take it from the repo.",
+   "when": "First-time setup on a machine with Claude Code or Codex."
+  },
+  {
+   "name": "Enable micro skills only for your own projects",
+   "how": "Run the tool's config command (the video says 'token economizer config', auto-caption, exact spelling not shown) and set micro skills to on. Everything else is on by default; micro skills are the one feature that starts off.",
+   "when": "Projects you wrote and trust. Keep off for cloned or third-party repos because command output can inject instructions into the facts."
+  },
+  {
+   "name": "Per-project repeated-failure facts",
+   "how": "The tool watches for the same failing command or tool call across sessions. After several confirming sessions it saves the fact for that project and injects it at SessionStart so the agent knows what not to retry. Inspect the injected facts with the microskills command.",
+   "when": "Repos where the agent repeatedly runs a broken build, test, or CLI invocation. Relevant to ProsHarness or AgentOS if they want to mine failures into reusable facts."
+  },
+  {
+   "name": "Prune unused tools per project, then restore on demand",
+   "how": "A tool unused across 10 messages over at least two sessions is turned off for that project. List pruned tools with 'tool prune' (shows the message count since last use). Restore one with 'tool prune restore <tool-name>'; restored tools are not pruned again.",
+   "when": "Sessions with many MCP servers or built-in tools that inflate every request. Check the prune list whenever Claude suddenly lacks a tool."
+  },
+  {
+   "name": "Measure the tool-definition overhead",
+   "how": "Run 'tool prune measure' to compare tokens per message with all tools versus only the tools in use. The demo reported about 34,300 down to about 24,400 tokens per message on one project.",
+   "when": "Before and after pruning, to confirm the saving is real for your project."
+  },
+  {
+   "name": "Two-step stuck escalation",
+   "how": "Use a post-tool hook to detect long runs without progress. Ask a model whether the agent is stuck. If yes, inject one instruction to change approach. If still stuck, surface a message to the human to interrupt. Never auto-kill the run.",
+   "when": "Long autonomous coding runs, such as ProsHarness-style checkpointed loops, where tight retry loops burn tokens."
+  },
+  {
+   "name": "Seed a new tool from existing session history",
+   "how": "Ask Claude Code to modify the plugin so the first session after install reads the prior session logs in the .claude folder (30-day retention) and uses them as initial state instead of a blank slate. The speaker says this removed the early-cost penalty in their tests, but offers no numbers beyond the demo.",
+   "when": "Adopting a learning-based token tool on a project that already has history."
+  },
+  {
+   "name": "Three-hook layout for an agent harness",
+   "how": "SessionStart injects learned facts. PostToolUse runs the cheap stuck check and tool-usage counting. Session end (Stop) reviews the full transcript to extract new facts and update counters. Keep expensive model calls out of the per-tool path.",
+   "when": "Designing hooks for a Claude Code wrapper or harness."
+  }
+ ],
+ "tools": [
+  "Token Economizer (Microsoft; Claude Code and Codex plugin, install from GitHub repo, version not stated)",
+  "Claude Code",
+  "Codex (OpenAI)",
+  "GitHub Copilot",
+  "Sonnet 5",
+  "Opus 4.8",
+  "Graft (map-based token saver, mentioned as a comparison, not shown in use)",
+  "Data Impulse (sponsor; residential proxy network)"
+ ],
+ "numbers": [
+  {
+   "claim": "Microsoft benchmark: 277 real bugs fixed across six real GitHub projects, run sequentially, on five setups across Claude Code, Codex and GitHub Copilot; cost lower on every setup with the tool",
+   "t": "0:51"
+  },
+  {
+   "claim": "Claude Code, Microsoft's numbers: Sonnet 5 cost 23.6% less, Opus 4.8 cost 30.9% less; no performance change for either model; Sonnet fixed one more bug per 100 tasks",
+   "t": "0:51"
+  },
+  {
+   "claim": "Microsoft tests: almost every project cost more with the plugin at first and got cheaper by the sixth task",
+   "t": "8:42"
+  },
+  {
+   "claim": "Speaker's demo project: 276 tools unused across four learned sessions; tokens per message fell from about 34,300 to about 24,400 (about 29% less per message)",
+   "t": "10:09"
+  },
+  {
+   "claim": "Second app: five warm-up sessions turned off 303 tools; three new tasks run twice (with and without plugin) took 99 steps without and 79 steps with, about 21% cheaper, same checks passed",
+   "t": "11:37"
+  },
+  {
+   "claim": "Pruning rule: tool disabled after 10 unused messages across at least two sessions; micro-skill model pass runs about every 3 sessions",
+   "t": "3:38"
+  },
+  {
+   "claim": "Sponsor claims (Data Impulse, not verified): 90M+ IPs across 195 countries; residential proxy $1 per GB; same IP held up to 2 hours; traffic does not expire",
+   "t": "4:43"
+  }
+ ],
+ "hot_takes": [
+  "Sponsored segment (Data Impulse) appears mid-video, so the quality cap of 2 applies under the rules; the technical content itself is substantive and concrete.",
+  "The headline numbers come from Microsoft's own benchmark and from the speaker's two-project tests; neither is independent, and the speaker's per-message 29% figure is from one project.",
+  "The speaker admits the tool costs more in early sessions; the fix (seeding from .claude history) is shown only as a prompt the speaker ran, with no before/after cost numbers for the fix itself.",
+  "Silently disabling tools is a debugging hazard; the speaker's own answer is a prune list and restore command, not a warning in the session.",
+  "Micro skills are a prompt-injection surface when facts come from untrusted repos; the speaker flags this and leaves the choice to the user.",
+  "Auto-captions garble several terms (Cloud Code = Claude Code, main.claude = .claude folder, Microskills = micro skills, Token Economizer config command exact spelling not verified)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "SkillForge mines agent telemetry into governed skills and has an open question about the success signal and skill-worthiness; Token Economizer's repeated-failure facts and confirm-after-N-sessions rule are a concrete, observable version of that idea. Its per-message tool-definition measurement also maps to the context budget work.",
+   "action": "Read the micro-skill approach (repeated failure, confirmation after several sessions, injection at session start) and prototype a skill-worthiness score in SkillForge using repeated-failure counts across sessions as the signal."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and runs long checkpointed loops. The video's three-hook layout (SessionStart, PostToolUse stuck check, Stop transcript review) and its two-step stuck escalation are directly reusable patterns for loop and checkpoint logic. Its warning that command output can inject instructions also applies to any harness that feeds learned state back into context.",
+   "action": "Compare ProsHarness's loop and checkpoint logic against a two-step stuck escalation (one corrective nudge, then surface to the human, never auto-kill), and treat any learned facts injected at session start as untrusted input."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

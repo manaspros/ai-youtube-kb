@@ -1,0 +1,246 @@
+{
+ "one_line": "Breakdown of the \"Avalon beats Strata by 47% on AMD\" claim: a llama.cpp fork tuned for one 7900 XT box, and why the number only holds on that machine and that model file.",
+ "summary": "The video takes apart a viral benchmark table in which Avalon, a llama.cpp fork, reports 91 tok/s against Strata's 61.9 tok/s for Qwen 3.8B Flash Next on a Radeon RX 7900 XT. The speaker walks through the hardware (2020 Ryzen, B450 board, PCIe 3 slot, DDR4 at about 34 GB/s measured) and the model's mixture-of-experts layout, then derives a bandwidth ceiling showing why expert caching matters. Avalon's gains are attributed to an expert cache that uses all idle VRAM (27% over Strata without drafting) plus a cheap speculative draft head that accounts for the rest (about 1.15x). The speaker stresses the confounds: two engines and two different model files, a Strata table that was already out of date when posted, and results that flip on other GPUs (RDNA4 favors Strata, Nvidia is roughly tied, dual W7800 gets slower). Avalon's file has better perplexity than Strata's and beats an Unsloth IQ4 quant, but downstream task scores are not published. The closing advice is a four-question checklist for reading any tok/s benchmark: engine version, same model file or not, full hardware including RAM and motherboard, and who owns the hardware.",
+ "speakers": [
+  "Kai (channel host, Kai Explains)"
+ ],
+ "orgs": [
+  "Strata",
+  "Unsloth",
+  "Anthropic (Claude Opus, cited as the kernel co-author)"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "evals"
+ ],
+ "tags": [
+  "amd",
+  "rdna3",
+  "moe",
+  "expert-cache",
+  "speculative-decoding",
+  "llama-cpp",
+  "benchmarking",
+  "perplexity",
+  "vram-offload",
+  "mmap",
+  "quantization"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Benchmark numbers are a photo of one machine and one file pair.",
+   "detail": "The 47% is real under the author's protocol (same night, same box, greedy decoding, 512 tokens, median of 3), but it measures the gap between two desks. Strata had speculative drafting on, so neither side was crippled. The comparison still mixes engine and model file, and the speaker says the 27% base gain is partly file versus file.",
+   "t": "3:57"
+  },
+  {
+   "idea": "Bandwidth math sets the ceiling for MoE decode.",
+   "detail": "Each token touches about 1 GB of expert weights (480 of 24,576 experts across 48 layers, top-10 per layer). At about 34 GB/s of DDR4 that caps decode near 34 tok/s before the GPU does anything; over PCIe 3 at about 14 GB/s the cap falls to about 14 tok/s. The GPU is not the bottleneck, reading expert weights is.",
+   "t": "9:05"
+  },
+  {
+   "idea": "Expert cache: use every idle byte of VRAM for hot experts.",
+   "detail": "Compute buffers, the unused part of the KV cache and the safety reserve (fixed at 400 MB) all hold experts. The GPU computes resident experts while the CPU handles misses in parallel, and the engine picks per miss whether moving the expert to the card is faster than computing it on the CPU. This is the 27% gain over Strata without drafting (49 to 62.4 tok/s on the same machine).",
+   "t": "11:50"
+  },
+  {
+   "idea": "Speculative drafting is expensive on MoE, so the draft head has to be cheap.",
+   "detail": "Each guessed token picks its own experts, so verifying guesses costs far more memory traffic than on a dense model. Avalon's draft head is about 1.5 GB (Strata's was 3.4 GB), uses a 65k-token vocabulary and shares the main model's expert cache. It agrees with the main model on 80.7% of positions, and the measured gain is 1.46x, about 1.15x on top of the cache gains.",
+   "t": "13:02"
+  },
+  {
+   "idea": "Quality check: the file is larger but scores better on perplexity.",
+   "detail": "Avalon's file is about 88 GB against Strata's 78 GB, so it reads more bytes per token and still runs faster. Perplexity is 1.443 vs 1.469 in English and 1.331 vs 1.338 in code, and it beats an Unsloth IQ4 quant (1.401). Perplexity is not task accuracy, and no downstream benchmarks are published yet.",
+   "t": "15:29"
+  },
+  {
+   "idea": "Strata's table was stale when posted, and optimization has moved to other GPUs.",
+   "detail": "The table lists Strata 0.1.43, but 0.2.8 was current, 14 releases later in 18 days. Strata's AMD work since then targets RDNA4 (R9700), and its 0.2 release notes say the RX 7000 packages were built but not run by maintainers. On a 7900 XT, Strata's community results cluster near 60 tok/s, so the 61.9 figure is fair.",
+   "t": "17:59"
+  },
+  {
+   "idea": "The speed-up does not transfer across GPUs, and it can reverse on multi-GPU.",
+   "detail": "On an RTX 4090 Avalon matched Strata, and on RDNA3 W7800s it was slower than on the 7900 XT. With two W7800s, all experts fit in VRAM, the memory-bandwidth floor disappears, and throughput fell to 46/70 tok/s from 58/87 on one card. The speaker's read: once memory is solved, the bottleneck becomes compute, and the 7900 XT-specific tuning does not carry over.",
+   "t": "20:31"
+  },
+  {
+   "idea": "Memory mapping makes a 32 GB machine run the model, but prompt ingestion pays the price.",
+   "detail": "With RAM capped at 28 GB, decode fell from 91.2 to 89 tok/s (about 2%), but ingesting a 19k-token prompt went from about 15 s to about 21 s. The tax is paid on each new prompt or agent turn, and the README omits which SSD was tested.",
+   "t": "21:50"
+  },
+  {
+   "idea": "Early single-maintainer forks ship fast and also ship bugs; watch the upstream PR.",
+   "detail": "Avalon was counting the expert file size three times in a two-card test (150 GB vs the correct 53 GB) and hung on that setup, both fixed within days. Avalon is a fork and not a pull request. A draft llama.cpp PR from Piotr Wilkin asks maintainers how much specialized code they will accept to compete with specialist engines.",
+   "t": "23:51"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Benchmark provenance checklist",
+   "how": "Before quoting a tok/s number, record the exact engine version (commit or release), whether both engines used the same model file or hash, full hardware (GPU, CPU, motherboard, PCIe generation, RAM speed and channels), and who owns the box. Also record the protocol: same run window, greedy decoding, fixed output length, median of N runs, speculative settings on or off.",
+   "when": "Any time a speed comparison is cited in KB notes, in InferCraft/gateway benchmark reports, or in a README. Use it to decide whether a claim transfers to another machine."
+  },
+  {
+   "name": "Bandwidth-ceiling estimate for MoE decode",
+   "how": "Work out bytes of active weights read per token (here about 1 GB: active experts times bytes per expert). Divide by the slowest link that serves them (DDR4 measured at about 34 GB/s, or PCIe 3 at about 14 GB/s). That gives a hard tok/s ceiling. Compare the reported number to it: anything above the ceiling means the weights are being served from VRAM or the numbers are wrong.",
+   "when": "Sanity-checking any local-inference claim on a model bigger than VRAM, and choosing whether offload or a bigger card is the fix."
+  },
+  {
+   "name": "Expert cache from spare VRAM with CPU fallback",
+   "how": "Fill every VRAM byte not used for active compute with the most-used experts (buffers borrowed between pipeline phases, unused KV headroom, a computed safety reserve). Run resident experts on the GPU and misses on the CPU in parallel. For each miss, choose dynamically between moving the expert to the GPU and computing it on the CPU.",
+   "when": "MoE models whose experts do not fit in VRAM, where reads from RAM set the decode speed. The reported gain is about 27% on a 20 GB card with DDR4-3200."
+  },
+  {
+   "name": "Cheap draft head that shares the expert cache for MoE speculative decoding",
+   "how": "Use a small draft head (about 1.5 GB, a 65k-token vocabulary cut from the full vocab) that reads from the main model's expert cache rather than competing for VRAM. Verify two guessed tokens per pass. Expect a much lower gain than the theoretical maximum because each verification pass touches new experts (about 1.7 normal steps of cost per pass).",
+   "when": "When a MoE model has spare memory for drafting. Dense-model speculative decoding numbers do not transfer, because each guessed token picks its own experts."
+  },
+  {
+   "name": "Perplexity as a fast quant-quality screen, with a caveat",
+   "how": "Compare perplexity of two quantized files on the same English and code text sets. Lower is better. Treat it as a screen only and run task benchmarks before claiming parity.",
+   "when": "Deciding whether a more aggressive or custom quant is safe to use in place of a standard one."
+  },
+  {
+   "name": "mmap for models larger than VRAM plus RAM",
+   "how": "Let the OS map the model file and page the overflow from SSD. Expect little decode slowdown when capped to about 28 GB of RAM, but a large hit on prompt ingestion (about 40% on a 19k-token prompt) whenever new context is loaded. Check the SSD type, since NVMe and SATA differ widely.",
+   "when": "Trying a large model on a 32 GB machine for interactive use with few new long prompts. Avoid it for agent loops that load large contexts often."
+  },
+  {
+   "name": "Diagnose multi-GPU slowdowns as a bottleneck shift",
+   "how": "If adding a GPU lets all weights fit in VRAM and throughput drops, check whether the bottleneck moved from memory bandwidth to compute. Compare compute units across cards (70 CUs on W7800 vs 84 on 7900 XT in the video).",
+   "when": "Scaling a local model across cards, or when a kernel tuned for one GPU family regresses on another."
+  }
+ ],
+ "tools": [
+  "Avalon (llama.cpp fork, MIT, repo live Oct 9 2026, Qwen 3.8B Flash Next only, Linux only, RDNA3 required by installer)",
+  "Strata (AMD-focused inference engine for MoE models; 0.1.43 in the table, 0.2.8 current)",
+  "llama.cpp (stock, with an open draft PR from Piotr Wilkin)",
+  "Boon llama.cpp fork (source of the first expert cache version in Avalon)",
+  "ik_llama.cpp (source of Avalon's compression types)",
+  "Unsloth IQ4 quantization (perplexity reference)",
+  "Strata ISTA quantization format",
+  "Claude Opus (the video says version 5.5; the README credits it with writing the GPU and CPU kernels)",
+  "ROCm (AMD software stack, cited as the lagging part)",
+  "Vulkan (Avalon has no Vulkan backend, so it does not run on Windows)",
+  "Qwen 3.8B Flash Next (MoE: 125B active, 51B lookup table, 48 layers, 512 experts per layer, top-10 routing)"
+ ],
+ "numbers": [
+  {
+   "claim": "Avalon 91 tok/s vs Strata 61.9 tok/s on RX 7900 XT, same model (author's table, posted Oct 22 2026): the source of the 47% headline",
+   "t": "1:17"
+  },
+  {
+   "claim": "Strata's Oct 6 benchmark on RTX 3060 (12 GB): Strata 41.6 tok/s vs tuned llama.cpp 9.1 tok/s",
+   "t": "2:39"
+  },
+  {
+   "claim": "RX 7900 XT: 20 GB VRAM, 800 GB/s bandwidth, launched at $899 in late 2022; bought used at 500 EUR, European prices about 590 EUR at test time",
+   "t": "6:34"
+  },
+  {
+   "claim": "Host system: Ryzen 7 3800XT (8 cores, July 2020), B450 board (PCIe 3, about 14 GB/s to GPU), 64 GB DDR4-3200 dual-channel: 51.2 GB/s theoretical, 33-35 GB/s measured",
+   "t": "6:34"
+  },
+  {
+   "claim": "Model: 125B active + 51B lookup table (177B total per author), file about 89 GB; 48 layers, 512 experts per layer (24,576 total), 10 experts per layer per token (480 active)",
+   "t": "7:53"
+  },
+  {
+   "claim": "About 1 GB of expert weights read per token at about 3.4 bits per parameter; RAM-only ceiling about 34 tok/s (about 29 ms per token), PCIe-only ceiling about 14 tok/s (about 71 ms per token)",
+   "t": "9:05"
+  },
+  {
+   "claim": "Total experts about 47 GB; the 7900 XT can keep about 9-14 GB of them in VRAM (roughly 20-30%); safety reserve calculated at 400 MB",
+   "t": "10:27"
+  },
+  {
+   "claim": "Same machine, no drafting: Strata 49 tok/s vs Avalon 62.4 tok/s (about 27% gain, about 16 ms per token)",
+   "t": "11:50"
+  },
+  {
+   "claim": "Draft head agreement with the main model on 80.7% of positions; theoretical max 2.46 tokens per pass with two guesses; measured gain 1.46x; draft head 1.5 GB vs Strata's 3.4 GB",
+   "t": "13:02"
+  },
+  {
+   "claim": "Speed decomposition: 1.27x (cache and parallel compute) times 1.15x (drafting) is about 1.47x, the 47% headline",
+   "t": "14:14"
+  },
+  {
+   "claim": "File sizes: Avalon about 88 GB vs Strata ISTA about 78 GB (13% more bytes per token)",
+   "t": "15:29"
+  },
+  {
+   "claim": "Perplexity (lower is better): English Avalon 1.443 vs Strata 1.469; code 1.331 vs 1.338; Unsloth IQ4 English 1.401",
+   "t": "15:29"
+  },
+  {
+   "claim": "Strata release count: 14 releases in 18 days (0.2.2 when Avalon's table was posted, 0.2.8 at recording time)",
+   "t": "17:59"
+  },
+  {
+   "claim": "Strata 0.2.7 on Radeon AI Pro R9700 (RDNA4): decode 82.9 to 94.6 tok/s at 8k context; 0.2.8: 73.7 to 79.7 tok/s on a story prompt",
+   "t": "17:59"
+  },
+  {
+   "claim": "Community Strata results on RDNA3: 7900 XTX 62.0 and 62.3 tok/s; 7900 GRE 59.1; four 7900 XT owners 59-60 tok/s on IQ3",
+   "t": "19:09"
+  },
+  {
+   "claim": "RTX 4090 rented for one Avalon run (Oct 26): 120.5 tok/s on a short prompt, author says same speed as Strata for now",
+   "t": "19:09"
+  },
+  {
+   "claim": "Radeon Pro W7800 (48 GB, 864 GB/s, 70 CUs vs 84 on 7900 XT): one card 58 tok/s without drafting and 87 with; two cards 46 and 70 (about 20% slower)",
+   "t": "20:31"
+  },
+  {
+   "claim": "32 GB RAM via mmap (RAM capped at 28 GB): decode 91.2 to 89 tok/s (about 2%); 19k-token prompt 15 s to 21 s (about 40% slower ingestion)",
+   "t": "21:50"
+  },
+  {
+   "claim": "Install size about 98 GB of disk",
+   "t": "22:51"
+  },
+  {
+   "claim": "Expert-size bug: counted 3 times, showing about 150 GB instead of 53 GB",
+   "t": "23:51"
+  },
+  {
+   "claim": "Author says the engine is reaching about 100 tok/s now",
+   "t": "26:05"
+  }
+ ],
+ "hot_takes": [
+  "The 47% headline compares two engines and two model files on one box. Only the 27% base gain can be separated, and even that is partly file versus file.",
+  "Avalon's own README calls the AI the engine and the author the driver, and says Claude Opus wrote all the GPU and CPU kernels. The video treats this as a provenance fact to note, not a criticism.",
+  "A stale competitor table makes a comparison meaningless: Strata had shipped 14 releases, mostly for RDNA4, after the table was posted.",
+  "Perplexity favoring Avalon's file does not show task quality. The author admits no downstream benchmarks are published.",
+  "Optimizing for one GPU's bandwidth-to-compute balance can make multi-GPU setups slower (dual W7800 lost to one card), so a win on one box is not a general engine win.",
+  "Nvidia is roughly tied with Strata for now because the kernels are not tuned for CUDA. Windows is unsupported (no Vulkan backend)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The video's four-question benchmark provenance checklist and the point that speed numbers are one machine's photo match AgentOS's stated thesis of proving the system with benchmarks and correctness checks. The MoE expert-cache and bandwidth-ceiling ideas are also relevant to InferCraft's KV-cache and offload work on one RTX 5090, though the hardware differs (AMD, llama.cpp).",
+   "action": "Adopt a benchmark provenance record for InferCraft and any Locust or latency results: engine version or commit, model file hash, full hardware (GPU, PCIe generation, RAM speed and channels), run protocol (greedy or sampled, output length, median of N, speculative settings), and hardware owner. Also compute a bandwidth-ceiling estimate (bytes read per token divided by the slowest link) before accepting any tok/s number."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The harness wraps the Claude Code CLI, which does not run local models, so local expert-offload and draft-head techniques do not apply.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "A useful reading guide for any local-inference benchmark, and a clear example of an MoE memory-bandwidth argument. Practitioner-level, not a new technique for our projects.",
+   "action": "Before citing any local tok/s figure in KB notes or insights, apply the four-question checklist (engine version, same model file, full hardware, hardware owner) and mark claims that come from a single machine as such."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

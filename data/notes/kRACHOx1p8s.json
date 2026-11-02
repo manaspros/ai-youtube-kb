@@ -1,0 +1,144 @@
+{
+ "one_line": "Better Stack demos MemPalace, a local tool that stores coding-agent conversations verbatim and exposes them to Claude Code over MCP so decisions persist across sessions.",
+ "summary": "Better Stack walks through MemPalace, an open-source local memory tool for Claude Code and other MCP-capable agents, pitched as a fix for agents forgetting past decisions. The core design choice is to store the original conversation text word for word in ChromaDB and build a compact index above it, instead of asking an LLM to distill facts, so edge cases and the reasons behind decisions survive. The demo installs the package with uv, initializes a palace in a project, mines project files and past Claude Code sessions, and asks why the team moved to GraphQL, retrieving the original discussion. A Claude Code plugin starts an MCP server and teaches Claude to search the palace before answering questions about past work. The presenter positions it as complementary to context mode (which manages in-session context size) and better than hosted SDK-style memory products for local developer use. Caveats: local databases need manual backup, cleanup and migration, there are no admin dashboards or permissioning, and the viral project has lookalike domains, so install only from the official repo, Python packaging and doc site.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "memory",
+  "claude-code",
+  "context-engineering",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "mempalace",
+  "local-memory",
+  "cross-session-memory",
+  "claude-code",
+  "mcp",
+  "chromadb",
+  "sqlite",
+  "temporal-knowledge-graph",
+  "uv",
+  "context-mode"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents forget project decisions across chats and days; MemPalace is pitched as local, lossless, persistent memory for coding tools, and it is positioned as different from context mode, which only manages one long session's context window.",
+   "detail": "The presenter says the two can run side by side: context mode for in-session window pressure, MemPalace for recall across separate chats and days. The 52,000+ GitHub star count is stated by the presenter and not verified in the video.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The demo flow is install, initialize a palace in a project, mine project files and old Claude Code sessions, then search in natural language.",
+   "detail": "Real project context is spread across commits, docs, chats, notes and markdown files, so the tool mines all of them. A search for why the team switched to GraphQL pulls the older discussion where that decision was made.",
+   "t": "1:26"
+  },
+  {
+   "idea": "Verbatim storage with a compact index beats LLM-summarized memory for recall of edge cases and rationale.",
+   "detail": "Most memory systems turn conversations into clean facts, and a summary can drop a constraint or the reason behind a decision. MemPalace keeps the original text intact and indexes it so the agent can find the right area first. The presenter frames this as the main contrast with other tools.",
+   "t": "2:25"
+  },
+  {
+   "idea": "Architecture is local and developer-oriented: ChromaDB on disk for retrieval, SQLite for a knowledge graph, an MCP server for agent access, and Claude Code hooks for workflow integration.",
+   "detail": "The Claude Code plugin starts the MCP server, exposes its tools, and teaches Claude a memory protocol so it searches the palace before answering questions about past work. The presenter says the difference from a database that merely exists is that the agent knows when to look.",
+   "t": "3:25"
+  },
+  {
+   "idea": "A temporal knowledge graph helps with software decisions that expire, such as an API choice that was right a few months ago and is wrong now.",
+   "detail": "Memory is framed as being about time as well as facts. A timeline-aware store can show what changed and when, which plain fact stores can miss.",
+   "t": "4:46"
+  },
+  {
+   "idea": "Local-first memory carries maintenance costs and is not a full memory platform.",
+   "detail": "The presenter says local databases need backup, cleanup, migration and sync, and that admin controls, dashboards and permissioning are not there yet. For some projects, plain ChromaDB search over transcripts may give most of the value with fewer concepts.",
+   "t": "5:56"
+  },
+  {
+   "idea": "Supply-chain caution: the project went viral and has lookalike websites.",
+   "detail": "The presenter says to install only from the official GitHub repo, Python packaging and documentation site named in the readme, and to treat the tool as part of the dev environment because it touches project history.",
+   "t": "5:56"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Verbatim store plus compact index",
+   "how": "Keep the original conversation and document text word for word in chunks on disk, and build a small index above it so retrieval finds the right region without summarizing away the source. Retrieve the original wording rather than a distilled fact.",
+   "when": "Decisions where constraints, edge cases or the reasoning behind a choice matter more than a clean summary of what was decided."
+  },
+  {
+   "name": "Local project memory setup",
+   "how": "Install with uv (spoken as: uv tool install mempalace; the presenter notes pip also works). Run the tool inside the project folder to create a local palace. Mine the project folder (notes, docs, commits, markdown), then mine past Claude Code session logs. Query with a natural-language question. Exact init and mine subcommand syntax is spoken rather than shown on screen, so confirm it against the project readme before running.",
+   "when": "A project whose context is scattered across commits, docs, markdown notes and old agent chats that you no longer remember writing."
+  },
+  {
+   "name": "Claude Code plugin with a memory protocol",
+   "how": "Install the MemPalace Claude Code plugin so it starts the MCP server, exposes the memory tools, and adds instructions telling Claude to search memory before answering questions about past work.",
+   "when": "Any Claude Code workflow where the agent should check prior decisions before answering, instead of relying on the user to paste history into the prompt."
+  },
+  {
+   "name": "Run alongside context mode",
+   "how": "Use context mode to keep one long coding session within the context window, and use MemPalace for recall across separate sessions and days. The presenter says they run together without conflict.",
+   "when": "Long single-session coding work combined with recurring multi-day work on the same project."
+  },
+  {
+   "name": "Load pointers instead of project lore",
+   "how": "Give the agent a small set of pointers into memory and let it search on demand, rather than pasting a large project history into every prompt.",
+   "when": "Projects whose accumulated context would consume a large share of the prompt if included each time."
+  },
+  {
+   "name": "Install hygiene for memory tools",
+   "how": "Install only from the official GitHub repo, the Python packaging listing and the documentation site named in the readme. Treat the memory store as part of the dev environment and plan backups, cleanup and migration of the local databases.",
+   "when": "Adopting any viral developer tool that reads and stores project history."
+  }
+ ],
+ "tools": [
+  "MemPalace (mempalace; spoken as Mem Palace; version not stated)",
+  "uv",
+  "pip",
+  "ChromaDB",
+  "SQLite",
+  "MCP (Model Context Protocol)",
+  "Claude Code (captioned as Cloud Code)",
+  "Claude Code hooks and plugin",
+  "context mode",
+  "Memzero",
+  "Zapp (transcript spelling; product name unverified)"
+ ],
+ "numbers": [
+  {
+   "claim": "MemPalace reported as having over 52,000 GitHub stars (presenter's claim, not verified in the video).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Illustrative example of about 40,000 tokens of project lore that would otherwise be pasted into each prompt. Hypothetical figure, not a measurement.",
+   "t": "4:46"
+  }
+ ],
+ "hot_takes": [
+  "Verbatim storage beats LLM-distilled memory for recalling constraints and rationale. Reasonable as a design argument, but the video shows no benchmark comparing recall quality.",
+  "The 'Stop Forgetting' title overstates the case. The presenter's own caveats say local databases need maintenance and there are no admin tools.",
+  "The 52,000-star figure is used as a credibility signal without verification.",
+  "MemPalace is complementary to context mode, not a replacement, so you can run both.",
+  "A viral developer tool with lookalike domains should be installed only from official sources, and memory stores should be treated as part of the dev environment."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh (L2A) already plans tiered cross-session memory with conflict resolution and provenance. MemPalace is a local, verbatim-first counterpart with a temporal knowledge graph for decisions that expire, which bears directly on that design.",
+   "action": "Compare MemoryMesh's ingest path with MemPalace's verbatim-store-plus-index design. Decide whether source text is kept alongside LLM-extracted facts so provenance and edge-case detail survive."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness drives Claude Code runs, and cross-session recall of past run decisions is adjacent to its checkpoint/resume work. The memory-protocol pattern is worth a look but is not a direct change.",
+   "action": "Trial a MemPalace-style plugin on one ProsHarness-driven Claude Code project to see whether searching memory before answering reduces repeated mistakes across runs."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

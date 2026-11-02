@@ -1,0 +1,245 @@
+{
+ "one_line": "Anthropic's Claude Managed Agents \"flows\" (dynamic multi-agent workflows) talk: how to fan out hundreds of isolated sub-agents, control cost with budgets, and contain risk with credential vaults, egress rules and auto mode.",
+ "summary": "Two Anthropic staff introduce flows, a Claude Managed Agents feature where a lead agent plans a task and spawns its own sub-agents (up to about 1,000, one nesting layer) in isolated session threads, and they argue this beats hand-rolled orchestration. They frame it with history (Ken Thompson's Unix, OS/360 and Mythical Man-Month, Linux's move from a star to a layered trust network) and note that a single agent degrades on large tasks. A live console demo runs a stock watchlist scanner, with a scan phase per ticker and a review phase, and they say phase-level model and agent-count choices control cost versus depth. They describe Bug Hunter (sliced PR review plus verification) and an explainer-video flow built on the same primitives. The second half covers why isolated contexts help against agent laziness, self-preference bias and goal drift, then a declare/contain/detect safety model: a brain-and-hands split, credential injection at the egress proxy, budgets, interrupts, and auto mode. Much of the material is product explanation, but the workflow patterns and safety mechanics are concrete.",
+ "speakers": [
+  "CJ Avilla",
+  "Harrison Stall"
+ ],
+ "orgs": [
+  "Anthropic"
+ ],
+ "format": "talk",
+ "topics": [
+  "multi-agent",
+  "agent-architecture",
+  "security-guardrails",
+  "governance-compliance"
+ ],
+ "tags": [
+  "claude-managed-agents",
+  "flows",
+  "dynamic-workflows",
+  "orchestration",
+  "fan-out",
+  "isolated-contexts",
+  "budgets",
+  "credential-vault",
+  "egress-proxy",
+  "auto-mode",
+  "bug-hunter",
+  "hill-climb",
+  "dreaming",
+  "durable-event-stream",
+  "interrupt",
+  "explainer-video",
+  "conceptual-integrity"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Single agents fail on big tasks, so split the work across many agents.",
+   "detail": "The speakers say a single agent runs out of steam on very large tasks, a coordinator with a roster of sub-agents goes further, and a dynamic flow that nests agents in parallel is their answer. They cite Linux 7.2 (9 weeks, about 2,600 developers, 300 companies) and OS/360 as evidence that large teams need structure.",
+   "t": "0:35"
+  },
+  {
+   "idea": "Hand-rolled multi-agent systems have four recurring problems.",
+   "detail": "They list crash recovery when one of many agents dies partway through, tracking the state of the whole topology, a coordinator's limited capacity (about 60 sub-agents is a cap), and inspecting which agent is doing what. Flows are pitched as the managed answer to all four.",
+   "t": "10:02"
+  },
+  {
+   "idea": "A flow is a lead agent that plans, then fans out into phases of isolated sub-agents.",
+   "detail": "The lead agent writes a plan, spawns sub-agents per phase (for example, one scanner per ticker), and each sub-agent gets its own context window. Phases are separated so later stages receive only the outputs they need. Sub-agents share a filesystem but have no direct messaging.",
+   "t": "30:33"
+  },
+  {
+   "idea": "Isolation per unit of work counters three single-agent failures: laziness, self-preference and goal drift.",
+   "detail": "Laziness: after 35 healthy services, a single agent stops checking the rest. Self-preference: asked whether its own poem or code is good, an agent says yes. Goal drift: a constraint like don't touch prod gets lost as the context fills and compacts. Giving each item its own agent, copying the goal into every sub-agent, and running a separate adversarial review each help.",
+   "t": "1:12:11"
+  },
+  {
+   "idea": "Spend compute per phase: cheap models for broad scanning, strong models for review.",
+   "detail": "They suggest two or three Haiku agents per ticker for the scan phase, then a stronger model with two or three review agents per ticker to check details the scan missed. The scale of each phase is tuned to how much money the user wants to put into it.",
+   "t": "28:15"
+  },
+  {
+   "idea": "Start with a loose prompt and let the lead agent design the topology, then refine.",
+   "detail": "They found that the more ambiguous and free-form the initial instruction, the better the flow they got. Afterwards, tune it. Hill-climbing (an iterative prompt-improvement loop, packaged as a Claude API skill) and the full transcripts of past runs are the suggested tuning tools.",
+   "t": "30:59"
+  },
+  {
+   "idea": "Use a per-session budget as a pausable circuit breaker.",
+   "detail": "When a budget (for example, $5, or $1.25 in one demo) is reached, the session emits a budget event and stops. The user can raise the budget and the flow resumes where it left off without redoing finished work. The model is deliberately not told its budget, because they found it gets anxious when told.",
+   "t": "39:09"
+  },
+  {
+   "idea": "Keep secrets out of the sandbox entirely: the brain holds the session state, the hands run tools, and credentials are injected at egress.",
+   "detail": "Each container gets placeholder secrets that do nothing if misused. A proxy at the network edge swaps in the real credential only for the allowed host for that credential. Secrets should never sit in a markdown file or on disk where a prompt injection could extract them.",
+   "t": "1:21:31"
+  },
+  {
+   "idea": "Use declare, contain, detect as the safety checklist for agents.",
+   "detail": "Declare: permissions, tools, persona, skills. Contain: environment rules such as a domain allowlist, disabled web_fetch or web_search, and per-MCP-toolset enablement, which guards against a compromised MCP server adding new tools. Detect: the durable event stream, which lets you interrupt a session that goes off course.",
+   "t": "1:20:25"
+  },
+  {
+   "idea": "Turn on auto mode instead of clicking approve on every tool call.",
+   "detail": "The speakers say humans approve about 97% of prompts in always-ask mode (citing public research) and that a classifier-based auto mode judges each tool call individually and is more patient. They call it the easiest low-hanging fruit for safety.",
+   "t": "1:26:59"
+  },
+  {
+   "idea": "Bug Hunter reviews PRs by slicing, then having separate reviewers verify candidate bugs by reproducing them.",
+   "detail": "Phase 1: each code slice is reviewed in its own context. Phase 2: a second reviewer agrees or disagrees with each candidate. Phase 3: a prover downloads the repo and tries to reproduce the bug, and only verified bugs get posted as inline PR comments with severity.",
+   "t": "1:03:56"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Plan, fan out, phase-gate",
+   "how": "Lead agent writes a plan, spawns one isolated sub-agent per item in a phase, then passes only the needed outputs to the next phase. Use the flow's phase gates instead of one long context.",
+   "when": "Large tasks with many independent items, such as hundreds of contracts, tickers, services, or files, where thoroughness matters more than speed."
+  },
+  {
+   "name": "Per-phase model and agent-count allocation",
+   "how": "Set a cheap fast model with several agents for broad scanning, and a stronger model with fewer agents for review. Scale agent counts per item by phase to match the spend you want.",
+   "when": "When costs must be controlled and some phases need depth more than others."
+  },
+  {
+   "name": "Separate reviewer context for adversarial checks",
+   "how": "Let a reviewer that did not produce the work check it with fresh context. Generator and reviewer are separate agents, and reviewers see no earlier reasoning.",
+   "when": "To counter self-preference bias in code, writing, or analysis."
+  },
+  {
+   "name": "Two-stage review with verification",
+   "how": "Stage one flags candidate issues per slice. Stage two has other agents agree or disagree. A final step reproduces the issue before reporting it. Only verified findings reach the human.",
+   "when": "AI PR review that needs a low false-positive rate."
+  },
+  {
+   "name": "Budget as a resumable circuit breaker",
+   "how": "Set a session budget before starting. On the budget event, inspect what happened, then raise the budget and resume, or stop. Keep the agent unaware of its budget.",
+   "when": "Long autonomous runs where runaway token spend is a risk."
+  },
+  {
+   "name": "Credential injection at the egress proxy",
+   "how": "Put placeholder secrets in the sandbox. Store the real values in a vault, and substitute them only at the network edge and only for the allowed host.",
+   "when": "Any agent that calls authenticated third-party APIs from a sandbox."
+  },
+  {
+   "name": "Declare, contain, detect",
+   "how": "Declare the agent's tools and permissions. Contain it with environment network allowlists and disabled tools, plus per-toolset MCP enablement. Detect by streaming the event log and interrupting off-course runs.",
+   "when": "Designing the safety layer for any production agent."
+  },
+  {
+   "name": "Transcript audit agent",
+   "how": "Export session transcripts from a period, and have another managed agent scan them for unexpected tool calls or accessed resources.",
+   "when": "Reviewing many agent sessions after the fact."
+  },
+  {
+   "name": "Gradual context reveal via linked markdown index",
+   "how": "Give a sub-agent a short index file that links to per-component docs, so it reads only what its task needs and saves tokens.",
+   "when": "Large codebases or doc sets where each sub-agent needs a different slice."
+  },
+  {
+   "name": "Filesystem as the inter-agent channel",
+   "how": "Sub-agents share a filesystem, so they pass information by writing and reading files. Constrain access to a subset of paths by prompting, since there is no permission layer for directory paths yet.",
+   "when": "Sub-agents need to exchange artifacts when no direct message primitive exists."
+  },
+  {
+   "name": "Interrupt and redirect",
+   "how": "Send a user.interrupt event to stop a running flow, then reprompt with new information. The lead agent can start a new flow that takes the earlier history into account. Injecting a single step into an existing plan is not supported.",
+   "when": "A run is heading the wrong way or new information arrives mid-run."
+  }
+ ],
+ "tools": [
+  "Claude Managed Agents",
+  "Claude Code",
+  "Claude API skill",
+  "ant CLI",
+  "Terraform provider for Claude agents",
+  "Dynamic workflows (Claude Code)",
+  "Hill-climb skill",
+  "Dreaming (memory consolidation product)",
+  "Auto mode (permission classifier)",
+  "Bug Hunter flow",
+  "Explainer Video Maker flow",
+  "Claude Tag (Slack bot)",
+  "GitHub",
+  "Cloudflare tunnels (MCP tunnels)",
+  "Twilio (example API)"
+ ],
+ "numbers": [
+  {
+   "claim": "Linux 7.2 took 9 weeks with contributions from about 2,600 developers across 300 companies.",
+   "t": "2:47"
+  },
+  {
+   "claim": "OS/360 was estimated at about 5,000 man-years, with up to 1,000 engineers thrown at it.",
+   "t": "1:40"
+  },
+  {
+   "claim": "Hand-waved illustration: a single agent runs for about an hour, a coordinator with a roster runs longer, and dynamic workflows run far longer on hard problems.",
+   "t": "8:57"
+  },
+  {
+   "claim": "Concurrent sub-agents per flow: about 6 concurrent agents per step in the demo. Flows allow up to about 1,000 agents, versus fewer in the earlier coordinator/roster design.",
+   "t": "45:49"
+  },
+  {
+   "claim": "A flow built to make a Unix-compatible OS with a Python interpreter ran for about 85 hours, with about 1,000 commits, and was still running when described.",
+   "t": "46:21"
+  },
+  {
+   "claim": "Nesting is limited to one layer of sub-agents today.",
+   "t": "1:39:42"
+  },
+  {
+   "claim": "Budget example: a session hits a $5 budget and emits a budget-reached event; another demo sets $1.25.",
+   "t": "39:09"
+  },
+  {
+   "claim": "API credits bundled with subscriptions: Max 5X about $100/month, Teams up to $500, plus a $50 experiment credit.",
+   "t": "31:31"
+  },
+  {
+   "claim": "Speaker estimate: about 97% of approval prompts in always-ask mode are clicked approve.",
+   "t": "1:26:59"
+  },
+  {
+   "claim": "Making a launch explainer video used to take about 20 hours; it now takes one short prompt to a flow.",
+   "t": "1:08:20"
+  },
+  {
+   "claim": "Speaker's estimate: about 50% of the room had heard of Claude Managed Agents.",
+   "t": "12:45"
+  }
+ ],
+ "hot_takes": [
+  "One person holding the whole project in their head (conceptual integrity) is the goal, and organizations must scale that by building networks of trusted maintainers instead of a star structure around one lead.",
+  "Agents that grade their own output will say it is good, so generator-reviewer separation is a requirement, not a nice-to-have.",
+  "Putting API keys in a markdown file given to an agent is definitely bad.",
+  "Most people approve agent tool calls almost automatically, so an auto-mode classifier is safer than human-in-the-loop approval fatigue.",
+  "Agent flows are not worth it for tasks a single agent can finish in 30 seconds; they are for big ambitious work."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Budget pause-and-resume and egress-level credential substitution map onto AgentOS L1 budgets and L2C Crucible sandboxing. The talk's shape (isolated per-item sub-agents plus separate review) also fits the SkillForge/EvolveCraft design.",
+   "action": "Add a budget-reached event to the L1 proxy that pauses the run and resumes without losing work; compare against how Crucible injects credentials."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness has checkpoint/resume and phone-driven approvals. The talk's budget pause/resume, interrupt event, and auto-mode argument (approval fatigue) are direct comparisons.",
+   "action": "Evaluate whether ProsHarness approvals should default to a classifier-based auto mode and surface only high-risk tool calls to the phone."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Strong practitioner patterns for coding-agent workflows (isolated review, transcript audit, linked markdown context) that match the user's recurring interests in context engineering and multi-agent orchestration.",
+   "action": "Read the Bug Hunter pattern and the linked-markdown context technique, then try one on a real PR or doc set."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T16:26:27"
+}

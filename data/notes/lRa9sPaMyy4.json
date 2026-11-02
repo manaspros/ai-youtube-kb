@@ -1,0 +1,158 @@
+{
+ "one_line": "Varun Pant (AWS) argues that formal verification in Lean, Verus and similar tools can prove code correct for all inputs, which tests and LLM judges cannot, and that humans should own the specification while agents write code and proofs.",
+ "summary": "The speaker says coding agents now produce far more code than humans can review, and that tests, LLM-as-judge and human review cannot show correctness for all inputs. Formal verification gives a mathematical proof against a written specification, so a passing proof holds for every input. His workflow is spec-driven: a human writes or checks the specification (possibly auto-formalised by AI from natural language), the agent implements it, and a prover checks the implementation against the spec. He introduces Lean as both a programming language and a proof assistant with a small trusted kernel, and explains proof search as a chess-like tree of tactics with backtracking. Three examples follow: an AI-translated zlib in Lean with a 32,000-line proof, Cedar (AWS authorization policy language) with a Lean spec checked against Rust by nightly differential testing, and Verus/Aeneas for Rust using pre- and post-conditions and solvers such as Z3. He closes by presenting Strata, a work-in-progress intermediate representation that lowers any language to a common core dispatched to Lean, SMT solvers or model checkers.",
+ "speakers": [
+  "Varun Pant"
+ ],
+ "orgs": [
+  "AWS"
+ ],
+ "format": "talk",
+ "topics": [
+  "testing-verification",
+  "coding-agents",
+  "context-engineering"
+ ],
+ "tags": [
+  "formal-verification",
+  "lean",
+  "spec-driven-development",
+  "differential-testing",
+  "smt-solvers",
+  "verus",
+  "aeneas",
+  "rust",
+  "cedar",
+  "strata",
+  "z3"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Tests, LLM-as-judge and human review are not enough for agent-written code",
+   "detail": "Tests check only some inputs, LLM judges are probabilistic, and human review does not scale to agent speed. Formal verification is the only one of these that can state correctness for all inputs.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Humans own the spec, machines own the code and the proof",
+   "detail": "The specification is the upstream artifact that everything else depends on. It is either written formally or auto-formalised from natural language, then validated by a human or by testing it on sample inputs. The agent implements from it and the prover checks the match.",
+   "t": "1:16"
+  },
+  {
+   "idea": "Lean puts definitions and proofs in one language with a small trusted kernel",
+   "detail": "There is no translation layer between code and proof. Proofs can be exported and re-checked independently, and only the small kernel has to be trusted. Anyone can write an independent kernel, and kernels exist in C++, Rust and Lean.",
+   "t": "2:20"
+  },
+  {
+   "idea": "Proof search is a game tree of tactics",
+   "detail": "The speaker compares tactics to chess moves on an interactive board. The prover tries a tactic, backtracks when a goal cannot be proved, and tries another branch until the theorem is closed. The kernel then checks the result, and a wrong proof is rejected immediately.",
+   "t": "3:23"
+  },
+  {
+   "idea": "AI can verify a whole real library by decomposing it into lemmas",
+   "detail": "An AI turned a natural-language spec of zlib decompression into a formal spec, wrote the Lean code, generated helper lemmas as subgoals, proved each one with tactics and assembled the final theorem. The human checks the formal spec, not the proof steps.",
+   "t": "4:23"
+  },
+  {
+   "idea": "Keep a formal spec next to production Rust and test them against each other",
+   "detail": "Cedar's production code runs in Rust while its functional specification is written in Lean. Differential random testing runs both on the same inputs, and the speaker says about 100 million such tests run nightly. No version ships until they agree.",
+   "t": "5:48"
+  },
+  {
+   "idea": "Solvers act as calculators that answer satisfiable or unsatisfiable",
+   "detail": "Verus uses annotations (requires and ensures) that the Z3 solver checks statically. They are erased at runtime, so they behave like ghost code. Aeneas translates Rust's mid-level IR into Lean for proving.",
+   "t": "6:49"
+  },
+  {
+   "idea": "Lower every language into one shared core IR and dispatch it to many engines",
+   "detail": "Strata lets you define a dialect for a language and lower it to Strata Core, which is written in Lean. From there the same program can go to the Lean prover, an SMT solver or a model checker. The speaker says this is still work in progress.",
+   "t": "8:42"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Spec-first verified agent coding",
+   "how": "Write what correct means as a specification (in Lean, or in natural language that AI auto-formalises). Validate the spec by human review or by testing it on some inputs. Let the coding agent implement it, then have a formal verifier prove the implementation meets the spec.",
+   "when": "Critical code where a wrong answer is costly, and where the agent writes most of the code, so the human needs a checkable point of control."
+  },
+  {
+   "name": "Spec model plus differential random testing",
+   "how": "Keep a functional spec (for example in Lean) alongside production code (for example in Rust). Run both on the same random inputs each night and block releases until their outputs match.",
+   "when": "The production code is too big to verify in full but has a clear reference model, as with Cedar's authorization engine."
+  },
+  {
+   "name": "Lemma decomposition for AI proofs",
+   "how": "Ask the AI to split a theorem into helper lemmas (subgoals), prove each one with tactics, then combine them into the final theorem. The kernel checks the final result.",
+   "when": "Large proofs, such as the 32,000-line zlib example, where one proof attempt is too large to handle at once."
+  },
+  {
+   "name": "In-code pre- and post-conditions checked by a solver",
+   "how": "Add requires and ensures annotations next to the Rust code. The verifier checks them with a solver such as Z3 at build time and erases them at runtime.",
+   "when": "Rust code where you want static guarantees without runtime cost and with less proof work than an interactive prover needs."
+  },
+  {
+   "name": "Intermediate-representation dialect to many backends",
+   "how": "Define a dialect for each source language, lower it to a shared core IR, then send that core to whichever engine fits: an interactive prover, an SMT solver or a model checker.",
+   "when": "Several languages or many programs need verification with one toolchain (Strata is the example)."
+  }
+ ],
+ "tools": [
+  "Lean",
+  "Lean 4 browser playground",
+  "Kiro (transcript shows 'Kero', likely the AWS agentic IDE)",
+  "Verus",
+  "Z3",
+  "Aeneas",
+  "Strata / Strata Core",
+  "Cedar",
+  "SMT solvers",
+  "model checkers",
+  "ArenaLang (kernel registry)"
+ ],
+ "numbers": [
+  {
+   "claim": "Builders generate hundreds and thousands of PRs every week (speaker's framing of the problem)",
+   "t": "0:08"
+  },
+  {
+   "claim": "AI converted zlib to Lean over about a week, with a 32,000-line proof checked by the kernel",
+   "t": "4:23"
+  },
+  {
+   "claim": "Cedar runs about 100 million differential random tests nightly; no version ships until they pass",
+   "t": "5:48"
+  },
+  {
+   "claim": "Video length 10:07",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Tests only check some inputs, LLM-as-judge is probabilistic and human review cannot match agent speed, so formal proof is the only way to say code is correct for all inputs.",
+  "Humans should own the specification and machines should own the code and the proof.",
+  "The goal is software that is probably correct in a provable sense, not just probably correct."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "L1 policy checks and L2C exec-gate guardrails are rules that could be written as formal properties, but the talk does not address runtime agent policy.",
+   "action": "Read the Cedar differential-testing section and consider whether one exec-gate rule could be written as a spec and checked against its implementation with random inputs."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness has a plan step followed by a critique step. The talk's human-validates-the-spec-before-implementation idea is close to that, but its checks are formal.",
+   "action": "Consider adding a spec-validation checkpoint before the implementation step of a long run, with a check that is lighter than full proof."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The core idea, that a human owns a validated spec and the agent implements against it with an automatic check, applies to any agent-written code. The formal tooling is heavy, but the workflow is portable.",
+   "action": "Pick one critical module, write its invariants as property tests (or pre/post-condition asserts) before the agent implements it, and check whether the agent's code passes them."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

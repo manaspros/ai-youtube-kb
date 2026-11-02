@@ -1,0 +1,47 @@
+# Monitoring Made EASY with Grafana and Prometheus!
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `pGSkPutCKtQ` · [watch](https://youtu.be/pGSkPutCKtQ) · **date:** 2025-11-02 · **length:** 10:17 · **format:** tutorial · **quality:** 2/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Better Stack, Grafana Labs, Prometheus
+- **topics:** observability, dev-tools · **tags:** grafana, prometheus, node-exporter, promql, docker-compose, dashboards, host-metrics, cpu-monitoring, disk-monitoring
+
+> Step-by-step Docker Compose setup of Prometheus, node_exporter and Grafana to chart host CPU and root-disk usage, with a sponsored Better Stack plug.
+
+## Summary
+The video walks through a single-host monitoring stack: node_exporter exposes host metrics, Prometheus scrapes and stores them, and Grafana visualizes them. It starts with a Docker Compose file for all three services, then a minimal Prometheus config with a 15-second global scrape interval and one target (node_exporter on port 9100). The presenter checks scraped metrics in the Prometheus UI, adds Prometheus as a Grafana data source by its container address, and builds two panels: CPU utilization from node_cpu_seconds_total (filtered to non-idle modes, rate changed to irate over a 1-minute range, legend set to the mode label) and root filesystem usage (size minus free bytes, with a device regex to drop temp and VDA paths). The panels are saved to a dashboard and arranged side by side. Around 8 minutes there is an explicit plug for Better Stack's hosted dashboards and status pages. The content is beginner-level host metrics only, with no alerting, no application metrics and no security hardening (default admin/admin credentials are left in place).
+
+## Key ideas
+- **Three-part pipeline: node_exporter exposes host metrics, Prometheus scrapes and stores them, Grafana charts them.** — The presenter frames the whole setup this way before any config, so each container's role is clear. ([0:00](https://youtu.be/pGSkPutCKtQ?t=0))
+- **Compose layout for node_exporter needs host namespace and read-only root mount so it can see the host, not the container.** — node_exporter gets a command pointing at the host filesystem, the host PID namespace, and the host root mounted read-only. Prometheus gets a config file volume and a data volume. Grafana gets a data volume. ([1:20](https://youtu.be/pGSkPutCKtQ?t=80))
+- **Check raw metrics in the Prometheus UI before building dashboards, then move to Grafana because Prometheus graphs are hard to customize.** — The presenter searches for node_ metrics, runs a query, and notes the Prometheus graph has few customization options, which motivates Grafana. ([2:44](https://youtu.be/pGSkPutCKtQ?t=164))
+- **Grafana reaches Prometheus by container address on the shared Docker network, so the data source URL uses the container name and port.** — The presenter says both containers share a Docker network, so default data source settings work once the URL is set. Save and Test confirms the connection. ([4:06](https://youtu.be/pGSkPutCKtQ?t=246))
+- **For CPU usage, filter out idle, switch rate to irate over a short range, and rewrite the legend to show only the mode.** — Starting metric is node_cpu_seconds_total. Grafana suggests wrapping it in rate, which the presenter changes to irate over 1 minute. Repeated job/instance labels are dropped in favour of a legend showing only mode. ([5:28](https://youtu.be/pGSkPutCKtQ?t=328))
+- **The Builder view generates PromQL, which can be pasted in directly; the presenter says AI can write the syntax.** — The presenter suggests a code view for pasting queries, while noting the Builder is sometimes quicker for picking metrics. ([6:56](https://youtu.be/pGSkPutCKtQ?t=416))
+- **Root filesystem usage is computed as total size minus free bytes, with a device regex excluding temp and VDA mounts.** — The second panel is pasted in as PromQL. The presenter explains it subtracts free bytes from size bytes for the root path, and uses a regex on the device label to ignore two other file paths. ([8:19](https://youtu.be/pGSkPutCKtQ?t=499))
+- **The video explicitly promotes Better Stack's hosted version, which offers drag-and-drop dashboards, status pages and alerts.** — This is a self-promotion segment inside an otherwise self-hosted tutorial. It does not affect the technical steps. ([8:19](https://youtu.be/pGSkPutCKtQ?t=499))
+
+## Techniques
+- **Compose file for a host-metrics stack** — Define three services: node-exporter (latest image, command pointing it at the host filesystem, pid: host, host root mounted read-only), prometheus (latest image, a config file mounted in, a volume for data, and a command flag pointing at the config), and grafana (container port 3000, a volume for data). The transcript does not spell out the exact flags. Read them off the screen or the video's description. Captions give Prometheus's host port as 1990, which is probably the default 9090. *When:* A single Linux host where you want CPU, memory and disk metrics without any application instrumentation.
+- **Minimal prometheus.yml** — Set global scrape_interval to 15s. Add one scrape target for node_exporter on port 9100 (the service name on the Compose network is the presumed address; the transcript only says port 9100). *When:* First-run setup, or when you want one scrape job to check the pipeline before adding more exporters.
+- **Verify the scrape in Prometheus before Grafana** — Open the Prometheus UI, search for node_, pick a metric, click Execute, then switch to the graph view to confirm data is arriving. *When:* Before building dashboards, to separate scrape problems from visualization problems.
+- **Add Prometheus as a Grafana data source** — Log in to Grafana (admin/admin by default), go to Connections, search for Prometheus, choose Add new data source, set the URL to the Prometheus container over HTTP on its port, leave other defaults, then click Save and test. *When:* Once Grafana and Prometheus share a Docker network.
+- **CPU utilization panel** — Create a time series panel on the Prometheus source. Use metric node_cpu_seconds_total with a label filter mode != idle. Change the rate function to irate and set the range to 1m. Under Options, set the legend to custom and use the mode label. Save the dashboard. *When:* Showing CPU load by state (user, system, iowait, irq, steal) on a single host.
+- **Root disk usage panel** — Create a panel with PromQL that subtracts node_filesystem_free_bytes from node_filesystem_size_bytes for the root mount. Use a device-label regex to exclude the temp and VDA paths. The exact query is on screen, not in the transcript. Give the panel a name and save it. *When:* Watching free space on the root filesystem of a single host.
+- **Dashboard layout and iteration** — After saving, go back to the dashboard list, drag panels to arrange them side by side, and resize as needed. Use the Builder or code view to tweak labels and queries. *When:* Final polish of a small dashboard.
+
+## Numbers
+- Prometheus global scrape interval is 15 seconds. ([1:20](https://youtu.be/pGSkPutCKtQ?t=80))
+- node_exporter target is on port 9100. ([1:20](https://youtu.be/pGSkPutCKtQ?t=80))
+- CPU rate window changed to irate with a 1-minute time range. ([5:28](https://youtu.be/pGSkPutCKtQ?t=328))
+- Default Grafana login is admin/admin (the presenter leaves it unchanged). ([2:44](https://youtu.be/pGSkPutCKtQ?t=164))
+- Prometheus is captioned as port 1990 (likely 9090). ([2:44](https://youtu.be/pGSkPutCKtQ?t=164))
+
+## Hot takes
+- Sponsored plug for Better Stack at about 8:19, pitching hosted dashboards, status pages and alerts. This caps quality at 2.
+- The title says monitoring, but the video covers host metrics only. It has no alerting, no application or request metrics, and no hardening (default admin/admin credentials are left in place).
+- The presenter is clear that PromQL is easier to paste from AI or the code view than to write by hand, which is a reasonable beginner shortcut.
+
+## Tools mentioned
+Grafana, Prometheus, node_exporter (Prometheus Node Exporter), Docker, Docker Compose, PromQL, Better Stack (hosted, sponsored mention)
+
+## Relevance to our work
+- **agentos** (1/3): AgentOS L4 already names Prometheus, Grafana and OTel. This video only covers host-level metrics, which is the basic baseline and not the AgentOS-specific pillars. → *Reuse this Compose layout and the CPU/root-disk panels as the baseline host dashboard on the RTX 5090 box, then add AgentOS pillar metrics (proxy, budgets, vLLM).*

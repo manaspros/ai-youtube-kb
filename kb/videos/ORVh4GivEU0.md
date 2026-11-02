@@ -1,0 +1,45 @@
+# Beyond RAG: A Relational Context Engine That Cuts Token Burn — Unblocked
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `ORVh4GivEU0` · [watch](https://youtu.be/ORVh4GivEU0) · **date:** 2026-10-11 · **length:** 19:44 · **format:** demo · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Peter (Unblocked) · **orgs:** Unblocked
+- **topics:** rag-retrieval, token-cost-efficiency, context-engineering, data-engineering · **tags:** context-engine, structured-query, text-to-query, schema-discovery, identity-resolution, query-validation, tenant-isolation, self-correction, agentic-search, mongodb
+
+> Unblocked (Peter) argues RAG misses structured questions, then builds a schema-aware query engine over a document store with validation and self-correction; the talk is a demo-heavy speed run.
+
+## Summary
+Peter from Unblocked argues that a "context engine" turns scattered org knowledge (code, PRs, tickets, docs, Slack) into task-specific, permission-aware context bundles for agents. He shows one anecdote where a bundle cut a Claude task from about $2.60 and 3 minutes to $1.29 and 1.5 minutes. He then makes the case that semantic RAG handles content questions but not structural or aggregate questions (merged last week, weekly ratios, reviewers per area), which need a query engine. The build part covers an open-source document query engine over a Mongo-style store: sampling-based schema discovery, deterministic-first identity resolution with an LLM tiebreaker, LLM query synthesis, a validator that blocks dangerous operators and injects tenant filters itself, and a retry loop that feeds errors back to the model. The talk is light on measurements, and the demo is the main evidence. A local A/B context-simulator repo is mentioned as a way to test the benefit without wiring up the product.
+
+## Key ideas
+- **Semantic RAG covers content questions but not structural ones** — Vector search finds the code, PR or thread about a topic. It cannot answer structured questions such as PRs merged last week, who reviewed payments most, or a weekly ratio chart. Those need a query engine, so retrieval has two halves: semantic and structured. ([6:40](https://youtu.be/ORVh4GivEU0?t=400))
+- **Generating the query is the easy part; the scaffolding is the hard part** — The work is passing the schema to the LLM, mapping user identities across systems, treating the generated query as untrusted, and handling execution errors. The LLM call itself is the small piece. ([8:14](https://youtu.be/ORVh4GivEU0?t=494))
+- **Discover the schema by sampling documents, mostly with procedural code** — For a schema-less store, sample documents and derive the schema at runtime, including inferring enum values and building indexes. The speaker says plain procedural methods get far before an LLM is needed, because the work is deterministic. ([10:45](https://youtu.be/ORVh4GivEU0?t=645))
+- **Resolve identities with fuzzy matching first and an LLM only as tiebreaker** — Map user names across systems such as GitHub and Slack with fuzzy matching. When candidates remain ambiguous, pass the short candidate list to an LLM to pick one. This is how the Unblocked product resolves identities, per the speaker. ([12:20](https://youtu.be/ORVh4GivEU0?t=740))
+- **Validate generated queries and enforce tenant scope in code, not in the prompt** — Validation is called the most important step. Block dangerous operators such as a server-side JS function operator, and hide fields the LLM should never see. Tenant filters are injected underneath the generated query so the LLM never handles tenant IDs. ([14:23](https://youtu.be/ORVh4GivEU0?t=863))
+- **Feed validation and execution errors back to the LLM in a bounded retry loop** — A rejected or failing query is returned to the model with the error message and retried up to a fixed maximum. In the demo, one question took a couple of attempts to converge on a valid operator, and a later exact-title match returned nothing until full-text search was added. ([15:30](https://youtu.be/ORVh4GivEU0?t=930))
+- **A/B testing context bundles locally is an open-source option** — The speaker mentions an open-source simulator that builds a context bundle per task, then runs the same task with and without it and compares results, so teams can measure the value without a live integration. ([18:27](https://youtu.be/ORVh4GivEU0?t=1107))
+
+## Techniques
+- **Dynamic schema discovery by document sampling** — Sample documents from a schema-less store, derive field types and enum values with deterministic code, and create indexes from the result. Pass the derived schema to the LLM at query time. *When:* Querying document or NoSQL stores where the schema is not declared, and you want tightly bound generated queries.
+- **Fuzzy identity resolution with LLM tiebreak** — Match user identities across systems by fuzzy string matching first. For remaining ambiguous cases, send the candidate names to an LLM and ask it to pick one. *When:* Questions name people whose identifiers differ across tools (for example a GitHub login versus a display name).
+- **Validate-then-inject for generated queries** — Allowlist safe operators, reject dangerous ones (such as server-side code execution), keep sensitive fields out of the LLM's view, and inject tenant or permission filters into the final query in code. *When:* Any LLM-generated query runs against shared data with multi-tenant or permission boundaries.
+- **Bounded self-correction loop** — On a validation or database error, append the error to the conversation and ask the LLM to regenerate. Stop after a fixed maximum number of retries. *When:* Text-to-query pipelines where the first generated query often fails on an operator or a field name.
+- **Per-task context bundle with an A/B harness** — Assemble a bundle of related code, docs, PRs and threads for a task, then run the same task with and without the bundle and compare cost, time and output. *When:* Deciding whether a context-retrieval layer for coding agents is worth its cost.
+
+## Numbers
+- Context bundle run: $1.29 and about 1.5 minutes, versus up to $2.60 and about 3 minutes without it. The speaker calls this a roughly 50% cost reduction. This is one task with no sample size or variance reported. ([3:59](https://youtu.be/ORVh4GivEU0?t=239))
+- A code-review issue count dropped after a model switch between Opus versions (the speaker says 4.6 to 4.8, and 'Opus 4.8 or Opus 4.6' in the same breath). Unblocked traced the cause to that switch. This is a single anecdote. ([4:59](https://youtu.be/ORVh4GivEU0?t=299))
+- Validation rejection and self-correction: the first attempt at a regex-based query was rejected, and a corrected query needed a couple of attempts. The final answer needed full-text search as well as the structured query. ([15:30](https://youtu.be/ORVh4GivEU0?t=930))
+- The talk has a 20-minute slot, and the speaker says the demo is a speed run. The talk gives no latency, accuracy or scale benchmarks for the query engine. ([0:08](https://youtu.be/ORVh4GivEU0?t=8))
+
+## Hot takes
+- Generating the query is the easy part. The scaffolding (schema, identity, validation, errors) is where the work is.
+- Use procedural code before an LLM for schema discovery and identity matching. An LLM is a fallback, not the default.
+- Never let the LLM handle tenant IDs or permission fields. Inject those filters in code after generation.
+- Plain RAG is not enough for agent context. Structured, time-scoped and aggregate queries need a separate query path.
+
+## Tools mentioned
+Claude, MongoDB, GitHub, Slack, Notion
+
+## Relevance to our work
+- **agentos** (2/3): AgentOS MemoryMesh already has hybrid BM25 and pgvector retrieval, but no path for structured or aggregate questions. The talk's validate-then-inject pattern and retry loop fit an L2A retrieval tool. The identity-matching step also overlaps with the entity-resolution interest. → *Prototype a read-only structured-query tool over one AgentOS data source. Use an allowlist validator, an injected tenant filter and a 3-try repair loop. Measure accuracy on 30 hand-written questions that retrieval alone fails.*
+- **prosharness** (1/3): The per-task context bundle with an A/B comparison matches ProsHarness's need to show that a Claude Code run is cheaper or more reliable with a bundle than without. The talk gives only one anecdote, so the evidence is weak. → *Run the same 3 repeat tasks in ProsHarness with and without a pre-assembled context bundle. Log cost and wall time for each run, and check whether the bundle helps.*

@@ -1,0 +1,151 @@
+{
+ "one_line": "A quick tour of Vercel's AI Elements, shadcn-style chat components built for the AI SDK, and a claimed five-minute build of a chat app with web search and markdown rendering.",
+ "summary": "The presenter walks through AI Elements, a set of shadcn-style React components from Vercel for building AI chat and vibe-coding UIs on the AI SDK. He lists the components (conversation, message, response with markdown, code block, reasoning, sources, tool calls, prompt input, web preview and others), then installs them with npx ai-elements@latest, noting that shadcn/ui must already be set up because the components depend on it. He converts a hand-built Tailwind chat page to use the components: a prompt input with a model selector and a web-search toggle, and a message list that renders sources and markdown. The server side is a POST route that calls streamText with a Perplexity model for web search or the selected model otherwise. The demo answers a question with five cited sources and rendered markdown, and shows reasoning streaming only if the model returns reasoning parts. The content is a single-screen happy-path demo with no auth, persistence or error handling, so it is useful as an orientation rather than a production guide.",
+ "speakers": [],
+ "orgs": [
+  "Vercel",
+  "shadcn",
+  "Perplexity",
+  "OpenAI",
+  "Anthropic"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "vibe-coding-app-building",
+  "dev-tools",
+  "product-ux"
+ ],
+ "tags": [
+  "ai-elements",
+  "vercel-ai-sdk",
+  "shadcn-ui",
+  "chat-ui",
+  "react",
+  "tailwind",
+  "markdown-rendering",
+  "web-search",
+  "component-library",
+  "streaming"
+ ],
+ "key_ideas": [
+  {
+   "idea": "AI Elements is a set of chat and AI-app UI components built for the Vercel AI SDK and distributed in the shadcn style, so the code lands in your project and you can restyle or change behavior.",
+   "detail": "Presenter's framing of the main value: the same components can look like a ChatGPT, Claude or Grok clone depending on styling, while the code stays editable.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The components cover the parts that are hard to get right by hand: markdown rendering, code blocks with syntax highlighting, the prompt input, and collapsible reasoning and tool-call displays.",
+   "detail": "He calls markdown rendering and code highlighting painful to build yourself, and says the prompt input with attachments, voice, search and a model selector is something he would rather install than design.",
+   "t": "1:26"
+  },
+  {
+   "idea": "The component inventory is about fifteen pieces: actions, branch, code block, conversation, image, loader, message, prompt input, reasoning, response, sources, suggestions, task, tool, and web preview.",
+   "detail": "Actions cover regenerate, thumbs up/down, copy and share. Branch lets the user switch between alternative generated messages. Tool shows parameters and result, collapsible. Web preview shows rendered output for browser-use or vibe-coding tools.",
+   "t": "2:47"
+  },
+  {
+   "idea": "Install requires shadcn/ui first, because AI Elements builds on shadcn primitives.",
+   "detail": "The install command adds about 27 files split between components/ai-elements and components/ui. The presenter says the code is composed the same way as shadcn, so it can be modified in place.",
+   "t": "5:16"
+  },
+  {
+   "idea": "Under the hood the code block uses react-syntax-highlighter with a Prism style, and the response component uses react-markdown with plugins and hardened rendering.",
+   "detail": "He lists these as the libraries he was curious about, noting that formatted markdown and hardening come out of the box rather than as something he wrote.",
+   "t": "5:16"
+  },
+  {
+   "idea": "The baseline chat page is a hand-built form with divs and Tailwind, and it uses useChat and sendMessage for the send path and model and search state. Replacing it with components is a matter of swapping elements, not rewriting the send logic.",
+   "detail": "The old page showed user and assistant messages with a sources dropdown, but the markdown did not render. Swapping the input, the message list and the content renderers gave the same behavior with better rendering.",
+   "t": "6:42"
+  },
+  {
+   "idea": "Web search is handled by choosing a model per request: when the search toggle is on, the route uses a Perplexity model with built-in search; otherwise the selected model is used.",
+   "detail": "The server route is a POST handler that calls streamText and converts the UI messages to model messages before passing them in, and it also includes a system prompt. The presenter notes the system prompt made the model defer to web results over his stated fact.",
+   "t": "4:02"
+  },
+  {
+   "idea": "Reasoning output only shows up when the model actually streams reasoning parts. In the demo with GPT-5 the reasoning did not appear, which the presenter attributes to the model rather than to AI Elements.",
+   "detail": "The reasoning component is collapsible and streams text when present. The presenter says GPT-5 was not returning reasoning text at the time of recording, so the component had nothing to show.",
+   "t": "7:53"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Install AI Elements into an existing shadcn project",
+   "how": "Run `npx ai-elements@latest` (or add individual components through the shadcn CLI using the command on the AI Elements docs page). Confirm shadcn/ui is already initialized first. Components land in components/ai-elements and components/ui. Edit them in place for styling or behavior.",
+   "when": "Starting a chat or vibe-coding UI on the AI SDK when you want prebuilt, owned components rather than a dependency you cannot change."
+  },
+  {
+   "name": "Chat screen composition",
+   "how": "Wrap the screen in Conversation, then ConversationContent. Map over messages: for assistant messages with sources, render the Sources collapsible above the content. Inside a Message, render MessageContent. For text parts use Response (markdown). For reasoning parts use Reasoning. Put PromptInput at the bottom with PromptInputButton for the search toggle and PromptInputModelSelect fed a list of model options.",
+   "when": "Building the main chat view with markdown, sources and reasoning in the same message list."
+  },
+  {
+   "name": "Per-request web-search switch",
+   "how": "Keep a search flag in client state alongside the selected model. Send both with each message. In the route, when the flag is on, use a model with built-in search (the presenter used a Perplexity model); otherwise use the selected model. Call streamText with the chosen model and the converted messages, plus a system prompt.",
+   "when": "Adding optional web grounding to a chat app without a separate search pipeline."
+  }
+ ],
+ "tools": [
+  "AI Elements (Vercel)",
+  "AI SDK (Vercel)",
+  "shadcn/ui",
+  "shadcn CLI",
+  "Tailwind CSS",
+  "react-markdown",
+  "react-syntax-highlighter",
+  "Prism",
+  "Perplexity (model with built-in web search)",
+  "GPT-5",
+  "Claude (model, transcribed as 'ClaudeForce')",
+  "ChatGPT (named as a clone example)",
+  "Grok (named as a clone example)",
+  "v0 (named as a vibe-coding example)"
+ ],
+ "numbers": [
+  {
+   "claim": "Install adds 27 files across components/ai-elements and components/ui.",
+   "t": "5:16"
+  },
+  {
+   "claim": "Presenter says the chat app with web search and markdown took about five minutes to build with AI Elements (single anecdote).",
+   "t": "7:53"
+  },
+  {
+   "claim": "Presenter says the earlier hand-built version with the AI SDK and Tailwind took about five minutes to set up, so the build-time comparison is roughly a wash in his account.",
+   "t": "4:02"
+  },
+  {
+   "claim": "The web-search answer cited five sources, shown in a collapsible sources list.",
+   "t": "7:53"
+  },
+  {
+   "claim": "Roughly fifteen components are listed in the AI Elements catalog.",
+   "t": "1:26"
+  }
+ ],
+ "hot_takes": [
+  "Ownership of the component code, not the component count, is the real selling point; the presenter frames it as 'you get components that just work but you still have complete control over the styling.'",
+  "The five-minute build claim is one anecdote on a happy path. It skips auth, persistence, error handling and streaming edge cases, so treat it as an orientation, not a benchmark.",
+  "Reasoning display is a model feature, not a UI feature: the presenter's own GPT-5 demo showed no reasoning because the model did not stream it.",
+  "The library choices (react-markdown, react-syntax-highlighter with Prism) are shown as a feature of the components, but they are also a dependency decision the reader inherits."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Only relevant if AgentOS ever gets a chat or playground UI over the proxy. These components target AI SDK frontends and do nothing for the proxy, budgets, memory or InferCraft layers.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The collapsible tool-call and task components show a pattern that could fit how ProsHarness presents run steps and pending approvals, but this is speculative.",
+   "action": "Read the tool and task component props as a reference for showing checkpoint and approval state if a ProsHarness UI is ever built. Not a dependency yet."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

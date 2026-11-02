@@ -1,0 +1,227 @@
+{
+ "one_line": "A two-hour Arize AI workshop on replacing \"vibes\" with measurement: read traces, write code and LLM-judge evals, calibrate the judges, then close the loop with experiments.",
+ "summary": "Laurie Voss (Head of Developer Relations, Arize AI) runs a hands-on 101 workshop on evaluating AI agents. He frames evals as tests for non-deterministic AI output and traces as logs, then instruments a Claude Agent SDK financial-analysis agent (Haiku underneath) with two lines of OpenInference/OpenTelemetry setup. The core method is to read traces first, categorise failures through open and axial coding, and only then write evals: deterministic code evals, built-in LLM judges (correctness, faithfulness), and a custom actionability rubric. He stresses judge calibration against human golden labels with a dev/test split, and reports that the judge disagreed with his labels on 54% of 13 examples at first. The talk ends with datasets and experiments, a loop where Claude Code rewrites prompts from judge explanations, and online sampled evals in production. Much of the content is vendor-specific to Arize AX, but the method and the failure examples are concrete and reusable.",
+ "speakers": [
+  "Laurie Voss"
+ ],
+ "orgs": [
+  "Arize AI"
+ ],
+ "format": "workshop",
+ "topics": [
+  "evals",
+  "observability",
+  "testing-verification"
+ ],
+ "tags": [
+  "evals",
+  "llm-as-judge",
+  "error-analysis",
+  "open-coding",
+  "axial-coding",
+  "traces",
+  "opentelemetry",
+  "openinference",
+  "arize-ax",
+  "claude-agent-sdk",
+  "rubric-design",
+  "meta-evaluation",
+  "golden-dataset",
+  "experiments",
+  "online-evals",
+  "faithfulness",
+  "actionability",
+  "precision-recall",
+  "position-bias",
+  "self-preference-bias"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Evals are tests for AI output and traces are logs for AI. Traces record every LLM call, tool call, and agent turn as a tree of spans with inputs, outputs, timing and tokens.",
+   "detail": "Unit tests fail on non-deterministic text because there is no single expected string. Evals grade semantic quality instead. Traces show what the agent did, and evals say whether it was any good.",
+   "t": "7:28"
+  },
+  {
+   "idea": "Read your traces before writing any eval. Error analysis comes first.",
+   "detail": "Read a dozen or more traces end to end, focusing on failures. Write down requirements for a good output first, since many teams never define success. Automating before understanding failures measures what is easy, not what matters.",
+   "t": "35:43"
+  },
+  {
+   "idea": "Use open coding, then axial coding, to turn observed failures into root causes. Each root cause points to a different fix.",
+   "detail": "Open coding means writing each problem in plain language without pre-set categories. Axial coding groups similar notes into categories and asks why it failed: bad retrieval, reasoning error, hallucination, or scope violation. Prioritise fixes by frequency multiplied by severity.",
+   "t": "44:44"
+  },
+  {
+   "idea": "Use code evals for deterministic checks and LLM judges for semantic ones. Grade what the agent produced, not the path it took.",
+   "detail": "Code evals (ticker present, JSON parses, length limits, forbidden phrases) are fast, free and reproducible. A ticker check caught a real failure: an AWS-only report that never mentioned Amazon. Penalising a fixed tool-call sequence punishes valid creative approaches.",
+   "t": "49:34"
+  },
+  {
+   "idea": "A correctness judge fails for live-research agents because it relies on its own training data. Give the judge the same context the agent had (faithfulness) instead.",
+   "detail": "The judge scored 0 of 13 on correctness because the reports cited 2026 facts that its knowledge did not cover. Faithfulness, with the research context attached, showed about half the reports were not grounded. Choose the eval that matches the question being asked.",
+   "t": "1:01:06"
+  },
+  {
+   "idea": "Write the judge rubric as observable yes/no criteria taken from your error analysis, with XML-tagged inputs, examples of good and bad output, and binary labels.",
+   "detail": "Vague words like helpful or accurate are not criteria. Each criterion should be checkable by a human, such as includes specific recommendations. Use one evaluator per dimension rather than one god evaluator. Ask the judge to reason before labelling. Binary labels beat 1 to 5 scales.",
+   "t": "1:06:25"
+  },
+  {
+   "idea": "Calibrate every judge against human golden labels, using a dev/test split and a focus on recall. Disagreements show where the rubric is ambiguous.",
+   "detail": "Treat the judge as a classifier and measure precision and recall. Read the judge's explanations on disagreements and tighten the criteria. Some disagreement is normal, and human inter-rater agreement can be as low as 0.2 to 0.3. A judge that disagrees with you every time is the real danger signal.",
+   "t": "1:20:50"
+  },
+  {
+   "idea": "Turn failing traces into datasets and run experiments with a fixed evaluator set. Then only the prompt changes between runs, so score differences are attributable to it.",
+   "detail": "Keep a failure dataset for quick iteration and a regression dataset of passing cases. Each experiment task is just a function from dataset input to output, so it can wrap a full agent or one component.",
+   "t": "1:37:29"
+  },
+  {
+   "idea": "Feed judge explanations to a coding agent, but supply requirements and ask it to find themes rather than fix individual traces. Otherwise it may game the evals.",
+   "detail": "Each proposed change should trace back to a specific failure explanation. Without clear requirements, the coding agent can write test data into its own prompts and pass the evals without improving anything. Ten traces with one shared cause matter more than one vivid failure.",
+   "t": "1:45:46"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Error analysis (open then axial coding)",
+   "how": "Read traces without categories, write free-text problems per trace, then group them into root-cause categories such as retrieval, reasoning, hallucination, or scope. Count frequency and weigh by severity.",
+   "when": "Before writing any evaluator, and again whenever a new failure pattern shows up in production."
+  },
+  {
+   "name": "Code evaluator on trace or span",
+   "how": "Write a deterministic Python function that takes the query and output and returns a label and a score. Map trace fields to its parameters, then run it offline or log it back to the tracing platform.",
+   "when": "For format, length, required fields, forbidden phrases, or a required entity like a ticker. Cheap enough to run on every trace."
+  },
+  {
+   "name": "Context-matched LLM judge",
+   "how": "Give the judge the same source material the agent used, and ask whether the output is faithful to it. Avoid asking the judge about facts it cannot know.",
+   "when": "When the agent uses live retrieval or web search, where a judge's built-in knowledge is out of date."
+  },
+  {
+   "name": "Rubric structure for LLM judges",
+   "how": "Describe the judge's context (what it is looking at) rather than a persona. List observable pass and fail criteria. Wrap the input and output in XML tags. Include a short good example and a bad example. Use binary labels through the tool-choice mechanism, and ask for reasoning before the label.",
+   "when": "Writing any custom LLM-as-judge eval, especially for domain criteria like actionability."
+  },
+  {
+   "name": "Judge calibration with golden labels",
+   "how": "Have a domain expert label concrete criteria. Split labels roughly 75/25 into dev and test. Tune the rubric on dev until the judge agrees, then check on test. Report precision and recall, and favour recall for guardrails.",
+   "when": "Before trusting any judge score, and after every rubric change."
+  },
+  {
+   "name": "Test both directions",
+   "how": "Include cases where a behaviour should happen and cases where it should not, such as searching the web when needed and not searching for an obvious answer.",
+   "when": "Building a golden dataset for any tool-use or routing behaviour."
+  },
+  {
+   "name": "Experiments on a fixed dataset",
+   "how": "Keep the dataset and evaluators fixed, change only the prompt or code, rerun, and compare scores. Use a failure set and a regression set.",
+   "when": "Verifying that a prompt or model change helped without breaking previously passing cases."
+  },
+  {
+   "name": "Evaluator split by dimension, with guardrail vs north-star labels",
+   "how": "Create one evaluator per quality dimension. Mark ship blockers (hallucinated price, harmful content) as guardrails that page someone, and aspirational measures as north-star metrics reviewed in weekly reports.",
+   "when": "Designing the eval suite and setting up production alerts."
+  },
+  {
+   "name": "Online sampled evals at span or trace scope",
+   "how": "Run the same evaluators on live traffic, sampling 1 to 10 percent of traces to control judge cost. Choose span scope for a single LLM or tool call, trace scope for the whole run.",
+   "when": "Once an offline eval is trusted, to watch production without judging every request."
+  },
+  {
+   "name": "Eval-driven development and data priorities",
+   "how": "Write the eval for a required behaviour, such as verifying identity before a refund, before building the feature. When iterating, fix data first, then prompts, then model choice, and tune hyperparameters last.",
+   "when": "Planning a new agent feature or deciding where to spend iteration effort."
+  }
+ ],
+ "tools": [
+  "Arize AX",
+  "Arize Phoenix",
+  "OpenInference",
+  "OpenTelemetry",
+  "Claude Agent SDK",
+  "Anthropic Claude Haiku (agent model)",
+  "Anthropic Claude Sonnet 4.6 (judge model)",
+  "Claude Code",
+  "Cursor",
+  "Codex",
+  "Arize Skills (npx install)",
+  "Alex (AX built-in eval agent)",
+  "Google Colab",
+  "tau-squared bench (cited)"
+ ],
+ "numbers": [
+  {
+   "claim": "Correctness judge scored 0 of 13 traces because it relied on training data that stops in January, while the agent used live 2026 web data.",
+   "t": "1:01:06"
+  },
+  {
+   "claim": "Faithfulness judge: 7 unfaithful and 6 faithful out of 13, so about half the reports were not grounded in their sources.",
+   "t": "1:04:00"
+  },
+  {
+   "claim": "Code ticker check: 12 passed and 1 failed out of 13 (the Amazon AWS-only report).",
+   "t": "54:08"
+  },
+  {
+   "claim": "Actionability judge agreement with his own random human labels was 46% (6 of 13) on a deliberately disagreement-heavy sample.",
+   "t": "1:25:28"
+  },
+  {
+   "claim": "Human annotators miss up to 50% of defects due to fatigue (speaker's cited figure).",
+   "t": "12:29"
+  },
+  {
+   "claim": "Human inter-rater reliability on the same output is often as low as 0.2 to 0.3.",
+   "t": "1:29:24"
+  },
+  {
+   "claim": "Workshop experiments: 12 to 20 examples give directional signal. Shipping decisions: target about 200 to 400 examples. Halving margin of error requires quadrupling sample size.",
+   "t": "1:39:42"
+  },
+  {
+   "claim": "Judge should disagree with human labels on no more than about 40% of examples; if it does, the eval is likely wrong (speaker's rule of thumb).",
+   "t": "1:17:45"
+  },
+  {
+   "claim": "Online evals are typically sampled at 1 to 10 percent of production traffic to control judge cost.",
+   "t": "1:43:18"
+  },
+  {
+   "claim": "Workshop data: 13 initial Tesla-run traces plus 12 test queries, all using Claude Haiku as the agent.",
+   "t": "34:18"
+  }
+ ],
+ "hot_takes": [
+  "Correctness judges fail on live-research agents because the judge's own knowledge cutoff is older than the data the agent retrieved; use faithfulness with the research context instead.",
+  "Twelve manual test queries are not a test suite, and LLM-generated queries cluster around obvious phrasings, so a domain expert should write the edge cases.",
+  "Numeric 1-to-5 judge scales are a poor choice because LLMs cannot reliably tell a 3 from a 4; binary pass/fail is better.",
+  "A god evaluator that checks accuracy, tone, completeness and policy at once is hard to calibrate. Split it into one evaluator per dimension.",
+  "A judge that disagrees with you some of the time is normal; the danger signal is one that disagrees all the time.",
+  "Coding agents asked to fix evals will cheat by putting test data into their prompts unless the requirements explicitly say to improve the behaviour, not pass the tests."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already plans RAGAS evals and L4 observability; the talk gives a concrete OpenInference/span-level eval pattern and a judge-calibration method that fit those layers.",
+   "action": "Add a span-scoped code evaluator (format, required-entity, forbidden-phrase) and one binary LLM judge, with 20 to 40 hand-labelled traces and a dev/test split, to the MemoryMesh or InferCraft traces before building more eval infrastructure."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code runs with checkpoints and critique, and this talk describes a loop where failing traces are turned into fixes for a coding agent, with explicit guardrails against eval gaming.",
+   "action": "Add a post-run code-evaluator step (output-format and required-field checks) to ProsHarness checkpoints. Also feed the failure explanations to Claude Code with a theme-finding instruction, not single-trace fixes."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Directly applies to the recurring interest in evals for agents and cheap Haiku pipelines. The talk gives concrete rubric and calibration rules that are reusable across projects.",
+   "action": "Before trusting any LLM-judge number in the entity-resolution or agent work, write observable binary criteria, label 20 or more examples by hand, and report precision and recall against those labels."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

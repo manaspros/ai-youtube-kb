@@ -1,0 +1,52 @@
+# Prototyping as Leadership: How a CTO Ships with AI Agents — Hursh Agrawal, The Browser Company
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `bdHaOXZOhcM` · [watch](https://youtu.be/bdHaOXZOhcM) · **date:** 2026-09-18 · **length:** 18:18 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Hursh Agrawal · **orgs:** The Browser Company
+- **topics:** software-factory, evals, enterprise-adoption, coding-agents · **tags:** overnight-agents, leadership, prototyping, hill-climbing, eval-from-feedback, context-gathering, computer-use-testing, small-prs, feature-flags, custom-model-training, claude-code, dia
+
+> A CTO explains how a manager with a full calendar keeps building by running coding agents overnight (context gathering at 5pm, morning review), using evals and custom-model training as examples.
+
+## Summary
+Hursh Agrawal, CTO of The Browser Company (Arc, Dia), argues that building is now part of a leader's job because coding agents can handle longer tasks. He describes his routine: a short morning review of overnight agent work, a few steering blocks, and a 5 p.m. block where he gathers context and launches an overnight run that is reviewed the next morning. He gives three examples of overnight work: building features with tests and computer-use end-to-end checks, hill-climbing LLM features against evals built from prototype feedback, and training custom models (a ModernBERT PII classifier). He says the leader's advantage is hands-on intuition about each new frontier model, which helps set engineering direction and convince teams with working prototypes. He also lists the organizational scaffolding needed for this to be safe, such as AI code review, clean CI, feature flags, and a prototype branch that never reaches production. He admits the approach has caused SEVs and annoyed engineers, and he gives hygiene rules such as testing before opening PRs and reading code before adding reviewers.
+
+## Key ideas
+- **Coding agents make a manager's calendar usable for building: he now ships 2 to 10 PRs a week while running 15+ recurring meetings and seven direct reports.** — The shift is due to agents that can handle longer tasks. He works 40 to 50 hours a week and cannot do long hours, so the building has to fit a normal week. ([0:08](https://youtu.be/bdHaOXZOhcM?t=8))
+- **Building is becoming part of the leader's job for two reasons: frontier models change about every three months, and intuition about them only comes from using them.** — Hands-on use lets leaders judge what a new model is good for and how it affects strategy. A working prototype also persuades engineers more than talking about a model does. ([1:30](https://youtu.be/bdHaOXZOhcM?t=90))
+- **Use the 5 p.m. block to set up an overnight run, and review the output the next morning.** — The loop is: gather context, set up the run, answer the agent's clarifying questions, let it work for 4 to 8 hours, then review the morning report and ship what is good. He spends about an hour each morning reviewing what the agent did overnight. ([6:34](https://youtu.be/bdHaOXZOhcM?t=394))
+- **Give the agent the whole business context instead of step-by-step instructions, because nobody will be there to steer it for hours.** — A co-work agent connected to Slack, Jira, Confluence, Notion and the repo does about 20 minutes of research and writes a long coding prompt with the trade-offs, what was tried before, and why the feature matters. That prompt is pasted into the coding agent. ([6:34](https://youtu.be/bdHaOXZOhcM?t=394))
+- **Make the agent write tests first and verify end-to-end with computer use. He says tests written after the code tend to be sloppy.** — The overnight prompt also asks for reviewer-friendly PRs with clear descriptions, green CI, an AI code review run in a clean sub-agent, and fixes for every bot comment, all without asking him questions. ([9:00](https://youtu.be/bdHaOXZOhcM?t=540))
+- **Hill-climb LLM features overnight by adding a feedback button to the prototype and turning the saved runs into an eval set.** — He collects around 20 to 30 feedback JSON dumps, each with the system prompt, inputs and rating, and has the agent design the scoring rubric interactively and then optimize until the score rises. He tells it not to overfit and to save the flow as a reusable skill. He says the results held up in production. ([10:23](https://youtu.be/bdHaOXZOhcM?t=623))
+- **Custom ML models can be trained overnight by a coding agent, but only in a sandbox that is not production.** — For a PII classifier that was too expensive and too slow on Opus and Haiku, the agent cleaned the data, added synthetic examples, used an ensemble of frontier models for labels, trained two candidate models on AWS GPUs, tore down the infrastructure, and reported the results. He insists on no production access. ([12:56](https://youtu.be/bdHaOXZOhcM?t=776))
+- **This only works with existing organizational scaffolding: AI code review, agent instruction-file hygiene, trustworthy CI, feature flags, and a prototype branch that reaches employees but not production.** — He admits his code has annoyed engineers and caused SEVs. He still thinks the learning is worth it, and he advises keeping small, readable PRs and reading all code before adding other reviewers. ([15:20](https://youtu.be/bdHaOXZOhcM?t=920))
+
+## Techniques
+- **Overnight agent loop** — At the end of the day, gather context (a research pass by a co-work agent is useful), launch a long-running coding agent with clear acceptance criteria, answer its clarifying questions, and in the morning review the report and the diffs before shipping. *When:* Feature work or model work where the goal is clear and can be verified later, and where a human review pass the next day is acceptable.
+- **Context-harvesting prompt** — Have a co-work agent connected to Slack, Jira, Confluence, Notion and the repo spend about 20 minutes assembling background (history, trade-offs, what failed, business reason), and turn it into one large prompt for the coding agent. *When:* Before handing a feature to an unattended agent, when the reasons behind the work are spread across tools.
+- **Test-first with end-to-end computer-use verification** — Instruct the agent to write tests before the implementation, then drive the full user flow with computer use and check it against the business goal, not only the tests. *When:* Unattended feature builds where tests written after the fact may just confirm the code as written.
+- **Feedback-to-eval hill-climb** — Add a feedback button and text box to the prototype. Save each run as a JSON dump (system prompt, inputs, output, rating). Turn 10 to 30 dumps into an eval set in SQLite or Markdown. Design the scoring rubric together, then let the agent optimize the prompt or harness until the score rises. Tell it not to overfit and save the loop as a skill. *When:* Early-stage LLM features with little labeled data, where quality, latency and cost all need tuning.
+- **Overnight custom-model training with sandboxed cloud access** — Give the agent cloud credentials scoped to a provisioned sandbox (never production), and ask for two candidate models, eval results, teardown of the GPU resources, and a hosting plan. *When:* When frontier-model calls are too costly or too slow, and a small classifier could meet the precision and recall targets.
+- **Prototype branch behind feature flags** — Ship prototypes to a branch or flag that reaches employees only, so experiments can be shown to people without touching production. *When:* Demoing agent-built features internally while keeping production safe.
+- **Small PRs with an AI reviewer in a clean sub-agent** — Ask the agent to split work into small, readable PRs, run an AI review skill in a fresh sub-agent, fix the findings, then resolve bot comments and CI failures. *When:* Agent-written code that must pass human review and set a good example for the team.
+
+## Numbers
+- Ships 2 to 10 PRs a week as a leader, with 15+ recurring meetings a week and seven direct reports ([0:08](https://youtu.be/bdHaOXZOhcM?t=8))
+- Frontier model families change about every three months ([1:30](https://youtu.be/bdHaOXZOhcM?t=90))
+- Works 40 to 50 hours a week; coding is about 2 to 3 hours a day, with a roughly one-hour morning review block ([5:17](https://youtu.be/bdHaOXZOhcM?t=317))
+- Overnight agent runs work for 4 to 8 hours ([6:34](https://youtu.be/bdHaOXZOhcM?t=394))
+- Context-gathering co-work pass takes about 20 minutes; pasting the prompt takes about 30 seconds ([7:51](https://youtu.be/bdHaOXZOhcM?t=471))
+- Feedback set size: 4 to 5 examples is fine to start, 20 to 30 is the target, and feedback can come from coworkers too ([11:46](https://youtu.be/bdHaOXZOhcM?t=706))
+- Overnight PII classifier: Opus and Haiku were too expensive and slow with poor precision and recall, and two custom models were trained overnight with no reported figures ([12:56](https://youtu.be/bdHaOXZOhcM?t=776))
+
+## Hot takes
+- Building is part of the job now, even for leaders with heavy meeting schedules.
+- A leader's steering is worth more per token than an IC's, because leaders hold the business context.
+- Do not put other reviewers on code you have not read yet; it will be obvious to senior engineers that you did not review it.
+- Never give an overnight agent production access.
+- Tests written after the code by coding agents tend to be sloppy; write them first.
+
+## Tools mentioned
+Claude Code, Codex, Cursor, Dia, Wispr Flow, Slack, Jira, Confluence, Notion, SQLite, AWS EC2, ModernBERT, Opus 4.8, Haiku
+
+## Relevance to our work
+- **prosharness** (3/3): The 5 p.m. setup and morning report are a long-running unattended loop, which is what ProsHarness checkpoint/resume and loops/schedules are for. The test-first plus E2E verification and the clean-sub-agent review also fit its plan, critique and approval steps. → *Add an overnight-run template to ProsHarness loops: gather context in one step, enforce test-first with an E2E check, require a clean-sub-agent review, and write a morning report of trade-offs. Checkpoint each stage so the run can resume.*
+- **agentos** (1/3): The feedback-to-eval-set-to-hill-climb flow and the save-as-skill step touch evals and SkillForge, but the talk gives no measured method or results. → *Compare the feedback-JSON to eval-set flow with the RAGAS evals in MemoryMesh, and consider whether it could seed SkillForge's skill-worthiness signal.*

@@ -1,0 +1,48 @@
+# MCP Is Getting Its Biggest Update Ever (No One's Ready)
+
+- **channel:** [Kai Explains](../channels/kai.md) · **id:** `k5f1uID3GcU` · [watch](https://youtu.be/k5f1uID3GcU) · **date:** 2026-08-02 · **length:** 7:51 · **format:** news · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Kai Explains channel host (not named in transcript) · **orgs:** Anthropic, OpenAI, Google, Microsoft, Salesforce, Atlassian, Snowflake
+- **topics:** mcp-and-tools, agent-architecture, security-guardrails, infra-cost-scaling · **tags:** mcp, stateless-protocol, session-id, sticky-sessions, oauth-2.1, authorization, serverless, load-balancing, context-bloat, protocol-migration
+
+> MCP's July 28 rewrite drops the handshake and session ID so any replica can serve any request; state moves into owner-checked handles, and auth fragmentation across clients is the bigger unresolved problem.
+
+## Summary
+The host walks through MCP's July 28 transport rewrite, which removes the stateful handshake and session ID in favor of a stateless wire where each request carries its own protocol version, client identity and capabilities. He argues the original stateful design made MCP hard to run behind load balancers, gateways and serverless platforms, and that the rewrite admits this in public. He says the state did not disappear but moved into explicit handles minted by tools and stored by the server, with the model acting as the courier, which creates an authorization risk unless the server checks ownership on every return. He points to auth as the issue server authors raise most, since each major client implements MCP's OAuth 2.1 requirement differently and the July release hardens rather than unifies it. He cites a registry probe in which only one of 4,356 reachable remote servers was ready for the new spec, and gives a short checklist for server and proxy maintainers. The figures he quotes (110M monthly SDK downloads, the registry probe, the React adoption comparison) are second-hand and unverified in the video.
+
+## Key ideas
+- **The original MCP was stateful: each connection did a handshake, the server minted a session ID, and later requests had to hit the same instance. That forced sticky sessions, Redis for protocol state, gateways that parse JSON bodies, and ruled out serverless.** — Framed as a single architectural decision that made production deployment hard, not as protocol complexity in general. ([0:00](https://youtu.be/k5f1uID3GcU?t=0))
+- **The July 28 rewrite removes the handshake and session ID. Every request carries the protocol version, client identity and capabilities, so any instance can answer any call and standard round-robin, autoscaling and serverless deploys work.** — The speaker calls this the whole change and says it is the right one. Three original features are deprecated; old versions keep negotiating, with a 12-month floor for deprecated features. ([1:19](https://youtu.be/k5f1uID3GcU?t=79))
+- **Multi-step state survives by round-tripping through the client. The server returns a sealed blob of its own state, and the client echoes it back on the next call, so whichever replica receives it can resume.** — He compares this to an old signed-cookie pattern. ([1:19](https://youtu.be/k5f1uID3GcU?t=79))
+- **State management did not disappear; it moved into explicit handles that tools mint and storage keeps alive. The model carries those handles, and it can drop or mangle them.** — A handle is effectively a bearer key that is not verified on return, so replaying another user's handle is an authorization hole. Stateful servers must mint, store and check ownership on every call. ([2:41](https://youtu.be/k5f1uID3GcU?t=161))
+- **Pure-function tools (lookups, reads, calculations) gain everything from stateless MCP and can scale to zero. Servers that hold live transactions, cursors or login sessions take on the full state burden.** — He summarizes it as: the rewrite made simple servers trivial and stateful servers the developer's full responsibility. ([2:41](https://youtu.be/k5f1uID3GcU?t=161))
+- **Authorization, not sessions, is the top issue server authors raise. Clients implement MCP auth differently (bearer tokens, full OAuth flows, rejecting or requiring machine-to-machine credentials, outdated spec revisions), and MCP mandates OAuth 2.1, which he says is still a draft.** — The July release adds six proposals' worth of hardening, but he says it documents the fragmentation rather than fixing it. He treats this as the longer bet. ([4:07](https://youtu.be/k5f1uID3GcU?t=247))
+- **Readiness is the real test: an engineer probed every reachable remote server in the official registry two weeks before release, and 4,356 answered with only one ready for the new spec. Context bloat was a client-side problem, fixed by loading tools on demand.** — The bloat example is Claude Code using 22% of a 200k-token window on tool definitions. Developers moving to skills and CLI tools are, in his view, following MCP's own roadmap of letting code call tools. ([5:30](https://youtu.be/k5f1uID3GcU?t=330))
+
+## Techniques
+- **Make stateful MCP tools own their handles** — When a tool holds something live (transaction, paginated cursor, login session), mint an opaque handle, store the state server-side keyed to it, and on every return check that the caller owns the handle. Do not trust a handle the model echoes back just because it is well-formed. *When:* Any MCP server that keeps state across calls, after moving to the stateless spec.
+- **Round-trip state through the client as a sealed blob** — Return a sealed (tamper-evident) blob of the server's state from a call, let the client echo it on the next request, and resume from it on any replica. Pair it with the owner check above. *When:* Multi-step tool flows that must survive load balancing or serverless execution without sticky sessions.
+- **Split pure tools from stateful tools in deployment** — Deploy stateless lookup, read and calculation tools as serverless functions that scale to zero; keep stateful tools on services that own their storage. *When:* Designing a fleet of MCP servers with mixed workloads.
+- **Gateway and proxy checklist for the MCP change** — Pass the new MCP routing headers through instead of stripping them; send a strict JSON content type; stop string-matching the JSON-RPC error code (the one transcribed as -32002 becomes -32602, so verify the exact codes in the spec); allow for the 12-month floor on deprecated features. *When:* Before the spec change reaches a gateway or proxy in front of MCP servers; he says most servers are not in an emergency.
+- **Test each server against every major client** — Because client auth implementations diverge, validate server auth against each target client (Claude.ai, the Anthropic API, ChatGPT, Google Cloud, VS Code) instead of assuming one implementation. *When:* Publishing or operating a remote MCP server used by multiple clients.
+- **Load tool definitions on demand in the client** — Do not preload every tool definition into the context window; load definitions when a task needs them, which the speaker says cut Claude Code's tool-definition overhead. *When:* Agents with large tool catalogs, where tool definitions crowd out working context.
+
+## Numbers
+- MCP is 16 months old; SDK downloads are about 110 million per month (speaker's figure) ([0:00](https://youtu.be/k5f1uID3GcU?t=0))
+- Three original MCP features are deprecated; deprecated features get a 12-month floor ([0:00](https://youtu.be/k5f1uID3GcU?t=0))
+- Speaker says React took about three years to reach its SDK adoption base; MCP reached it in 16 months ([5:30](https://youtu.be/k5f1uID3GcU?t=330))
+- Claude Code once used 22% of a 200,000-token window on tool definitions before loading them on demand ([5:30](https://youtu.be/k5f1uID3GcU?t=330))
+- Probe of reachable remote servers in the official MCP registry: 4,356 answered, 1 was ready for the July 28 spec (about 1 in 4,000) ([4:07](https://youtu.be/k5f1uID3GcU?t=247))
+
+## Hot takes
+- The stateless rewrite makes simple servers trivial but pushes state, handle minting and authorization onto server developers.
+- A handle that the model echoes back is effectively an unverified bearer key, and skipping the owner check lets one user's handle replay into another user's data.
+- MCP's auth fragmentation across clients matters more than the transport change, and the July release documents it rather than fixing it.
+- The real test is the readiness gap (1 of ~4,000 servers) and whether it closes in six months; the auth story is the longer bet.
+- The 110M-downloads figure, the registry probe and the React comparison are second-hand and not verified in the video.
+
+## Tools mentioned
+MCP (Model Context Protocol), July 28 spec revision, OAuth 2.1, Claude Code, Claude.ai, Anthropic API, ChatGPT, Google Cloud, VS Code, Redis, Salesforce, JIRA, Snowflake, React (cited only as an adoption comparison)
+
+## Relevance to our work
+- **agentos** (2/3): Govrix Scout is a proxy in front of agent traffic, and Crucible holds sandbox sessions. Both face the same stateful-handle and routing-header questions if MCP traffic is ever forwarded. → *If Govrix Scout forwards MCP traffic, confirm it preserves the new MCP routing headers and strict JSON content type, and design Crucible session handles as opaque IDs that are owner-checked on every call.*
+- **prosharness** (1/3): ProsHarness checkpoints and resumes long Claude Code runs. Resume tokens handed to the model are the same kind of unverified handle the talk warns about. → *Treat any resume or checkpoint token the model returns as untrusted and check ownership before resuming a run.*

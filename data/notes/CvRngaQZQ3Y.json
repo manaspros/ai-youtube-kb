@@ -1,0 +1,157 @@
+{
+ "one_line": "LangChain's Vivek Trivedy argues agent improvement is a data-mining loop: ship, collect traces, mine them, then run data-driven experiments on prompts, tools and models.",
+ "summary": "Vivek Trivedy (LangChain applied research) frames improving agents as a data-mining problem. The recipe is to ship the agent, collect traces of its tool calls and outputs, mine those traces for failures and successes, then test each change (prompt, tool, orchestration, loop) against the traces. He ties observability to continual learning, since agents learn from environment feedback only if their traces are kept. He argues that prompt changes are hard for humans to reason about, so trace reading has to be automated, with agents reading other agents' traces. Scale is the main problem: reading millions of tokens per trace is expensive and long traces do not fit in context, so traces should be queried as an external store. The talk then covers a model-downgrade path (start on a frontier model, then harness-engineer and fine-tune cheaper open models on the traced task), plus generating evals and summaries for human reviewers. The closing advice is to alternate harness engineering with fine-tuning and to make feedback denser than pass/fail. The talk is partly a pitch for LangSmith Engine and LangChain's open-model service.",
+ "speakers": [
+  "Vivek Trivedy"
+ ],
+ "orgs": [
+  "LangChain",
+  "Harvey"
+ ],
+ "format": "talk",
+ "topics": [
+  "observability",
+  "evals",
+  "training-finetuning-rl",
+  "memory"
+ ],
+ "tags": [
+  "trace-mining",
+  "continual-learning",
+  "harness-engineering",
+  "distillation",
+  "open-models",
+  "dense-feedback",
+  "auto-research",
+  "LangSmith",
+  "Deep Agents",
+  "Terminal Bench"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Improving agents is a loop: ship, collect traces, mine them, then run data-driven experiments on prompts, tools, orchestration and loops.",
+   "detail": "Agents generate tool calls, outputs and API/CLI activity on every run. Store all of it, mine it, and only accept a change if it improves results on the traced behaviour.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Observability and continual learning are tightly coupled.",
+   "detail": "Continual learning means an agent uses feedback from its environment to update its own knowledge. Without traces there is no feedback to learn from.",
+   "t": "2:21"
+  },
+  {
+   "idea": "Humans cannot reason about agent behaviour from the code alone, so trace reading must be automated.",
+   "detail": "Agent behaviour comes from prompts, tools, skills, hooks and middleware, and it varies by domain. The speaker's team uses agents to read other agents' traces to find good and bad interactions and to answer questions such as whether quality drops after compaction.",
+   "t": "3:31"
+  },
+  {
+   "idea": "Reading traces at scale is an input-token cost problem and a context-size problem.",
+   "detail": "Cost is roughly traces times average trace size. Very long coding-agent traces do not fit in one context, so the trace should be treated as an external object that is queried, not pasted in.",
+   "t": "6:42"
+  },
+  {
+   "idea": "Use a frontier model first to prove feasibility, then move down to a cheaper open model using traces.",
+   "detail": "Work out the minimum intelligence the task needs. Then harness-engineer an open model, guided by how the frontier model reasons in its traces, until it matches the frontier judge at a much lower cost.",
+   "t": "8:01"
+  },
+  {
+   "idea": "When prompt tuning saturates, fine-tune on a narrow vertical task; at high volume, hardware can beat token pricing.",
+   "detail": "Vertical fine-tuning of base models can reach and exceed frontier performance on the narrow task a customer cares about. At high inference volume a dedicated cluster can be cheaper than per-token costs.",
+   "t": "9:23"
+  },
+  {
+   "idea": "Use dense feedback signals and alternate harness work with fine-tuning.",
+   "detail": "A pass/fail output gives little guidance. Richer per-step signals from traces let agents propose and test fixes. The suggested order is harness engineering (about two minutes per feedback cycle), then fine-tuning to break its ceiling, then harness engineering again.",
+   "t": "15:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Agent-driven trace mining",
+   "how": "Put all agent traces in one tracing project and have an agent search them for good and bad interactions, failure patterns and behaviour over long sessions, rather than reading them by hand.",
+   "when": "You have many traces, or single traces too long to read or fit in context."
+  },
+  {
+   "name": "Frontier-to-open-model downgrade via trace judging",
+   "how": "Run the task on a frontier model. Use its traces as the reference judge, then harness-engineer a cheaper open model to match that judging, cutting cost by one to two orders of magnitude.",
+   "when": "A task is proven feasible and you want to cut the cost of a repeated judge or agent step."
+  },
+  {
+   "name": "Distillation from good traces",
+   "how": "Select the good runs from a strong model, build a dataset from them, and supervised fine-tune a small model (around 9B to 13B) to imitate that behaviour.",
+   "when": "A stronger model performs well on a task with stable, repeated behaviour and you want to lower cost."
+  },
+  {
+   "name": "Evals generated from traces",
+   "how": "Turn observed behaviour and failure modes from traces into eval sets, then update the agent until those evals pass.",
+   "when": "You need test coverage for behaviour you only found in production."
+  },
+  {
+   "name": "Score-driven auto-research loop",
+   "how": "Given a metric that can be pushed up, let an agent run experiments, read the results and traces, and make an update. Check it for cheating.",
+   "when": "You have a numeric score or eval to climb and enough compute for many iterations."
+  },
+  {
+   "name": "Harness, then fine-tune, then harness sandwich",
+   "how": "Iterate on prompts and harness first for fast feedback. Once that saturates, fine-tune. Then return to harness work on the tuned model.",
+   "when": "Harness changes stop improving results and you need to break through the ceiling."
+  },
+  {
+   "name": "Human review summaries",
+   "how": "Have agents condense the traces into digests that humans can review, since humans cannot read every trace.",
+   "when": "High-trust domains such as legal or medical, where a person must check agent output."
+  }
+ ],
+ "tools": [
+  "LangSmith",
+  "LangSmith Engine",
+  "Deep Agents",
+  "Claude Code",
+  "Codex",
+  "Terminal Bench",
+  "scikit-learn"
+ ],
+ "numbers": [
+  {
+   "claim": "Open models can match Opus-level trace judging at roughly one to two orders of magnitude lower cost (Harvey legal benchmark work).",
+   "t": "8:01"
+  },
+  {
+   "claim": "Agents now run for millions of tokens per task, so reading traces is costly.",
+   "t": "4:43"
+  },
+  {
+   "claim": "Harness engineering gives feedback in about two minutes per cycle.",
+   "t": "16:31"
+  }
+ ],
+ "hot_takes": [
+  "Showing someone an agent's eval suite tells you how the agent will behave, because agents are tuned until the evals pass.",
+  "If you have traces you can do continual learning; the speaker calls observability and continual learning tightly coupled.",
+  "Agent memory cannot be an append-only log; it needs updating over time, like sleep-time compute and dreaming.",
+  "Pass/fail benchmarks like Terminal Bench give too little signal to improve an agent."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "SkillForge's open question is the success signal for mining telemetry into skills. This talk's trace-mining loop and dense-feedback argument speak directly to it.",
+   "action": "Prototype a SkillForge success signal built from per-step trace feedback (not just pass/fail) and test whether it ranks skill-worthy runs better on a set of recorded AgentOS traces."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Harness engineering from traces and the harness-then-fine-tune loop map onto ProsHarness's checkpoint and run-review work.",
+   "action": "Read the talk's harness-iteration loop and check whether ProsHarness run traces can be mined for where Claude Code runs lose context after compaction."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The frontier-to-open-model downgrade, validated against traces, is a direct recipe for the cheap Haiku pipelines the user cares about.",
+   "action": "For one existing Haiku judge or classifier step, run a frontier-model reference on a trace sample, then test whether a cheaper model matches it before switching."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,183 @@
+{
+ "one_line": "Better Stack walks through Qdrant's open 10B-vector FineWeb benchmark dataset, which ships exact nearest-neighbor ground truth, and reruns a 1M slice against four vector engines. Lesson: test on your own data with brute-force truth.",
+ "summary": "The host argues that vendor vector-DB benchmarks are hard to trust because small datasets hide scale effects and approximate or synthetic ground truth is common. He presents Qdrant's FineWeb dataset: 10 billion documents embedded twice (dense and sparse) with GTE Multilingual Base, 120k queries, and exact top-10,000 ground truth computed by brute force, with the tooling under Apache 2.0. Because he cannot store the full 24.5 TB, he builds a 1M-vector slice, recomputes exact ground truth over that slice, and runs Qdrant, Milvus, Elasticsearch and PGVector in Docker one at a time. He sweeps each engine's search-effort setting across five values and compares latency at matched recall. Elasticsearch is fastest at about 94% recall but tops out near 95%, while Qdrant and Milvus reach 98%. He repeatedly says the results are a vendor-curated, single-run slice and may not hold at 10B scale.",
+ "speakers": [
+  "Andrus (Better Stack host)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Qdrant",
+  "Hugging Face",
+  "Elastic",
+  "Milvus",
+  "Common Crawl (via FineWeb)"
+ ],
+ "format": "review",
+ "topics": [
+  "rag-retrieval",
+  "evals"
+ ],
+ "tags": [
+  "vector-database",
+  "ann-search",
+  "recall",
+  "benchmarking",
+  "ground-truth",
+  "hybrid-search",
+  "dense-sparse",
+  "filtered-search",
+  "fineweb",
+  "msmarco",
+  "docker"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Small vector benchmarks mislead because at about 1M vectors everything fits in RAM, hiding memory pressure, index build time and tail latency that appear at 100M+ scale.",
+   "detail": "The earlier Qdrant benchmarks used 1M (DBpedia OpenAI) and 10M (Deep Image 96) vectors. The host argues a 1M test says little about production behavior at much larger scale.",
+   "t": "1:04"
+  },
+  {
+   "idea": "Recall needs exact ground truth, and computing it is the hard part.",
+   "detail": "Recall is the share of true nearest neighbors an engine returns. Exact answers require scanning every vector for every query. At 10B vectors and 120k queries this is over 10^15 distance computations, so most benchmarks use approximate ground truth or synthetic random vectors, which lack real clustering structure.",
+   "t": "2:03"
+  },
+  {
+   "idea": "Qdrant's dataset is built to cover realistic query types: dense, sparse and filtered queries over a real web corpus.",
+   "detail": "Corpus is FineWeb (10B documents). Each document is embedded twice with GTE Multilingual Base, once dense and once sparse, so hybrid retrieval can be tested on the same data. The 120k queries are 100k dense (MS MARCO), 10k sparse and 10k filtered. Filtered search is singled out as a common failure point that few benchmarks test.",
+   "t": "3:26"
+  },
+  {
+   "idea": "Storing the top 1,000 (or 10,000) exact neighbors per query lets one ground-truth run serve any smaller k.",
+   "detail": "Ground truth is sorted best-first to depth 10,000. Top-5 for chatbot retrieval, top-20 for a results page and top-1000 for reranker candidates all come from truncating the same list, so separate exact runs are unnecessary.",
+   "t": "4:33"
+  },
+  {
+   "idea": "The ground truth is verifiable, which makes it a stronger claim than a vendor's benchmark number, even though the benchmark is still vendor-chosen.",
+   "detail": "The host says Qdrant picked the corpus, embedding model, queries and harness, so results depend on those choices. Brute-force ground truth has no tuning knobs, so anyone with GPU budget can recompute it and check. The tooling is open source under Apache 2.0.",
+   "t": "5:35"
+  },
+  {
+   "idea": "Published ground truth does not apply to a slice of the dataset, so you must recompute exact truth over the vectors you actually loaded.",
+   "detail": "Qdrant's answers come from all 10B documents, so scoring a 1M slice against them looks broken. For slice testing, exact brute force over the loaded slice gives valid recall, but it answers 'does this index find what exhaustive search finds in my data' rather than 'does it match Qdrant's 10B result'.",
+   "t": "6:58"
+  },
+  {
+   "idea": "Use a sweep of search-effort settings and compare latency at matched recall, not one number per engine.",
+   "detail": "Each engine has a knob that trades speed for recall. The host measured five settings per engine, producing a recall-vs-latency curve, and asked which engine is faster at the same accuracy. Engines ran one at a time in their own containers with the same loaded vectors and ground truth so they did not compete for CPU.",
+   "t": "9:16"
+  },
+  {
+   "idea": "Elasticsearch was fastest at about 94% recall, but it cannot pass about 95%, while Qdrant and Milvus reach 98%.",
+   "detail": "The host calls this a trade-off: Elasticsearch is the fastest way to be roughly right, and Qdrant is the only one of the four that is both fast and most precise. He also notes that Elasticsearch surprised him, since it is usually a keyword engine with vectors added. He cautions that these are million-vector results.",
+   "t": "10:20"
+  },
+  {
+   "idea": "The 1M-slice results may not carry over to 10B, so each team should run the same method on its own corpus.",
+   "detail": "The host ends by calling the dataset and toolchain the takeaway, not his numbers. The toolchain covers embedding generation, database loading and load testing, and can be pointed at any corpus.",
+   "t": "11:05"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Exact brute-force ground truth on your own slice",
+   "how": "Load the subset of vectors into the engines under test. Compute exact top-K for each query with a no-index scan over exactly those loaded vectors. Score each engine's approximate results as recall = overlap with true top-K. Do not reuse published ground truth for a subset.",
+   "when": "Any retrieval or ANN evaluation on a subset of your corpus, or any time you need recall numbers you can defend."
+  },
+  {
+   "name": "Store deep ground truth and truncate for smaller k",
+   "how": "Compute exact neighbors once to a large depth (the video uses 1,000 to 10,000), store them sorted best-first, then take the first k entries to get ground truth for top-5, top-20, or top-1000 reranking candidate sets.",
+   "when": "When one corpus must serve several k values, such as RAG context (small k), result pages (about 20), or a reranker stage (hundreds to thousands)."
+  },
+  {
+   "name": "Recall-vs-latency sweep per engine",
+   "how": "For each engine, vary its search-effort parameter over several values (the video uses five). Record recall and latency at each value, then compare engines by latency at a matched recall target (e.g. 94%, 98%) instead of by a single setting.",
+   "when": "Choosing between engines or index settings, or comparing against a service-level recall target."
+  },
+  {
+   "name": "Sequential, isolated engine runs over the same loaded data",
+   "how": "Start one engine's container, load the identical vectors, run the same queries against the same ground truth, record results, tear it down, then move to the next. Engines do not share CPU during measurement.",
+   "when": "Fair side-by-side benchmarks on a single machine."
+  },
+  {
+   "name": "Benchmark filtered and sparse/hybrid queries separately",
+   "how": "Build separate query sets for filtered search (metadata constraint plus vector similarity), sparse, and dense queries, each with their own exact ground truth. Use dense and sparse embeddings from one model over the same documents so hybrid comparisons change only the retrieval method.",
+   "when": "Evaluating hybrid retrieval, or any workload with metadata filters, where engines often differ most."
+  }
+ ],
+ "tools": [
+  "Qdrant",
+  "Milvus",
+  "Elasticsearch",
+  "PGVector (pgvector)",
+  "FineWeb (Hugging Face dataset)",
+  "GTE Multilingual Base (embedding model)",
+  "MS MARCO (query set)",
+  "Docker",
+  "Qdrant open-source benchmark toolchain (Apache 2.0; named 'Supernova' in the captions, name unverified)"
+ ],
+ "numbers": [
+  {
+   "claim": "Full dataset: 10 billion vectors, about 24.5 TB of embeddings, free on Hugging Face.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Ground truth for 120k queries over 10B vectors is over 10^15 distance computations (a quadrillion).",
+   "t": "2:03"
+  },
+  {
+   "claim": "Query set: 100,000 dense queries (MS MARCO), 10,000 sparse, 10,000 filtered; 120,000 total.",
+   "t": "3:26"
+  },
+  {
+   "claim": "Exact ground truth stored to depth 10,000 per query (sorted best-first).",
+   "t": "4:33"
+  },
+  {
+   "claim": "Host's test: 1M-vector slice, 4 engines (Qdrant, Milvus, Elasticsearch, PGVector), 5 search-effort settings each.",
+   "t": "9:16"
+  },
+  {
+   "claim": "At about 94% recall: Elasticsearch 7.5 ms, Qdrant 9.5 ms, Milvus 12.5 ms, PGVector 13 ms.",
+   "t": "9:16"
+  },
+  {
+   "claim": "Elasticsearch plateaus below 95% recall; Qdrant and Milvus reach 98%.",
+   "t": "10:20"
+  },
+  {
+   "claim": "Earlier Qdrant benchmarks used DBpedia OpenAI 1M and Deep Image 96 at 10M vectors.",
+   "t": "1:04"
+  }
+ ],
+ "hot_takes": [
+  "Most vector-DB vendor benchmarks are unreliable because they use small datasets, approximate ground truth, or synthetic vectors.",
+  "Elasticsearch beat three dedicated vector databases on latency at about 94% recall in this single small test (the host calls this surprising).",
+  "A brute-force, parameter-free ground truth on a public dataset is a stronger basis for trust than a vendor's own numbers, but the dataset, embedding model and queries were still chosen by a vendor (Qdrant).",
+  "The 1M-slice results are a single run and may not hold at 10B scale; the host says so repeatedly.",
+  "The 'Most Vector DB Benchmarks Are Wrong' title is more hype than the video supports; the substance is a dataset announcement plus a small, caveated experiment."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh uses hybrid retrieval (BM25 plus pgvector). The video gives a concrete method for measuring recall and latency against exact ground truth on a slice, and a dense plus sparse setup to test hybrid retrieval.",
+   "action": "Build a MemoryMesh retrieval eval: load a corpus slice into pgvector, compute exact brute-force top-K per query (store to depth 1000 and truncate), sweep the pgvector search-effort setting, and report recall@k against latency for dense, sparse and filtered queries."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness does not depend on vector retrieval or vector DB choice.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Vendor-benchmark skepticism and the exact-ground-truth method apply to any retrieval evaluation, but the video adds no new technique beyond standard recall practice.",
+   "action": "Before choosing a vector DB, run a recall-vs-latency sweep on your own data with brute-force ground truth instead of relying on vendor pages."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

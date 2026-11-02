@@ -1,0 +1,155 @@
+{
+ "one_line": "Thiyagarajan Maruthavanan (Kalmantic Labs) argues teams should rent inference to learn and own it to earn, using his own runaway-cost incident and enterprise objections to self-hosting as evidence.",
+ "summary": "The speaker says usage-priced inference is hard to budget: prepaid credits feel like casino chips, and spend passes the limit people set in their heads. He describes building Ultrasono, a reverse Suno app that finds a prompt for a given song, which went viral and ran up hundreds of thousands of dollars in inference. A stolen API key pushed spend from about $7,000 to $10,000 before it was stopped, and he estimates it could have reached $100,000. He blames waste on missing input compression, repeated calls in agent loops, and endpoints that do not know the shape of the workload. He moved the app to a local DGX Spark, found memory to be the bottleneck, and then heard from three enterprises (a fund, a hospital, a tax practice) that had objections to renting or to third-party inference: rate-limit control, audit vendor flags, and reproducing recommendations. His rule is to keep renting before product-market fit and to own infrastructure once a use case is proven or budgeted. He says optimization is possible even while renting, and he promotes his open-source JustTokenMax, which he says beats Headroom, though the talk gives no benchmark numbers. The talk closes with the line \"rent to learn, own to earn.\"",
+ "speakers": [
+  "Thiyagarajan Maruthavanan"
+ ],
+ "orgs": [
+  "Kalmantic Labs",
+  "Anthropic",
+  "OpenAI",
+  "Suno",
+  "Uber",
+  "Netflix"
+ ],
+ "format": "talk",
+ "topics": [
+  "token-cost-efficiency",
+  "local-ai",
+  "infra-cost-scaling",
+  "governance-compliance"
+ ],
+ "tags": [
+  "inference cost",
+  "token budget",
+  "self-hosting",
+  "DGX Spark",
+  "API key theft",
+  "rent vs own",
+  "input compression",
+  "enterprise audit",
+  "JustTokenMax"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Usage-priced inference is hard to budget",
+   "detail": "Prepaid credits encourage overspending, and a large retailer reportedly spent close to $200M with Anthropic. The speaker also cites an Uber budget that ran out by month four.",
+   "t": "0:00"
+  },
+  {
+   "idea": "A stolen key can run up costs fast with no cap",
+   "detail": "Spend climbed in steps from about $7k to $7.5k to $8k. It was stopped at $10k, and the speaker estimates it could have reached $100k.",
+   "t": "1:13"
+  },
+  {
+   "idea": "Waste comes from missing compression and agent loops",
+   "detail": "Input tokens are often not compressed, agent loops make many wasteful calls, and the inference endpoint does not know the shape of the workload.",
+   "t": "1:13"
+  },
+  {
+   "idea": "Self-hosting on a small box works until memory limits it",
+   "detail": "Moving the app from Anthropic to a local DGX Spark worked well, but memory was the bottleneck. The speaker then ran more agents on the same box.",
+   "t": "2:29"
+  },
+  {
+   "idea": "Enterprises object to renting for three different reasons",
+   "detail": "A fund wanted to control its own rate limits. A hospital failed an audit because a third-party vendor dependency was flagged. A tax practice needed to reproduce recommendations, which requires access to the model internals.",
+   "t": "3:51"
+  },
+  {
+   "idea": "Decision rule: rent before product-market fit, own after",
+   "detail": "Pre-PMF startups can rent to test demand. Post-PMF companies, and enterprises with a budgeted project, should build their own inference. He compares this to renting in a city before buying a house.",
+   "t": "5:17"
+  },
+  {
+   "idea": "Optimization is available even while renting",
+   "detail": "Input cost, token management and context management can all be improved before any hardware purchase. The speaker open-sourced JustTokenMax for this and says it beats Headroom, though no numbers are given.",
+   "t": "5:17"
+  },
+  {
+   "idea": "Ignore conflicting vendor predictions",
+   "detail": "Jensen, Satya Nadella and inference-endpoint providers each predict a different future. The speaker says market rules change every three to six months, so each team has to work out its own answer.",
+   "t": "6:40"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Per-key spend monitoring with a cutoff",
+   "how": "Track cumulative inference spend per API key and watch for rising trends. Alert early and revoke or cap the key when spend rises unexpectedly, not only when a total budget is hit.",
+   "when": "Any shared or public API key, or any endpoint where a leaked key could run up large costs."
+  },
+  {
+   "name": "Input compression and context management in agent loops",
+   "how": "Compress input tokens and trim context before each model call, especially in agent loops that make many calls.",
+   "when": "Agents or loops where the same context is sent repeatedly and inputs are large."
+  },
+  {
+   "name": "Rent-to-own decision gate",
+   "how": "Rent inference while the use case is unproven. Before committing to self-hosting, check audit and vendor-dependency rules, rate-limit control, and whether outputs must be reproducible.",
+   "when": "Deciding whether to move from a hosted API to self-hosted inference, especially in regulated or enterprise settings."
+  },
+  {
+   "name": "Small local inference box for personal agents",
+   "how": "Run the model on a single desktop-class box such as a DGX Spark, then host the agents there. Memory is the limit to watch.",
+   "when": "Low-volume research or personal agents where cost matters more than throughput."
+  }
+ ],
+ "tools": [
+  "DGX Spark",
+  "Headroom",
+  "JustTokenMax",
+  "JustInfo",
+  "Suno",
+  "NemoClaw"
+ ],
+ "numbers": [
+  {
+   "claim": "A large retailer reportedly spent close to $200M on inference with Anthropic before building its own infrastructure.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Uber reportedly exhausted a yearly token budget by month four (cited news, not verified in the talk).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Ultrasono reached hundreds of thousands of users and cost hundreds of thousands of dollars in inference.",
+   "t": "1:13"
+  },
+  {
+   "claim": "A stolen key moved spend from about $7,000 to $7,500 to $8,000, and it was stopped at $10,000. The speaker estimates it could have reached $100,000.",
+   "t": "1:13"
+  },
+  {
+   "claim": "The speaker says the key was stolen three weeks before the talk.",
+   "t": "1:13"
+  },
+  {
+   "claim": "Rules of the AI market change every three to six months.",
+   "t": "6:40"
+  }
+ ],
+ "hot_takes": [
+  "Usage-priced inference works like prepaid casino credits: people overspend without noticing.",
+  "Rent to learn, own to earn.",
+  "Once a use case has product-market fit, building your own inference infrastructure is not optional.",
+  "Enterprises will not accept a third-party inference dependency because of audit and reproducibility needs."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS already has budgets and a proxy layer (Govrix Scout). The talk's key-theft case shows that a total cap alone may not catch a leaked key draining spend.",
+   "action": "Test Govrix budget enforcement with a stolen-key scenario: spend rising in steps from $7k to $10k should trigger a per-key cutoff, and add a spend-velocity alert alongside the total cap."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs long Claude Code agent loops. The talk says repeated calls and uncompressed context waste tokens in loops like these.",
+   "action": "Log tokens per loop iteration to find repeated calls and context growth."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

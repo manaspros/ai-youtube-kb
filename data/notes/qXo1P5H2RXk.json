@@ -1,0 +1,184 @@
+{
+ "one_line": "Explainer building an agent harness from scratch (agent loop, context management, permission gate, config) and arguing that the harness, not the model, now drives much of a coding agent's score and cost.",
+ "summary": "The speaker argues that a benchmark score for a coding agent is a property of the model plus the harness wrapped around it, so comparisons of agents are largely comparisons of harnesses. He builds a harness up from first principles: a bare model is text in, text out; the smallest harness is an agent loop that executes requested tools and resends the whole conversation until the model stops asking. He then adds the layers in the order they became necessary: context-window management (state on disk, sub-agents with clean context, deliberate compaction), a permission and sandbox gate that owns what the agent may touch, and per-agent git worktrees for running agents in parallel. Configuration such as project files, on-demand skills and hooks is also harness-owned, which is why switching harnesses feels like a downgrade. He cites a cost spread for the same task across harnesses, driven mainly by the number of round trips rather than the system prompt. He closes by saying the \"harness\" label is marketing-flavored, but the layer underneath is real and that labs control how much of a scaffold gain shows up as score versus bill. The talk has no hands-on commands or config keys and its numbers are cited second-hand.",
+ "speakers": [
+  "Kai (host of Kai Explains; surname not stated in transcript)"
+ ],
+ "orgs": [
+  "Anthropic",
+  "OpenAI",
+  "NVIDIA",
+  "Cursor",
+  "Cline"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "context-engineering",
+  "claude-code",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "agent-harness",
+  "agent-loop",
+  "context-window",
+  "compaction",
+  "subagents",
+  "permissions",
+  "sandboxing",
+  "git-worktree",
+  "system-prompt-overhead",
+  "tool-descriptions",
+  "cost-per-task",
+  "round-trips",
+  "benchmarks",
+  "post-training-harness-coupling",
+  "loop-engineering"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Benchmark scores for agents are a property of model plus harness; labs footnote the scaffold because the wrapper can move the score.",
+   "detail": "Speaker points to the scaffold line under a coding benchmark on Anthropic's model card. The point is that the harness now moves results as much as the model does, and the speaker suggests recent coding-agent comparisons were mostly comparing harnesses on closely matched models.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The smallest harness is an agent loop: execute the model's tool requests, append results, resend the whole conversation, repeat until done.",
+   "detail": "A model only maps text to text. Something outside it must open files, run tests and paste results back, then resend the full conversation each turn. That recursive loop is what the speaker calls the minimum that earns the word harness.",
+   "t": "1:14"
+  },
+  {
+   "idea": "Tool descriptions ship with every message, so harness features are a per-turn cost.",
+   "detail": "Claude Code, Cursor and Cline add roughly 8,000 to 30,000 tokens of tool and rule descriptions on every turn. Speaker reads the open-source Cline repo to show it is mostly descriptions. Richer capability means a longer prompt, paid on every loop iteration.",
+   "t": "2:38"
+  },
+  {
+   "idea": "The harness manages the context window from outside the model: state goes to disk, sub-agents read with clean context, and compaction is deliberate.",
+   "detail": "Letting the model summarize its own history is leaky, since details drop and the agent can believe it tested something it never ran. The harness instead writes state to files, spawns sub-agents for reading, and compacts on its own schedule.",
+   "t": "3:50"
+  },
+  {
+   "idea": "The harness owns the permission and sandbox gate for unattended runs.",
+   "detail": "It decides which commands need a human yes, which directories are off limits, and whether the agent runs in a sandbox or directly on the machine. The speaker calls this the part nobody demos but the part that makes walking away from a 20-minute run safe.",
+   "t": "3:50"
+  },
+  {
+   "idea": "Parallel agents avoid collisions by each getting its own git work tree.",
+   "detail": "Each agent gets a separate checkout so edits never land in the same place. The speaker frames this as plumbing, not intelligence, but it determines whether two agents can run at once.",
+   "t": "4:58"
+  },
+  {
+   "idea": "Repeated prompt content moves into harness configuration, and that configuration is why a harness switch feels like a downgrade.",
+   "detail": "Examples are a project file describing the codebase, a skill loaded only when needed, and a hook that runs the linter after every edit. Labs post-train models against their own harness and tool-call format, so a frontier model in a third-party harness may hesitate and reread more.",
+   "t": "4:58"
+  },
+  {
+   "idea": "Cost differs widely for the same model and task across harnesses, and the driver is trip count more than system prompt size.",
+   "detail": "On a one-line task run through four harnesses, the speaker cites about $0.37 in one versus $0.07 in another, from an earlier video. A harness that finds the answer in three file reads costs far less than one that takes 30, because every read is a full round trip.",
+   "t": "6:17"
+  },
+  {
+   "idea": "Prompt, context and now loop engineering are layers that absorb each other, each wrapping the one below.",
+   "detail": "Harness engineering absorbed context engineering, which absorbed prompt engineering. The speaker says loop engineering wraps the harness the same way. He calls the word 'harness' a 2026 coinage that sells something, but says the layer it names does real work.",
+   "t": "6:17"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Minimal agent loop",
+   "how": "Send the conversation to the model. If the reply requests a tool (for example read file, write file, run tests), execute it outside the model, append the result to the conversation, and call the model again. Stop when the model returns no tool request. Each iteration resends the full history, so cost grows with turns.",
+   "when": "When building any custom coding or tool-using agent from scratch, or when debugging why an agent is expensive or looping."
+  },
+  {
+   "name": "Externalize state and use clean-context sub-agents",
+   "how": "Write task state and progress to files on disk instead of keeping it in the chat history. Spawn sub-agents with fresh context for heavy reading, and return only their results. Compact the history at chosen points rather than letting the window fill mid-reasoning. The speaker does not give file names or thresholds.",
+   "when": "On tasks long enough that the context window fills before the work is done, such as a 20-minute run."
+  },
+  {
+   "name": "Harness-owned permission gate",
+   "how": "Enforce in the wrapper, not the prompt: a list of commands that require human approval, a list of forbidden directories, and a choice between a sandbox and direct execution on the host machine. The model cannot override these rules.",
+   "when": "Before running an agent unattended or for long periods, since it can eventually attempt a destructive action nobody would approve."
+  },
+  {
+   "name": "One git work tree per agent",
+   "how": "Give each concurrent agent its own checkout (a git worktree) so their edits land in separate directories and do not collide. Merge the results afterwards.",
+   "when": "When running two or more coding agents on the same repository at the same time."
+  },
+  {
+   "name": "Move repeated instructions into configuration",
+   "how": "Put standing knowledge in a project context file (describing the codebase), put task-specific knowledge in skills the agent loads only when the task needs them, and put mechanical checks in hooks that run automatically, such as a linter after each edit. The speaker names this category of configuration but shows no file contents.",
+   "when": "When the same instructions are being repeated in prompts across many turns or sessions."
+  },
+  {
+   "name": "Audit tool-description overhead",
+   "how": "Read the harness's tool and rule descriptions (the speaker reads the open-source Cline repo) and estimate their token cost per turn. Multiply by the number of loop iterations to see the true cost of each feature.",
+   "when": "When choosing or building a harness and when deciding whether a rarely used tool is worth its per-turn cost."
+  },
+  {
+   "name": "Compare harnesses by trips per task, not only by score",
+   "how": "Run the same task through different harnesses and count model round trips, files read and total tokens or cost. The speaker's example is a one-line task run through four harnesses, where cost varied about 5x.",
+   "when": "When evaluating coding agents on cost or efficiency, since leaderboard scores hide this."
+  }
+ ],
+ "tools": [
+  "Claude Code (Anthropic)",
+  "Codex (OpenAI)",
+  "Cursor",
+  "Cline (auto-caption reads 'Klein'; the open-source repo is discussed)",
+  "Anthropic model card (benchmark scaffold footnote)",
+  "git work trees",
+  "NVIDIA H200 (hardware, mentioned as a comparison, not used)"
+ ],
+ "numbers": [
+  {
+   "claim": "Claude Code, Cursor and Cline add about 8,000 to 30,000 tokens of tool and rule descriptions to every message.",
+   "t": "2:38"
+  },
+  {
+   "claim": "Per Anthropic's guidance (as cited by the speaker), routing work through an agent can cost 4 to 15 times more than asking the model directly.",
+   "t": "1:14"
+  },
+  {
+   "claim": "A one-line task run through four harnesses with the same model cost about $0.37 in the most expensive and $0.07 in the cheapest, per the speaker's earlier video.",
+   "t": "6:17"
+  },
+  {
+   "claim": "A well-guided harness reads about 3 files and stops, while a poorly guided one reads about 30 files for the same job. Each read is a full round trip.",
+   "t": "6:17"
+  },
+  {
+   "claim": "A task running about 20 minutes can exceed the context window before the work is done (qualitative, no measured figure).",
+   "t": "3:50"
+  }
+ ],
+ "hot_takes": [
+  "'Harness' is a term coined in 2026 for marketing reasons, and the speaker says the word is worse than the thing it describes.",
+  "Most differences between coding agents on leaderboards reflect the harness, not the model, because the models are much closer than demos suggest.",
+  "Labs post-train models on their own harness and tool-call format, so a frontier model in a third-party harness can underperform its launch demo.",
+  "Labs that own both the model and the harness decide how much of a scaffold gain appears as benchmark score versus as customer cost.",
+  "Quality note: no sponsor segment. The numbers (4-15x cost, $0.37 vs $0.07, 8k-30k token overhead) are cited second-hand, and the speaker gives no source links for the Anthropic guidance. Treat them as directional. The talk has no commands, config keys or file contents to reproduce."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "",
+   "action": "Record round trips and tokens per agent task at the proxy so budget enforcement can count trips, not only per-request tokens."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness is a harness around Claude Code, and the talk covers the same concerns: state on disk for resume, a harness-owned permission gate, per-agent git worktrees and config-driven behavior.",
+   "action": "Compare ProsHarness's checkpoint/resume state, approval gate and parallel-run isolation against the talk's model (files on disk, per-command approval and forbidden dirs, one git worktree per agent), and measure round trips per run."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Gives shared vocabulary (agent loop, harness, loop engineering) and an argument for evaluating coding agents on trips and cost as well as score, which applies to the Claude Code workflows the user follows.",
+   "action": "Evaluate coding-agent choices on round trips and tool-description overhead per task, not only on benchmark score."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

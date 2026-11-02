@@ -1,0 +1,222 @@
+{
+ "one_line": "Workshop where attendees attack a Kubernetes-hosted burrito-ordering agent, then add layered infra and AI guardrails (admission, runtime, network, input/output scrubbing, MCP checks) and see which attacks each layer stops.",
+ "summary": "Michael Forrester (Accenture) and Whitney Lee (Datadog) ran a live workshop in which attendees tried to make a Kubernetes-hosted LLM agent exfiltrate data, deploy an arbitrary image, and leak a secret recipe. Model-level refusals were inconsistent: most attacks worked sometimes, and the fork bomb was refused every time. The speakers then walked through a hardened cluster where Kyverno admission rules, runtime enforcement tools, and network policy blocked the infrastructure attacks. For the AI-side attacks they used LLM Guard, first an input guard before the model call and then an output scrubber, which showed the cost and liability trade-offs of each. They closed with an MCP tool-poisoning example and a three-question rubric for when to put an AI step into a workflow. The talk is mostly a demo with live glitches, and the speakers note the IDP repo will be public. The guardrail layering and the cost and PII reasoning are the useful parts.",
+ "speakers": [
+  "Michael Forrester",
+  "Whitney Lee"
+ ],
+ "orgs": [
+  "Accenture",
+  "Datadog"
+ ],
+ "format": "workshop",
+ "topics": [
+  "security-guardrails",
+  "sandboxing-execution",
+  "mcp-and-tools",
+  "observability"
+ ],
+ "tags": [
+  "kubernetes",
+  "guardrails",
+  "prompt-injection",
+  "kyverno",
+  "falco",
+  "tetragon",
+  "kubearmor",
+  "llm-guard",
+  "mcp-tool-poisoning",
+  "opentelemetry",
+  "kagent",
+  "idp",
+  "red-teaming",
+  "least-privilege",
+  "agent-security"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Naming and framing change model behaviour. Villain-style names like Joker or Megatron made the model assume bad intent and refuse to deploy. Renaming the same image promo-mascot and giving it a marketing story got the deployment approved, even with no system prompt pushing it.",
+   "detail": "The speakers say this happened with no pushing system prompt, so it is a real-world test. They also wondered whether positive hero names would be favoured, but did not test it.",
+   "t": "6:15"
+  },
+  {
+   "idea": "Model-level refusals cannot be the security boundary. Attacks sometimes worked and then stopped working, and the speakers say the same prompt can behave differently across runs. Their advice is to put the guardrails at the infrastructure layer as well.",
+   "detail": "The speakers say they are still not sure why refusals varied. Most attacks eventually succeeded within 20 to 30 prompts. The fork bomb was the one exception, and it was refused every time.",
+   "t": "3:56"
+  },
+  {
+   "idea": "Ordinary Kubernetes and CI/CD security matters more now that an agent can reach the cluster. The speakers say artifact registries, verification, and known SDLC practice cover most of what is needed, and that letting the agent have direct access is the mistake to avoid.",
+   "detail": "Kubernetes security is layered and the demo covered only a few parts of it. The speakers say the three possible AI use cases differ in risk, and AI-managed systems are the riskiest.",
+   "t": "13:01"
+  },
+  {
+   "idea": "Admission control stops bad deployments before they run. Kyverno works as a validating or mutating webhook: it required resource requests and allowed pulls only from the trusted internal registry. Workload identity via SPIFFE or SPIRE can then drive policy about what an agent is allowed to do.",
+   "detail": "The speakers call it cluster-level policy, so organisation-specific rules can be written in one place. Challenge two (deploy an external image) was blocked here.",
+   "t": "15:43"
+  },
+  {
+   "idea": "Runtime tools differ on prevent versus respond. Falco watches the kernel and raises alerts, and Falco Talon can act on them, such as killing the pod. KubeArmor and Tetragon use Linux security modules or eBPF and can block the action before it completes.",
+   "detail": "The speakers say an ls command should never run in production. Falco lets it run briefly before a response, while KubeArmor can prevent it entirely. The Falco path failed live, and the team switched tools at the last minute.",
+   "t": "18:00"
+  },
+  {
+   "idea": "A fork bomb needs a prevention layer, not a response layer. The speakers say it can spawn many processes in about 200 ms, so detect-then-kill is too slow. Their fix was a kernel-level per-process limit set in a config file.",
+   "detail": "The speakers say no model would run a fork bomb, even when told to. Because of that they dropped this as a live challenge and described the fix instead.",
+   "t": "19:23"
+  },
+  {
+   "idea": "Excessive agency is the main cause of agent breaches, and it is an infrastructure problem. The usual causes are over-broad scopes and leftover elevated credentials or tokens in the environment. Access, authentication and authorization need to be fixed at the platform level.",
+   "detail": "The speakers say a wrong-tenant or process problem can look like a model problem, so the root cause has to be traced rather than assumed.",
+   "t": "23:18"
+  },
+  {
+   "idea": "Output scrubbing can be switched on mid-stream and catches sensitive terms as they stream. Its drawback is that the LLM call and its tokens are already paid for. Input guardrails block the request before the model is called.",
+   "detail": "The speakers show LLM Guard redacting recipe names and ingredients. The input guard blocks earlier, so there are no model tokens and no PII ever reaches the trace store. The speakers say you probably need both layers, and that the input guard catches about 80 to 90 percent.",
+   "t": "29:47"
+  },
+  {
+   "idea": "MCP tool descriptions are an injection channel. In the demo, a weather tool's description told the model to read an internal config and include it in the reply, so the user never saw the exfiltration. The speakers say enterprises should not start by pulling public MCP servers. Tools should come through a registry or gateway.",
+   "detail": "The speakers say the attacker could also send the config to an external endpoint. Guardrails on the input side did not reliably stop this attack in the demo.",
+   "t": "41:26"
+  },
+  {
+   "idea": "Use a three-question rubric before putting AI in a workflow. Ask whether the system is bounded with known interfaces, whether it is worth the cost, and whether its output can be verified. Software artifacts such as Terraform or Python are good candidates because they can be checked.",
+   "detail": "The speakers say these questions matter more than deciding AI is always the answer. They also say the usual non-functional requirements (security, cost, performance, reliability, operational excellence) still apply.",
+   "t": "48:33"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Layered guardrails across infra and AI",
+   "how": "Combine Kubernetes admission policy (Kyverno: resource requests, trusted registry only), runtime enforcement (KubeArmor or Tetragon via LSM/eBPF, with Falco for alerting), network policy at L4 and L7, and AI-side input and output guards. Do not rely on any single layer.",
+   "when": "Any agent that runs in a cluster or can call tools. Use it when a model refusal is the only thing stopping a bad action."
+  },
+  {
+   "name": "Input guard before the LLM call",
+   "how": "Run cheap regex for known-bad patterns first, then a small (about 8B) classifier such as LLM Guard or NeMo Guardrails. Block the request before the model is invoked.",
+   "when": "When each model call costs money, or when users might type PII (card numbers, SSNs) that must never reach traces or storage."
+  },
+  {
+   "name": "Mid-stream output scrubbing",
+   "how": "Turn on an output-scrub rule (LLM Guard) that redacts named sensitive terms while the response streams. It catches the content even after generation has started.",
+   "when": "During an incident when you need to stop leakage immediately. Accept that the model tokens for that response are already spent."
+  },
+  {
+   "name": "MCP tool description review and registry allowlists",
+   "how": "Inspect each MCP tool's description for instructions that reference files, config, or other tools. Source tools from a registry or gateway allowlist rather than pulling servers directly from the public internet.",
+   "when": "Before connecting any third-party or public MCP server to an agent platform."
+  },
+  {
+   "name": "OpenTelemetry traces for every agent turn",
+   "how": "Instrument the agent and guard proxy with OTel to capture system prompt, tool calls and results, token counts and cost, and the available tool list. Send to any backend (the demo used Datadog).",
+   "when": "For auditing agent behaviour, tracing exfiltration attempts, and debugging a single user interaction."
+  },
+  {
+   "name": "Kernel-level prevention for runaway processes",
+   "how": "Set a per-process or per-user process limit in a kernel configuration file so a fork bomb is capped before it exhausts resources. Do not depend on detect-then-kill.",
+   "when": "When the agent can execute shell commands and a single runaway loop could take down a node."
+  },
+  {
+   "name": "Agent identity and least privilege",
+   "how": "Give each agent its own workload identity (SPIFFE/SPIRE), write policy against that identity, and remove leftover elevated credentials and tokens from the environment.",
+   "when": "Whenever agents are granted cluster or service access, to limit excessive agency."
+  },
+  {
+   "name": "Three-question rubric for AI in a workflow",
+   "how": "Ask: is the system bounded with known interfaces, is it worth the cost, and can the output be verified (for example by tests or a linter)? Prefer workflows where the AI output is checkable.",
+   "when": "When deciding whether to add an LLM step to a pipeline or platform."
+  }
+ ],
+ "tools": [
+  "Kubernetes",
+  "Amazon EKS",
+  "kagent",
+  "Kyverno",
+  "Falco",
+  "Falco Talon",
+  "Tetragon",
+  "KubeArmor",
+  "Cilium",
+  "SPIFFE/SPIRE",
+  "LLM Guard",
+  "NeMo Guardrails",
+  "OpenTelemetry",
+  "Datadog",
+  "Grafana",
+  "Jaeger",
+  "Zipkin",
+  "AWS Bedrock",
+  "Claude Sonnet 4.6",
+  "MCP"
+ ],
+ "numbers": [
+  {
+   "claim": "The IDP platform under the demo has 34 integrated components, including AI guardrails.",
+   "t": "1:25"
+  },
+  {
+   "claim": "The speakers say a fork bomb can spawn many processes in about 200 ms, so a response-based control is too slow.",
+   "t": "19:23"
+  },
+  {
+   "claim": "Guard classifier models are described as roughly 8 billion parameters, with some smaller and larger.",
+   "t": "39:01"
+  },
+  {
+   "claim": "An input guard block happens before the LLM call, so the demo spent no model tokens on the blocked request.",
+   "t": "37:32"
+  },
+  {
+   "claim": "The speakers say an input guard should catch about 80 to 90 percent of what is needed, and that it is cheaper than output scrubbing because the model is never called.",
+   "t": "42:46"
+  },
+  {
+   "claim": "Most attacks eventually succeeded within 20 to 30 prompts (the speakers' own experience, not measured), except the fork bomb.",
+   "t": "42:46"
+  },
+  {
+   "claim": "Speaker recollection, unverified: a share of public MCP servers have serious security vulnerabilities, which he estimates at roughly 33 to 40 percent (he first said 10 as a placeholder and then corrected to this).",
+   "t": "41:26"
+  },
+  {
+   "claim": "Speaker recollection, secondhand and unverified: an NVIDIA CFO said roughly 70-something percent of jobs done by AI today could be done by humans more cheaply and reliably.",
+   "t": "48:33"
+  },
+  {
+   "claim": "Speaker says the repo represents about 100 hours of work and will be made public.",
+   "t": "51:23"
+  }
+ ],
+ "hot_takes": [
+  "Excessive agency, not model misbehaviour, is the top cause of agent incidents, and it is an infrastructure problem.",
+  "Do not rely on the model to refuse bad actions. Put the guard at the infrastructure layer for every agent in the cluster.",
+  "Do not start an enterprise MCP rollout by connecting public MCP servers. Use a registry, a gateway, or your own servers.",
+  "Input guardrails beat output guardrails for cost and for PII liability, because the data never gets processed or traced.",
+  "Traditional CI/CD and SDLC knowledge is most of what is needed to ship agents safely.",
+  "Regex for known bad patterns should run before any 8B classifier."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L1 Govrix Scout already does PII and prompt-injection scanning at a proxy. This talk's input-then-output guard split, with regex before a classifier and cost and PII arguments, applies directly to that design.",
+   "action": "Add a pre-model input guard stage (regex first, then classifier) and measure how many model calls and tokens it saves. Compare the result with the existing Govrix Scout PII and injection scan."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI and runs tool calls on the user's machine. The talk's point that model refusals are unreliable and that a deterministic check must sit below the model is relevant, but the talk does not cover this setup directly.",
+   "action": "Review ProsHarness tool and MCP descriptions for instructions that reference files or config, and consider a deterministic check on shell commands that does not depend on the model refusing."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The three-question rubric (bounded system, worth the cost, verifiable output) is a reusable filter for deciding where an LLM step belongs in a pipeline.",
+   "action": "Apply the bounded, worth-it, verifiable-output check to the next proposed LLM step in the EDA or entity-resolution pipelines before building it."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

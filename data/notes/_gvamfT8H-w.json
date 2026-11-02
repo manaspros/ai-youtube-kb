@@ -1,0 +1,163 @@
+{
+ "one_line": "DocuSign and NVIDIA on turning enterprise agreement PDFs into queryable data, using a small layout-aware table extraction VLM (Nemotron Parse) inside a hybrid OCR pipeline.",
+ "summary": "Hiral Shah (DocuSign) and Sean Sodha (NVIDIA) describe how DocuSign's Agreement Manager extracts pricing tables, SLAs and other key terms from unstructured agreements at scale. They argue generic VLMs and text-line extractors break on tables, so DocuSign uses NVIDIA's Nemotron Parse, a roughly 850-900M parameter single-shot model that outputs layout, text, reading order and table structure. The pipeline is hybrid: the table model handles layout and tables, while OCR covers other fields and clauses. They split compute by use case, doing heavy OCR and extraction up front for corpus-wide queries and keeping per-document latency low for ad hoc Q&A. They report the model is about 20x faster than other open models at extracting tables per second, and that a smaller purpose-built model also cut latency and cost. Current deployment is FP16, with FP8 and NVFP4 quantization and multi-token generation named as next steps, and accuracy is being tuned before performance. The talk is partly a product demo and carries some vendor framing, but it gives concrete architecture choices and scale figures.",
+ "speakers": [
+  "Hiral Shah",
+  "Sean Sodha"
+ ],
+ "orgs": [
+  "DocuSign",
+  "NVIDIA"
+ ],
+ "format": "talk",
+ "topics": [
+  "data-engineering",
+  "inference-serving",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "document-extraction",
+  "table-extraction",
+  "VLM",
+  "OCR",
+  "hybrid-pipeline",
+  "agreements",
+  "Nemotron",
+  "NIM",
+  "vLLM",
+  "quantization",
+  "NVFP4",
+  "FP8",
+  "CSV-export",
+  "batch-vs-latency"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Generic VLMs and text-line extractors fail on enterprise tables",
+   "detail": "Pricing tiers, SKUs, SLAs and rate cards are table-shaped. Line-by-line text readers break the table structure, and the speaker says they tested this.",
+   "t": "3:45"
+  },
+  {
+   "idea": "Table extraction needs a model built for it",
+   "detail": "Nested tables, merged rows and columns and other layout permutations make table parsing hard. NVIDIA and DocuSign built Nemotron Parse focused on table extraction.",
+   "t": "6:14"
+  },
+  {
+   "idea": "Use a small single-shot extractor, not a large generative VLM",
+   "detail": "The model is about 850-900M parameters. One pass takes a document and returns layout, text, reading order and table structure. The speaker calls it an extractor, not a generator, and says it can be served via NIM or vLLM.",
+   "t": "7:21"
+  },
+  {
+   "idea": "Split compute by use case",
+   "detail": "For corpus-wide queries over petabytes, pay the OCR and extraction cost up front so queries are fast later. For single-contract Q&A, process on demand with lower concurrency. Batch sizes, concurrency and where compute is spent change between the two.",
+   "t": "14:56"
+  },
+  {
+   "idea": "Hybrid pipeline with two routes",
+   "detail": "The table model handles layout and tables. OCR still handles other fields, metadata and clauses. Each document goes through both routes.",
+   "t": "14:56"
+  },
+  {
+   "idea": "Lower context and smaller model mean lower latency and cost at scale",
+   "detail": "The speaker ties the smaller model to lower latency and cost when serving millions of agreements. Purpose-built smaller models also reach market faster.",
+   "t": "11:01"
+  },
+  {
+   "idea": "Accuracy first, then performance",
+   "detail": "The model is FP16 today. FP8, NVFP4 (Blackwell), and multi-token generation are the planned speed-ups, but the team is focusing on accuracy first and will push the accuracy-performance Pareto curve after.",
+   "t": "16:09"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Purpose-built small table-extraction VLM",
+   "how": "Use a small single-shot model that takes a page image and emits layout, text, reading order and table structure in one pass, instead of chaining YOLO-style element detectors with OCR.",
+   "when": "Documents are table-heavy and the output must keep table structure, at high throughput."
+  },
+  {
+   "name": "Hybrid two-route document pipeline",
+   "how": "Send each page through a layout/table model for tables and through OCR for free text, fields and clauses, then merge the outputs into one structured agreement record.",
+   "when": "Documents mix tables with long prose that still needs text extraction."
+  },
+  {
+   "name": "Offline-heavy vs online-light compute split",
+   "how": "For large corpora, run OCR and extraction in batch ahead of time so queries hit preprocessed data. For ad hoc single-document Q&A, run extraction on demand with a different batch and concurrency profile.",
+   "when": "The system serves both bulk analytics across a corpus and low-latency questions about one document."
+  },
+  {
+   "name": "Structured export and API over extracted data",
+   "how": "Store extracted tables against an organization-level data model and expose them as CSV downloads and an API for finance and procurement tools.",
+   "when": "Downstream teams need the extracted pricing or SLA tables in spreadsheets or other systems, not just as search results."
+  },
+  {
+   "name": "Benchmark on table extraction and track accuracy vs speed",
+   "how": "Compare open models on a table-extraction benchmark (the speaker names RD-TableBench), and judge each change by accuracy-performance tradeoff.",
+   "when": "Choosing or tuning an extraction model before optimizing quantization or decoding."
+  }
+ ],
+ "tools": [
+  "Nemotron Parse",
+  "Nemotron Retriever",
+  "NVIDIA NIM",
+  "vLLM",
+  "C-RADIO",
+  "NVFP4",
+  "FP8",
+  "Coupa"
+ ],
+ "numbers": [
+  {
+   "claim": "DocuSign processes about 1 million agreements per day, with 1.9M paying customers and about 1B users",
+   "t": "1:07"
+  },
+  {
+   "claim": "Deloitte study cited by the speaker: about $2 trillion in negotiated agreement value that no one captures",
+   "t": "1:07"
+  },
+  {
+   "claim": "Nemotron Parse is about 850-900M parameters, a single-shot model",
+   "t": "7:21"
+  },
+  {
+   "claim": "Nemotron Parse extracts tables about 20x faster per second than other open-source models tested",
+   "t": "12:07"
+  },
+  {
+   "claim": "Customer agreement repositories range from about 1,000 agreements to millions",
+   "t": "10:05"
+  },
+  {
+   "claim": "Current model runs at FP16, with FP8 and NVFP4 quantization planned",
+   "t": "16:09"
+  }
+ ],
+ "hot_takes": [
+  "Generic VLMs and multimodal LLMs fail on enterprise tables, so a purpose-built small extraction model is the better choice.",
+  "A smaller, purpose-built model is better for enterprises than a large general model because it wins on latency, cost and time to market.",
+  "Agreements are hierarchical, since one agreement governs another, so flat document extraction misses the answer."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "MemoryMesh ingests knowledge buckets from documents. Table-heavy PDFs could be poorly handled by text-only ingestion, and this talk gives one architecture for layout-aware ingestion. It is not a direct change to AgentOS.",
+   "action": "When MemoryMesh ingestion meets table-heavy PDFs, compare a layout-aware extractor against the current text path on a small set of pricing or SLA tables and record the accuracy."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content on Claude Code harnesses, checkpoints, planning or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The offline-heavy versus online-light split is a reusable design choice for any pipeline that serves both corpus queries and single-document questions.",
+   "action": "For any ingestion pipeline that serves both bulk and per-document queries, separate the preprocessing budget from the query-time budget and set batch and concurrency settings separately for each."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

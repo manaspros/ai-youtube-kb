@@ -1,0 +1,122 @@
+{
+ "one_line": "WebMCP is a proposed browser API, backed by Google and Microsoft, that lets a site's front-end expose its own features as tools for AI agents. The speaker demos it in Chrome Canary and argues it beats agents scraping pages.",
+ "summary": "The video introduces WebMCP, a browser API proposal backed by Google and Microsoft, which lets front-end developers expose site features as tools so an agent can act on the site instead of parsing its HTML or screenshots. The speaker contrasts it with normal MCP servers, which expose backend APIs. He demos a flight-booking page in Chrome Canary, where an extension calls a registered \"search flights\" tool and the React state update triggers navigation. He then shows a read-only \"list flights\" tool that gives the agent the page's current data as JSON, so it can recommend a flight with fewer tokens and better accuracy. He covers the declarative API, where plain HTML form attributes become a tool with zero JavaScript, using a restaurant booking form as the example. He is positive because the developer defines the allowed interactions and the human stays in the loop, but he calls it only a proposal and flags poisoned tool descriptions and how much browser control an agent would get as open security questions. There are no benchmarks in the video.",
+ "speakers": [],
+ "orgs": [
+  "Google",
+  "Microsoft",
+  "OpenAI"
+ ],
+ "format": "review",
+ "topics": [
+  "mcp-and-tools",
+  "security-guardrails"
+ ],
+ "tags": [
+  "webmcp",
+  "browser-api",
+  "navigator.modelContext",
+  "declarative-api",
+  "imperative-api",
+  "chrome-canary",
+  "browser-agents",
+  "tool-calling",
+  "prompt-injection"
+ ],
+ "key_ideas": [
+  {
+   "idea": "WebMCP is a browser API proposal, not an MCP server. Each site's front-end becomes a mini MCP server by exposing its own features as tools, so the agent uses the website for the user rather than only calling APIs and answering in chat.",
+   "detail": "Backed by Google and Microsoft per the speaker. Currently a proposal, tested in Chrome Canary. The speaker says he likes it but is not fully convinced.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Today's agent-website approaches (Playwright, HTML parsing, screenshots) are token-heavy and error-prone. WebMCP replaces that with a developer-defined client-side JavaScript function the agent calls with structured arguments.",
+   "detail": "The agent does not need to know the page's HTML. It picks a tool by name and description and passes arguments that map to the form inputs.",
+   "t": "1:24"
+  },
+  {
+   "idea": "Imperative API: the developer registers tools through window.navigator.modelContext. A tool has a name, a description the model reads to decide when to call it, an input schema, and an execute function.",
+   "detail": "In the demo, execute dispatches a 'search flights' event with the parameters. A React listener picks that up and sets the search state, which causes the navigation. The developer keeps control of what each interaction does.",
+   "t": "2:50"
+  },
+  {
+   "idea": "Read-side tools are as useful as action tools. A list-flights tool exposes the current React state to the agent as clean JSON, so it can reason over on-screen data without scraping the DOM.",
+   "detail": "The speaker says this uses far fewer tokens and is more accurate. The agent recommended flight 56, which he then found on the page.",
+   "t": "5:07"
+  },
+  {
+   "idea": "Declarative API: a plain HTML form becomes a WebMCP tool through attributes, with zero JavaScript. The browser infers argument names and types from the input name and type.",
+   "detail": "A tool name and tool description on the form, plus a per-input param description, give the model context. The demo booking form exposed phone, date, time, guest, seating and requests.",
+   "t": "6:21"
+  },
+  {
+   "idea": "The speaker's design argument: build the site for the human, and let the developer define the agent's allowed interactions. He prefers this to building a human site plus a separate MCP server, or to booking inside a chat UI.",
+   "detail": "Keeping the human in the loop is the reason he favours it. He describes the AI as an assistant on the page, not a replacement for the user.",
+   "t": "7:13"
+  },
+  {
+   "idea": "Security is the main open issue. Poisoned tools or descriptions on hostile sites, and how much user data and browser control the in-browser agent gets, are unresolved in his view.",
+   "detail": "He hopes the proposal answers this. The video gives no concrete mitigation.",
+   "t": "8:18"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Imperative WebMCP tool registration",
+   "how": "Call window.navigator.modelContext and use its register-tool function. Give each tool a name, a description the model reads to decide when to use it, an input schema with per-argument guidance, and an execute function. In execute, read the arguments the agent filled in and dispatch a custom event (the demo uses one named 'search flights'). Have a React component listen for that event and run the normal state-update handler, so agent and human share one code path. Exact method names beyond window.navigator.modelContext were not legible in the auto-captions.",
+   "when": "A page already has a form or a multi-step client-side flow, and you want an agent to drive the same behaviour a human gets, with guardrails you define. Chrome Canary only, per the demo."
+  },
+  {
+   "name": "Read-only state tool for on-page data",
+   "how": "Register a tool (demo: list flights) whose execute returns the current React state as JSON: every item the user can currently see, with its filters applied. The agent calls it when it needs to reason over the page, instead of parsing rendered HTML or taking screenshots.",
+   "when": "The agent must rank, compare or recommend from data already on screen, and token cost and accuracy matter."
+  },
+  {
+   "name": "Declarative WebMCP via HTML form attributes",
+   "how": "Add a tool name and a tool description attribute to an existing <form>. Add a tool param description attribute to inputs that need extra guidance for the model. The browser turns the form into a tool and derives argument names and types from each input's name and type. The speaker wrote no JavaScript. Exact attribute spellings were not clear in the auto-captions, so check the proposal spec before using them.",
+   "when": "A simple form (reservation, contact, search) needs to be agent-fillable with minimal change, and no custom logic is needed."
+  },
+  {
+   "name": "Design principle: expose explicit tools, not the whole UI",
+   "how": "Decide up front which interactions an agent may trigger, and expose only those as tools with clear descriptions. Keep a human in the loop by having the agent fill or propose, and the user confirm and submit in the page.",
+   "when": "Designing any agent-facing site feature, where the speaker wants developer-defined guardrails rather than free-form browsing by the agent."
+  }
+ ],
+ "tools": [
+  "WebMCP (browser API proposal)",
+  "window.navigator.modelContext (proposed browser API)",
+  "Chrome Canary",
+  "MCP (Model Context Protocol)",
+  "React",
+  "Playwright",
+  "ChatGPT Atlas",
+  "Gemini",
+  "Arc",
+  "a browser extension used to drive the demo (unnamed)"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "WebMCP is better than the current 'build a human site plus an MCP server for the AI' approach because the site developer defines the agent's interactions.",
+  "Booking flights or restaurants inside a ChatGPT-style chat UI is a worse experience than going to the site and letting the AI help on that page.",
+  "The title overstates the demo. The speaker admits the flight demo looks basic. Substance is a short API walkthrough of an early proposal, with no benchmarks.",
+  "Poisoned tools and descriptions, and how much control a browser agent gets, are the main unresolved risks."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "WebMCP is a page-level, client-side tool surface, not a backend proxy. It touches AgentOS's tool-calling and exec-gate guardrail story only indirectly, through the security concerns the speaker raises.",
+   "action": "Read the WebMCP proposal's security model when it matures, and compare it with the exec-gate guardrails before deciding whether AgentOS should treat in-browser tool calls as a governed source."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "ProsHarness wraps the Claude Code CLI and does not drive browsers. The human-in-the-loop idea is related, but the video does not add anything concrete to the harness.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

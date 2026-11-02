@@ -1,0 +1,177 @@
+{
+ "one_line": "Better Stack tests Ponytail, a Claude Code plugin that applies a YAGNI decision ladder to make agents write less code. Its cost claims come with a caveat, and one A/B test shows fewer lines and lower cost.",
+ "summary": "The speaker walks through Ponytail, a Claude Code plugin that makes the coding agent climb a YAGNI \"decision ladder\" before writing anything: check whether the code is needed, whether the standard library, a native platform feature or an installed dependency covers it, and whether it can be a one-liner. He uses a modal-dialog example to show a native HTML dialog replacing a Radix-style library, roughly 8 lines with zero dependencies against about 30. He reports the project's benchmark claim of 47 to 77% lower cost across three models, three approaches and five tasks, with correctness checked alongside cost. He notes two critiques: the benchmark resends the full skill on every call, which overstates the cost of a real session, and a blog post by Colin Eberhardt found that a three-word instruction (\"follow Yagni principles\") nearly matched the benchmark score. In a single weather-dashboard test, the Ponytail instance finished in under a minute, produced one HTML file instead of three files plus a Python server, followed the location instruction, and was about 50% cheaper. Combining Ponytail with Caveman gave no gain and was slightly more expensive than Ponytail alone. The video is a single anecdotal run plus a secondhand benchmark, not a controlled evaluation.",
+ "speakers": [
+  "Andrus"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "claude-code",
+  "token-cost-efficiency",
+  "coding-agents",
+  "evals"
+ ],
+ "tags": [
+  "ponytail",
+  "yagni",
+  "claude-code-plugin",
+  "caveman",
+  "token-cost",
+  "skill-injection",
+  "benchmark",
+  "over-engineering",
+  "native-dialog",
+  "radix-ui",
+  "prompt-vs-package"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Ponytail's goal is to make the agent produce the leanest solution, cutting the bloat agents usually generate.",
+   "detail": "It is pitched as similar to Caveman (which cuts output verbosity), but aimed at code size rather than chat tokens.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Ponytail bakes YAGNI into the agent as a decision ladder it must climb before writing code.",
+   "detail": "Questions in order: does this need to exist; can the standard library handle it; is there a native platform feature; is a dependency already installed that does it; can it be a one-liner. New code is written only if every answer is no, and then only the minimum to work.",
+   "t": "1:01"
+  },
+  {
+   "idea": "The modal-dialog example shows the native-first preference in practice.",
+   "detail": "A default agent installs a Radix-style dialog library (portal, overlay, root, trigger, content). Ponytail uses the browser's built-in dialog element, which traps focus, closes on Escape and gets a backdrop from one CSS selector. The result is about 8 lines with no dependencies, against about 30 lines from an npm package.",
+   "t": "1:54"
+  },
+  {
+   "idea": "Ponytail leaves a comment recording what it skipped and why, so deferred decisions can be found later.",
+   "detail": "If the team later wants the fuller Radix version, the comment marks where that upgrade belongs. The speaker frames this as lazy but not irresponsible.",
+   "t": "3:04"
+  },
+  {
+   "idea": "The cost benchmark checks correctness, not just size.",
+   "detail": "Three approaches (no skill, Caveman, Ponytail), three models, five everyday tasks, 10 runs per cell with the median reported. A broken one-liner that looks small fails the correctness check, which the speaker takes as a fair design.",
+   "t": "3:04"
+  },
+  {
+   "idea": "The benchmark is weak on the cost side in two directions, and critics have a point on the skill.",
+   "detail": "Each benchmark call resends the full ponytail rule set, so the cost is overstated for a real multi-prompt session where the instructions are paid once. Separately, Colin Eberhardt's blog post found that the three words 'follow Yagni principles' nearly matched the benchmark score, and seven words beat it.",
+   "t": "3:55"
+  },
+  {
+   "idea": "The speaker argues the packaging is the product, not the prompt text.",
+   "detail": "Ponytail injects the rules across agents and adds an audit command, a review command and a depth ledger. A plain system-prompt line does not provide those features.",
+   "t": "4:59"
+  },
+  {
+   "idea": "In a single weather-dashboard test, the Ponytail instance was faster, leaner and more accurate on the requirements.",
+   "detail": "Ponytail finished in under a minute with one HTML file. The default run took 2m30s, produced three files and a Python server, and showed London instead of asking for the user's location. The Ponytail version asked for geolocation, as requested, and was about 50% cheaper.",
+   "t": "6:02"
+  },
+  {
+   "idea": "Stacking Caveman and Ponytail gave no benefit.",
+   "detail": "The combination produced similar output and cost slightly more than Ponytail alone, so the speaker suggests using Ponytail alone.",
+   "t": "8:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "YAGNI decision ladder in the agent prompt",
+   "how": "Before any code is written, require the agent to answer in order: does this need to exist; can the standard library handle it; is there a native platform feature; is an installed dependency already doing it; can it be a one-liner. Write new code only when all answers are no, and keep it to the minimum that works.",
+   "when": "Coding agents that over-build (new dependencies, abstractions, wrapper layers) for small UI or utility tasks."
+  },
+  {
+   "name": "Native-first replacement check",
+   "how": "Before adding a UI or utility library, check whether the platform already provides it. The speaker's example is the browser dialog element, which supplies focus trapping, Escape-to-close and a backdrop with a single CSS selector.",
+   "when": "Reviewing agent-written frontend code that adds a component library for something the browser handles."
+  },
+  {
+   "name": "Record deferred decisions in a code comment",
+   "how": "Ask the agent to leave a comment naming what it skipped and why, and what the fuller version would be. The speaker credits this with making later upgrades easy to find.",
+   "when": "Accepting a minimal implementation that you may want to expand later."
+  },
+  {
+   "name": "Benchmark cost next to correctness",
+   "how": "Compare arms (no skill, a baseline plugin, the candidate) across models and tasks. Use multiple runs per cell and report the median. Score each output for correctness, so a cheap wrong answer cannot win on cost. Also measure the per-session cost of injected instructions, since per-call benchmarks charge the full rule set every time.",
+   "when": "Evaluating any prompt, skill or plugin that claims to reduce tokens or cost."
+  },
+  {
+   "name": "Side-by-side A/B of a coding agent with and without a plugin",
+   "how": "Open two Claude Code instances in separate directories. Enable the plugin in one at local scope only. Send the identical prompt to both. In the plugin instance, explicitly ask it to use the skill, because the skill was not always picked up automatically. Compare duration, file count, line count, cost and whether each requirement was met.",
+   "when": "Quick, informal checks of whether a plugin or skill changes agent output before adopting it."
+  }
+ ],
+ "tools": [
+  "Ponytail (Claude Code plugin; benchmark compares no skill, Caveman, and Ponytail)",
+  "Claude Code",
+  "Caveman",
+  "Radix UI (React dialog library, the default-agent choice in the modal example)",
+  "npm (npm package dialog example)",
+  "Python server (default-run output, not a named tool)"
+ ],
+ "numbers": [
+  {
+   "claim": "Ponytail's claimed cost reduction is 47 to 77%.",
+   "t": "3:04"
+  },
+  {
+   "claim": "The benchmark uses 3 approaches, 3 models, 5 everyday tasks, 10 runs per cell, with the median reported.",
+   "t": "3:04"
+  },
+  {
+   "claim": "Modal dialog: about 30 lines and an npm dependency for the library version, against about 8 lines and zero dependencies with the native dialog element.",
+   "t": "1:54"
+  },
+  {
+   "claim": "Native dialog element is said to be supported in every major browser since 2022.",
+   "t": "1:54"
+  },
+  {
+   "claim": "Weather app test: Ponytail finished in under 1 minute; default finished in 2 min 30 s.",
+   "t": "6:02"
+  },
+  {
+   "claim": "Weather app test: default produced 3 files plus a Python server; Ponytail produced one HTML file.",
+   "t": "6:02"
+  },
+  {
+   "claim": "Ponytail version was about 50% cheaper than the default in the single test, with far fewer lines of code.",
+   "t": "7:21"
+  },
+  {
+   "claim": "Colin Eberhardt's blog post: the three words 'follow Yagni principles' nearly matched the benchmark, and the seven-word version beat it.",
+   "t": "4:59"
+  }
+ ],
+ "hot_takes": [
+  "The title's '94% less code' figure does not appear in the video. The only figures given are the 47 to 77% cost claim and the single-run 50% cheaper result.",
+  "The speaker's claim that real sessions cost less than the benchmark because instructions are paid once per session is plausible but untested in the video.",
+  "The weather-app result is one prompt, one run per arm, with no correctness rubric. It is anecdotal.",
+  "The speaker calls packaging (auto-injection, audit, review, depth ledger) the product. That claim is not tested against the three-word prompt baseline the video itself cites.",
+  "Stacking Caveman with Ponytail added cost, which the speaker reports as a finding against combining plugins."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The benchmark design (cost paired with correctness, median over runs) is reusable for judging cheap-model or token-trimming changes in AgentOS. The plugin itself is not infrastructure.",
+   "action": "When evaluating any AgentOS token-saving change, pair cost with a correctness check and report the median over repeated runs."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI, and this video shows that per-call skill injection is a real cost that amortizes over a session. A YAGNI decision ladder could be a cheap planning or implementation rule inside the harness.",
+   "action": "Measure the per-session cost of any instruction block ProsHarness injects, and test a short decision-ladder prompt in the implementation step against the current one with a correctness check."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The video is a useful cautionary example: a small rule set can match a benchmark, so a three-word baseline should be tested before crediting structure.",
+   "action": "Use a minimal-prompt baseline in any prompt or skill evaluation before attributing gains to the richer version."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

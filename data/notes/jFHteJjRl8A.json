@@ -1,0 +1,167 @@
+{
+ "one_line": "Deepak Pathak (Skild AI) argues robotics lacks internet-scale data, so the answer is one omnibodied brain pretrained on diverse data, post-trained on teleop, and improved by a deployment data flywheel.",
+ "summary": "Pathak opens with a history of robotics demos (a 1960s MIT copy demo, teleoperation rigs from the 1950s, Berkeley table cleanup on one GPU) to argue the field has barely moved in decades, and that hardware-first thinking is the cause. He ties this to Moravec's paradox: perception and physical adaptation are hard, while fully observed tasks such as backflips are easy. The core claim is that robotics has no internet-scale data, and teleoperation at about one minute per example cannot reach LLM-scale token counts. His proposed recipe is to pretrain on scalable, diverse but noisy data (simulation, human video), post-train on small high-quality teleop data, and add deployment data that grows once robots are deployed. He argues for a single \"omnibodied\" end-to-end model across any robot, reading camera input and driving motors with only a PID inner loop, and shows transfer from human video with under one hour of robot data. Deployment results include a GPU assembly line at NVIDIA's Houston factory, package delivery, and fault recovery when a robot leg breaks. The talk is mostly a company overview, but it has concrete data-cost and transfer numbers.",
+ "speakers": [
+  "Deepak Pathak"
+ ],
+ "orgs": [
+  "Skild AI",
+  "NVIDIA",
+  "UC Berkeley",
+  "CMU",
+  "Google"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "training-finetuning-rl",
+  "models-research",
+  "data-engineering"
+ ],
+ "tags": [
+  "robotics",
+  "physical-ai",
+  "teleoperation",
+  "imitation-learning",
+  "sim-to-real",
+  "data-flywheel",
+  "end-to-end-policy",
+  "omnibodied-model",
+  "moravec-paradox",
+  "pretraining-post-training"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Robotics lacks internet-scale data, which is why the LLM scaling recipe does not transfer directly.",
+   "detail": "Teleoperation takes about one minute per example. The speaker says matching GPT-3-scale token counts this way would take more than a century of the whole US population working on it. He calls teleop slow and expensive, and not a new idea.",
+   "t": "5:43"
+  },
+  {
+   "idea": "Judge data sources on three axes: scalability, diversity, and closeness to the robot's own joint angles.",
+   "detail": "Simulation is very scalable and moderately close to the robot, but low in diversity. Human video is scalable and diverse but far from robot data. Teleop is close to the robot but hard to scale. No single source wins, and the sources' weaknesses complement each other.",
+   "t": "9:48"
+  },
+  {
+   "idea": "Pretrain on scalable, diverse, lower-quality data, then post-train on a small amount of high-quality teleop.",
+   "detail": "He says this mirrors LLM training. Simulation and human video are used for pretraining, and teleop for post-training. A third bucket, deployment data, becomes the largest source once deployment is at scale.",
+   "t": "12:41"
+  },
+  {
+   "idea": "A deployment data flywheel feeds post-training and deployment data back into pretraining.",
+   "detail": "The speaker argues one robot shape will never be deployed everywhere, so a single omnibodied model is needed to pool data across hardware. Deployment itself is named as the hardest part of the flywheel.",
+   "t": "13:48"
+  },
+  {
+   "idea": "A single end-to-end policy reads camera input and drives motors, with no state machine and only a PID loop at the bottom.",
+   "detail": "The PID loop raises control from 100 to 500 Hz. He says vision is just another input, and the robot is trained on as little as under 10 hours of data for omelet making with unseen objects. Robustness comes from the pretrained base model.",
+   "t": "18:50"
+  },
+  {
+   "idea": "Human video pretraining plus under one hour of robot data transfers to humanoids.",
+   "detail": "The robot's own model generates imagined scenarios, which the speaker calls the robot's dream, to multiply learning from few examples. He says the work is moving from egocentric human video to third-person video, which would open up YouTube as a source.",
+   "t": "17:20"
+  },
+  {
+   "idea": "Moravec's paradox explains why stair climbing is hard and backflips are easy.",
+   "detail": "A backflip only requires knowing the robot's own body, which is fully observed and easy to simulate. Stairs require perceiving unknown geometry and adapting to disturbances, so they need vision and understanding.",
+   "t": "21:39"
+  },
+  {
+   "idea": "Fault recovery and safety fall out of the omnibodied model.",
+   "detail": "When a leg is disabled, the robot relearns to walk on two legs in about three trials. Adaptation takes from milliseconds to around 30 seconds, and the same brain runs on wheels when a wheel jams.",
+   "t": "25:42"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Pretrain on diverse, scalable data, post-train on small high-quality teleop",
+   "how": "Use simulation and human video for broad pretraining, then fine-tune on a small set of teleoperated demonstrations that match the target robot's joint-level data.",
+   "when": "When high-quality target-domain data is scarce but cheap, noisy data is plentiful."
+  },
+  {
+   "name": "Deployment data flywheel",
+   "how": "Log data from deployed robots and feed it back into pretraining, so each deployment improves the shared base model.",
+   "when": "When the system is already deployed and can gather data at scale."
+  },
+  {
+   "name": "End-to-end camera-to-motor policy with only a low-level PID loop",
+   "how": "Skip hand-built planning, mapping and state machines. Map camera input directly to motor commands, with a PID controller only to run the loop at 100-500 Hz.",
+   "when": "When a single learned policy must cover many tasks and the system must tolerate disturbances."
+  },
+  {
+   "name": "Learn from human video, then adapt with minimal robot data",
+   "how": "Pretrain on egocentric human video, then add under one hour of robot data to transfer to the robot embodiment.",
+   "when": "When robot data is expensive but human video is plentiful."
+  },
+  {
+   "name": "Cross-embodiment zero-shot transfer",
+   "how": "Train one model across many robot bodies and deploy it zero-shot to unseen humanoids and platforms.",
+   "when": "When you need one model to run on varied or changing hardware."
+  }
+ ],
+ "tools": [],
+ "numbers": [
+  {
+   "claim": "Teleoperation takes about 1 minute per training example, which the speaker says makes LLM-scale data collection impractical.",
+   "t": "5:43"
+  },
+  {
+   "claim": "GPT-3 training used roughly 30 trillion tokens. Current frontier models use hundreds of trillions.",
+   "t": "5:43"
+  },
+  {
+   "claim": "The omelet-making robot costs about $4,000 in arms and has only a camera as sensor (no force sensing).",
+   "t": "18:50"
+  },
+  {
+   "claim": "Omelet-making robustness was learned from under 10 hours of robot data.",
+   "t": "20:12"
+  },
+  {
+   "claim": "Transfer to humanoids needed under one hour of robot data after pretraining on human video.",
+   "t": "17:20"
+  },
+  {
+   "claim": "Robot hands reportedly break within about 100 hours of use in the speaker's experience.",
+   "t": "17:20"
+  },
+  {
+   "claim": "A newer stair-climbing policy trains in about 30 minutes, versus much longer for the earlier version.",
+   "t": "23:07"
+  },
+  {
+   "claim": "After disabling a leg, the robot learns to walk on two legs in about three trials, with adaptation taking from milliseconds to around 30 seconds.",
+   "t": "25:42"
+  }
+ ],
+ "hot_takes": [
+  "Robotics has been stuck for about 70 years because it has been treated as a hardware problem first.",
+  "Humanoid claims about home robots by December are hype, and the real test is whether a humanoid can climb stairs.",
+  "Hands are an excuse for the lack of progress. The bottleneck is the intelligence, not the hand.",
+  "Moravec's paradox is the central lens: what humans find hard, such as perception and adaptation, is hard for robots, and what seems hard, such as backflips, is easy."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The pretrain / post-train / deployment-data split and the flywheel idea map loosely onto SkillForge's mining of agent telemetry into skills.",
+   "action": "Read how the speaker frames the flywheel (deployment data feeding pretraining) and compare it to SkillForge's planned telemetry-to-skill loop, to see whether raw telemetry should count as pretraining data and curated traces as post-training data."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The talk does not cover harnessing a CLI agent, checkpoint/resume, or approval flows.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The three-axis data check (scalability, diversity, closeness to target) is a reusable way to pick training or eval data sources.",
+   "action": "When choosing data for a cheap-model pipeline or an entity-resolution labeling set, score each candidate source on scale, diversity and closeness to the production distribution before mixing them."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

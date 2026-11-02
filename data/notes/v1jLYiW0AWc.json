@@ -1,0 +1,167 @@
+{
+ "one_line": "Hands-on beta test of Replit Agent 3's Agents and Automations builder: guided setup via Slack, Telegram or scheduled triggers, OAuth connectors, and automatic app testing, with real gaps in memory, integrations and Slack deployment.",
+ "summary": "The host tests Replit's new Agents and Automations section, shipped with Replit Agent 3, and judges the guided, conversational builder smoother than building an equivalent agent with Claude Code. Each agent gets a trigger (Slack, Telegram, or a scheduled trigger the transcript calls \"Timebase\") and needs an OpenAI key. Integrations are connected through OAuth connectors with no manual wiring. The first agent (a Telegram bot that checks calendar availability and sends email) took about 28 messages and 20 actions to build. The playground has no persistent memory, which only activates after deployment to Slack or Telegram. The agent added a missing scheduling capability itself once the user asked, but its own testing covers apps only, not integrations. Deployed Slack agents failed to work even though the connection showed as connected, which the host attributes to beta. The verdict is positive but cautious: the builder is promising, and the Slack and memory gaps need fixing before it is practical for teams.",
+ "speakers": [
+  "AI LABS host (unnamed in transcript)"
+ ],
+ "orgs": [
+  "Replit",
+  "OpenAI",
+  "Notion",
+  "Slack",
+  "Telegram",
+  "Microsoft (Outlook, OneDrive)",
+  "Spotify",
+  "Linear",
+  "Stripe",
+  "n8n"
+ ],
+ "format": "review",
+ "topics": [
+  "product-ux",
+  "vibe-coding-app-building",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "replit",
+  "agent-builder",
+  "no-code-automation",
+  "oauth-connectors",
+  "telegram-bot",
+  "slack-bot",
+  "scheduled-triggers",
+  "beta",
+  "agent-memory",
+  "app-testing"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Replit's Agents and Automations section (part of Agent 3) builds agents conversationally. The host calls the guided flow smoother than building the same agent with Claude Code.",
+   "detail": "Setup is guided, and the host says the agent handles many details itself. The host's earlier comparison point was an n8n MCP plus a Claude Code agent for building n8n workflows.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Each agent starts from a trigger. The options shown are Slack, Telegram, and a scheduled trigger (transcript says 'Timebase'). Every agent also needs its own OpenAI key.",
+   "detail": "The trigger decides how users message the agent. The host notes this is a beta, so some features are rough.",
+   "t": "0:47"
+  },
+  {
+   "idea": "Integrations use OAuth connectors. The user logs in and no other manual setup is needed. Memory works only after deployment, not in the playground.",
+   "detail": "The playground could not recall earlier messages. Persistent memory activates only when the agent is deployed to Slack or Telegram, so memory has to be tested after deployment.",
+   "t": "1:51"
+  },
+  {
+   "idea": "Publishing differs by channel. Telegram needs a new BotFather bot and token for each deployment. Slack connects once.",
+   "detail": "The host created a bot named Mailbot, pasted the API token into Replit, and it published.",
+   "t": "2:51"
+  },
+  {
+   "idea": "The agent noticed a capability the user never asked for. Scheduling was not in the original prompt, and the agent added it after the user asked. Its own app testing caught only some errors.",
+   "detail": "Replit's built-in testing ran on apps and not on integrations, and generated apps still shipped formatting errors. The host concludes the agent was not fully tested before deployment.",
+   "t": "3:44"
+  },
+  {
+   "idea": "The integration catalog is small and has no Google option. Six connectors are listed: Notion, OneDrive, Spotify, Outlook, Linear and Slack.",
+   "detail": "Other external integrations need manual API key setup, as with OpenAI.",
+   "t": "5:09"
+  },
+  {
+   "idea": "A Notion-backed agent answered pipeline questions correctly, but deployed Slack agents did not work despite showing as connected.",
+   "detail": "Both the Notion video-progress agent and the calendar agent failed in Slack. The host calls this likely a beta issue and says the team uses Slack, not Telegram.",
+   "t": "6:29"
+  },
+  {
+   "idea": "Automatic app testing worked well for generated websites. Testing applies to apps only, not agents.",
+   "detail": "Replit also asked for Stripe automatically when the app needed payments. The host's Spotify agent could only search the public catalog and could not read personal playlists.",
+   "t": "6:29"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Least-privilege Notion OAuth",
+   "how": "When the connector's OAuth asks which pages to grant, select only the single page the agent needs (the host picked just the content-pipeline page) and not the whole workspace.",
+   "when": "Connecting any workspace-level connector (Notion, Outlook, Slack) to an agent that only needs one area of it."
+  },
+  {
+   "name": "Test memory after deployment",
+   "how": "Playground tests cannot verify cross-session memory. Deploy to Slack or Telegram, then check whether the agent recalls earlier messages.",
+   "when": "Any agent whose behaviour depends on remembering earlier turns."
+  },
+  {
+   "name": "Ask the agent to explain a missing action",
+   "how": "Ask the agent whether it actually performed an action (here: scheduling a meeting). When it reports the capability is missing, ask it to add that capability, then repeat the original request.",
+   "when": "An agent says it did or could not do something. Check the real side effect in the calendar or email client, not just the reply."
+  },
+  {
+   "name": "Telegram publishing setup",
+   "how": "In BotFather create a new bot and give it a display name and unique username. Copy the API token it returns, paste it into Replit's publish screen, and publish. Repeat this for each new deployment.",
+   "when": "Deploying a Replit agent as a Telegram bot. Slack publishing needs only one connection."
+  },
+  {
+   "name": "Verify side effects end to end",
+   "how": "After the agent acts, check the outcome outside the chat: the notification email in Replit's mail service and the event in Outlook. In the host's test, the invitation status showed 'not responded' until the invitee confirmed.",
+   "when": "Any agent that creates calendar events, sends mail, or changes records."
+  }
+ ],
+ "tools": [
+  "Replit Agent 3",
+  "Replit Agents and Automations",
+  "Replit app testing",
+  "Replit Stripe integration",
+  "OpenAI API",
+  "Notion (connector)",
+  "Outlook (connector)",
+  "OneDrive (connector)",
+  "Spotify (connector)",
+  "Linear (connector)",
+  "Slack (connector and deployment target)",
+  "Telegram (deployment target)",
+  "BotFather",
+  "n8n",
+  "n8n MCP",
+  "Claude Code"
+ ],
+ "numbers": [
+  {
+   "claim": "The first agent (Telegram bot: calendar availability and email sending) took about 28 messages and 20 actions to build.",
+   "t": "0:47"
+  },
+  {
+   "claim": "Six built-in integrations at the time: Notion, OneDrive, Spotify, Outlook, Linear, Slack. No Google integration.",
+   "t": "5:09"
+  },
+  {
+   "claim": "Pipeline overview returned by the Notion-backed agent: 17 videos in ideation, 19 in progress, 7 completed and published.",
+   "t": "5:09"
+  },
+  {
+   "claim": "Video length is 8:32; the feature is in beta.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The Replit builder is smoother than building the same agent with Claude Code, as the host experienced it (single-user anecdote).",
+  "Slack deployment is broken in beta for both agents tested, even though connections show as connected; the host says the team cannot use Telegram.",
+  "Built-in agent testing covers apps but not integrations, so agents ship under-tested.",
+  "Playground memory is missing, so cross-session behaviour cannot be tested before deploying.",
+  "The Spotify agent only searches the public catalog and cannot reach personal playlists, so its usefulness is limited."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Shows a no-code agent builder with managed connectors and a playground that cannot test memory. Relevant to how AgentOS should make session memory testable before deployment.",
+   "action": "Check that AgentOS memory (MemoryMesh tiers) can be exercised in a pre-deploy test harness, not only after deployment to a channel."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Its Agents and Automations flow covers scheduled runs and asks for confirmation at several steps, which overlaps ProsHarness loops, schedules and approvals.",
+   "action": "Look at how Replit presents scheduled run times and step confirmations as a UX reference for ProsHarness loops and schedules."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

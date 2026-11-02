@@ -1,0 +1,64 @@
+# Full Walkthrough: Workflow for AI Coding — Matt Pocock
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `-QFHIoCo-Ko` · [watch](https://youtu.be/-QFHIoCo-Ko) · **date:** 2026-05-18 · **length:** 1:36:30 · **format:** workshop · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Matt Pocock · **orgs:** AI Hero, Human Layer
+- **topics:** context-engineering, software-factory, testing-verification, multi-agent · **tags:** grill-me, PRD, tracer-bullets, vertical-slices, ralph-loop, afk-vs-hitl, tdd, deep-modules, smart-zone, dumb-zone, compaction, kanban, sandcastle, doc-rot, self-review, push-vs-pull-standards
+
+> Matt Pocock's live workshop on an AI coding workflow: grill-me alignment, PRD, vertical-slice issues with blocking edges, AFK Ralph loops with TDD and feedback loops, and deep-module codebases.
+
+## Summary
+Matt Pocock runs a two-hour live workshop, with a Q&A from the room, on a human-led AI coding workflow. He argues that the context window has a "smart zone" that degrades as it fills, so each task should be sized to fit inside it and sessions should be cleared rather than compacted. The workflow starts with a tiny "grill me" skill that makes the agent interview the human one question at a time until they share a design concept, then turns that into a PRD (the destination) and a set of vertical-slice issues with blocking relationships (the journey). Planning and QA stay human-in-the-loop, while implementation runs as an AFK Ralph loop, a bash script that feeds the local issue backlog to Claude, with TDD and feedback loops. He insists that codebases built from deep modules with small interfaces are what make agent work testable, and he shows a TypeScript runner called Sandcastle that runs independent issues in parallel git worktrees inside Docker. The talk is practitioner-level and demo-driven, and it is not a product pitch.
+
+## Key ideas
+- **Smart zone vs dumb zone** — Attention cost grows with context length, so output quality falls as the window fills. A fresh conversation gives the best work. The speaker (crediting Dex Horthy) puts the practical limit near 100k tokens whatever the window size, and says a 1M window mainly adds room for retrieval, not better coding. ([2:37](https://youtu.be/-QFHIoCo-Ko?t=157))
+- **Clear the context instead of compacting** — He prefers starting over from a tiny system prompt to compacting, which he calls a lossy written history that carries forward sediment. He recommends keeping a visible token counter so you know how close you are to the dumb zone. ([9:28](https://youtu.be/-QFHIoCo-Ko?t=568))
+- **Grilling creates alignment, not a plan** — Specs-to-code, where you edit specs and never read the code, does not work because you must keep hold of the code. Before any plan, a short skill makes the agent ask one question at a time with a recommended answer, walking each branch of the design. Sessions ran 40 to 100 questions and the transcript becomes a reusable asset. ([12:23](https://youtu.be/-QFHIoCo-Ko?t=743))
+- **Human in the loop for alignment, AFK for implementation** — Alignment, review and QA need humans. Implementation, once the issues are well specified, can run unattended. Planning cannot be looped away. ([25:35](https://youtu.be/-QFHIoCo-Ko?t=1535))
+- **Vertical slices (tracer bullets) over horizontal layers** — Agents tend to build layer by layer (schema, then API, then UI), which gives no integrated feedback until the end. Each issue should cut through every layer and produce something visible, so feedback arrives early. ([41:13](https://youtu.be/-QFHIoCo-Ko?t=2473))
+- **Blocking-graph Kanban enables parallelism** — Issues with blocked-by edges and an AFK or HITL label form a DAG. Independent issues can go to separate agents at once. A numbered sequential plan can only be worked by one agent in one loop. ([45:33](https://youtu.be/-QFHIoCo-Ko?t=2733))
+- **Feedback loops set the ceiling on agent quality** — Tests, type checks and TDD give the agent a way to check its work. Without them the agent is coding blind. Weak agent output is often a sign to improve the repo's feedback loops first. ([1:09:44](https://youtu.be/-QFHIoCo-Ko?t=4184))
+- **Manual QA is where taste gets imposed** — Fully automating idea, research, prototype and QA produces apps that lack taste and quality. The human QA pass is what turns output into something good, and QA findings feed new issues back into the Kanban board. ([1:12:51](https://youtu.be/-QFHIoCo-Ko?t=4371))
+- **Deep modules with small interfaces and grey-box internals** — Following Ousterhout, shallow modules with many exports are hard for agents to navigate and test. Deep modules expose a small interface over a large implementation. Design the interfaces yourself, then delegate the internals, which keeps your mental map of the codebase. ([1:16:14](https://youtu.be/-QFHIoCo-Ko?t=4574))
+- **Sandcastle: planner, parallel implementers, reviewer, merger** — A TypeScript library creates a git worktree per issue inside a Docker sandbox. A planner picks unblocked issues, implementers run in parallel, a reviewer checks the commits against pushed standards, and a merger combines the branches and fixes type or test breakage. ([1:30:40](https://youtu.be/-QFHIoCo-Ko?t=5440))
+
+## Techniques
+- **Smart-zone sizing and clear-over-compact** — Keep a visible token counter. Split large work into tasks that stay under roughly 100k tokens of context. Clear the context between phases instead of compacting, so each new session starts from the small system prompt. *When:* Any multi-step coding task on a large window model, especially where output quality drops late in a long session.
+- **Grill-me alignment skill** — A very short skill tells the agent to interview the user relentlessly about every branch of the plan, one question at a time, each with a recommended answer. The agent explores the repo first, and the human answers or overrides. Meeting transcripts can be fed in to surface assumptions. *When:* Before planning on any vague idea or feature request, and when a stakeholder has given a loose brief.
+- **Destination doc plus journey issues** — Turn the grilling conversation into a PRD with problem statement, user stories, out-of-scope list, implementation decisions and testing decisions. Then split it into issue files written as vertical slices with blocked-by links and an AFK or HITL tag. *When:* After grilling and before implementation, so the work is queued and parallelisable.
+- **Ralph loop (sequential AFK runner)** — A bash script reads all local issue markdown files and the last five commits, then runs Claude in accept-edits mode with a prompt. The prompt says to pick the next AFK task, use TDD, and run the feedback loops. Run it once by hand to tune the prompt before looping it, and run it inside a Docker sandbox. *When:* Implementation of a well-specified backlog once a human has finished planning, on a single branch with one agent at a time.
+- **Red-green-refactor TDD for agents** — The agent writes one failing test, confirms it fails for the right reason, then writes the minimal implementation. This stops the layered pattern of implement-then-write-tests that tends to let the agent cheat. *When:* Any repo with a fast test harness, and especially for service logic that can be tested without the frontend.
+- **Self-review in a fresh context** — After implementation, clear the context and have a separate pass review the diff, so the reviewer works in the smart zone rather than the dumb zone of the implementer. Then do human QA. *When:* Before any human review of agent-written code.
+- **Interface-first deep modules with grey-box delegation** — The human designs the module interface and test boundary. The agent implements the internals. An architecture-improvement skill scans for shallow modules and proposes deepenings with the reasons for coupling and the dependency category. *When:* When a codebase is hard for agents to test or navigate, or when the human is losing their sense of the code.
+- **Push vs pull for coding standards** — Standards live in skills the implementer can pull when it needs them. The automated reviewer gets the standards pushed into its prompt along with the diff to compare against. *When:* Enforcing house style on agent output without bloating every prompt.
+- **Sandcastle-style parallel runs** — One planner picks unblocked issues. Each issue runs in its own git worktree inside a Docker sandbox with an implementer, then a reviewer checks the commits, and a merger agent combines the branches and fixes type and test breaks. He uses Sonnet to implement and Opus to review. *When:* Several independent issues in the backlog and you want agents running in parallel.
+- **Delete plans and PRDs after they ship** — Close the issue, or delete the document, once the work is done instead of keeping it in the repo. Stale docs mislead later agent sessions (doc rot), and the closed issue still gives a visual indicator that the work is finished. *When:* After a feature has shipped and the repo has moved on.
+
+## Numbers
+- Practical smart-zone marker is about 100k tokens, whatever the window size (200k or 1M). Quality degrades beyond that. ([4:02](https://youtu.be/-QFHIoCo-Ko?t=242))
+- A 1M-token context window was announced the same day the speaker launched a course recorded on 200k, which he reads as more room for retrieval, not better coding. ([37:43](https://youtu.be/-QFHIoCo-Ko?t=2263))
+- A grilling subagent burned 93.7K tokens on Opus, but the main session's token count barely moved. ([17:29](https://youtu.be/-QFHIoCo-Ko?t=1049))
+- Grilling sessions can run 40 to 100 questions, about an hour of chat. ([19:54](https://youtu.be/-QFHIoCo-Ko?t=1194))
+- One grilling session in the demo answered 22 of its own questions and used about 25k tokens of conversation. ([29:12](https://youtu.be/-QFHIoCo-Ko?t=1752))
+- The example PRD had 18 user stories. The speaker's own video-manager repo has 744 closed issues, which are its PRDs and implementation issues. ([34:24](https://youtu.be/-QFHIoCo-Ko?t=2064))
+- The example plan split the PRD into five blocked-by issues, one of them tagged AFK. ([39:44](https://youtu.be/-QFHIoCo-Ko?t=2384))
+- After issue 02 the repo had 284 tests. One type error was fixed during the run. ([1:10:45](https://youtu.be/-QFHIoCo-Ko?t=4245))
+- Sandcastle uses Sonnet for implementation and Opus for review. ([1:32:05](https://youtu.be/-QFHIoCo-Ko?t=5525))
+- The architecture-improvement skill flagged the quiz scoring service as having zero tests, the biggest gap it found. ([1:33:34](https://youtu.be/-QFHIoCo-Ko?t=5614))
+
+## Hot takes
+- Specs-to-code is vibe coding under another name. You have to keep hold of the code, because the code is the battleground.
+- Compacting is worse than clearing. The speaker says he would rather the agent behave like the character in Memento and start fresh.
+- A 1M-token window mostly ships more dumb zone. It is good for retrieval and less good for coding.
+- Do not read the PRD closely. Reviewing it mainly tests the model's summarisation, and the real leverage is in QA and the issue graph.
+- Automating idea, research, prototype and QA end to end produces slop with no taste. A human QA pass is essential.
+- A bad codebase makes bad agents. Feedback loops and deep modules set the ceiling on agent output.
+- Own your planning stack rather than adopting a framework such as Spec Kit, OpenSpec or Taskmaster, because you need to be able to fix it when it breaks.
+- Delete PRDs and plans from the repo once the work ships, because stale docs cause doc rot that misleads later agents.
+
+## Tools mentioned
+Claude Code, Sandcastle, Docker, TypeScript, GitHub Issues, TLDraw, Slido, Playwright MCP, Sonnet, Opus, Spec Kit, OpenSpec, Taskmaster, Beads
+
+## Relevance to our work
+- **prosharness** (3/3): ProsHarness already has checkpoint/resume, plan to critique to debate, and loops around Claude Code. This talk's flow (grill, PRD, blocked-by issue graph, AFK loop with only unblocked issues, parallel worktrees) maps directly onto that harness. → *Prototype a grill-me skill as the front end of ProsHarness planning, and make the plan output issues with blocked-by edges and an AFK/HITL flag so the loop picks only unblocked AFK tasks.*
+- **general** (2/3): The grill, PRD, vertical-slice, and fresh-context review flow is broadly applicable to coding-agent work, and it targets context-size and test-feedback failure modes the user has. → *On the next feature, run a grill-me pass before any code and note how many questions it asks and how many get settled before planning.*
+- **agentos** (1/3): The talk is about the workflow, not infrastructure. The worktree-per-task and Docker-per-task pattern is loosely related to Crucible's per-task sandboxes. → *Read the Sandcastle design (worktree plus Docker per task) before scoping Crucible's per-task sandbox.*

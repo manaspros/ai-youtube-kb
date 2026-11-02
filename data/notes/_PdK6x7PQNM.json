@@ -1,0 +1,181 @@
+{
+ "one_line": "Ari Morcos (Datology AI) argues data quality is an under-used compute multiplier, showing curated-data gains in VLMs, multilingual and legal models, and a small-budget frontier-scale run.",
+ "summary": "Ari Morcos, CEO of Datology AI, argues that with compute getting scarce and token use rising, the best lever is better training data. He frames data quality as a compute multiplier: a better data curve gives the same performance for far less compute, or better performance for the same compute. His core idea is to maximise the information each token and batch gives the model, and he says the right data depends on the target task, not on one universal dataset. He describes Datology's four steps (clean, curate, create, compose), with rephrasing of high-quality documents as the synthetic-data step. He shows results in VLMs (about 14 points gained from curation alone and about 45x less training compute to match a strong Qwen model), multilingual models (8% multilingual data, about 8x less compute than Qwen3), and a Thomson Reuters legal mid-training run. The talk ends with a customer's 17T-token open model trained for under $20M total, and the claim that domain models can be built for high six to seven figures. Most of the evidence is vendor-reported, with no methods detail, so treat the numbers as claims.",
+ "speakers": [
+  "Ari Morcos"
+ ],
+ "orgs": [
+  "Datology AI",
+  "Thomson Reuters",
+  "RCAI",
+  "Meta",
+  "Google",
+  "OpenAI",
+  "NeurIPS"
+ ],
+ "format": "talk",
+ "topics": [
+  "data-engineering",
+  "training-finetuning-rl",
+  "models-research"
+ ],
+ "tags": [
+  "data-curation",
+  "pretraining-data",
+  "synthetic-data",
+  "rephrasing",
+  "mid-training",
+  "decontamination",
+  "scaling-laws",
+  "cross-lingual-transfer",
+  "compute-efficiency",
+  "domain-adaptation"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Data quality is a compute multiplier",
+   "detail": "Better data makes the learning curve steeper, so the same compute gives much better performance, or the same performance costs far less compute. The speaker says the x-axis can be data, compute, time or dollars.",
+   "t": "1:28"
+  },
+  {
+   "idea": "Maximise signal per token and per batch",
+   "detail": "The aim is to maximise the marginal information gain per data point. There is no single golden dataset; the best mix depends on the output tasks the model must do (e.g., legal data for a legal model). Diversity and mixing also matter, since narrow data makes models brittle to rephrasing.",
+   "t": "2:53"
+  },
+  {
+   "idea": "Four-stage data pipeline: clean, curate, create, compose",
+   "detail": "Clean uses heuristic filters and benchmark decontamination against downstream benchmarks. Curate uses quality classifiers, topic taxonomies, semantic redundancy removal, quality-based up/downsampling and task-distribution matching. Create uses synthetic rephrasing to expand data. Compose mixes and sequences data across at least three training phases.",
+   "t": "3:56"
+  },
+  {
+   "idea": "Rephrase only the high-quality documents",
+   "detail": "Rephrasing is framed as a fancy form of augmentation. Choosing which documents to rephrase matters a lot; a random pick gives poor results. Because the source facts stay in the document, the speaker says there is no model collapse and the rephrasing model needs only a simpler transform task.",
+   "t": "12:14"
+  },
+  {
+   "idea": "Repeating high-quality data beats showing low-quality data",
+   "detail": "The speaker says repeating high-quality data is almost always better than showing new low-quality data, up to some threshold. This is a token-scarcity argument.",
+   "t": "17:17"
+  },
+  {
+   "idea": "Domain mid-training keeps general skills when most data is representative",
+   "detail": "In the Thomson Reuters case, 100B tokens of mid-training (under 1% of pretraining budget) raised LegalBench by about 5 points with no catastrophic forgetting. The majority of the mix matched the pretraining distribution, with only some domain data. Post-training gains then roughly tripled on the mid-trained model.",
+   "t": "14:37"
+  },
+  {
+   "idea": "Cross-lingual transfer from English curation",
+   "detail": "Curating only the English data improved non-English accuracy. The size of the transfer tracked how similar each language is to English. The effect also runs the other way, but is smaller.",
+   "t": "10:50"
+  },
+  {
+   "idea": "Simulate token scarcity to predict large-run scaling",
+   "detail": "The speaker says a model trained on the right data with simulated token scarcity follows a predictable scaling line. This lets a team de-risk a run with 50 to 100 times less compute before scaling up. The 17T-token Trinity Large run landed on the line of the two smaller models despite 50x more training compute.",
+   "t": "10:50"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Four-C data pipeline (clean, curate, create, compose)",
+   "how": "Heuristic filters and n-gram decontamination against downstream benchmarks first; then quality classifiers, topic taxonomy balancing, semantic redundancy removal, quality-weighted up/downsampling, and task-distribution matching; then synthetic rephrasing; then mixing and sequencing into at least three phases.",
+   "when": "When pretraining or continued training a model and compute is the bottleneck, or when building a domain model from mixed sources."
+  },
+  {
+   "name": "Selective synthetic rephrasing into many formats",
+   "how": "Pick the highest-quality source documents first, then rephrase each into many templates (e.g., true/false questions) so the facts all come from the source document.",
+   "when": "When you have a small, high-value proprietary corpus and need more diverse training data without generating new facts."
+  },
+  {
+   "name": "Domain mid-training with a representative mix",
+   "how": "Continue pretraining an open model on a mix that is mostly general pretraining-like data plus some domain data, then run post-training on the mid-trained model.",
+   "when": "When adapting a model to a specialised domain and general capability must not drop."
+  },
+  {
+   "name": "Small-run scaling check under token scarcity",
+   "how": "Train small models on curated data with the token budget constrained to match the target run, fit the scaling line, and predict the large run before committing compute.",
+   "when": "Before a costly large training run, to check whether the expected gains will appear."
+  },
+  {
+   "name": "Repeat high-quality data under token limits",
+   "how": "When new tokens are scarce, repeat the best data up to a threshold rather than adding low-quality data.",
+   "when": "When the token pool is limited and quality is uneven."
+  }
+ ],
+ "tools": [],
+ "numbers": [
+  {
+   "claim": "Reasoning models use about 8x as many tokens as non-reasoning models, projected to grow about 5x again in the next year.",
+   "t": "0:12"
+  },
+  {
+   "claim": "H100 prices rose about 40% above their end-of-last-year lows.",
+   "t": "0:12"
+  },
+  {
+   "claim": "VLM trained on curated data (about 25B tokens, MAmmoTH mix) reaches about 14 absolute percentage points above its input dataset, with no post-training, and beats the public VLM Pareto frontier.",
+   "t": "6:52"
+  },
+  {
+   "claim": "VLM result roughly matches a Qwen 3.5 4B-class model with about 45x less training compute.",
+   "t": "6:52"
+  },
+  {
+   "claim": "Curated VLMs reach about 35x fewer FLOPs per correct answer than a Qwen 3.5-class model on the inference-efficiency plot.",
+   "t": "8:15"
+  },
+  {
+   "claim": "Multilingual model uses only 8% multilingual tokens (most languages at most about 6B tokens) and is slightly better than Qwen 3 with roughly 8x less compute.",
+   "t": "9:39"
+  },
+  {
+   "claim": "Trinity Large (17T tokens, hyper-sparse MoE) scaling was predicted from smaller runs despite 50x more training compute.",
+   "t": "10:50"
+  },
+  {
+   "claim": "Legal mid-training: 100B tokens (under 1% of pretraining budget) raised LegalBench about 5 points with no catastrophic forgetting.",
+   "t": "14:37"
+  },
+  {
+   "claim": "Post-training gain almost tripled on the mid-trained model versus the default instruction-tuned model (the speaker later says 2 to 3x).",
+   "t": "14:37"
+  },
+  {
+   "claim": "A fully open US-made model trained on 17T curated public tokens reached a competitive level with the open frontier for under $20M total cost, including R&D and salaries.",
+   "t": "17:17"
+  },
+  {
+   "claim": "Speaker says a narrow domain model can be trained for high six figures to about $1M.",
+   "t": "17:17"
+  }
+ ],
+ "hot_takes": [
+  "Data quality is the single most under-leveraged compute multiplier.",
+  "Frontier API access may be limited for outside users because inference capacity is short, not as a business choice.",
+  "Customizing a model does not need hundreds of millions of dollars; a narrow domain model can be built for high six figures to about $1M.",
+  "Repeating high-quality data is almost always better than adding low-quality data, up to a threshold.",
+  "Post-training and pretraining should be treated as one connected pipeline, not three independent handoffs."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Talk is about pretraining data curation, not agent infrastructure, proxies, memory or serving.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content on Claude Code harnesses, checkpoint/resume, or plan/critique loops.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Relevant only to the recurring interest in data quality with LLMs; the reusable idea is 'rephrase only high-quality sources' for training or eval data.",
+   "action": "If you build LLM-generated eval or fine-tuning sets, test whether filtering source documents for quality before rephrasing beats random selection; the speaker's paper 'Beyond Neural Scaling Laws' is the cited starting point."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

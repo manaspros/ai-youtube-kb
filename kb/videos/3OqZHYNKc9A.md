@@ -1,0 +1,49 @@
+# This Tiny Engine Runs Impossibly Big AI Models Locally! (colibrì)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `3OqZHYNKc9A` · [watch](https://youtu.be/3OqZHYNKc9A) · **date:** 2026-08-02 · **length:** 11:35 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Andris (Better Stack host) · **orgs:** Better Stack
+- **topics:** local-ai, inference-serving · **tags:** colibri, calibri, GLM 5.2, mixture-of-experts, expert streaming, NVMe offload, local inference, KV cache, MLA, speculative decoding, multi-token prediction, RAM bottleneck, RTX 5090, Apple M2 Max, pure C
+
+> Better Stack tests colibrì, a pure-C engine that streams a 744B MoE model (GLM 5.2) from SSD, on a MacBook and a RTX 5090 workstation. Result: it works, but speed is bounded by RAM, not the GPU.
+
+## Summary
+The host runs colibrì (transcribed as "Calibri"), a pure-C inference engine by Vincenzo Fornaro, that runs GLM 5.2, a 744B-parameter mixture-of-experts model, on consumer hardware. The engine keeps the small dense layers (about 17B parameters) in RAM and streams the experts from disk on demand, caching the ones it uses. It adds a routing-frequency cache that pins hot experts at startup, speculative decoding through the model's multi-token prediction head, and a compressed MLA attention cache that the host says shrinks the KV cache about 57x. The host tested it on a MacBook M2 Max with 32 GB RAM and the model on an external USB SSD, where the first word took over two minutes and throughput was about 0.1 tokens/s, with roughly 145 of 158 seconds spent waiting on disk. On a workstation with an RTX 5090, 64 GB RAM and an internal drive, the first word arrived in about 17 seconds at about 0.8 tokens/s, and disk waiting fell to about 48%. The host's conclusion is that RAM capacity and drive speed, not the GPU, decide performance. The video is a single-user demo with no published benchmark method, so the speed numbers are anecdotal.
+
+## Key ideas
+- **MoE architecture is what makes the model streamable: 744B total parameters, but only about 40B (roughly 5%) are active per token.** — Experts are thousands of small specialist subnetworks and only a few run per token, so per-token work and memory needs are far below the total size. ([1:13](https://youtu.be/3OqZHYNKc9A?t=73))
+- **colibrì treats the machine's storage as a memory hierarchy: VRAM, system RAM and NVMe SSD act as layered caches.** — Dense components (about 17B parameters, under 10 GB at int4) stay resident in RAM. Experts live on SSD and are streamed in per token, then cached. ([1:13](https://youtu.be/3OqZHYNKc9A?t=73))
+- **Routing-frequency learning cache: the engine logs which experts prompts route to and pins the hottest ones into spare RAM at startup.** — The log file sits next to the model. The cache gets better for a given task the more that task is run, so it is workload-specific. ([2:35](https://youtu.be/3OqZHYNKc9A?t=155))
+- **Speculative decoding uses the model's native multi-token prediction head to draft several tokens ahead.** — The host presents this as a speed trick. No acceptance rate or speedup number is given. ([2:35](https://youtu.be/3OqZHYNKc9A?t=155))
+- **The streaming quantized forward pass was checked to be token-exact against a full-precision reference transformer.** — The host says this was verified; it is the quality claim behind the whole approach. ([3:29](https://youtu.be/3OqZHYNKc9A?t=209))
+- **Storage is the first wall: the model is about 357 GB, so the host used an external USB SSD (about 1 GB/s) on the Mac, and that choice dominated the first result.** — An external USB drive is much slower than an internal one (about 1 GB/s versus 7 or more GB/s internal), and streaming makes drive speed the throughput limit. ([4:21](https://youtu.be/3OqZHYNKc9A?t=261))
+- **Profiling the compute-versus-wait split shows the bottleneck. On the Mac, about 145 of 158 seconds were disk waits and about 7 seconds were compute.** — The engine has a profiling screen that breaks each turn into compute time and time waiting for experts to load from disk. This is the most reusable diagnostic in the video. ([6:15](https://youtu.be/3OqZHYNKc9A?t=375))
+- **Memory, not the GPU, is the main lever: the RTX 5090 workstation with 64 GB RAM and an internal drive was about 8x faster than the Mac, and the host says the GPU was barely used.** — Disk waits fell to about 48%, so more of the model stayed in RAM. The host's own benchmarks reportedly show a CPU-only server with 1 TB RAM beating one RTX 5090. The host draws the RAM-first conclusion from this. ([8:12](https://youtu.be/3OqZHYNKc9A?t=492))
+
+## Techniques
+- **Expert streaming with a RAM-resident dense core** — Keep the always-used dense layers (about 17B parameters, under 10 GB at int4) in RAM. Keep MoE experts on NVMe and fetch each token's routed experts on demand, caching the ones used. The host shows this with colibrì but gives no config keys or commands. *When:* The model is a MoE with a small active fraction, it does not fit in RAM or VRAM, and you accept per-token disk latency for offline or low-throughput use.
+- **Routing-frequency pinning** — Record which experts each prompt routes to in a file beside the model. At startup, pin the most frequently routed experts into spare RAM so repeat workloads hit RAM instead of disk. *When:* You run a repeated or domain-specific workload, so a warm expert set is reused across sessions.
+- **Compute-versus-wait profiling per turn** — Instrument the decode loop to separate time spent in math from time spent waiting on weight or expert loads. Compare the ratio across hardware to find whether memory, disk or compute is the limit. *When:* Before buying hardware or tuning an offload setup, to see which resource actually bounds throughput.
+- **Token-exact validation of a streamed or quantized path** — Run the same prompts through the optimized engine and a full-precision reference implementation and compare the output tokens for exact equality. *When:* Before trusting an offload or quantization path, as a correctness check separate from benchmark speed.
+- **Speculative decoding via the native MTP head** — Use the model's built-in multi-token prediction head to propose several tokens, then verify them. The host does not explain the verification or show numbers. *When:* The model ships an MTP head, and single-token decode is the bottleneck.
+
+## Numbers
+- GLM 5.2 has 744B total parameters, about 40B active per token (about 5%). ([1:13](https://youtu.be/3OqZHYNKc9A?t=73))
+- Dense components are about 17B parameters, under 10 GB at int4, kept resident in RAM. ([1:13](https://youtu.be/3OqZHYNKc9A?t=73))
+- The model is about 357 GB on disk. ([4:21](https://youtu.be/3OqZHYNKc9A?t=261))
+- External USB SSD is about 1 GB/s versus about 7 GB/s or more for an internal drive (host's estimate). ([4:21](https://youtu.be/3OqZHYNKc9A?t=261))
+- MacBook M2 Max, 32 GB RAM, external SSD: first word after over 2 minutes; about 0.1 tokens/s; turn took about 158 s, of which about 145 s (over 80%) was disk waiting and about 7 s was compute. ([5:30](https://youtu.be/3OqZHYNKc9A?t=330))
+- RTX 5090 workstation, 64 GB RAM, internal SSD: first word in about 17 s; about 0.8 tokens/s; disk waiting about 48%. Host reports about 8x faster than the Mac. ([7:28](https://youtu.be/3OqZHYNKc9A?t=448))
+- MLA compressed attention cache shrinks the KV cache about 57x (host statement). ([3:29](https://youtu.be/3OqZHYNKc9A?t=209))
+- Host reports Calibri's own benchmarks show a CPU-only dual-Xeon server with 1 TB RAM beating a single RTX 5090 by a wide margin. Not verified in the video. ([9:35](https://youtu.be/3OqZHYNKc9A?t=575))
+
+## Hot takes
+- The host's conclusion: the GPU is not what makes or breaks this; RAM capacity and drive speed are, so RAM prices are a constraint on local frontier-model use.
+- Running a frontier model on a laptop is possible but unusable in practice. The host says the dream of a frontier model on an average laptop is not here yet.
+- The 5090-versus-Mac comparison changes RAM, drive, and GPU at once (64 GB internal drive versus 32 GB external USB), so the speedup cannot be attributed to the GPU or to memory alone. The host's RAM conclusion rests on that confounded comparison plus benchmarks not shown in the video.
+- Calibri's claimed token-exact validation and 57x KV-cache reduction are presented without the test setup. Both are host or author claims, not measured in the video.
+
+## Tools mentioned
+colibrì (transcribed as Calibri), pure-C local inference engine by Vincenzo Fornaro, zero external dependencies, GLM 5.2 (744B-parameter MoE language model, about 357 GB on disk, about 40B active per token), MLA (multi-head latent attention) compressed KV cache, Multi-token prediction head (speculative decoding), Apple MacBook M2 Max, 32 GB RAM, NVIDIA RTX 5090, 64 GB RAM workstation, Samsung portable SSD over USB (about 1 GB/s)
+
+## Relevance to our work
+- **agentos** (2/3): InferCraft (L2B) already plans KV-cache offload, speculative decoding and quantization on one RTX 5090. This shows expert-level SSD streaming for MoE models, a compute-versus-disk-wait profiling method, and a RAM-first bottleneck argument. → *Add a compute-vs-wait split (disk, PCIe, compute) to the InferCraft profiler and benchmark MoE expert offload from NVMe against the existing CPU-offload KV strategy, using the same 5090 box.*

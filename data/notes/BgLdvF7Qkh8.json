@@ -1,0 +1,172 @@
+{
+ "one_line": "Runlayer's founding engineer describes how a 50-60 person company monitored its own 300+ daily agents through a gateway, then used the session data for security (intent drift, over-permissioning, cross-agent contamination) and for cost control (erroring MCP tools, model tier jumps).",
+ "summary": "Aiden Sochowski of Runlayer describes an internal rollout of agent monitoring at a company of about 50-60 people running over 300 agents a day, many of them not triggered by a user. The team put a gateway in front of agent traffic, logged every session and tool call centrally, and mapped agents by topic and risk. The main security concern is that each tool call is an attack surface: hostile input in an inbox or resume, destructive actions, or exfiltration. Inbound and outbound policies (regex on outbound email, blocking reads from sensitive sources) help but are context-dependent and imperfect. Agent PR reviewers with approval rights can be argued out of their checklist over multiple turns. The team trained classifiers that check each tool call in a session against the agent's defined purpose, and models that compare tool use to historical baselines and suggest de-scoping. Tight write-scoping is recommended so one poisoned input cannot contaminate other agents. The same telemetry exposed cost problems: an MCP server written by non-engineers errored repeatedly and ballooned token spend, and a switch to a much more expensive model raised costs roughly 100x within a week. The talk ends with the view that you cannot stop all actions, so the goal is to detect high-risk actions and route people to approved paths.",
+ "speakers": [
+  "Aiden Sochowski"
+ ],
+ "orgs": [
+  "Runlayer"
+ ],
+ "format": "talk",
+ "topics": [
+  "security-guardrails",
+  "governance-compliance",
+  "observability",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "agent-gateway",
+  "session-monitoring",
+  "tool-call-audit",
+  "intent-drift",
+  "least-privilege",
+  "prompt-injection",
+  "mcp-errors",
+  "model-routing",
+  "budgets",
+  "shadow-agents"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Start with visibility: put a gateway in front of all agent traffic and log every session and tool call to a central store before writing any policy.",
+   "detail": "Agents run from local MCP clients, unmanaged devices and third-party SaaS agents, and the company had no record of them. Monitoring is what surfaced the problem.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Shadow agents outnumber people. About 300 agents run daily at a 50-60 person company, many not triggered by a user.",
+   "detail": "They are triggered by chatbots, schedules or SaaS apps. The team maps agents by topic and risk, and an internal visualization shows agents as galaxies and each run as a planet.",
+   "t": "1:22"
+  },
+  {
+   "idea": "Every tool call is an attack surface: reading hostile data, taking destructive actions, or exfiltrating data.",
+   "detail": "Example: a support inbox email asks the agent to list prospects. An over-permissioned agent could read the calendar and send that data out.",
+   "t": "3:18"
+  },
+  {
+   "idea": "Static policies in a gateway are hard to get right because safety depends on context.",
+   "detail": "A blanket block on a tool is too blunt. Classifiers on inbound content are useful but not 100% accurate. Outbound regex for customer names or PII, or blocking reads from a private calendar, are context-dependent layers.",
+   "t": "4:22"
+  },
+  {
+   "idea": "An agent reviewer that can approve PRs can be talked out of its checklist over multiple turns.",
+   "detail": "If the reviewer's permissions are not dynamic for the session, it can approve by mistake or after repeated pressure. The speaker says these attacks often span a whole session, not a single call.",
+   "t": "6:39"
+  },
+  {
+   "idea": "Session-level intent drift needs a classifier that checks every tool call against what the agent was defined to do.",
+   "detail": "The team trained its own classifiers to read the full session and decide whether each tool call still matches the agent's definition.",
+   "t": "7:49"
+  },
+  {
+   "idea": "For narrow agents, session history is high-signal, so flag runs that use tools outside the agent's normal range.",
+   "detail": "Example: a recruiter bot with access to an ATS, meeting notes, a calendar and messaging. Calls outside its historical pattern are flagged early and high-risk runs are scoped down.",
+   "t": "9:00"
+  },
+  {
+   "idea": "Least privilege is hard to set upfront, so learn it from history.",
+   "detail": "The team built models that review past tool calls for a well-defined agent and suggest permissions to remove, for example ATS records or meetings the agent never uses.",
+   "t": "10:15"
+  },
+  {
+   "idea": "One agent can poison others. Tightly scope which systems each agent can write to, to keep context clean.",
+   "detail": "Example: a malicious resume read by one agent could be passed on to another agent that reads the same data. Systems are often not partitioned, so write paths need limits.",
+   "t": "11:41"
+  },
+  {
+   "idea": "The same telemetry shows cost and reliability problems, not just security ones.",
+   "detail": "An MCP tool that errors causes an agent to retry or search for workarounds, and each retry costs input and output tokens. Monitoring error rates and rate limiting MCP calls keeps costs down.",
+   "t": "12:57"
+  },
+  {
+   "idea": "Cost can jump with a model tier change, and most teams do not run evals to justify it.",
+   "detail": "The speaker describes a team that moved from a cheap model to a much more expensive one and saw costs rise about 100x within a week. Budgets and default model tiers, with a stated reason for each tier, are the fix.",
+   "t": "14:08"
+  },
+  {
+   "idea": "You cannot stop all actions. Monitor, find the high-risk actions that need scrutiny, intervene, and route people to approved paths.",
+   "detail": "This is the closing principle. It is framed as detection plus intervention, not blanket blocking.",
+   "t": "15:35"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Gateway-first agent telemetry",
+   "how": "Route agent traffic (local MCP clients, SaaS agents, internal bots) through one gateway. Log every session and every tool call to a central store, and tag each run with its agent, owner and topic so runs can be grouped by agent and risk.",
+   "when": "As the first step on any org that runs agents in more than one place, before writing policies. It shows the real agent inventory and gives data to train other checks."
+  },
+  {
+   "name": "Per-tool-call intent classifier",
+   "how": "For each tool call in a session, give a classifier the session's data plus the agent's defined purpose and ask whether the call is aligned. Flag or block misaligned calls. The speaker says they trained their own classifier, and the input is the full session, not just the single call.",
+   "when": "Long-running or multi-turn sessions where the intent can drift over the session, for example a reviewer that is argued with over many turns."
+  },
+  {
+   "name": "Baseline-and-flag on tool-use history",
+   "how": "Build a per-agent profile of which tools and data sources it normally uses. Flag runs whose tool calls fall outside that profile early, and send the flagged runs for review. Use the same history to propose de-scoped permissions, such as removing access to records or data sources the agent never uses.",
+   "when": "Narrow agents with a well-defined task, where the normal tool-use pattern is predictable and deviations are high-signal."
+  },
+  {
+   "name": "Inbound and outbound content policies",
+   "how": "Inbound: classify content the agent reads (such as email or resumes) for embedded instructions. Outbound: block messages that match regex patterns for customer names or PII. Source-level: block reads from sensitive data sources, such as a private calendar, in some contexts. Expect imperfect coverage and layer the checks.",
+   "when": "Agents that read untrusted content and can send messages or write to external systems."
+  },
+  {
+   "name": "Tight write scoping per agent",
+   "how": "Limit each agent's write access to specific databases or objects within each system, rather than the whole SaaS app. The goal is to stop one agent's poisoned output from reaching other agents' context.",
+   "when": "Multi-agent setups where agents share systems, and any agent that reads data another agent writes."
+  },
+  {
+   "name": "MCP error and retry monitoring with rate limits",
+   "how": "Track error rates and repeated failing calls per MCP tool. Rate-limit tools that loop on errors, and review the server code behind any tool that errors often. The speaker's example was a server a non-engineer wrote for a vendor API without an MCP server.",
+   "when": "Agents that call internal or vibe-coded MCP servers, where a broken tool can make the agent retry and burn tokens."
+  },
+  {
+   "name": "Budgets and default model tiers",
+   "how": "Set spend budgets per agent or team. Make a cheaper model the default and require a stated reason to use a more expensive one, so the justification is written down.",
+   "when": "When teams can switch models freely and costs can rise sharply. The speaker says teams rarely run evals to justify a higher tier."
+  }
+ ],
+ "tools": [
+  "MCP (Model Context Protocol)",
+  "Claude Code (captioned as 'cloud code')",
+  "Opus (Claude model, mentioned as hard to prompt-inject)",
+  "Runlayer (the speaker's company; product is a gateway, not named in detail)"
+ ],
+ "numbers": [
+  {
+   "claim": "Company of about 50-60 people running over 300 agents every day.",
+   "t": "1:22"
+  },
+  {
+   "claim": "Cost rose about 100x within a week after a model switch from a cheap model to a much more expensive one. The captioned model names ('GPT-56 Luna', 'Fable 5.1') are unverified auto-caption text.",
+   "t": "14:08"
+  },
+  {
+   "claim": "Recruiter bot is highly provisioned, with access to an ATS, meeting notes, a calendar and messaging.",
+   "t": "9:00"
+  }
+ ],
+ "hot_takes": [
+  "Speaker says the best defense is detection and intervention, not blocking: 'you can't just stop all actions'.",
+  "Speaker says prompt-injecting a reviewer agent gets easier with repetition ('if you ask it 10 times'). This is anecdotal, with no measured rate.",
+  "Speaker argues that agent-written code and agent PR approval are still open questions in the industry.",
+  "The talk is a vendor talk that ends with a booth invitation. Most claims are qualitative. No classifier accuracy, false-positive rate or dollar figures are given beyond the single 100x anecdote."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 3,
+   "why": "Maps directly to the L1 gateway (budgets, PII/injection scan, audit log) and the L2D skill-mining idea. The talk shows the same telemetry can drive intent-drift checks, least-privilege suggestions from history, and MCP error budgets.",
+   "action": "Add a per-agent tool-use baseline to Govrix Scout's audit log, and flag runs whose tool calls fall outside it. Then test whether the same baseline can suggest de-scoped permissions."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs long Claude Code loops, where the retry-storm problem from erroring tools applies. The talk is not about harness design.",
+   "action": "Check whether ProsHarness loops have a retry budget or per-tool failure cap, so one broken tool cannot burn tokens across a long run."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

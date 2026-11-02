@@ -1,0 +1,37 @@
+# AI Images Are Getting Shockingly Real - FLUX 1.1 PRO
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `sFZR6EG4WxU` · [watch](https://youtu.be/sFZR6EG4WxU) · **date:** 2024-11-02 · **length:** 4:06 · **format:** tutorial · **quality:** 2/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Together AI
+- **topics:** voice-multimodal, product-ux · **tags:** image-generation, flux, together-ai, prompting, photorealism, marketing-imagery
+
+> Short tutorial on generating photoreal images with Flux 1.1 through Together AI, using a prompt-template trick; anecdotal, hype-driven, and untested.
+
+## Summary
+The speaker opens by claiming that Flux 1.1 produces images realistic enough to pass as photos, then walks through using Flux 1.1 on the Together AI website after signing in with a Google account. He shows a plain prompt (a dog on a sofa), says the result looks realistic but has the smooth, blurred background that real photos usually lack, and then introduces a "secret trick": a prompt prefix of the word "image", four random numbers, an image-type token such as "CR2", and a short subject of one to three words. He shows several outputs he calls indistinguishable from real photos, and also a variant that uses a type word like "selfie" plus a file type like "JPG". The closing segment pitches the use for marketing and e-commerce product shots without photo shoots, and notes that the free generation quota on the site is limited. No comparisons, controls, or repeated trials are shown, so the realism claims and the claimed effect of the trick rest on the speaker's visual impression alone.
+
+## Key ideas
+- **Flux 1.1 is presented as producing images realistic enough to be mistaken for photographs, with the claim resting on the speaker's visual judgment.** — The speaker says the samples are AI generated and that the model is pumping out pictures so real they may not be believed. No quantitative evaluation or side-by-side comparison with real photos is given. ([0:00](https://youtu.be/sFZR6EG4WxU?t=0))
+- **A plain prompt gives realistic but recognisably generated output.** — The dog-on-a-sofa result looks realistic, but the speaker says it has background blur and smoothness that real photos typically lack. He calls it realistic but not as realistic as the intro samples. ([1:33](https://youtu.be/sFZR6EG4WxU?t=93))
+- **The speaker's 'secret trick' is a prompt template: a fixed prefix plus a camera or image-type token, followed by a very short subject.** — Template: 'image', four random numbers, an image type such as 'CR2', then a subject of one to three words. He says long prompts do not work. He says the output looks like a phone snapshot, but does not test whether the random numbers or the type token are what changes the result. ([1:33](https://youtu.be/sFZR6EG4WxU?t=93))
+- **A second template swaps the camera token for a photo-type word plus a file type.** — Typing 'selfie' followed by a file type such as 'JPG' is presented as another way to get a phone-photo look. The speaker says he cannot see where this technology will end up and mentions future AI video. ([1:33](https://youtu.be/sFZR6EG4WxU?t=93))
+- **The speaker's stated business use is replacing product and model photo shoots for marketing, e-commerce and content creation.** — He says generated images can stand in for real models, real people or even pets. He gives no evidence of the results in those settings, and no discussion of disclosure or provenance. ([2:59](https://youtu.be/sFZR6EG4WxU?t=179))
+- **Access is capped on the hosted playground, and the speaker suggests other sites for higher generation volume.** — He says the Together AI site currently gives limited free generations and that the model may become more freely accessible over time. He names no alternative sites. ([2:59](https://youtu.be/sFZR6EG4WxU?t=179))
+
+## Techniques
+- **Flux 1.1 generation on Together AI (UI steps)** — 1) Open the Together AI website. 2) Sign in with a Google account, which goes straight to the generation page. 3) Prompt box is on the left; common settings and the model switch are on the right. 4) Select the Flux 1.1 model (the speaker says the default is fine). 5) Enter the prompt and generate. The speaker does not show exact setting names, values or sizes. *When:* Quickest hosted way to try Flux 1.1 without local GPUs. The free quota is limited, so expect a cap.
+- **Photo-style prompt template (speaker's 'secret trick')** — Prompt = 'image' + four random digits + an image-type token (the example is 'CR2') + a short subject of one to three words. Keep it short; long prompts are said to fail. The speaker does not test whether the random digits or the token matter, so compare with and without them before relying on it. *When:* Trying to get photo-like portraits or product shots from Flux 1.1 with a minimal prompt. Treat the effect as unverified.
+- **Type-word plus file-type prompt** — Start the prompt with a shot-type word such as 'selfie' and add a file type such as 'JPG' before the subject. *When:* Wanting a casual phone-snapshot look. The effect is anecdotal and untested.
+
+## Numbers
+- Four random digits are part of the photo-style prompt template. ([1:33](https://youtu.be/sFZR6EG4WxU?t=93))
+- Prompts should be only one to three words; the speaker says longer prompts fail. ([1:33](https://youtu.be/sFZR6EG4WxU?t=93))
+- The Together AI site gives limited free generations, with no quota stated. ([0:00](https://youtu.be/sFZR6EG4WxU?t=0))
+
+## Hot takes
+- Realism claims are unverified. There are no side-by-side tests, no real-photo baselines and no repeated trials, and the speaker's own dog sample is described as realistic but not as realistic as the intro.
+- The 'secret trick' is a prompt prefix with random numbers and camera words. The video does not show that the random numbers or the token change the output, so the effect could come from ordinary prompting.
+- The title and intro ('Shockingly Real', 'you might not believe your eyes') are hype with thin technical substance. The most concrete content is a one-line prompt template and a UI walkthrough.
+- The video teaches making images that look like phone photos and pitches them as substitutes for real models and products. It does not discuss disclosure or misuse, which matters for that use case.
+
+## Tools mentioned
+Flux 1.1 (Flux 1.1 Pro per the title; the transcript says Flux 1.1), Together AI (website, Google sign-in)

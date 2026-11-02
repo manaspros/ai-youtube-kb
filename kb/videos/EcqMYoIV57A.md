@@ -1,0 +1,49 @@
+# Why More Context Makes Your Agent Dumber and What to Do About It — Nupur Sharma, Qodo
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `EcqMYoIV57A` · [watch](https://youtu.be/EcqMYoIV57A) · **date:** 2026-06-18 · **length:** 26:27 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Nupur Sharma · **orgs:** Qodo
+- **topics:** context-engineering, multi-agent, pr-code-review · **tags:** context-window, lost-in-the-middle, context-engine, iterative-retrieval, knowledge-graph, hierarchical-summarization, orchestration-paradox, 80-20-split, judge-agent, mixture-of-agents, pr-review, calibration, feedback-weighting, loop-caps
+
+> Qodo's Nupur Sharma argues that dumping more context into an agent makes results worse, and shows how selecting, splitting and judging context across specialist agents fixed this in their PR review system.
+
+## Summary
+The speaker says LLMs attend mostly to the start and end of a long context, so material in the middle gets lost, and that bigger context windows do not fix this. She describes the path from static prompts to tool loops to multi-agent setups, and the new failure modes each step brings. Her main point is to optimize what goes into context rather than dumping everything in. She lists context-selection options (hierarchical summaries, knowledge graphs, iterative retrieval with a critic node) and their cost trade-offs. She names an "orchestration paradox" where agents spend tokens researching methods instead of doing the task, and proposes an 80/20 split with loop caps. For multi-agent work she describes specialist agents, a judge agent that reconciles their outputs, and Qodo's PR review pipeline (context collector, specialist agents, judge) with calibration from PR history and org guidelines. Much of the talk is architecture from a vendor, with few hard numbers, and the figures given are mostly illustrative.
+
+## Key ideas
+- **Bigger context windows do not solve the problem; models seem to use the start and end of context and lose the middle.** — She describes a U-shaped attention pattern where early and late inputs are used and in-between inputs are dropped. Her team says it is benchmarking this. Context selection is therefore a design task, not a matter of size. ([2:57](https://youtu.be/EcqMYoIV57A?t=177))
+- **Context engines are a buzzword that does not scale easily to large codebases.** — A context engine ranks and retrieves what matters for a task. Indexing takes moderate effort, but at around 600-700 repositories, mapping and indexing slow down and become unpredictable. Other options can be cheaper. ([5:08](https://youtu.be/EcqMYoIV57A?t=308))
+- **There is a menu of context-selection strategies with different upfront costs.** — Hierarchical summaries per file and folder need heavy LLM processing whenever files change. Knowledge graphs take a lot of setup but suit deep file-to-file dependency chains. Iterative retrieval gives the agent a light index (a library card) and low setup, at the cost of latency and tokens. A critic node can check relevance and retry. ([6:07](https://youtu.be/EcqMYoIV57A?t=367))
+- **The orchestration paradox: agents waste tokens researching how to do a task rather than doing it.** — Stronger reasoning models keep hopping between methods and tools. She says this shows up most in discovery and planning, and the agent loops without finishing. ([8:18](https://youtu.be/EcqMYoIV57A?t=498))
+- **Split the work 80/20: a strong model explores, while hard gates and summarization are deterministic.** — The strong model handles the exploratory 80%. The 20% (validation, summarization, output format) is tightly constrained and can use a cheaper model, since it only needs the goal and the result. Loop caps (4-5 iterations, or about 5 minutes) force the agent to use its last result. ([9:19](https://youtu.be/EcqMYoIV57A?t=559))
+- **Give each subtask its own specialist agent, then reconcile the results with a judge agent.** — Four tasks in one agent meant two got attention and two were dropped. Separate agents keep each task focused. Conflicting outputs (her vacation example: a hotel in Greece and flights to Portugal) need a judge agent to merge them into one coherent answer. ([12:03](https://youtu.be/EcqMYoIV57A?t=723))
+- **Qodo's PR review pipeline: a context collector routes slices of context to specialist agents, and a judge filters the findings.** — The collector gathers PR diff, context-engine results and tool data, then splits it. Specialists cover security, code quality and Jira. The judge checks the findings against the context engine and PR history, and keeps only those relevant to this team. ([14:41](https://youtu.be/EcqMYoIV57A?t=881))
+- **Calibrate reviews with PR history and org guidelines, and weight findings by how developers respond.** — PR history shows whether similar findings were accepted or rejected. Architect and compliance guidelines can be uploaded to a portal, and rules are always surfaced. Accepted suggestions gain weight and rejected ones lose it. Organizations that use no rules can still rely on PR history. ([17:35](https://youtu.be/EcqMYoIV57A?t=1055))
+
+## Techniques
+- **Context selection instead of context dumping** — Index the codebase and rank material by relevance to the task. Give each agent only the slice it needs, rather than the whole repo or every tool output. *When:* Large or messy codebases where full-context prompts give inconsistent results.
+- **Iterative retrieval with a library-card index** — Give the agent a lightweight index of topics and locations. It fetches details on demand and loops as needed, with a critic node that rejects irrelevant results and triggers a retry. *When:* Mid-sized codebases or internal agents, where low setup effort matters more than per-query cost and latency.
+- **Hierarchical summarization** — Generate a summary per file and folder, and regenerate it when files change. Agents read summaries first and open files only when needed. *When:* Codebases that change slowly and can afford upfront LLM processing.
+- **Knowledge graph for dependencies** — Model file-to-file and module-to-module dependencies in a graph database, and traverse it to find the impact of a change. *When:* Logic with deep dependency chains across many repos or files, where the upfront modelling effort pays off.
+- **80/20 research and gate split** — Let a strong model explore and plan freely for about 80% of the work. Use a constrained, deterministic step (possibly with a cheaper model) for validation, summarization and output format. Add loop caps by iteration count or time, then continue from the last result. *When:* Agent loops that drift into endless planning or tool-hopping, and that waste API tokens.
+- **Specialist agents with a judge agent** — Split the review or task by domain (security, code, tickets). Each specialist returns findings. A judge agent checks them against the original goal and history, merges conflicts, and drops irrelevant items. *When:* Multi-faceted tasks where one agent loses focus, or where specialist outputs contradict each other.
+- **Feedback-weighted calibration** — Store whether past suggestions were accepted or rejected, and whether issues recurred and were fixed. Weight future findings by these signals. Always surface explicit rules. *When:* Code review or any agent output that people accept or reject, where organizational norms should shape the output.
+
+## Numbers
+- Early static-prompt setups had a 4K context window. ([0:56](https://youtu.be/EcqMYoIV57A?t=56))
+- Context-engine indexing and mapping slow down and become unpredictable at around 600-700 repositories. ([5:08](https://youtu.be/EcqMYoIV57A?t=308))
+- Suggested 80/20 split between exploratory research and deterministic validation or summarization. ([9:19](https://youtu.be/EcqMYoIV57A?t=559))
+- Loop cap of about 4-5 iterations, or a timeout of about 5 minutes, after which the agent works from its last result. ([9:19](https://youtu.be/EcqMYoIV57A?t=559))
+- A PR review can produce around 15 candidate recommendations, which the judge then filters. ([17:35](https://youtu.be/EcqMYoIV57A?t=1055))
+
+## Hot takes
+- More context makes agents worse. The fix is selection, not window size.
+- Context engine is a buzzword that many teams should avoid building.
+- Strong reasoning models should do the exploring, and cheap deterministic steps should do the final output.
+- Code review quality comes from feedback history, so accepted and rejected suggestions should shape future findings.
+
+## Tools mentioned
+Jira, MCP, Claude Opus
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness runs plan, critique and debate loops around Claude Code. Loop caps, the 80/20 split, and a judge that reconciles critiques map directly to that flow. → *Add an iteration or time cap to plan, critique and debate loops. Test a judge step that merges critic outputs and uses a cheaper model for the gate.*
+- **agentos** (1/3): MemoryMesh retrieval could use the iterative library-card index and selection ideas, but the talk offers no benchmarks. → *Read about hierarchical or iterative retrieval options and compare them with the current hybrid BM25 and pgvector path in MemoryMesh.*

@@ -1,0 +1,192 @@
+{
+ "one_line": "AI LABS shows seven Claude Code workflow hooks that offload yes/no, ranking and routing decisions to \"Jev\", a decision-only model with a confidence value, to cut latency and token spend.",
+ "summary": "The presenter introduces \"Jev\" (spelling as auto-captioned), a model from TypeSafe that answers only by picking from options the caller supplies (yes/no, a list, or a score) and returns a confidence value, so it cannot write code or call tools. They claim it is faster and cheaper than text-generating models because it emits one decision rather than a long answer, and that input tokens are the only billed cost. Access was via Vercel AI Gateway, since TypeSafe's own signups were paused. They then walk through seven places they wired it into Claude Code: replacing compaction summaries, checking that doc rules have tests, picking a skill per prompt, replacing the Explore subagent's file search with keyword search plus batched reranking, triaging which changes need a full review, choosing the next click in browser testing, and blocking edits that break file-specific rules at 80% confidence. Most speed figures are single anecdotes, and no baseline comparison is shown. A Zapier sponsor segment sits mid-video.",
+ "speakers": [],
+ "orgs": [
+  "AI LABS",
+  "TypeSafe",
+  "Vercel",
+  "OpenRouter",
+  "Zapier"
+ ],
+ "format": "review",
+ "topics": [
+  "claude-code",
+  "token-cost-efficiency",
+  "context-engineering",
+  "pr-code-review"
+ ],
+ "tags": [
+  "jev",
+  "decision-model",
+  "claude-code-hooks",
+  "compaction",
+  "skill-routing",
+  "subagents",
+  "explore-agent",
+  "code-review-gate",
+  "browser-testing",
+  "rule-enforcement",
+  "sponsored-segment"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Jev is a decision-only model: you give it options (yes/no, a list, or a score) and it returns one pick plus a confidence value. It does not write text, code or tool calls.",
+   "detail": "The presenter frames it as a decision model, contrasted with Claude and GPT, which write answers token by token. Its use is limited to decisions inside tools like Claude Code and Codex.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The speed and cost argument is that one decision is a tiny output, so it is quick and cheap. Only the input is billed.",
+   "detail": "Claimed: all questions are answered in parallel, each decision takes a fraction of a second, and the response is free because it is not billed as output tokens. No benchmark or price table is shown.",
+   "t": "1:05"
+  },
+  {
+   "idea": "Access went through a gateway because TypeSafe's direct signups were paused. The workflow is an API key stored as an environment variable.",
+   "detail": "Jev is also listed on OpenRouter and Vercel AI Gateway. The presenter used Vercel, which shows the key only once at creation, and exported it as an environment variable so Claude in the same terminal can read it.",
+   "t": "2:33"
+  },
+  {
+   "idea": "Compaction: Jev replaces the model-written summary with a list of the important items. It is claimed to take under a second.",
+   "detail": "The default compaction sends the full conversation back for summarizing. The Fast Jev Compaction plugin uses a hook to redirect /compact. It is not from the marketplace, so the presenter copied it into the project and patched it for the gateway. Sessions under 25% full use normal compaction.",
+   "t": "2:33"
+  },
+  {
+   "idea": "A coverage check finds documented access rules that have no test. A hook runs on edits to access-control files and asks Jev about each rule.",
+   "detail": "For every rule in the docs, Jev answers whether a test covers it. The output lists uncovered rules, which Claude then turns into tests. The presenter's use case is app-level permissions.",
+   "t": "4:56"
+  },
+  {
+   "idea": "Skill selection is moved out of the main model. A hook reads every skill's name and description plus the prompt, then picks one skill or none before Claude starts.",
+   "detail": "Named the skill picker. It runs after every prompt, so Claude does not have to weigh all skill descriptions in its own context window.",
+   "t": "6:18"
+  },
+  {
+   "idea": "Explore replacement: the default Explore subagent now runs on the main session model (Opus in the example), so the presenter built a skill that combines keyword search with Jev ranking.",
+   "detail": "Keyword search finds candidates, then Jev scores them 20 at a time, and only the top few files get opened. Their timing: 1.6 seconds to rank 35 files, with the right file first.",
+   "t": "7:45"
+  },
+  {
+   "idea": "Review triage: Jev answers seven yes/no questions about a change and decides how much review it gets.",
+   "detail": "If every answer is no, the reviewer runs one quick round. If any answer is yes, or Jev is unsure, the change gets the full review. The goal is to keep the full review for risky changes and speed up small ones. Jev does not replace the reviewer.",
+   "t": "8:45"
+  },
+  {
+   "idea": "Browser testing: the main model judges the outcome, and Jev chooses the next click from the page's interactive elements.",
+   "detail": "The loop lists every button and link, Jev picks the one closest to the goal, the page is re-listed, and this repeats until Jev calls the goal done or the page blocks it. The presenter tested admin, manager and employee roles for access.",
+   "t": "9:45"
+  },
+  {
+   "idea": "Rule enforcement is a pre-edit hook, not a CLAUDE.md instruction. Jev checks each proposed edit against that file's rules and blocks it at 80% confidence.",
+   "detail": "Hooks run every time, so the model cannot skip them. The blocked edit returns the broken rule's name to Claude. In the one demo, the edit that read employee data straight from the browser was blocked before the file was created.",
+   "t": "10:54"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Decision-model offload via gateway",
+   "how": "Pick an OpenAI-compatible gateway that lists the model (the presenter used Vercel AI Gateway). Create an API key on its keys page, copy it immediately (shown once), then export it as an environment variable in the terminal you run Claude Code from. Call the model only with the options and the input; the response is one choice plus a confidence value.",
+   "when": "High-frequency yes/no, classification, routing, or ranking decisions where a full LLM turn would be slow or costly, and free-text output is not needed."
+  },
+  {
+   "name": "Compaction replacement via project-local hook",
+   "how": "Copy the Fast Jev Compaction plugin into the project because it was not installed from the marketplace. Patch it for your gateway. Ask Claude to register the plugin in its settings, then run /compact as usual. The hook takes over. Sessions below 25% context use the default compaction.",
+   "when": "Long Claude Code sessions where summary compaction is slow, and a list of important items is an acceptable substitute for a prose summary."
+  },
+  {
+   "name": "Doc-rule to test coverage hook",
+   "how": "Add a hook that fires on edits to the access-control files. For each rule in the docs, ask the decision model whether a test covers it. Report the uncovered rules, then have Claude write tests from that report.",
+   "when": "Docs hold many explicit rules, such as permissions, and you want an automatic check for missing coverage."
+  },
+  {
+   "name": "Per-prompt skill picker hook",
+   "how": "On prompt submission, read every skill's name and description, send them with the prompt to the decision model, and ask for exactly one skill or none. Inject that choice into Claude's context so it need not choose among all skills.",
+   "when": "A project has many skills, and the main model's skill selection is slow or inconsistent."
+  },
+  {
+   "name": "Keyword search then batched LLM rerank for Explore",
+   "how": "Build a skill that first runs a plain keyword search for candidate files. Score the candidates in batches of 20 with the decision model, then open only the top-ranked files in the main context.",
+   "when": "File search should be cheap and fast, and the main model is too expensive for it."
+  },
+  {
+   "name": "Seven yes/no review gate",
+   "how": "Before the review step, have the decision model answer seven fixed yes/no questions about the change. Route to a quick single review round only if all answers are no. Otherwise send it to the full review, including any answer that is unsure.",
+   "when": "Most changes are small and a full review is slow, but risky changes must still get the full treatment."
+  },
+  {
+   "name": "Browser agent with model-picked clicks",
+   "how": "Open the app and list every button and link on the page. Ask the decision model which element moves closest to the goal, click it, and repeat on the new page. Stop when the decision model reports the goal done or the page blocks progress. The main model makes the final pass or fail call against the docs.",
+   "when": "End-to-end checks of role-based access or multi-step flows where the expensive model should not choose each click."
+  },
+  {
+   "name": "Pre-edit rule enforcement hook",
+   "how": "Before each edit, send the proposed change and that file's rule set to the decision model. Ask whether each rule is broken. Block the edit when a rule is broken with at least 80% confidence, and return the rule text to Claude.",
+   "when": "Rules in CLAUDE.md-style docs are being skipped sometimes, and a violation should be enforced rather than requested."
+  }
+ ],
+ "tools": [
+  "Jev (TypeSafe decision model, as auto-captioned)",
+  "Vercel AI Gateway",
+  "OpenRouter",
+  "Claude Code",
+  "Codex",
+  "Fast Jev Compaction plugin",
+  "Claude Code Explore subagent",
+  "Opus (caption reads 'Opus 2')",
+  "Zapier (sponsor segment)"
+ ],
+ "numbers": [
+  {
+   "claim": "The compaction replacement is claimed to finish in under one second (usually).",
+   "t": "3:41"
+  },
+  {
+   "claim": "Sessions under 25% of context use normal compaction instead of Jev.",
+   "t": "3:41"
+  },
+  {
+   "claim": "Explore-replacement ranking took 1.6 seconds for 35 files, with Jev scoring 20 files per batch.",
+   "t": "8:45"
+  },
+  {
+   "claim": "The review gate asks seven yes/no questions per change.",
+   "t": "8:45"
+  },
+  {
+   "claim": "Edits are blocked when Jev is at least 80% sure a rule is broken.",
+   "t": "10:54"
+  },
+  {
+   "claim": "Browser test covered three roles: admin, manager and employee.",
+   "t": "10:54"
+  },
+  {
+   "claim": "Pricing: only input tokens are billed; the output decision is described as free. No dollar or per-token figures are given.",
+   "t": "1:05"
+  }
+ ],
+ "hot_takes": [
+  "Quality is capped at 2 under the sponsored-segment rule: a Zapier sponsor read sits mid-video (about 6:18), and the title is hype. The seven hooks are concrete, though, which is why the score is not lower.",
+  "Speed and cost claims are unbenchmarked anecdotes (one 1.6 s ranking, one sub-second compaction). No baseline against a Haiku or Sonnet call and no token counts are shown.",
+  "The model is only available by gateway at the time: the presenter says TypeSafe's direct signups are paused due to demand.",
+  "The 80% block threshold and the 25% compaction cutoff are presented as tuned choices, with no false-positive or false-block rate given. The only blocking example is a single successful demo.",
+  "The auto-captions show Jev throughout, so the model's exact spelling and version are unverified. The source-model claim about the Explore default changing to the main session model is the presenter's own."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Confidence-gated yes/no and routing calls on a cheap, text-free model could sit in the L1 proxy's strategy routing or PII/prompt-injection pre-checks, but the video offers no proxy-level evidence.",
+   "action": "Benchmark a decision-only classification call with a confidence threshold against the current routing classifier on latency and cost before deciding whether to use it."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and already does skill ranking and review-style checks, so skill picking, review triage and pre-edit hooks map directly onto it. The evidence is one author's anecdotes.",
+   "action": "Prototype a per-prompt skill-picker hook and a seven-question review-triage gate in ProsHarness, using a cheap decision model with a confidence threshold, and A/B it against the current skill ranking on accuracy and latency."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

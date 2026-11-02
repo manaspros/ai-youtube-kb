@@ -1,0 +1,49 @@
+# Tokens Should Have Jobs — Katelyn Lesse & Angela Jiang, Anthropic
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `PXj0p_mW9nI` · [watch](https://youtu.be/PXj0p_mW9nI) · **date:** 2026-09-18 · **length:** 13:21 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Katelyn Lesse, Angela Jiang · **orgs:** Anthropic
+- **topics:** token-cost-efficiency, multi-agent, evals, agent-architecture · **tags:** token-budget, advisor-executor, grader-rubric, dreaming-memory, fixed-budget-eval, cost-per-pass, financial-analysis-bench, claude-managed-agents, test-time-compute
+
+> Anthropic's Katelyn Lesse and Angela Jiang argue agent token budgets are not fungible: giving some tokens jobs (advisor, grader, dreamer) beats simply spending more on one executor, measured at a fixed budget and scored on pass rate.
+
+## Summary
+The talk argues that the usual way to improve an agent, raising the token budget or using pricier tokens, assumes every token is interchangeable. The speakers propose giving some tokens separate jobs: an executor does the task, an advisor answers its questions, a grader scores output against a rubric and drives retries, and a dreamer reviews transcripts and writes learnings to memory for the next run. They tested these strategies on a bench of financial-analysis tasks meant to mimic expert analysts. A one-shot comparison was confounded because strategies chose different budgets, so they fixed every strategy to the largest budget (about 600k tokens). At that fixed budget, advise beat plain execute by a small but real margin. They then scored only exact, 100%-correct results as passes, since a slightly wrong P&L is useless to a finance expert. Under that scoring, the cost per successful answer is the budget divided by the pass rate, which made the strategies' true costs comparable. The speakers say the right strategy depends on whether the goal is token efficiency (advise) or reliability (grade or dream). They describe Claude Managed Agents as the meta-harness that lets these roles be composed, and they encourage developers to combine primitives into new strategies.
+
+## Key ideas
+- **Tokens are not fungible: the default lever of spending more budget or pricier tokens assumes every token does the same job.** — The speakers propose assigning some tokens to non-execution roles. Executing tokens do the work, and other tokens advise, grade, or dream. A role-based setup is called a strategy. ([0:19](https://youtu.be/PXj0p_mW9nI?t=19))
+- **Four strategies: execute (baseline), advise, grade, dream.** — Advise lets the executor call an advisor for guidance on the next step. Grade scores the executor's output against a rubric and drives retries. Dream reviews the executor's transcripts and writes findings to memory that the next run reads. ([1:45](https://youtu.be/PXj0p_mW9nI?t=105))
+- **Grade with an explicit rubric when the good outcome is known in advance, such as refund criteria in customer service.** — A grader checks each attempt against the rubric and the executor iterates until the result passes. The speaker's example is a customer service agent deciding refunds. ([2:47](https://youtu.be/PXj0p_mW9nI?t=167))
+- **Dreaming turns feedback into memory so later runs improve, for example in recruiting agents.** — The dreamer inspects transcripts and writes learnings that the executor picks up next round. The speaker's example is a recruiting agent that learns from candidate and employer feedback. ([3:35](https://youtu.be/PXj0p_mW9nI?t=215))
+- **A one-shot comparison is misleading because each strategy picks its own token spend, so the budget must be held constant.** — Dream scored highest in the one-shot test but used about 600k tokens against about 39k for execute. The speakers fixed every strategy at the highest budget, so differences reflect the strategy rather than the spend. ([5:03](https://youtu.be/PXj0p_mW9nI?t=303))
+- **At an equal budget the strategies still differ, which is the alpha that role-based tokens provide.** — At the fixed budget, execute reached 0.76 and advise reached 0.89. The gap is smaller than the gap from simply adding budget, but it is real. ([6:26](https://youtu.be/PXj0p_mW9nI?t=386))
+- **In high-stakes domains score pass or fail at 100%, because a near-correct answer still has to be rechecked by hand.** — The speakers argue an 80% accurate P&L forces the expert to recompute it or rerun the agent. Under the strict pass criterion, execute passed about 42% of runs and the more complex strategies up to about 75%. ([7:50](https://youtu.be/PXj0p_mW9nI?t=470))
+- **Compare strategies by total token cost per successful outcome, which is budget divided by pass rate, not by cost per run.** — At a 0.42 pass rate, execute needs about 2.4 runs on average (the speaker rounds to three). At 600k tokens per run, that is roughly 1.8M tokens per correct answer, the baseline true cost. ([9:01](https://youtu.be/PXj0p_mW9nI?t=541))
+- **Pick the strategy by what you optimize: advise for token efficiency, grade or dream for reliability.** — Advise and grade were the most token-efficient per usable output. Grade and dream were stronger when the goal is the highest share of perfect runs. ([10:28](https://youtu.be/PXj0p_mW9nI?t=628))
+- **The orchestration layer composes roles, so teams can build new strategies beyond the four shown.** — The speakers say Claude Managed Agents provides the executor, advisor, grader, and dreamer as primitives, and that the roles can be chained (execute, advise, grade, then dream). They expect the platform to construct these strategies dynamically over time. ([11:39](https://youtu.be/PXj0p_mW9nI?t=699))
+
+## Techniques
+- **Role-split executor with advisor** — The executor calls a separate advisor model for guidance during the task and checks its next step against that advice. Use the advisor on a stronger model if needed. *When:* Multi-step agents that need checks mid-run, such as a sales agent flagging overdue follow-ups or stalled deals.
+- **Rubric grader with retry loop** — Write the success criteria as a rubric. After each attempt, a separate grader scores the output against it, and the executor retries until it passes. *When:* The correct outcome is known in advance and can be written as explicit criteria, such as refund policy decisions.
+- **Dreamer writing memory from transcripts** — A separate agent reads executor transcripts, extracts findings, and writes them to memory that the executor reads at the start of the next run. *When:* Agents that get repeated feedback over time, such as recruiting agents or any agent whose later runs should reuse earlier lessons.
+- **Fixed-budget strategy comparison** — Cap every strategy at the same maximum token budget (the largest one used), then compare results. Do not compare one-shot runs where each strategy picks its own spend. *When:* Benchmarking agent designs when the test is whether a design choice helps, not whether more tokens help.
+- **Cost per pass metric** — Require exact correctness for a pass, measure the pass rate, then compute budget divided by pass rate as the expected total token cost per correct result. *When:* High-stakes domains where partial credit has no value, such as financial figures.
+
+## Numbers
+- One-shot execute scored 15% accuracy and used about 39k tokens; dream scored highest but used about 600k tokens. These one-shot runs are not comparable because each strategy chose its own budget. ([5:03](https://youtu.be/PXj0p_mW9nI?t=303))
+- At a fixed budget of about 600k tokens, execute rose from 0.15 to 0.76. Advise and grade rose from the 60s to near 90s (percent). ([5:03](https://youtu.be/PXj0p_mW9nI?t=303))
+- At the same fixed budget, execute scored 0.76 and advise scored 0.89, a difference the speakers describe as the alpha of role-based tokens. ([6:26](https://youtu.be/PXj0p_mW9nI?t=386))
+- Under the strict 100%-pass criterion, execute passed about 42% of runs, and the more complex strategies reached up to about 75%. ([7:50](https://youtu.be/PXj0p_mW9nI?t=470))
+- Expected total token cost per correct answer for execute is about 1.8M tokens: roughly 600k per run times about three runs (the speaker rounds from about 2.4 runs at a 42% pass rate). ([9:01](https://youtu.be/PXj0p_mW9nI?t=541))
+
+## Hot takes
+- Tokens are not fungible, so budget increases are not the only lever for agent quality.
+- In high-stakes domains, 80% accuracy is not useful, so benchmarks should score pass or fail, not partial credit.
+- Per-run cost misleads. Compare strategies by total cost per successful outcome.
+
+## Tools mentioned
+Claude Managed Agents
+
+## Relevance to our work
+- **agentos** (2/3): The dreamer pattern (a separate agent writes learnings from transcripts into memory) matches the SkillForge idea of mining agent telemetry into reusable skills, and the grader pattern matches the exec-gate idea. The talk supplies a concrete measurement method for both. → *Add a dreamer-style offline job that reads executor transcripts and proposes SkillForge skill candidates, then measure whether the next run's pass rate improves at a fixed token budget.*
+- **prosharness** (2/3): ProsHarness already runs plan, then Codex critique, then debate. The talk gives a way to test whether that critique step pays for its tokens, using a fixed budget and a cost-per-pass measure. → *Run ProsHarness plan-critique loops on a fixed token budget with a pass-only success criterion, and report expected total tokens per correct plan for critique on versus off.*
+- **general** (2/3): The cost-per-pass metric and the fixed-budget comparison method apply to any agent eval, including the entity-resolution and Haiku pipeline work. → *When comparing agent or LLM pipeline variants, report budget-matched results and expected total tokens per correct answer, not per-run accuracy or cost.*

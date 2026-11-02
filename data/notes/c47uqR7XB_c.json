@@ -1,0 +1,177 @@
+{
+ "one_line": "AI LABS walks through \"unlazy,\" an agent skill that makes coding agents prove each task is done via a gates ledger, tree decomposition and fresh-agent re-checks, plus their fix for its slow sequential runs.",
+ "summary": "The video presents \"unlazy,\" a skill for Claude Code and Codex aimed at agents that claim work is finished when it is not, or quietly shrink the job. The host argues that existing fixes (Ralph loops, Claude's goal command, and their own task-list loops) let the agent or a text-reading judge decide completion. Unlazy instead writes a gates file before any work starts, where each gate has a verification command, the expected output and an evidence line that starts as \"pending.\" A checker runs those commands and fills in the evidence, and a ticked box still showing \"pending\" counts as unmet. A large task is split into a tree to a user-chosen depth, with leaves handed to sub-agents, and in orchestrated mode the main agent re-runs a sub-agent's checks itself before advancing. The host then reports that the original skill ran 3 to 4 hours and produced only a login page because it handed out one task at a time. Their edit to run several sub-agents in parallel, with plan.md assigning file ownership, reportedly produced a working demo app in about 2 hours using 10 agents. The video is a single anecdote with no measured success rate, and it includes a sponsor segment and membership plug.",
+ "speakers": [
+  "AI LABS host (unnamed)"
+ ],
+ "orgs": [
+  "AI LABS",
+  "GitHub",
+  "Anthropic",
+  "OpenAI",
+  "Data for SEO"
+ ],
+ "format": "review",
+ "topics": [
+  "testing-verification",
+  "skills-self-improvement",
+  "multi-agent",
+  "coding-agents"
+ ],
+ "tags": [
+  "agent laziness",
+  "false completion claims",
+  "gates file",
+  "verification ledger",
+  "evidence line",
+  "tree decomposition",
+  "depth limit",
+  "orchestrated mode",
+  "independent re-verification",
+  "parallel sub-agents",
+  "file ownership",
+  "explicit give-up",
+  "Ralph loop",
+  "goal command",
+  "skill install",
+  "sponsored segment"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents report work as done without proof, and shrink jobs silently by skipping hard parts.",
+   "detail": "Two failure modes are named: claiming completion after opening only some files, and building the easy parts of a multi-part task while omitting the hard one without mentioning it. The host argues the second is more costly because the summary hides the gap.",
+   "t": "2:45"
+  },
+  {
+   "idea": "Prior completion-check approaches all let the agent or a text-reading judge decide.",
+   "detail": "Ralph loops treat a finish-line string the agent writes as done. Claude's goal command uses a smaller model that reads the conversation rather than the work. The host's own loops had real checks, but the agent graded them.",
+   "t": "4:13"
+  },
+  {
+   "idea": "Unlazy writes a gates file before work begins, so completion is checked against a ledger.",
+   "detail": "Each gate is a checkbox with an outcome, a command that proves it, the exact expected output, and an evidence line starting as pending. The host says the file is used because an instruction to be thorough gets lost in long sessions.",
+   "t": "6:53"
+  },
+  {
+   "idea": "A ticked gate whose evidence still says pending is treated as worse than an unticked one.",
+   "detail": "The checker runs each command, and only when the output contains the expected words does it tick the box and replace pending with the deciding output. An agent-ticked box with pending left underneath is counted as unmet.",
+   "t": "7:30"
+  },
+  {
+   "idea": "Large tasks are split recursively into a tree to a user-set depth, and leaves go to sub-agents.",
+   "detail": "The depth number in the prompt caps how many times the task is split. Leaves should be at least about 10 minutes of real work; if the split makes them smaller, the skill falls back to a default depth of 3, which is solo mode in one session.",
+   "t": "5:25"
+  },
+  {
+   "idea": "In orchestrated mode the main agent does not trust a sub-agent's claim of completion.",
+   "detail": "A fresh sub-agent receives only the plan and its own gates file. When it reports done, the main agent re-runs that task's checks before ticking the plan and handing out the next task. An impossible gate is given up by name with a reason, which appears in the final report.",
+   "t": "8:21"
+  },
+  {
+   "idea": "The original skill ran sequentially and wasted parallel capacity; the host's fix was a prompt change.",
+   "detail": "The skill handed out one task, waited, then handed out the next, even though Claude Code and Codex can run sub-agents in parallel. A test run took 3 to 4 hours and produced only a login page. The host edited the skill's instructions to parallelize, and the video says the prompt is copyable from the description.",
+   "t": "10:56"
+  },
+  {
+   "idea": "Parallel runs need file ownership recorded in plan.md so agents do not overwrite each other.",
+   "detail": "Before building, the skill writes plan.md and then gates.md. plan.md maps each task to the files it owns. The host says that with this change, 10 agents worked at once on different parts of the demo app.",
+   "t": "10:56"
+  },
+  {
+   "idea": "The host reports a single demo run as evidence, with no measured success rate.",
+   "detail": "One app build took nearly 2 hours and produced a demo app with the wanted features. The host says the skill was refined over several test rounds, but shows no before-and-after metrics beyond the run times quoted.",
+   "t": "11:56"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Gates ledger with verifier command",
+   "how": "Before any work, write a gates file. For each gate, record: a checkbox, the outcome that must be true, the command that proves it, the exact expected output words, and an evidence line set to pending. A checker runs each command; when the expected words appear, it ticks the box and replaces pending with the output that decided it. Treat any ticked box whose evidence is still pending as unmet.",
+   "when": "Multi-part tasks where each part can be checked by a command (tests, grep, a curl, a build). Use it to stop an agent from self-certifying completion."
+  },
+  {
+   "name": "Recursive tree decomposition with depth cap",
+   "how": "Ask the agent to split the task into subtasks, then split each again, up to a depth number given in the prompt. Leaves should be roughly 10+ minutes of real work. If leaves come out smaller, fall back to depth 3 and run in one session (solo mode). Leaves go to sub-agents.",
+   "when": "Large builds (a whole app) where one agent would carry too much context. Use depth 2 or 3 for a single feature, about 5 for a whole app, per the host."
+  },
+  {
+   "name": "Orchestrator re-verifies sub-agent claims",
+   "how": "Give each sub-agent only the plan and its own gates file, with no unrelated context. When it reports done, the orchestrator reruns that task's gate commands itself before marking the plan line complete and dispatching the next task. Gates that cannot be met are given up explicitly by name, with a reason, and listed in the final report.",
+   "when": "Orchestrated multi-agent builds where a sub-agent's self-report should not be the final word."
+  },
+  {
+   "name": "Parallel sub-agents with file ownership in plan.md",
+   "how": "Have the plan list each task and the file(s) it owns before any sub-agent starts. Lay the shared foundation first, then dispatch independent tasks to run concurrently. Prompt the skill to parallelize rather than wait on each task.",
+   "when": "Any multi-agent build where agents might edit the same repo. The host's sequential-to-parallel prompt change cut a run from 3-4 hours of a login page to about 2 hours for a working app with 10 agents."
+  },
+  {
+   "name": "Explicit give-up instead of silent drop",
+   "how": "When a gate proves impossible, the agent writes a line naming the gate and the reason, and that line goes into the final report instead of the task being dropped quietly.",
+   "when": "Long autonomous runs where some subtasks may be infeasible and the user needs to see what was not done."
+  },
+  {
+   "name": "Installing unlazy into a project",
+   "how": "Copy the install command from the skill's official GitHub page and run it in the project terminal. Choose the agent(s) from the installer menu: Codex reads .agents directly; for Claude Code, select it so the .claude folder becomes a shortcut to .agents. Choose project scope to test on one project, or global scope to use it everywhere. The skill file in .agents holds the agent guidance. Invoke it by typing the skill name, the depth number, then the full description of what to build.",
+   "when": "When trying the skill on a project. The host chose project scope to limit the test to one codebase."
+  }
+ ],
+ "tools": [
+  "unlazy (agent skill; name as spoken in the video)",
+  "Claude Code",
+  "Codex",
+  "Ralph loop",
+  "Claude goal command",
+  "Opus",
+  "GPT 5.6",
+  "VS Code",
+  "Data for SEO (sponsor)",
+  "model router skill (generic, unnamed)"
+ ],
+ "numbers": [
+  {
+   "claim": "Original unlazy run on a test app: 3 to 4 hours, ending with only a login page.",
+   "t": "9:36"
+  },
+  {
+   "claim": "Default split depth is 3 (solo mode); leaf tasks should be at least about 10 minutes of real work.",
+   "t": "5:25"
+  },
+  {
+   "claim": "Depth 5 used for building the demo app from scratch; depth 2-3 suggested for a single feature.",
+   "t": "10:56"
+  },
+  {
+   "claim": "Parallel version used 10 agents at once and ran nearly 2 hours to produce the demo app.",
+   "t": "11:56"
+  },
+  {
+   "claim": "The host calls the skill's creator GitHub's number one trending author; this is an unverified claim in the video.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "A ticked checkbox whose evidence still says pending should count as unmet; this is a concrete anti-self-grading rule worth copying.",
+  "Ralph-style finish-line strings and LLM judges that read the conversation check what was said, not the artifact; a command-backed gate is a stronger completion signal.",
+  "The original skill's sequential hand-off was the real bottleneck, and a prompt-only change fixed it per the host, which suggests orchestration prompts deserve the same scrutiny as code.",
+  "Evidence is one demo run with no success rate or baseline comparison; the 'insane' title and the 'GitHub number one trending' claim are not backed in the video.",
+  "Sponsor segment (Data for SEO) and a community membership plug are present, which caps quality at 2 under the rubric."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness does checkpoint/resume and plan -> critique loops around Claude Code. The gates file, command-backed evidence, and orchestrator re-running sub-agent checks map directly onto those checkpoints.",
+   "action": "Prototype a gates.md per ProsHarness plan step: each gate = a verification command, expected output substring, and an evidence field the harness fills from real output. The harness, not the agent, ticks gates and rejects any gate ticked without evidence."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS has L2D SkillForge (skill mining) and an open question on skill-worthiness. Command-backed skill checks could be one signal, but the video does not measure skill quality.",
+   "action": "When reading SkillForge design notes, consider whether a candidate skill can be admitted only after its verification commands pass, and compare that signal with the open success-signal question."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

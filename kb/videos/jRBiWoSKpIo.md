@@ -1,0 +1,38 @@
+# Claude Now Builds Custom Interfaces to Plan Your Life
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `jRBiWoSKpIo` · [watch](https://youtu.be/jRBiWoSKpIo) · **date:** 2026-02-02 · **length:** 4:04 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** Better Stack presenter (unnamed in transcript) · **orgs:** Better Stack
+- **topics:** claude-code, coding-agents, mcp-and-tools · **tags:** claude-canvas, claude-code-plugin, tmux, split-pane, ink, bun, terminal-ui, ipc, personal-assistant, skills
+
+> A 4-minute demo of Claude Canvas, an open-source Claude Code plugin that opens tmux split panes rendered with Ink to preview emails, flights and calendar items, with the pane sending user choices back to Claude. The data shown is invented, and the "future of terminal assistants" claim is opinion.
+
+## Summary
+The video demos Claude Canvas, an open-source Claude Code plugin that renders visual previews in a split terminal pane. The speaker says it is installed as a Claude plugin and currently needs tmux, and he names a fork for iTerm and Apple Terminal. Each prompt triggers one of three skills (flight, document, calendar), which runs a TypeScript CLI with bun. That CLI spawns a tmux split pane and renders the UI with Ink, the React renderer used by Claude Code. Email drafts and flight options appear as previews, and the speaker shows arrow-key selection and seat picking. He points out that the flight prices and seat maps are made up by Claude, not pulled from an API. The pane and Claude Code communicate over inter-process communication, so selections can flow back to the agent. The video closes with the speaker's opinion that terminal agents will become personal assistants, though he would not book flights that way.
+
+## Key ideas
+- **Claude Canvas is a Claude Code plugin that turns the terminal into a preview surface: prompts can open a visual pane for emails, flights or calendar items instead of plain text output.** — Open source, installed as a Claude plugin. Currently requires tmux, though the speaker says there are ways around that. He calls out a fork for native iTerm and Apple Terminal. ([0:00](https://youtu.be/jRBiWoSKpIo?t=0))
+- **The request path is prompt, then skill, then CLI, then pane. One of three skills (flight, document, calendar) is triggered, a bun-run TypeScript CLI receives arguments, and spawn creates a tmux split pane that renders with Ink.** — Ink is the React library for terminal UIs, the same one used to build Claude Code. The three skills named in the video are flight, document and calendar. ([0:00](https://youtu.be/jRBiWoSKpIo?t=0))
+- **Preview-before-action is the practical use shown: an email draft is rendered with From, To and Subject fields before anything is sent.** — The demo prompt asks Claude to write the email and then preview it with canvas spawn. The speaker notes that a Gmail MCP server would fill From and To automatically, and that he typed them in for the demo. ([0:00](https://youtu.be/jRBiWoSKpIo?t=0))
+- **The demo flight data is not real. Claude invents the flight options and seat maps, so the video demonstrates the UI and interaction pattern, not a booking integration.** — The speaker says the data is not connected to an MCP server or an external API and that Claude is making the information up. ([1:18](https://youtu.be/jRBiWoSKpIo?t=78))
+- **The side pane talks back to Claude Code over inter-process communication, so a user's choice in the pane (flight, seat) can be read by the agent. This is what makes it an interactive picker rather than a static render.** — The video does not show the IPC mechanism. The speaker says the original version used native Ghostty and moved to tmux because it was easier. ([2:39](https://youtu.be/jRBiWoSKpIo?t=159))
+- **The speaker's conclusion is opinion. He thinks terminal agents will become personal assistants that get email, messages and calendar access, but he would not use this for booking flights.** — No evidence is offered beyond the demo and the developer habit of using natural language to control machines. ([2:39](https://youtu.be/jRBiWoSKpIo?t=159))
+
+## Techniques
+- **Skill-routed CLI that spawns a split pane** — Give each domain (flight, document, calendar) a skill. The skill runs a typed CLI script with bun and passes the relevant arguments. The script uses a spawn command to open a tmux split pane and renders the UI there with Ink (React for terminals). Only the mechanism is described in the video; no code is shown. *When:* When an agent action needs a structured preview or a multi-field view that is awkward as plain text, and you want to stay inside the terminal agent.
+- **Preview a draft in a pane before sending** — Prompt along the lines of: write the email from X to Y about Z, then preview it using canvas spawn. The pane shows From, To and Subject. The From and To fields come from the prompt or from a connected MCP server such as Gmail. *When:* For any outbound or irreversible action (email, booking) where the user should review a rendered draft first.
+- **Bidirectional pane-to-agent IPC for user selections** — The split pane sends the user's choice (arrow-key selection, seat pick) back to Claude Code over inter-process communication, so the agent can continue with that input. The IPC details are not shown. *When:* For human-in-the-loop choices among options, such as approvals, pickers or confirmations, where a plain prompt is too thin.
+
+## Numbers
+- Demo flight options shown at $445 and $89, both generated by Claude and not from a live API. ([1:18](https://youtu.be/jRBiWoSKpIo?t=78))
+- Canvas supports three skills at the time of the video: flight, document, calendar. ([0:00](https://youtu.be/jRBiWoSKpIo?t=0))
+
+## Hot takes
+- The speaker frames a terminal coding agent as a future personal assistant that reads email, messages and calendars, and he says he would not use it to book flights.
+- The demo's flight and seat data is fabricated by Claude, so the video shows interaction design rather than a working booking flow.
+- Thin substance for the title. The video is about 4 minutes and gives little detail on the implementation beyond the skill, CLI, pane and IPC outline. Quality is capped at 2 for that reason.
+
+## Tools mentioned
+Claude Code, Claude Canvas (Claude Code plugin), tmux, bun, Ink, Ghostty, iTerm, Apple Terminal, Gmail MCP server (mentioned as a possible source of From/To fields, not demoed), Astro (creator mentioned as suggesting generated UI)
+
+## Relevance to our work
+- **prosharness** (1/3): ProsHarness wraps the Claude Code CLI and has phone-driven approvals. A tmux split pane that returns the user's choice to the agent via IPC is a related pattern for in-terminal approvals. → *Look at how ProsHarness could show approval or plan-critique choices in a tmux side pane and return the answer to the running Claude Code session, as a lighter alternative to phone approvals. Check the Canvas repo for the IPC mechanism, which the video does not show.*

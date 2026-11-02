@@ -1,0 +1,175 @@
+{
+ "one_line": "Mike Phipps (Gates Foundation) explains why the Strategic Intelligence Platform's defensible asset is a knowledge graph of tacit process knowledge, served to agents through MCP rather than a custom chat UI.",
+ "summary": "Mike Phipps describes the Strategic Intelligence Platform (SIP), an enterprise knowledge graph the Gates Foundation rolled out to about 4,000 staff in the month before the talk. His argument is that the durable moat is the tacit knowledge of internal processes, such as field meanings, joins, limitations and reporting conventions, not the chat UI, which users already get from Claude or ChatGPT. The team consolidated siloed structured and unstructured systems into a lakehouse, curated them through dedup, extraction, chunking and governance steps, and modeled them as one graph in Neo4j. The graph has several hierarchies, including an additive DAG for funding and a management hierarchy with precomputed roll-up edges, plus entity stitching across HR, org and meeting data. The platform is exposed to agents through a forked Neo4j MCP server with state passthrough, and constrained workflow apps are planned. Evals built from data owners' reporting standards are run against the live graph and feed back into domain rules and schema descriptions; remaining misses are mostly ambiguous questions rather than wrong answers. No pass@1 or stability numbers were given.",
+ "speakers": [
+  "Mike Phipps"
+ ],
+ "orgs": [
+  "Gates Foundation",
+  "Neo4j"
+ ],
+ "format": "talk",
+ "topics": [
+  "data-engineering",
+  "mcp-and-tools",
+  "enterprise-adoption"
+ ],
+ "tags": [
+  "knowledge-graph",
+  "neo4j",
+  "mcp",
+  "data-modeling",
+  "tacit-knowledge",
+  "entity-resolution",
+  "governance",
+  "evals",
+  "stability-testing",
+  "graphrag",
+  "enterprise"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The defensible part is tacit process knowledge, not the interface",
+   "detail": "The team judged the chat UI not defensible because users already have Claude or ChatGPT. Their moat is modeling how internal processes work, and they serve that through MCP where users already are.",
+   "t": "1:11"
+  },
+  {
+   "idea": "Answers must match how the organization answered before",
+   "detail": "Data owners have to explain field meanings, joins, limitations, safeguards, security trimming and reporting conventions. The agent has to reproduce past answering conventions, not just answer plausibly.",
+   "t": "6:33"
+  },
+  {
+   "idea": "AI makes governance more urgent",
+   "detail": "Data that was hard to reach before becomes easy for agents to reach. PII must be masked, sensitive data classified, and per-user entitlements enforced.",
+   "t": "8:00"
+  },
+  {
+   "idea": "Use hierarchies carefully and precompute roll-ups",
+   "detail": "The funding hierarchy is an additive DAG, so all levels must be considered together. The management hierarchy is different because each level matters on its own, so the team precomputes a derived roll-up edge from direct and indirect management relations. One investment can have two lenses, funding and management.",
+   "t": "9:29"
+  },
+  {
+   "idea": "Stitch entities across siloed systems so the agent can traverse them",
+   "detail": "HR, org charts, meeting attendees and owners were in separate systems. Linking common entities lets the agent reason across org structure, and documents are chunked and connected back to that structure.",
+   "t": "12:01"
+  },
+  {
+   "idea": "Building the model exposes what you do not know",
+   "detail": "Modeling the domain surfaces gaps in understanding and datasets that are not yet included. The authors treat this as a valuable side effect of the work.",
+   "t": "15:04"
+  },
+  {
+   "idea": "Evals drive data-model fixes, and repeat-question stability is a test",
+   "detail": "Targeted eval questions were written with data owners, split into complexity tiers, and paired with a graph query that runs against the live graph. Stability is measured by asking the same question several times and using an LLM judge. Gaps found this way update domain rules and schema descriptions.",
+   "t": "17:30"
+  },
+  {
+   "idea": "Remaining failures are ambiguity, not wrong answers",
+   "detail": "The residual misses are questions that have a right answer but not the one the user meant. The team's constant struggle is closing that ambiguity gap.",
+   "t": "18:58"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Tacit-knowledge-first data modeling with data owners",
+   "how": "Interview the owners of each system of record about field meanings, joins, data limitations, safeguards, security trimming and reporting conventions, then encode those rules in the graph and its schema descriptions.",
+   "when": "Enterprise data is siloed and the agent must answer the way the organization already answers."
+  },
+  {
+   "name": "Graph with explicit hierarchy types and precomputed roll-ups",
+   "how": "Model additive DAG hierarchies (funding) separately from tree-like hierarchies where each level matters (management). Precompute derived roll-up edges, such as direct plus indirect management, as shortcuts that are created after the base edges.",
+   "when": "The same entities need to be rolled up in different ways, or traversal across levels has to be fast and simple."
+  },
+  {
+   "name": "Cross-system entity stitching",
+   "how": "Find common entities such as people, teams and organizations across source systems, then link them so the agent can traverse across system boundaries at query time.",
+   "when": "Context for an answer is split across HR, project, meeting and document systems."
+  },
+  {
+   "name": "Document chunks as graph nodes with full-text plus graph retrieval",
+   "how": "Meetings link to documents, documents to semantic chunks, and chunks back to the structured graph. Full-text indexes support search, and the agent can also do pure graph traversal.",
+   "when": "Unstructured documents must be combined with structured records in one retrieval layer."
+  },
+  {
+   "name": "Curation pipeline before the graph",
+   "how": "Run dedup, document ordering, cross-document inconsistency handling, structured field extraction, semantic chunking, figure-to-text conversion, tagging that creates edges, and metadata that becomes graph properties. Governance steps mask PII and classify sensitive data.",
+   "when": "Loading heterogeneous structured and unstructured sources into one graph."
+  },
+  {
+   "name": "Expose the graph as an MCP server with state passthrough",
+   "how": "Fork an off-the-shelf Neo4j MCP server, update its schema, and pass conversation IDs and message numbers back to the platform. Use MCP apps and sandboxed agents for constrained workflows that run on the same backend.",
+   "when": "Users already work in Claude, Cowork or ChatGPT and you do not want to build your own chat UI."
+  },
+  {
+   "name": "Per-question graph-query ground truth plus stability checks",
+   "how": "For each eval question, write a graph query. At eval time, run it against the live graph and compare the agent's answer with the result. Ask the same question several times and use an LLM judge to measure pass@1 stability. Feed failures back into domain rules and schema descriptions.",
+   "when": "The underlying data changes often and you need eval answers that stay current."
+  }
+ ],
+ "tools": [
+  "Neo4j",
+  "MCP",
+  "Claude",
+  "ChatGPT",
+  "Cowork"
+ ],
+ "numbers": [
+  {
+   "claim": "SIP rolled out to about 4,000 people at the Gates Foundation in production, the month before the talk",
+   "t": "1:11"
+  },
+  {
+   "claim": "Foundation has run for 25+ years",
+   "t": "2:35"
+  },
+  {
+   "claim": "Over 2,000 grants in one year, many over $5 million, into 100+ countries",
+   "t": "3:58"
+  },
+  {
+   "claim": "About 4,000 Foundation employees; annual disbursement over $7 billion",
+   "t": "3:58"
+  },
+  {
+   "claim": "Over 80 strategy teams, each with annual reviews that set the yearly budget",
+   "t": "8:00"
+  },
+  {
+   "claim": "Funding hierarchy has five levels",
+   "t": "9:29"
+  },
+  {
+   "claim": "The graph connects four source systems in one graph and one semantic layer exposed via MCP",
+   "t": "13:32"
+  }
+ ],
+ "hot_takes": [
+  "The chat UI is not a defensible product; the defensible part is modeled internal process knowledge that survives model upgrades.",
+  "AI makes data governance more urgent because data that was hard to reach is now easy for agents to reach.",
+  "Eval gaps are mostly ambiguity in what the user meant, not outright wrong answers."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already has GraphRAG, hybrid retrieval and provenance, and this talk shows a per-question live-graph eval and a repeat-question stability check that could strengthen its RAGAS evals.",
+   "action": "Add a stability eval to MemoryMesh: run each GraphRAG eval question several times, have an LLM judge score answer agreement, and store the expected graph query or retrieval result per question so ground truth follows the live data."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Nothing in the talk concerns checkpointing, plan critique, loops or harness design for Claude Code runs.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The concrete curation, hierarchy and eval-feedback patterns apply to any agent that answers questions over enterprise data.",
+   "action": "Read the talk's data-curation and eval-feedback sections as a checklist when designing any future enterprise-data agent, and check whether ambiguous questions are logged separately from wrong answers."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

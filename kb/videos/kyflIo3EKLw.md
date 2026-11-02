@@ -1,0 +1,49 @@
+# Here's What They Didn't Tell You About Gemini 3
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `kyflIo3EKLw` · [watch](https://youtu.be/kyflIo3EKLw) · **date:** 2025-12-02 · **length:** 8:58 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** AI LABS host (name not given in transcript) · **orgs:** Google, Anthropic, OpenAI
+- **topics:** models-research, coding-agents, vibe-coding-app-building, context-engineering · **tags:** gemini-3, gemini-cli, google-antigravity, google-ai-studio, ui-generation, one-shot-prompting, model-comparison, context-window, benchmarks, harness-vs-model, claude-code, gpt-5.1
+
+> Hands-on review of Gemini 3 vs Claude and GPT-5.1 for UI generation and multi-phase coding; the speaker finds Gemini 3 strong at UI design but credits the agent harness, not the model, for most of the difference.
+
+## Summary
+The AI LABS host tests Gemini 3 right after its launch, starting with the official benchmarks (LiveCodeBench Pro, SWE-bench Verified, Terminal-Bench 2) and then running his own unguided UI tests. A "fake macOS" one-shot test in Google Antigravity and Gemini CLI looked no different from Claude's output, while Google AI Studio's code assistant produced a much better UI, which he attributes to the agent rather than the model. He then runs a multi-phase macOS typing-practice app build (same stories and instructions for Claude and Gemini CLI, with Claude used for planning) and reports that Gemini CLI finished about 20 minutes sooner and used only 4% of its context by story 7, when Claude had to compact. Claude needed about 20 re-prompts to fix an invisible-text bug, and Claude skipped the sound effects, while Gemini CLI waited on build commands and then fixed the bug. He concludes Gemini 3 is an excellent design model, that the coding gains look less revolutionary than the hype, and that Claude Code's surrounding tooling still gives the better overall experience. The evidence is one run per test with no repeats, so treat the comparisons as anecdotal.
+
+## Key ideas
+- **Official benchmarks are a starting point, not proof. The speaker says his own test in a real environment matters more than leaderboard numbers.** — He reads the Gemini 3 launch figures (LiveCodeBench Pro, SWE-bench Verified 67.2%, Terminal-Bench 2) and notes Claude 4.5 is about 1 point ahead on SWE-bench Verified, then says real-environment testing is what counts. ([1:00](https://youtu.be/kyflIo3EKLw?t=60))
+- **For the same model, the agent harness can change the output more than the model does. He credits Antigravity's weaker result to the agent, not Gemini.** — Antigravity output with Gemini 3 looked like Claude's output in the same agent. Google AI Studio's code assistant gave a much better UI, which he attributes to the agent setup rather than the model. ([2:24](https://youtu.be/kyflIo3EKLw?t=144))
+- **Unprompted asset generation: AI Studio's agent added a wallpaper-generation feature and generated images with an image model when the speaker only asked about it.** — The speaker asked whether the wallpaper came from the image model. The agent said no and built a feature that generates wallpapers with the image model. He presents this as agents now generating their own assets. ([3:52](https://youtu.be/kyflIo3EKLw?t=232))
+- **Output language and format shifted the UI quality. GPT-5.1 looked better when asked for HTML, while Gemini's HTML and TypeScript outputs were not compared on equal footing.** — He says GPT-5.1 produced better gradients and shadows when asked for HTML, and that the Gemini UI he first saw was in HTML while the later one was in TypeScript. ([5:03](https://youtu.be/kyflIo3EKLw?t=303))
+- **A multi-phase build test showed a different picture on process. Gemini CLI was clunky but faster to finish, and Claude's context filled up earlier.** — Both models got the same eight-story phase-1 plan made by Claude, with the same instructions. Claude reached story 7 and had to compact its context. Gemini had used 4% of its context by then, and finished first by about 20 minutes. The speaker says Gemini CLI's context is probably 1M tokens, but he could not confirm this from the model card. ([6:03](https://youtu.be/kyflIo3EKLw?t=363))
+- **Bug-fix efficiency and instruction following differed. Claude needed many re-prompts for an invisible-text bug and skipped sound effects. Gemini CLI fixed the bug with a codebase agent and implemented the sound effects.** — He says he re-prompted Claude about 20 times to fix the missing text, while Gemini CLI fixed it after running a codebase agent. Gemini CLI also waited about 10 minutes on build commands that had already finished. ([7:15](https://youtu.be/kyflIo3EKLw?t=435))
+- **Bottom line: Gemini 3 looks like a strong UI design model, but the speaker does not expect a revolution in coding. He still prefers Claude Code's tooling and integrations overall.** — He calls Gemini's app design close to the original reference and minimal. He expects overhype and says the surrounding agent tools, not the raw model, currently give the better everyday experience. ([8:43](https://youtu.be/kyflIo3EKLw?t=523))
+
+## Techniques
+- **Same-spec head-to-head coding test** — Have a planning model (Claude here) split the app into phases, each with user stories. Give every agent the identical stories and instructions, then stop after phase 1 to limit cost and run time. Record time to finish, context-window use, number of re-prompts to fix a bug, and whether each instruction was followed. *When:* Comparing coding agents or models on a realistic multi-step build, not a one-shot prompt.
+- **Separate model from harness** — Run the same model through several agents (Antigravity, Gemini CLI, AI Studio's code assistant) and compare with a different model in the same agent. Whichever variable changes the output is the one that matters. *When:* Deciding whether a poor result is a model problem or an agent/tooling problem, such as when evaluating ProsHarness or agent backends.
+- **One-shot UI test with no guidance** — Ask for a complex, fully usable UI (here a macOS clone) with no styling guidance and an instruction not to extend an existing codebase. Then compare visuals, animations and functionality across models, noting whether the agent adds unrequested assets. *When:* Quick check of design taste and creativity before committing to a model for front-end work.
+- **Track context-window use per story** — Read the context-usage readout in the CLI after each story to see when compaction will trigger. Compare this across agents at the same story index. *When:* Long multi-story builds where compaction or context limits could change the result.
+
+## Numbers
+- LiveCodeBench Pro: speaker says Gemini 3 beats Claude 4.5 by nearly 1000 points and GPT-5.1 by 200 points, as read from the model card (unverified; the 1000-point gap looks implausible and should be checked against the source) ([1:00](https://youtu.be/kyflIo3EKLw?t=60))
+- SWE-bench Verified: Gemini 3 solves 67.2%, about 1 point behind Claude 4.5 per the speaker ([1:00](https://youtu.be/kyflIo3EKLw?t=60))
+- Terminal-Bench 2: the speaker says Gemini shows a large gap against other frontier models, but no figure is given ([1:00](https://youtu.be/kyflIo3EKLw?t=60))
+- Phase 1 has eight user stories; the test had three phases planned but only phase 1 was run ([5:03](https://youtu.be/kyflIo3EKLw?t=303))
+- Gemini CLI used 4% of its context window through story 7 of phase 1; Claude reached story 7 and had to compact ([6:03](https://youtu.be/kyflIo3EKLw?t=363))
+- Gemini CLI finished about 20 minutes ahead of Claude in phase 1 ([6:03](https://youtu.be/kyflIo3EKLw?t=363))
+- Claude needed about 20 re-prompts to fix the missing-text bug; the speaker says the fix took about 4 re-prompts in one place and 20 in another (he says 'four times' then '20 times') ([7:15](https://youtu.be/kyflIo3EKLw?t=435))
+- Gemini CLI waited about 10 minutes on build commands after they had completed ([7:15](https://youtu.be/kyflIo3EKLw?t=435))
+- Speaker estimates Gemini CLI's context window at 1 million tokens, but could not confirm it from the model card ([6:03](https://youtu.be/kyflIo3EKLw?t=363))
+
+## Hot takes
+- Gemini 3 is the best UI/design model available, but the coding gains are not revolutionary (speaker's view, based on one run).
+- Agent tooling such as Claude Code currently gives a better overall experience than the raw model, even when the model looks stronger.
+- Leaderboards like SWE-bench and Terminal-Bench do not predict real-environment results, so a real test is needed.
+- Capped at quality 2: the tests are single anecdotal runs with no repeats, and the phase-1 result was not finished. Title promises a reveal of hidden info, but the content is a hands-on review with moderate substance.
+
+## Tools mentioned
+Gemini 3 Pro, Gemini CLI, Google Antigravity (VS Code fork), Google AI Studio (Code Assistant), Claude 4.5, Claude Code, Claude desktop app, Claude canvas, GPT-5.1, GPT-5, nano banana (image model, named by the speaker)
+
+## Relevance to our work
+- **agentos** (1/3): AgentOS routes requests across models (strategy routing), and this video shows that the same model can give very different results depending on the harness. The evidence is anecdotal, though. → *When benchmarking AgentOS routing choices, run a multi-phase task on our own harness with several models and track re-prompts and context use per story, not one-shot leaderboard numbers.*
+- **prosharness** (1/3): ProsHarness wraps Claude Code, and the speaker's point that the harness can matter more than the model applies directly to ProsHarness's value. The evidence is anecdotal. → *When evaluating ProsHarness against other backends, keep the model fixed and vary only the harness, then measure re-prompts, context use and whether instructions were followed.*

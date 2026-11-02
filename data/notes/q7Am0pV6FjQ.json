@@ -1,0 +1,158 @@
+{
+ "one_line": "Goal Buddy, an open-source plugin for Claude Code and Codex, wraps the native goal command with file-based state, an upfront \"oracle\" for done, and Scout/Worker/Judge agent roles.",
+ "summary": "The video walks through Goal Buddy, an open-source plugin that installs for both Claude Code and Codex and adds structure around Claude Code's native goal command for long-running tasks. The speaker argues the native goal has four problems: completion is a yes/no decision from a small model (Haiku) judging the conversation, state exists only in chat context that degrades after compaction, there is no local state file, and the agent decides task breakdown itself. He contrasts it with the earlier Ralph Wiggum plugin, which checked completion with exact-match shell scripts. Goal Buddy's fix is an oracle defined before work starts, a state.yaml and goal.md on disk, and three roles: a read-only Scout and Judge, a single-task Worker with edit access, and a PM on the main thread that is the only role allowed to mark the goal done. A goal prep step asks clarifying questions first, then the loop maps, slices, executes and audits, with a live dashboard. Two anecdotal tests follow: a specification-with-tests task that finished but ran fully sequentially, and a vague landing-page prompt where the oracle became \"dev server up plus browser walkthrough of each section,\" producing a more complete site than native goal but taking longer. No benchmarks, timings, token counts or failure rates are given.",
+ "speakers": [],
+ "orgs": [
+  "AI LABS"
+ ],
+ "format": "review",
+ "topics": [
+  "claude-code",
+  "multi-agent",
+  "agent-architecture",
+  "context-engineering"
+ ],
+ "tags": [
+  "goal-buddy",
+  "claude-code-goal",
+  "ralph-wiggum-plugin",
+  "codex",
+  "oracle",
+  "state-yaml",
+  "judge-agent",
+  "scout-agent",
+  "long-running-agents",
+  "haiku-evaluator",
+  "pm-loop"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Native goal judges completion with a small model returning yes/no, which makes 'done' subjective; the Ralph Wiggum plugin was the opposite, using exact-match shell checks.",
+   "detail": "The speaker frames these as two ends of a spectrum: the shell-script check is too literal, the small-model judgment is too vague for things that cannot be quantified.",
+   "t": "1:05"
+  },
+  {
+   "idea": "Native goal keeps no local state, so chat context is the only source of truth, and that degrades after compaction on long runs.",
+   "detail": "Resuming with the Claude resume command keeps the goal, but the agent only knows where it stopped from the chat context. Context bloat and compaction are called out as the main risks for hours-long runs. Native goal also does its own task breakdown in the main agent.",
+   "t": "1:05"
+  },
+  {
+   "idea": "Requiring an explicit, checkable definition of done before work starts is the central fix.",
+   "detail": "The speaker says an unclear definition of done is never right for agents. Goal Buddy's oracle is the done criteria written before starting, programmatic where possible.",
+   "t": "2:32"
+  },
+  {
+   "idea": "Goal Buddy splits the loop into three agents with fixed access levels: Judge (read-only, highest reasoning effort, returns JSON with approved and rejected decisions), Scout (read-only, low effort, writes an evidence receipt), Worker (only agent with edit access, one task at a time).",
+   "detail": "The PM is the main thread that coordinates the workflow and is the only authority that can mark a task done. Claude Code agents use markdown definitions and Codex agents use TOML.",
+   "t": "3:40"
+  },
+  {
+   "idea": "The goal prep step asks questions until intent is clear, then writes goal.md (request, answers, objective, oracle) and state.yaml (rules, agents, task IDs, active-task field, dashboard link).",
+   "detail": "In the UI test, it also asked for the tech stack. The oracle is the piece the speaker calls most important.",
+   "t": "6:08"
+  },
+  {
+   "idea": "Work is broken into slices defined as safe, easy to verify, and runnable individually, not as small tasks; each slice lists allowed files, verification steps and a stop condition.",
+   "detail": "The Judge sequences the Scout's findings into the fewest possible vertical slices before the Worker runs them one by one.",
+   "t": "6:08"
+  },
+  {
+   "idea": "Loop order is Scout maps, Judge slices, Worker executes each slice, then the PM runs a final audit and marks the goal complete.",
+   "detail": "A dashboard shows which agent is active, which tasks are queued and which are completed. The speaker says the user still has to check the results afterwards.",
+   "t": "7:36"
+  },
+  {
+   "idea": "The coding run was fully sequential, and the speaker says parallelization should be added. A subjective UI task was made checkable by redefining the oracle.",
+   "detail": "For the landing page, the oracle became dev server up plus browser walkthroughs confirming each section. Native goal produced one simple HTML page; Goal Buddy took longer and produced a more complete app.",
+   "t": "9:04"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Oracle-first done criteria",
+   "how": "Before any work, write the goal in agent-readable terms plus an oracle in goal.md. Use a programmatic check where possible (for example, all tests pass with the expected behavior). For subjective work, use observable checks such as the dev server running and a browser walkthrough confirming each section.",
+   "when": "Any long-running agent run where a model judging its own completion is unreliable, and any subjective deliverable such as a UI, which needs an observable proxy."
+  },
+  {
+   "name": "Role-separated agents with access limits",
+   "how": "Define a read-only Judge with the highest reasoning effort that returns JSON approved/rejected decisions with rationale; a read-only Scout at low effort that writes an evidence receipt; and one Worker with edit access that runs one slice at a time. Only the main-thread PM marks tasks done. Use markdown agent definitions for Claude Code and TOML for Codex.",
+   "when": "Autonomous runs where the agent doing the work should not be the one grading it, and where you want reasoning effort set per role."
+  },
+  {
+   "name": "File-based run state instead of chat history",
+   "how": "Keep state.yaml (goals, rules, tasks with IDs and assigned agent, an active-task field, a dashboard link), a progress file, and a findings directory. The loop reads and updates these files each step rather than relying on the conversation.",
+   "when": "Runs that may span a session end, a resume, or compaction, where the agent has to know where it stopped without the chat context."
+  },
+  {
+   "name": "Slice contracts",
+   "how": "Split the work into slices that are safe, verifiable, and individually runnable. Each slice states its allowed files, how to verify it, and when to stop. A judge step merges findings into the fewest vertical slices before workers start.",
+   "when": "Multi-file implementation handed to a worker agent, where each worker needs a clear expected output."
+  },
+  {
+   "name": "Clarify before looping",
+   "how": "Run a prep step that asks questions until intent, scope and tech stack are clear, then write the goal file from the answers before any implementation begins.",
+   "when": "Vague one-line requests where the native goal command would start building right away."
+  },
+  {
+   "name": "Install and start a run",
+   "how": "Copy the install command from the Goal Buddy project (the link is in the video description, not spoken) and paste it into the project folder; it installs as a plugin for Claude Code and Codex. Start a new session, run the goal prep command and answer its questions, then copy and run the loop command it generates, which sets the goal to the goal.md file. Resume with Claude's resume command if the session ends. Exact command strings are not shown in the transcript.",
+   "when": "Starting a Goal Buddy run on an existing project, or resuming one after the session ended."
+  }
+ ],
+ "tools": [
+  "Goal Buddy",
+  "Claude Code (goal command, resume command)",
+  "Codex",
+  "Ralph Wiggum plugin",
+  "Haiku (native goal evaluator)"
+ ],
+ "numbers": [
+  {
+   "claim": "Native goal's completion check is a small model (Haiku) returning a yes/no decision on the conversation so far.",
+   "t": "1:05"
+  },
+  {
+   "claim": "Judge runs at the highest reasoning effort; Scout runs at low reasoning effort. Worker is limited to one task at a time.",
+   "t": "3:40"
+  },
+  {
+   "claim": "The coding test ran fully sequentially with no use of Claude Code parallelism.",
+   "t": "9:04"
+  },
+  {
+   "claim": "The video gives no benchmarks, timings, token counts, cost figures or failure rates for either test; the landing-page comparison says only that Goal Buddy took longer.",
+   "t": "10:03"
+  }
+ ],
+ "hot_takes": [
+  "Title says 'greatest AI coding system', but the evidence is two single runs of one tool with no timings, cost figures or failure rates.",
+  "The speaker says the coding run was sequential and did not use Claude Code parallelism, and that agents may have hallucinated, so the results are unverified beyond the demo.",
+  "The critique of native goal (small-model yes/no judge, no local state, compaction degradation) is a useful framing even without this tool.",
+  "The subjective-task result depends on browser walkthroughs; the video calls this quantifiable but does not show the checks themselves.",
+  "Much of the runtime is jokes and channel plugs (AI Labs Pro, hype button); technical detail per minute is low."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 3,
+   "why": "ProsHarness already wraps Claude Code with checkpoint/resume of long runs and plan/critique/debate; Goal Buddy's file-based state, oracle, and read-only judge/scout roles overlap directly with that design.",
+   "action": "Compare ProsHarness checkpoint/resume against Goal Buddy's state.yaml and goal.md: make the PM role the only one that can mark a task done, and give the judge read-only access with its own reasoning-effort setting."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The oracle-first pattern (programmatic done check, or observable checks for subjective work) applies to any long-running agent run.",
+   "action": "Write a programmatic oracle (tests pass, dev server up, browser walkthrough) into the task file before starting any long agent run."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Long-running agent sessions in AgentOS would hit the same chat-context and compaction problems described, but the video offers no new infrastructure ideas.",
+   "action": "Check whether AgentOS long-run sessions depend on chat context for progress state; if so, add a state file with explicit done criteria."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,153 @@
+{
+ "one_line": "Anant Srivastava argues enterprise teams should decide deliberately whether knowledge lives in the prompt, in retrieval/memory, or in fine-tuned weights, using rate of change, scope, and behavior-vs-facts as the test.",
+ "summary": "The talk says the key architecture question for enterprise AI is where knowledge reaches inference: the prompt, a retrieval or memory layer, or model weights via fine-tuning. Speaker says most teams make this choice by accident, escalating from prompt to retrieval to fine-tuning when answers are wrong, and that every prompt edit, indexed document, or training sample quietly decides where knowledge lives. He gives a diagnostic lens: prompt for small, stable behavior and tone; memory for knowledge that is large, changing faster than retraining, citable, and access-scoped; weights only for things that have stopped changing, such as formats and reflexes rather than facts. He uses a worked example where a product catalog pushed into the prompt leaked into weights after fine-tuning on support tickets, producing nonexistent product names. He warns that fine-tuning on runbooks is usually a retrieval problem in disguise, and that fine-tuning is worth it for a stable, human-converged \"center\" of decisions or to cut cost with a small model, with drift monitoring. He closes with a loop: signals from sessions become durable memory, stable patterns move into weights, and once the model knows a format it no longer needs retrieved examples. The talk has no benchmarks and is conceptual, with some ASR errors in the captions.",
+ "speakers": [
+  "Anant Srivastava"
+ ],
+ "orgs": [
+  "Mount Sinai",
+  "IMO Health"
+ ],
+ "format": "talk",
+ "topics": [
+  "context-engineering",
+  "rag-retrieval",
+  "training-finetuning-rl",
+  "memory"
+ ],
+ "tags": [
+  "fine-tuning vs RAG",
+  "prompt vs memory vs weights",
+  "knowledge placement",
+  "architecture decisions",
+  "access control in retrieval",
+  "AST chunking",
+  "drift monitoring",
+  "human-in-the-loop labeling",
+  "cost reduction with small models",
+  "medical claims coding"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Knowledge placement is an architecture decision that most teams make by accident.",
+   "detail": "Teams escalate from prompt to retrieval to fine-tuning when answers are wrong, and each individual edit (prompt tweak, indexed doc, training sample) quietly decides where knowledge lives. Nobody owns the resulting architecture, so it accumulates rather than being designed.",
+   "t": "0:13"
+  },
+  {
+   "idea": "Treat prompt, memory, and weights as three different tools, not a ladder to climb.",
+   "detail": "Prompt holds behavior (tone, persona, escalation rules). Memory holds knowledge. Weights hold how to reason or reflexes. The speaker rejects the idea that you move up from prompt to fine-tuning as a default.",
+   "t": "0:13"
+  },
+  {
+   "idea": "Example of accidental architecture: a catalog in the prompt leaks into weights.",
+   "detail": "A support assistant's prompt was edited for tone, refund policies were added to retrieval, a product catalog was shoved into the prompt, and then the model was fine-tuned on six-month-old tickets. The result was invented product names, because the catalog had leaked into the weights.",
+   "t": "2:27"
+  },
+  {
+   "idea": "Prompt is for small, stable, behavioral content, not facts.",
+   "detail": "Stuffing facts into the prompt costs tokens on every call and triggers lost-in-the-middle effects. A good prompt example is a SaaS support agent's tone, its escalation after three failures, and its next-step guidance. The speaker counts authored instructions such as markdown files as part of the prompt.",
+   "t": "5:38"
+  },
+  {
+   "idea": "Memory is for knowledge that is large, changes faster than you can retrain, and must be citable and access-scoped.",
+   "detail": "This covers both agent memory about a user and external enterprise knowledge served through RAG. Access control belongs here, so the system can decide who sees which data. Retrieval should be filtered by metadata such as repo and permissions rather than returning many loosely related chunks.",
+   "t": "6:47"
+  },
+  {
+   "idea": "Weights should only hold what has stopped changing, and the decision rests on rate of change.",
+   "detail": "Locking in a moving boundary is the subtle failure, for example fine-tuning on runbooks or docs that are still being edited. Fine-tuning belongs to reflexes such as formats and selection between formats, not to facts. Retraining should need a strong reason.",
+   "t": "9:25"
+  },
+  {
+   "idea": "When a model gives wrong answers, check retrieval before fine-tuning.",
+   "detail": "In the runbook example, the model needed the right chunks rather than new weights. Fine-tuning on procedures bakes in old information that will go stale. The speaker says to fix the retrieval problem first.",
+   "t": "12:06"
+  },
+  {
+   "idea": "Fine-tune a stable center of human-labeled decisions and monitor drift.",
+   "detail": "In hard tasks such as content moderation or claims, a frontier model makes recommendations and humans correct them. Patterns settle into a stable center, where override rates flatten, and that center is a candidate for fine-tuning. A contested edge still needs humans, and drift in the center must be watched.",
+   "t": "13:09"
+  },
+  {
+   "idea": "The fine-tuning test is convergence plus a real reason: capability or cost.",
+   "detail": "Fine-tune only once the information has stopped changing and the humans have converged. Also have a clear reason. Frontier models are usually capable enough, so the usual reason is cost. A small model fine-tuned on the task can handle high volume cheaply.",
+   "t": "16:11"
+  },
+  {
+   "idea": "Architecture is a circulating loop, not a one-way pipeline.",
+   "detail": "Context produces signals, and some become durable memory. Retrieval patterns that recur get trained into weights. Once the model reflexively knows a format, the system stops retrieving examples for it, so the agent improves by doing its job.",
+   "t": "17:16"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Knowledge placement diagnostic",
+   "how": "For each piece of knowledge, ask: is it small, stable, and about behavior (put it in the prompt)? Is it large, changing faster than retraining, citable, or access-scoped (put it in memory/RAG)? Has it stopped changing, and is it a format or reflex (candidate for weights)? Check each item before deciding.",
+   "when": "Designing or auditing an enterprise agent where the team keeps adding fixes in different places and cannot say where knowledge lives."
+  },
+  {
+   "name": "Retrieval-first debugging",
+   "how": "When the model gives a wrong answer, first check whether the right chunks were retrieved. Only change weights if retrieval is correct and the model still fails on reasoning or format.",
+   "when": "Any time the team proposes fine-tuning to add domain facts or fix factual errors."
+  },
+  {
+   "name": "Fine-tune the stable center, keep humans on the edge",
+   "how": "Use a frontier model to recommend labels, have humans correct them, and track override rates. When the overrides flatten, use the agreed majority cases as training data. Keep humans on the contested cases and monitor the center for drift.",
+   "when": "Classification or decision tasks with human review, such as moderation or claims, where the consensus is stable and you want a cheaper model."
+  },
+  {
+   "name": "Code-aware chunking with denormalized metadata",
+   "how": "Chunk code by syntax (for example with AST-based splitting) rather than fixed size. Store metadata on each chunk such as repo and the users allowed to commit, then filter on it at query time so retrieval returns only the relevant scope.",
+   "when": "Building RAG over an organization's code or any corpus where results must respect per-repo or per-user access."
+  },
+  {
+   "name": "Promote-and-prune memory loop",
+   "how": "Route signals from sessions into durable memory. Watch which retrieved patterns recur, fine-tune on the stable formats, and then remove the now-redundant retrieval examples. Repeat the cycle over time.",
+   "when": "Long-running agents that keep retrieving the same format examples on every call, where the cost of retrieval or context is rising."
+  },
+  {
+   "name": "Small fine-tuned model for cost",
+   "how": "Keep a frontier model for the hard, changing parts. Once the task is stable and capability is not the issue, fine-tune a small model on the task output and run the high-volume traffic on it.",
+   "when": "A stable, high-volume task where the cost of a frontier model per call is the main problem, not its accuracy."
+  }
+ ],
+ "tools": [],
+ "numbers": [
+  {
+   "claim": "About 70,000 medical coding codes (ICD-10 style) cited as an example of stable facts that should not be fine-tuned into a model.",
+   "t": "14:43"
+  },
+  {
+   "claim": "Fine-tuning training data drawn from support tickets up to six months old; the stale data leaked a catalog into weights and produced nonexistent product names. Timeline in the example is a few weeks per step.",
+   "t": "3:33"
+  },
+  {
+   "claim": "Human override rates in a moderation or claims loop flatten after a point, which marks the stable center that can be fine-tuned.",
+   "t": "13:09"
+  }
+ ],
+ "hot_takes": [
+  "Most teams make the knowledge-placement decision by accident, and the architecture accumulates rather than being designed.",
+  "Fine-tuning to fix factual or retrieval errors is usually the wrong fix; check the retrieved chunks first.",
+  "Fine-tuning is rarely about capability with frontier models; the real reason is usually cost.",
+  "The model is the easy part; the harness around it that stores and moves knowledge is the real architecture."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh (L2A) already handles knowledge buckets and tiered memory, and SkillForge (L2D) turns telemetry into reusable skills. The talk's split of behavior vs citable knowledge vs reflex maps directly onto how AgentOS should classify what goes into each store, and the 'stop retrieving what the model now knows' loop is relevant to SkillForge.",
+   "action": "Add a placement check to MemoryMesh ingest that tags each item as behavior (prompt or manifest), citable knowledge (bucket with provenance and per-user scope), or stable reflex (SkillForge candidate), and log how often each tier is retrieved to find items that should be promoted."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness checkpoints long Claude Code runs and runs plan/critique loops. The talk's argument that the harness should move session signals into durable memory and prune redundant context matches that design, but it does not address checkpoint or resume mechanics.",
+   "action": "Consider a promotion step at checkpoint time that moves stable learnings from a run's context into a durable memory file, and a periodic check that removes examples the agent no longer needs in context."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

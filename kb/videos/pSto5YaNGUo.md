@@ -1,0 +1,52 @@
+# The Agentic AI Engineer - Benedikt Sanftl, Mutagent
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `pSto5YaNGUo` · [watch](https://youtu.be/pSto5YaNGUo) · **date:** 2026-07-18 · **length:** 34:50 · **format:** demo · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Benedikt Sanftl, Burak · **orgs:** Mutagent
+- **topics:** evals, observability, software-factory, agent-architecture · **tags:** agentic-ai-engineer, eval-driven-development, llm-as-judge, failure-modes, trace-diagnosis, spec-driven, offline-online-loop, auto-research, claude-code, orchestrator
+
+> Mutagent's CEO and CTO argue agents should be built and improved in an agentic loop: an offline eval-and-optimize loop plus an online trace-diagnose loop, with a demo of their research-preview evaluator and diagnose agents.
+
+## Summary
+The speakers describe two loops for AI agents. The offline loop covers spec, build, eval, and ship, and the online loop covers monitoring production traces, diagnosing failure modes, and feeding fixes back into the offline loop. They argue that manual review is the bottleneck and that agents should run these loops so more cycles fit into the same time. The eval suite acts as the termination gate, similar to unit tests, and is built up from domain expert input, historical or synthetic data, and failures found in production. They recommend binary pass/fail criteria over score-based LLM judges, along with calibration to handle judge variance. The diagnose stage clusters failures by root cause, uses code-checkable indicators to triage traces without reading them all, and samples representative traces through segmentation. The talk ends with a demo of an orchestrator in Claude Code that dispatches an evaluator agent and a diagnose agent, which outputs an HTML report and a markdown task definition for the coding agent. The product is in research preview and most of the talk is pitch, so the evidence is mostly qualitative with few benchmarks.
+
+## Key ideas
+- **Two loops: offline and online** — The offline loop covers build, eval, optimize, and test. The online loop monitors production traces, diagnoses failures, and feeds them back into the offline loop. Together they form one end-to-end loop that can run agentically. ([0:01](https://youtu.be/pSto5YaNGUo?t=1))
+- **Human review is the bottleneck** — Manual loops (write change, sample outputs, read traces, A/B test) are slow and do not scale to many agents. Running the loop agentically fits more improvement cycles into the same time window. ([1:03](https://youtu.be/pSto5YaNGUo?t=63))
+- **The eval suite is the termination gate** — Evals act as the equivalent of unit tests for agents. Development is eval-driven, similar to TDD, and an agent is done when the suite is green. ([4:03](https://youtu.be/pSto5YaNGUo?t=243))
+- **Eval suites come from discovery** — Starting points are domain expert criteria and historical or synthetic data. The complete suite grows over time from user feedback and production failures, including edge and hard cases. ([11:50](https://youtu.be/pSto5YaNGUo?t=710))
+- **Binary criteria over scores, and calibrated judges** — Score-based LLM-judge evals do not say what to fix unless the rubric is very well defined. Binary pass/fail criteria give a clear call to action. Judges also need calibration because the same judge can grade the same case differently across runs, which makes experiment comparisons unreliable. ([16:44](https://youtu.be/pSto5YaNGUo?t=1004))
+- **Evaluate the trajectory, not just the final output** — Check whether the agent had complete context and inspect every tool output in the run, since one wrong tool output can lead to a wrong final answer. The harness the agent runs in is also an optimization variable. ([15:48](https://youtu.be/pSto5YaNGUo?t=948))
+- **Cluster failures by root cause and keep learned indicators** — Failures are grouped by root cause, such as a section of the prompt, or a missing or malfunctioning tool. Code-checkable indicators, such as specific content or tool-call sequences per failure mode, let the team find problems without reading every trace. ([19:25](https://youtu.be/pSto5YaNGUo?t=1165))
+- **Sample traces instead of reading them all** — Reading millions of traces costs more than running them. Pick a representative sample using segmentation strategies and the learned indicators. ([20:43](https://youtu.be/pSto5YaNGUo?t=1243))
+- **Spec is separate from the framework** — The spec holds success criteria, context requirements, tools, responsibilities and non-responsibilities, and constraints. Because it is isolated from implementation, the target harness or framework can change later without rewriting the spec. ([9:19](https://youtu.be/pSto5YaNGUo?t=559))
+
+## Techniques
+- **Spec-first agent definition** — Write a spec with success criteria, required context, integrations and tools, responsibilities and explicit non-responsibilities, and constraints. A coding agent then builds the agent from the spec on whichever harness is chosen. *When:* Starting a new agent or skill, especially when the platform may change later.
+- **Eval-driven development as TDD for agents** — Build an eval set (metrics plus datasets of cases the agent must pass). Seed it from experts and historical or synthetic data, then add cases from production failures. Treat the green suite as the ship gate. *When:* Any agent that needs a clear termination condition before shipping.
+- **Binary criteria with calibrated LLM judges** — Replace a single score with pass/fail criteria, each with a specific failure meaning. Calibrate the judge against its own run-to-run variance so experiment comparisons are meaningful. *When:* Building LLM-as-judge evals where the result must say what to fix.
+- **Trajectory-level evaluation** — Check context completeness and each tool output in the full run, along with the final answer. Treat harness configuration as something to optimize as well. *When:* Debugging agents whose final answers look right but rest on bad intermediate steps.
+- **Failure-mode library with code-checkable indicators** — Group failures by root cause and record each failure mode with an indicator a script can match, such as particular content or a tool-call sequence. Reuse the indicators to triage new traces. *When:* Running diagnostics over large production trace volumes.
+- **Tiered trace sampling** — First have an LLM read a small segment of traces to surface obvious problems. Focus on the most frequent failure mode, or run a guided search for a problem a user reported. *When:* Traces are too numerous to read, and diagnosis has to be cheap enough to run on a schedule.
+- **Auto-research style optimization gated by evals** — Vary prompt sections or other parts of the agent in experiments. Ship automatically only when the target eval scores are reached. *When:* Improvement loops where the eval suite is trustworthy enough to act as an automatic gate.
+- **Orchestrator dispatching evaluator and diagnose subagents from a coding harness** — Run a stage-based orchestrator inside Claude Code that exposes slash-style trigger commands. Connect trace sources and ticketing or Slack. Output as a PR, markdown config changes, or a managed deployment. *When:* Doing agent improvement from the developer's existing coding environment.
+- **Diagnostic report with assumptions block and human decisions** — Produce an HTML report with failure modes, a causal chain, and multi-choice remedies. Include an explicit assumptions block so wrong assumptions, such as missing code access, can be corrected. Finish with a decisions page and a markdown task definition for the coding agent. *When:* Reviewing agent failures where the diagnosing agent may not have full code context.
+
+## Numbers
+- Example eval dataset of about 200 items, where manual review is slow without automated evals ([17:00](https://youtu.be/pSto5YaNGUo?t=1020))
+- Reading millions of agent traces costs more than running them, which is why sampling is needed ([20:43](https://youtu.be/pSto5YaNGUo?t=1243))
+- Speakers have built agents for about three years, and frameworks have shifted from code-building agents toward agent loop runtimes in recent months ([9:19](https://youtu.be/pSto5YaNGUo?t=559))
+- Teams may roll out hundreds of agents, which is the scaling reason given for an agentic loop ([2:01](https://youtu.be/pSto5YaNGUo?t=121))
+
+## Hot takes
+- Score-based LLM-judge evals are less useful than binary criteria because they do not say what to fix.
+- The spec should stay independent of the framework, since the best harness will change within a year.
+- Manually reading traces does not scale, and reading everything costs more than the execution.
+- The human's role shifts to designing loops with clear eval or termination gates.
+
+## Tools mentioned
+Claude Code, Codex, Deep Agents (mentioned as a framework), Hermes (mentioned as a framework), Whisper Flow (speech-to-text for feedback), Tracing platform (auto-caption reads 'length use'; name unclear)
+
+## Relevance to our work
+- **agentos** (2/3): The diagnose loop (trace sampling, failure-mode clustering, learned indicators) is close to SkillForge's open question on success signals and skill-worthiness scoring. It also overlaps with EvolveCraft's self-improvement. → *Test whether code-checkable failure indicators (binary, script-matchable) can serve as the success signal for SkillForge before using LLM-judge scores.*
+- **prosharness** (2/3): ProsHarness wraps Claude Code and runs loops with checkpoints. The talk's orchestrator-dispatches-subagents pattern and eval-gated loop termination are close to that design. → *Add an explicit binary eval gate as the termination condition for ProsHarness loops, so a run stops only when the criteria pass.*
+- **general** (2/3): The binary-criteria and judge-calibration methods apply to any LLM-judge eval, including entity resolution work. → *Compare the binary-criteria approach with the current scored eval setup, and measure judge variance across repeated runs before trusting differences between versions.*

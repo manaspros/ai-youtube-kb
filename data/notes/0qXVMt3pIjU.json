@@ -1,0 +1,161 @@
+{
+ "one_line": "Better Stack walks through running a 28.9M-parameter TinyStories language model on an ~$8 ESP32-S3 microcontroller by keeping the big embedding table in flash and only streaming the rows each token needs.",
+ "summary": "The host runs a 28.9M-parameter language model in plain C on an ESP32-S3 with 512 KB of SRAM, generating roughly nine tokens per second with no Wi-Fi and no server. The key trick is per-layer embeddings, borrowed from Google's Gemma: most of the parameters sit in a large lookup table that is only read, so that table stays in 16 MB of flash while the small compute path (attention and feed-forward) stays in SRAM. Each token pulls about six rows, roughly 450 bytes total. The model is trained on Microsoft's TinyStories dataset, so it only produces simple stories and drifts back to one story whatever prompt it gets. The build follows Karpathy's llama2.c approach and is wrapped in a one-shot script that checks the board, installs the toolchain, trains, exports, builds and flashes, taking about 25 minutes with about 13 of that on training. The host stresses the board must be the 16 MB-flash N16R8 variant and that the demo is a proof of concept with real limits, including a prompt baked in at flash time.",
+ "speakers": [
+  "Andres (Better Stack host)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Google",
+  "Microsoft"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "models-research"
+ ],
+ "tags": [
+  "esp32-s3",
+  "microcontroller",
+  "tiny-llm",
+  "per-layer-embeddings",
+  "flash-offload",
+  "tinystories",
+  "llama2.c",
+  "plain-c",
+  "on-device-inference",
+  "embedded"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Per-layer embeddings let most parameters live in slow flash",
+   "detail": "Most of a small LM's parameters are only looked up, never computed on. Keep that embedding table in cheap flash and read only the rows the current token needs. Only the compute path (attention and feed-forward) must sit in fast SRAM.",
+   "t": "1:16"
+  },
+  {
+   "idea": "Only a handful of rows are fetched per token",
+   "detail": "The 25M-row table stays parked in flash. For each token the device pulls one row per layer (six layers, about 450 bytes total), which makes the 512 KB SRAM limit workable.",
+   "t": "2:20"
+  },
+  {
+   "idea": "Tiny model, narrow domain",
+   "detail": "At this size a general-purpose model would produce gibberish. The model is trained on TinyStories, so it can only write simple, coherent children's stories. It has no code generation and no answers to hard questions.",
+   "t": "2:20"
+  },
+  {
+   "idea": "llama2.c is the blueprint",
+   "detail": "The inference runs in a few hundred lines of portable C with no OS and no Python interpreter. The host credits Karpathy's llama2.c project as the basis for the whole approach.",
+   "t": "3:13"
+  },
+  {
+   "idea": "Board variant matters: 16 MB flash is required",
+   "detail": "The exported table is about 15 MB, so boards with 4 or 8 MB of flash cannot hold it. The host says to check for the N16R8 variant (16 MB flash, 8 MB PSRAM) before buying.",
+   "t": "3:13"
+  },
+  {
+   "idea": "The one-shot script replaces a scattered multi-step setup",
+   "detail": "The upstream instructions were spread across several files and assumed context the host lacked. The host wrote one script that checks the board, installs the toolchain, prepares data, trains, exports, verifies, builds and flashes. It runs about 25 minutes, most of it training.",
+   "t": "4:41"
+  },
+  {
+   "idea": "The prompt is baked in at flash time and output drifts",
+   "detail": "The device can only play back one prompt pre-flashed at a time, so changing the prompt means reflashing. Every prompt tried (a robot, the Star Wars opening crawl) drifts back to the same little-girl story, and the output loops after it ends.",
+   "t": "5:38"
+  },
+  {
+   "idea": "The host frames it as a limited proof of concept",
+   "detail": "The host says the demo is a limited proof of concept, not a practical assistant. The interesting part is the memory-layout trick, not the text quality.",
+   "t": "6:51"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Keep the embedding table in flash, stream rows on demand",
+   "how": "Store the large per-layer embedding table in external or on-chip flash. For each token, read only the row for each layer (about six rows, roughly 450 bytes) into working memory. Keep attention and feed-forward weights in SRAM. The video does not show the code.",
+   "when": "A model is mostly lookup-table parameters and the device has little fast RAM but more slow flash. The same idea applies to any huge, read-only lookup table."
+  },
+  {
+   "name": "Plain-C inference in llama2.c style on bare metal",
+   "how": "Export trained weights to a flat binary and run a small C inference loop with no OS and no Python runtime. The video cites Karpathy's llama2.c as the template. Exact file names and commands are not shown in the transcript.",
+   "when": "Running a small trained model on a microcontroller, or when you want zero runtime dependencies."
+  },
+  {
+   "name": "Train a tiny model on a narrow dataset",
+   "how": "Train a roughly 29M-parameter model on TinyStories, which is written at a simple enough level for a model that size to learn coherence. Training took about 13 minutes on a MacBook.",
+   "when": "The target is a narrow, simple-language task on very constrained hardware. Expect the model to stick to the training distribution."
+  },
+  {
+   "name": "Single-script build pipeline for embedded ML",
+   "how": "One script runs these steps in order: check the board, install the toolchain, prepare data, train, export, verify, build and flash. Replacing a multi-file, multi-command setup removes the babysitting. The script name is not given in the transcript.",
+   "when": "Reproducing a hardware ML project where the setup is spread across several documents and the steps are mechanical."
+  },
+  {
+   "name": "Pick the board by flash size first",
+   "how": "Confirm the board has 16 MB of flash (the N16R8 ESP32-S3 variant, with 8 MB PSRAM) before buying. Boards with 4 or 8 MB cannot hold the roughly 15 MB exported table.",
+   "when": "Before buying hardware for any flash-offloaded model."
+  }
+ ],
+ "tools": [
+  "ESP32-S3 (N16R8 variant: 16 MB flash, 8 MB PSRAM)",
+  "Gemma (source of the per-layer embedding idea)",
+  "TinyStories dataset (Microsoft research)",
+  "llama2.c (Karpathy)",
+  "Plain C toolchain for ESP32",
+  "MacBook (used for training, about 13 minutes)"
+ ],
+ "numbers": [
+  {
+   "claim": "Model is 28.9M parameters, running on an ESP32-S3 with 512 KB SRAM and costing about $8",
+   "t": "0:00"
+  },
+  {
+   "claim": "Previous record for an LLM on a chip like this was about 260,000 parameters, so this model is about 110x larger",
+   "t": "0:00"
+  },
+  {
+   "claim": "Embedding table is about 25M rows and the largest part of the model; it lives in 16 MB of flash",
+   "t": "1:16"
+  },
+  {
+   "claim": "About six rows (one per layer) are fetched per token, roughly 450 bytes total",
+   "t": "2:20"
+  },
+  {
+   "claim": "Exported table is about 15 MB, so boards with 4 or 8 MB of flash will not hold it",
+   "t": "3:13"
+  },
+  {
+   "claim": "Full one-shot build takes about 25 minutes, with about 13 minutes of training on a MacBook",
+   "t": "4:41"
+  },
+  {
+   "claim": "Generation runs at about 9 tokens per second",
+   "t": "4:41"
+  }
+ ],
+ "hot_takes": [
+  "Framed as 'less RAM than a computer from the 90s' and 'this is insane'. Both are unsourced and rhetorical.",
+  "The 260,000-parameter prior-record figure and the '$8 chip' price are stated without a source.",
+  "The host says the output can't do real Q&A or code, and that it drifts to one story. That honesty is what keeps the video from being a pitch.",
+  "The core technique (keep read-only tables in slow memory and fetch rows on demand) is useful well beyond microcontrollers."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Flash-resident lookup tables fetched by row are a small-scale analogy to tiered storage and offload, which InferCraft's CPU-offload KV strategies also handle. It is not a direct change to the GPU serving stack.",
+   "action": "Skim the per-layer-embeddings / flash-offload idea as prior art when designing InferCraft's offload tiers. No code change implied."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Nothing here touches the Claude Code harness, checkpointing, or approvals.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

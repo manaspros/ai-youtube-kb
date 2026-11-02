@@ -1,0 +1,137 @@
+{
+ "one_line": "AI Labs video on Felix Rieseberg's article: get more from Claude Code by asking for outcomes, expert methods, varied viewpoints, an outside judge, and the tools to verify results.",
+ "summary": "The video walks through a framework from an article by Felix Rieseberg, who led engineering for Claude's apps at Anthropic, on getting far more out of Claude Code than a literal task list. Felix's core claim is that agents do exactly what is asked and then stop, so the prompt has to name the result being chased. He describes four ways of going beyond the ask: speed, altitude, depth, and range, with speed being what most people already do. Altitude means stating the end outcome (for example, hiring faster) and asking for diagnosis and recommended actions, not just a dashboard of numbers. Depth means using a meta-prompt that rewrites the task to require what a professional would do, which methods and tools to use, and independent evidence that the result is correct, rather than adopting a persona. Range means describing the product by what it does for people, then spawning specialist sub-agents that review it one after another, each fixing things before the next runs. The video also recommends impossible-sounding goals (make it feel instant, not faster) and an outside judge: a different model or a second non-interactive session reviews the builder's work. Finally, the video stresses that all of this depends on giving the agent the resources to verify itself, such as crash reports via MCP, version-to-code mapping, and a place to reproduce bugs. The exact prompts are only in the linked article and are not in the video.",
+ "speakers": [
+  "Felix Rieseberg (quoted, article author)",
+  "unnamed AI Labs narrator"
+ ],
+ "orgs": [
+  "Anthropic",
+  "AI Labs",
+  "GoLogin"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "context-engineering",
+  "multi-agent",
+  "testing-verification"
+ ],
+ "tags": [
+  "prompting",
+  "outcome-driven-prompts",
+  "meta-prompt",
+  "outside-judge",
+  "cross-model-review",
+  "sub-agents",
+  "specialist-roles",
+  "impossible-goals",
+  "verification-resources",
+  "mcp",
+  "article-summary",
+  "sponsored-segment"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents stop at the literal task; name the result you want, not the task.",
+   "detail": "The narrator says agents finish the task and call it done because nothing in the prompt says what it was supposed to achieve. Felix cites a study, not named in the video, that people with a specific hard goal outperform people told only to do a task.",
+   "t": "1:21"
+  },
+  {
+   "idea": "Altitude: prompt for the outcome and for diagnosis, not just the artifact.",
+   "detail": "Example: a reports dashboard should be built around the goal (hiring faster), explain why the result is not being hit, list problems, and recommend actions. Felix's crash example: ask for the app to be crash-free instead of fixing one issue at a time. The video says this works for outcome-driven work, not creative work.",
+   "t": "2:49"
+  },
+  {
+   "idea": "Depth: role personas change tone, not method, so ask for the methods experts use.",
+   "detail": "Felix's meta-prompt rewrites the user's task to ask for a deeper version, not a bigger one. It asks what a professional would do that was not requested, what material to start from, which specific methods and tools to use, and what evidence besides the model's own claim would show the result is right. The output is a new prompt to run in a fresh session.",
+   "t": "3:51"
+  },
+  {
+   "idea": "Set goals that sound almost impossible so the agent cannot just tweak the existing code.",
+   "detail": "Example: instead of 'make the site faster', ask for 'make it feel like the site loads instantly'. The narrator argues a small goal lets the agent make small tweaks, while an unreasonable-sounding goal forces a rethink of how the system works.",
+   "t": "6:45"
+  },
+  {
+   "idea": "Never let the builder judge its own work; use an outside judge from a different model.",
+   "detail": "The builder made every decision, so it is a poor judge. Options: have Claude run the Codex CLI for an in-depth review, or spawn a non-interactive Claude Code session in the background. The narrator recommends a different model from the one that built the feature. Claude then implements the fixes from the findings.",
+   "t": "6:45"
+  },
+  {
+   "idea": "Range: describe the product by the verb (what it does for people), then bring in specialist viewpoints.",
+   "detail": "Replace 'what the app is' with 'what it does for people' (example: earn strangers' trust with their next job, and companies' trust with their services). Then ask the agent to spawn sub-agents, each as a specialist role. They run one after another, and each fixes things before the next starts. The narrator says this is slow but gives a much better end result.",
+   "t": "8:13"
+  },
+  {
+   "idea": "Each of these approaches only works if the agent can verify its own results.",
+   "detail": "Felix gave his agent three things to keep apps crash-free: the crash reports (via an MCP connection to the crash tracker), the context to map versions to code changes, and a machine where it can reproduce each crash and test its fix. The point is to let the agent prove a fix works instead of asserting it.",
+   "t": "9:41"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Outcome-first prompt (altitude)",
+   "how": "State the business result you want (example: hire faster). Ask the agent to explain why the current state misses it, list the problems, and recommend actions and key decisions. Do not ask only for the artifact (dashboard, feature).",
+   "when": "Outcome-driven work with a measurable goal: dashboards, reliability work, fixing a class of bugs. Not creative work with no single right result."
+  },
+  {
+   "name": "Expert-method meta-prompt (depth)",
+   "how": "Give the agent your task and a meta-prompt that asks it to rewrite the task as a deeper version, not a bigger one. Have it state: what a professional would do beyond the request, what material to start from, which methods and tools experts use, and what evidence beyond its own claim shows the result is correct. Take the generated prompt and run it in a fresh session. The exact prompt is in Felix's article, which is linked in the video description and is not spoken in the video.",
+   "when": "When the output should follow expert practice, not just sound like an expert. Use persona prompts only for tone."
+  },
+  {
+   "name": "Impossible-sounding goal reframing",
+   "how": "Replace an incremental target with an outcome that cannot be reached by tweaking (example: 'make it feel like the site loads instantly' instead of 'make it faster'). This forces a redesign rather than small optimizations.",
+   "when": "Performance, UX, and reliability goals where the agent would otherwise take the safe, incremental route."
+  },
+  {
+   "name": "Outside judge via a second model",
+   "how": "After the builder finishes, have a separate reviewer do an in-depth review of the new feature. Options named in the video: ask Claude to run the Codex CLI (installed on the machine) for the review and return findings, or spawn a non-interactive Claude Code session in the background. Use a different model from the one that built the feature. Feed the findings back so the builder implements the fixes.",
+   "when": "After any agent-written feature where self-review is unreliable. Use it as a quality gate before calling work done."
+  },
+  {
+   "name": "Noun-to-verb role discovery and sequential specialist sub-agents (range)",
+   "how": "Write the product goal as a verb-phrase of what it does for people (example: 'get strangers to trust us with their next job'). Ask the agent to examine the app from as many angles as possible. It should spawn sub-agents, each taking a specialist role relevant to that goal. Run them one after another; each proposes and implements fixes before the next starts, so later agents see earlier fixes. Expect a long run.",
+   "when": "When one reviewer's view is too narrow, and when run time does not matter much. The sequential order is the main cost."
+  },
+  {
+   "name": "Verification resources for agents",
+   "how": "Before expecting proof, give the agent: (1) the error or crash data, connected via an MCP server to whatever tracker you use; (2) a way to map deployed versions to code changes; (3) an environment where it can reproduce the failure and run its fix. Require the agent to show that the fix worked by running the reproduction, not by asserting it.",
+   "when": "Any bug-fixing or reliability task. Without this, the other techniques cannot be checked."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude (Anthropic)",
+  "Codex CLI",
+  "MCP (Model Context Protocol)",
+  "GoLogin (sponsor segment, not a recommended tool)",
+  "AI Labs Pro (paid community, mentioned in closing)"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Felix's claim that persona prompts only change tone and not method is the author's view; it is not backed by data in the video.",
+  "The study on specific hard goals versus simple tasks is referenced without a name, date, or figure, so it cannot be checked.",
+  "The exact meta-prompt is only in the linked article and is not shown in the video, so a viewer cannot reproduce the depth technique from the video alone.",
+  "Sequential specialist sub-agents are called very slow by the narrator. It is recommended for quality, with no time or cost figures given.",
+  "The video is a secondhand summary of one person's article, with mid-roll sponsor reads (GoLogin) and a plug for a paid community (AI Labs Pro). The substance is still usable, so quality is not capped."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Verification-by-reproduction and cross-model review fit an agent-facing eval loop, but AgentOS is mainly a proxy and infra stack.",
+   "action": "Add a second-model review step to any AgentOS agent-written change (for example, a Crucible or SkillForge task) before it counts as done, and log whether the reviewer's findings led to changes."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already has a plan, critique (Codex), and debate loop. This video adds outcome-phrased goals (feels instant, not faster) and a verify-with-reproduction step that the harness could enforce after implementation.",
+   "action": "Add an explicit post-implementation stage that runs an outside judge on a different model and requires a reproduction artifact. Also rewrite plan goals as outcome statements (for example, 'feels instant') and check whether the critique step asks for proof beyond the model's own claim."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

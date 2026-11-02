@@ -1,0 +1,54 @@
+# Your GPU Neighbor Can Hear Your Model — Branislav Brzak, Stealthium
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `SacJfmp33vM` · [watch](https://youtu.be/SacJfmp33vM) · **date:** 2026-10-13 · **length:** 13:21 · **format:** talk · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Branislav Brzak · **orgs:** Stealthium, NVIDIA
+- **topics:** security-guardrails, inference-serving, sandboxing-execution · **tags:** gpu-side-channel, timing-attack, multi-tenant, mig, nvlink, nvswitch, vllm, speculative-decoding, kernel-monitoring
+
+> Timing alone on shared H100s leaks a neighbor's LLM: model depth, token speed and workload type, via MIG or NVLink. Mitigate with careful placement, host-side kernel monitoring, and no MIG co-location with untrusted tenants.
+
+## Summary
+Branislav Brzak of Stealthium shows that a tenant on a shared NVIDIA GPU can infer details of another tenant's LLM using only timing measurements, with no root access and no exploit. A probe on one MIG slice times its own memory reads every few microseconds, and GPU-wide memory barriers make the victim's activity visible as small latency shifts. From this trace the talk recovers the decode speed and, through a frequency-based best-fit on layer counts, the architecture and depth of the model, reporting about 97% accuracy on model identification. Workload type (prose, code, JSON, retrieval) is also classified from timing, but the signal appears only when speculative decoding is enabled. The same idea works across NVLink from another GPU in the same 8x H100 NVSwitch server, with lower accuracy (79.2% over five models against a 20% baseline) because layer counts fall below the noise. The speaker's mitigations are placement choices, the fact that MIG rules out tensor parallelism, and host-side monitoring of kernel launches, which their product used to catch the probe in under 600 ms.
+
+## Key ideas
+- **Shared GPUs leak through timing even with hardware isolation.** — MIG isolates compute units, VRAM, bandwidth and L2 partitions, but GPU-wide memory barriers touch every L2 partition, so one tenant's activity slows another tenant's reads by a small, measurable amount. The attacker only times its own reads. ([2:45](https://youtu.be/SacJfmp33vM?t=165))
+- **Median latency shift is tiny but enough.** — The idle-versus-serving difference is only about 3 microseconds at the median, invisible to the eye but sufficient for the attacker to recover model and workload information. ([3:43](https://youtu.be/SacJfmp33vM?t=223))
+- **Decode speed alone does not identify the model.** — Token rate narrows the field but Qwen 8B and Llama 3 8B decode only about 1.6% apart, so speed alone is not a clean fingerprint. ([5:14](https://youtu.be/SacJfmp33vM?t=314))
+- **Layer count is the sharper fingerprint, found by frequency analysis.** — Folding and averaging the latency trace per model gives a count that sits almost exactly on an integer (mean distance 0.028 across 22 traces). A best-fit search over candidate depths 16 to 48 picks the winner with no training set or labels, in under 30 lines of code. ([5:14](https://youtu.be/SacJfmp33vM?t=314))
+- **Best-fit depth matching works on unseen and fine-tuned models, with limits.** — Because it is a fit rather than a lookup table, it handles models it never saw. Fine-tunes and distills that keep the base architecture share a layer count, so depth alone cannot separate them. The method also outputs a confidence level, and only two of the least confident answers were wrong in their testing. ([6:28](https://youtu.be/SacJfmp33vM?t=388))
+- **Workload type leaks when speculative decoding is on.** — How predictable the text is changes how many drafted tokens are accepted per step, which changes step time. That is the signal. Classification across prose, code, JSON and retrieval was 31 of 40 half-second windows correct, and 4 of 4 full responses by majority vote, across 11 configurations. ([7:43](https://youtu.be/SacJfmp33vM?t=463))
+- **Cross-GPU attack over NVLink needs no shared die.** — On an 8x H100 NVSwitch server, a probe on GPU 2 pointer-chases memory on GPU 0 (the victim, tensor parallel on GPUs 0 and 1). Peer access is a normal feature. Layer counts drop below noise here, so the attack relies on tempo, giving 79.2% accuracy over five models. ([8:44](https://youtu.be/SacJfmp33vM?t=524))
+- **Kernel-launch monitoring can catch the probe quickly.** — The probe showed up as one kernel relaunched about 3000 times on the same 40 KB of memory, with under 1 KB returned to the CPU. The speaker's product flagged it in under 600 ms, before the reply was half typed. ([11:29](https://youtu.be/SacJfmp33vM?t=689))
+
+## Techniques
+- **Timing probe on own memory** — Load from a small private buffer, time each load, repeat about every 5 microseconds. Never touch the victim's memory; the signal comes from shared-resource contention. *When:* Auditing how much a shared GPU leaks, or understanding the threat model for multi-tenant inference.
+- **Frequency analysis of latency traces for model fingerprinting** — Take the FFT of the probe latency trace; the fundamental equals tokens per second plus harmonics. Fold and average per model to get a layer-count estimate, then run a best-fit against candidate depths (16 to 48) and report a confidence score. No training data needed. *When:* Identifying an unknown or proprietary model from side metrics, or checking whether a deployment leaks architecture.
+- **Keep sensitive models off MIG slices shared with untrusted tenants** — Choose placement so that a sensitive model and an untrusted tenant do not share a physical GPU. MIG disallows peer-to-peer, so tensor parallelism cannot run on MIG. Sharding over NVLink limits leaks to timing rather than exact layer counts. *When:* Planning multi-tenant GPU deployments or deciding between MIG and multi-GPU tensor parallelism.
+- **Host-side kernel-launch monitoring** — Watch every kernel launch on every GPU. Flag kernels relaunched many times on the same memory footprint with little data returned to the CPU, which is the signature of a timing probe. *When:* Operating shared GPU infrastructure and needing to detect covert probes early.
+
+## Numbers
+- Model architecture and depth identified with 97% accuracy on MIG. ([1:22](https://youtu.be/SacJfmp33vM?t=82))
+- Decode speed recovered with 99.3% accuracy (caption garbled, wording approximate). ([1:22](https://youtu.be/SacJfmp33vM?t=82))
+- Median latency is only about 3 microseconds higher when the neighbor serves an LLM than when idle. ([3:43](https://youtu.be/SacJfmp33vM?t=223))
+- Qwen 8B and Llama 3 8B decode speeds differ by only about 1.6%. ([5:14](https://youtu.be/SacJfmp33vM?t=314))
+- Mean distance from integer for layer-count estimates across 22 traces is 0.028. ([5:14](https://youtu.be/SacJfmp33vM?t=314))
+- Best-fit depth search covers candidate depths 16 to 48; Qwen 8B (36 layers) wins by about 4 points over the next candidate. ([6:28](https://youtu.be/SacJfmp33vM?t=388))
+- Only two of the least confident answers were wrong in the depth classifier testing. ([6:28](https://youtu.be/SacJfmp33vM?t=388))
+- Workload classification: 31 of 40 half-second windows correct; 4 of 4 full responses correct by majority vote; speculative decoding enabled. ([7:43](https://youtu.be/SacJfmp33vM?t=463))
+- Across 11 configurations, prose is fastest in 10 of 11 rounds, versus 1 in 4 chance. ([8:44](https://youtu.be/SacJfmp33vM?t=524))
+- Accuracy spread by configuration ranges from 70.2% on GPT-OSS 20B to 0.9% on GLM 4.9B. ([8:44](https://youtu.be/SacJfmp33vM?t=524))
+- NVLink probe: idle hop about 890 ns, rising to about 300 microseconds when the victim is working. ([10:11](https://youtu.be/SacJfmp33vM?t=611))
+- NVLink tempo-based model identification reaches 79.2% accuracy on 5 models against a 20% baseline. ([10:11](https://youtu.be/SacJfmp33vM?t=611))
+- Detected probe: one kernel relaunched about 3000 times on the same 40 KB, only 1 KB returned to CPU, flagged in under 600 ms with fewer than 50 reply tokens. ([11:29](https://youtu.be/SacJfmp33vM?t=689))
+
+## Hot takes
+- Hardware isolation like MIG does not stop timing leaks; the GPU-wide memory barrier is the leak path.
+- Layer count and depth can identify even unreleased or proprietary models, because the method is a best fit rather than a lookup table.
+- Turning on speculative decoding adds a workload-type signal that is otherwise absent.
+- A weaker NVLink signal is still a real fingerprint (79% against 20% baseline), so it should not be dismissed as noise.
+
+## Tools mentioned
+NVIDIA MIG, NVLink, NVSwitch, vLLM, speculative decoding, Qwen 8B, Llama 3 8B, DeepSeek R1 distill, GPT-OSS 20B, GLM 4.9B
+
+## Relevance to our work
+- **agentos** (1/3): AgentOS InferCraft runs vLLM on one RTX 5090 and plans speculative decoding (EAGLE-3). The talk shows that speculative decoding changes timing in a way that leaks workload type, which matters only if the box ever serves more than one tenant. → *Add a threat-model note for InferCraft: if multi-tenant, timing alone can leak model depth and workload type, and EAGLE-3 on changes the signal. Test whether it leaks before exposing shared access.*
+- **general** (1/3): Useful background for any team that runs LLMs on shared GPUs: placement and host-side kernel monitoring are the practical defenses named. → *Read the talk's three takeaways (placement, MIG vs NVLink trade-off, host verification) before choosing a multi-tenant GPU layout.*

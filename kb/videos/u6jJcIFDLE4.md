@@ -1,0 +1,42 @@
+# Why We Killed Our Multi-Agent Pipeline — Subbiah Sethuraman and Abhilash Asokan, ZS Associates
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `u6jJcIFDLE4` · [watch](https://youtu.be/u6jJcIFDLE4) · **date:** 2026-08-18 · **length:** 15:00 · **format:** talk · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Subbiah Sethuraman, Abhilash Asokan · **orgs:** ZS Associates
+- **topics:** multi-agent, agent-architecture, context-engineering, enterprise-adoption · **tags:** multi-agent failure, deterministic-agentic split, single reasoning owner, knowledge graph control plane, hypothesis loop, pharma commercial analytics, claude code as design probe, context loss at handoffs
+
+> ZS Associates explain why their multi-agent pharma analytics pipeline failed and how they rebuilt it: deterministic signal detection, one reasoning agent, and a knowledge graph used as a control plane.
+
+## Summary
+Two ZS Associates engineers describe a multi-agent system for pharma commercial analytics that mimicked an analyst's four steps (signal, source localization, driver attribution, synthesis) with one agent per step. The output looked coherent but was wrong at the action step, because a language model detected signals that statistics could find, context was lost at each agent handoff, and no agent shared the domain model. Instead of redesigning the topology, they ran Claude Code in an empty directory with bash and a database, watched how it worked, and used those observations to restructure. The fixes were a deterministic statistical pipeline that queues signals, a single agent that owns reasoning and spawns subagents only for scoped investigations, and a domain knowledge graph that constrains which hypotheses the agent can test. They report that an investigation needing 50+ turns now takes 20 to 30 minutes, where an analyst took three to four weeks. The talk is short and gives few hard numbers, but the failure analysis is specific.
+
+## Key ideas
+- **The multi-agent failure came from how the work was split, not from the LLM.** — Each agent derived a locally correct fact, but the final action ignored the payer/insurance cause. Context was lost at handoffs, and no agent had a shared model of the business metrics (e.g. TRX and how it relates to other KPIs). ([3:54](https://youtu.be/u6jJcIFDLE4?t=234))
+- **Move deterministic work out of the agent into a statistical pipeline.** — Signal detection (anomalies, trend breaks, threshold crossings, prioritization) runs as a plain automated pipeline with guardrails before any agent starts. Flagged signals go onto a queue, and the agent wakes up only to investigate, not to decide what counts as a signal. ([6:55](https://youtu.be/u6jJcIFDLE4?t=415))
+- **Collapse reasoning into one agent, but keep parallelism through subagents that return findings only.** — Observing Claude Code showed the team a single agent with tools (repeated function writing and database queries) could do the work. Subagents still run focused investigations such as rep activity in a region, but they return results, and the main agent keeps the judgment. ([7:59](https://youtu.be/u6jJcIFDLE4?t=479))
+- **Treat the knowledge graph as a control plane, not a lookup table.** — The graph is built with domain experts from client work and maps geography, payers, accounts, brands and KPIs, including how KPIs drive other KPIs. It limits what the agent can examine, so each edge is a hypothesis the agent must test against the data. Without it, the agent inferred relationships from raw tables and often got them wrong. ([10:02](https://youtu.be/u6jJcIFDLE4?t=602))
+- **The investigation is a bounded loop over the graph.** — Start at an entity, read its graph neighborhood, pick an edge as a hypothesis, check it against the actual numbers, then follow it if the evidence supports it or drop it if not. Separate passes handle 'where' (which dimensions the decline concentrates in) and 'why' (which KPIs drive it). The loop stops when hypotheses run out or a root cause is found. ([11:06](https://youtu.be/u6jJcIFDLE4?t=666))
+- **Takeaways: let the architecture emerge from observation, and keep deterministic and agentic parts apart.** — Do not impose human design constraints up front. Keep deterministic parts out of the agent. Use one agent that owns the end-to-end reasoning, which may call subagents, tools or skills. Treat the graph as the thing the agent navigates by. ([14:07](https://youtu.be/u6jJcIFDLE4?t=847))
+
+## Techniques
+- **Probe the design with a coding agent** — Open an empty directory, run Claude Code with only bash and the database, give it one real example case, and watch what it does step by step. Use what it does to decide the architecture rather than redesigning the topology on a whiteboard. *When:* When a multi-agent system gives plausible but incoherent output and the team is unsure whether the problem is topology, skills, tools or handoff schema.
+- **Deterministic signal gate feeding an investigator agent** — Run statistical anomaly, trend and threshold checks over the KPI data on a schedule. Rank the results, push them onto a queue, and start the agent only for queued items so it investigates and does not classify. *When:* When the trigger step is numeric and rule-like (drops, anomalies, breaks in trend) and a language model adds noise or inconsistency.
+- **Single reasoning owner with scoped investigation subagents** — One main agent holds the reasoning and final judgment and can spawn subagents for focused data pulls. Subagents return raw findings only, not conclusions, so context is not split across agents. *When:* When the parallel-agent pipeline lost context at handoffs and the final output no longer matched the earlier findings.
+- **Knowledge graph as the agent's control plane** — Model domain entities, their relationships and KPI-to-KPI drivers in a graph built with domain experts. Limit the agent to walking the graph, and make each edge a testable hypothesis, so it cannot search outside the model. *When:* When the search space has many dimensions (region, payer, account, brand, KPI) and the agent otherwise infers schema relationships from tables and gets them wrong.
+- **Hypothesis-traversal investigation loop** — Start at an entity, read its neighborhood, pick an edge, test it against the source numbers, keep it if supported, and repeat until no hypotheses remain or the root cause is found. Split the work into a where pass (which dimensions) and a why pass (which drivers). *When:* For root-cause analysis that needs many checks, where a long run of tokens is acceptable in exchange for much faster investigations than manual work.
+
+## Numbers
+- Example output from the first system: prescriptions down 18% in a territory over about four weeks, with a payer tier change as the cause. ([2:32](https://youtu.be/u6jJcIFDLE4?t=152))
+- The graph-driven loop takes 50+ turns and produces in about 20 to 30 minutes an investigation that an analyst took about three to four weeks to produce. ([12:35](https://youtu.be/u6jJcIFDLE4?t=755))
+
+## Hot takes
+- The LLM was not the failure; splitting the work across agents was.
+- Signal detection like a sales drop does not need a language model, just statistics.
+- Human-designed architecture constraints should not be imposed up front; let the architecture be derived from observed behavior.
+- A knowledge graph should be a control plane the agent navigates, not a look-up source.
+
+## Tools mentioned
+Claude Code, bash, knowledge graph (tool not named), relational database (not named)
+
+## Relevance to our work
+- **prosharness** (2/3): The talk's rule that one agent owns the judgment while subagents only return investigation results maps onto ProsHarness's plan, critique and debate stages, where a split of reasoning could lose context the same way. → *In the plan, critique and debate flow, make one orchestrating session own the final decision and limit subagents to returning evidence, then check whether any handoff drops a key constraint.*
+- **agentos** (1/3): The deterministic-gate-then-agent pattern could apply to SkillForge's telemetry mining, where the open question is how to score skill-worthiness. The talk does not address skill scoring directly. → *Prototype a statistical pre-filter over agent telemetry in SkillForge that queues candidate patterns, so the agent only judges the queued items, and measure how often it decides differently from the filter.*

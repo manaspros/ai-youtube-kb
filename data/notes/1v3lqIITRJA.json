@@ -1,0 +1,161 @@
+{
+ "one_line": "Better Stack tutorial on running Django in production with Docker: gunicorn instead of runserver, nginx serving static files, a multi-stage non-root Dockerfile, and Postgres wired together with docker-compose.",
+ "summary": "The presenter containerizes a small Django poll app with three services: Postgres, a gunicorn-served Django app, and an nginx front door on port 8001. He argues most Django Docker guides make three mistakes: they use runserver, they ignore static files so CSS breaks, and they leave the admin broken. The setup reads settings from environment variables (.env.local for development, .env.prod for production), collects static files into a STATIC_ROOT volume that nginx serves, and uses an entrypoint script to run collectstatic and migrate before starting gunicorn. The Dockerfile is multi-stage on python:3.13-slim, copies requirements.txt before the code for layer caching, and runs as a non-root user. The video ends by checking the app and the Django admin on localhost:8001 with CSS loading. It is a practical, reproducible tutorial with no AI content and no sponsor segment seen.",
+ "speakers": [
+  "Better Stack presenter (unnamed in transcript)"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "django",
+  "docker",
+  "docker-compose",
+  "gunicorn",
+  "nginx",
+  "postgresql",
+  "static-files",
+  "multi-stage-build",
+  "non-root-container",
+  "env-vars",
+  "production-deploy"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Most Django Docker guides go wrong in three ways: they use runserver (not for production), they ignore static file serving so CSS breaks, and they leave the Django admin unstyled or broken.",
+   "detail": "The fix is gunicorn as the app server, nginx to serve /static, and a checked admin page as the acceptance test.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Read every environment-specific setting (DEBUG, SECRET_KEY, ALLOWED_HOSTS, CSRF_TRUSTED_ORIGINS, DB credentials) through os.getenv with fallbacks; load a local env file with python-dotenv during development only.",
+   "detail": "Two env files are used: .env.local (DEBUG true, localhost hosts, CSRF origin on port 8000) and .env.prod (DEBUG false, CSRF origin on port 8001). Docker does not read the local loader.",
+   "t": "1:07"
+  },
+  {
+   "idea": "collectstatic is the step that makes static files work in containers. It copies them into STATIC_ROOT, and that directory is then shared to nginx through a volume.",
+   "detail": "The entrypoint script runs collectstatic and migrate, and gunicorn must be the last command in it.",
+   "t": "3:24"
+  },
+  {
+   "idea": "Add .env files to .dockerignore before anything else so secrets are not baked into the image.",
+   "detail": "The presenter ignores both .env and .env* to be safe, then copies the rest of the ignore file from a template.",
+   "t": "5:33"
+  },
+  {
+   "idea": "Copy requirements.txt and run pip install before copying the app code, so Docker layer caching keeps dependency installs when only code changes.",
+   "detail": "This is paired with a multi-stage build. The builder stage has compilers and build tools. The final python:3.13-slim stage copies only the installed packages and the app code.",
+   "t": "6:36"
+  },
+  {
+   "idea": "Run the container as a non-root user, and set ownership of /app to that user, so a compromised process has fewer privileges.",
+   "detail": "This is presented as a security practice; the presenter does not discuss the threat model in detail.",
+   "t": "7:54"
+  },
+  {
+   "idea": "The nginx admin CSS problem comes from missing mime types. Include mime.types and set default_type to application/octet-stream, then alias /static to the shared static volume and proxy everything else to the Django service.",
+   "detail": "Without the mime types the admin renders with no CSS, and the admin is unusable. The proxy_pass target is the compose service name and port, not localhost.",
+   "t": "11:33"
+  },
+  {
+   "idea": "In docker-compose, the nginx service depends on the Django web service, both share the static volume, and the Postgres data volume persists database state.",
+   "detail": "The published nginx port (8001) must match CSRF_TRUSTED_ORIGINS for production, or form posts will be rejected. The presenter says the port in the transcript as 8001 with some garbled text.",
+   "t": "12:49"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "gunicorn as the app server with entrypoint script",
+   "how": "Add gunicorn (version 23 as stated) to requirements.txt. Create entrypoint.prod.sh at the project root that runs `python manage.py collectstatic --noinput` and `python manage.py migrate`, then as the last line `gunicorn <project>.wsgi:application --bind 0.0.0.0:8000 --workers 3`. Make the script executable and set it as the container ENTRYPOINT. The presenter says `--bind` is port 8000 and `--workers 3` is a reasonable default; the exact flags are as spoken and should be checked against gunicorn docs. The `<project>.wsgi:application` value must match the project's wsgi.py.",
+   "when": "Any Django app being deployed in a container. Use it in place of runserver."
+  },
+  {
+   "name": "Environment-driven settings.py with two env files",
+   "how": "In settings.py, `import os` and read SECRET_KEY, DEBUG, ALLOWED_HOSTS and CSRF_TRUSTED_ORIGINS with os.getenv(NAME, fallback). Database settings (engine Postgres, name, user, password, host, port) also come from env vars. For local development only, load the env file with python-dotenv (`load_dotenv('.env.local')`); production uses `.env.prod` via docker-compose env_file. Keep DEBUG=false and CSRF origin on port 8001 in .env.prod.",
+   "when": "Keeping one codebase across local and container environments without committing secrets."
+  },
+  {
+   "name": "Static file serving through a shared volume and nginx",
+   "how": "Set STATIC_URL = '/static/' and STATIC_ROOT to a directory (the presenter's name for it is 'static files' under /app). The compose file mounts a named volume `static` on the Django service at that path and the same volume on nginx. nginx has `location /static { alias /static; cache time optional }`. Run collectstatic at container start.",
+   "when": "Serving Django admin and app CSS/JS through nginx in a compose stack."
+  },
+  {
+   "name": "nginx config with mime types, static alias and reverse proxy",
+   "how": "In nginx.conf, the http block includes mime.types and sets default_type application/octet-stream. A server block listens on port 80 and maps the published port to 8001 in compose. `location /static` aliases the shared static volume. The catch-all `location /` uses proxy_pass to the Django compose service name and port 8000, and passes the standard forwarding headers so Django sees the right request metadata.",
+   "when": "Putting nginx in front of gunicorn and serving static assets from nginx."
+  },
+  {
+   "name": "Multi-stage Dockerfile with cache-friendly ordering and non-root user",
+   "how": "Stage 1 (builder): FROM python:3.13-slim, WORKDIR /app, ENV PYTHONDONTWRITEBYTECODE=1 and PYTHONUNBUFFERED=1, pip install --upgrade pip, COPY requirements.txt only, pip install -r requirements.txt. Stage 2: FROM python:3.13-slim, create a non-root user, mkdir /app and chown it, COPY --from=builder the installed site-packages and binaries, WORKDIR /app, COPY . . with --chown to the app user, reapply the ENV lines, USER <app user>, EXPOSE 8000, chmod +x entrypoint, ENTRYPOINT the script. The presenter names the copy-from paths as shown on screen; they are not repeated in the transcript.",
+   "when": "Images that should be small, reproducible, free of build tools, and not run as root."
+  },
+  {
+   "name": "docker-compose three-service stack",
+   "how": "Services: db (Postgres image with env_file .env.prod), web (build: . with env_file .env.prod, depends_on db, volume static mounted at the static path), and nginx (depends_on web, mounts nginx.conf into the nginx config path, mounts the static volume, publishes port 8001). Add a named volume for postgres data and a named volume for static. Set the DB host to the compose service name (`db`), not localhost. Start with `docker compose up`. Verify with the app at localhost:8001 and the admin at localhost:8001/admin.",
+   "when": "Local production-like runs or small single-host deployments of Django with Postgres."
+  },
+  {
+   "name": ".dockerignore with env files first",
+   "how": "Create .dockerignore at the project root. Its first entries are `.env` and `.env*`, so no env file is copied into the image. The rest is a template of local-only files that are not needed in the image. Keep it updated whenever a local-only file is added.",
+   "when": "Every container build that uses a project directory containing .env files."
+  }
+ ],
+ "tools": [
+  "Django",
+  "Docker",
+  "Docker Compose",
+  "Gunicorn (version 23 as stated)",
+  "Nginx",
+  "PostgreSQL",
+  "Python 3.13-slim (base image)",
+  "python-dotenv (load_dotenv for local dev)"
+ ],
+ "numbers": [
+  {
+   "claim": "gunicorn version 23 is the latest version named for the requirements file",
+   "t": "1:07"
+  },
+  {
+   "claim": "gunicorn is configured to bind port 8000 with 3 workers, which the presenter calls a nice default",
+   "t": "4:19"
+  },
+  {
+   "claim": "Python base image is 3.13-slim for both build and final stages",
+   "t": "5:33"
+  },
+  {
+   "claim": "The nginx service publishes port 8001 and must match the production CSRF_TRUSTED_ORIGINS port",
+   "t": "12:49"
+  },
+  {
+   "claim": "Local-dev CSRF origin is localhost:8000 and production CSRF origin is localhost:8001 (transcript garbled; the exact values are as spoken)",
+   "t": "2:16"
+  }
+ ],
+ "hot_takes": [
+  "runserver is not meant for production and loses a lot of performance (presenter's claim, not measured in the video)",
+  "Most Django Docker guides skip static file serving or admin, so their CSS breaks in production"
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Generic containerization of a Python web service with nginx, gunicorn and a non-root image. Only a small part applies to AgentOS, which is mostly a Rust proxy plus Python services.",
+   "action": "When containerizing AgentOS Python services, reuse the .dockerignore-excludes-.env and non-root user pattern from this video."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content about Claude Code CLI wrapping, checkpoints, or agent loops.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

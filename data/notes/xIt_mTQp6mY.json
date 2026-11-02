@@ -1,0 +1,159 @@
+{
+ "one_line": "Kyle Mistele (HumanLayer) argues agent loops should be built as incremental control loops (sensor, controller, actuator) that keep humans reading the code, not blind \"Ralph\" loops that dump 40k-line PRs.",
+ "summary": "Kyle Mistele, co-founder of HumanLayer, says most loop talk is hype and that blind Ralph-style bash loops produce PRs nobody can review, which fails on teams, critical systems and regulated code. He reframes loops with control theory: a set point, a sensor that measures the gap, a controller that picks a small change, and an actuator that applies it, then re-measure. Sensors can be deterministic (ast-grep rules, lint) or agent-based, and a deterministic sensor is preferred. His worked example is an incremental migration of HumanLayer's RPC procedures to Effect, using an ast-grep scan of main that is committed to version control and checked on each PR to stop regressions. The controller picks one item deterministically, optionally weighted by telemetry, and the actuator is a CLI coding agent running a hand-curated skill with golden examples. A scheduled GitHub Actions workflow runs one iteration per day and opens a PR, with a version-controlled feedback markdown file and a /iterate PR comment so humans can re-steer it cheaply. Flow control skips a run while the loop's last labeled PR is still open, so each loop has at most one open PR, and velocity is raised by batching items or running the workflow in parallel for several people.",
+ "speakers": [
+  "Kyle Mistele"
+ ],
+ "orgs": [
+  "HumanLayer"
+ ],
+ "format": "talk",
+ "topics": [
+  "software-factory",
+  "coding-agents",
+  "agent-architecture"
+ ],
+ "tags": [
+  "loops",
+  "ralph-loop",
+  "control-theory",
+  "ast-grep",
+  "github-actions",
+  "feedback-file",
+  "flow-control",
+  "golden-patterns",
+  "incremental-migration",
+  "effect-ts",
+  "human-on-the-loop"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Blind loops are the wrong default for real teams",
+   "detail": "A bash loop that prompts an agent produces large unreadable PRs. Ralph loops suit solo work on non-critical systems. Teams with customers, regulation and SLAs need loops that keep the code readable.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Frame agent loops as control systems",
+   "detail": "Use the control-theory loop: a set point (desired state of some code property), a sensor that measures the error, a controller that turns the error into a small change, and an actuator that applies it. Re-measure and repeat. Kubernetes autoscaling and Postgres autovacuum follow the same pattern.",
+   "t": "4:12"
+  },
+  {
+   "idea": "Change the system incrementally and make it measurable",
+   "detail": "A loop fits when you can measure the property, make changes in small steps, and get feedback on each change's quality. Blind Ralph loops are not incremental, so they tend to overshoot and create huge diffs.",
+   "t": "6:19"
+  },
+  {
+   "idea": "Prefer a deterministic sensor, and stop regressions before running the loop",
+   "detail": "Use ast-grep rules that are language-agnostic and sit outside the TypeScript and lint config. Scan main once, sort the violations deterministically, commit the list to version control, and add a per-PR check that fails when a branch adds new violations. That check is the disturbance dampener.",
+   "t": "10:23"
+  },
+  {
+   "idea": "Feed business signals into the controller, and keep deterministic work out of the agent",
+   "detail": "The controller can pick the first or smallest violation with bash, jq or ast-grep. For more leverage, use telemetry (errors, missing instrumentation, APM gaps) to rank items and pass that data to the actuator. He says you should never send an agent to do work that deterministic code can do.",
+   "t": "11:48"
+  },
+  {
+   "idea": "Make the actuator an agent plus a carefully written skill, and run it in existing CI",
+   "detail": "The skill holds hand-written golden examples and a response template. After the agent runs, the workflow commits, pushes and opens the PR deterministically, using the agent's final message as the description. GitHub Actions runs it on a daily schedule, with no new cluster needed.",
+   "t": "13:03"
+  },
+  {
+   "idea": "Keep humans on the loop with a version-controlled feedback file and a comment trigger",
+   "detail": "A markdown feedback file in the repo is loaded into the actuator's context on every run. A /iterate comment on the loop's PR triggers a run that loads the diff, comments and description, and updates the feedback file. The loop only responds to PRs carrying its own label. Feedback changes can be diffed and reverted.",
+   "t": "14:24"
+  },
+  {
+   "idea": "Flow control: at most one open PR per loop, then scale by batching",
+   "detail": "The workflow exits early if the loop's labeled PR is still open, so no PRs stack or conflict while humans are away. To speed up, pick several items per run, run each item in its own phase with its own context window, or run the workflow once per engineer.",
+   "t": "15:44"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Sensor, controller, actuator loop for code migration",
+   "how": "Define the set point (e.g. no unmigrated procedures). Build a sensor that lists violations. Have a controller select one item and a context-carrying signal. Have an actuator agent make one change, then re-run the sensor.",
+   "when": "Incrementally migrating a codebase pattern, such as an API, library or framework, where each change can be measured."
+  },
+  {
+   "name": "Deterministic baseline plus per-PR ratchet",
+   "how": "Run a full scan on main and commit the sorted violation list to version control. In CI, fail any PR that adds new violations of the pattern so humans cannot undo the loop's progress.",
+   "when": "Before turning on any migration loop, so the target pattern stops growing while it is being cleaned up."
+  },
+  {
+   "name": "Ast-grep as the sensor",
+   "how": "Write language-agnostic ast-grep rules with include and exclude paths. Layer more rules over time. Keep the rules out of the TypeScript and lint config so agents cannot disable them with inline comments.",
+   "when": "Monorepos that span several languages, or any codebase where agents tend to suppress linter rules."
+  },
+  {
+   "name": "Golden-pattern skill for the actuator",
+   "how": "Write hand-made idiomatic examples before the loop runs, put them in the skill, and add a response template. Iterate on the skill over time, not all up front.",
+   "when": "Whenever an agent must reproduce a house style that is not in its training data or the public docs."
+  },
+  {
+   "name": "Scheduled CI workflow as the loop runner",
+   "how": "Run one loop iteration (sense, control, actuate, open PR) on a daily cron in GitHub Actions or a similar CI system that already has code access, secrets and dispatch.",
+   "when": "When you want a loop without adding new infrastructure and you want a small, reviewable PR each morning."
+  },
+  {
+   "name": "Feedback file plus comment-triggered re-steering",
+   "how": "Keep a markdown instructions file in the repo, load it into the agent's context on every run, and let a slash command on the loop's PR trigger a run that loads the PR context and updates the file.",
+   "when": "When the loop needs frequent human correction and you want that feedback in version control, not in a prompt."
+  },
+  {
+   "name": "Single-open-PR flow control",
+   "how": "Tag each loop's PRs with a label. At the start of each run, exit if a PR with that label is still open. Speed up by batching several items per run, using separate phases per item, or running several workflows in parallel.",
+   "when": "When loop output piles up faster than humans review it, or when work could duplicate or conflict across runs."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "ast-grep",
+  "GitHub Actions",
+  "Effect (TypeScript)",
+  "React Doctor",
+  "OpenClaw",
+  "OpenCode"
+ ],
+ "numbers": [
+  {
+   "claim": "Sensor output had about 50 keys per violation, so the speaker kept only four and sorted them deterministically.",
+   "t": "10:23"
+  },
+  {
+   "claim": "The speaker's team had about 150 RPC procedures to migrate. Doing one at a time, he says, would take about six months.",
+   "t": "15:44"
+  },
+  {
+   "claim": "The loop runs once a day, so the team receives one small PR each morning.",
+   "t": "13:03"
+  },
+  {
+   "claim": "The speaker says it took six months to fix Claude Code's terminal flicker, while the OpenCode team wrote a renderer in a fraction of that time. This is his anecdote, not a measured benchmark.",
+   "t": "2:45"
+  }
+ ],
+ "hot_takes": [
+  "Blind Ralph loops are a teaching device that people take too literally, and they produce PRs no one can review.",
+  "Bad code costs more in the age of agents than it ever has, so code review and readability still matter.",
+  "Do not send an agent to do a job that deterministic code can do.",
+  "Designing loops that read the code, not making all code read-only, is the right path for teams."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk's loop pattern (deterministic sensor, one-item controller, one open PR per loop) is relevant to the SkillForge and EvolveCraft self-improvement loops, but it is about coding-agent workflows, not AgentOS infrastructure.",
+   "action": "When designing SkillForge's skill-worthiness signal, try a deterministic-first sensor and a single-item-per-run controller, and track the result as a versioned file rather than a prompt."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already runs loops and schedules around Claude Code. This talk gives concrete flow-control and feedback mechanisms that could be added to that scheduling layer.",
+   "action": "Add a loop gate to ProsHarness schedules: skip a run when the last PR carrying that loop's label is still open. Also load a version-controlled feedback markdown file into each run's context, and add a PR-comment trigger to re-steer runs."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

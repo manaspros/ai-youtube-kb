@@ -1,0 +1,166 @@
+{
+ "one_line": "FactSet's principal AI engineer argues skills are the new product features and engineers should ship harnesses, then covers a minimal skill harness, routing via descriptions, eval-gated skills, and skill-library governance.",
+ "summary": "Yogendra Miraje (FactSet) argues that in agent-first products, business logic moves out of screens and into skills, so skills are effectively the new features. He says the engineer's job shifts from shipping features to shipping the harness that runs skills. He describes a minimal skill harness: a registry of name, description and path, a system prompt that lists only those fields (progressive disclosure), a file-read tool, and bash or a sandbox if skills run scripts. Skill descriptions act as routing signals, so they should be written from the user's request and kept distinct. Skills should be cut by user intent rather than by data model, and critical instructions should go early because a model upgrade silently broke skill obedience. He insists skills need evals and should be treated as contracts versioned to a model. Past roughly ten skills the system prompt needs shortlisting, and at hundreds it needs hierarchy, metadata filters and governance covering admission, ownership, boundaries, lifecycle and coherence. The talk has no benchmarks; its value is practitioner lessons from a real enterprise skill stack.",
+ "speakers": [
+  "Yogendra Miraje"
+ ],
+ "orgs": [
+  "FactSet"
+ ],
+ "format": "talk",
+ "topics": [
+  "skills-self-improvement",
+  "agent-architecture",
+  "context-engineering",
+  "governance-compliance"
+ ],
+ "tags": [
+  "agent skills",
+  "skill registry",
+  "progressive disclosure",
+  "routing descriptions",
+  "skill evals",
+  "skill governance",
+  "skill shortlisting",
+  "enterprise agents",
+  "FactSet",
+  "harness design"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Skills are the new features of agent-first products",
+   "detail": "When the agent becomes the main interface, prompts define who the agent is, tools define what it connects to, and skills define how a task gets done. Business logic lives in skills, so non-engineers can ship features by writing them. The engineer's role shifts to building harnesses that run skills.",
+   "t": "3:48"
+  },
+  {
+   "idea": "Blueprints from last year's talk were naive skills, and the team moved to the open standard",
+   "detail": "The speaker's earlier blueprint approach (fixed step recipes for agents) was a primitive form of a skill. Since Anthropic open-sourced skills, the team stopped maintaining its own standard and adopted skills fully.",
+   "t": "0:08"
+  },
+  {
+   "idea": "A minimal skill harness needs only three parts",
+   "detail": "A skill registry (name, description, path), a system prompt that lists those fields, and a basic file-read tool. Scripts need bash or a code sandbox. The agent loop keeps a messages array, makes model calls with tools, and ends when a turn has no tool call.",
+   "t": "6:20"
+  },
+  {
+   "idea": "Progressive disclosure keeps only metadata in the system prompt",
+   "detail": "Only name, description and path go into the system prompt. The agent reads the full SKILL.md body only for the skills it picks. The SKILL.md front matter is the discovery key, and the body holds the business logic plus references to files and scripts.",
+   "t": "5:17"
+  },
+  {
+   "idea": "Descriptions are routing signals and should be written from the user's side",
+   "detail": "In the demo, an HTML report skill and a PDF report skill both existed, and the trigger word PDF in the description decided which one ran. Descriptions should match user requests, not describe the skill's internals. They must stay distinct from each other and must not go stale. Most skills in this setup are model-driven only, so users never invoke them by name.",
+   "t": "9:17"
+  },
+  {
+   "idea": "Cut the skill library by user intent, not by data model, and expect refactors",
+   "detail": "Early narrow skills (estimate analysis, fundamentals) did not match real use cases. The library was reorganised around jobs such as earnings preparation and pre-market preparation. The speaker says refactoring is normal as use cases appear.",
+   "t": "10:46"
+  },
+  {
+   "idea": "Model upgrades can break skills with no edits, so put critical instructions early and run evals",
+   "detail": "After switching models, the agent stopped following skills even though no skill text changed. The new model focused on the start of each skill, and the critical instruction sat at the end. The speaker says skills without evals are wishful thinking and should be treated as versioned contracts, re-tested on every model upgrade.",
+   "t": "12:17"
+  },
+  {
+   "idea": "Scale the skill catalogue in stages: shortlist past ten, hierarchy and governance at hundreds",
+   "detail": "Listing all skills in the system prompt works for a few. Past about ten, shortlist by embedding similarity or a small model. At hundreds, add a hierarchy, metadata filters and governance to keep the library searchable.",
+   "t": "12:17"
+  },
+  {
+   "idea": "Govern the skill library like a codebase, with five aspects",
+   "detail": "The five aspects are admission (automated gate plus human review, like a PR), ownership (named maintainers, like code owners), boundaries (allow-listed tools per skill as the access control), lifecycle (semantic versions, deprecation warnings, changelogs) and coherence (periodic audits and validation checks). The speaker says governance need not be red tape if automation handles most of it.",
+   "t": "13:40"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Minimal skill registry and loop",
+   "how": "Store each skill as name, description and path. Put only that metadata in the system prompt. Run a standard agent loop over a messages array, appending tool calls until a turn has none. Give the agent a file-read tool so it can load a skill body on demand.",
+   "when": "Adding skill support to your own agent harness, before any framework or marketplace is involved."
+  },
+  {
+   "name": "Write descriptions as routing signals",
+   "how": "Phrase each skill description in the user's terms with a clear trigger word, such as 'use only when the user asks for a PDF report'. Keep sibling skills distinct, and review descriptions when skills change.",
+   "when": "Several skills overlap in purpose, such as HTML vs PDF output, and the agent picks the wrong one."
+  },
+  {
+   "name": "Cut skills by user intent",
+   "how": "Name and scope skills after real jobs to be done, such as earnings preparation or pre-market preparation, not after data tables or analysis types. Refactor the library as real use cases come in.",
+   "when": "Designing a skill library for non-technical users whose requests do not match the data model."
+  },
+  {
+   "name": "Front-load critical instructions and re-run evals on model upgrades",
+   "how": "Move must-follow rules to the top of each SKILL.md. Keep an eval set per skill, and re-run it on every model change because skills act as contracts tied to a model.",
+   "when": "Switching models, or when skill obedience drops without any skill edits."
+  },
+  {
+   "name": "Shortlist skills before they hit the system prompt",
+   "how": "Past roughly ten skills, select candidates by embedding similarity or with a small model, and only put the shortlist in the system prompt. At hundreds of skills, add hierarchy and metadata filters.",
+   "when": "The skill count grows and listing every skill in the prompt starts to fail."
+  },
+  {
+   "name": "Governance as a skill PR pipeline",
+   "how": "Gate new skills with automated checks plus human review. Assign a named owner per skill. Use semantic versions, deprecation warnings and changelogs. Limit each skill's allowed tools. Run periodic audits for coherence.",
+   "when": "A large skill library is shared across teams and needs control over ownership, access and drift."
+  }
+ ],
+ "tools": [
+  "Anthropic Agent Skills (SKILL.md format)",
+  "Claude Code",
+  "Codex",
+  "bash or code sandbox for skill scripts"
+ ],
+ "numbers": [
+  {
+   "claim": "Skill-list-in-prompt approach starts to break at more than about 10 skills",
+   "t": "12:17"
+  },
+  {
+   "claim": "Hundreds of skills need hierarchy, metadata filters and governance",
+   "t": "12:17"
+  },
+  {
+   "claim": "Minimum harness has three components: skill registry, system prompt, file-read tool",
+   "t": "6:20"
+  },
+  {
+   "claim": "Five governance aspects: admission, ownership, boundaries, lifecycle, coherence",
+   "t": "13:40"
+  },
+  {
+   "claim": "Talk length 17:24; no benchmark or cost figures given",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Skills are the new product features, and engineering's job is now shipping harnesses rather than features.",
+  "Skills are not documentation. They are contracts versioned to a model.",
+  "Routing does not stay tuned as the skill count grows. The mechanism itself has to change.",
+  "At enterprise scale, skill library governance is non-negotiable."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "L2D SkillForge aims to turn agent telemetry into governed, reusable skills. This talk gives concrete governance pieces (admission gate, owners, semver/deprecation, per-skill tool allow-lists) that SkillForge's open question on skill-worthiness does not cover.",
+   "action": "Add owner, semver, deprecation status and allowed-tools fields to the SkillForge skill record, and add a skill-admission check before a mined skill enters the library."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and includes skill ranking. The talk's point that skills are contracts tied to a model, and its warning about instruction position, apply to any harness that loads skills.",
+   "action": "Check whether ProsHarness skill ranking shortlists before putting skills in the prompt, and add a per-model eval run to the skill-ranking tests so a model upgrade does not silently break skills."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Mostly confirms known context-engineering points. The practical note that instruction position changes obedience across model versions is a small, concrete addition to context-engineering practice.",
+   "action": "Add a check to the context-engineering checklist: critical rules belong at the start of a skill or CLAUDE.md, and re-test them when the model changes."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

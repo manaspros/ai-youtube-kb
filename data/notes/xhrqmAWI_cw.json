@@ -1,0 +1,171 @@
+{
+ "one_line": "Walkthrough of a compound-engineering Claude Code plugin (plan, work, review, triage, codify, resolve commands) that persists to-dos and runs parallel review agents. Practical, but the 10X title is unmeasured.",
+ "summary": "The host tries a Claude Code plugin (\"compound engineering\") that drives a plan-work-review loop through custom slash commands and sub-agents. The plan step takes a PRD and tech stack, launches research agents (research, best practices, framework), and writes a GitHub-issue markdown file that holds the research, the files to create, and six phases. Phases are stored in Claude Code's built-in to-do tool, which the host says survives compaction and session resume, and the work step executes them one at a time, pausing after each phase for review. A review step runs parallel language and concern agents (Python, TypeScript, Rails; security, performance, architecture, data integrity), and triage turns the findings into per-issue markdown files that codify then annotates. A resolve step builds a dependency graph over the to-dos and runs independent ones in parallel, with each feature in its own git worktree. The host's main criticism is a requirements gap that produced a wrong export button, and he concedes the framework is not groundbreaking; its main strength is being an easy-to-install plugin. He compares it unfavourably for large projects to the BMAD method, which he says is more thorough but slower for small ones, without measuring either.",
+ "speakers": [],
+ "orgs": [
+  "Anthropic"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "claude-code",
+  "multi-agent",
+  "context-engineering"
+ ],
+ "tags": [
+  "compound-engineering",
+  "claude-code-plugins",
+  "slash-commands",
+  "subagents",
+  "todo-persistence",
+  "git-worktrees",
+  "parallel-code-review",
+  "dependency-graph",
+  "bmad-method",
+  "git-ingest",
+  "nextjs",
+  "fastapi",
+  "rails"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The workflow is built on one principle: each unit of engineering work should make the next unit easier. It is delivered as a set of custom slash commands that chain plan, work, review, triage, codify and resolve.",
+   "detail": "Plan takes a PRD and tech stack, then launches sub-agents for research, best practices and frameworks. Later steps loop back to plan, so the process is iterative.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The plan step pre-engineers context into a GitHub-issue markdown file inside a new git worktree. The file holds the research, which files to create, and a set of phases.",
+   "detail": "The framework researcher (Next.js and FastAPI in the demo) ran for about 6 minutes and used roughly 50k tokens. The plan produced 6 phases covering backend and frontend setup.",
+   "t": "1:23"
+  },
+  {
+   "idea": "Phases are kept as tasks in Claude Code's built-in to-do tool, not as separate markdown files. The host says they persisted through compaction and an exit-and-resume, while the GitHub issue remains the context base and is edited as each phase completes.",
+   "detail": "The host deliberately exited and resumed the session so that compaction would not erase the to-dos before he showed them. One phase was half done when the session ended and finished later.",
+   "t": "2:35"
+  },
+  {
+   "idea": "The work step executes phases one at a time and pauses after each one to show what was built, so the human can review a phase before the next starts.",
+   "detail": "He checks remaining context with the context command before starting a phase, so a single phase does not span a compaction.",
+   "t": "3:40"
+  },
+  {
+   "idea": "The review step runs several sub-agents in parallel. Each covers a different concern (language-specific correctness, security, performance, architecture, data integrity), and results come back as a priority-ordered list of critical issues.",
+   "detail": "The host built custom review agents for Python, TypeScript and Rails. Triage then asks which issues to fix, and each chosen issue becomes its own markdown file in a to-dos folder.",
+   "t": "5:07"
+  },
+  {
+   "idea": "Codify writes the learnings from each review into the issue files, and resolve builds a dependency graph over the to-dos so independent ones run in parallel. Each feature gets its own worktree and GitHub issue.",
+   "detail": "Resolve decides parallelism by itself from the dependency graph. The host calls worktree isolation a major benefit for adding features to existing codebases, provided the context is well consolidated first.",
+   "t": "6:18"
+  },
+  {
+   "idea": "Requirements gaps show up as wrong output and the framework cannot catch them. The export button merged every repo into one file, which the host blames on his own vague requirements.",
+   "detail": "He says the BMAD method, which is more planning-heavy, would likely have prevented this. That counterfactual was not tested.",
+   "t": "5:07"
+  },
+  {
+   "idea": "The host argues that consistent naming conventions matter a great deal once there are many components and pages, and promises a later video on context-engineering conventions for Claude Code.",
+   "detail": "This is an offhand remark with no examples, so it is a claim to verify rather than a finding.",
+   "t": "6:18"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Plan, work, review, triage, codify, resolve command loop",
+   "how": "Define each stage as a custom slash command (the video names plan, work, review, triage, codify, resolve, plus a context-usage check). Plan writes a GitHub-issue markdown file with research and phases in a new git worktree. Work runs phases one by one and pauses after each for human review. Review runs parallel sub-agents and returns prioritized issues. Triage asks which to fix and writes one markdown file per issue. Codify appends learnings to those files. Resolve builds a dependency graph and runs independent to-dos in parallel. The loop then returns to plan.",
+   "when": "Adding features to an existing codebase when you already have consolidated context, and want reviewable phase checkpoints rather than one long autonomous run."
+  },
+  {
+   "name": "Built-in to-do tool as the phase ledger",
+   "how": "Write each phase as a task in Claude Code's built-in to-do list. Keep the GitHub issue file as the long-lived context document and update it as each phase completes. The host reports that the to-dos survived compaction and an exit-and-resume.",
+   "when": "Long multi-phase builds where compaction could otherwise erase the plan. Check whether the persistence holds in your own setup before relying on it."
+  },
+  {
+   "name": "Pause-per-phase human checkpoint",
+   "how": "Have the executing step stop after each phase, summarize what it built, and wait for approval before continuing.",
+   "when": "Work where a wrong early phase would compound, such as schema or architecture decisions."
+  },
+  {
+   "name": "Context check before each phase",
+   "how": "Run the Claude Code context command before starting a phase to see how much context remains before the buffer limit. Start a fresh session if a phase would not fit, so compaction does not land mid-phase.",
+   "when": "Multi-session workflows where a phase split across two compacted sessions loses continuity."
+  },
+  {
+   "name": "Language- and concern-specific parallel review agents",
+   "how": "Create one review sub-agent per language (the host used Python, TypeScript, Rails) and per concern (security, performance, architecture, data integrity). Run them in parallel and ask for a severity-ordered list of issues.",
+   "when": "Reviewing agent-written code where a single generic reviewer tends to miss language-specific problems."
+  },
+  {
+   "name": "Dependency-graph parallel resolution of to-dos",
+   "how": "Give the resolve step all to-do items. Have it infer which items depend on which and run the independent ones concurrently, each in an isolated worktree.",
+   "when": "A backlog of small, mostly independent fixes after a review pass."
+  },
+  {
+   "name": "Git ingest for Q&A on a repo",
+   "how": "Convert a git repository into a single LLM-readable file using the git ingest tool, then give it to Claude to ask detailed questions about the codebase. The host did this with the compound-engineering repo.",
+   "when": "Learning how an unfamiliar repo works, or giving an agent a whole-repo snapshot for questions."
+  },
+  {
+   "name": "Install as a plugin via marketplace",
+   "how": "Add the plugin marketplace in Claude Code, then install the plugin from it. The host says the commands appear on screen but are not spoken, so exact strings are not in the transcript. Check the video or the plugin repo for them.",
+   "when": "Sharing one standardized set of commands, sub-agents, MCP servers and hooks across a team."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "compound engineering (Claude Code plugin)",
+  "Claude Code plugin marketplace",
+  "Claude Code built-in to-do tool",
+  "GitHub issues",
+  "git worktrees",
+  "git ingest",
+  "BMAD method (compared, not used)",
+  "Next.js",
+  "FastAPI",
+  "Python",
+  "TypeScript",
+  "Rails"
+ ],
+ "numbers": [
+  {
+   "claim": "Framework researcher sub-agent ran for about 6 minutes and used around 50k tokens.",
+   "t": "1:23"
+  },
+  {
+   "claim": "The plan step generated 6 phases, each covering backend and frontend setup.",
+   "t": "1:23"
+  },
+  {
+   "claim": "The export-button bug came from an incomplete requirements spec. The framework did not catch it, and the host estimates BMAD would have avoided it. This was not measured.",
+   "t": "5:07"
+  },
+  {
+   "claim": "No speed, cost or quality benchmarks are given beyond the single research-agent figure. The 10X in the title is not quantified.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The 10X in the title is not measured anywhere in the video. The host's own verdict is that it does not offer anything drastically new, and the real selling point is that it is an easy-to-install plugin.",
+  "BMAD is described as more thorough but too slow for small projects. This is a hands-on impression from one demo, not a comparison.",
+  "The workflow's concrete value is the per-phase human checkpoint and the to-do persistence claim. Both are shown on screen with little explanation, and the exact commands are not spoken.",
+  "Capped at 2 because the title is hype and the substance is thin: no commands are read out, no benchmarks are given, and the one number is a single sub-agent run."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Plan, review, codify loop with learnings written back into issue files is a crude version of capturing reusable knowledge from agent work. Relevant to SkillForge's skill-worthiness question, but the video gives no success signal.",
+   "action": "Read how the codify step decides what to keep from a review and compare it with SkillForge's open question on success signal and skill-worthiness scoring."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and does checkpoint and resume of long runs. This video's to-do persistence across compaction and resume, its per-phase pause, and its plan, critique, review loop overlap directly with that design.",
+   "action": "Compare the to-do-tool persistence across compaction and resume, with the GitHub-issue file as context base, against ProsHarness checkpoint and resume, and consider a per-phase pause as a default approval gate."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

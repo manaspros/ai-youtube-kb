@@ -1,0 +1,196 @@
+{
+ "one_line": "OpenCode console breach postmortem: a legacy database with plaintext provider keys survived a \"remove legacy\" commit, and per-key spend limits, not the attacker, set who lost $16 vs $3,000. Ends with a key-hygiene checklist.",
+ "summary": "The host walks through the OpenCode console breach from October 2026, where users' bring-your-own provider API keys (OpenAI, Anthropic, Google) were stolen and drained within hours. The exposure window opened around 03:00 UTC on Oct 17, and OpenCode's first public statement came about 17.5 hours later, so affected users posted losses publicly before the company spoke. The root cause as described is a legacy database that a commit on Oct 12 claimed to remove, but a deploy only removed the code pointer and login service, leaving the production DB with live keys stored as plaintext. The host argues the \"distillation attack\" framing does not fit the traffic, since the first request was a cheap \"reply OK\" test ping. The losses varied from $16 to $3,000 because of each key's spend ceiling: OpenAI spend alerts do not stop traffic, Anthropic prepaid accounts can auto-reload, and Gemini billing lags about 10 minutes. The video closes with concrete steps: revoke at the provider, rotate every key ever pasted into a third-party dashboard, enable hard limits, disable auto-reload, keep balances small, delete forgotten keys, and use one key per tool or service. Facts about the attack path are explicitly unconfirmed by OpenCode at the time of recording.",
+ "speakers": [
+  "Kai Explains host (name not given in transcript)"
+ ],
+ "orgs": [
+  "OpenCode",
+  "OpenAI",
+  "Anthropic",
+  "Google",
+  "NSA",
+  "CISA",
+  "FBI"
+ ],
+ "format": "news",
+ "topics": [
+  "security-guardrails",
+  "governance-compliance",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "api-key-security",
+  "incident-postmortem",
+  "budget-limits",
+  "key-rotation",
+  "credential-storage",
+  "legacy-migration",
+  "stolen-api-keys",
+  "spend-caps"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Timeline: exposure opened around 03:00 UTC on Sat Oct 17; first OpenCode public statement came at 17:56 UTC, about 17.5 hours later. Users posted losses publicly first, and some providers (OpenAI per one user, Anthropic per its own post) revoked or warned before OpenCode did.",
+   "detail": "Speaker cites the 03:00 UTC start, the 17:56 UTC statement, and a victim whose OpenAI key was drained for $281 and Anthropic key for $168 within hours. Both keys had only ever been used inside OpenCode console.",
+   "t": "2:38"
+  },
+  {
+   "idea": "A 'remove legacy database' commit did not remove the production database. Deleting a pointer in new code does not delete a resource the code did not create.",
+   "detail": "Commit dated Oct 12, five days before the breach. The deploy removed the old login service and DB password from the new codebase; the production DB holding keys survived. In dev, deletion failed three times due to deletion protection.",
+   "t": "3:55"
+  },
+  {
+   "idea": "Provider keys were stored in plaintext in the legacy schema, and the masked key shown in settings proves it. Disk encryption at rest does not protect against anything that can run a SELECT.",
+   "detail": "Speaker says the old provider table's credentials column held raw keys, not hashed or app-level encrypted. The settings page shows the first and last 8 characters, which can only be produced from the raw stored value, so hashing would have broken masking.",
+   "t": "5:14"
+  },
+  {
+   "idea": "The 'distillation attack' framing looks like a misread. The first request on a stolen key was a $0.001 'reply OK' test ping, which checks that a key is alive before a burn.",
+   "detail": "Speaker cites Max Weinbach's first request (a short Chinese prompt meaning reply OK) and a Reddit comment that distillation was the effect, not the cause. Later traffic was 35M tokens with long cached conversations. Speaker says the attack path is still unconfirmed.",
+   "t": "7:30"
+  },
+  {
+   "idea": "Stolen real-developer keys are valuable because aged accounts escape new-account restrictions. Anthropic's Oct 12 defenses apply to API accounts created on or after Aug 31, 2026, so a fresh fake account gets the restrictions while a long-lived real account does not.",
+   "detail": "Speaker links this to a resale market: an earlier OpenCode ban of a reseller running about 8,000 fake accounts at roughly $60 of tokens per account per month, plus gray-market proxies that reroute requests to Claude.",
+   "t": "10:09"
+  },
+  {
+   "idea": "The loss size was set by each key's spend ceiling. OpenAI spend alerts send an email but do not stop traffic, and the separate hard limit can overshoot. Anthropic prepaid accounts with auto-reload can buy more credit with a card. Gemini Tier 1 caps at $250/month but billing lags about 10 minutes.",
+   "detail": "Anthropic tiers cited: Start $500/month, Build $1,000/month, Scale $200,000/month. Gemini Tier 1 cap $250/month with about 10-minute billing lag. Speaker frames the spend alert as a tap on the shoulder, not a locked door.",
+   "t": "11:30"
+  },
+  {
+   "idea": "Prepaid credits without auto-reload bound the loss. One victim's prepaid OpenAI balance was overrun by $2.15 and then the attacker had nothing left to spend.",
+   "detail": "Speaker contrasts the prepaid case with auto-reload enabled, where a drained balance buys itself more credit. The lesson: a low balance is the real exposure cap.",
+   "t": "12:45"
+  },
+  {
+   "idea": "Concrete response order: revoke at the provider, not only in the tool; rotate every key ever pasted into a third-party dashboard; set the OpenAI hard limit; disable auto-reload; keep balance low; delete forgotten keys; one key per tool or service.",
+   "detail": "Speaker notes OpenCode's notice said no email meant no impact, but victims were drained without one, so rotation should not wait for a notice. Production keys should stay on your own servers.",
+   "t": "14:09"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Set a provider hard limit, not just a spend alert",
+   "how": "On OpenAI, go to billing and turn on the separate hard limit toggle (the alert only emails). Expect enforcement to lag, so set the ceiling below what you can tolerate losing.",
+   "when": "Any OpenAI API account, especially one whose key is used in a third-party tool or shared across services."
+  },
+  {
+   "name": "Prepaid credit balances without auto-reload",
+   "how": "Disable auto-reload on prepaid provider accounts (Anthropic console, Google, etc.). Keep the balance at an amount you would shrug at losing and top up manually.",
+   "when": "Any prepaid provider account. Speaker says auto-reload may be on by default."
+  },
+  {
+   "name": "Revoke keys at the provider, not in the tool",
+   "how": "Delete the key in the provider dashboard (OpenAI, Anthropic console, Google Cloud). Deleting it inside a third-party tool does not kill the key at the provider.",
+   "when": "After a third-party tool incident, or any suspected key leak."
+  },
+  {
+   "name": "Key inventory and rotation",
+   "how": "List every key per provider, delete keys you no longer remember or use (speaker cites a $1,700 loss on a forgotten key), and rotate every key ever pasted into a third-party dashboard. Speaker estimates about five minutes per provider.",
+   "when": "Immediately after a vendor breach, and periodically otherwise."
+  },
+  {
+   "name": "One key per tool or service",
+   "how": "Give each tool, service and team its own provider key, and keep production keys on your own servers. A compromise then has a blast radius of one key that can be revoked alone.",
+   "when": "Any team or product that uses third-party tools alongside production."
+  },
+  {
+   "name": "Verify decommissioning of the underlying resource",
+   "how": "When retiring a legacy store, delete the resource itself (not just the config pointer or service account) and verify it is gone. Check for deletion protection or leftover live data in every environment.",
+   "when": "Decommissioning legacy databases or services through a deploy pipeline."
+  },
+  {
+   "name": "Encrypt third-party credentials at the application layer",
+   "how": "Do not store raw provider keys in a plain DB column. Speaker's implied fix is app-level encryption, since disk encryption does not stop queries, and display only a masked form derived safely (hashing would break the first/last 8 chars display).",
+   "when": "Any service that stores customer or user-supplied provider credentials."
+  }
+ ],
+ "tools": [
+  "OpenCode (terminal coding assistant and console web dashboard)",
+  "OpenAI API",
+  "Anthropic API / Claude API console",
+  "Google Gemini API",
+  "Google Cloud",
+  "Claude",
+  "GPT",
+  "Gemini"
+ ],
+ "numbers": [
+  {
+   "claim": "Victim losses ranged from $16 to $3,000 for keys in the same attack.",
+   "t": "0:00"
+  },
+  {
+   "claim": "About 35 million tokens consumed overnight on stolen keys.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Exposure window opened about 03:00 UTC Sat Oct 17; first OpenCode public statement at 17:56 UTC, about 17.5 hours later.",
+   "t": "1:18"
+  },
+  {
+   "claim": "One victim lost $281 on OpenAI and $168 on Anthropic within hours; another posted a $1,700 loss.",
+   "t": "2:38"
+  },
+  {
+   "claim": "OpenCode's first statement was viewed about 2.8 million times; one victim post got about 800,000 views.",
+   "t": "2:38"
+  },
+  {
+   "claim": "Legacy DB removal commit dated Oct 12; breach Oct 17, five days later. Dev deletion failed three times due to deletion protection.",
+   "t": "3:55"
+  },
+  {
+   "claim": "Anthropic's Oct 12 defenses said to cut what distillers can harvest by 90 to 99%; new rules apply to API accounts created on or after Aug 31, 2026.",
+   "t": "7:30"
+  },
+  {
+   "claim": "A banned reseller ran about 8,000 fraudulent OpenCode accounts, about $60 of resold tokens per account per month.",
+   "t": "10:09"
+  },
+  {
+   "claim": "Anthropic tiers cited: Start $500/month, Build $1,000/month, Scale $200,000/month.",
+   "t": "12:45"
+  },
+  {
+   "claim": "Gemini API Tier 1 cap is $250/month, with billing about 10 minutes behind real usage.",
+   "t": "12:45"
+  },
+  {
+   "claim": "One prepaid OpenAI balance overran by $2.15 before reaching zero and stopping.",
+   "t": "12:45"
+  },
+  {
+   "claim": "Victim loss of $1,700 came from a forgotten, still-active key.",
+   "t": "15:21"
+  }
+ ],
+ "hot_takes": [
+  "The attacker did not choose how much anyone lost; the key's spend limit did, and most people never set it.",
+  "The distillation framing is probably an early misread: 'the distillation was the effect and not the cause,' since the first request was a test ping.",
+  "A spend alert is a tap on the shoulder, not a locked door.",
+  "Deleting a legacy pointer in code is not deleting the resource; the migration was ambushed mid-flight.",
+  "OpenCode did a lot right (public code, refunds, responsive founders), but a plaintext key column is indefensible even with encrypted disks."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Govrix Scout already does budgets and audit. This incident is a case study for hard, per-key spend caps enforced at the proxy, and for not storing upstream provider keys in plaintext.",
+   "action": "Verify that Govrix Scout budgets can hard-stop per upstream key (not just alert), measure how far spend can overshoot before enforcement, and confirm no raw provider keys sit in the L3 Postgres key store."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness handles credentials for the Claude Code CLI with zero-token handling, which is adjacent to this incident but does not hold provider billing keys directly.",
+   "action": "Check that ProsHarness never writes provider keys into checkpoints, logs or plan files, and that its credential store uses per-tool keys."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

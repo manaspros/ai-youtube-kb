@@ -1,0 +1,168 @@
+{
+ "one_line": "Cursor's David Gomes on replacing its git-worktree and best-of-N feature (about 15K lines deleted) with one markdown skill plus subagents, and what was lost in the swap.",
+ "summary": "David Gomes from Cursor describes rebuilding the Git worktrees feature and its best-of-N model comparison as an agent skill and subagents instead of application code. The old version needed worktree management, setup scripts, a judge model, harness system reminders and disk cleanup, and the removal PR deleted roughly 15,000 lines. The new version is a short markdown skill, and slash commands handle the entry points, with prompts served from Cursor's backend so they update without a client release. The main gains are lower maintenance, switching into a worktree mid-chat, working across multiple repos, and a parent agent that can compare and merge subagent outputs. The main loss is containment: the old code made escaping a worktree physically impossible, while the skill relies on aggressive prompting that the speaker calls vibes-based and that drifts over long sessions. He describes headless-CLI evals with two scorers, one checking work inside the worktree and one checking that the primary checkout stayed untouched, which showed Haiku leaking into the primary checkout far more than Composer or Grok. Planned fixes are RL tasks for Cursor's Composer model, a native worktree UI in Cursor 3.0, and non-Git parallelization primitives.",
+ "speakers": [
+  "David Gomes"
+ ],
+ "orgs": [
+  "Cursor",
+  "Braintrust"
+ ],
+ "format": "talk",
+ "topics": [
+  "skills-self-improvement",
+  "coding-agents",
+  "multi-agent",
+  "evals"
+ ],
+ "tags": [
+  "cursor",
+  "git-worktrees",
+  "agent-skills",
+  "subagents",
+  "best-of-n",
+  "slash-commands",
+  "evals",
+  "braintrust",
+  "headless-cli",
+  "parallel-agents",
+  "system-reminders",
+  "rl",
+  "composer"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Cursor replaced its worktree feature and best-of-N comparison with a skill plus subagents built from existing primitives",
+   "detail": "Both features were reimplemented as markdown: a skill for worktrees and a subagent-per-model pattern for best-of-N. The speaker's thesis is that a feature which used to be app code can be expressed as prompts that call existing agent primitives.",
+   "t": "4:58"
+  },
+  {
+   "idea": "The old implementation carried a lot of machinery",
+   "detail": "It required worktree creation and isolation, user setup scripts, a judge model that picks the best implementation, harness changes with system reminders to keep agents on track, and cleanup of abandoned worktrees that filled disks.",
+   "t": "3:29"
+  },
+  {
+   "idea": "The removal PR deleted about 15,000 lines",
+   "detail": "The speaker says the new skill-based version is almost as good as the old one but far cheaper to maintain. He admits the maintenance argument is partly selfish, since the feature is used by power users rather than most of the user base.",
+   "t": "3:29"
+  },
+  {
+   "idea": "The skill gains are mid-chat switching, multi-repo support and better cross-model judging",
+   "detail": "A slash command lets users move into a worktree partway through a conversation, which the old UI could not do. Multi-repo setups now get one worktree and one PR per repo, which the old feature disabled. Because the parent agent sees every subagent's work, it can compare outputs and stitch pieces from different models together.",
+   "t": "10:45"
+  },
+  {
+   "idea": "Containment is now prompt-based, and this is the biggest regression",
+   "detail": "The old code made it physically impossible for an agent to touch files outside its worktree. The skill only tells the model to stay put, and over long sessions models can forget where they are working. The speaker calls this vibes-based and says the community feedback is mixed.",
+   "t": "12:09"
+  },
+  {
+   "idea": "Discoverability and perceived speed got worse",
+   "detail": "The UI dropdown that offered local, cloud or worktree runs was removed, so users must know to type the slash command. Worktree creation now happens visibly inside the chat, which feels slower even though the total time is about the same.",
+   "t": "13:09"
+  },
+  {
+   "idea": "Evals with two scorers show isolation failures differ by model",
+   "detail": "Using the headless Cursor CLI, the speaker scores whether work landed in the worktree and whether the primary checkout was left alone, with Braintrust as the eval harness. Haiku often deviates into the primary checkout, while Composer and Grok do much better. Eval results are described qualitatively, with no numbers shown.",
+   "t": "15:37"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Skill as the orchestrator for a stateful workflow",
+   "how": "Write the feature as a markdown skill of about 40 lines. It tells the parent agent to create a Git worktree, run the user's configured setup scripts, stay in that checkout, and includes separate Windows and Linux/macOS command variants. The user invokes it through a slash command.",
+   "when": "Replacing application code whose logic is mostly sequencing shell commands and prompts, where a rare power-user feature does not justify ongoing code maintenance."
+  },
+  {
+   "name": "Best-of-N through one subagent per model",
+   "how": "The parent spawns one subagent per model, each in its own worktree with its own context. It waits for all of them, then writes a comparison table with grades and criticism and recommends one. The user can ask it to combine pieces from different outputs. The demo ran Kimi, Grok, Composer, GPT and Opus on one task.",
+   "when": "Comparing several models or approaches on the same coding task, when the comparison itself needs a parent that can see all candidate outputs."
+  },
+  {
+   "name": "Commands instead of skills for server-controlled prompts",
+   "how": "Ship the prompts as slash commands whose text is loaded only when the user invokes them, and fetch them from the vendor's backend. That way prompt fixes reach users on the next use without a client update.",
+   "when": "The prompt will change often and should not depend on client release cycles, and it only needs to load on demand."
+  },
+  {
+   "name": "Prompt-level containment with system reminders",
+   "how": "Use direct instructions such as never work outside this directory, plus system reminders injected into the harness to keep the agent on track. The speaker presents this as the weakest part of the design and plans to tune it through evals.",
+   "when": "Enforcement by the infrastructure is not possible and a soft guarantee is acceptable. Pair it with evals that detect drift."
+  },
+  {
+   "name": "Two-scorer isolation eval run headlessly",
+   "how": "Run the agent via the headless CLI on tasks. Score 1 checks that the agent made changes in its worktree. Score 2 is the inverse and checks that the primary checkout has no changes. Let an agent write the eval scaffolding, log to Braintrust, and compare models per scorer.",
+   "when": "Testing whether an agent respects a boundary such as a directory, sandbox or repo, and comparing models on that boundary."
+  },
+  {
+   "name": "Feeding failure cases into RL training",
+   "how": "Add tasks that run in the worktree environment to the RL task pool used to train the in-house model, so the model learns to stay in its checkout.",
+   "when": "You own the model being trained and a behavior fails in production, as with worktree containment for Composer."
+  }
+ ],
+ "tools": [
+  "Cursor (2.0 and 3.0)",
+  "Cursor CLI (headless)",
+  "Git worktrees",
+  "Agent skills",
+  "Subagents",
+  "Slash commands",
+  "Composer (Cursor's own model, version 2 mentioned)",
+  "Braintrust",
+  "Kimi",
+  "Grok",
+  "GPT",
+  "Opus",
+  "Haiku"
+ ],
+ "numbers": [
+  {
+   "claim": "The removal PR deleted about 15,000 lines of code (\"around 15,000\")",
+   "t": "3:29"
+  },
+  {
+   "claim": "The previous best-of-N implementation was about 4,000 lines (\"maybe 4,000\"), and the new skill is about 40 lines (\"only around 40 lines of code\")",
+   "t": "6:25"
+  },
+  {
+   "claim": "The best-of-N demo ran five models in parallel: Kimi, Grok, Composer, GPT and Opus",
+   "t": "9:19"
+  },
+  {
+   "claim": "The old feature shipped with Cursor 2.0 around October 2025",
+   "t": "2:33"
+  },
+  {
+   "claim": "Git worktrees are slow to create, use a lot of disk space, and work only in Git repos",
+   "t": "18:21"
+  },
+  {
+   "claim": "Haiku deviates into the primary checkout very often; Composer and Grok perform much better (no rates given)",
+   "t": "15:37"
+  }
+ ],
+ "hot_takes": [
+  "The title's figures (12K lines replaced by a 200-line skill) do not match what is said in the talk: about 15K lines deleted, about 4K for the old best-of-N code, and about 40 lines for the new skill. The 200-line number does not appear in the transcript.",
+  "The speaker presents the skill as almost as good as the old feature, but no task-success, isolation or quality metrics are shown. The only evidence is qualitative eval comments and a forum thread that he says has mixed feedback.",
+  "The speaker concedes that the containment guarantee moved from code (physically impossible to escape) to prompts (vibes-based). That is a real regression, which the 'almost as good' framing downplays.",
+  "This is vendor content from Cursor, and the eval discussion favors Cursor's own Composer model. The maintenance-cost argument is self-described as partly selfish.",
+  "Quality 4 rather than 5: the candid tradeoffs and the move from enforcement-in-code to enforcement-in-prompt are practical, but the talk has no quantified results."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk's central lesson is that isolation enforced by prompts is weaker than isolation enforced by infrastructure. This is relevant to Crucible's sandboxing and exec-gate guardrails, but it is one data point.",
+   "action": "Keep directory and sandbox boundaries enforced in infrastructure (Crucible/celld). Borrow the two-scorer eval (work landed in the sandbox, nothing leaked outside it) as a test for exec-gate guardrails."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and runs long, checkpointed tasks, so worktree isolation per run, best-of-N across models or plans, and boundary-violation evals apply directly.",
+   "action": "Prototype a best-of-N mode in ProsHarness that runs each plan or model in its own git worktree from a skill-style orchestrator, then add a scorer that fails any run writing to the primary checkout."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

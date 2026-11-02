@@ -1,0 +1,144 @@
+{
+ "one_line": "Short walkthrough of Cloudflare's Sandbox SDK for running AI-generated code in isolated containers from a Worker, with a Claude Haiku-to-sandbox example and a positioning take against Daytona.",
+ "summary": "Cloudflare released a Sandbox SDK for executing code, managing files and running processes in an isolated environment, aimed at untested code produced by AI agents. The speaker questions whether it is late given Daytona and Vercel already offer sandboxes, then explains the layering: a Worker runs the application code, a Durable Object receives RPC calls and manages the sandbox lifecycle, and a container executes commands and returns output back up the chain. The walkthrough builds a Bun project with Wrangler config declaring the container, a Durable Object binding and a storage migration, plus a Dockerfile based on the Cloudflare sandbox image that exposes the Durable Object port. A minimal Worker calls sandbox.exec to run Python and returns the exit code, output and command. A second example sends a question to Claude Haiku via the Anthropic SDK, writes the generated code to code.js in the sandbox and runs it with node. The speaker says deployment requires a Workers paid plan and that the SDK also covers process management, git clones and terminal-like sessions. The verdict: strongest for teams already on Cloudflare Workers who want a TypeScript API, while Daytona is the pick for a cheaper option with a Python SDK and more features.",
+ "speakers": [],
+ "orgs": [
+  "Cloudflare",
+  "Daytona",
+  "Vercel",
+  "Anthropic"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "sandboxing-execution",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "cloudflare",
+  "sandbox-sdk",
+  "durable-objects",
+  "containers",
+  "workers",
+  "wrangler",
+  "code-execution",
+  "daytona",
+  "claude-haiku",
+  "bun"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Sandbox SDK is positioned for running untested, AI-generated code: execute commands, manage files and run processes in an isolated environment.",
+   "detail": "Framed as the answer to agent-generated code that should not run on the host. The speaker asks whether it arrives late given Daytona and Vercel sandboxes, and treats the Cloudflare-specific answer as the main reason to pick it.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Three-layer architecture: Worker, Durable Object, container.",
+   "detail": "The Worker runs application code. A Durable Object receives RPC calls and manages sandbox lifecycle (create, activate, delete). It routes commands to the container, which executes them and captures output; responses flow back through the same layers.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Container image is a full Linux environment with Node 20, Python 3.11, latest Bun on Ubuntu 22.",
+   "detail": "Full Linux capabilities, but local runs need Docker Desktop or another Docker runtime because the container image is built and pulled first.",
+   "t": "1:24"
+  },
+  {
+   "idea": "Minimal Worker: getSandbox plus sandbox.exec, with the Durable Object class exported so the runtime registers it.",
+   "detail": "Code runs Python through exec, logs stdout and stderr, and returns the result from a default fetch handler. The Sandbox class must be re-exported from the entry file or the Durable Object is not registered; the Durable Object namespace is typed on env.",
+   "t": "1:24"
+  },
+  {
+   "idea": "Responses carry exit code, output and the command that ran, and the same output appears in the local console.",
+   "detail": "Local dev with Docker builds the image on first run before the port is reachable, so the first request is slow.",
+   "t": "2:43"
+  },
+  {
+   "idea": "LLM-to-sandbox pattern: model writes code, sandbox runs it.",
+   "detail": "The example sends the user question to Claude Haiku with a prompt asking for simple, cleaned-up code, writes the output to code.js in a sandbox named after a demo user, and executes it with node (the speaker notes Bun would also work). Errors are handled and the result returned.",
+   "t": "2:43"
+  },
+  {
+   "idea": "Deployment needs a Workers paid plan; the SDK goes beyond exec.",
+   "detail": "Also mentioned: process management, cloning git repos, and sessions that behave like terminal tabs. The speaker says long-running containers beyond the limits of other options are a reason to choose it, but the duration figure is garbled in the captions.",
+   "t": "4:06"
+  },
+  {
+   "idea": "Decision rule: Cloudflare Sandbox for Workers shops wanting a TypeScript API; Daytona for cheaper with a Python SDK and more features.",
+   "detail": "A comparison given in one paragraph with no benchmarks or pricing numbers. Treat it as the speaker's opinion from a short hands-on, not a measured evaluation.",
+   "t": "4:06"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Worker + Durable Object sandbox wiring",
+   "how": "Wrangler JSONC declares the container, a Durable Object binding for the Sandbox class, and a migration for its storage. A Dockerfile uses the Cloudflare sandbox base image (Node 20, Python 3.11, Bun on Ubuntu 22) and exposes the Durable Object port. In the Worker, call getSandbox(env, id) to create or reuse a sandbox by ID, run sandbox.exec(command), and re-export the Sandbox class from the entry module so the runtime registers the Durable Object.",
+   "when": "Use when you want per-user or per-session isolated execution from a Cloudflare Worker, with sandbox identity tied to an ID you control."
+  },
+  {
+   "name": "Generate-then-execute loop",
+   "how": "Send the user question to an LLM (the example uses Claude Haiku through the Anthropic SDK) with a prompt that asks for a single, minimal code file. Write the returned code into the sandbox with the sandbox file-write call, execute it with node (or bun) via exec, and return the stdout, stderr, exit code and generated code to the caller. Handle errors on the generation and execution paths separately.",
+   "when": "Use for agent features that must run model-written code (data transforms, calculations, quick scripts) without touching the host or the main worker process."
+  },
+  {
+   "name": "Local dev with Docker before deploy",
+   "how": "Run the Worker locally with Docker running so the sandbox image builds and pulls on first request, then hit the local endpoint to confirm exec output. Deploy after that; the account needs a Workers paid plan.",
+   "when": "Use to validate the container image and Durable Object wiring before paying for a deploy."
+  }
+ ],
+ "tools": [
+  "Cloudflare Sandbox SDK",
+  "Cloudflare Workers",
+  "Cloudflare Durable Objects",
+  "Cloudflare Containers",
+  "Wrangler",
+  "Docker Desktop",
+  "Bun",
+  "Node 20",
+  "Python 3.11",
+  "Ubuntu 22",
+  "Anthropic AI SDK",
+  "Claude Haiku",
+  "Daytona",
+  "Vercel sandbox"
+ ],
+ "numbers": [
+  {
+   "claim": "Container image includes Node 20, Python 3.11, latest Bun, on Ubuntu 22.",
+   "t": "1:24"
+  },
+  {
+   "claim": "Deploying requires a Workers paid plan.",
+   "t": "4:06"
+  },
+  {
+   "claim": "Speaker says containers can run for a long time (captions read 'more than 45 minutes or five hours'), which is ambiguous and not verified; check the official docs before relying on it.",
+   "t": "4:06"
+  },
+  {
+   "claim": "Video length is 5:17; no benchmarks, latency or pricing figures are given.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Cloudflare's sandbox is a no-brainer for teams already on Workers who want a TypeScript API (speaker's view).",
+  "The title ('You NEED to try') oversells a short intro; the substance is a basic exec example and a one-paragraph comparison.",
+  "Lateness vs Daytona and Vercel is raised as a question and not answered in depth."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Crucible (L2C) is opt-in sandboxed code execution with a Cloudflare backend. This talk shows the concrete Cloudflare primitives (Worker, Durable Object per sandbox, exec and file-write API) that such a backend would sit on.",
+   "action": "Compare the Cloudflare Sandbox SDK's Durable Object lifecycle and exec/write-file API with the planned celld Cloudflare backend in Crucible, and check the container lifetime limits in Cloudflare's docs before committing to it."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI for long runs; an isolated sandbox could matter later if it runs untrusted generated code, but the talk does not address checkpoint/resume or harness design.",
+   "action": "If ProsHarness ever needs isolated execution for Claude Code runs, add Cloudflare Sandbox and Daytona to the candidate list and compare their exec/session APIs."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

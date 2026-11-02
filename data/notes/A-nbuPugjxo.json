@@ -1,0 +1,126 @@
+{
+ "one_line": "Beginner primer on distributed tracing: a trace is one request's whole journey, spans are the units of work inside it, and the common mistake is starting new traces instead of child spans.",
+ "summary": "Better Stack explains the difference between traces and spans using a food-delivery analogy: a trace is the whole request journey across services, and spans are the individual operations (HTTP calls, DB queries, processing steps) that make it up. Spans form a parent-child tree, and each one records its parent, duration and errors through propagated context. The video's main point is that developers often add new traces where they should add spans. It demonstrates this in Jaeger, where one payment request showed up as several separate traces with no top-level entry, and then shows the corrected single-trace view with nested spans. It closes with three rules (think journey not stops, connect spans via context, instrument with purpose) and two pitfalls (a new trace per operation, and not propagating context between services). This is an introductory treatment with no benchmarks or production data.",
+ "speakers": [
+  "Better Stack presenter (unnamed)"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Uber (developer of Jaeger, as stated)",
+  "OpenTelemetry"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "observability",
+  "dev-tools"
+ ],
+ "tags": [
+  "distributed-tracing",
+  "spans",
+  "context-propagation",
+  "jaeger",
+  "opentelemetry",
+  "instrumentation",
+  "observability-basics"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A trace is the complete journey of one request, from entry to response, possibly across several services; spans are the steps inside it.",
+   "detail": "Food-delivery analogy: the whole order is the trace, and the restaurant, chef and driver are spans. A span is one unit of work such as an HTTP call, a DB query or a service call.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Spans form a parent-child tree, and each span knows its parent, duration and errors via context.",
+   "detail": "Together the spans form a family tree that shows what happened within one trace. A child cannot start until its parent step has done its work (the chef finishes before the driver leaves).",
+   "t": "1:09"
+  },
+  {
+   "idea": "The most common error is creating a new trace where a span belongs.",
+   "detail": "Developers say they are 'adding traces to this function' when they mean spans. Splitting one request into 20 separate traces instead of one trace with 20 spans makes it hard to reconstruct the flow during debugging.",
+   "t": "1:09"
+  },
+  {
+   "idea": "Jaeger demo: one request appeared as several unrelated traces with no top-level entry.",
+   "detail": "Each service was its own trace (validate payment, check payment auth, get payment config), so there was nothing to click into for the single request. Errors were hard to attribute to the request that caused them.",
+   "t": "2:35"
+  },
+  {
+   "idea": "With correct structure, the root trace shows what kicked off the request and all its child spans.",
+   "detail": "After restructuring, one GET request is one trace with nested spans (validate payment, validate format, validate range). The trace graph shows the request fanning out to the downstream calls, and an error can be traced back to the originating request.",
+   "t": "3:53"
+  },
+  {
+   "idea": "Three rules: think journey not stops, connect spans explicitly, and instrument with purpose.",
+   "detail": "Do not make multiple traces when you need spans in one trace. Propagate span context so no span is disconnected. Trace critical paths, bottlenecks and error-prone code rather than everything, and prefer quality telemetry over volume.",
+   "t": "3:53"
+  },
+  {
+   "idea": "The two pitfalls are a new trace per operation, and not propagating context into service calls.",
+   "detail": "Create spans for operations within the trace, and always pass trace context into outbound service calls. The suggested next step is to audit your tracing setup for disconnected traces that should be spans.",
+   "t": "6:22"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "One trace per inbound request, one span per operation",
+   "how": "Start a trace at the request entry point. Wrap each unit of work (HTTP call, DB query, validation, processing step) in a child span rather than starting a new trace. Use the parent span's context so the child is linked.",
+   "when": "Any request that touches multiple steps or services, which is most backend and agent-gateway paths."
+  },
+  {
+   "name": "Propagate trace context into every outbound call",
+   "how": "Pass the current span context into each downstream service call so the callee creates child spans under the same trace ID. Without this, the downstream work appears as a disconnected trace.",
+   "when": "Any service-to-service call, including proxies, gateways and tool/API calls made by agents."
+  },
+  {
+   "name": "Instrument selectively",
+   "how": "Put spans on critical paths, known bottlenecks and error-prone operations first. Skip trivial internal functions.",
+   "when": "When telemetry volume or cost is a concern and you need signal, not everything."
+  },
+  {
+   "name": "Audit for disconnected traces",
+   "how": "In the tracing UI (Jaeger in the demo), search for the service's traces and check whether one user request shows up as several traces. Each such case should be converted into spans under a single root trace.",
+   "when": "When debugging is slow because a request is hard to follow end to end."
+  },
+  {
+   "name": "Read the trace graph and span tree in Jaeger",
+   "how": "Use Find Traces for a service, open one trace, and inspect the spans and their parent-child nesting and durations. The trace graph shows which upstream call triggered each downstream span.",
+   "when": "For diagnosing latency or errors on one specific request."
+  }
+ ],
+ "tools": [
+  "Jaeger",
+  "OpenTelemetry (documentation referenced; no version stated)"
+ ],
+ "numbers": [
+  {
+   "claim": "Illustrative example: a payment-processing debug that could take hours when split into 20 traces instead of one trace with 20 spans (hypothetical, no measured data).",
+   "t": "1:09"
+  },
+  {
+   "claim": "Video length 7:39; no benchmarks, costs, or adoption stats are given.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Most of the value is correcting a naming habit (trace vs span), and the mental model is correct but elementary for anyone who has used distributed tracing.",
+  "The presenter says teams often add traces where they should add spans, which is a plausible but unquantified claim; the Jaeger demo is a single hand-built example app, not a measured case."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "",
+   "action": "Check that the Govrix Scout proxy opens one OTel trace per inbound request and creates child spans for budget, PII/injection scan, routing and upstream calls, instead of separate traces per stage; verify trace context is propagated to the upstream vLLM/Ray Serve calls."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps long Claude Code runs with checkpoint/resume and plan-critique-debate steps. A run could be modeled as a trace with spans per step, though the video is generic and does not cover agent runs.",
+   "action": "Consider tagging each ProsHarness checkpoint step as a span under one run-level trace so a resumed run can be followed across restarts."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

@@ -1,0 +1,169 @@
+{
+ "one_line": "Sponsored walkthrough of building a full-stack notes app with Warp's agentic development environment, covering PRD planning, parallel agents split by API contract, saved prompts and rules, and MCP context.",
+ "summary": "The host argues that AI coding is mostly about filling the context window with the right information at the right time, and uses Warp's new agentic development environment (ADE) as the vehicle. The video is a sponsored partnership: the host opens with unverified benchmark claims (75.8% on SWE-bench, first on Terminal Bench) and closes with a $5 Warp Pro promo. The method is a sequence of principles: write a detailed PRD first (brainstormed with ChatGPT), generate the API contracts, then fan out separate agents for backend, frontend and authentication. Reusable context lives in saved prompts, Warp Drive rules, MCP servers (Context7 and Playwright), starter workflows and notebooks. Agents keep a to-do list because context windows shrink, and rules tell them to fetch current library docs via Context7 before installing. The demo runs the agents in parallel tabs, reviews their diffs, adds auth, validates with Express Validator and Zod, and tests the signup, notes, AI summary and voice-note features. The video shows the workflow but never measures the \"save 90% of time\" claim from its title.",
+ "speakers": [
+  "AI LABS host (unnamed)"
+ ],
+ "orgs": [
+  "Warp",
+  "OpenAI"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "coding-agents",
+  "context-engineering",
+  "multi-agent",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "warp",
+  "agentic-development-environment",
+  "parallel-agents",
+  "prd-planning",
+  "saved-prompts",
+  "workflows",
+  "rules",
+  "mcp",
+  "context7",
+  "playwright-mcp",
+  "task-list",
+  "diff-review",
+  "zod",
+  "express-validator",
+  "sponsored"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Context, not prompts, is the core skill: fill the context window with the right information at the right time.",
+   "detail": "The host frames the whole video around this claim and presents the workflow principles as ways to manage context.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Plan first with a detailed PRD that lists every feature before any agent writes code.",
+   "detail": "The host brainstorms the idea with ChatGPT, then produces a PRD. The demo app has three log-entry modes: manual notes, AI summary of an uploaded document, and voice-note transcription.",
+   "t": "1:02"
+  },
+  {
+   "idea": "Split work across parallel agents by component, and generate the API contract first so the agents can work independently.",
+   "detail": "The host generates all APIs from the PRD, then one agent builds the backend and another the frontend against those APIs. An auth agent follows once both are ready. The host says this keeps any single agent from being overloaded with context.",
+   "t": "2:16"
+  },
+  {
+   "idea": "Save prompts, rules, MCP servers, workflows and notebooks so context is reusable rather than retyped.",
+   "detail": "Warp Drive holds the MCP servers, rules (for example, keep dependencies mutually compatible), starter prompts, templated workflows (for example, Next.js init), and notebooks, which are markdown docs fed to the agent as needed.",
+   "t": "3:28"
+  },
+  {
+   "idea": "Give agents an explicit task list because their context windows shrink over time.",
+   "detail": "The host says that without a clear outline the agent works from a degraded context and starts to hallucinate. Warp's built-in to-do list makes the agent work through tasks one by one.",
+   "t": "4:30"
+  },
+  {
+   "idea": "Use MCP for external, current context and rules for project-specific behavior.",
+   "detail": "The host has a rule that tells the agent to use Context7 whenever it installs a library or framework, so it fetches the latest compatible version and docs from the source. The host says models have training cutoffs, which is why external lookups matter.",
+   "t": "5:50"
+  },
+  {
+   "idea": "Run agents in parallel tabs, watch the completion signals, then review and edit their diffs.",
+   "detail": "The host runs frontend and backend in separate tabs, uses Warp's management panel and red-dot and toast notifications to track completion, and reviews the changes. The host calls the tool an ADE because the user can edit the agent's code in the same view.",
+   "t": "6:43"
+  },
+  {
+   "idea": "Add validation as a separate step after the components exist: Express Validator on the backend, Zod on the frontend.",
+   "detail": "The host then tests signup and sign-in, which the validation enforces, followed by the notes, AI summary, document summary and voice-note features. No automated tests or evals are shown.",
+   "t": "7:45"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "PRD-first, then API contract, then fan out",
+   "how": "Brainstorm the app (the host uses ChatGPT), write a PRD that lists every feature, generate the API endpoints from the PRD, then give separate agents one component each (backend, frontend), with the auth agent starting after the first two are done.",
+   "when": "Multi-component full-stack builds where agents need a shared interface to work in parallel without stepping on each other."
+  },
+  {
+   "name": "Saved prompts as reusable commands",
+   "how": "Store frequently used prompts in Warp Drive, then recall them with a backslash or the slash command and run them in a new tab.",
+   "when": "Repeating the same kind of task (for example, backend setup or auth) across sessions or team members."
+  },
+  {
+   "name": "Templated workflows for known-hard setup steps",
+   "how": "Create a Warp workflow that encodes the correct command sequence for a task the agent gets wrong (the host cites Next.js project init, which took four attempts because of naming conventions).",
+   "when": "Setup steps that agents repeatedly get wrong, such as scaffolding with fixed naming conventions."
+  },
+  {
+   "name": "Rules to pin dependency and library behavior",
+   "how": "Add a standing rule such as: ensure all installed dependencies are compatible with each other; always use the Context7 MCP when installing any library or framework.",
+   "when": "Projects where the agent must avoid stale library versions or version conflicts."
+  },
+  {
+   "name": "Notebooks as context documents",
+   "how": "Write an extended README or markdown doc for the project and attach it so the agent can read it when needed.",
+   "when": "Project-specific background that is too long for a prompt but needed in some tasks."
+  },
+  {
+   "name": "Explicit task list for long runs",
+   "how": "Let the agent write a to-do list for the whole task so it works through items in order.",
+   "when": "Multi-step tasks in which the agent's context is likely to grow long or degrade."
+  },
+  {
+   "name": "Parallel agent tabs with completion monitoring",
+   "how": "Run each agent in its own tab, watch the management panel and the completion indicators, then review each agent's diff and edit code directly before saving.",
+   "when": "Independent work streams where you want to supervise several agents at once."
+  }
+ ],
+ "tools": [
+  "Warp (agentic development environment and terminal, with a built-in AI agent)",
+  "Warp Drive (saved prompts, rules, MCP servers, workflows, notebooks)",
+  "Context7 MCP",
+  "Playwright MCP",
+  "ChatGPT",
+  "Express Validator",
+  "Zod",
+  "Next.js",
+  "SWE-bench (vendor claim: 75.8%)",
+  "Terminal Bench (vendor claim: #1)"
+ ],
+ "numbers": [
+  {
+   "claim": "Warp's agent is claimed to score 75.8% on SWE-bench and rank #1 on Terminal Bench. Vendor-stated and unverified in the video.",
+   "t": "0:00"
+  },
+  {
+   "claim": "A Next.js project setup used to take about four agent attempts because of naming-convention mistakes. The host's own anecdote, not a measurement.",
+   "t": "4:30"
+  },
+  {
+   "claim": "Warp Pro promo at $5 for one week. Sponsor offer.",
+   "t": "8:55"
+  },
+  {
+   "claim": "Video title says 'Save 90% of Time' versus Claude Code; the video does not measure or compare time or cost.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Sponsored: the host says they partnered with Warp, and the video ends with a $5 Warp Pro promo, so the praise and benchmarks should be weighed as vendor claims.",
+  "The title's 'Save 90% of Time' versus Claude Code is never measured or compared in the video; the only comparison is the host's general impression.",
+  "The SWE-bench and Terminal Bench figures are stated by the presenter without a source or methodology.",
+  "The principles (PRD, parallel agents by API contract, saved prompts, rules, MCP, task lists, validation) are generic and apply to any agent tool. The Warp-specific part is the UI for saved prompts, notifications and diff review.",
+  "No automated tests, evals or verification of agent output are shown; the host checks the result by manually signing up and using the app."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Generic IDE-side coding workflow; nothing about the AgentOS proxy, memory, inference, or sandboxing.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Shares the plan-then-parallelize pattern (PRD and API contract before fan-out) and rules/MCP for context, but the video does not offer a harness design.",
+   "action": "When ProsHarness fans out Claude Code subtasks, have the plan step emit a shared interface or API contract that each subagent receives, and compare with the parallel-agent approach shown here."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

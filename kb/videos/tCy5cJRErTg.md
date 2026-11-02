@@ -1,0 +1,43 @@
+# Time to SWITCH...Claude Code vs Cursor debate just ended
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `tCy5cJRErTg` · [watch](https://youtu.be/tCy5cJRErTg) · **date:** 2025-11-02 · **length:** 8:54 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** AI LABS host (name not stated in transcript) · **orgs:** AI LABS, Anthropic, Cursor
+- **topics:** claude-code, coding-agents, dev-tools, mcp-and-tools · **tags:** claudia, claude-code, gui, cursor, checkpoints, custom-agents, subagents, mcp, preview-pane, install-from-source, clau.md
+
+> Walkthrough of Claudia, a build-from-source desktop GUI over Claude Code with custom agents, per-prompt checkpoints, a preview pane and GUI MCP setup, pitched as a reason to leave Cursor. Hype title; single-tool demo.
+
+## Summary
+The host argues that Claude Code is more capable than Cursor but has GUI gaps, such as pasting images into the terminal UI, adding MCP servers, rules and subagents, and that a tool called Claudia closes them. Claudia wraps the Claude Code CLI in a desktop GUI with two areas: Claude Code Agents (named agents with an icon, default model, read/write/search permissions and a system prompt, each run against a chosen project folder) and Claude Code Projects (sessions grouped by folder, with model and reasoning-level selection and a rendered to-do list). The host also highlights a built-in preview pane for a running dev server, which captures visual issues and accepts pasted images, plus a timeline with checkpoints that restore earlier states without requiring Git, a usage dashboard, CLAUDE.md editing and MCP server setup from forms (command and args for stdio, URL for SSE). The demos are a read-only web-search agent for finding shadcn components and a Next.js landing-page clone built from one prompt. Installation is from source: clone the repo, run bun install, then run a dev or production build, with Rust, Bun, git and Claude Code as prerequisites. The host admits UI bugs and the tool is still in development. The video makes no measured comparison with Cursor and does not verify its context-window claim.
+
+## Key ideas
+- **Claimed gaps in Claude Code vs Cursor: no pasted images in the terminal UI, and MCP servers, rules and subagents still need the command line even when Claude Code runs inside Cursor.** — The host frames image paste as the main pain point (users must give a file path). Cursor's Claude Code integration brings errors across but not the native MCP, rules or subagent setup. ([1:25](https://youtu.be/tCy5cJRErTg?t=85))
+- **Claudia's Claude Code Agents mode: custom agents defined by name, icon, default model, per-agent permissions and a system prompt.** — Each agent runs in what the host calls an isolated sandbox for the chosen project. Write access can be turned off, so the agent can only read files and search the web. The system prompt sets its role; the host's example says it should prioritise official documentation and return only relevant results. ([2:28](https://youtu.be/tCy5cJRErTg?t=148))
+- **Read-only research agent demo: a docs-first agent finds shadcn components for a project folder.** — The agent was pointed at a project path, given a model and a task, and returned the component list with implementation tips. The demo shows the pattern of a narrow, read-only subagent for research. ([3:43](https://youtu.be/tCy5cJRErTg?t=223))
+- **Claude Code Projects view groups sessions by folder and shows Claude's to-do list as a GUI checklist.** — Per session the user picks the folder, model and reasoning level. The host says Claude writes its own to-do list and works through it, and a one-prompt HTML Uber-style prototype and a Next.js Notion-style landing page were built this way. ([3:43](https://youtu.be/tCy5cJRErTg?t=223))
+- **Preview pane and checkpoints: a live URL preview captures visual issues and accepts pasted images, and a timeline restores earlier states without Git.** — The host created a checkpoint before a contrast fix so they could revert if it failed. The point is undo for AI edits for users who do not want to manage Git commits. The video does not show how checkpoints are stored. ([5:11](https://youtu.be/tCy5cJRErTg?t=311))
+- **MCP servers and CLAUDE.md are configured through forms, not JSON or shell quoting. The host says stdio servers take a command and arguments, and SSE servers take a URL.** — Also in the GUI: a usage dashboard and CLAUDE.md editing. The host presents this as making Claude Code usable without terminal config. ([6:22](https://youtu.be/tCy5cJRErTg?t=382))
+- **Install is build-from-source only, and the host admits UI bugs in this early version.** — Prerequisites are Rust, Bun, git (Windows may need it installed separately) and Claude Code. Steps are clone, then bun install, then a dev build (for editing and viewing changes in the browser) or a production build that produces an app in the applications folder. The host calls the UI usable but still buggy. ([7:28](https://youtu.be/tCy5cJRErTg?t=448))
+
+## Techniques
+- **Read-only research subagent** — In Claudia, create an agent with a name and icon, pick a default model, turn off write access so it can only read files and search the web, and give it a system prompt that sets the domain (for example programming), tells it to prefer official docs, and asks for only relevant output. Run it against a project path with a task. *When:* Looking up library docs or component options in a codebase without giving the agent edit rights.
+- **Checkpoint before a risky AI change** — Create a checkpoint in the timeline before a prompt that might break things; if the result is wrong, restore that checkpoint. The host uses this instead of Git commits. *When:* Making AI edits you may want to undo, especially for users who do not manage Git history.
+- **Visual bug loop with a preview pane** — Paste the dev server URL into the preview pane. Issues seen in the preview are captured automatically and can be pasted back as images into the prompt box, with no file paths. *When:* Frontend iteration where pasting screenshots into the Claude Code terminal does not work.
+- **Add MCP servers through a form** — For stdio servers, paste the command and arguments into the form with no JSON and no shell quoting. For SSE servers, paste the URL. The host says the server is then usable in Claude Code. *When:* Adding MCP servers without editing config files by hand.
+- **Build Claudia from source** — Install Rust, Bun, git and Claude Code. Clone the repository from GitHub (the exact command is shown on screen and not spoken), run bun install, then run either the dev build (for editing the source and seeing changes in the browser) or the production build (which creates a launchable app). The exact build command is not spoken in the transcript and must be taken from the repo README. *When:* Trying Claudia before any prebuilt binary is published; the host notes this was the only install option at the time.
+
+## Numbers
+- Claude Code is said to give the full context window that Cursor restricts for the same models, and to work with the $20 Pro plan. The host gives no measurements or sources. ([0:00](https://youtu.be/tCy5cJRErTg?t=0))
+- Video length is 8:54. No benchmarks, latency, token counts or prices are measured in the video. ([0:00](https://youtu.be/tCy5cJRErTg?t=0))
+
+## Hot takes
+- The title says the Claude Code vs Cursor debate 'just ended', but the video is one tool demo by one presenter with no side-by-side comparison.
+- The claim at 0:00 that Cursor restricts the context window for the same models is asserted without evidence.
+- The 'completely isolated sandbox' for each agent at 2:28 is vague. The video shows permission toggles and a folder selection, not what isolation covers.
+- The tool is early and buggy by the host's own account, and it installs only from source, which limits how easily the claims can be tested.
+- A short channel-membership and subscribe pitch appears in the middle of the video, which is promotional rather than technical.
+
+## Tools mentioned
+Claudia, Claude Code, Cursor, Rust, Bun, git, Next.js, shadcn/ui, Claude Pro plan ($20), MCP (stdio and SSE servers), CLAUDE.md, HTML
+
+## Relevance to our work
+- **prosharness** (1/3): ProsHarness wraps the Claude Code CLI and needs checkpoint/resume. Claudia's per-prompt timeline restore on top of the CLI is a similar problem, but the video gives no implementation detail. Its per-agent read/write permission profiles also resemble scoped subagent configs. → *Check how Claudia stores checkpoints (in the repo or in Claude Code session state) before finalising ProsHarness checkpoint/resume, and consider per-agent read-only permission profiles for research subagents.*

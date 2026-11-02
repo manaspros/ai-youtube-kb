@@ -1,0 +1,146 @@
+{
+ "one_line": "A short walkthrough of five terminal upgrades (tldr, duf, bat, fzf, zoxide) that replace man, df, cat, history/ps lookups and cd, with the commands shown.",
+ "summary": "The presenter walks through five CLI tools that improve everyday terminal work. tldr gives community-maintained, example-first command docs in place of man pages. duf is a colored, sortable, JSON-capable replacement for df. bat is cat with syntax highlighting, line numbers, git change markers, and a mode that reveals hidden characters. fzf is a generic fuzzy picker that the speaker pairs with bat for file previews and pipes shell history and process lists through. zoxide replaces cd with a frecency-ranked jump, with an interactive mode built on fzf. The content is practical and reproducible, but shallow: each tool gets a demo and a quick look at its options, with no benchmarks or deeper internals. The speaker's own claims about fzf's power (\"1% and then 2%\") are enthusiasm rather than evidence.",
+ "speakers": [
+  "unnamed Better Stack presenter"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "cli",
+  "terminal",
+  "shell",
+  "tldr",
+  "duf",
+  "bat",
+  "fzf",
+  "zoxide",
+  "productivity",
+  "linux"
+ ],
+ "key_ideas": [
+  {
+   "idea": "tldr is a faster way to learn a command than man: it shows concise, example-first usage and the speaker says it is community-maintained",
+   "detail": "Use `tldr <command>` in place of `man <command>`. The example output splits options into bracketed flags such as [-a] and [-h] that map onto the example commands. `tldr -a` lists all supported commands and `tldr --update` pulls new pages. The speaker recommends it for quick lookups without leaving the terminal.",
+   "t": "0:00"
+  },
+  {
+   "idea": "duf is a readable, colored replacement for df with sorting, filtering and JSON output",
+   "detail": "The table separates local devices from special devices. `--sort` takes a column name (the speaker uses usage), `--only local` hides the special-device table, and `--json` emits machine-readable output, which the speaker has used to save disk info to a file for other tools.",
+   "t": "2:30"
+  },
+  {
+   "idea": "bat is cat with syntax highlighting, line numbers and git change markers, plus a mode that exposes invisible characters",
+   "detail": "Showing a file gives line numbers, a filename header and git added/changed/deleted markers. Options include removing line numbers, changing the language, and highlighting a line range (the flag for that is not spoken). `bat -A` shows tabs, spaces and end-of-file markers, which helps find characters that break scripts.",
+   "t": "3:44"
+  },
+  {
+   "idea": "fzf is a general fuzzy picker, and its power comes from piping any list into it",
+   "detail": "Bare `fzf` fuzzy-searches every file under the current directory tree (the demo indexed 18,164 files). Its real leverage is composition: the speaker feeds history and `ps aux` into it, and calls the picker from a shell alias that pipes the chosen process into a kill command.",
+   "t": "5:48"
+  },
+  {
+   "idea": "Combining fzf with bat gives a live file preview while searching",
+   "detail": "The speaker runs fzf with a --preview option that calls bat with numbers and forced color, so the right-hand pane shows highlighted file contents as the cursor moves. Binary files such as .DS_Store produce a bat warning instead of content.",
+   "t": "6:57"
+  },
+  {
+   "idea": "zoxide is cd with memory: it ranks directories by frecency (frequency plus recency) and gets better with use",
+   "detail": "It records every directory you visit with a visit count and last-access time. `z <name>` jumps to the highest-ranked match on a partial name, `z source example` uses multiple terms to narrow a match, and `zi` opens an interactive list (via fzf) that shows each directory's rank score.",
+   "t": "9:07"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Replace man with tldr for quick command examples",
+   "how": "Run `tldr <command>` (e.g. `tldr ls`) instead of `man ls`. Run `tldr -a` to list supported commands, and `tldr --update` to fetch new pages. Recommended for remembering how to combine options without a web search.",
+   "when": "Looking up how to use a command you half-remember, when you do not want to context-switch to a browser or an LLM chat."
+  },
+  {
+   "name": "Use duf for disk usage",
+   "how": "Run `duf` for a colored table. Use `duf --sort usage` to sort by a column, `duf --only local` to show only local devices, `duf --json` for JSON output, and `duf --all` and a path argument to inspect specific mount points.",
+   "when": "Checking disk space interactively, or scripting disk usage by piping JSON into a file or another tool."
+  },
+  {
+   "name": "Use bat as a cat replacement and to expose hidden characters",
+   "how": "Run `bat <file>` for highlighted output with line numbers and git change markers. Use `bat -A <file>` to show spaces, tabs and end-of-file markers and drop syntax highlighting. Use `bat --help` or `tldr bat` to find the flags for removing line numbers, changing language, and highlighting a line range (the speaker does not name these flags).",
+   "when": "Reading code in the terminal, sharing clean screenshots, or tracking down invisible characters that break a script."
+  },
+  {
+   "name": "Build an fzf file finder with a bat preview",
+   "how": "Run `fzf --preview 'bat --style=numbers --color=always {}'`. The speaker describes the bat options (numbers, forced color) but not the {} placeholder; that is fzf's standard way to pass the highlighted file to the preview command. Navigate with the arrow keys to see previews.",
+   "when": "Finding a file by fuzzy name and checking its contents without opening it."
+  },
+  {
+   "name": "Search shell history and processes with fzf",
+   "how": "Pipe history into the picker: `history | fzf`. For processes: `ps aux | fzf`. The speaker wraps the process version in a shell alias that pipes the selected line into a kill command, which makes a small interactive task manager. The alias text is not shown in full.",
+   "when": "Finding a command you ran a while ago without pressing the up arrow many times, or finding and ending a process in a long list."
+  },
+  {
+   "name": "Replace cd with zoxide",
+   "how": "Use the `z` command in place of `cd`. Visit directories normally for a while so zoxide learns them, then `z <partial name>` jumps to the top-ranked match. `z <term1> <term2>` (e.g. `z source example`) narrows matches to paths that contain both terms. `zi` opens an interactive picker backed by fzf that shows each directory's rank.",
+   "when": "Working in deeply nested project trees or jumping between several repos with similar folder names."
+  }
+ ],
+ "tools": [
+  "tldr",
+  "man",
+  "duf",
+  "df",
+  "bat",
+  "cat",
+  "fzf",
+  "zoxide",
+  "ps",
+  "git",
+  "history",
+  "Docker",
+  "ChatGPT"
+ ],
+ "numbers": [
+  {
+   "claim": "fzf indexed 18,164 files under the source directory in the demo",
+   "t": "5:48"
+  },
+  {
+   "claim": "Top-ranked zoxide match for the 'example' query has a rank of 60 in the demo",
+   "t": "10:28"
+  },
+  {
+   "claim": "zoxide records a visit count and last-access time for each directory it sees, and ranks matches by frecency",
+   "t": "9:07"
+  },
+  {
+   "claim": "Video length is 11:56 and covers five tools",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The speaker calls fzf 'honestly like 1%' and then '2%' of its power, and says it is 'the ultimate tool'. This is enthusiasm, not measured evidence.",
+  "The speaker calls bat's git change markers and fzf's bat preview the most useful combination, and calls zoxide 'a smarter CD' that gets better over time. These are opinions based on personal use.",
+  "The speaker says he uses bat's hidden-character mode to find characters that break scripts, and has used duf --json to export disk data to files."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Shell and terminal productivity tools with no bearing on the AgentOS proxy, memory, serving, sandbox or observability stack.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Terminal ergonomics only. ProsHarness wraps the Claude Code CLI and this video does not touch that.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

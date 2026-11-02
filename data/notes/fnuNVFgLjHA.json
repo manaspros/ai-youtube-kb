@@ -1,0 +1,172 @@
+{
+ "one_line": "Arize workshop on closing an agent's detect, investigate, fix, verify loop using an always-on trace-analysis agent, coding-agent skills, harness-as-judge scoring and replay experiments; mostly a product walkthrough.",
+ "summary": "Fuad Ali of Arize AI argues that agent failures are invisible at launch and that observability should move from humans reading dashboards to agents reading telemetry and acting on it. He demos a shopping assistant with a price-filter bug (birthday gifts under $30 return items over $30) that staging evals missed. Arize Signal runs continuously on production traces, clusters failures by root cause, investigates against the repo and Datadog, and opens a PR with a write-up. Arize skills let coding agents such as Claude Code query traces, build datasets from failures and run evaluators. He contrasts a fixed-rubric LLM-as-judge with a harness-as-judge that reads the trace tree in plain language and calls external systems to check things like access. Agent experiments replay a failure dataset against a dev build behind an endpoint and score it with the same judge, comparing quality, latency and cost. The talk is a product workshop with setup steps and Wi-Fi interruptions, so most of the substance is the loop design and the vendor's claims, which are not independently verified.",
+ "speakers": [
+  "Fuad Ali"
+ ],
+ "orgs": [
+  "Arize AI"
+ ],
+ "format": "workshop",
+ "topics": [
+  "observability",
+  "evals",
+  "skills-self-improvement",
+  "software-factory"
+ ],
+ "tags": [
+  "self-learning loop",
+  "harness as judge",
+  "LLM as judge",
+  "agent experiments",
+  "trace clustering",
+  "Arize Signal",
+  "Arize skills",
+  "detect investigate fix verify",
+  "failure dataset replay",
+  "production traces",
+  "Claude Code",
+  "OpenAI Agents SDK",
+  "product workshop"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent failures are invisible at launch",
+   "detail": "An agent can pass staging evals and still confidently fail in production on an edge case nobody wrote a test for. The example is a birthday-gift query under $30 that returns items over $30, and the agent never flags it. Real failures surface through user complaints, tickets or pages.",
+   "t": "4:28"
+  },
+  {
+   "idea": "Three phases of software engineering, ending in an autonomous telemetry loop",
+   "detail": "Phase 1 is humans reading traces and dashboards and writing code. Phase 2 is humans writing prompts to fix behavior. Phase 3 is a coding agent that reads the telemetry itself and acts on it. The speaker argues observability must become a programmatic interface that agents consume, operate on and reflect on, because thousands of agents cannot be read by humans.",
+   "t": "1:34"
+  },
+  {
+   "idea": "Always-on trace analysis (Signal) clusters failures and proposes fixes",
+   "detail": "Signal runs in a sandbox against production traces, clusters failures by root cause and dedupes them across runs. It can connect to GitHub and Datadog, write an investigation with severity and evidence, and open a PR. A human still reviews the code. Clustering can be tuned to your own taxonomy.",
+   "t": "8:30"
+  },
+  {
+   "idea": "Coding agents can query traces on demand through skills",
+   "detail": "Arize skills let a coding agent in the repo read traces, cross-reference them with the agent's code, build datasets from failure traces, run trace error analysis and run evaluators. The speaker frames this as on-demand work, while Signal is the always-on counterpart.",
+   "t": "11:20"
+  },
+  {
+   "idea": "Harness-as-judge replaces fixed-rubric LLM-as-judge for unknown failures",
+   "detail": "An LLM judge scores a fixed rubric it already knows, so it catches known issues only. A harness-as-judge observes the trajectory and picks criteria from it, such as right tool, valid arguments or grounding in handed-off context. It can call external systems, for example to check whether a user had access. The rubric can be one plain sentence, for instance: pass if every returned product's price is within the requested min and max range.",
+   "t": "26:56"
+  },
+  {
+   "idea": "Fixes are validated by replaying failing traces, not by the agent's own claim",
+   "detail": "Failing production traces are saved as a dataset (the example is 25 budget-constrained searches). The dev version of the agent runs behind an endpoint against that dataset, and the same judge scores both versions side by side. Operational metrics such as latency and cost are checked alongside quality. The speaker says this lets an agent verify its own PR before a human reviews it.",
+   "t": "31:25"
+  },
+  {
+   "idea": "Alerts can trigger the investigation loop",
+   "detail": "The always-on agent can be wired to fire on an eval crossing a threshold (the example is an eval staying below a 1% trigger rate), a latency spike or a cost spike. Custom harness judges can then run in CI on the resulting PRs.",
+   "t": "25:35"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Continuous failure clustering over production traces",
+   "how": "Run a background agent over every incoming trace. Cluster failures by root cause, dedupe repeats across runs, track trends over time and link examples. Tune the taxonomy to your own traces.",
+   "when": "Many agents or high traffic, where no human can read every trace, and you want root-cause groupings instead of raw error counts."
+  },
+  {
+   "name": "Join trace evidence with the code path",
+   "how": "Start from the trace where the user asked for something and the output violated it. Then find the code path that should have enforced the constraint (here, the price filter) and propose a fix. Give the agent access to both the trace data and the repo.",
+   "when": "Edge-case logic bugs that only show up in live traffic and that a fixed eval set would not have covered."
+  },
+  {
+   "name": "Plain-language harness-as-judge rubric with tool access",
+   "how": "Write the pass/fail criterion as one sentence. Let the judge read the full trace tree, call external systems such as an access-control source or a data API, and run in a sandbox against real traces.",
+   "when": "Failures that need outside context to judge (permissions, grounding in data outside the prompt) or that you cannot enumerate in advance."
+  },
+  {
+   "name": "Failure-dataset replay with agent experiments",
+   "how": "Collect the failing production traces into a dataset. Deploy the candidate fix behind a dev endpoint, stream the dataset inputs through it, score with the same judge used in production, and compare before and after fix, including latency and cost. Run it from CI so an agent can do it before a human review.",
+   "when": "Before merging an agent fix, so the fix is validated on real failures rather than on the agent's own assertion."
+  },
+  {
+   "name": "Alert-triggered agent investigation",
+   "how": "Connect the always-on investigation agent to alerts on evals, latency or cost. A threshold breach starts an investigation and the output is a PR plus an evidence write-up.",
+   "when": "Teams that already have metric alerts and want root-cause analysis to start automatically when the alert fires."
+  },
+  {
+   "name": "Agent skills for trace analysis from the coding agent",
+   "how": "Install a set of skills (trace analysis, dataset curation, evaluators) into the coding agent. Ask it to check traces for errors, cross-reference them with the agent's code, and propose fixes.",
+   "when": "An engineer improving the agent interactively in the repo, rather than running an always-on service."
+  }
+ ],
+ "tools": [
+  "Arize Signal",
+  "Arize skills",
+  "Arize agent experiments",
+  "Claude Code",
+  "OpenAI Agents SDK",
+  "FastAPI",
+  "Datadog",
+  "GitHub",
+  "Cursor",
+  "Codex"
+ ],
+ "numbers": [
+  {
+   "claim": "Arize says it has processed over 1 trillion spans",
+   "t": "2:54"
+  },
+  {
+   "claim": "Arize says it runs over 60 million evaluations per month",
+   "t": "2:54"
+  },
+  {
+   "claim": "Arize says it has over 3 million downloads per month",
+   "t": "2:54"
+  },
+  {
+   "claim": "Demo replay: a fix PR showed a 36% increase on one specific evaluator (vendor demo, not independently checked)",
+   "t": "34:19"
+  },
+  {
+   "claim": "Replay dataset in the example: 25 budget-constrained search traces that failed",
+   "t": "31:25"
+  },
+  {
+   "claim": "Illustrative alert threshold: an eval kept below a 1% trigger rate",
+   "t": "25:35"
+  },
+  {
+   "claim": "Setup claimed to take under 10 minutes on your own agent, using instrumentation skills",
+   "t": "35:44"
+  }
+ ],
+ "hot_takes": [
+  "Observability should shift from dashboards that humans read to programmatic interfaces that agents consume, operate on and reflect on.",
+  "Harness-as-judge is replacing fixed-rubric LLM-as-judge for catching unknown unknowns in agent behavior.",
+  "Agents should validate their own fixes against replayed real failures before a human reviews the PR."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "SkillForge needs a success signal and a skill-worthiness score. The talk's pattern of clustering failures from traces and validating them with a judge plus replay is a concrete candidate for both.",
+   "action": "Prototype a SkillForge success signal that replays mined failure traces through a harness-as-judge rubric, then checks whether clustered failure groups predict which skills are worth keeping."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness plans to use plan, critique and debate steps. A tool-calling judge that checks the trace against outside systems is one possible verify step, but this talk does not cover checkpoint or resume.",
+   "action": "Note the harness-as-judge rubric (one-sentence criterion plus tool calls) as one design option for a verify gate after plan critique."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Directly about evals for agents: harness-as-judge with tool access, replaying failure datasets and comparing before and after fixes. Also relevant to the recurring interest in evals and agent verification.",
+   "action": "Compare harness-as-judge (judge with tool calls, rubric from the trajectory) with the current eval setup, and try a before/after replay of a small set of failing traces."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

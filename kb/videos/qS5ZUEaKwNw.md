@@ -1,0 +1,47 @@
+# Qwen 3.6 + Ollama is INSANE: Better than Claude Code (FREE + Local + open Source)
+
+- **channel:** [Kai Explains](../channels/kai.md) · **id:** `qS5ZUEaKwNw` · [watch](https://youtu.be/qS5ZUEaKwNw) · **date:** 2026-08-02 · **length:** 7:23 · **format:** review · **quality:** 3/5 · **depth:** intro
+- **speakers:** Kai (host of Kai Explains, name taken from the channel title) · **orgs:** Alibaba, Ollama, Hugging Face
+- **topics:** local-ai, coding-agents, token-cost-efficiency · **tags:** qwen-3.6, ollama, qwen-code, local-llm, claude-code-comparison, context-window, settings-json, offline-coding-agent, open-weights, threejs
+
+> Kai runs Alibaba's open Qwen 3.6 locally through Ollama and Qwen Code against Claude Code on three same-prompt builds; local wins on privacy, cost and offline use, but loses on finish and wiring.
+
+## Summary
+The host runs Qwen 3.6 locally through Ollama and wires it into Qwen Code, Alibaba's open-source agentic coding harness, as a free alternative to Claude Code. He gives both agents the same three prompts: a single-file Three.js aquarium, a portfolio page, and a macOS-style desktop. Qwen matches Claude on the portfolio and wins on the aquarium's look, but it is much slower and its desktop icons do not open, so the wiring is broken. The setup is: install Ollama, pull the model, install Qwen Code, and point its settings.json at localhost:11434. The main gotcha is Ollama's default 4,096-token context, which silently truncates long agent work, so he raises it to 64k. He concludes the cloud model still wins on complex multi-file repo work, while the local stack is genuinely useful for code that cannot leave the machine, offline work, and cheap prototyping. The title oversells, but the body is candid, and the evidence is three single runs with no benchmark.
+
+## Key ideas
+- **Qwen 3.6 plus Qwen Code gives a Claude Code-style agent that runs entirely on your own machine, with no API key, account or bill.** — Qwen Code is Alibaba's open-source agentic harness: it reads files, edits code, runs commands and iterates on its own output. The model is served locally by Ollama. ([0:00](https://youtu.be/qS5ZUEaKwNw?t=0))
+- **On three same-prompt builds, the local setup ties or wins on looks but loses on completion and speed.** — Aquarium: Qwen's single HTML file (494 lines) worked and its fish looked better than Claude's. Portfolio: outputs were hard to tell apart, though Claude's header font was bolder. Desktop: Qwen (about 1,300 lines) looked better, but its icons did not open, so the wiring failed. ([1:25](https://youtu.be/qS5ZUEaKwNw?t=85))
+- **The biggest setup trap is Ollama's default 4,096-token context, which silently truncates the agent's memory of earlier steps.** — Symptoms are the agent forgetting files it read a couple of steps earlier, which looks like a broken model. Raising the context window to 64k fixes it. ([4:14](https://youtu.be/qS5ZUEaKwNw?t=254))
+- **Qwen Code points at the cloud by default, so you must redirect it to the local Ollama endpoint in settings.json.** — The base URL goes to localhost on port 11434. The model ID must match the pulled model name. The API key can be the literal string 'ollama', because Ollama ignores keys but the SDK requires a non-empty value. ([2:50](https://youtu.be/qS5ZUEaKwNw?t=170))
+- **The honest split: the cloud model wins on complex multi-file repository work, and the local stack wins where privacy, cost or connectivity matter.** — Local use cases named are code that legally cannot go to the cloud, prototyping and learning without a meter running, quick scripts, and working offline. The speaker still pays for the $200/month Claude Max plan. ([5:35](https://youtu.be/qS5ZUEaKwNw?t=335))
+- **The speaker frames open models as moving quickly: Qwen 3.5 was called a before-and-after moment for open models by Hugging Face's CTO, and 3.6 continues that trend.** — This is secondhand praise and a trend claim, not evidence of performance on any specific benchmark. ([5:35](https://youtu.be/qS5ZUEaKwNw?t=335))
+
+## Techniques
+- **Point Qwen Code at a local Ollama model** — Install Ollama, run 'ollama run qwen3.6' (the caption reads 'Alama run QN 3.6'; the exact tag is not confirmed by the transcript), and install Qwen Code. In Qwen Code's settings.json, set the base URL to localhost:11434 (the Ollama port), set the model ID to exactly the pulled model name, and set the API key to the literal string 'ollama'. Ollama ignores the key, but the SDK requires something there. The exact JSON keys are not shown on screen in the transcript. *When:* You want a free, offline, private coding agent for prototyping or code that must not leave the machine.
+- **Raise the Ollama context window before running an agent** — Set the context window to 64k. Ollama's default is 4,096 tokens, and the transcript says it truncates silently, so the agent drops earlier context without an error. The transcript does not show the exact setting or flag used. *When:* Any agent loop with multi-step file reads and edits on a local Ollama model. Do this before judging the model's quality.
+- **Smoke-test the agent loop before real work** — Ask a trivial question (2 plus 2), then ask the agent to create a file, write to it and read it back. Watch whether it plans, acts and checks its own work. *When:* Right after setup, to confirm that tool calls and the file loop work before you trust the stack with a real task.
+- **Compare agents on the same prompts, judged by behavior** — Give each agent identical prompts with rising difficulty, asking for a single HTML file each time. Score what matters after the look: whether the interactive parts work (here, clicking the desktop icons). The desktop test showed a model can nail the visuals and still fail the wiring. *When:* Evaluating a local model against a cloud agent, or any model swap, for a one-shot build task.
+- **Route by lane: local for private, offline or cheap work; cloud for complex repos** — Keep code that cannot be sent to a cloud API, offline sessions, scratch prototypes and quick scripts on the local agent. Keep multi-file repository work on the frontier cloud model. *When:* Deciding which coding agent to use for a given task, to control cost and data exposure.
+
+## Numbers
+- Claude built the three.js aquarium in 1 minute 28 seconds; Qwen produced 494 lines of working HTML that were judged better on fish quality. ([1:25](https://youtu.be/qS5ZUEaKwNw?t=85))
+- Portfolio page: Claude about 2 minutes; Qwen about 10 minutes; outputs described as hard to tell apart. ([2:50](https://youtu.be/qS5ZUEaKwNw?t=170))
+- macOS-style desktop: Claude about 2.5 minutes; Qwen wrote almost 1,300 lines but its icons did not open. ([2:50](https://youtu.be/qS5ZUEaKwNw?t=170))
+- Ollama's default context window is 4,096 tokens; the speaker recommends 64k. ([4:14](https://youtu.be/qS5ZUEaKwNw?t=254))
+- Claude Code is priced at $200 per month (Max plan); the local stack is $0 with no API keys. ([5:35](https://youtu.be/qS5ZUEaKwNw?t=335))
+- Local model sizes run from 2B to 122B parameters; the 9B fits in 16 GB of RAM and the 4B runs in 8 GB. ([5:35](https://youtu.be/qS5ZUEaKwNw?t=335))
+
+## Hot takes
+- The title says 'better than Claude Code', but the speaker's own tests and conclusion say the cloud model still wins on complex multi-file work; the title oversells the body.
+- The useful lane for local models is private, offline, or cost-sensitive work, not parity with frontier coding agents.
+- Visual quality can mislead: the local model's desktop looked better than Claude's, yet its interactive features did not work.
+- The evidence is three single runs with no repeated trials or benchmark, so the speed and quality comparison is anecdotal.
+- Silent context truncation at the Ollama default is the failure most likely to make a local agent look broken, and it is easy to miss.
+
+## Tools mentioned
+Qwen 3.6 (Alibaba open-weights model; sizes from 2B to 122B per transcript), Qwen Code (Alibaba's open-source agentic coding harness), Ollama (local model server, default context 4,096), Claude Code (Anthropic, cloud comparison, $200/month Max plan), Qwen 3.5 (earlier model, mentioned), Three.js (used in the aquarium task)
+
+## Relevance to our work
+- **agentos** (1/3): AgentOS runs InferCraft (vLLM plus Ray Serve) on a single RTX 5090, and this video shows a local open-weight coding-agent option. Its 2B-122B size range and the silent context-truncation trap are relevant to serving config. → *Benchmark a Qwen 3.6 model served through vLLM on the RTX 5090 against the current InferCraft default for agent-loop tasks, and add an alert when a request's prompt exceeds the served context window instead of truncating silently.*
+- **prosharness** (1/3): ProsHarness wraps Claude Code. The lane split (local for private or offline work, cloud for multi-file repo work) is a possible routing policy for cheap sub-steps. → *Try a per-step model override in ProsHarness that sends a low-risk, single-file step to a local Qwen endpoint and keeps multi-file steps on the cloud, then compare pass rates.*

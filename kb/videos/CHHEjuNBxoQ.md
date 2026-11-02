@@ -1,0 +1,43 @@
+# This New Open Source Tool Just Fixed Your Claude Code Workflow
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `CHHEjuNBxoQ` · [watch](https://youtu.be/CHHEjuNBxoQ) · **date:** 2026-10-02 · **length:** 12:25 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** ? · **orgs:** AI LABS, Runnable, GitHub
+- **topics:** coding-agents, context-engineering, memory, security-guardrails · **tags:** agit, session-sharing, conversation-versioning, revert, cherry-pick, fork, secret-redaction, codex, claude-code, AGENTS.md, CLAUDE.md
+
+> Walkthrough of Agit, an open-source tool that applies git's model (repos, sessions as branches, turns as commits) to agent conversations, with sharing, revert, cross-agent fork and secret redaction.
+
+## Summary
+AI LABS presents Agit, a tool that treats agent conversations the way git treats code: a repo holds sessions, each session is a branch, and each prompt/response turn is saved as a commit. The speaker's motivation is that context handed off through summary files loses details, and that agent sessions are hard to move between tools. Reverting in Agit rewinds only the conversation the agent sees; app files are untouched. Sharing is private by default with a 1 GB private storage limit, a one-way public conversion, collaborator access, or view-limited read-only links. Cherry-picking messages and forking a Claude Code session into Codex copy conversation history but not app changes. The team's main caveat is secret handling: pattern-based redaction misses ordinary-word passwords, so they wrote a skill that registers known passwords before saving, which must be loaded from the start of a session. The video includes a 1.5-minute sponsored segment for Runnable. Installation details are only partly shown, and the claims of uniqueness are the team's own.
+
+## Key ideas
+- **Agit applies git's model to agent conversations: the repo holds sessions, each session is a branch, and each turn (prompt plus agent response) is saved as a commit.** — The repo stores conversations, memory and skills rather than code. Saves happen automatically after each turn, locally in a folder under the home directory's .agit folder. ([1:24](https://youtu.be/CHHEjuNBxoQ?t=84))
+- **Reverting in Agit rewinds only the conversation the agent sees; the app's files are not rolled back.** — This differs from a built-in rewind command because it also works on conversations shared with you. Removed turns stay in the log, and resume plus push are needed to continue and publish the change. ([2:36](https://youtu.be/CHHEjuNBxoQ?t=156))
+- **Sharing is private by default, with a 1 GB storage cap on private repos and a one-way conversion to public.** — Going public runs checks and asks for confirmation; the speaker says it cannot be made private again. Sharing options are collaborators in the settings pane (who continue work and open pull requests) or a read-only link with an open-count limit. ([2:36](https://youtu.be/CHHEjuNBxoQ?t=156))
+- **Individual messages can be cherry-picked into the current session, and sessions can be forked from Claude Code into Codex.** — Cherry-picking copies the message, the agent response and its record of actions, but not the app changes they describe. Forking converts the history into the format Codex reads, leaving the original session in place, which avoids writing a manual handoff note. ([9:23](https://youtu.be/CHHEjuNBxoQ?t=563))
+- **Automatic secret redaction is pattern-based and misses ordinary-word passwords, so the team added a skill that registers passwords before the conversation is saved.** — Recognized API key patterns are replaced with placeholders at save time and checked again before push. A password registered after it was already saved stays in history even if the message is deleted, so the skill must be added at session start. ([10:37](https://youtu.be/CHHEjuNBxoQ?t=637))
+- **During setup, a project-level instruction file tells the agent how to use Agit, and both AGENTS.md and CLAUDE.md can be written so that Codex and Claude Code both get the instructions.** — The init interface asks for a repo name, confirms the project folder, shows the instructions and skills it will save, offers an auto-push toggle, and asks which instruction file(s) to write. ([5:29](https://youtu.be/CHHEjuNBxoQ?t=329))
+
+## Techniques
+- **Versioned agent sessions via a git-style repo** — Install Agit (speaker uses the createagit one-command installer or an npm install, which the speaker found more reliable), check the version, create an account, log in with the browser option, and confirm identity with the who-am-i command. Run init in the project folder, name the repo, confirm the folder, choose whether to auto-push, and write AGENTS.md and/or CLAUDE.md. Then prompt the agent normally; each turn is saved. *When:* When you run several sessions on one project, or need a session to outlive the terminal or agent that produced it.
+- **Reverting a session to an earlier turn** — Run log to list sessions and turn numbers. Run revert with the session name, then a hash and the turn numbers counted from the end back to the target point (several can go in one command). Run resume to continue the trimmed conversation, then push to update the profile copy. Turn numbers in the log stay visible after reverting. *When:* When the agent went wrong several turns earlier and you want it to stop seeing those turns. This does not undo file changes in the app.
+- **Cherry-picking messages between sessions** — Run log to find the message numbers in the source session. Run the cherry-pick command with the source session name and one or more message numbers, targeting the current session. The messages and responses are appended to the end of the current session. *When:* When one earlier conversation contains a useful exchange that you want in the current context. Code changes must be reapplied separately.
+- **Forking a Claude Code session into Codex** — Run the fork command from your own terminal (not from inside the agent) and choose Codex. This creates a new Codex session with the converted history; the original Claude Code session remains available. *When:* When you want to hand off mid-conversation between coding agents without writing a handoff summary.
+- **Registering known passwords before a session is saved** — Load the speaker's password-registration skill at the start of the session. It registers the secrets already present, then instructs the agent to register each new password it is given before continuing. Registered values are replaced with placeholders at save time. *When:* When sessions may contain passwords with no recognizable pattern, which automatic key detection would miss. Load it before the secret appears, since removing it later does not erase it from history.
+
+## Numbers
+- Private repo storage limit is 1 GB across all private conversations. ([2:36](https://youtu.be/CHHEjuNBxoQ?t=156))
+- Sponsored segment for Runnable runs about 1.5 minutes (4:04 to 5:29). ([4:04](https://youtu.be/CHHEjuNBxoQ?t=244))
+- Demo uses a community web-app template for an event management app; no benchmark or cost numbers are given. ([5:29](https://youtu.be/CHHEjuNBxoQ?t=329))
+
+## Hot takes
+- The claim that no other tool moves sessions across agents as cleanly is the team's own, untested comparison.
+- The title says it 'fixed' Claude Code workflows, but the video only demonstrates a tool and its features, not measured gains.
+- The password workaround is a manual step the speaker admits is needed because automatic redaction misses plain-word passwords; the limitation is real and under-emphasized in the title.
+- Making a repo public cannot be undone, and the speaker gives this one sentence of warning.
+
+## Tools mentioned
+Agit, createagit (installer), npm, GitHub, Claude Code, Codex, AGENTS.md, CLAUDE.md, Runnable (sponsor)
+
+## Relevance to our work
+- **prosharness** (2/3): Agit's per-turn commits, revert, resume and cross-agent fork are close to ProsHarness checkpoint/resume of long Claude Code runs. Its explicit choice to revert the conversation without touching app state is a design decision ProsHarness should make on purpose. → *Compare Agit's revert/resume model (conversation-only rollback, turn-number addressing, cherry-pick) with ProsHarness checkpoints, and decide whether checkpoint rollback should also restore workspace state.*
+- **agentos** (1/3): Redaction is pattern-based and misses plain-word passwords. The register-known-secrets approach is a comparison point for the L1 PII scan. → *Compare Agit's pattern-only redaction gap with Govrix Scout's PII scan, and test whether a registered-secret list before storage closes the plain-word password miss.*

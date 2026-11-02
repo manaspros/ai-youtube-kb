@@ -1,0 +1,210 @@
+{
+ "one_line": "Better Stack podcast with Resend's DX engineer on getting LLMs to recommend a vendor, scoping per-team AI agents with narrow API keys, and email deliverability basics. Mostly biographical, with a few practitioner nuggets.",
+ "summary": "A Better Stack podcast episode (Ep. 15) with Chris Penningson, DX engineer at Resend, an email API company. Most of the hour covers his background, his YouTube habits, home studio gear and launch-week video production. The practitioner content is in three places. First, he describes how Resend tries to get Claude and other LLMs to recommend it: standard SEO basics, machine-readable pages, Q&A blocks, and a recency effect that favours newer vendors, with a self-reported figure of about 70% of the time. Second, he describes Resend's internal AI agents, each scoped to one team or task, with its own vault and narrowly limited API keys, reporting through Slack and easy to shut off. Third, he gives a deliverability checklist, centred on domain reputation, subdomains, consent and authentication records. The hosts add a hot take that every site should default to Astro. Most of the episode is not transferable engineering material.",
+ "speakers": [
+  "Richard",
+  "James",
+  "Josh",
+  "Chris Penningson"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Resend",
+  "Supabase",
+  "Lovable",
+  "Stripe",
+  "Fly.io",
+  "Railway",
+  "TanStack",
+  "Cursor",
+  "Open Light Studios"
+ ],
+ "format": "interview",
+ "topics": [
+  "security-guardrails",
+  "product-ux",
+  "dev-tools"
+ ],
+ "tags": [
+  "resend",
+  "agent-api-key-scoping",
+  "llm-discoverability",
+  "geo-seo",
+  "email-deliverability",
+  "scheduled-agents",
+  "openclaw",
+  "hermes-agent",
+  "slack-as-agent-interface",
+  "devrel",
+  "podcast",
+  "astro",
+  "react-server-components"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Run many narrow agents, one per team or task, instead of one general agent",
+   "detail": "Resend's marketing team has its own agent instance with its own password vault, its own Twitter and LinkedIn accounts, and access limited to scoped API keys. Other teams run agents for narrow jobs such as incident summaries. The speaker says the agents were started by a single team and other teams copied the idea after seeing it work.",
+   "t": "27:53"
+  },
+  {
+   "idea": "API key scoping and easy revocation are the main control, not trust in the agent",
+   "detail": "He says the reason to scope keys is so you can give an agent keys for one particular task and nothing more. If a use case looks wrong, the team limits or pulls the key. He says Resend wants to invest more in API scoping for agents, and that scoping matters more as tools like OpenClaw spread.",
+   "t": "30:18"
+  },
+  {
+   "idea": "Concrete recurring agent jobs: a Monday analytics digest and weekly competitor watch",
+   "detail": "A marketing agent runs every Monday and pulls Twitter, LinkedIn, SEO and documentation-question data into a weekly report. A social agent (Hermes, an OpenClaw-based agent) did competitor analysis once a week, and later moved to on-demand use. He says it was poor at writing tweets, so it was kept for research and summaries.",
+   "t": "29:20"
+  },
+  {
+   "idea": "Use agents for context gathering before writing, not for final output",
+   "detail": "He asks an agent to use the GitHub CLI to find who worked on a feature, read the RFC, and return a bullet list of what a changelog should cover. He also has agents scaffold new landing pages from patterns already in the codebase, with the human writing the copy.",
+   "t": "25:33"
+  },
+  {
+   "idea": "Getting recommended by LLMs is mostly SEO basics plus being early, and it is unstable",
+   "detail": "The listed basics are JSON-LD, one H1 per page, llms.txt, a markdown version of key pages (for example, a curl request to the pricing page returns markdown), and Q&A accordions, which he says LLMs favour. He also mentions comparison pages written with other vendors. He attributes part of the effect to a recency bias that favours newer vendors and says models change often, so the work has to be repeated.",
+   "t": "20:13"
+  },
+  {
+   "idea": "Claimed result: Claude suggests Resend about 70% of the time, with no data shown",
+   "detail": "This is a self-reported figure with no measurement method given. He also says Resend has no direct way to tie AI referrals to signups. Growth is credited to word of mouth, Supabase integration traffic as Lovable and similar tools grew, and AI in general.",
+   "t": "21:36"
+  },
+  {
+   "idea": "Deliverability depends mainly on domain reputation, so isolate sending by subdomain",
+   "detail": "He says Gmail mostly tracks the sending domain's reputation rather than the IP's. Send from a subdomain per stream so a problem can be moved without affecting the whole platform. Include unsubscribe links on non-transactional mail, and set SPF, DKIM and DMARC. Mail should only go to people who have opted in, and volume should be steady, not a sudden bulk send.",
+   "t": "39:29"
+  },
+  {
+   "idea": "Deliverability checks: link and image domains match the sender, avoid spammy wording, and read per-email insights",
+   "detail": "Links and images should use the sending domain. Gmail's own spam reasons can guide wording changes. Resend shows deliverability insights for each sent email in its emails table.",
+   "t": "43:13"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "One scoped identity per agent or team",
+   "how": "Give each agent its own instance, its own secret store (he names a 1Password vault), and API keys that only cover the endpoints its task needs. Use Slack as the only interface. Keep the ability to shut an agent off by revoking or narrowing its key.",
+   "when": "Any agent that holds credentials for third-party accounts such as social media, analytics, or an incident tool."
+  },
+  {
+   "name": "Scheduled weekly digest agent",
+   "how": "A cron-style job (every Monday) that pulls analytics from Twitter, LinkedIn, SEO and the docs site, plus common user questions, then posts a short report. The speaker gives no implementation details beyond the schedule and data sources.",
+   "when": "Recurring reporting where a human otherwise spends time collecting numbers."
+  },
+  {
+   "name": "Weekly competitor watch, on demand",
+   "how": "Have the agent read competitors' recent posts and summarize themes. Ask it for background on a single post when needed. Do not use it to draft final posts.",
+   "when": "Market or competitor monitoring. Output is research for a human to act on."
+  },
+  {
+   "name": "Research agent before writing a changelog or post",
+   "how": "Ask the agent to use the GitHub CLI to list contributors to a feature, read the linked RFC, and return a bullet outline of what to cover. Write the text yourself.",
+   "when": "Release notes or changelog drafts where the facts are scattered across PRs and RFCs."
+  },
+  {
+   "name": "Scaffold landing pages from existing repo patterns",
+   "how": "Point the agent at an existing landing page or customer story in the codebase, paste in the new copy, and ask for a new page with the same structure.",
+   "when": "Repetitive marketing pages that share one layout."
+  },
+  {
+   "name": "LLM-discoverability checklist for a docs or marketing site",
+   "how": "One H1 per page. JSON-LD structured data. An llms.txt file. Make key pages available as markdown so a plain curl returns markdown (he gives the pricing page as an example). Add FAQ accordions with Q&A text. Publish comparison pages that cover peer vendors. Track the result, which he says can change with each model release.",
+   "when": "A developer product where AI assistants are likely to pick the tool for the user."
+  },
+  {
+   "name": "Deliverability setup for a transactional email service",
+   "how": "Send each stream from its own subdomain. Use the sending domain for links and images. Add unsubscribe links to non-transactional mail. Configure SPF, DKIM and DMARC. Send only to opted-in addresses. Keep volume predictable. Read per-email deliverability insights after each send.",
+   "when": "Any app that sends email at scale, especially from a new domain."
+  },
+  {
+   "name": "Obsidian vault synced to GitHub as a personal task store",
+   "how": "Keep tasks as Markdown in an Obsidian vault, sync the vault to a GitHub repo, and let a personal agent read it. The speaker says the setup is complicated and gives no details.",
+   "when": "Personal task management where the agent should read the same task list the human uses."
+  }
+ ],
+ "tools": [
+  "Resend",
+  "React Email",
+  "Claude",
+  "Hermes (OpenClaw-based agent)",
+  "OpenClaw",
+  "Cursor",
+  "GitHub CLI",
+  "1Password",
+  "Slack",
+  "Obsidian",
+  "Linear",
+  "Raycast",
+  "OmniFocus",
+  "Figma",
+  "DaVinci Resolve",
+  "Astro",
+  "Next.js",
+  "TanStack Start",
+  "React Server Components",
+  "Supabase",
+  "Lovable",
+  "llms.txt",
+  "JSON-LD",
+  "Google Postmaster Tools",
+  "SPF",
+  "DKIM",
+  "DMARC",
+  "Panasonic Lumix S5 (camera, as named)",
+  "Cam Link"
+ ],
+ "numbers": [
+  {
+   "claim": "Resend's marketing agent runs every Monday and produces a weekly report from Twitter, LinkedIn, SEO and docs data",
+   "t": "29:20"
+  },
+  {
+   "claim": "Claude suggests Resend about 70% of the time (self-reported, no method given)",
+   "t": "21:36"
+  },
+  {
+   "claim": "Resend was founded in January 2023",
+   "t": "20:13"
+  },
+  {
+   "claim": "Resend had about 45 to 46 employees at recording time; the speaker was the 10th hire",
+   "t": "18:47"
+  },
+  {
+   "claim": "The speaker says Claude ships about seven new features a day",
+   "t": "26:48"
+  }
+ ],
+ "hot_takes": [
+  "Every website should default to Astro; the speaker says it covers most basic sites and avoids React Server Components' mental-model and security problems. [57:24]",
+  "React Server Components' mental model is hard to explain, and an explanation that needs another framework signals a poor design. [55:59]",
+  "AI agents are not good at writing social posts; they are better for research and competitor watch. [31:36]",
+  "Quality note: a vendor's own DX engineer as the guest, mostly biographical, with a few practitioner items. Not clearly a paid segment, but it leans promotional for Resend, so quality is capped at 2."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Its per-agent scoping and kill switch are close to AgentOS's exec-gate and guardrail ideas, but the episode does not describe a gateway design.",
+   "action": "Compare Resend's one-scoped-identity-per-agent and revoke-to-stop pattern with the planned exec-gate guardrails, and check whether AgentOS can revoke one agent's access without restarting the proxy."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs long Claude Code loops and schedules that need credentials. A separate scoped credential per run that can be revoked on failure fits its zero-token credential handling.",
+   "action": "Give each scheduled or looping ProsHarness run its own narrowly scoped credential handle from the vault, and add a kill switch that revokes it when the run stops or is flagged."
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "Email deliverability and LLM-discoverability tips do not match current projects.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

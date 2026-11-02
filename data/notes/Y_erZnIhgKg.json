@@ -1,0 +1,170 @@
+{
+ "one_line": "Better Stack summarizes ten takeaways from Google's Shell Style Guide: move long scripts to Python, brace variables, prefer [[ ]], declare locals carefully, and run ShellCheck. Short recap with no code shown.",
+ "summary": "The creator walks through ten recommendations from Google's public Shell Style Guide in a four-minute video. The core advice is to stop writing Bash once a script passes about 100 lines and move to Python, which is preinstalled on most modern Linux distributions. Other points cover script hygiene (a purpose comment below the shebang, two-space indentation, no tabs, 80-character lines, heredocs for long strings) and readability (one pipeline segment per line, braced variables, arrays only for simple argument lists, functions instead of aliases). The last points are correctness habits: use [[ ]] instead of [ ], declare function variables as local on a separate line from command substitution so exit codes are not masked, and run ShellCheck. The video shows no runnable code, so the guidance is only as detailed as the spoken summary.",
+ "speakers": [],
+ "orgs": [
+  "Google",
+  "Better Stack"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools"
+ ],
+ "tags": [
+  "bash",
+  "shell-scripting",
+  "shellcheck",
+  "style-guide",
+  "linting",
+  "linux",
+  "python"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Stop writing Bash once a script goes past roughly 100 lines",
+   "detail": "Bash is hard to maintain and debug at that size. The speaker recommends Python, which is installed by default on modern Linux distributions.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Give every script a purpose comment below the shebang",
+   "detail": "A short overview lets a first-time reader understand what the script does.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Use fixed formatting rules: two-space indent, no tabs, 80-column lines",
+   "detail": "For long string literals, use a here-document, or embedded newlines if the script can tolerate many backslashes.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Split long pipelines and logical chains one segment per line",
+   "detail": "Pipes or operators start each new line, indented two spaces. Very short pipelines can stay on one line.",
+   "t": "1:15"
+  },
+  {
+   "idea": "Always brace variable references, except positional and special parameters",
+   "detail": "Braced variables are easier to read, safer in string concatenation and loops, and easier to debug.",
+   "t": "1:15"
+  },
+  {
+   "idea": "Keep arrays for simple lists such as command arguments, not complex data",
+   "detail": "If you need richer data structures, the speaker says to switch to Python. Strings do not work for list-style arguments.",
+   "t": "1:15"
+  },
+  {
+   "idea": "Avoid aliases in scripts and use functions instead",
+   "detail": "Aliases can hide the real command, and they expand once at definition time, so a value like $RANDOM inside an alias is fixed. A function avoids both problems.",
+   "t": "1:15"
+  },
+  {
+   "idea": "Prefer [[ ]] over [ ] for tests",
+   "detail": "Double brackets support logical operators and pattern matching, and they avoid the word-splitting failures single brackets have with unquoted variables.",
+   "t": "2:37"
+  },
+  {
+   "idea": "Declare function variables as local, and split the declaration from command substitution",
+   "detail": "Writing local and the assignment on one line makes local's exit status replace the command's, hiding failures. Declaring first, then assigning, keeps the real exit code.",
+   "t": "2:37"
+  },
+  {
+   "idea": "Run ShellCheck to catch warnings and bugs",
+   "detail": "It is available as a web version, through a package manager for the terminal, and as a VS Code extension.",
+   "t": "2:37"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Move long scripts to Python",
+   "how": "Once a Bash script passes about 100 lines, or needs structured data beyond simple arrays, rewrite it in Python (preinstalled on most modern Linux distros).",
+   "when": "Any shell script that is growing, is hard to debug, or manipulates complex data."
+  },
+  {
+   "name": "Purpose comment after the shebang",
+   "how": "Put a short comment directly below the shebang line that states what the script does.",
+   "when": "Every script that someone else may read."
+  },
+  {
+   "name": "Formatting baseline",
+   "how": "Indent with two spaces, never tabs. Keep lines at 80 characters. For long literal strings, use a here-document; use embedded newlines if many backslashes are acceptable.",
+   "when": "All scripts, to match Google's shell style guide."
+  },
+  {
+   "name": "One pipeline stage per line",
+   "how": "Split any non-trivial pipeline so each command is on its own line, with the leading pipe indented two spaces. Apply the same layout to && and || chains.",
+   "when": "Pipelines that would be hard to read on one line. Very short ones can stay on one line."
+  },
+  {
+   "name": "Brace all variable references",
+   "how": "Write ${var} rather than $var. Use unbraced form only for positional parameters such as $1 and for special parameters such as $@ or $?.",
+   "when": "Every variable reference in a script, especially inside string concatenation and loops."
+  },
+  {
+   "name": "Arrays only for flat argument lists",
+   "how": "Store the arguments for a command in an array and expand it there, rather than building a string.",
+   "when": "Passing a variable number of arguments to a command. For nested or record-style data, use Python instead."
+  },
+  {
+   "name": "Functions instead of aliases in scripts",
+   "how": "Replace any alias used in a script with a function of the same name, so the command stays visible and the body runs on every call.",
+   "when": "Scripts that need a reusable shortcut for a command. Aliases stay in interactive shell config."
+  },
+  {
+   "name": "Double brackets for conditionals",
+   "how": "Write [[ ... ]] for file, string and numeric tests. Use it for logical operators (&&, ||) and pattern matching, and rely on it not to word-split unquoted variables.",
+   "when": "Any conditional in a Bash script."
+  },
+  {
+   "name": "Local variables with separate command substitution",
+   "how": "Inside a function, declare with local on one line, then assign the command substitution on the next line, e.g. declare local var first, then var=$(cmd).",
+   "when": "Any function that stores the output of a command, so its exit status is not masked by local."
+  },
+  {
+   "name": "Lint scripts with ShellCheck",
+   "how": "Paste the script into the ShellCheck website, install it through the system package manager, or add the VS Code extension, then fix its warnings.",
+   "when": "Before committing or running any Bash script. The speaker presents it as the final and most important step."
+  }
+ ],
+ "tools": [
+  "Bash",
+  "Python",
+  "ShellCheck",
+  "VS Code",
+  "Google Shell Style Guide"
+ ],
+ "numbers": [
+  {
+   "claim": "Recommended size threshold for abandoning Bash: about 100 lines",
+   "t": "0:00"
+  },
+  {
+   "claim": "Indentation: 2 spaces, no tabs. Maximum line length: 80 characters",
+   "t": "0:00"
+  },
+  {
+   "claim": "Video length: 4:14, covering 10 takeaways from the style guide",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Bash scripts longer than about 100 lines should be rewritten in Python.",
+  "Aliases should stay out of scripts entirely; use functions instead.",
+  "The video is a recap of Google's public style guide with no code demonstrations, so it is thin on how-to detail."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS has shell-based ops and benchmark helpers that could follow the same rules, but most of the stack is Python and Rust.",
+   "action": "Run ShellCheck over any repo shell scripts (launch, deploy, or load-test helpers) and move any script longer than ~100 lines to Python."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI and may include shell helpers for checkpoints, loops, or schedules.",
+   "action": "Add ShellCheck to ProsHarness's shell helpers and check the local/command-substitution pattern in any function that captures command output."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

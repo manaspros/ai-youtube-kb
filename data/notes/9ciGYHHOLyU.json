@@ -1,0 +1,162 @@
+{
+ "one_line": "A solo builder turns Karpathy's LLM-wiki idea and Google's OKF spec into a deterministic, local MCP memory layer, then documents the failures that showed up with a local model.",
+ "summary": "The speaker argues that frontier-style memory systems are a poor fit for small local models, which dilute their attention when asked to follow a detailed spec while also doing the real task. Instead, the memory burden is moved into the tool: a markdown wiki of linked files, walked by a \"librarian\" agent behind a fixed set of MCP tools (query, add memory, update memory, status, maintain). The first attempt, a skill file embedding the OKF spec, failed because the model ignored the root path, put the folder in the wrong place, and skipped index updates. The client model also never queried memory because it could only see tool names, so a live seed summary was pushed through the MCP instructions field and the query tool description. Two write rules (enrich before create, link both ways) stopped the memory from becoming a pile of unconnected nodes, and a deterministic lint step flags orphans and broken links. The memory handles contradictions by rewriting old facts rather than appending. The creator says the project is unfinished, with a hot cache tier and an idle-time \"dreaming\" consolidation step planned next.",
+ "speakers": [
+  "Kai Explains host (unnamed narrator)"
+ ],
+ "orgs": [
+  "Google",
+  "Anthropic"
+ ],
+ "format": "review",
+ "topics": [
+  "memory",
+  "mcp-and-tools",
+  "context-engineering",
+  "local-ai"
+ ],
+ "tags": [
+  "LLM wiki",
+  "OKF",
+  "Karpathy",
+  "MCP",
+  "llama.cpp",
+  "llamaswap2",
+  "Qwen3",
+  "Gemma",
+  "local memory",
+  "librarian agent",
+  "knowledge graph",
+  "orphan detection",
+  "seed memory",
+  "deterministic linting"
+ ],
+ "key_ideas": [
+  {
+   "idea": "RAG is the wrong default for personal memory",
+   "detail": "RAG suits a mostly fixed corpus queried for speed, and the model's intelligence is not used during retrieval. Personal context changes constantly, and a linked markdown wiki that the model walks file by file avoids re-chunking and re-embedding on every fact update.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Move the memory burden off the model and onto the tool",
+   "detail": "Local models cannot reliably follow a detailed spec like OKF while also doing the user's task. The design uses a librarian agent that owns the store, with deterministic rules and model calls only where a real decision is needed.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The librarian pattern: a deterministic store with an agent front door",
+   "detail": "Memory is indexed at every level with walkable index files and cross-links. The librarian answers queries, files new knowledge so it can be found later, and is backed by a local llama.cpp server that it prefers so memory queries never trigger a model swap.",
+   "t": "2:40"
+  },
+  {
+   "idea": "Client models need a reason to look before they answer",
+   "detail": "The client model saw only tool names and answered from its own knowledge without checking memory. The fix was a live seed summary of what the knowledge base covers, pushed through the MCP instructions field and the query tool description at session start. Seed entries describe concepts, not file names, because user questions match concepts better.",
+   "t": "4:07"
+  },
+  {
+   "idea": "Enrich before create, and link both ways",
+   "detail": "Without rules the model made a new file for every fact (a standalone Hyderabad file disconnected from the profile). Two rules fixed this: search for the concept a fact belongs to and patch it in if it is an attribute, and when a genuinely new concept is created, also patch its related concepts so links run in both directions.",
+   "t": "5:35"
+  },
+  {
+   "idea": "Model choice matters for agentic write decisions",
+   "detail": "Gemma 12B handled the mechanics but made poor decisions about what to enrich and what to link. Qwen3 30B-A3B on a single consumer GPU handled those decisions on its own.",
+   "t": "5:35"
+  },
+  {
+   "idea": "A deterministic lint pass keeps the graph healthy, and contradictions must be removed, not appended",
+   "detail": "A lint step walks every link and flags orphans (concepts nothing points to) and broken links. Auto-generated index files must be excluded as link sources, or every node looks connected. A maintain tool with an internal agent wires orphans back in. For contradictions, the old fact must be removed everywhere, even if that means rewriting the file.",
+   "t": "7:00"
+  },
+  {
+   "idea": "Shared MCP memory across harnesses, and the honest status",
+   "detail": "Because every agent connects through the same MCP layer, one memory serves all of them. The creator says it is not finished. A hot cache tier for recent memories and an idle-time dreaming pass that reorganizes and links memory are planned next.",
+   "t": "8:27"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Librarian agent over a deterministic markdown store",
+   "how": "Keep memory as linked markdown files with walkable index files at each level. Route all reads and writes through one agent that uses fixed rules and calls the model only when a real decision is needed. Expose it through a few MCP tools: query (read-only), add memory (write or patch), update memory (fix stale facts), status, and maintain.",
+   "when": "Personal or project memory that changes often, where re-embedding on every update is wasteful and the client model is too weak to follow a memory spec itself."
+  },
+  {
+   "name": "Seed memory in MCP instructions and tool descriptions",
+   "how": "On each MCP session connect, generate a short live summary of the knowledge base, organized by concept rather than file name. Put it in the server's MCP instructions field and in the description of the query tool so the client knows what exists before it answers.",
+   "when": "Any MCP memory or knowledge server where the client model otherwise answers from its own knowledge and never calls the query tool."
+  },
+  {
+   "name": "Enrich-before-create and bidirectional linking rules for memory writes",
+   "how": "On each new fact, search for the concept it belongs to. If it is an attribute of an existing concept, patch that concept. Only create a new file for a genuinely new concept, and then patch the related existing concepts so each link points both ways.",
+   "when": "Agent-written knowledge stores that otherwise fill with isolated one-fact files."
+  },
+  {
+   "name": "Deterministic graph lint for orphans and broken links",
+   "how": "Write a non-LLM pass that walks every link and reports orphan concepts (no inbound links) and broken links (targets that do not exist). Exclude auto-generated index files as link sources, because otherwise they link everything and hide orphans. Feed the report to a maintain step that wires orphans into related concepts.",
+   "when": "Any agent-maintained wiki or knowledge graph that is growing and needs a health check independent of the model."
+  },
+  {
+   "name": "Contradiction handling by rewrite, not append",
+   "how": "When a new fact replaces an old one (for example a city change), find every place the old fact appears and remove it, rewriting the whole file if needed, rather than adding the new value next to the old one.",
+   "when": "Mutable personal facts stored in an agent memory, where stale values would otherwise coexist with current ones."
+  },
+  {
+   "name": "Give the memory a model that makes write decisions well",
+   "how": "Test the write-path model separately from the read path. The creator found a 12B model mechanically capable but poor at enrich and link decisions, and a 30B-A3B MoE model reliable on one consumer GPU.",
+   "when": "Choosing a local model for an agent that edits a knowledge graph autonomously."
+  }
+ ],
+ "tools": [
+  "Karpathy LLM wiki (concept)",
+  "Google OKF spec",
+  "MCP",
+  "llama.cpp server",
+  "llamaswap2",
+  "Qwen3 30B-A3B",
+  "Gemma 12B",
+  "Claude Opus (cited as the level of model needed for spec-following)",
+  "Author's own memory tool, with web UI and graph visualizer (open source, link in description, not named)"
+ ],
+ "numbers": [
+  {
+   "claim": "Orphan concept count dropped from 1 to 0 after the maintain tool wired orphans back into related concepts",
+   "t": "7:00"
+  },
+  {
+   "claim": "Gemma 12B was mechanically fine but made poor enrich and link decisions",
+   "t": "5:35"
+  },
+  {
+   "claim": "Qwen3 30B-A3B ran the enrich and link behavior autonomously on a single consumer GPU",
+   "t": "5:35"
+  },
+  {
+   "claim": "Seed-summary example: the memory mentions billing, people and infrastructure segments at session start, so the client queries instead of guessing (no benchmark given)",
+   "t": "4:07"
+  }
+ ],
+ "hot_takes": [
+  "RAG is the wrong tool for personal, constantly changing memory; a text wiki that is walked by links is better.",
+  "Small local models cannot follow a detailed memory spec while doing the real task, so the spec must live in deterministic tooling, not the prompt.",
+  "Clients will not use a memory they cannot see; the seed summary in MCP instructions matters more than the retrieval layer.",
+  "Auto-generated index files must be excluded from link analysis, or orphan detection becomes useless.",
+  "No benchmarks, latency, or accuracy numbers are given; evidence is one creator's single build. The creator says the project is unfinished."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L2A MemoryMesh is tiered cross-session memory with conflict resolution and provenance. This talk covers a markdown-wiki version of the same problem: contradiction rewrite, enrich-before-create, and orphan lint.",
+   "action": "Add an orphan and broken-link lint and a contradiction-rewrite test case to the MemoryMesh eval suite, and compare its conflict handling against the rewrite-not-append rule."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI, which only learns about tools from their names and descriptions. The seed-memory finding applies to any cross-session memory it exposes over MCP.",
+   "action": "When ProsHarness exposes memory or resume state over MCP, put a short live summary in the server instructions so the CLI queries it before answering from its own context."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

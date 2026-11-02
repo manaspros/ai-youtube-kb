@@ -1,0 +1,51 @@
+# I Gave a Robot Duck a 15MB AI Brain (Needle 3)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `KQcQ7P78eTI` · [watch](https://youtu.be/KQcQ7P78eTI) · **date:** 2026-10-05 · **length:** 11:24 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Andres · **orgs:** Cactus Compute, Better Stack, Disney, DeepSeek, Pebble
+- **topics:** training-finetuning-rl, local-ai, mcp-and-tools, evals · **tags:** needle-3, cactus-compute, tool-calling, fine-tuning, on-device, edge-ai, small-models, held-out-eval, synthetic-data, mujoco, robotics, rtx-5090
+
+> Walkthrough of Cactus Compute's Needle 3 on-device tool-calling model: a size-adjustable layer ladder, local fine-tuning on a robot-duck task, and a 49-prompt held-out eval (27% base, 84% fine-tuned 20-layer).
+
+## Summary
+Andres from Better Stack introduces Needle 3, Cactus Compute's small tool-calling model that maps plain-English commands to a closed list of actions and arguments. The main new feature is an "intelligence ladder": one 20-layer model where any prefix of 2 to 20 layers still works standalone, so builds range from about 9 MB to 29 MB. He fine-tunes the model locally on an RTX 5090 to drive a simulated OpenDuck Mini robot, which walks via a separate MuJoCo-trained locomotion policy while Needle picks one of five high-level tools. Training data is about 1,700 generated examples covering five behavioural rules (please, bare command, rude, dramatic, out-of-scope), with 49 hand-written prompts held out for testing. On the held-out set the base model scores 13/49, the fine-tuned 20-layer 41/49 and the fine-tuned 4-layer 30/49. He notes that local fine-tuning drops the confidence score and produces larger files than Cactus's paid platform, and that generalisation is uneven (for example "the moon is shining" triggers a spin). The video shows the approach and results, but not the exact commands or config.
+
+## Key ideas
+- **Needle is a tool-call dispatcher, not a chatbot. You give it a list of allowed actions, and it maps a plain-English sentence to one action and fills in its arguments.** — Its whole job is choosing from a closed action set (walk, turn, flash a light) and filling in parameters such as direction or duration. That narrow scope is why the model can be small. ([0:36](https://youtu.be/KQcQ7P78eTI?t=36))
+- **The intelligence ladder: one 20-layer model can be cut at any depth from 2 to 20 layers, and every prefix still works as a standalone model.** — Cactus's builds run from about 9 MB to 29 MB, so one download can be tailored to a phone or a much smaller device. ([2:04](https://youtu.be/KQcQ7P78eTI?t=124))
+- **Most of the 121M parameters are an N-gram lookup table, so inference cost is closer to a 50M-parameter model.** — The speaker relays Cactus's claim. Lookups are cheaper than computation, and more than half the parameters sit in that table. ([2:04](https://youtu.be/KQcQ7P78eTI?t=124))
+- **The same model can also emit sentence embeddings, so on-device search over notes is possible without a second model.** — Mentioned briefly as a new capability alongside the tool-calling role. ([2:04](https://youtu.be/KQcQ7P78eTI?t=124))
+- **Fine-tune on your own tools with generated data organised around behavioural rules, and include an explicit no-call class.** — The duck's five rules are: a please means act; a bare command means shake head; rude or threatening input means anger even with please; dramatic events trigger a reaction without please; out-of-scope requests (set a timer) make no call. About 1,700 examples phrase these in many ways so the model learns the idea rather than memorising. ([5:33](https://youtu.be/KQcQ7P78eTI?t=333))
+- **Split the system into a low-level controller and a high-level tool picker. The walking policy handles physics and balance, and Needle only chooses among five tools (walk, turn, emote, dance, shake head).** — The OpenDuck team trained the walking brain in MuJoCo and published both the robot model and the policy. The LLM never does locomotion. ([4:26](https://youtu.be/KQcQ7P78eTI?t=266))
+- **Evaluate on prompts that were never used for training. The base model scores 13/49 (27%), the fine-tuned 20-layer 41/49 (84%) and the fine-tuned 4-layer 30/49 (61%).** — The base model refused zero impolite commands and got zero on dramatic reactions. The scoreboard runs all three models in seconds on a laptop. ([9:05](https://youtu.be/KQcQ7P78eTI?t=545))
+- **Generalisation is partial, and the failures are instructive. Unseen politeness spellings work, but some out-of-distribution prompts misfire.** — 'The moon is shining' triggers a spin, 'make a sandwich, please' gets a nod, and 'are you a duck?' gets a head shake. ([7:47](https://youtu.be/KQcQ7P78eTI?t=467))
+- **Fine-tuning locally gives a different artifact from Cactus's platform: no confidence score and larger files, because the platform does extra compression and keeps the confidence head.** — The speaker says the platform is probably worth the $19 for a real product, a soft plug rather than a sponsored segment. ([10:07](https://youtu.be/KQcQ7P78eTI?t=607))
+
+## Techniques
+- **Closed-set tool dispatcher** — Define each tool with a short description and an enumerated list of allowed argument values (for example walk: forward, backward, left, right). The model can only output one of these options, so it cannot invent an action the robot does not have. *When:* On-device or low-latency routing where the action space is small and fixed, and hallucinated actions are unacceptable.
+- **Layer-truncatable model (intelligence ladder)** — Ship one model whose prefixes of 2 to 20 layers each work alone. Pick the depth per device at download time. Cactus's official builds range from about 9 to 29 MB. *When:* The same model must run across devices of very different size and compute budgets.
+- **Rule-categorised synthetic training data** — Enumerate the behavioural rules (positive trigger, negative trigger, emotional or rude tone, out-of-scope with no tool call). Generate many paraphrases per rule (about 1,700 total, including varied politeness spellings and dramatic events) so the model learns the concept, not the exact sentences. Include an explicit no-call class. *When:* Fine-tuning a small tool-caller on your own tool set when you lack real logs, or when you need to cover edge categories deliberately.
+- **Hand-written held-out scoreboard** — Write about 49 prompts by hand and never put them in training. Run the base model, the fine-tuned model and any smaller variant on the same set, then count correct answers per model. The video does this in a UI tab that finishes in seconds. *When:* Checking whether fine-tuning generalised or just memorised the training examples, and comparing model sizes on one fixed set.
+- **Split controller from the LLM decision layer** — Put low-level control (balance, locomotion, physics) in a trained policy or simulator. Expose only a few high-level intents (walk, turn, emote) to the small LLM, which picks one per utterance. *When:* Robots or agents where a fast, deterministic low-level loop should not depend on the language model's latency or errors.
+- **Local fine-tune over LAN to a GPU box** — Upload the training set from a laptop to a GPU machine on the local network, watch the loss chart, then download the finished model back to the laptop. The 20-layer run took about 12.5 minutes and the 4-layer run about 5 minutes on an RTX 5090. The video does not show commands or config. *When:* Iterating on a fine-tune cheaply on your own hardware, accepting that you lose platform features such as confidence scores and extra compression.
+
+## Numbers
+- Cactus builds of Needle 3 range from about 9 MB to 29 MB ([2:04](https://youtu.be/KQcQ7P78eTI?t=124))
+- Needle 3 full model is 121M parameters, up from 45M in Needle 2; more than half sits in the N-gram lookup table; Cactus says running cost is about that of a 50M-parameter model ([2:04](https://youtu.be/KQcQ7P78eTI?t=124))
+- Cactus says a 4-layer, 29M-parameter fine-tuned version beats DeepSeek V4 Flash on the same task (vendor claim, not shown) ([2:04](https://youtu.be/KQcQ7P78eTI?t=124))
+- Cactus platform costs $19 for three training runs, which includes compute and training-data generation ([3:09](https://youtu.be/KQcQ7P78eTI?t=189))
+- Training set of about 1,700 generated examples, plus 49 held-out hand-written prompts ([6:41](https://youtu.be/KQcQ7P78eTI?t=401))
+- Training time on RTX 5090: 20-layer about 12.5 minutes; 4-layer about 5 minutes ([6:41](https://youtu.be/KQcQ7P78eTI?t=401))
+- The 4-layer model used in the demo is about 15 MB ([7:47](https://youtu.be/KQcQ7P78eTI?t=467))
+- Held-out scores: base Needle 3 13/49 (27%); fine-tuned 20-layer 41/49 (84%); fine-tuned 4-layer 30/49 (61%) ([9:05](https://youtu.be/KQcQ7P78eTI?t=545))
+
+## Hot takes
+- The 49-prompt held-out set is small and was written and run once by one author, so the 27% to 84% jump is directional rather than statistically solid. No variance or repeated runs are shown.
+- The claim that a 29M fine-tuned 4-layer model beats DeepSeek V4 Flash is the vendor's own benchmark and is not reproduced in the video.
+- Local fine-tuning silently drops the confidence score and produces larger files, which matters for any production use. The video mentions this but then recommends the paid platform.
+
+## Tools mentioned
+Needle 3, Needle 2, Cactus Compute fine-tuning platform, OpenDuck Mini, MuJoCo, DeepSeek V4 Flash, NVIDIA RTX 5090, ESP32, Pebble Index Ring, BDX droids (Disney)
+
+## Relevance to our work
+- **agentos** (1/3): Shows a small closed-set tool router with a fixed held-out scoreboard, which maps to tool-routing or intent classifiers that could run alongside the RTX 5090 stack. → *Build a 50-prompt held-out tool-routing eval (base vs fine-tuned vs smaller model) before adopting any small on-device tool dispatcher.*
+- **prosharness** (1/3): The split between a deterministic low-level controller and a small LLM that only picks from a closed set of high-level intents parallels how ProsHarness could restrict Claude Code dispatch or approvals to a fixed action enum. → *Constrain ProsHarness's loop and approval decisions to an enumerated action set and log any out-of-set output as a failure.*

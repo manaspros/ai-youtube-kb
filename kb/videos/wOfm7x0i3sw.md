@@ -1,0 +1,46 @@
+# Open Source Is Back. Goodbye Claude.
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `wOfm7x0i3sw` · [watch](https://youtu.be/wOfm7x0i3sw) · **date:** 2026-08-02 · **length:** 7:06 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Warren · **orgs:** Better Stack, OpenCode, Anthropic, OpenAI, Google, Design Arena, models.dev, GitHub, Ghostty, Z.ai (GLM), DeepSeek
+- **topics:** coding-agents, token-cost-efficiency, multi-agent, claude-code · **tags:** opencode, open-source, subagents, custom-agents, model-routing, cost, glm-5.2, deepseek-4, agents-md, lsp, terminal-agent, claude-code-comparison
+
+> Better Stack walkthrough of OpenCode, an open-source terminal coding agent with bring-your-own models and custom subagents, weighed against Claude Code; the cost verdict depends on whether you pay per API token or hold a subscription.
+
+## Summary
+Warren from Better Stack presents OpenCode, a terminal coding agent that he says has over 180,000 GitHub stars and offers bash, edit, grep, webfetch and websearch tools similar to Claude Code. The main difference he stresses is model choice: a models.dev directory of free, local and paid models, with a free default model called "big pickle" and a /models command to switch. He argues cheaper models such as GLM 5.2 and DeepSeek 4 can match paid frontier models for many tasks, citing a Design Arena web-design result. OpenCode has no automatic model routing, so he configures custom subagents pinned to specific models. Its built-in primary agents are build and plan (switched with Tab), and subagents are general and a read-only explore agent, invoked by @ mention. He shows custom agents defined either in the opencode JSON config or as markdown files in an agents folder, with a description, mode, model, temperature and permissions. Quality-of-life features include LSP (off by default), @ fuzzy file search, undo/redo, a share link, and /init, which writes an AGENTS.md. His verdict is that OpenCode wins on cost for API-billed users, while Claude Code is cheaper for people on Claude Pro or Max, which he says Anthropic does not allow third-party harnesses to use. The video is a single-tool walkthrough with no production test, despite promising one at the start.
+
+## Key ideas
+- **OpenCode is an open-source terminal coding agent pitched as a Claude Code replacement, with a similar built-in tool set (bash, edit, grep, webfetch, websearch).** — The speaker cites over 180,000 GitHub stars at recording time. The pitch is no vendor lock-in and access to hundreds of models, including free and local ones. ([0:00](https://youtu.be/wOfm7x0i3sw?t=0))
+- **Bring-your-own-model is the main differentiator.** — Models come from the models.dev directory, which the speaker says OpenCode officially supports. The default is a free model called 'big pickle', and /models switches between free, Google, Anthropic and OpenAI models. ([0:00](https://youtu.be/wOfm7x0i3sw?t=0))
+- **Cheaper open-weight models can be competitive on cost.** — He says GLM 5.2 and DeepSeek 4 are much cheaper than frontier API pricing with comparable results, and cites a Design Arena web-design ranking where GLM 5.2 beat 'Fable 5' at the time of recording. No prices or task-level eval numbers are given. ([1:14](https://youtu.be/wOfm7x0i3sw?t=74))
+- **OpenCode has no automatic model routing.** — Unlike harnesses such as Copilot, it does not pick a model per task. The workaround is custom subagents, each pinned to a model, that are invoked for specific kinds of work. ([1:14](https://youtu.be/wOfm7x0i3sw?t=74))
+- **Agents come in two kinds: primary and subagent.** — Primary agents are build (implements changes) and plan (proposes changes without editing), switched with Tab or /agents. Subagents are invoked automatically from the prompt or tagged with @. Built-in subagents are general (research and multi-step tasks) and explore (read-only codebase exploration). ([2:24](https://youtu.be/wOfm7x0i3sw?t=144))
+- **Custom agents can live in JSON config or in markdown files.** — The JSON form keeps everything in one config under an agents key. The markdown form puts one file per agent in an agents folder under the .opencode directory. Each agent has a description, a mode (subagent), a model, a temperature, permissions, and a system prompt in the body. ([3:49](https://youtu.be/wOfm7x0i3sw?t=229))
+- **Per-agent temperature and permissions are the tuning knobs.** — The speaker uses a high-temperature UI agent for design work and a very low temperature for a deterministic code-review agent. Both pre-approve edits and bash so they do not prompt. ([3:49](https://youtu.be/wOfm7x0i3sw?t=229))
+- **Verdict depends on billing model.** — On API-only pricing he says OpenCode wins easily. On a Claude Pro or Max subscription he says third-party harnesses are blocked, so Claude Code is cheaper. He presents this as a claim about Anthropic's policy and does not show it. ([6:15](https://youtu.be/wOfm7x0i3sw?t=375))
+
+## Techniques
+- **Pin a cheap model to a specialist subagent** — Create .opencode/agents/ui-engineer.md with a description (UI component implementation, styling, front-end work), mode: subagent, a model (GLM 5.2 in the example), permissions that always allow edit and bash, and a system prompt body that describes the role. Invoke it with @ui-engineer or let the prompt trigger it. *When:* When a task type (here UI/design) is better served by a specific cheaper model than the default. This is OpenCode's substitute for automatic model routing.
+- **Low-temperature review subagent** — Create a review.md subagent with a low temperature value, a model such as Claude Sonnet 4, the same pre-approved permissions, and a detailed description of the review standards (quality, best practices). The speaker says more detail in the description lowers the chance of off-task behavior or hallucination. *When:* For review or verification passes where repeatable output matters more than creativity.
+- **Same agent definition in one JSON file** — Define build, plan and custom agents under the agents key in the opencode JSON config, each with a description, model and prompt. Keeping everything in one file is the speaker's recommended option for a single, reviewable config. *When:* When you want all agent config in one checked-in place instead of many markdown files.
+- **Enable LSP for type-aware feedback** — Turn on LSP in the OpenCode config (off by default). It starts the right language server per file so the model gets type information and diagnostics, not only raw text. *When:* Any typed-language project where the agent should see compiler errors and types while editing.
+- **Generate AGENTS.md with /init** — Run init inside an OpenCode session. It writes AGENTS.md, a checked-in file that teaches the agent the project's conventions, equivalent to CLAUDE.md in Claude Code. *When:* Onboarding a repo so every session starts with project conventions.
+- **Plan then build** — Use the plan primary agent to design a large feature without edits, review the plan, then switch to build (Tab or /agents) to implement it. *When:* Large features where you want to review the approach before any files change.
+
+## Numbers
+- OpenCode has over 180,000 GitHub stars at recording time. ([0:00](https://youtu.be/wOfm7x0i3sw?t=0))
+- Cheaper models such as GLM 5.2 are described as 'much, much cheaper' than frontier API pricing, with no figures given. ([1:14](https://youtu.be/wOfm7x0i3sw?t=74))
+- GLM 5.2 beat Fable 5 at web design on Design Arena at the time of recording (speaker's report, no score given). ([1:14](https://youtu.be/wOfm7x0i3sw?t=74))
+- Video length 7:06. ([0:00](https://youtu.be/wOfm7x0i3sw?t=0))
+
+## Hot takes
+- Anthropic blocks third-party harnesses like OpenCode from using Claude Pro or Max subscriptions, so Claude Code is the cheaper choice for subscribers (speaker's claim; not verified in the video).
+- OpenCode's UI is considerably better than Claude Code's (subjective).
+- Title 'Open Source Is Back. Goodbye Claude.' overstates the content; the video is a single-tool walkthrough with no production test, although the intro promises one.
+
+## Tools mentioned
+OpenCode, Ghostty, models.dev, big pickle (free default model in OpenCode), GLM 5.2, DeepSeek 4, Claude Sonnet 4, Fable 5 (named as a comparison model), Claude Code, GitHub Copilot (comparison), Design Arena (benchmark), AGENTS.md, CLAUDE.md
+
+## Relevance to our work
+- **agentos** (1/3): Per-subagent model pinning (a cheap model for a specialist, low temperature for review) is a simple routing pattern that matches the cost-routing theme in AgentOS, but it is a config convention, not infra. → *Compare OpenCode's per-agent model and temperature config with the strategy-routing rules in Govrix Scout, to see whether budget-aware routing can key on agent or task type.*
+- **prosharness** (1/3): ProsHarness wraps the Claude Code CLI and manages subagent-style runs. OpenCode's markdown agent definitions (description, mode, model, temperature, permissions) are a compact format to compare against ProsHarness's own agent or subagent definitions. → *Compare ProsHarness's subagent definition format with OpenCode's .opencode/agents markdown schema, and check the subscription-harness claim against Anthropic's terms before relying on it.*

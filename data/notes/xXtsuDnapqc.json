@@ -1,0 +1,172 @@
+{
+ "one_line": "Walkthrough of Apple's new Container Machines, persistent per-container Linux VMs on macOS built on Apple's open-source container CLI, with benchmarks against OrbStack and Docker Desktop and the main caveats.",
+ "summary": "Better Stack presents Apple's Container Machines, a lightweight persistent Linux environment on macOS built on Apple's container project (a Swift, OCI-compatible Docker alternative released last year). The walkthrough builds an Ubuntu image from a Dockerfile, creates a default machine with the container machine create command, and shows that the host home directory is mounted read-write, so files edited on the Mac are immediately visible in Linux. It notes that dev-server hot reload did not pick up edits made from macOS, and suggests connecting an editor over SSH as a workaround (unverified). The architecture point is that each container gets its own lightweight VM via Apple's Virtualization framework, instead of sharing one Linux VM as Docker Desktop does, which the speaker frames as better isolation, selective mounts and lower memory use. Benchmarks from a linked third-party repo show Apple's tool roughly level with OrbStack and Docker Desktop on CPU and memory throughput, but slower on tiny-container startup (still sub-second). The main caveats are that memory is held until the machine restarts, there is no GPU or USB passthrough, GUI apps are awkward, and the home mount cannot be narrowed to one folder. The speaker says he would still use OrbStack for now, and Apple's tool beats Docker Desktop if OrbStack's paid licence is a problem.",
+ "speakers": [],
+ "orgs": [
+  "Apple",
+  "Docker",
+  "OrbStack",
+  "Better Stack"
+ ],
+ "format": "review",
+ "topics": [
+  "dev-tools",
+  "sandboxing-execution"
+ ],
+ "tags": [
+  "apple-container",
+  "container-machines",
+  "macos",
+  "linux-vm",
+  "docker-alternative",
+  "oci",
+  "orbstack",
+  "docker-desktop",
+  "lima",
+  "wsl",
+  "ssh-remote-editing",
+  "virtualization-framework",
+  "bun",
+  "postgres",
+  "systemd",
+  "benchmarks"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Container Machines are Apple's answer to WSL: a persistent Linux environment on macOS, built on the open-source Apple container project, which runs any OCI image and is tuned for Apple silicon.",
+   "detail": "Any image you could pull from Docker Hub works, as long as it includes a system init program so it can behave as a VM. The speaker's example is an Ubuntu image built from a Dockerfile.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Setup is two steps: build an OCI image with Apple's container tool, then create a machine from it, marking it as default so commands target it without naming it.",
+   "detail": "The machine comes up in seconds. In the example it reports 7 CPUs and 18 GB of memory. CPU and memory are configurable, but the default memory is half of the Mac's RAM. Requires macOS 26 or later; installed from the GitHub releases page.",
+   "t": "1:21"
+  },
+  {
+   "idea": "The host home directory is mounted read-write into the Linux machine, and the user account is copied over, so files edited with macOS tools are immediately usable in Linux without transfer.",
+   "detail": "The machine also has its own separate Linux home volume for Linux-specific dotfiles. Running a command from a Mac folder drops you into the same path inside Linux.",
+   "t": "1:21"
+  },
+  {
+   "idea": "Hot reload and breakpoints did not work reliably when editing files from macOS. The speaker suggests connecting the editor to the machine over SSH, which Apple's docs describe.",
+   "detail": "The speaker expects this to fix breakpoints and hot reload but did not verify it on camera. Bun dev server did not pick up a changed file and needed a restart.",
+   "t": "2:24"
+  },
+  {
+   "idea": "Each container runs in its own lightweight VM through Apple's Virtualization framework, instead of many containers sharing one big Linux VM as Docker Desktop does. The speaker credits this with security, privacy (selective mounts) and lower memory use.",
+   "detail": "Startup times are close to Docker and other tools per the speaker. Machines can run real systemd, so the speaker runs Postgres as a service next to an app, matching a production Linux server.",
+   "t": "3:52"
+  },
+  {
+   "idea": "A third-party benchmark puts Apple's container tool roughly level with OrbStack and Docker Desktop. Apple leads on memory throughput and is slightly ahead on single-thread CPU, but has the slowest tiny-container startup.",
+   "detail": "Startup is sub-second for Apple (Docker Desktop and OrbStack are under 0.25 s). OrbStack leads on file system and small-file performance. The speaker only summarises the results and links the repo.",
+   "t": "5:03"
+  },
+  {
+   "idea": "The main caveats are memory, passthrough, GUI apps and mount security. Memory stays allocated until the machine restarts, and there is no GPU or USB passthrough.",
+   "detail": "The home mount is read-write by default, so code running in the machine can reach SSH keys and cloud credentials. The only options are read-only or no mount, not a single folder. GUI Linux apps are not seamless.",
+   "t": "6:17"
+  },
+  {
+   "idea": "Verdict: the speaker would keep OrbStack for now because of dynamic memory release and polish. Apple's tool beats Docker Desktop, and Lima is another option if OrbStack's paid licence matters.",
+   "detail": "OrbStack is paid for business or commercial use. The speaker frames Apple's tool as a fresh option, not a finished replacement.",
+   "t": "7:43"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Build a dev machine image from a Dockerfile",
+   "how": "Write a Dockerfile on an Ubuntu base image with the common dev tools installed. Build it with Apple's container tool and give it a local tag. The exact build flags are not shown in the transcript. Any OCI image should work, as long as it includes a system init program.",
+   "when": "You need a repeatable Linux target on macOS that matches a deployment distro, such as Ubuntu for a server build or a test stack."
+  },
+  {
+   "name": "Create, list and run a container machine",
+   "how": "Run `container machine create` with the image, a friendly name and the default flag. Check it with `container machine list`, which shows IP, CPUs and memory. Enter it with `container machine run`, optionally with a command after it. The transcript shows `run` with no command opening an interactive shell; the create flags are not shown.",
+   "when": "You want a persistent Linux shell on the Mac without a Docker-style compose setup, and you want commands to target it by default."
+  },
+  {
+   "name": "Use the Mac project files from inside Linux",
+   "how": "Work in the normal macOS project folder with macOS tools. Run the build or test command from inside the machine with `container machine run`. The home directory is mounted read-write, so no file copy step is needed. Keep Linux-only dotfiles in the machine's separate home volume.",
+   "when": "You want to compile or test a Linux binary from a Mac without transferring files."
+  },
+  {
+   "name": "Edit files over SSH for breakpoints and hot reload",
+   "how": "Connect the editor to the container machine over SSH and edit the files there, rather than editing from macOS. Apple's documentation has a tutorial for the setup. The speaker says this is expected to make breakpoints and hot reload work, but did not show it working.",
+   "when": "Dev-server hot reload or debugger breakpoints do not update when files are changed from macOS."
+  },
+  {
+   "name": "One machine per distro target",
+   "how": "Create several container machines with different base images, such as Alpine, Ubuntu and Debian, and keep them side by side. Each runs a real init system, so you can run services like Postgres alongside the app.",
+   "when": "You need to test cross-distro behaviour or a multi-service stack that must match a Linux production server."
+  },
+  {
+   "name": "Narrow the home mount before running untrusted code",
+   "how": "Container Machines can only mount the whole home directory read-write, read-only, or not at all, with no single-folder option. Use read-only or no mount for any untrusted code. Keep credentials outside the mounted home directory.",
+   "when": "Running agent-written or third-party code in a machine that would otherwise expose SSH keys and cloud credentials."
+  }
+ ],
+ "tools": [
+  "Apple container (Swift OCI container CLI and runtime, released last year)",
+  "Apple Container Machines (persistent Linux VMs on macOS 26+)",
+  "Apple Virtualization framework",
+  "Docker Desktop",
+  "OrbStack",
+  "Lima",
+  "Dockerfile / OCI images",
+  "Ubuntu 24",
+  "Alpine",
+  "Debian",
+  "Bun (bun dev server)",
+  "PostgreSQL",
+  "systemd",
+  "Docker Hub",
+  "Visual Studio Code (Linux version, mentioned)",
+  "Windows Subsystem for Linux (WSL, for comparison)"
+ ],
+ "numbers": [
+  {
+   "claim": "Example machine: 7 CPUs and 18 GB of memory. Default memory is half of the Mac's RAM, and the memory is never returned until the machine restarts.",
+   "t": "1:21"
+  },
+  {
+   "claim": "Requires macOS 26 or later.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Benchmarks (third-party repo, not verified): Apple's tool is top on single-thread CPU by a small margin over OrbStack, and roughly level on multi-thread. It leads on memory throughput, with OrbStack second and Docker Desktop last.",
+   "t": "5:03"
+  },
+  {
+   "claim": "Tiny-container startup: Apple's tool is sub-second but slower than Docker Desktop and OrbStack, which are under 0.25 s.",
+   "t": "5:03"
+  },
+  {
+   "claim": "OrbStack is the speaker's current pick. It is paid for business or commercial use.",
+   "t": "7:43"
+  }
+ ],
+ "hot_takes": [
+  "Apple's new Container Machines is an early, unpolished option, not a replacement for OrbStack. The speaker says it still lacks dynamic memory release and passthrough.",
+  "The read-write home directory mount is a security problem for anyone running untrusted or agent-written code, since it exposes SSH keys and cloud credentials.",
+  "The 'Apple just built WSL' framing is a headline stretch. The video itself describes fast lightweight VMs that behave like a Linux server, not a WSL clone.",
+  "The editor-over-SSH fix for hot reload and breakpoints is unverified in the video."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Container Machines show a per-container VM model with selective mounts, a useful reference for Crucible's sandboxed code execution. The read-write home mount is a cautionary example of a broad mount.",
+   "action": "Compare Crucible's celld isolation with per-container VM plus selective mounts, and check that no sandbox mounts the whole home directory."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI and does zero-token credential handling. The video shows that a broad home mount exposes SSH keys and cloud credentials to anything inside a VM.",
+   "action": "If ProsHarness ever runs Claude Code in a VM or container, mount only the project directory, never the home directory, so credentials stay out of reach."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

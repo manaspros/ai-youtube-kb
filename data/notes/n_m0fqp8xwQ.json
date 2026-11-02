@@ -1,0 +1,149 @@
+{
+ "one_line": "Hands-on look at NVIDIA's open PersonaPlex full-duplex voice model: deploy on a rented RunPod A40, run the Moshi server, and test role prompts, which work for scripted flows but drift under confusing input.",
+ "summary": "The host introduces PersonaPlex, an open NVIDIA voice model that listens and speaks at the same time, in contrast to the usual speech-to-text, LLM, text-to-speech cascade that adds lag. He says it is built on the Moshi architecture from Kyutai, is a 7B-parameter model using the Mimi neural audio codec, and was trained on about 1200 hours of real English conversation (Fisher corpus) plus over 2000 hours of synthetic role-play data for customer service and tech support. NVIDIA's own duplex benchmark is cited as showing better turn-taking and interruption latency than other open and commercial systems, but this is not verified in the video. He deploys the model on a rented RunPod A40 with a 100 GB container, exposes port 8998, installs Opus and the Moshi server from the PersonaPlex repo, and opens the built-in web UI. Role tests are a bank verification call, an \"annoying dog-obsessed friend\" persona, and an Italian-speaking friend; the bank role holds its script, but the persona tests show date confusion, off-topic replies and repetition loops. He concludes the latency feels better than ChatGPT voice mode but accuracy is still clunky and the model is not robust to adversarial or confusing input.",
+ "speakers": [
+  "Andrus (Better Stack host)"
+ ],
+ "orgs": [
+  "NVIDIA",
+  "Kyutai",
+  "Better Stack",
+  "RunPod"
+ ],
+ "format": "review",
+ "topics": [
+  "voice-multimodal",
+  "models-research",
+  "inference-serving"
+ ],
+ "tags": [
+  "full-duplex",
+  "voice-agent",
+  "speech-to-speech",
+  "moshi",
+  "runpod",
+  "gpu-deployment",
+  "role-prompting",
+  "open-weights"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Full-duplex means the model listens and speaks at once, updating internal state as the user talks, instead of running a text-based cascade.",
+   "detail": "Traditional voice stacks convert speech to text, run an LLM, then convert back to speech, which creates noticeable lag. PersonaPlex is a single end-to-end model, and the speaker credits this for its low latency.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Full-duplex enables back-channeling (\"uh-huh\"), which breaks the strict user-turn / agent-turn structure.",
+   "detail": "The model mirrors the user's flow in real time, so the conversation does not feel one-sided. The speaker frames this as active listening.",
+   "t": "1:15"
+  },
+  {
+   "idea": "Architecture and training mix: Moshi base, Mimi codec, real conversation plus synthetic role data.",
+   "detail": "7B parameters on the Moshi architecture from Kyutai, with the Mimi neural audio codec. Trained on about 1200 hours of real human conversation (Fisher English) for pauses and rhythm, plus over 2000 hours of synthetic role data for customer service and technical support, so it can follow instructions and keep a human feel.",
+   "t": "1:15"
+  },
+  {
+   "idea": "Vendor-reported benchmark claim: better turn-taking and interruption latency than open and commercial systems.",
+   "detail": "NVIDIA reports large gains on its duplex benchmark, which the transcript labels as the 'service duplex bench'. The video does not reproduce these numbers.",
+   "t": "2:18"
+  },
+  {
+   "idea": "Hardware is the practical constraint: the speaker suggests at least 24 GB VRAM for minimal latency.",
+   "detail": "The demo runs on a rented RunPod A40 container. Model weights and code are under an open license.",
+   "t": "2:18"
+  },
+  {
+   "idea": "Setup is simple once the container is right: the Moshi server runs on port 8998 and is reached through the RunPod HTTP proxy.",
+   "detail": "The speaker needs at least 50 GB of space, so he raises the container to 100 GB, adds port 8998 to the HTTP ports, uses the PyTorch Ubuntu template, then installs Opus, clones the repo, installs the Moshi server, exports a Hugging Face token, and starts the server.",
+   "t": "3:19"
+  },
+  {
+   "idea": "Role prompts make a scripted customer-service flow work, but the model is not robust to confusing input.",
+   "detail": "In the bank role it follows verification (name, date of birth) even when the caller keeps saying it will rob the bank, and it ends the call. In the dog-obsessed persona it gets the year wrong (2011 vs 2026), goes off topic, and cannot handle questions well.",
+   "t": "4:33"
+  },
+  {
+   "idea": "Persona tests show drift and repetition loops when the prompt is ambiguous or the user is adversarial.",
+   "detail": "The Italian-speaker role produces repetitive 'like, you know' loops and confused replies. The speaker concludes the more the user confuses it, the more it goes off the rails, so it is not bulletproof.",
+   "t": "8:53"
+  },
+  {
+   "idea": "Overall verdict: latency feels strong, but accuracy is still clunky.",
+   "detail": "The speaker says the latency feels better than ChatGPT voice mode, but accuracy and reliability are not there yet. He still calls it a promising real-world candidate.",
+   "t": "10:38"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Deploy PersonaPlex on a rented GPU pod",
+   "how": "Launch a RunPod A40 with a container disk of at least 50 GB (the speaker uses 100 GB), add port 8998 to the HTTP ports, and pick the PyTorch Ubuntu template. SSH in, install the Opus audio codec, clone the PersonaPlex repo, run its Moshi server install step, export a Hugging Face token (needed to download the model), and start the Moshi server. The video does not show the exact commands, package names or repo URL; follow the PersonaPlex GitHub README. Open the RunPod-generated link for port 8998 to reach the built-in web UI.",
+   "when": "Trying an open full-duplex voice model without local GPUs. Note that the video shows no exact commands, so the README is the source of truth."
+  },
+  {
+   "name": "Role prompt presets and custom persona prompts in the web UI",
+   "how": "The UI ships with text prompt presets (default assistant, medical office, bank, astronaut). Custom persona prompts are typed into the same field, for example a persona that only talks about dogs and tells knock-knock jokes. The bank preset followed a verification script.",
+   "when": "Prototyping scripted customer-service or role-play voice flows. Expect drift on off-script or adversarial inputs, so test edge cases before relying on it."
+  },
+  {
+   "name": "Stress-test a voice model with adversarial and off-script user turns",
+   "how": "The speaker repeats an off-topic or threatening line, gives a wrong date, or asks mixed questions to see whether the role holds. Rate the outcomes as role adherence, date/fact accuracy and loop behavior.",
+   "when": "Evaluating any voice agent before production. The speaker's informal tests show the model can drift badly, so an evaluation harness with scripted adversarial cases is the reproducible version of this."
+  }
+ ],
+ "tools": [
+  "PersonaPlex (NVIDIA open voice model, full-duplex)",
+  "Moshi (Kyutai speech-to-speech architecture and server)",
+  "Mimi (neural audio codec)",
+  "Opus (audio codec, installed on the server)",
+  "RunPod (GPU container hosting, A40 used)",
+  "PyTorch Ubuntu template (RunPod)",
+  "Hugging Face (model download, token required)",
+  "ChatGPT voice mode (comparison only)"
+ ],
+ "numbers": [
+  {
+   "claim": "Model size: 7B parameters, built on the Moshi architecture with the Mimi neural audio codec.",
+   "t": "1:15"
+  },
+  {
+   "claim": "Training data: about 1200 hours of real human English conversation (Fisher corpus) plus over 2000 hours of synthetic role-play data (customer service, tech support).",
+   "t": "1:15"
+  },
+  {
+   "claim": "Recommended GPU: at least 24 GB VRAM for minimal latency (speaker's advice, not a measurement).",
+   "t": "2:18"
+  },
+  {
+   "claim": "Deployment: at least 50 GB free space; the speaker set the container to 100 GB. The Moshi server listens on port 8998.",
+   "t": "3:19"
+  },
+  {
+   "claim": "No latency or accuracy measurements are shown. The claims of low latency and better turn-taking are subjective impressions or NVIDIA's own benchmark, which is not shown.",
+   "t": "10:38"
+  }
+ ],
+ "hot_takes": [
+  "The title's 'absolutely WILD' framing is hype; the substance is a single informal demo with no measurements. The host's latency verdict is subjective.",
+  "NVIDIA's outperformance claim rests on its own duplex benchmark, which the video does not reproduce.",
+  "The demo's failures (date confusion, repetition loops, derailing on adversarial input) argue against trusting role prompts with an open full-duplex model without guardrails.",
+  "The bank-role success is a scripted flow with a stable prompt; it does not show general reliability."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "A full-duplex speech model is a different interaction surface from text agents. AgentOS has a GPU-serving layer (InferCraft on one RTX 5090), so a Moshi-class model would be a serving candidate only if voice is ever in scope.",
+   "action": "Read the PersonaPlex/Moshi model card before any voice work; do not change InferCraft now."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No Claude Code, checkpoint, planning or approval content.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

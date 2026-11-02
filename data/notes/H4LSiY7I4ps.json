@@ -1,0 +1,173 @@
+{
+ "one_line": "Better Stack tutorial: collect /var/log/auth.log with Vector, convert syslog to JSON with a remap transform, ship it to Better Stack, then chart sudo authentication failures on a dashboard.",
+ "summary": "The video walks through monitoring Linux authentication logs on an Ubuntu machine (running under WSL). It shows what /var/log/auth.log records (PAM sessions, sudo commands, SSH logins, authentication failures) and generates examples by switching users, mistyping a password, and removing a user from the sudo group. Vector collects the file, a remap transform (parse_linux_authorization plus parse_regex inside if/else checks) converts it to JSON with an event name and context, and a console sink is used for testing with `vector validate` and `sudo vector`. An HTTP sink with a Better Stack source token (bearer auth, POST) then ships the events to Better Stack's live tail. The last part turns the event name into a log-to-metrics group-by via a JSON extract, builds a bar chart filtered to sudo authentication failures, and names alerting as the next step. The walkthrough is practical and reproducible, but the Better Stack-specific parts (sources, log-to-metrics, dashboards) are vendor-tied, and the regex coverage is only sketched.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "Ubuntu",
+  "Red Hat"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "observability",
+  "dev-tools",
+  "security-guardrails"
+ ],
+ "tags": [
+  "linux",
+  "auth-logs",
+  "auth.log",
+  "vector",
+  "log-shipping",
+  "log-parsing",
+  "vrl",
+  "remap",
+  "dashboards",
+  "alerting",
+  "sudo",
+  "ssh",
+  "pam",
+  "syslog",
+  "better-stack"
+ ],
+ "key_ideas": [
+  {
+   "idea": "auth.log is the single record of access on a Linux host",
+   "detail": "It captures session open/close for users, PAM messages, sudo commands with their directory and command, su/user switches, and authentication failures. Monitoring it is presented as the basis for spotting breach patterns and privilege misuse.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Raw syslog lines are unstructured, so parsing them to JSON is the first step",
+   "detail": "The speaker's argument is that JSON lets you extract fields directly, whereas the syslog text file has to be searched by eye. Vector converts it in a transform before anything is shipped.",
+   "t": "7:51"
+  },
+  {
+   "idea": "A single parse function does most of the work, and a few if/else checks add event names",
+   "detail": "parse_linux_authorization turns the message into structured fields that are assigned to the event. A category of 'authentication' is set, and message substring checks (e.g. 'failed password') set event.name and context through parse_regex. The speaker says the full regex list is in the docs and does not go through it.",
+   "t": "10:22"
+  },
+  {
+   "idea": "Validate and test with a console sink before adding the network sink",
+   "detail": "The console sink prints transformed events locally. `vector validate` checks the config, and `sudo vector` runs the pipeline, so the transform can be confirmed before any remote destination is configured.",
+   "t": "13:01"
+  },
+  {
+   "idea": "Shipping uses an HTTP sink with a source-specific bearer token",
+   "detail": "The Better Stack source's token goes into an auth block with strategy bearer. The HTTP sink POSTs to the URI from the source's configure page. Validation is run again, then the live tail on Better Stack shows the logs, including the user's own sudo edit of vector.yaml.",
+   "t": "16:51"
+  },
+  {
+   "idea": "A log-to-metrics group-by lifts the event name into a queryable column",
+   "detail": "A group-by column named 'event name' is created on the source with a JSON extract of event.name typed as nullable string, leaving the codec at its defaults. The metric takes about 3-4 minutes to rebuild before it is usable on dashboards.",
+   "t": "21:04"
+  },
+  {
+   "idea": "The dashboard chart counts events by event name, filtered to sudo authentication failures",
+   "detail": "The default level grouping is unticked and event name is ticked. A filter on event name equals the sudo authentication failure value is added, the y-axis is a count, and the chart type is bar. The default 3-hour window is widened to 12 hours to show earlier events.",
+   "t": "23:52"
+  },
+  {
+   "idea": "Alerting is the stated next step, and the same pattern applies to any file",
+   "detail": "Better Stack alerting policies are suggested after the dashboard is set up. The speaker says any file on the system can be collected and charted with Vector and shipped the same way.",
+   "t": "26:32"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Verify what auth.log captures before building a pipeline",
+   "how": "Run `tail` on /var/log/auth.log as root to see the last 50 lines. Use `who am i` after switching users to confirm identity. Generate events on purpose: su to another user, a mistyped password, removing a user from the sudo group, and a failed sudo attempt. Then check that each shows up in the file.",
+   "when": "Before writing a parser, to see the real message formats on the target host. Non-root users get 'permission denied' on this file, so use sudo."
+  },
+  {
+   "name": "Vector file source plus remap transform for auth logs",
+   "how": "In /etc/vector/vector.yaml, define a source named auth-logs of type file pointing at /var/log/auth.log. Define a transform named parse-auth-log with inputs [auth-logs] and type remap. In its source, assign the result of parse_linux_authorization on the message to the root event (the video does this with the '.' operator). Set event.category to 'authentication'. Then add an if/else chain on message substrings such as 'failed password', and in each branch set event.name and context from parse_regex. The speaker says the regex list lives in the Vector docs.",
+   "when": "When you need auth events as structured JSON with a stable event name for filtering and counting. The video says the parse function targets Debian-style auth.log, and Red Hat systems use the 'secure' file instead."
+  },
+  {
+   "name": "Validate, then test with a console sink",
+   "how": "Add a sink named print of type console that takes the parse-auth-log output. Run `vector validate`, then `sudo vector` to see the transformed events in the terminal before going further.",
+   "when": "Each time the config changes, and before enabling any remote sink, so transform errors show up locally."
+  },
+  {
+   "name": "Ship to a remote source with an HTTP sink and bearer auth",
+   "how": "Replace the console sink with an HTTP sink whose uri comes from the destination's source configure page. Set method to post. Add an auth block with strategy bearer and the source token. Run `vector validate` and `sudo vector` again, then check the destination's live tail. The token is on the source's configure page and is also shown when the source is first created.",
+   "when": "When logs need to leave the host for central storage and alerting."
+  },
+  {
+   "name": "Create a log-to-metrics group-by from the parsed event name",
+   "how": "On the destination's source, open the configure page and go to the Logs to metrics tab. Create a group-by column named 'event name'. Set the SQL expression to json_extract on the log data with keys event then name, and type nullable string. Keep the default codec. Wait about 3-4 minutes for it to rebuild, then use the column in dashboard SQL.",
+   "when": "When you want per-event counts for dashboards or alerts without re-parsing raw text at query time."
+  },
+  {
+   "name": "Build a bar chart of one event type",
+   "how": "Create a dashboard, then a chart. Select the source and use the drag-and-drop builder. Untick the default level grouping and tick event name. Add a filter where event name equals the event you want (the video uses sudo authentication failure). Set the y-axis to a count, choose the bar chart type, and save the chart. Widen the time range from the 3-hour default if needed.",
+   "when": "To track how often a security-relevant event happens over time."
+  }
+ ],
+ "tools": [
+  "Vector (version not stated)",
+  "Better Stack (sources, live tail, log-to-metrics, dashboards, alerting)",
+  "Ubuntu (WSL)",
+  "auth.log / syslog / rsyslog",
+  "PAM (pluggable authentication modules)",
+  "sudo",
+  "sshd",
+  "nano",
+  "Vector Remap Language (VRL) functions: parse_linux_authorization, parse_regex, json_extract (SQL)"
+ ],
+ "numbers": [
+  {
+   "claim": "Video length 27:39; tutorial covers one host, one source, one sink, one chart",
+   "t": "0:00"
+  },
+  {
+   "claim": "Non-root tail on auth.log gives permission denied; sudo is needed to read the last 50 lines",
+   "t": "4:00"
+  },
+  {
+   "claim": "Vector has three component types: sources, transforms, sinks",
+   "t": "9:06"
+  },
+  {
+   "claim": "Vector config is /etc/vector/vector.yaml",
+   "t": "7:51"
+  },
+  {
+   "claim": "Log-to-metrics group-by takes typically 3-4 minutes to rebuild",
+   "t": "22:31"
+  },
+  {
+   "claim": "Dashboard default time range is 3 hours; widened to 12 hours to show earlier events",
+   "t": "25:15"
+  },
+  {
+   "claim": "Speaker reads the last 50 records of auth.log as the sample size",
+   "t": "2:37"
+  }
+ ],
+ "hot_takes": [
+  "Vendor-tied tutorial: the Better Stack-specific parts (source token, HTTP sink URI, log-to-metrics, dashboard UI) do not carry over to other destinations, though the Vector parts do.",
+  "The parse coverage is limited to the events shown in the demo. The speaker skips the regex list ('not going to go over all of these'), so a reader has to check the docs for other event types.",
+  "Debian-centric: the transform uses the Debian auth.log parser. The speaker only says Red Hat uses the 'secure' file, with no config for it.",
+  "Auto-captions say 'pseudo authentication failure' throughout, most likely meaning 'sudo'. Verify the exact event name your parser emits before filtering on it.",
+  "No filtering or sampling is shown, so the whole auth.log gets shipped. The video does not discuss volume or cost."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS L4 uses Prometheus/Grafana and OTel. This video shows a generic log-normalize-then-count pattern (parse to JSON, extract an event name, count per event), which is a small piece of that observability stack.",
+   "action": "Normalize host or service logs to JSON with a stable event-name field at ingest, then derive per-event counts from that field for L4 dashboards, instead of grepping raw text."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The video covers host auth logs and sudo auditing. ProsHarness work on Claude Code runs, checkpoints, and credential handling does not depend on it.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

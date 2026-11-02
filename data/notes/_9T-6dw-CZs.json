@@ -1,0 +1,152 @@
+{
+ "one_line": "A beginner-level walkthrough of five Claude Code features: custom slash commands, Cursor integration with multi-line input, adding MCP servers (Sentry example), plan mode with CLAUDE.md, and the \"ultrathink\" keyword.",
+ "summary": "The presenter argues Claude Code is now cheap to use because it is included in the $20 Pro and $200 Max plans, then walks through features he says viewers may have missed. Custom slash commands are plain .md files in a commands folder, with a dynamic argument, and need a restart of Claude Code to appear. He shows running Claude Code inside Cursor's terminal, where a Cursor-only setup command is needed before multi-line prompts work. He then adds an MCP server (Sentry) by pasting a Cursor/Windsurf JSON config into `claude mcp add-json`, and shows that MCP servers can expose their own slash commands that take arguments such as an issue ID. The last segments cover plan mode (toggled with Shift+Tab), generating CLAUDE.md with a slash command, and typing \"ultrathink\" for the hardest problems. Almost everything is shown at a surface level with no evals, measurements or failure cases, and the \"10x more productive\" framing is not backed by anything in the video.",
+ "speakers": [
+  "AI LABS presenter (unnamed in transcript)"
+ ],
+ "orgs": [
+  "AI LABS",
+  "Anthropic",
+  "Cursor",
+  "Windsurf",
+  "Sentry"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "mcp-and-tools",
+  "coding-agents",
+  "context-engineering"
+ ],
+ "tags": [
+  "custom slash commands",
+  "slash commands",
+  "MCP",
+  "Sentry MCP",
+  "Cursor integration",
+  "multi-line prompts",
+  "plan mode",
+  "auto-accept edits",
+  "CLAUDE.md",
+  "ultrathink",
+  "Claude Agent SDK",
+  "GitHub app",
+  "Seer"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Claude Code is included in the Pro and Max subscriptions, which the presenter says is why he now uses it as his main coding agent.",
+   "detail": "He contrasts subscription use with pay-per-API-token use. No pricing details beyond the $20 Pro and $200 Max tiers are given, and the claim is not checked in the video.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Any .md file in a commands folder becomes a reusable slash command, and the file body is the prompt.",
+   "detail": "He creates searchweb.md, which searches the web for a given argument, and explaincodebase.md, which scans the whole codebase and explains how it fits together. Claude Code has to be restarted to pick up new command files.",
+   "t": "1:02"
+  },
+  {
+   "idea": "Cursor's terminal can host Claude Code. Multi-line prompts need a Cursor-only setup command first, because Enter or Shift+Enter otherwise submits the prompt immediately.",
+   "detail": "He runs `claude` in Cursor's integrated terminal, which installs the Claude Code extension. Cmd+Esc opens the panel, and Cursor errors are passed to Claude Code. The setup command's name is not spoken in the transcript. He says it sets up Cursor terminal key bindings for multi-line input.",
+   "t": "3:07"
+  },
+  {
+   "idea": "MCP servers can be added by reusing the JSON config from Cursor or Windsurf.",
+   "detail": "He exits Claude Code, runs the add-json form of `claude mcp` (spoken as 'addJSON') with a server name and the single-quoted JSON object from the Sentry config, then checks the result with the MCP command inside Claude Code. He recommends using the same name as in the config, though the name is not enforced.",
+   "t": "5:09"
+  },
+  {
+   "idea": "An MCP server can expose its own slash commands that take arguments, which turns the server into a callable tool.",
+   "detail": "The Sentry MCP exposes 'find errors in a file' and 'fix issues with Seer' (Sentry's AI agent). The second takes an issue ID as its argument.",
+   "t": "7:21"
+  },
+  {
+   "idea": "Plan mode is for brainstorming before any edits, and its output can be saved to CLAUDE.md.",
+   "detail": "Shift+Tab switches modes, including plan mode and auto-accept edits mode, which edits files without asking. The presenter says plan mode fleshes out ideas and can write them into CLAUDE.md. He describes CLAUDE.md as a rule file that Claude follows, and it can be created with a slash command.",
+   "t": "8:21"
+  },
+  {
+   "idea": "The keyword 'ultrathink' in a prompt is presented as a way to get maximum reasoning effort, and the presenter says it should be reserved for problems Claude cannot solve normally.",
+   "detail": "He says Anthropic itself has referenced the keyword. No before-and-after comparison, token counts or quality measurements are shown.",
+   "t": "8:21"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Custom slash command as a prompt file",
+   "how": "Create a commands folder in the Claude Code config directory (the exact path is not spoken; the video creates it with a pasted command). Add one .md file per command, e.g. searchweb.md or explaincodebase.md. Write the reusable prompt in the body and use a placeholder for the argument the command will receive. Restart Claude Code so it reads the new file, then invoke it as a slash command with the argument.",
+   "when": "A prompt is repeated often, such as a web-search helper or a codebase explainer for onboarding."
+  },
+  {
+   "name": "Claude Code inside Cursor",
+   "how": "Open Cursor's integrated terminal and run `claude`, which detects Cursor and installs the Claude Code extension. Press Cmd+Esc to open the Claude Code panel inside Cursor. Errors from Cursor are passed to Claude Code automatically. For multi-line prompts, run the Cursor-only setup command the video describes (name not spoken) before using Shift+Enter, otherwise Enter submits.",
+   "when": "You work in Cursor and want Claude Code next to the editor, with its diagnostics available."
+  },
+  {
+   "name": "Add an MCP server from an existing Cursor or Windsurf JSON config",
+   "how": "Exit Claude Code. Run `claude mcp add-json <name> '<JSON object>'`, where <name> is the server name, ideally matching the config key, and the JSON is the server entry copied from the Cursor or Windsurf config, wrapped in single quotes. Start Claude Code again and run the MCP command to confirm the server is listed as connected.",
+   "when": "You already have MCP servers configured for another editor and want the same ones in Claude Code without rewriting them."
+  },
+  {
+   "name": "Use MCP server commands from slash commands",
+   "how": "After an MCP server is connected, type its slash command in Claude Code and supply the argument it asks for. In the Sentry example that is an issue ID for the 'fix issues with Seer' command.",
+   "when": "A tool provider offers action-oriented commands, such as fixing a specific issue, that you want to trigger directly without writing the prompt yourself."
+  },
+  {
+   "name": "Plan first, then save rules to CLAUDE.md",
+   "how": "Press Shift+Tab until plan mode is on. Describe the idea and let Claude expand it. When the plan is worth keeping, have it written into CLAUDE.md. Create CLAUDE.md with the init slash command if it does not exist. Use Shift+Tab again to switch to auto-accept edits mode when you want it to edit without asking.",
+   "when": "Starting a new project or feature and wanting agreed rules recorded for later sessions."
+  },
+  {
+   "name": "Add 'ultrathink' to a prompt for hard problems",
+   "how": "Put the keyword 'ultrathink' in the prompt. The video recommends it only for problems that Claude fails to solve in normal mode.",
+   "when": "A normal attempt has failed on a difficult problem. The video gives no measured benefit, so treat it as a trial."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Cursor",
+  "Windsurf",
+  "Sentry",
+  "Sentry MCP server",
+  "Seer (Sentry AI agent)",
+  "Claude Agent SDK",
+  "Claude GitHub app"
+ ],
+ "numbers": [
+  {
+   "claim": "Claude Code is included in the $20 Pro and $200 Max plans, and the presenter says this is why it is cheap for him compared with API usage.",
+   "t": "0:00"
+  },
+  {
+   "claim": "The presenter says the viewer will become '10 times more productive'. No measurement is given.",
+   "t": "0:00"
+  },
+  {
+   "claim": "The channel's first membership tier had 50 people join right away. This is a channel stat, not a Claude Code metric.",
+   "t": "4:16"
+  }
+ ],
+ "hot_takes": [
+  "The title says '3 Things' but the video covers about six features, and the '10 times more productive' claim has no support.",
+  "The presenter says Anthropic itself referenced 'ultrathink', but no source is given in the video.",
+  "The features shown (custom commands, MCP add, plan mode, CLAUDE.md) are documented basics, so it reads as an introduction, not the 'missed' features the title promises."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "This is single-user CLI usage. It has nothing on the proxy, budgets, memory, KV cache or infra pillars.",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI, so it depends on the same features: slash commands, plan mode, CLAUDE.md and `claude mcp add-json`. The video gives no evidence about how they behave under automation.",
+   "action": "Check whether ProsHarness's CLI wrapper handles project-level slash command files and CLAUDE.md, since a harness must not break either one."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

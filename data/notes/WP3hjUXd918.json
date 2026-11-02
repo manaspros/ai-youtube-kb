@@ -1,0 +1,244 @@
+{
+ "one_line": "Towards AI workshop on context engineering: prompt caching makes compaction costly, and on their AI tutor keeping full history beat every compaction preset on recall, cost and latency.",
+ "summary": "Three Towards AI speakers present how they manage context for their AI tutor, which answers student questions from course lessons and docs. They first argue that old tool outputs bloat context, which degrades answer quality (context rot) and raises cost and time-to-first-token. They then explain prompt caching and why it changes the economics of compaction: rewriting context kills the cache, so compaction must shrink context by more than about 50x to pay off. Their tutor uses hybrid retrieval (dense plus BM25, top 30 merged and reranked to 5) and a read-only filesystem knowledge base. They ran presets-by-tasks evals (single-turn Q&A and multi-turn planted-fact sessions) on Gemini 3.5 Flash and then DeepSeek V4 Flash. Across these, keeping the full history beat every compaction preset on recall, cost and latency, because compaction removed tool outputs and forced the agent to re-retrieve. Their conclusion is to name the constraint first and not compact by default; they set a 30K-token compaction threshold and chose DeepSeek for cost. Local 32K-context experiments on a MacBook performed much worse on chat memory, while RAG still worked locally. Numbers are small-sample (60 Q/A pairs, 11-13 turn sessions, one or two trials), and the speakers say so.",
+ "speakers": [
+  "Louis-François Bouchard",
+  "Omar Solano",
+  "Samridhi Vaid"
+ ],
+ "orgs": [
+  "Towards AI",
+  "LangChain",
+  "Google (Gemini)",
+  "DeepSeek",
+  "Anthropic (Claude Code)",
+  "OpenAI (Codex)"
+ ],
+ "format": "workshop",
+ "topics": [
+  "context-engineering",
+  "token-cost-efficiency",
+  "evals",
+  "rag-retrieval"
+ ],
+ "tags": [
+  "context-rot",
+  "compaction",
+  "prompt-caching",
+  "summarization-trap",
+  "hybrid-search",
+  "bm25",
+  "eval-harness",
+  "llm-as-judge",
+  "planted-fact-probe",
+  "progressive-disclosure",
+  "filesystem-knowledge-base",
+  "deepseek",
+  "local-models",
+  "ai-tutor"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Old tool outputs are the main context bloat in their tutor, not the user question.",
+   "detail": "Retrieved chunks and past tool call/result pairs grow across turns. The speaker says quality degrades (context rot) and cost and time-to-first-token rise even on the same model. Model switching is not the fix.",
+   "t": "6:06"
+  },
+  {
+   "idea": "Prompt caching changes the compaction math.",
+   "detail": "Cached input tokens are much cheaper and faster. Any transform of the prefix (summary, rewrite) is a new context, so the cache misses and you pay full price. The speaker says compaction must compress by more than about 50x to be worth it, and that caching can cut cost by around 90% or more.",
+   "t": "16:37"
+  },
+  {
+   "idea": "Summarization is potentially a trap.",
+   "detail": "It rewrites the prefix and kills the cache. The speaker says serious harnesses (Claude Code, Codex) use caching and a different compaction method, so compaction should be used very specifically.",
+   "t": "18:06"
+  },
+  {
+   "idea": "Keeping full history won on their evals.",
+   "detail": "On Gemini 3.5 Flash, across 11 presets, not touching the context gave the best recall, lower cost and lower latency than the production defaults and the compaction presets. The unmeasured production defaults (clear after 5K tokens, summarize after 30K) were not the best.",
+   "t": "43:00"
+  },
+  {
+   "idea": "Compaction hurt because it removed tool outputs the agent needed again.",
+   "detail": "When old tool results are dropped, the agent re-retrieves the same information, which adds tool calls, tokens and latency and lowers recall.",
+   "t": "45:25"
+  },
+  {
+   "idea": "Summarizing the chat loses specific details; keeping everything does not.",
+   "detail": "On DeepSeek, the model answered specific detail questions correctly 95% of the time with full history, versus 32% after summarization. The speaker says the summary drops the exact details.",
+   "t": "51:18"
+  },
+  {
+   "idea": "The cheapest run was the one that sent the most tokens, because the tokens were cached.",
+   "detail": "The full-history DeepSeek setup sent the most tokens, but about 97% were cached, so it was the cheapest. A 36-turn conversation was about 1.78M tokens. Summarizing made the model read and write new tokens every turn.",
+   "t": "52:19"
+  },
+  {
+   "idea": "Local models fail once the conversation or lessons exceed the window.",
+   "detail": "On a MacBook with a 32K window, lessons were already bigger than the window, so caching stopped helping. Keep-all chat recall was about 92-95% in cloud versus about 33% locally. RAG over local documents still reached 100% accuracy.",
+   "t": "55:50"
+  },
+  {
+   "idea": "Dense-only retrieval fails on facts buried in long context; hybrid holds up.",
+   "detail": "Dense retrieval went from about 80% at 50K-200K tokens to 0% recall at 400K for buried facts. BM25 stayed at 100%. This is the reason the tutor uses hybrid search.",
+   "t": "58:48"
+  },
+  {
+   "idea": "Their rule: do not compact by default; name the constraint first.",
+   "detail": "They chose DeepSeek V4 Flash for cost, keep everything, and set compaction at 30K tokens as a backstop. The speaker says the cost gap at scale is large (about $40K/month for Gemini versus about $1.9K/month for DeepSeek at 1,000 students, as stated).",
+   "t": "1:01:21"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Head and tail truncation of big tool outputs",
+   "how": "Keep the start and end of a large tool result and insert a truncation marker, so the model can re-call the tool if it needs the middle. Needs no LLM.",
+   "when": "Tools that return long outputs such as logs, search results or code, where most of the content is not needed."
+  },
+  {
+   "name": "Sliding window and clearing old tool outputs",
+   "how": "Keep only the last N user turns, or clear old tool outputs once they pass a token threshold (their example: clear after 5K tokens but keep the last 5). Pick N and thresholds from your own users and measure them.",
+   "when": "Chats with stale tool outputs; a cheap first pass before any LLM-based compaction. Measure against full history because it can cost recall."
+  },
+  {
+   "name": "Selective retention and summarization with a threshold",
+   "how": "A model decides what to keep versus drop (selective retention), or summarizes older turns after a token threshold while keeping the last N messages verbatim (their example: summarize after 30K tokens, keep the last 20 messages). Claude Code's style is to summarize everything and reset. Delta summarization keeps a running summary that a subagent can return to the main agent.",
+   "when": "Only when you have a named constraint (window size, cost, latency) that full history cannot meet. Test against keep-all first."
+  },
+  {
+   "name": "Filesystem knowledge base with progressive disclosure",
+   "how": "Store chunks in raw, generated and wiki folders with cross-links to raw files. Expose a short index (about 450 tokens) and let the agent browse it with read-only bash, with an 8-second command timeout, a 40K-character output cap and a 20-command limit per turn. Keep skills small and load them one at a time.",
+   "when": "Large corpora that cannot fit in one window. Note the speaker's finding that the extra bash browsing tool added about 50% latency with no recall gain for their simple questions."
+  },
+  {
+   "name": "Hybrid retrieval with a token cap",
+   "how": "Run semantic search and BM25 keyword search, take the top 30 from each, merge, rerank to the top 5, and drop trailing chunks if the total passes 100K tokens. Optionally filter by source first to raise precision.",
+   "when": "Retrieval over a large, mixed corpus with code and exact terms. Tune k and the token cap with recall measurements."
+  },
+  {
+   "name": "Eval harness: presets by tasks, then grade",
+   "how": "Define presets (context strategies) and tasks (single-turn Q&A from real student questions, and multi-turn sessions). Run each preset-task pair to save a bundle of metrics as JSON, then grade later with deterministic code checks (correct lesson retrieved) plus an LLM judge. Add a check that the compaction actually fired, so a run counts only if the strategy was exercised.",
+   "when": "Before choosing a context strategy for an agent. Their full run cost over $500-600 in API spend."
+  },
+  {
+   "name": "Planted-fact recall probe",
+   "how": "Have a simulated student state a fact early, pad the conversation with filler turns, then ask a question that depends on the fact. Score whether the answer recalls it.",
+   "when": "Testing whether a compaction strategy keeps long-range details; cheaper than full task evals."
+  },
+  {
+   "name": "Log every turn",
+   "how": "Record input tokens, output tokens, cached tokens, cost, time to first token, tool call count and whether summarization ran. Also track user frustration signals and abnormally long outputs.",
+   "when": "Always, in any production agent. The speaker calls this the step most teams skip."
+  }
+ ],
+ "tools": [
+  "LangChain (create_agent, middleware)",
+  "FastAPI",
+  "Next.js",
+  "Gemini 3.5 Flash",
+  "DeepSeek V4 Flash",
+  "Claude Code",
+  "Codex",
+  "Opik (transcribed as 'OPIC')",
+  "Hugging Face Spaces",
+  "BM25",
+  "Dense embedding retrieval"
+ ],
+ "numbers": [
+  {
+   "claim": "Prompt caching can make tokens up to about 50x cheaper (DeepSeek example); speaker says caching typically saves about 90% of cost. Compaction must compress by more than 50x to pay off after cache loss.",
+   "t": "16:37"
+  },
+  {
+   "claim": "Production single-turn cost about $0.50 per response; multi-turn about $0.24 per turn (Gemini 3.5 Flash, their setup).",
+   "t": "44:26"
+  },
+  {
+   "claim": "Eval setup: 60 single-turn Q&A pairs scraped from the staff Q&A site, then cleaned; multi-turn sessions about 11-13 turns; one and two trials.",
+   "t": "35:33"
+  },
+  {
+   "claim": "Experiment spend exceeded $500 and reached almost $600 for the Gemini evals.",
+   "t": "43:00"
+  },
+  {
+   "claim": "Tutor corpus: over 8 million tokens of lessons and public library and vendor docs.",
+   "t": "24:32"
+  },
+  {
+   "claim": "Hybrid retrieval: top 30 per method, reranked to top 5; total chunk limit 100,000 tokens.",
+   "t": "25:34"
+  },
+  {
+   "claim": "Knowledge-base index about 450 tokens; bash tool command timeout 8 seconds, output cap 40,000 characters, limit 20 commands per turn.",
+   "t": "29:32"
+  },
+  {
+   "claim": "Agent used the bash knowledge-base tool on about 90% of turns; turning it off kept the same recall and made the run about 50% faster.",
+   "t": "30:53"
+  },
+  {
+   "claim": "Specific-detail recall after chat: about 95% with full history vs about 32% after summarization (DeepSeek).",
+   "t": "51:18"
+  },
+  {
+   "claim": "About 97% of input tokens cached in the full-history DeepSeek run; a 36-turn conversation used about 1.78M tokens.",
+   "t": "52:19"
+  },
+  {
+   "claim": "Distinctive-fact recall stayed strong up to about 800K tokens with no context rot observed; ambiguous facts dropped to about half.",
+   "t": "53:29"
+  },
+  {
+   "claim": "Dense retrieval: about 80% recall at 50K-200K tokens, 0% at 400K for buried facts; BM25 stayed at 100%.",
+   "t": "58:48"
+  },
+  {
+   "claim": "Local MacBook (32K window): RAG on local docs reached 100% accuracy in 25-65 seconds; overstuffed context took about 340 seconds and returned a single token.",
+   "t": "57:11"
+  },
+  {
+   "claim": "Cloud keep-all chat recall about 92-95% vs about 33% on local.",
+   "t": "59:58"
+  },
+  {
+   "claim": "Scale estimate: DeepSeek roughly $18K-$180K per month at 100K-1M daily units (transcript says 'tons', likely tokens); at 1,000 students Gemini about $40K/month vs DeepSeek about $1.9K/month.",
+   "t": "1:01:21"
+  },
+  {
+   "claim": "Compaction default in production: summarize after 30K tokens while keeping full history below that.",
+   "t": "1:01:21"
+  }
+ ],
+ "hot_takes": [
+  "Do not compact by default; name the constraint first and test keep-all against it.",
+  "Summarization is potentially a trap because it kills the prompt cache.",
+  "Full-history context with caching can beat compaction on cost, latency and recall on frontier and cheap cloud models.",
+  "GraphRAG was costlier to set up and tied RAG on their real-user evals, so it was not worth it for them.",
+  "Most teams do not log their agent traffic, and that is the highest-value gap."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh's tiered cross-session memory and InferCraft's KV-cache strategies (H2O, CPU offload) are the same compaction-versus-cache tradeoff the speaker measured. Their keep-all-until-threshold result and cache-loss math bear directly on that design.",
+   "action": "Add a MemoryMesh or InferCraft benchmark comparing keep-all, sliding window and summarize-after-threshold on recall, cached-token share and TTFT, using a planted-fact probe, before adding any summarization path."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Long checkpointed Claude Code runs face the same context rot and cache-loss problem. Clearing stale tool outputs and refreshing the session on topic change are cheap levers that ProsHarness checkpoint/resume could apply.",
+   "action": "Read the ProsHarness checkpoint/resume path and test whether clearing old tool outputs (keeping the last few) before a checkpoint preserves run quality while keeping the cache warm."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The concrete method (presets by tasks, bundles of JSON metrics, deterministic checks plus LLM judge, and a check that compaction actually fired) is a reusable eval pattern for any agent context-strategy decision.",
+   "action": "Adopt the presets-by-tasks eval shape with a compaction-fired check for the next context-strategy decision on any agent, and budget the run with a cheap judge model."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

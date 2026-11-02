@@ -1,0 +1,46 @@
+# The Future of MCP — David Soria Parra, Anthropic
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `v3Fr2JR47KA` · [watch](https://youtu.be/v3Fr2JR47KA) · **date:** 2026-05-18 · **length:** 18:46 · **format:** talk · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** David Soria Parra · **orgs:** Anthropic
+- **topics:** mcp-and-tools, context-engineering, agent-architecture · **tags:** mcp, mcp-apps, progressive-discovery, tool-search, programmatic-tool-calling, code-mode, structured-output, skills-over-mcp, server-discovery, stateless-transport, connectivity, tool-design
+
+> David Soria Parra (Anthropic) on where MCP is heading: MCP apps, progressive tool discovery, code-style tool composition, and the 2026 protocol roadmap.
+
+## Summary
+The speaker argues that MCP servers can now ship full UIs ("MCP apps") as well as tools, so a human and a model can use the same server. He says agents need a mix of skills, MCP, and CLI or computer use, and that the right choice depends on the job. The main client-side advice is progressive discovery: defer loading tool schemas until the model asks for them, instead of putting every tool in context. He also recommends programmatic tool calling, where the model writes a short script in a sandbox that composes several tool calls, which cuts round trips, tokens, and latency. Server authors should design tools for agents rather than wrapping REST endpoints one-to-one. The roadmap includes a stateless transport for easier scaling (targeted for June), async tasks, new TypeScript and Python SDK versions, cross-app enterprise login, server discovery via well-known URLs, and skills shipped over MCP. The talk is a mix of practitioner patterns and product announcements from the protocol's own maintainer.
+
+## Key ideas
+- **MCP apps: a server can ship its own UI that renders in several clients** — The speaker describes an agent interface served by an MCP server, not built into the client or a plug-in. It works across clients such as Claude, ChatGPT, VS Code, and Cursor because both sides share protocol semantics. The same server can also expose tools, so a human and the model can act on the same thing. ([0:00](https://youtu.be/v3Fr2JR47KA?t=0))
+- **Connectivity is a stack, not one solution** — Coding agents were the easy first case because they run locally and can call a compiler. Knowledge-worker agents need connections to many SaaS apps and shared drives. The speaker says 2026 is the year to put agents into production, and that the right mix is skills for domain knowledge, MCP for rich semantics, and CLI or computer use where a sandbox exists. ([4:14](https://youtu.be/v3Fr2JR47KA?t=254))
+- **Pick the connectivity mechanism per use case** — CLIs work well for well-known tools that are already in model pre-training, and in a local sandbox. MCP fits when you need UI, long-running task display, resources, platform independence, auth, governance, or no sandbox. Skills are reusable domain knowledge in a simple file. ([5:16](https://youtu.be/v3Fr2JR47KA?t=316))
+- **Progressive discovery: load tools on demand, not all at once** — Putting every tool schema into context bloats the window. Instead, expose a tool-search or tool-loader tool so the model can look up and load only the tools it needs. The speaker says Claude Code saw a large drop in tool context after adding this, and that clients can build the same pattern without vendor support. ([7:32](https://youtu.be/v3Fr2JR47KA?t=452))
+- **Programmatic tool calling (code mode): let the model write a script instead of chaining calls** — Chaining tool calls one at a time makes the model orchestrate through repeated inference, which is slow. Give the model an execution environment such as a V8 isolate or Lua interpreter, and have it write code that calls several tools and filters results in one pass. The speaker notes that coding agents already do this when they write bash commands. ([9:49](https://youtu.be/v3Fr2JR47KA?t=589))
+- **Structured output schemas let the model compose tool results** — MCP's structured output field declares a tool's return type, so the model knows the shape of results and can chain them safely. If a server does not declare an output schema, the speaker suggests extracting one with a cheap model and a requested type. ([10:34](https://youtu.be/v3Fr2JR47KA?t=634))
+- **Design tools for agents, not REST endpoints copied one-to-one** — The speaker criticises auto-converting REST APIs into MCP servers. He suggests starting from what a human would want to do with the API, and exposing higher-level operations or an execution environment, citing a Cloudflare server as an example that cuts tokens and latency. ([11:58](https://youtu.be/v3Fr2JR47KA?t=718))
+- **Protocol roadmap: stateless transport, async tasks, skills over MCP, server discovery** — Streamable HTTP is hard to scale for very large deployments, so a stateless transport proposal (from Google) is due around June. Async tasks are meant for agent-to-agent work, with few clients supporting them so far. New SDK versions are planned, along with cross-app access so one enterprise login covers many MCP servers, discovery through well-known URLs, and skills shipped by the server. The speaker says you can approximate skills-over-MCP today with a load-skills tool. ([13:09](https://youtu.be/v3Fr2JR47KA?t=789))
+
+## Techniques
+- **Progressive tool discovery** — Do not load every tool schema into the prompt. Give the model a tool-search or load-tool tool, and load each tool's definition only when the model asks for it. *When:* The agent has many MCP tools or tool definitions are crowding out working context.
+- **Programmatic tool calling / code mode** — Expose an execution sandbox (V8 isolate, Lua, or similar) as a tool. The model writes one script that calls several tools, filters the JSON, and returns only the result it needs. *When:* A multi-step task needs several dependent tool calls, and each round trip adds latency and tokens. Requires a safe sandbox.
+- **Use structured output to enable composition** — Declare the return schema on each MCP tool so the model can chain calls on typed fields. Where no schema exists, have a cheap model extract a typed shape from the output. *When:* You are building tools that other tools or scripts will consume, or that the model must chain safely.
+- **Agent-first tool design** — Start from what a human operator would want to do, and expose task-level operations rather than one tool per REST endpoint. *When:* You are writing a new MCP server, or wrapping an existing API for an agent.
+- **Pick connectivity per task** — Use skills for domain knowledge, CLI for tools the model already knows in a sandboxed local agent, MCP where you need UI, auth, governance, or no sandbox, and computer use as a last resort. *When:* Designing the connectivity layer of an agent that has to reach several systems.
+- **Skills-over-MCP approximation** — Before the formal extension ships, expose a load-skills tool from your server that returns domain instructions on request. *When:* A large MCP server needs usage guidance that it can update without a plugin or registry.
+
+## Numbers
+- MCP has reached 110 million monthly downloads, including as a dependency of frameworks such as the OpenAI Agents SDK, Google ADK, and LangChain ([1:58](https://youtu.be/v3Fr2JR47KA?t=118))
+- MCP took about 18 months to go from a local-only spec with tools to remote auth, elicitation, tasks, and MCP apps. The speaker frames this as an 18-to-12-month window. ([1:58](https://youtu.be/v3Fr2JR47KA?t=118))
+- React, a widely used open-source project, took roughly twice as long as MCP to reach the same download volume ([2:59](https://youtu.be/v3Fr2JR47KA?t=179))
+- Adding tool search to Claude Code produced a large reduction in tool context usage. The speaker shows a before-and-after comparison but gives no exact figure in the transcript. ([8:29](https://youtu.be/v3Fr2JR47KA?t=509))
+
+## Hot takes
+- Auto-converting REST APIs one-to-one into MCP servers produces poor results. Design for an agent instead.
+- No single connectivity method (computer use, CLI, or MCP) solves everything. Anyone claiming one fits all is wrong.
+- 2025 was the year of coding agents. 2026 is the year agents move into production for general knowledge work.
+
+## Tools mentioned
+MCP, MCP Apps, Claude Code, Cloudflare MCP server, V8 isolate, Lua interpreter, FastMCP, Python SDK, TypeScript SDK, OpenAI Agents SDK, Google ADK, LangChain, Streamable HTTP, ChatGPT, VS Code, Cursor
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness wraps the Claude Code CLI. Progressive tool discovery and script-based composition are harness-side patterns that could reduce context load and round trips in long runs. → *Add deferred loading for MCP tools in the harness, and test whether a script-style step for multi-step plan execution reduces model calls in a checkpointed run.*
+- **agentos** (1/3): AgentOS is a proxy in front of agents, with a sandboxed code-execution layer (Crucible). The talk's programmatic tool calling idea touches that layer, but the talk does not address proxy design. → *Look at whether Crucible could act as the sandbox where the model writes one script that calls several tools, and measure the round-trip savings on one multi-step task.*

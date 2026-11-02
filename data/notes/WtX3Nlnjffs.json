@@ -1,0 +1,173 @@
+{
+ "one_line": "Walkthrough of OpenTelemetry sampling for logs and traces in a local Go app: collector probabilistic sampling, SDK trace samplers, and tail-based sampling with error and probabilistic policies.",
+ "summary": "The video explains head-based sampling (decided before or at collection, cheap) versus tail-based sampling (decided after buffering spans, more informed but memory-heavy) in OpenTelemetry. It runs a Go demo that increments a counter and logs it every second, exporting logs and traces over OTLP to a local collector. For logs, it configures the collector's probabilistic sampling processor at 10% and keys sampling on the record's \"value\" attribute, with a hash seed for consistency across multiple collectors. For traces, it shows SDK-side samplers (always, never, parent-based, trace-ID ratio) and the collector's probabilistic sampler modes. Tail-based sampling uses the tail sampling processor, with its wait time, trace buffer, and decision cache settings, plus policies: an error-status policy plus a 10% probabilistic policy so error traces keep some surrounding context. It closes by recommending the memory limiter processor, since tail sampling holds data in memory. Log sampling is presented as less mature than trace sampling. A short sponsored segment for Better Stack appears mid-video.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "OpenTelemetry"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "observability",
+  "infra-cost-scaling",
+  "dev-tools"
+ ],
+ "tags": [
+  "opentelemetry",
+  "sampling",
+  "head-based-sampling",
+  "tail-based-sampling",
+  "otel-collector",
+  "go",
+  "logs",
+  "traces",
+  "otlp",
+  "memory-limiter"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Head-based sampling decides before data is stored and is cheap; tail-based sampling decides after buffering and is more informed but needs collector memory.",
+   "detail": "Head-based can run in code or in the collector after ingestion. Tail-based holds all spans in memory until a decision is made, so the collector needs more resources.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Log sampling in the collector uses the probabilistic sampling processor keyed on a record attribute.",
+   "detail": "Set sampling percentage to 10 (any value works, e.g. 10.1), set the attribute source to record and the from attribute to the log attribute \"value\". The demo confirms about 10.1% of logs survive. Trace ID is the default source when logs carry trace context.",
+   "t": "1:16"
+  },
+  {
+   "idea": "A hash seed makes sampling consistent across multiple collectors.",
+   "detail": "With a hash seed, the chosen attribute or trace ID is hashed with FNV and compared to a threshold, instead of using random numbers. The same item gets the same decision on every collector.",
+   "t": "1:16"
+  },
+  {
+   "idea": "Logs only get trace-based sampling if the app attaches span context to them.",
+   "detail": "The demo creates a span in the counter loop, passes its context into the logger call, and the logs then carry trace and span IDs. After that, a plain percentage works because trace ID is the default sampling key.",
+   "t": "2:43"
+  },
+  {
+   "idea": "SDK-side trace sampling has four built-in options, and collector-side trace sampling has three modes.",
+   "detail": "SDK samplers: always sample, never sample, parent-based (sample only if the parent was sampled), and trace-ID ratio (0.5 samples half of traces). Collector probabilistic sampler modes: proportional, equalizing (accounts for how much an item was already sampled, using trace context), and hash.",
+   "t": "2:43"
+  },
+  {
+   "idea": "The tail sampling processor only supports traces, not logs, and needs at least one policy.",
+   "detail": "Settings named: decision wait (seconds since the first span before deciding), num traces (traces held in memory), expected new traces per second (for allocation), and decision cache (remembers sampled and dropped trace IDs after eviction, with sampled and non-sampled cache sizes). The decision is made at wait time regardless of memory pressure.",
+   "t": "4:11"
+  },
+  {
+   "idea": "Error-only tail sampling loses context, so add a probabilistic policy alongside it.",
+   "detail": "A status-code policy alone keeps only error spans, which the demo confirms. Adding a 10% probabilistic policy keeps some non-error spans around the errors. Policies can also use latency, rate limiting, string, numeric or boolean attributes, sub-policies, or OTTL expressions.",
+   "t": "5:38"
+  },
+  {
+   "idea": "Tail sampling needs the memory limiter processor as a guard.",
+   "detail": "Because buffered traces sit in collector memory, the video recommends the memory limiter processor to cap memory use.",
+   "t": "7:01"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Probabilistic log sampling in the collector",
+   "how": "Use the probabilistic sampling processor with sampling_percentage 10 (fractional values work). Set the attribute source to record and the from attribute to the log attribute to sample on (here \"value\"). Verify the output rate (about 10.1% at 10.1). Key names are not spelled out in the transcript; the speaker's wording maps to attribute source, from attribute and hash seed, so check the processor docs for exact YAML keys.",
+   "when": "High-volume logs where you want a fixed fraction kept and a stable key per record."
+  },
+  {
+   "name": "Consistent sampling across multiple collectors",
+   "how": "Enable the hash seed option on the probabilistic sampler. The sampler hashes the source attribute or trace ID with FNV and applies a threshold, so every collector makes the same decision for the same key.",
+   "when": "More than one collector instance handles the same traffic and sampling must agree between them."
+  },
+  {
+   "name": "Trace-correlated logs in a Go app",
+   "how": "Create a tracer, a trace provider and a trace exporter. Inside the hot loop, start a span and pass the returned context into the logger call, so logs carry trace and span IDs. Exports use OTLP to a local collector, with the insecure option for local development.",
+   "when": "Before relying on trace-ID-based sampling for logs, or when you want logs to link to traces."
+  },
+  {
+   "name": "SDK head-based trace sampling",
+   "how": "Pass a sampler to the trace provider with the sampler option: always sample, never sample, parent-based, or trace-ID ratio (for example 0.5 for half of traces).",
+   "when": "Cutting trace volume at the source when a cheap, uninformed decision is acceptable; parent-based keeps distributed traces whole."
+  },
+  {
+   "name": "Collector probabilistic trace sampling",
+   "how": "Use the probabilistic sampler for traces with sampling percentage and mode set to proportional, equalizing or hash. Equalizing uses the sampling state stored in trace context, so decisions account for earlier sampling by other collectors.",
+   "when": "Trace volume reduction at the collector without changing app code."
+  },
+  {
+   "name": "Tail-based trace sampling with policies",
+   "how": "Add the tail sampling processor with decision wait (seconds), num traces (memory buffer size), expected new traces per second, and a decision cache with sampled and non-sampled cache sizes. Define at least one policy. Example: a status-code policy set to error, plus a probabilistic policy at 10% so non-error context is kept.",
+   "when": "When sampling must depend on trace content (errors, latency, attributes) rather than just randomness, and the collector has memory to spare."
+  },
+  {
+   "name": "Error-only policy with context",
+   "how": "Emit an error record and error span for some values (the demo uses every value divisible by 5). Configure the status-code error policy and a probabilistic 10% policy together, so error traces appear with some surrounding spans.",
+   "when": "Keeping error traces without losing the context needed to debug them."
+  },
+  {
+   "name": "Memory guard for tail sampling",
+   "how": "Add the memory limiter processor to the collector pipeline to cap the memory used while traces wait for a sampling decision.",
+   "when": "Any tail-sampling deployment, to avoid collector OOM under bursty traffic."
+  }
+ ],
+ "tools": [
+  "OpenTelemetry Collector",
+  "OpenTelemetry Go SDK (traces, logs)",
+  "OTel slog bridge (Go log/slog)",
+  "OTLP exporter",
+  "Probabilistic sampling processor (logs and traces)",
+  "Tail sampling processor",
+  "Memory limiter processor",
+  "Go",
+  "FNV hash",
+  "Better Stack (sponsor, logs UI)"
+ ],
+ "numbers": [
+  {
+   "claim": "Example log sampling rate: 10%; the demo verifies that a 10.1% setting keeps about 10.1% of logs.",
+   "t": "1:16"
+  },
+  {
+   "claim": "Trace-ID ratio sampler at 0.5 keeps half of all traces.",
+   "t": "2:43"
+  },
+  {
+   "claim": "Policy example: a probabilistic policy at 10% is added alongside the error-status policy.",
+   "t": "5:38"
+  },
+  {
+   "claim": "Error trigger in the demo: every counter value divisible by 5 emits an error (about 1 in 5 values).",
+   "t": "5:38"
+  },
+  {
+   "claim": "Demo counter increments and logs once per second.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Video length 7:24.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Tail-based sampling is presented as the more informed option, but the tradeoff is collector memory; the video recommends the memory limiter and gives no sizing numbers for decision wait or num traces.",
+  "Log sampling is described as much less developed than trace sampling, so trace-linked logs are the safer route.",
+  "The equalizing and hash modes are explained, but the single local collector in the demo never exercises multi-collector consistency.",
+  "Sponsored segment for Better Stack at about 4:11 (logs UI, status pages, free tier). Per the quality rule, this caps quality at 2."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L4 uses OTel, Prometheus and Grafana, and L1 writes a Merkle audit log. Tail or head sampling could cut telemetry volume and storage cost, and the trace-ID correlation pattern fits the observability pillar.",
+   "action": "Prototype a collector pipeline for AgentOS OTel traces with the tail sampling processor: an error-status policy, a 10% probabilistic policy and the memory limiter. Measure buffered trace memory on the RTX 5090 host under load before enabling it."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI. Run volumes are low, so sampling is unlikely to matter, but correlating harness logs with run and step spans could help debug checkpoint and resume.",
+   "action": "If ProsHarness adds OTel, attach span context to its logs so each run step can be traced, and skip sampling until volume justifies it."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

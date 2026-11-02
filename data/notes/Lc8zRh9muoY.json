@@ -1,0 +1,144 @@
+{
+ "one_line": "Microsoft's Chronicle PoC records each agent node's inputs and outputs as a replayable trace, so production failures can be debugged and turned into offline tests. The talk argues for replayability rather than chasing bitwise determinism.",
+ "summary": "Tisha Chawla and Susheem Koul (Microsoft) argue that teams should stop trying to make LLM agents deterministic and instead record production runs so failures can be replayed. They open with a broker agent that turned \"sell $1,000 of stock\" into selling 1,000 shares while the API returned a clean 200 OK. They explain why temperature zero does not give determinism: GPU batch effects, floating-point non-associativity, and MoE expert capacity limits all depend on what else is in the batch. The distinction they draw is controllability (same output, which they say you don't need) versus replayability (rebuilding a past run well enough to debug it). Their proof of concept, Chronicle, wraps each node (tool, LLM call, retrieval) with a boundary annotation that saves inputs, outputs and version metadata. The same recorded trace can then be replayed with other nodes stubbed, so a changed guardrail can be tested live with assertions, and LLM outputs can be stubbed so deterministic nodes are tested with no model calls. Behavioural qualities such as tone or trajectory are left to LLM-as-judge. The talk is short and conceptual, backed by one worked example and a code link.",
+ "speakers": [
+  "Tisha Chawla",
+  "Susheem Koul"
+ ],
+ "orgs": [
+  "Microsoft"
+ ],
+ "format": "talk",
+ "topics": [
+  "observability",
+  "testing-verification",
+  "agent-architecture"
+ ],
+ "tags": [
+  "replay",
+  "determinism",
+  "temperature-zero",
+  "boundary-annotation",
+  "stubbing",
+  "production-debugging",
+  "agent-tracing",
+  "chronicle",
+  "deterministic-testing",
+  "behavioral-testing"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Chasing bitwise determinism is the wrong goal for agents",
+   "detail": "Temperature zero still is not deterministic in practice. Batch effects, floating-point ordering and MoE expert capacity limits make outputs vary with traffic. The speaker says teams lose weeks trying to pin the model, and that the right question is how to debug and retest a run you cannot reproduce.",
+   "t": "2:50"
+  },
+  {
+   "idea": "Separate controllability from replayability",
+   "detail": "Controllability means same input gives same output. Replayability means rebuilding a past run well enough to debug it, which is an observability problem. You do not need to freeze the model; you need to record what it did.",
+   "t": "5:42"
+  },
+  {
+   "idea": "Record at the node boundary, not the network layer",
+   "detail": "Much of an agent never touches the network: local retrieval, in-process tools, memory. Streaming and async also break packet-level capture. So capture what enters and leaves each step, meaning the step's semantics rather than packets.",
+   "t": "6:00"
+  },
+  {
+   "idea": "A boundary annotation turns any method into a recorded node",
+   "detail": "Tools, LLM calls and retrievals can all be wrapped. The annotation saves inputs and outputs, plus parameters such as model version and code version, and writes the whole run as a trace.",
+   "t": "7:04"
+  },
+  {
+   "idea": "Fix guardrails on tools, not on the LLM",
+   "detail": "You cannot control the LLM's choice of tool arguments, so put validation on the tool itself. In the example, the place-order tool gets a guardrail that blocks an implausible order.",
+   "t": "9:32"
+  },
+  {
+   "idea": "Replay a recorded trace with selective stubbing as a regression test",
+   "detail": "Stub every node except the one you changed, run that node live, and assert on its output. The recorded trace supplies the rest of the stack, so the test replicates the original failure context.",
+   "t": "11:02"
+  },
+  {
+   "idea": "Split testing into deterministic and behavioural",
+   "detail": "Deterministic nodes such as guardrails and tool calls are tested by stubbing LLM outputs from the trace, which costs nothing and never calls the model. Behavioural properties such as tone or trajectory are left to LLM-as-judge.",
+   "t": "12:32"
+  },
+  {
+   "idea": "Log the variables that define a run, not just the prompt",
+   "detail": "Record the LLM version, build ID, retrieved chunks and other inputs that shape the response. The speaker calls this capturing the full envelope and says the prompt alone is not enough.",
+   "t": "13:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Boundary-annotated run recording",
+   "how": "Wrap each agent node (tool, LLM call, retrieval) with a boundary annotation that saves its inputs and outputs, plus version metadata such as model version and code version, as one trace per run.",
+   "when": "Any production agent where a bad run must be reproduced later for debugging, not re-run and hoped to match."
+  },
+  {
+   "name": "Record at the node boundary, not the network",
+   "how": "Capture semantic step inputs and outputs in-process instead of proxying traffic, since local retrieval, in-process tools and memory never cross the network and streaming or async code breaks packet capture.",
+   "when": "Agents that mix network calls with local tools, memory or retrieval, or that stream responses."
+  },
+  {
+   "name": "Replay with selective stubbing plus assertions",
+   "how": "Load a recorded trace, stub every node except the changed one, run that one live, and assert on its output (for example, that a blocked order was blocked).",
+   "when": "Regression-testing a fix to one node against a real failing run, with no change to the rest of the stack."
+  },
+  {
+   "name": "Zero-model-call deterministic tests from traces",
+   "how": "Use the recorded LLM outputs as stubs so that guardrails and tool-call logic run as repeatable tests with no model calls.",
+   "when": "Testing the deterministic parts of an agent graph in CI, where cost and flakiness matter."
+  },
+  {
+   "name": "Guardrails at the tool boundary",
+   "how": "Validate tool arguments inside the tool (for example, quantity limits or unit checks) so bad LLM-chosen values are blocked whatever the model does.",
+   "when": "Agents that take real-world actions such as trades, writes or deletes, where the LLM's argument choice cannot be trusted."
+  },
+  {
+   "name": "Keep generation variance on",
+   "how": "Do not pin temperature to zero to chase repeatability. Rely on recorded traces to debug, and keep sampling variation so the agent stays useful.",
+   "when": "Production agents where creativity matters and failures are debugged through traces rather than determinism."
+  }
+ ],
+ "tools": [
+  "Chronicle (Microsoft proof of concept; code link shown by QR code, URL not spoken)"
+ ],
+ "numbers": [
+  {
+   "claim": "Broker agent example: a $1,000 order at $190/share was executed as 1,000 shares, about $190,000 of exposure. The API returned 200 OK in 30 ms with zero exceptions and green dashboards.",
+   "t": "1:24"
+  },
+  {
+   "claim": "Speaker says forum threads show that running the same prompt 1,000 times at temperature zero can still return dozens of different responses, due to GPU non-determinism and MoE routing. This is cited from threads, not measured in the talk.",
+   "t": "2:50"
+  },
+  {
+   "claim": "Speaker's example uses a single ACME order that replayed with a 1,000-unit quantity and then a blocked output in the test. No benchmark numbers are given.",
+   "t": "9:32"
+  }
+ ],
+ "hot_takes": [
+  "Temperature zero does not give you a deterministic agent, so stop trying to get bitwise determinism through the API.",
+  "Debugging needs replayability (record what happened), not determinism (freeze the model).",
+  "Packet or network-layer capture is the wrong place to trace agents that do most of their work in-process.",
+  "Keep temperature above zero; the generation variance is part of what makes the agent useful."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS's Govrix Scout proxy records at the network layer, which the talk says misses in-process tools, memory and retrieval. Node-boundary recording with version metadata would complement it and support replay for Crucible and SkillForge telemetry.",
+   "action": "Prototype a boundary decorator for AgentOS tool and LLM calls that saves inputs, outputs, model version and config hash per run, and check whether the existing proxy audit log can be linked to these traces."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness does checkpoint/resume of Claude Code runs. Boundary recording plus stubbed replay is a direct way to test harness changes against a recorded run without spending model tokens.",
+   "action": "Record per-step inputs and outputs in ProsHarness checkpoints, and add a replay mode that stubs Claude CLI and Codex calls from the recording so harness fixes can be regression-tested offline."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

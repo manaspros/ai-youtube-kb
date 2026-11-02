@@ -1,0 +1,169 @@
+{
+ "one_line": "Hands-on test of Magnitude, a new Rust inference engine for Apple Silicon that tunes kernels per machine and targets agent workloads; the \"2x llama.cpp\" claim holds for one decode config but is mixed in independent tests.",
+ "summary": "Better Stack's Josh tests Magnitude, a new open-source local inference engine (v0.2.5, Rust, on a compiler it calls Seismic) that claims up to 2x llama.cpp decode speed on Mac. Its main idea is per-machine tuning: on first model download it times different kernel configurations on the user's hardware, keeps the fastest, and caches it, which takes about a minute. It also exposes OpenAI- and Anthropic-compatible endpoints on localhost, with a one-click connect to Claude Code, Codex and OpenCode, and adds agent-oriented features: shared prompt caches across sessions, a compressed KV cache by default, and load-on-demand with unload when idle. The headline 2x comes from one benchmark (Qwen 3.6 35B A3B at 4-bit, 64K context, M4 Pro): decode went from 30 to 57 tok/s while prefill was only 9% faster, and llama.cpp ran a full 16-bit KV cache because its compressed path broke in that test. Independent results are mixed: one M5 Max run had Magnitude at 161 tok/s against RapidMLX's 175, and others found llama.cpp 20-30% faster or twice as fast; the founder attributes part of this to Magnitude not yet using the M5's Metal matrix units. The author's verdict is that it is useful for M1-M4 owners running local coding agents, mainly for the connect flow, and should not be used for production until more independent MLX comparisons appear. Caveats: macOS 13+, Intel Macs CPU-only, under 4-bit models not supported, few curated models (about 15), no documented way to load your own GGUF, and models left behind in a hidden folder after uninstall.",
+ "speakers": [
+  "Josh"
+ ],
+ "orgs": [
+  "Better Stack",
+  "Magnitude",
+  "NVIDIA"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "coding-agents"
+ ],
+ "tags": [
+  "magnitude",
+  "llama.cpp",
+  "mlx",
+  "ollama",
+  "local inference",
+  "kernel autotuning",
+  "kv cache compression",
+  "prefill vs decode",
+  "claude code",
+  "apple silicon",
+  "benchmarks",
+  "open-weight models"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Magnitude tunes kernels for the specific machine instead of shipping one precompiled kernel set",
+   "detail": "Engines like llama.cpp and Ollama ship precompiled kernels for portability. Magnitude tries different kernel configuration knobs on the user's hardware when a model is downloaded, times them, and caches the fastest setup per device. The tuning takes about a minute.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Decode speed, not prefill, is what a coding agent feels",
+   "detail": "Prefill is how fast the prompt is read; decode is generation one token at a time. The speaker says that while watching a coding agent work, decode is the number you actually notice.",
+   "t": "1:05"
+  },
+  {
+   "idea": "Local OpenAI- and Anthropic-compatible endpoints make it a drop-in backend for coding agents",
+   "detail": "Magnitude serves both APIs on localhost. A connect button configures Claude Code, Codex, OpenCode and others, after which Claude Code is restarted and talks to the local model. The speaker calls this the strongest reason to install it.",
+   "t": "2:09"
+  },
+  {
+   "idea": "Agent-specific optimizations sit on top of the engine",
+   "detail": "Several agent sessions can share prompt caches, memory grows and shrinks as needed, the KV cache is compressed, and models load on demand and unload when idle. The engine is positioned between llama.cpp/Ollama (portable, slower), vLLM/SGLang (data-center batching) and MLX (fast but Apple-only).",
+   "t": "3:33"
+  },
+  {
+   "idea": "The 2x headline is narrow and the comparison was not like-for-like",
+   "detail": "On an M4 Pro with 48 GB, Qwen 3.6 35B A3B at 4-bit with 64K context: decode rose from 30 to 57 tok/s, but prefill was only 9% faster. On an NVIDIA DGX Spark decode improved 19%. llama.cpp ran a full 16-bit KV cache because its compressed path broke in that run, while Magnitude compresses by default.",
+   "t": "4:31"
+  },
+  {
+   "idea": "Independent benchmarks contradict the 2x claim on some hardware",
+   "detail": "On an M5 Max, RapidMLX reached 175 tok/s versus Magnitude's 161. Other users measured llama.cpp at about 2x Magnitude on an M5 Max and an RTX 5070 Ti, or 20-30% faster. The founder says Magnitude does not yet use the M5's Metal matrix hardware and an official MLX comparison is coming.",
+   "t": "5:34"
+  },
+  {
+   "idea": "The project is very early",
+   "detail": "Version 0.2.5, five releases in about four days, and the engine was rewritten in September. The model library has about 15 curated models, nothing below 4-bit, and no documented way to load your own GGUF.",
+   "t": "5:34"
+  },
+  {
+   "idea": "Practical operational caveats",
+   "detail": "Requires macOS 13 or newer; Intel Macs run CPU-only. Downloaded models live in a hidden folder in the home directory and survive uninstall. An idle model takes a while to reload on its first response.",
+   "t": "6:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Benchmark decode and prefill separately, and match KV-cache precision",
+   "how": "Report prefill tok/s and decode tok/s as separate numbers. Before comparing engines, confirm both use the same KV cache precision (16-bit versus compressed). The speaker's test pasted Moby Dick into context up to 64K tokens and asked the model to repeat the final section.",
+   "when": "Any local-engine comparison. A single headline multiplier can hide a small prefill gain and a context-dependent decode gain."
+  },
+  {
+   "name": "Per-device kernel autotuning, cached per machine",
+   "how": "On first model download, run several kernel configurations on the local hardware, time each, keep the fastest, and cache the choice keyed to the device so later loads skip the search. The tuning step takes about one minute.",
+   "when": "A fixed fleet or single workstation where the one-time cost is amortized and portable precompiled kernels leave performance on the table."
+  },
+  {
+   "name": "Point Claude Code at a local Anthropic-compatible endpoint",
+   "how": "Run a local engine that exposes an Anthropic-compatible API on localhost, use its connect option (or set Claude Code's API base URL to that localhost endpoint), and restart Claude Code. The video does not show the exact environment variable or config key.",
+   "when": "Running coding-agent sessions against a local open-weight model with no cloud spend, or for offline experiments."
+  },
+  {
+   "name": "Agent-serving cache and memory policy",
+   "how": "Let concurrent agent sessions share a prompt cache, compress the KV cache by default, grow and shrink memory on demand, and unload a model after it has been idle. Expect a slow first response after an idle unload.",
+   "when": "Long-running or multi-session agent workloads on a single machine, where repeated system prompts and idle-model memory dominate."
+  }
+ ],
+ "tools": [
+  "Magnitude (v0.2.5)",
+  "llama.cpp",
+  "MLX",
+  "Ollama",
+  "Qwen 3.5 4B (Q8)",
+  "Qwen 3.6 35B A3B (4-bit)",
+  "Seismic (numerical compiler)",
+  "Claude Code",
+  "Codex",
+  "OpenCode",
+  "RapidMLX",
+  "vLLM",
+  "SGLang",
+  "NVIDIA DGX Spark",
+  "RTX 5070 Ti",
+  "M5 Max",
+  "M4 Pro",
+  "GGUF"
+ ],
+ "numbers": [
+  {
+   "claim": "Kernel tuning on first download takes about 1 minute",
+   "t": "1:05"
+  },
+  {
+   "claim": "Qwen 3.6 35B A3B 4-bit, 64K context, M4 Pro 48 GB: decode 30 -> 57 tok/s (+92%) vs llama.cpp",
+   "t": "4:31"
+  },
+  {
+   "claim": "Same test: prefill only about 9% faster",
+   "t": "4:31"
+  },
+  {
+   "claim": "Same test on NVIDIA DGX Spark: decode improvement 19%",
+   "t": "4:31"
+  },
+  {
+   "claim": "M5 Max independent run: RapidMLX 175 tok/s vs Magnitude 161 tok/s",
+   "t": "5:34"
+  },
+  {
+   "claim": "Another user measured llama.cpp about 20-30% faster; others found llama.cpp about 2x Magnitude on M5 Max and RTX 5070 Ti",
+   "t": "5:34"
+  },
+  {
+   "claim": "Magnitude v0.2.5, five releases in about four days, engine rewritten in September, about 15 curated models, nothing below 4-bit",
+   "t": "5:34"
+  }
+ ],
+ "hot_takes": [
+  "The 2x headline rests on one configuration in which llama.cpp was not using its compressed KV cache, so the comparison is not like-for-like.",
+  "The connect-to-Claude-Code button may be the strongest reason to install Magnitude, more than its raw speed.",
+  "On M5 hardware, stay on MLX for raw tokens per second; wait for independent MLX comparisons before any production use."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "L2B InferCraft plans pluggable KV-cache strategies on a single RTX 5090; this video's compressed-KV-by-default and cross-session prompt-cache sharing are comparison points, and its decode-vs-prefill and cache-precision caveats apply to any benchmark we run.",
+   "action": "When benchmarking InferCraft KV strategies, report prefill and decode separately and pin KV precision in every baseline, as the video's 2x comparison did not."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI; pointing Claude Code at a local Anthropic-compatible endpoint could support offline or zero-token test runs of checkpoint/resume flows.",
+   "action": "Try running a ProsHarness checkpoint/resume test with Claude Code pointed at a local model endpoint, and check the resume path."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

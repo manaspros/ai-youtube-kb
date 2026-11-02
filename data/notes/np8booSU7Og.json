@@ -1,0 +1,178 @@
+{
+ "one_line": "Kai Explains walkthrough of a fully local AI stack: llama.cpp behind one OpenAI-compatible endpoint, with AnythingLLM for chat and RAG, Pi as a local coding agent, and n8n for email automation.",
+ "summary": "The video builds a self-hosted AI stack in layers: an inference engine (llama.cpp's llama-server, or LlamaSwap as a fallback), a chat UI (AnythingLLM, Open WebUI as an alternative), a RAG knowledge layer, a local coding agent (Pi, OpenCode as an alternative), and an automation layer (n8n). The organizing idea is that every layer exposes one OpenAI-compatible REST endpoint, so each tool can talk to every other tool without custom integrations. The walkthrough gives concrete settings for each layer, including the Docker, provider and vector-database choices. The n8n example is an hourly workflow that has an agent label important emails through a local model. It closes with ops advice for running the stack as an always-on home lab: a dedicated machine, auto power-on after outage, a container manager, and Tailscale. The speaker is candid that local models trail cloud frontier models on deep reasoning and long context, and frames the trade as privacy and control over raw capability. There are no benchmarks or cost figures, so the value is the architecture and setup recipe.",
+ "speakers": [
+  "Kai Explains narrator (not named in transcript)"
+ ],
+ "orgs": [
+  "Kai Explains"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "local-ai",
+  "rag-retrieval",
+  "coding-agents",
+  "agent-architecture"
+ ],
+ "tags": [
+  "local-ai",
+  "llama.cpp",
+  "openai-compatible",
+  "self-hosted",
+  "rag",
+  "anythingllm",
+  "pi-coding-agent",
+  "n8n",
+  "tailscale",
+  "home-lab",
+  "docker"
+ ],
+ "key_ideas": [
+  {
+   "idea": "One OpenAI-compatible endpoint is the integration point. Every layer exposes it, so each tool plugs into the same base URL instead of needing bespoke integrations.",
+   "detail": "The stack is described as one engine and one endpoint, with chat, knowledge, coding and automation all branching from that address.",
+   "t": "0:00"
+  },
+  {
+   "idea": "llama.cpp's llama-server is the engine. Its built-in router (model preset mode) is still experimental, so LlamaSwap is the stated fallback: it sits on llama.cpp, reads one config file, and serves and routes models.",
+   "detail": "Either way the result is an OpenAI-compatible endpoint on the local machine. The speaker links a separate video on tuning llama-server to hardware.",
+   "t": "1:15"
+  },
+  {
+   "idea": "AnythingLLM runs headless in Docker as the chat and RAG layer. Its provider settings are configured from the UI, not the compose file.",
+   "detail": "Compose uses host networking so it can reach the llama-server on the same machine. Embedding and model settings are stripped from compose and set in the UI, pointing the Generic OpenAI provider at the machine IP and llama-server port.",
+   "t": "2:36"
+  },
+  {
+   "idea": "RAG is handled inside AnythingLLM with the default LanceDB vector store, and answers cite their source document. Retrieval stays on the machine.",
+   "detail": "Upload PDFs or docs to a workspace, let them embed, and switch the workspace chat mode from agent to chat so answers come from the documents.",
+   "t": "2:36"
+  },
+  {
+   "idea": "A local coding agent is kept as a hedge. The argument is that cloud tool policy and pricing can change overnight, so a working local option matters.",
+   "detail": "Pi is installed via npm with a llama.cpp plugin. The speaker reports it mapped a codebase and fixed build and config errors on a six-year-old Angular project without guidance.",
+   "t": "4:03"
+  },
+  {
+   "idea": "n8n can use a local model by reusing its OpenAI credential type with a changed base URL. The API key field can be any string.",
+   "detail": "The workflow is an hourly schedule trigger into an agent node with a system prompt describing what matters, a chat-model node on the local credential with the Responses API option unchecked, and a Gmail add-label tool whose message ID comes from the trigger.",
+   "t": "5:24"
+  },
+  {
+   "idea": "The speaker states the trade-off: local models are not frontier models, so deep reasoning and very long context favor cloud models. The stack is framed as buying privacy and control, not capability.",
+   "detail": "Before committing, the speaker suggests deciding what you optimize for.",
+   "t": "6:31"
+  },
+  {
+   "idea": "Running the stack unattended needs four ops steps: a dedicated always-on machine, BIOS auto power-on after power loss, a container manager (Portainer or Arcane), and Tailscale for remote access.",
+   "detail": "These are presented as what turns a weekend project into something relied on.",
+   "t": "6:31"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Single OpenAI-compatible endpoint as the integration bus",
+   "how": "Serve the model with llama-server (or LlamaSwap). Set every client's OpenAI base_url to http://<machine-ip>:8080/v1. Use the same URL in chat, RAG, coding agent and automation tools.",
+   "when": "Wiring several local tools together without writing per-tool integrations."
+  },
+  {
+   "name": "llama-server router preset mode, with LlamaSwap as fallback",
+   "how": "Start llama-server in model preset mode to use its built-in router. If the router misbehaves, run LlamaSwap on top of llama.cpp with a single config file that defines the models and acts as the router.",
+   "when": "Serving several local models behind one endpoint. Use LlamaSwap if llama-server's experimental router is unreliable."
+  },
+  {
+   "name": "Headless AnythingLLM in Docker, configured from the UI",
+   "how": "Take the AnythingLLM Docker Compose file from its GitHub page. Set network mode to host so it can reach other services on the machine. Remove the embedding and model settings from the file. Start it, then go to Settings > Providers > LLM > Generic OpenAI, set the base URL to the machine IP and llama-server port, and set the context window and max token limits.",
+   "when": "Running a private chat front end on the same machine as the model server, and keeping model config out of the compose file."
+  },
+  {
+   "name": "Local RAG with AnythingLLM defaults",
+   "how": "Settings > Vector Database: keep the default LanceDB. Check the embedder settings (defaults are fine). Use the Document Upload button in the workspace header to add PDFs, papers or internal docs and let them embed. Set the workspace chat mode from agent to chat. Answers cite the source document.",
+   "when": "Grounding answers in your own documents without sending them to a third party."
+  },
+  {
+   "name": "Pi as a local coding agent",
+   "how": "Install Pi with npm. Add the llama.cpp plugin. Open Pi's global settings file and set the llama.cpp URL to http://<server-ip>:8080/v1. Run /models inside Pi to list the models configured in llama-server. Point Pi at a project directory and ask it to analyze the codebase, map the architecture, or fix build and config errors.",
+   "when": "Keeping a working coding agent that runs offline on local models, as a backup to cloud coding tools. OpenCode is named as an alternative to compare."
+  },
+  {
+   "name": "n8n email triage with a local model",
+   "how": "Start n8n with its Docker Compose file. Under Credentials, add an OpenAI credential and change its base URL to the local server. Use any string for the API key. Build a workflow: (1) schedule trigger every hour that checks email; (2) pass subject and body to an agent node with a system prompt defining what is important to you; (3) attach an OpenAI chat model node using that credential, with the Responses API option unchecked to use the standard OpenAI-compatible path; (4) add a Gmail tool action that adds a label, with the message ID set to the trigger's dynamic value and a short tool description so the agent knows when to use it.",
+   "when": "Running recurring classification or triage on email with the model kept local. The Gmail API still handles the mail itself."
+  },
+  {
+   "name": "Always-on home lab hardening",
+   "how": "Use a dedicated machine that stays on. In the BIOS, set power-on after power loss. Run a container manager such as Portainer or Arcane for a web dashboard instead of the terminal. Install Tailscale for private access from a phone or laptop.",
+   "when": "Moving the stack from a laptop to a machine that runs automations around the clock."
+  }
+ ],
+ "tools": [
+  "llama.cpp",
+  "llama-server",
+  "LlamaSwap",
+  "AnythingLLM",
+  "Open WebUI",
+  "LanceDB",
+  "Pi (coding agent, npm)",
+  "OpenCode",
+  "n8n",
+  "Docker",
+  "Docker Compose",
+  "Portainer",
+  "Arcane",
+  "Tailscale",
+  "Gmail"
+ ],
+ "numbers": [
+  {
+   "claim": "llama-server endpoint is on port 8080 under /v1 (the URL to set in Pi's global settings).",
+   "t": "4:03"
+  },
+  {
+   "claim": "Email triage workflow runs every hour.",
+   "t": "5:24"
+  },
+  {
+   "claim": "Coding-agent anecdote: Pi found and fixed build and config errors in a six-year-old Angular project with no guidance (anecdote, not a benchmark).",
+   "t": "4:03"
+  },
+  {
+   "claim": "The stack has five layers: engine, chat, RAG, coding agent, automation; plus four ops steps for always-on hosting.",
+   "t": "0:00"
+  },
+  {
+   "claim": "No benchmarks, latencies, costs, or token counts are given; the video is 8:12 long.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The speaker concedes local models are not frontier models and lose to cloud models on deep reasoning and very long context. The privacy and control framing is stated as the trade-off.",
+  "The claim that none of the emails 'ever touched a cloud AI' holds only for the model step. The n8n Gmail node still reads and labels mail through Google's API.",
+  "'No subscription that can be canceled' omits the cost of dedicated hardware, and the speaker never prices it.",
+  "llama-server's router is described as early and experimental, and LlamaSwap is offered as the fallback. The walkthrough does not show either one under load."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The one-endpoint, OpenAI-compatible design is the same pattern AgentOS uses (point base_url at one proxy). The video also covers llama-server and LlamaSwap, which are relevant to the serving layer.",
+   "action": "Put the AgentOS proxy in front of a llama-server upstream and point real clients (Pi, AnythingLLM, n8n's OpenAI credential) at it, as an integration test of the single-endpoint design."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Pi is an alternative local coding harness. ProsHarness wraps the Claude Code CLI, so this is a comparison point, not a direct change.",
+   "action": "Evaluate Pi with a local llama-server model as a second, cheap offline coding harness to compare against the Claude Code CLI wrapper."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The stack is a practical reference for running a local fallback for coding and email triage. Little of it is new to someone who has run llama-server.",
+   "action": "Keep a local OpenAI-compatible fallback for coding and triage as insurance against cloud policy or pricing changes."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

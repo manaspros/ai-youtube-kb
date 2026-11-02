@@ -1,0 +1,162 @@
+{
+ "one_line": "Callstack engineer Lech Kalinowski builds a handheld text-terminal for OpenClaw and local LLMs on an ESP32, with a thin-client design backed by a 120B model on a DGX Spark. Mostly a hardware showcase with useful field notes.",
+ "summary": "The speaker, Lech Kalinowski of Callstack, describes a handheld AI terminal built over about three months. It pairs a small OLED screen (live typing) with an e-paper screen (slow, stable display of the final output), driven by an ESP32 dual-core microcontroller. The device is a thin client: a backend on a DGX Spark runs the agent work through OpenClaw and serves an open-source 120B model. Because the MCU has little memory, rendering uses pre-allocated one-bit images with no markdown engine and no malloc. The talk spends a lot of time on hardware problems (I2C pull-ups, a silent GPIO failure, a regulator that damaged the display, and a noisy cheap encoder). The most unusual feature is an RPG mode, where the LLM generates NPCs, worlds and maps that are converted to one-bit assets. The speaker closes with three takeaways and a demo video. Most of the content is a project showcase, with little new detail on LLM serving.",
+ "speakers": [
+  "Lech Kalinowski"
+ ],
+ "orgs": [
+  "Callstack"
+ ],
+ "format": "talk",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "product-ux"
+ ],
+ "tags": [
+  "openclaw",
+  "esp32",
+  "dgx-spark",
+  "physical-ai",
+  "hardware",
+  "e-paper",
+  "oled",
+  "rpg",
+  "thin-client",
+  "openai-compatible-proxy",
+  "gpt-oss-120b",
+  "embedded"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Motivation: a remote controller for an OpenClaw instance on a DGX Spark, with a dual-display design",
+   "detail": "The speaker wanted a physical device to talk to an LLM. An OLED gives fast typing and an e-paper screen gives a readable, energy-efficient final view. Together they make a low-power terminal.",
+   "t": "1:41"
+  },
+  {
+   "idea": "The device is a thin client; the heavy work runs on a backend",
+   "detail": "Firmware on the ESP32 handles input and display. A separate backend on the DGX Spark handles the agent work with OpenClaw and the LLM. The MCU does not run models.",
+   "t": "4:52"
+  },
+  {
+   "idea": "On a microcontroller, render from pre-allocated one-bit images",
+   "detail": "Pages live in fixed buffers in memory. There is no markdown engine and no malloc on the MCU side. The speaker says this is needed because of the memory limits.",
+   "t": "6:25"
+  },
+  {
+   "idea": "Serve an open 120B model behind an OpenAI-style proxy",
+   "detail": "The speaker ran a 120B open-source model on NVIDIA's serving stack and exposed an OpenAI-style API. Other open models did not match the OpenAI API closely enough, so the proxy was needed to make them work.",
+   "t": "8:56"
+  },
+  {
+   "idea": "Power and hardware issues dominated the build",
+   "detail": "Silent I2C failure without external pull-ups, a GPIO 13 failure that needed a port move, and a regulator that damaged the display (replacement parts took weeks). Cheap encoders added rotational noise that needed pull-ups and capacitors.",
+   "t": "10:29"
+  },
+  {
+   "idea": "RPG mode uses the LLM for world-building",
+   "detail": "The LLM generates NPCs, worlds, maps and skills. The images are converted to one-bit matrices so the MCU can display them. The speaker built four worlds and a mood system.",
+   "t": "13:22"
+  },
+  {
+   "idea": "Design for fallbacks so the device stays usable",
+   "detail": "If the OLED fails, the e-paper still works. If the keyboard fails, the encoder works. If Wi-Fi drops, the local shell still runs.",
+   "t": "14:52"
+  },
+  {
+   "idea": "Takeaways: match displays to the job, LLMs are too heavy for tiny MCUs, and context matters more than numbers",
+   "detail": "The speaker says no current model runs on very small MCUs, so LLM work must go to a backend. The speaker also says narrative and context matter most for LLM products.",
+   "t": "17:22"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Thin-client MCU with a heavy backend",
+   "how": "Keep firmware to input and display only. Put agent orchestration and model calls on a server, and expose it to the device over the network.",
+   "when": "When the device has very little RAM or compute and must still feel interactive."
+  },
+  {
+   "name": "Pre-allocated one-bit page buffers",
+   "how": "Store each screen as a fixed one-bit bitmap in memory. Avoid runtime allocation and any markup or layout engine on the MCU.",
+   "when": "For text or image output on a small MCU with a monochrome display."
+  },
+  {
+   "name": "Dual-display split by job",
+   "how": "Use a fast OLED for live input and an e-paper panel for a stable, low-power final view that updates only on commit.",
+   "when": "When you need fast text entry and a readable, energy-efficient output on the same device."
+  },
+  {
+   "name": "OpenAI-style proxy in front of open models",
+   "how": "Serve an open model with a fast inference engine and wrap it in an OpenAI-compatible endpoint, so clients written for the OpenAI API can use it.",
+   "when": "When existing agent tooling expects the OpenAI API and the open model's native API does not match it."
+  },
+  {
+   "name": "Graceful degradation across hardware parts",
+   "how": "Give each input and output a fallback path, so the device keeps working if one part fails.",
+   "when": "For hardware prototypes where parts are fragile or unreliable."
+  }
+ ],
+ "tools": [
+  "OpenClaw",
+  "ESP32",
+  "NVIDIA DGX Spark",
+  "NVIDIA serving stack (auto-caption: 'Tensor Earth')",
+  "OLED display",
+  "e-paper display"
+ ],
+ "numbers": [
+  {
+   "claim": "About 130 commits over roughly three months of work",
+   "t": "15:48"
+  },
+  {
+   "claim": "Two displays, four modes, four RPG worlds, and 16 character classes",
+   "t": "15:48"
+  },
+  {
+   "claim": "Powered by a single lithium-polymer cell",
+   "t": "15:48"
+  },
+  {
+   "claim": "Backend serves an open-source 120 billion parameter model",
+   "t": "8:56"
+  },
+  {
+   "claim": "MCU is an ESP32 dual-core microcontroller",
+   "t": "7:56"
+  },
+  {
+   "claim": "A GPIO 13 silent failure and an I2C issue without external pull-ups",
+   "t": "10:29"
+  }
+ ],
+ "hot_takes": [
+  "Match displays to the job. There are plenty on the market.",
+  "LLMs are still too heavy for tiny MCUs, so the model has to run on a backend.",
+  "Context and narrative matter more than numbers in LLM products."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The speaker found that not all open models match the OpenAI API, so the serving side needed an OpenAI-style proxy. This touches AgentOS's proxy and InferCraft serving, but only lightly.",
+   "action": "Check that InferCraft's OpenAI-compatible endpoint works with open models that do not fully match the OpenAI API, and test it with a non-OpenAI-style model."
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

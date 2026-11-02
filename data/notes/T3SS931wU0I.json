@@ -1,0 +1,174 @@
+{
+ "one_line": "Braintrust dev-rel walks through a small eval comparing agentic search (grep/find/cat in Claude Code) with vector search for finding bugs in the TypeScript Go repo: equal accuracy, but vector cost 4x more.",
+ "summary": "Jess from Braintrust explains that evals are a structured way to answer questions about an AI system, using a dataset, a task, a scoring method and experiments. She then runs a concrete comparison of agentic search against vector search for coding agents, prompted by a Cursor claim. The dataset is about 20 merged \"fix\" PRs from Microsoft's TypeScript Go repo, with each task generated from the diff and scored pass/fail by the repo's own test suite. Both arms run inside the Claude Code harness, and vector search is forced by a disallowed-tools flag because prompt instructions alone did not stop the agent from using grep. Both approaches reached the same accuracy, but vector search cost about four times as much because it made more, smaller searches and its chunks often lacked imports and calling code. She also fixes orphaned subprocess traces by passing parent span IDs as environment variables. She openly lists the weaknesses: a single trial per task, a weak vector implementation and only 20 rows. The talk is mostly a process walkthrough with a light product pitch for Braintrust.",
+ "speakers": [
+  "Jess"
+ ],
+ "orgs": [
+  "Braintrust",
+  "Cursor",
+  "Microsoft",
+  "OpenAI"
+ ],
+ "format": "talk",
+ "topics": [
+  "rag-retrieval",
+  "evals",
+  "coding-agents"
+ ],
+ "tags": [
+  "agentic-search",
+  "vector-search",
+  "braintrust",
+  "evals",
+  "claude-code",
+  "tracing",
+  "retrieval-cost",
+  "llm-as-judge-alternatives",
+  "dataset-from-prs",
+  "subprocess-tracing"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Vibes-based shipping is the failure mode; evals replace it with numbers and per-row comparisons.",
+   "detail": "Example: a model update in April 2025 made OpenAI's model sycophantic and less truthful; evals are how you catch regressions like that. The speaker also gives an illustrative 'X of 200 cases passed' style of claim, which is hypothetical.",
+   "t": "0:12"
+  },
+  {
+   "idea": "An eval is a dataset, a task, a scorer, and experiments; each combination of the three is one experiment.",
+   "detail": "The dataset holds golden, edge and failure cases. The task is the system prompt plus model. The scorer can be deterministic, LLM-as-judge or human review. Changing any one of the three creates a new experiment to compare.",
+   "t": "2:51"
+  },
+  {
+   "idea": "Production logs feed the eval loop: sample a small set of real traffic, turn it into a dataset, test changes, then deploy and repeat.",
+   "detail": "She suggests sampling about 10 to 20 production rows to start. Those rows become the dataset, and the cycle repeats as changed behaviour appears in new logs.",
+   "t": "6:34"
+  },
+  {
+   "idea": "Evals are a team effort: engineers, PMs, subject-matter experts and analysts each own part of the loop.",
+   "detail": "PMs usually drive the definition of success and hypotheses. Domain experts such as insurance, medicine or law staff provide labels and ground truth. Engineers get data in and make code changes, and analysts examine results.",
+   "t": "7:40"
+  },
+  {
+   "idea": "Vector search and agentic search differ in how they find code: embedding chunks versus a human-like grep-and-follow exploration.",
+   "detail": "Vector search embeds code chunks and returns the nearest ones to the query. Agentic search gives the LLM shell tools such as grep, find, ls and cat, and it reads files and follows calls the way a developer would.",
+   "t": "8:56"
+  },
+  {
+   "idea": "Building the retrieval dataset from bug-fix PRs: check out the parent commit, generate a task from the diff, and score by the existing test suite.",
+   "detail": "The speaker picked merged PRs with 'fix' in the title from Microsoft's TypeScript Go repo. An LLM wrote a bug description from each diff. Pass means the repo's test suite passes, and scoring is binary (100% or 0%).",
+   "t": "11:25"
+  },
+  {
+   "idea": "Accuracy was equal, but vector search cost about four times as much, and the cost came from more searches, not longer ones.",
+   "detail": "Chunks often lacked imports, tool calls or the calling code above them. In one row, the vector agent made 26 searches and still could not connect three functions. Each extra search adds an LLM call.",
+   "t": "15:09"
+  },
+  {
+   "idea": "Prompt instructions are not enough to force a tool path; enforce it with a disallowed-tools flag.",
+   "detail": "To run the vector arm inside Claude Code, the speaker first told the agent not to use agentic search. That alone did not work, so she also blocked the relevant tools with the disallowed-tools flag.",
+   "t": "12:21"
+  },
+  {
+   "idea": "Subprocess agent runs lose their traces unless the parent span ID is passed down, for example via an environment variable.",
+   "detail": "Without the fix, the trace shows only a 'run claude agent' span with no visibility inside. With the parent span ID passed as an environment variable, every turn, LLM call and shell command appears under the parent trace.",
+   "t": "13:48"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Eval composition: dataset, task, scorer, experiment",
+   "how": "Treat each combination of dataset, task (prompt plus model) and scorer as one experiment. Change one piece at a time and compare experiments per row.",
+   "when": "Before comparing any change to an AI system, such as a model, prompt, retriever or scorer."
+  },
+  {
+   "name": "Production-log sampling into a dataset",
+   "how": "Sample roughly 10 to 20 real production rows, label them, and use them as the eval dataset. Re-sample as new failures appear.",
+   "when": "After shipping a feature and wanting an eval set that reflects real traffic."
+  },
+  {
+   "name": "Mining bug-fix PRs as coding-agent eval tasks",
+   "how": "Find merged PRs whose titles say 'fix', check out the parent commit where the bug still exists, generate a task from the diff with an LLM, then ask the agent to locate the buggy code.",
+   "when": "Evaluating code search, retrieval or localisation strategies on a real repo with a test suite."
+  },
+  {
+   "name": "Binary scoring from the repo's own test suite",
+   "how": "Score a run 1 if the project's existing tests pass after the agent's fix and 0 otherwise. No judge is needed.",
+   "when": "The codebase has a reliable test suite, so a judge is unnecessary."
+  },
+  {
+   "name": "Forcing a retrieval strategy in a coding agent",
+   "how": "Use both a prompt instruction and a disallowed-tools flag so the agent cannot use the tools that belong to a different strategy.",
+   "when": "Comparing two retrieval or tool strategies on the same harness, where the agent would otherwise fall back to its default."
+  },
+  {
+   "name": "Propagating parent span IDs to subprocess agents",
+   "how": "Pass the parent span ID to the child process via an environment variable so the child's turns and tool calls nest under the parent trace.",
+   "when": "Running agent CLIs as subprocesses and needing full trace visibility."
+  }
+ ],
+ "tools": [
+  "Braintrust (evals, tracing, UI, CLI, MCP server)",
+  "Claude Code (agent harness, disallowed-tools flag)",
+  "grep, find, ls, cat, bash (agentic search tools)",
+  "Vector database (unnamed in the talk)",
+  "Microsoft TypeScript Go repo and its test suite (dataset and scorer)",
+  "Cursor semantic search post (cited as motivation)"
+ ],
+ "numbers": [
+  {
+   "claim": "Vector search cost about 4x more than agentic search at the same accuracy, on about 20 bug-localisation tasks.",
+   "t": "15:09"
+  },
+  {
+   "claim": "The eval dataset was about 20 merged 'fix' PRs from Microsoft's TypeScript Go repo.",
+   "t": "11:25"
+  },
+  {
+   "claim": "In one row, the vector agent made 26 searches and still could not piece together how three functions interacted.",
+   "t": "15:09"
+  },
+  {
+   "claim": "Suggested starting sample from production logs: about 10 to 20 rows.",
+   "t": "6:34"
+  },
+  {
+   "claim": "Scoring is binary: 100% if the test suite passes, 0% if it fails. Single trial per task, which the speaker calls a weakness.",
+   "t": "13:48"
+  },
+  {
+   "claim": "OpenAI's sycophancy regression was shipped in April 2025, per the speaker.",
+   "t": "1:29"
+  }
+ ],
+ "hot_takes": [
+  "Prompting is never enough to switch an agent's retrieval strategy; enforce it with a tool-level disallow flag.",
+  "In this test, agentic search matched vector search on accuracy at about a quarter of the cost, because vector chunks lack the connecting context an agent needs.",
+  "Evals are a team sport, and the PM usually leads on defining what success looks like.",
+  "Vibes-based shipping decisions are the thing to avoid."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "MemoryMesh uses hybrid BM25 plus pgvector retrieval and RAGAS evals; this talk gives one data point that a plain grep-style agent can match vector retrieval accuracy at lower cost on code. It is a single small test, not evidence for memory retrieval.",
+   "action": "When evaluating MemoryMesh retrieval, add a grep-and-read baseline on the same tasks and compare accuracy and token cost per query, using several trials per task."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and needs checkpoint and trace visibility into runs. The speaker's disallowed-tools flag approach and subprocess trace-linking directly apply to that wrapper.",
+   "action": "Use the disallowed-tools flag, not just a prompt rule, when a ProsHarness run must avoid a specific tool path, and pass parent span IDs to each claude subprocess so its trace stays linked."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Recurring interest in evals for agents. The talk gives a concrete end-to-end recipe (PR-derived tasks, binary test-suite scoring, per-row experiment comparison) that transfers to agent evaluation work.",
+   "action": "Build a small agent eval from merged bug-fix PRs with test-suite scoring, run at least three trials per configuration, and compare per-row results before trusting a difference."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

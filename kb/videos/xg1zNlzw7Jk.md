@@ -1,0 +1,45 @@
+# Claws Out: Securing and Building with OpenClaw - Nick Taylor, Pomerium
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `xg1zNlzw7Jk` · [watch](https://youtu.be/xg1zNlzw7Jk) · **date:** 2026-07-18 · **length:** 17:12 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Nick Taylor · **orgs:** Pomerium, OpenClaw, ChatGPT
+- **topics:** security-guardrails, mcp-and-tools, coding-agents · **tags:** openclaw, trusted-proxy-auth, identity-aware-proxy, pomerium, control-plane, websocket-auth, device-pairing, mcp-apps, chatgpt-apps, live-coding, hot-module-reloading, discord, clawspace, open-source-contribution, rebasing
+
+> Nick Taylor (Pomerium) on hardening the OpenClaw control plane with trusted-proxy auth, then a live demo of building a UI-bearing MCP app for ChatGPT by editing its workspace from Discord on his phone.
+
+## Summary
+Nick Taylor, a developer advocate at Pomerium, describes a trusted-proxy auth mode he contributed to the OpenClaw project. Before it, a proxy-protected OpenClaw still needed a token pasted into the UI (passed in the WebSocket query string) and device pairing. With trusted-proxy mode, an identity-aware proxy (identity provider, policy engine, reverse proxy) handles auth, and the gateway trusts a user header from listed proxy IPs. He shares a PR and rebase story, a bug a community member found that he missed because his local device was already paired, and his own OpenClaw setup on Discord. The live demo registers a template MCP app with a search-speakers tool in ChatGPT, then has OpenClaw edit the React/Vite source under hot module reloading, adds a "more" button that calls the LLM through the MCP apps send-message function, and exposes the local app safely through the Pomerium-gated public URL. He closes with a warning that people have accidentally exposed agent setups, and encourages personal tools built from the phone.
+
+## Key ideas
+- **Put an identity-aware proxy in front of the agent control plane and let it do auth.** — Before trusted-proxy mode, a proxy-gated OpenClaw still needed a shared token in the UI, which was sent in the WebSocket query string, plus device pairing. The speaker's change lets the gateway accept identity from the proxy, so the token and pairing are no longer needed. Policies live in the proxy, not in OpenClaw. ([2:36](https://youtu.be/xg1zNlzw7Jk?t=156))
+- **Trusted-proxy config is a small, explicit trust boundary.** — The gateway mode becomes trusted proxy. The config lists the proxy's IP addresses (one or more) as trusted proxies. A trusted-proxy section names the user header (a JWT in his setup), optional required headers, and optional allowed users. He skips allowed users because the proxy policy already decides who gets in. It can be set during onboarding or edited in the TUI. ([4:04](https://youtu.be/xg1zNlzw7Jk?t=244))
+- **He framed the change as a UX win as well as a security one.** — Dropping the token and pairing cut friction he found annoying, such as setting things up from his phone and then having to go to a second screen. He argues the better security posture and the smoother experience came from the same change. ([4:04](https://youtu.be/xg1zNlzw7Jk?t=244))
+- **A contributor's own test environment hid a bug.** — Anthony reported a bug and Sid fixed it. The speaker missed it because he tested on a local machine where a device was already paired, so the unpaired path never ran. Community review caught what his setup did not. ([5:28](https://youtu.be/xg1zNlzw7Jk?t=328))
+- **Fast-moving OSS means constant rebasing and stale PRs.** — His first PR was closed as stale after he went on vacation. Over the following weeks the project's popularity jumped sharply, so the eventual merge needed a lot of rebasing. ([5:28](https://youtu.be/xg1zNlzw7Jk?t=328))
+- **He used the agent to write its own contribution, and gave it too much access.** — OpenClaw wrote the PR. He had given the GitHub CLI full access, so a PR opened before he had finished reviewing. He moved it back to draft. The lesson he draws is to keep write access narrow. ([6:56](https://youtu.be/xg1zNlzw7Jk?t=416))
+- **Live edits to a UI-bearing MCP app can run from a chat app on a phone.** — The MCP app runs a React/Vite dev server behind a public, proxy-gated URL that ChatGPT can reach. OpenClaw edits the workspace files, hot module reloading updates the app in ChatGPT, and the speaker iterates from Discord. He describes this as a good fit for web work. ([9:26](https://youtu.be/xg1zNlzw7Jk?t=566))
+- **A widget can call the model through the MCP apps send-message function.** — He added a 'more' button. Clicking it sends a message through the MCP apps messaging function, which makes an LLM call and returns a summary of a talk. The widget thus gets model output without its own API integration. ([14:03](https://youtu.be/xg1zNlzw7Jk?t=843))
+- **The proxy is what makes exposing local tools safe.** — He says the pattern only works because a proxy sits in front of something local, and he notes that Caddy with OAuth could do the same job. He says NGINX is being replaced in Kubernetes ingress land. He closes with a warning that people have exposed agent setups by accident. ([15:04](https://youtu.be/xg1zNlzw7Jk?t=904))
+
+## Techniques
+- **Identity-aware proxy as the auth layer for an agent control plane** — Run the agent's gateway bound to local network. Put a reverse proxy with an identity provider and policy engine in front. Set the gateway to trusted-proxy mode, list the proxy IPs as trusted, name the user header that carries the identity JWT, and add any required headers. Drop the shared token and device pairing for proxy-authenticated clients. *When:* Exposing a self-hosted agent UI or WebSocket control plane beyond localhost, where the team already runs an identity-aware proxy.
+- **Live-edit an MCP app from chat** — Start from a template MCP server that also serves UI. Register it as an app in ChatGPT behind a public proxy-gated URL. Let the coding agent edit the source in the workspace while the Vite dev server reloads it. Iterate by chat message, including from a phone. *When:* Prototyping ChatGPT MCP apps with UI and wanting fast feedback without leaving the chat channel.
+- **Widget-to-LLM calls via the MCP apps send-message function** — Attach a button to a UI action that calls the MCP apps message function. The host model then answers in the chat thread, so the widget needs no separate model integration. *When:* An MCP app UI needs to ask the model for a summary or explanation of the data it shows.
+- **Narrow write access for agent-driven PRs** — Give the agent's GitHub CLI or token only the scopes it needs. Open PRs as drafts and review before marking ready. *When:* An agent is allowed to open PRs on repos you care about.
+- **Test the unauthenticated or fresh-install path** — Run the feature in an environment with no prior pairing or token state, since a warm local setup can hide first-run bugs. *When:* Changing onboarding, auth or pairing flows in a project with many users.
+
+## Numbers
+- Issue number for the trusted-proxy request was 1560. The speaker's original PR was numbered in the 1700s and was closed as stale. ([2:36](https://youtu.be/xg1zNlzw7Jk?t=156))
+- After the feature was opened, the project's popularity went from about 1,500 to almost 16,000 in two weeks. The speaker's wording is 'from 1,500 to almost 16,000'. The metric is not stated, and it is probably GitHub stars. ([5:28](https://youtu.be/xg1zNlzw7Jk?t=328))
+- The demo MCP app has two tools, echo and search speakers. The speaker's source for the speaker list is a speakers.json file from the conference site. ([10:36](https://youtu.be/xg1zNlzw7Jk?t=636))
+
+## Hot takes
+- An identity-aware proxy is a pretty solid security approach for internal apps, even though it is not the 'lethal trifecta' people usually mean.
+- Telegram is out for agent use because its channels are not encrypted, so the speaker, who works at a security company, uses Discord.
+- Building your own tools on your phone is the point of personal software; the speaker's ClawSpace file editor is an example.
+
+## Tools mentioned
+OpenClaw, Pomerium, ChatGPT apps (MCP apps), MCP, React, Vite, Discord, Telegram, WhatsApp, Caddy, NGINX, GitHub CLI, Google Cloud IAP, Replit, Kubernetes ingress
+
+## Relevance to our work
+- **agentos** (1/3): AgentOS is a proxy in front of agents, and the talk's trusted-proxy pattern is a relevant way to handle auth for its control and admin surfaces. → *Check whether AgentOS's admin or control-plane endpoints accept identity from a shared token in a URL query string. If they do, move to a trusted-proxy model that accepts identity only from allowlisted proxy IPs and verifies a JWT header.*
+- **prosharness** (1/3): ProsHarness has phone-driven approvals, and the talk shows a phone and chat-channel control flow with auth handled by a proxy instead of tokens. → *Check that the phone approval channel for ProsHarness uses a proxy-verified identity, not a token in a URL, and add a fresh-install test that starts with no pairing state.*

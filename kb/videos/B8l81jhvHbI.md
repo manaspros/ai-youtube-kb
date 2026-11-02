@@ -1,0 +1,41 @@
+# Enterprise Agents Have a Structure Problem - Ishita Daga, Tesla
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `B8l81jhvHbI` · [watch](https://youtu.be/B8l81jhvHbI) · **date:** 2026-08-18 · **length:** 12:08 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Ishita Daga · **orgs:** Tesla
+- **topics:** context-engineering, memory, evals, enterprise-adoption · **tags:** enterprise-agents, data-agents, source-of-truth, semantic-layer, context-lifecycle, staleness, metric-preference, feedback-loop
+
+> Ishita Daga (Tesla) argues enterprise data agents fail from ambiguity, staleness and team-level preference, not model size, and proposes a tiered source-of-truth structure, a context lifecycle, and open questions on preference.
+
+## Summary
+Ishita Daga, an ML engineer at Tesla building enterprise data agents, argues that bad agent answers usually come from missing structure rather than a weak model. She names three failure modes: ambiguity about which table, knowledge base or source is authoritative, staleness as definitions and processes change, and preference, where teams define the same metric differently. For ambiguity she proposes a hierarchy of sources of truth, from a curated semantic layer, to canonical parametric queries, to a full database graph, with the agent trying the cleanest layer first. For staleness she proposes a context lifecycle that combines mandatory live data sources with a feedback loop that logs corrections and runs evaluations. She says preference remains unsolved: a semantic layer with metric variants still requires the user to specify which one they mean, and agent memory tools do not capture which metric a team uses. The talk is conceptual, with a worked example and no benchmarks.
+
+## Key ideas
+- **Bigger models, more context and more docs do not fix data agents** — The speaker says the usual first reaction to a bad answer (bigger model, longer context, more .md files, MCP servers, plugins) misses the three structural problems: ambiguity, staleness and preference. ([0:01](https://youtu.be/B8l81jhvHbI?t=1))
+- **Sources of truth should form a hierarchy from cleanest to messiest** — Ambiguity is about which knowledge base or table is authoritative. The agent should not weight all sources equally. It should start at the cleanest, least flexible layer and move to messier, more dynamic layers only when needed. ([3:03](https://youtu.be/B8l81jhvHbI?t=183))
+- **Build the first two layers before the database graph** — The three layers are the semantic layer (curated KPIs and definitions), canonical parametric queries, and a database graph linking tables, columns and metrics. The speaker thinks the first two cover most of the problem and the graph is hard to build and maintain, so it should come last. ([4:25](https://youtu.be/B8l81jhvHbI?t=265))
+- **Context needs a lifecycle, not a one-time write** — Staleness is handled by a loop with two parts. First, mandatory live sources that are reviewed and updated often, such as GitHub, a CRM, Tableau or dbt semantic layers. Second, a feedback loop that logs each event where someone says a table or definition is wrong, a metric has a new calculation, or a filter changed, then uses those events to update the agent's context. ([6:51](https://youtu.be/B8l81jhvHbI?t=411))
+- **Evaluation is what shows whether the agent is improving** — The speaker recommends either a curated suite of human-annotated questions or an automated check that replays recent real questions and compares new answers with the reference answers. He says many teams skip this, so they cannot see why agents fail. ([8:09](https://youtu.be/B8l81jhvHbI?t=489))
+- **Preference: the same metric can be correctly defined in two different ways** — Team A measures milestone time from the previous milestone's completion to the current one's. Team B measures from the current milestone's start to the next one's start. Both are valid, but they give very different answers, so the agent has to know what this user means. ([9:11](https://youtu.be/B8l81jhvHbI?t=551))
+- **Existing fixes do not solve preference, and the target is routing** — A semantic layer with metric variants still needs the user to pick one, which brings back the ambiguity problem. Agent memory tools such as mem0 or a memory.md file store preferences but cannot tell metrics apart. The speaker's target is to route each team or person to the right metric automatically. He presents this as open research. ([10:39](https://youtu.be/B8l81jhvHbI?t=639))
+
+## Techniques
+- **Tiered source-of-truth hierarchy** — Organise knowledge into three tiers: (1) a curated semantic layer with KPI and metric definitions, business definitions and query templates; (2) canonical parametric queries the agent can fill in or adapt with its own filters; (3) a database graph that links tables, columns and metrics. The agent queries top-down and stops at the first tier that answers the question. *When:* An enterprise data agent faces many overlapping knowledge bases and tables and needs a defined order of authority. Start with tiers 1 and 2, which the speaker says solve most cases, before attempting tier 3.
+- **Context lifecycle with live sources and event logging** — Mark a small set of frequently updated sources as mandatory live inputs. Log every correction, definition change, new calculation or filter as an event. Feed those events back into the agent's context on a schedule, so the context is updated from what users report rather than rewritten by hand. *When:* Definitions, KPIs and processes change often, and the team keeps losing track of stale .md files, skills or prompts.
+- **Replay-based evaluation of recent questions** — Either write a suite of human-annotated questions with reference answers, or automatically take the questions users asked over the past few days and compare the agent's new answers with the answers that were accepted as correct. Run this regularly, not just once. *When:* You need to know whether a data agent is getting better or worse after context changes, and you have no regular performance tracking.
+- **Metric variants in a semantic layer with user selection** — Store all the valid ways to calculate a metric as variants in one semantic layer. The user chooses one by including a term in the prompt. The speaker says he is trying this approach. *When:* Teams define the same metric differently and you need to make the choice visible, while accepting that the user still has to specify it in the prompt.
+
+## Numbers
+- Speaker's estimate: the semantic layer and canonical queries (first two tiers) solve about 80 percent of data-agent problems, with the database graph handling the remaining 20 percent. This is an estimate, not a measured result. ([4:25](https://youtu.be/B8l81jhvHbI?t=265))
+
+## Hot takes
+- Bigger models, longer context and more knowledge files are the wrong first response to a bad data-agent answer.
+- Agent memory tools such as mem0 or memory.md files do not solve metric preference, because they cannot tell two valid metric definitions apart.
+- A full database graph is the hardest layer to maintain, so enterprises should start with a semantic layer and canonical queries.
+
+## Tools mentioned
+mem0, Tableau, dbt, GitHub, memory.md files
+
+## Relevance to our work
+- **agentos** (2/3): The source-of-truth hierarchy maps to MemoryMesh's knowledge buckets and hybrid retrieval, which currently has no defined authority order when sources conflict. → *Add a per-bucket authority tier (semantic, canonical, free-form) to MemoryMesh metadata and use it to order retrieval results and resolve conflicts before BM25 and pgvector scores are merged.*
+- **agentos** (1/3): The speaker's replay-based evaluation of recent questions against accepted answers is a lightweight version of the RAGAS evals already planned for MemoryMesh. → *Add a nightly job that replays real MemoryMesh queries from the last few days against accepted answers and tracks accuracy over time.*
+- **prosharness** (1/3): The context lifecycle idea (logging corrections as events and feeding them back into context) matches how skill rankings and CLAUDE.md content go stale. → *Consider logging user corrections to skill-ranking results as events and replaying them to update the ranking, instead of editing rankings by hand.*

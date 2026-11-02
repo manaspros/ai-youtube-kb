@@ -1,0 +1,133 @@
+{
+ "one_line": "Voice assistant satisfaction can rise without better accuracy: gate act/confirm/stop on calibrated confidence and pick thresholds by minimizing a user-cost function (\"ouch\").",
+ "summary": "Amit Desai (Roku, former Alexa voice SME) argues that voice AI teams only tune one knob, accuracy, and that a second knob, system behavior under uncertainty, is underused. He uses a smart-speaker music example with 1,000 labeled requests at 79% accuracy. Choosing a single confidence threshold for \"act or stop\" by gut feel is worse than an optimized threshold, because wrong actions and unnecessary stops have different user costs. He models user cost as extra seconds to recover (wrong song 10s, stop 4s) and calls the metric \"ouch.\" Adding a confirm behavior creates a three-band policy (stop, confirm, act) with two thresholds, found by optimization over a heat map, and the cost falls further (2.1 to 1.9 to 1.27 to about 1.26 per turn). The same approach should transfer to TV and to embodied or digital agents, but the cost values must be re-set per modality, since visual choices or state-losing actions change the trade-off.",
+ "speakers": [
+  "Amit Desai"
+ ],
+ "orgs": [
+  "Roku",
+  "Alexa (Amazon)"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "product-ux",
+  "evals"
+ ],
+ "tags": [
+  "voice-ux",
+  "confidence-thresholds",
+  "act-confirm-stop",
+  "user-cost-function",
+  "decision-thresholds",
+  "embodied-ai",
+  "conversational-behavior"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Two levers for user satisfaction: accuracy, and system decisions under uncertainty (stop, confirm, act). The second lever is orthogonal to accuracy and under-used.",
+   "detail": "Accuracy held fixed at 79%, and the system's behavior alone changes the outcome. The speaker frames this as the premise for the talk.",
+   "t": "1:08"
+  },
+  {
+   "idea": "Gut-feel confidence thresholds produce bad outcomes; optimize the threshold against a cost function instead.",
+   "detail": "Any single threshold trades off stopping (bad) against wrong actions (bad). A 65% threshold guess gave about 1.9 cost per turn, and the optimized threshold at 43% gave about 1.27.",
+   "t": "6:01"
+  },
+  {
+   "idea": "Outcomes are not equally bad. Quantify each one as extra seconds to recover to success.",
+   "detail": "Unit costs used: wrong song about 10 seconds (hear it, interrupt, re-request), stop about 4 seconds (re-speak). The speaker calls the combined metric 'outcome user cost heuristic,' or 'ouch.'",
+   "t": "8:56"
+  },
+  {
+   "idea": "Adding a confirm behavior turns the policy into three bands and two thresholds (T1 and T2).",
+   "detail": "Confirm-yes costs about 2 seconds and confirm-no about 6 seconds. The optimum reported is T1 about 41 and T2 about 49, found from a 2D heat map. Accuracy is unchanged throughout.",
+   "t": "13:00"
+  },
+  {
+   "idea": "The cost values are assumptions, and the optimum moves when they change. Set them per surface and per modality.",
+   "detail": "If a wrong action is valued at 20 instead of 10, the optimal thresholds shift. On a TV with visible choices, confirm is cheaper; if launching a channel exits the current state, a wrong act costs much more.",
+   "t": "15:25"
+  },
+  {
+   "idea": "The method is meant to be real-time and learned in production, not a fixed offline table. The principle carries over to other surfaces and embodied or digital agents.",
+   "detail": "The smart-speaker grid is a simplified example. The speaker expects real systems to use a learned decision model, and says the same reasoning applies to physical or digital actions like sending email or placing a call.",
+   "t": "16:42"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Outcome user-cost minimization for act/confirm/stop",
+   "how": "Label a sample of requests with the outcome of each possible system behavior. Give each bad outcome a cost in seconds of user recovery (wrong act, stop, confirm-yes, confirm-no). Plot confidence distributions for correct and wrong hypotheses, then choose thresholds that minimize total cost divided by turns.",
+   "when": "A voice or agent system gives a calibrated confidence score and can choose between acting, asking to confirm, or declining, and where the wrong-action and stop costs differ."
+  },
+  {
+   "name": "Two-threshold three-band policy with grid search",
+   "how": "Define T1 (below it: stop) and T2 (above it: act), with confirm in between. Sweep both thresholds over a grid, compute total cost for each pair, and read the minimum from a heat map. The speaker used an AI coding assistant to build the interactive graph.",
+   "when": "When adding a confirmation step, which makes the decision space two-dimensional and makes guessed thresholds unreliable."
+  },
+  {
+   "name": "Sensitivity check on unit costs",
+   "how": "Change the assumed cost of the most expensive outcome (for example, wrong act from 10 to 20) and recompute the optimal thresholds before committing to a policy.",
+   "when": "Before shipping a threshold policy, since the cost values are heuristic and drive the optimum."
+  }
+ ],
+ "tools": [
+  "Interactive threshold-sweep graph built with a coding assistant (no specific library named)"
+ ],
+ "numbers": [
+  {
+   "claim": "Accuracy on 1,000 labeled spoken requests: 79% correct, 21% wrong song",
+   "t": "3:34"
+  },
+  {
+   "claim": "Always-act baseline cost: 2.1 user-cost points per turn (2100 total over 1,000 requests)",
+   "t": "10:19"
+  },
+  {
+   "claim": "Single threshold guessed at 65%: about 1.9 per turn",
+   "t": "10:19"
+  },
+  {
+   "claim": "Single threshold optimized at 43%: about 1.27 per turn, with accuracy unchanged",
+   "t": "11:38"
+  },
+  {
+   "claim": "Unit costs: wrong song about 10 seconds, stop about 4 seconds, confirm-yes about 2 seconds, confirm-no about 6 seconds",
+   "t": "8:56"
+  },
+  {
+   "claim": "Three-band optimum: T1 about 41, T2 about 49, total cost about 1.26 per turn. The transcript's written figure reads '1464,' which looks like a garbled 1.264; treat as uncertain",
+   "t": "15:25"
+  }
+ ],
+ "hot_takes": [
+  "Accuracy is not the only lever. Behavior under uncertainty can do as much for user satisfaction as squeezing out more accuracy.",
+  "Gut-feel confidence thresholds are measurably worse than thresholds optimized against a user-cost function.",
+  "Embodied and digital agents that take real actions will make accuracy alone an insufficient path to acceptable UX."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Crucible's exec-gate guardrails and any agent that takes actions could use a confidence-banded act/confirm/stop policy, though the talk covers voice only.",
+   "action": "Prototype a three-band gate (auto-run, ask for confirmation, refuse) on Crucible exec-gate decisions, with a per-action-type cost table, and tune the thresholds on logged decisions."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness has phone-driven approvals, and this talk gives a way to decide when to ask for approval versus proceed.",
+   "action": "Consider using a cost-weighted approval threshold for ProsHarness phone approvals, so low-risk steps auto-proceed and only costly-to-undo steps wait for a human."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Recurring interest in evals for agents. The talk proposes a cost-weighted metric as a better target than raw accuracy.",
+   "action": "When evaluating agent decisions, report expected user or recovery cost (weighted by outcome type) alongside accuracy, and keep the cost table versioned."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

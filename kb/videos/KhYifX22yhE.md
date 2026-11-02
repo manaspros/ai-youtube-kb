@@ -1,0 +1,51 @@
+# The Messy Reality of Scale: Synthetic Data and Pre-Training — Marah Abdin & Robert McHardy, poolside
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `KhYifX22yhE` · [watch](https://youtu.be/KhYifX22yhE) · **date:** 2026-08-18 · **length:** 17:31 · **format:** talk · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Marah Abdin, Robert McHardy · **orgs:** poolside
+- **topics:** training-finetuning-rl, data-engineering, models-research · **tags:** synthetic-data, pre-training, rephrasing, data-mixing, multi-agent-data-generation, silent-data-corruption, gradient-norm, bf16-accumulation, fp8-training, deepgemm, replica-hash-check, laguna, open-weights, swe-bench, coding-models
+
+> Poolside's data and training leads on synthetic data at scale, the modular generation pipelines behind Laguna M.1 and XS.2, and the silent-corruption bugs (broken GPU, BF16 accumulation, FP8 kernel race) they found training Laguna S.
+
+## Summary
+Marah Abdin (poolside data team) covers how synthetic data complements organic pretraining data, why repetition became a problem as training budgets scaled, and a modular six-part pipeline design with specialized rephrasing and multi-step generation shapes. She also describes Hive, an internal queue-and-orchestrator system for chaining LLM agents. Robert McHardy covers training-side lessons: replica weight-hash checks caught a broken GPU producing silent corruption, a BF16 accumulation in tensor-parallel unembedding stalled a run near 50k steps, and an FP8 kernel race silently corrupted about 0.5% of gradients in Laguna S. The speakers say the hash check cannot catch such races in real runs because there is no redundancy, and they are building a dry-run checker. Base-model evals show Laguna S ahead of the models they compared on coding benchmarks and strongest on SWE-bench Agentless Multilingual, though weaker on MMLU-Pro, which they attribute to a data gap. The talk gives no exact benchmark scores in the transcript. Quality is practitioner-level with hard-won debugging detail, but the eval slide is an ablation-style caveated base-model comparison.
+
+## Key ideas
+- **Synthetic data is meant to complement organic data, not replace it.** — Organic text often hides rationale, planning and structure. Synthetic generation can extract these and re-present them, filling gaps and regularizing how tokens and teaching signal are presented. XS.2 used a 13% synthetic share of the pretraining mix. ([1:26](https://youtu.be/KhYifX22yhE?t=86))
+- **Quality-over-quantity filtering hit repetition limits once training budgets scaled.** — Focusing too hard on high-quality data meant repeating the same tokens many times as compute grew, which hurt the model. Rephrasing high-quality seeds was the main fix for token uniqueness, and the speaker's team has a continuously growing corpus of about six trillion tokens (generated data by context). ([2:51](https://youtu.be/KhYifX22yhE?t=171))
+- **Build synthetic pipelines from six swappable components, and match complexity to the data's worth.** — Components are seeds, primary inputs, metadata, secondary inputs, a generator (an agent with tools or an LLM with a prompt template), and supplementary filters and validators. Cheap seed-heavy rephrasing with small models sits at one end. Expensive multi-stage orchestration is reserved for data that is worth it. ([5:01](https://youtu.be/KhYifX22yhE?t=301))
+- **Break a task down when the generator model is too weak for it.** — The speaker's rule of thumb: if a task is too hard for the model, outputs drift into its biases and lose correctness and diversity. Decompose the task instead. Example: for a novel, first generate setting, characters, plot and twists, then generate chapters one at a time. ([5:58](https://youtu.be/KhYifX22yhE?t=358))
+- **Replica weight-hash checks catch silent GPU corruption that looks like an ordinary bad run.** — In data-parallel training, weights must match across replicas. Hashes are compared periodically, and any mismatch halts the run. A broken GPU produced spiky loss and huge gradient norms in a run otherwise identical to a healthy one. The hash check caught it. ([9:32](https://youtu.be/KhYifX22yhE?t=572))
+- **Accumulation precision can silently stall a run as activations grow.** — Activations grew before the unembedding during Laguna M.1 training. The tensor-parallel accumulation ran in BF16 by default, which lacked precision, and the loss flattened around 50k steps. Moving the accumulation to FP32 from the same checkpoint restored convergence, and the gradient norm fell. ([10:52](https://youtu.be/KhYifX22yhE?t=652))
+- **Hash checks have a blind spot for races in low-level kernels.** — In Laguna S, FP8 training using open-source DeepGEMM kernels showed illegal memory accesses and NaNs. Tracing this led to a race condition that silently replaced about 0.5% of gradients with random values. Real runs have no redundant replica on the same data, so the hash check cannot see it. A dry-run checker is in progress, and a fix is in a public PR. ([13:35](https://youtu.be/KhYifX22yhE?t=815))
+- **Treat data and the training codebase as one system to verify.** — The speaker's stance: bad data or a bad training codebase each stop you from training a good model. The team verifies correctness across both, trusts nothing by default, and applies the same checks at small scale (XS.2) before the larger run (Laguna S, 118B total, 8B active). ([9:32](https://youtu.be/KhYifX22yhE?t=572))
+
+## Techniques
+- **Modular six-part synthetic data pipeline** — Define seeds, primary inputs, metadata, secondary inputs, a generator (agent or LLM plus prompt template) and supplementary filters and validators as separate parts. Compose them from cheap to complex. *When:* When designing any synthetic data generation, so the parts can be swapped and the cost matched to the value of the data.
+- **Seed-heavy cheap rephrasing** — Rephrase high-quality seed documents with small models, making the seeds carry most of the diversity. Use specialized variants: raw code to code-plus-text, and a STEM-specific pipeline. *When:* When high-quality data is repeated too often as training budget grows and you need more unique tokens.
+- **Staged decomposition of hard generation** — Split a hard generation into ordered steps that build context (for example setting, characters, plot, then content one piece at a time) instead of one large prompt. *When:* When the generator model is too weak for the whole task and output starts to lose correctness or diversity.
+- **Cross-domain porting and judge-evolver loops** — Port data across modes (code translation, math problems to code). Run judge and evolver agents back and forth for k rounds, or run multi-turn agent chats. *When:* To expand data coverage beyond what one generator pass produces, or to iteratively improve samples.
+- **Orchestrated agent queue (Hive)** — Define each agent with its prompt, parameters, model, inputs and outputs, and set when it enters or exits the queue and its frequency. An orchestrator picks the next agent or skips one, and can rewrite the next agent's instructions. A supervisor watches the orchestrator from a global view. *When:* When many generation agents must run in a controlled hierarchy and the flow must change dynamically.
+- **Cross-replica weight hash checks** — Hash the weights on each data-parallel replica, compare the hashes periodically, and halt training if they differ. *When:* In large distributed training runs, to catch silent corruption from bad hardware.
+- **FP32 accumulation for growing activations** — Accumulate tensor-parallel unembedding results in FP32 rather than the BF16 default when activations grow during training. Apply the fix from an existing checkpoint. *When:* When loss stops converging and gradient norms rise as activations grow near the output layer.
+- **Test recipes on a small model before scaling** — Use a smaller model (XS.2, 33B) as a testbed for data and architecture changes, then scale the same recipe (Laguna S, 118B total) and watch for numerical issues that only appear at scale. *When:* Before committing a large training budget to a new data or architecture change.
+
+## Numbers
+- Synthetic data share of XS.2 pretraining mix ([1:26](https://youtu.be/KhYifX22yhE?t=86))
+- Continuously growing corpus of about 6 trillion tokens (generated data per context) ([2:51](https://youtu.be/KhYifX22yhE?t=171))
+- Loss curve stalled around 50,000 training steps for Laguna M.1 before the FP32 accumulation fix ([10:52](https://youtu.be/KhYifX22yhE?t=652))
+- XS.2 is 33B parameters, open weights, competitive for its size on coding ([12:11](https://youtu.be/KhYifX22yhE?t=731))
+- Laguna S: 118B total / 8B active parameters, trained on 30T tokens across 4,000 GPUs, not yet public (preview) ([13:35](https://youtu.be/KhYifX22yhE?t=815))
+- About 0.5% of gradients silently corrupted by an FP8 DeepGEMM race condition in Laguna S ([13:35](https://youtu.be/KhYifX22yhE?t=815))
+- Base-model coding evals (MultiPL-E, LiveCodeBench, BigCodeBench, EvalPlus): Laguna S above XS.2, M.1, GLM 4.5 Air, Nemotron 3 Super and DeepSeek V4 Flash, per the speaker. No exact scores given in the transcript. ([14:45](https://youtu.be/KhYifX22yhE?t=885))
+- Best of tested models on SWE-bench Agentless Multilingual, used as an agentic proxy during pretraining. No exact score given in the transcript. ([16:06](https://youtu.be/KhYifX22yhE?t=966))
+
+## Hot takes
+- Synthetic data is a complement to organic data, not a replacement, in the current state of the world.
+- We don't trust anything: correctness checks must cover both the data and the training code.
+- Focusing on agentic coding, the team accepts a weaker MMLU-Pro score and attributes the gap to data.
+
+## Tools mentioned
+Hugging Face, DeepGEMM (FP8 kernels), Hive (poolside internal generation orchestrator)
+
+## Relevance to our work
+- **agentos** (1/3): The judge-and-evolver loop and staged decomposition could inform EvolveCraft's self-improvement design, but the talk only sketches them. → *Read the multi-turn judge-evolver and staged-decomposition sections as a pattern for EvolveCraft's generator loop, and test it on a small case before adopting it.*

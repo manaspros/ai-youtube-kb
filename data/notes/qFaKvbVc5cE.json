@@ -1,0 +1,192 @@
+{
+ "one_line": "NVIDIA workshop on NVIDIA Data Designer: build column-by-column synthetic data pipelines, seed them with Wikidata random walks and Tavily search traces, and use them to teach a model web search (BrowseComp 0 to about 30%).",
+ "summary": "Dhruv Nathawani (NVIDIA, Nemotron team) walks through Data Designer, an open-source framework for building synthetic data as a column-by-column DAG. Columns can be optional seed data, sampler columns for diversity, LLM text/structured/code/image columns, and validators. He argues that naive prompt loops collapse in diversity and give no correlations or validation. The workshop has three notebooks: basic generation with a judge, agentic data via MCP with Tavily search, and a search-training pipeline. The search pipeline starts from random 4-to-8-hop walks over the Wikidata graph, turns them into hard search questions, and has a teacher model (gpt-oss-120b) produce search trajectories and golden answers. Roughly 50,000 seeds were filtered to 7,000 SFT records, which moved BrowseComp from about 0 to about 30 percent. The talk spends its second half on evaluation: a string matcher, an LLM judge, human audit of the judge, and live search for stale ground truth. It closes with best practices and NVIDIA's persona dataset and other open tools. Much of the content is a tool pitch, and the pace was rushed by the one-hour slot.",
+ "speakers": [
+  "Dhruv Nathawani"
+ ],
+ "orgs": [
+  "NVIDIA"
+ ],
+ "format": "workshop",
+ "topics": [
+  "training-finetuning-rl",
+  "data-engineering",
+  "rag-retrieval",
+  "evals"
+ ],
+ "tags": [
+  "synthetic-data",
+  "data-designer",
+  "seed-data",
+  "wikidata",
+  "agentic-search",
+  "tavily",
+  "mcp",
+  "distillation",
+  "llm-as-judge",
+  "evaluation",
+  "personas",
+  "nemotron",
+  "sft",
+  "structured-output"
+ ],
+ "tools": [
+  "NVIDIA Data Designer",
+  "Nemo Curator",
+  "Nemo Gym",
+  "Nemo Anonymizer",
+  "Nemo Safe Synthesizer",
+  "Tavily",
+  "MCP",
+  "vLLM",
+  "gpt-oss-120b",
+  "Wikidata",
+  "Hugging Face"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Naive prompt loops fail for synthetic data",
+   "detail": "Repeatedly prompting an LLM for a product review or question set starts repeating after 10 to 20 tries and misses feature correlations, multimodality, steering, and validation. Data Designer fixes this by generating column by column, with diversity from sampler columns and templated seeds.",
+   "t": "5:42"
+  },
+  {
+   "idea": "Data Designer is a DAG of columns, run in preview then batch",
+   "detail": "Columns can be an optional seed (CSV, JSONL, Parquet, or company data), sampler columns (for example difficulty with weights and sub-samplers), LLM text/structured/code/image columns, and LLM-as-judge columns. Preview generates three records for inspection, then batch mode generates the full set. Structured output that fails parsing is dropped.",
+   "t": "7:09"
+  },
+  {
+   "idea": "Random walks over Wikidata make hard, grounded search seeds",
+   "detail": "Random walks of about 4 to 8 hops over the Wikidata graph give entity chains. The speaker picked this range because shorter walks are trivial and longer ones drift off topic. The chain then becomes a multi-hop riddle that needs search to answer.",
+   "t": "25:19"
+  },
+  {
+   "idea": "Questions must be unanswerable from weights, or the agent cheats",
+   "detail": "If the answer is recallable from training data, the agent answers directly and skips the tool calls. Questions are therefore chosen so the answer is hard to find without search, and the training target is the search behaviour itself.",
+   "t": "23:58"
+  },
+  {
+   "idea": "Overproduce, then filter hard",
+   "detail": "The search pipeline went from 50,000 seeds to 7,000 high-quality end-to-end SFT records. Quality is the main lever in the speaker's view. Diversity is one axis of quality, and the funnel applies LLM-judge scores and simple heuristics such as question word count.",
+   "t": "39:19"
+  },
+  {
+   "idea": "Ground truth goes stale, so verification needs layers",
+   "detail": "A verifier accepted 'U.S.' as the owner of U.S. Steel, but the company had been sold to a Japanese owner. A string matcher kept only about 24 percent, which the speaker calls too low. Evaluation needs a union of layers: a deterministic checker, an LLM judge audited by humans, and live search for current facts.",
+   "t": "35:40"
+  },
+  {
+   "idea": "Use the cheapest correct column type, and version the pipeline as code",
+   "detail": "Samplers should be Python, not LLM calls, and LLMs should be used only where text is actually generated. Because the pipeline is code, it can be versioned, shared, and forked. Looking at a few samples is the speaker's main quality check.",
+   "t": "46:03"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Column-by-column DAG for synthetic data",
+   "how": "Declare seed, sampler, LLM text/structured, and judge columns in a graph. Use Jinja-style templates to insert seed values into each prompt so every call is unique. Run preview on 3 records, iterate on prompts, then run batch.",
+   "when": "Any time you need a large, diverse, correlated, validated dataset that someone else can reproduce."
+  },
+  {
+   "name": "Seeded random walks over a knowledge graph",
+   "how": "Sample an entity from Wikidata and walk 4 to 8 hops along property edges. Pass the chain into the question-generation prompt as the seed path.",
+   "when": "You need multi-hop questions that a model cannot answer from memory and that stay on topic."
+  },
+  {
+   "name": "Teacher trajectories with a tool, then SFT on the trajectories",
+   "how": "Give a teacher LLM a search tool through MCP, with usage guidelines (a call budget and a JSON answer format with URLs and justification) and an in-context example. Keep the full tool-call trace as the training target.",
+   "when": "Teaching a smaller model when and how to call a search or other tool."
+  },
+  {
+   "name": "Overproduce and filter funnel",
+   "how": "Generate far more candidates than needed, score each with a judge and cheap heuristics, then keep the top fraction. The speaker's example keeps 66 percent at one stage and 7,000 out of 50,000 overall.",
+   "when": "Synthetic data quality varies a lot across samples and filtering is cheaper than generation errors."
+  },
+  {
+   "name": "Layered verification of synthetic labels",
+   "how": "Combine a deterministic matcher, an LLM judge, a human audit of a sample of judge verdicts, and live retrieval to check whether facts are still true. Treat a clean check of 100 items as evidence only for those 100 issues.",
+   "when": "Labels depend on facts that can change, or when the judge model's own reliability is unknown."
+  },
+  {
+   "name": "Skip the golden answer and use a reward function (RL path)",
+   "how": "Generate only the prompts, then score rollouts with an RL reward function (NVIDIA Nemo Gym) during training.",
+   "when": "Doing RL on tool-use tasks where you do not want to pay for teacher answers."
+  },
+  {
+   "name": "Persona seeds from census marginals",
+   "how": "Fit a probabilistic graphical model to census demographics, sample personas from it, and use them as seeds so generated records follow real demographic distributions and avoid individual user data.",
+   "when": "Generating records such as health or tax data that must match real population distributions and privacy constraints."
+  }
+ ],
+ "numbers": [
+  {
+   "claim": "Data Designer has been used to create 6.5 trillion tokens of training data (speaker's figure, growing daily)",
+   "t": "4:44"
+  },
+  {
+   "claim": "Tavily gives 1,000 free credits on signup, per the speaker",
+   "t": "1:40"
+  },
+  {
+   "claim": "Search pipeline: 50,000 seeds filtered to 7,000 high-quality end-to-end SFT records",
+   "t": "39:19"
+  },
+  {
+   "claim": "After SFT on that data, BrowseComp moved from about 0 to about 30 percent",
+   "t": "39:19"
+  },
+  {
+   "claim": "A keep rate of 66 percent is shown at one filter stage",
+   "t": "40:44"
+  },
+  {
+   "claim": "A deterministic string-match checker keeps about 24 percent of the data, which the speaker says is low and partly due to the matcher",
+   "t": "42:13"
+  },
+  {
+   "claim": "BIRD SQL benchmark moved from 26 percent to 41 percent with the agentic SQL data (speaker's Q&A answer). The speaker notes the SOTA of about 70 is agentic, while their SQL dataset is not",
+   "t": "29:28"
+  },
+  {
+   "claim": "Hop length heuristic: 4 to 8 hops over Wikidata",
+   "t": "25:19"
+  },
+  {
+   "claim": "Nemotron Personas USA has about one million personas",
+   "t": "48:47"
+  },
+  {
+   "claim": "Example: exactly seven U.S. people under 18 report more than $10 million in tax return income, which an LLM would not produce by default",
+   "t": "50:19"
+  }
+ ],
+ "hot_takes": [
+  "\"Internet data is not the data you want for your transformer\" (Karpathy, quoted by the speaker)",
+  "Diversity before volume. The speaker cites the Kimi K2 paper: ten strategies at one epoch beat one strategy at ten epochs.",
+  "Evaluating synthetic data is an open research problem, and an LLM judge alone is not enough.",
+  "Synthetic distillation can beat the teacher when the pipeline adds diversity and filtering (StructEval, Nemotron versus gpt-oss)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "MemoryMesh's RAGAS-style evals rely on LLM judges, and the talk shows judge verdicts need a human-audited sample before trusting them.",
+   "action": "Add a small human-audit pass (about 50 items, double-labelled) on MemoryMesh RAGAS judge scores before using them to rank retrieval changes."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Synthetic data generation is not part of the Claude Code harness scope.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Relevant to our entity-resolution and cheap-model pipelines: keep samplers and matchers in code, use an LLM only where it generates or judges, overproduce then filter, and audit judge verdicts with humans.",
+   "action": "Apply the cheapest-correct-column rule to the ER and Haiku pipelines: move any LLM-based sampling or string matching to code, then check the LLM judge against a human-labelled sample before trusting it."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,189 @@
+{
+ "one_line": "Xander Song (Arize) introduces Harbor, an open-source framework for testing agents on real tasks in fresh sandboxes, scored by side-effect verifiers, and shows how his team used it to tune a prompt for SQL over GraphQL.",
+ "summary": "Xander Song, an Arize AI engineer and Phoenix maintainer (not a Harbor maintainer), explains Harbor as a framework for evaluating agents on realistic tasks. Each task is a natural-language instruction plus a Docker environment seeded with real data, and per-task verifier scripts that check side effects and write a reward. Trials run in fresh containers, so repeated runs of the same task measure stochastic agents, and they parallelize across sandbox providers. The talk stresses validating the pipeline with an oracle solution before spending tokens on an agent. Verifiers treat the agent as a black box, which lets the task suite stay fixed while the agent implementation changes. The second half is a Phoenix case study: aggregate questions pushed agents into paginating REST and GraphQL, so the team added a read-only SQL tool and a one-line prompt change. Synthetic tasks and oracles were generated with Claude, and the before/after jobs were compared in Phoenix. The speaker admits the approach is easy for a single-node app packaged in one container and harder for distributed systems.",
+ "speakers": [
+  "Xander Song"
+ ],
+ "orgs": [
+  "Arize AI",
+  "Daytona"
+ ],
+ "format": "talk",
+ "topics": [
+  "testing-verification",
+  "evals",
+  "observability",
+  "coding-agents"
+ ],
+ "tags": [
+  "harbor",
+  "agent-evals",
+  "verifiers",
+  "oracle-solution",
+  "pass-at-k",
+  "trajectories",
+  "ATIF",
+  "phoenix",
+  "openinference",
+  "sandboxes",
+  "synthetic-tasks",
+  "regression-tests",
+  "skill-triggering",
+  "prompt-ab-test"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A Harbor task is a natural-language instruction, a Docker environment seeded with real data, and verifier scripts that write a reward.",
+   "detail": "Verifiers check only the side effects the agent leaves in the environment, and the reward is pass/fail (0 or 1) or any named score. Because the verifiers ignore the agent's implementation, the task stays fixed while the agent changes, much like integration tests written against an interface.",
+   "t": "1:41"
+  },
+  {
+   "idea": "Verifiers are mounted only after the agent finishes, so the agent cannot see or cheat against them or the solution.",
+   "detail": "In default local Docker runs, the verifiers and oracle solution are not present during the agent's execution. Verification then checks the resulting state, for example by re-running a migration and checking tables and indexes.",
+   "t": "10:12"
+  },
+  {
+   "idea": "Run an oracle (a scripted solution) through the pipeline before any agent, to validate data, environment, and verifiers without spending tokens.",
+   "detail": "The speaker presents oracles as the cheap way to find broken data or buggy verifiers. Passing against an oracle builds confidence in the verifiers without reading them line by line.",
+   "t": "6:37"
+  },
+  {
+   "idea": "Trials are repeated and independent because agents are stochastic; pass@k and aggregate rewards summarize them.",
+   "detail": "Each trial gets a fresh container, so the whole job parallelizes. The speaker runs roughly 200 concurrent workers on Daytona. Example: across 4 tasks, 2 agents, and 3 trials, one task passed pass@3 for both agents while another passed for only one.",
+   "t": "15:05"
+  },
+  {
+   "idea": "Harbor is a host-side CLI that drives the container through a script contract: the right scripts must sit in fixed places in the image.",
+   "detail": "The orchestrator runs on a laptop or in GitHub Actions and starts the agent, verifier, and oracle through scripts. Any language or framework works as long as it fits in a Docker image. The speaker says there are no linters for this contract, so coding agents must rely on Harbor's skills to set it up.",
+   "t": "26:00"
+  },
+  {
+   "idea": "Their own use case: a whole app (SQLite snapshot, API, server-side agent, CLI, skills) packed into one container, with a test client replacing the browser.",
+   "detail": "The team optimizes the hybrid system (Claude Code plus MCP server, CLI, skills and API) as one unit, not the coding agent alone. The speaker says multi-service or distributed systems would need the agent carved into an interface, and that is probably harder.",
+   "t": "28:28"
+  },
+  {
+   "idea": "Aggregate questions drove agents into pagination, so they added a read-only SQL tool and a prompt that prefers SQL for counts and groupings, then A/B-tested it in Harbor.",
+   "detail": "Before the change, agents paged through REST or GraphQL to aggregate data. The prompt was changed from only mentioning GraphQL to preferring SQL for count or group queries. Across the same tasks, SQL calls rose and average tool calls fell. The speaker says the drop is understated because the dataset was small.",
+   "t": "33:30"
+  },
+  {
+   "idea": "Verifiers that peek at the trajectory (for example, whether a skill or SQL tool was used) are a deliberate trade-off when optimizing a metric instead of correctness.",
+   "detail": "The speaker concedes these checks are less pure and more brittle, since renaming a skill breaks the test. He says a one-turn 'did the right skill fire' test is cheap and still useful. For correctness regressions he keeps verifiers outcome-only.",
+   "t": "41:29"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Harbor task layout",
+   "how": "Each task bundles an instruction markdown file (the natural-language prompt given to the agent), a Dockerfile that seeds the environment with real data, and a test directory with verifier scripts that write a reward (reward.txt). An optional solution script serves as the oracle. Group tasks into a dataset and run N trials per task as one job.",
+   "when": "Use for any agent eval where success can be read from side effects in the environment, such as files changed, DB rows written, or migrations applied."
+  },
+  {
+   "name": "Oracle-first validation",
+   "how": "Before running any agent, run the oracle solution through the same pipeline. Confirm the verifier reports success and the data and environment are right.",
+   "when": "Use before every new task or verifier, so broken setup is found before tokens are spent."
+  },
+  {
+   "name": "Keep verifiers outside the agent's view",
+   "how": "Mount the verifier scripts and solutions into the container only after the agent finishes, then run the checks against the resulting state.",
+   "when": "Use whenever the agent could otherwise read the expected answer or cheat."
+  },
+  {
+   "name": "Synthetic task and oracle generation",
+   "how": "Give Claude the domain objects (traces, spans, datasets, experiments) and ask for a list of realistic user queries, mixing aggregate and non-aggregate ones. For each query, ask it to write an oracle solution (a REST call or DB query). Spot-check the questions, then write verifiers as SQL checks, REST calls or LLM-as-judge.",
+   "when": "Use to build a broad task set quickly when no real task log exists; the speaker still spot-checked the output by hand."
+  },
+  {
+   "name": "Before/after prompt A/B in a fixed harness",
+   "how": "Keep the dataset and verifiers fixed. Run one job with the old prompt and one with the new. Compare aggregate reward, tool-call counts by tool, turn count, and per-task trajectories side by side.",
+   "when": "Use when a prompt or tool-description change should improve efficiency without breaking correctness, so you can confirm it with evidence instead of by feel."
+  },
+  {
+   "name": "Read-only SQL tool for aggregates",
+   "how": "Expose a read-only SQL query tool alongside REST and GraphQL on the MCP server. Add a prompt line telling the agent to use SQL for count or group-by questions before paging through the API.",
+   "when": "Use when agents keep paginating to compute aggregates over an API that lacks aggregate endpoints."
+  },
+  {
+   "name": "Single-node app snapshot in Docker",
+   "how": "Package the app server, a SQLite file with realistic data, the CLI, and the agent-facing skills into one image. Replace the browser with a test client so the agent can drive the real app.",
+   "when": "Use when the system is one node with an embedded database; for distributed systems, first carve out a stable interface and test behind it."
+  },
+  {
+   "name": "One-turn skill-triggering test",
+   "how": "Send a single question to the agent and check the trajectory to see whether the intended skill fired. No realistic data is needed.",
+   "when": "Use to catch skill description collisions, accepting that the test is coupled to skill names and breaks on renames."
+  }
+ ],
+ "tools": [
+  "Harbor",
+  "Docker",
+  "Arize Phoenix",
+  "OpenInference",
+  "OpenTelemetry",
+  "OTLP",
+  "ATIF (Agent Trajectory Interchange Format)",
+  "Daytona",
+  "Modal",
+  "E2B",
+  "SQLite",
+  "Postgres",
+  "Claude Code",
+  "Claude Opus 5 (as named in talk)",
+  "GPT-5 via Codex (as named in talk)",
+  "Cursor",
+  "MCP",
+  "REST API",
+  "GraphQL API",
+  "Pixie (Arize in-house server-side agent)",
+  "GitHub Actions",
+  "Playwright (mentioned by analogy)"
+ ],
+ "numbers": [
+  {
+   "claim": "About 200 concurrent workers used on the Daytona sandbox provider",
+   "t": "15:05"
+  },
+  {
+   "claim": "Example eval matrix: 4 tasks x 2 coding agents x 3 trials (k=1,2,3)",
+   "t": "15:05"
+  },
+  {
+   "claim": "Prompt change caused SQL calls to rise and average tool calls per trajectory to fall; the speaker says the drop is modest and understated because the dataset was small",
+   "t": "37:24"
+  },
+  {
+   "claim": "The reward stayed high in the optimization experiment because the baseline was already correct; the change targeted efficiency (tool-call count), not correctness",
+   "t": "39:26"
+  },
+  {
+   "claim": "Comparison view: GraphQL tool calls went down, SQL calls went up, reward held steady, and the number of turns dropped in the after-change job",
+   "t": "43:16"
+  }
+ ],
+ "hot_takes": [
+  "Vendor-led talk: the speaker maintains Phoenix and OpenInference, and the second half is largely a Phoenix product demo; Harbor itself is presented as the open-source framework, and the speaker says he is not a Harbor maintainer.",
+  "The approach is easy for a single-node app packed into one container; the speaker admits distributed systems would be 'probably harder' and offers no tested answer.",
+  "Verifiers that peek into the trajectory are conceded to be less pure, and skill-firing tests are called brittle when skill names change.",
+  "Efficiency gains from the prompt change were measured on a small dataset, which the speaker says understates the effect.",
+  "Synthetic questions and oracles were generated by Claude and only spot-checked; the speaker says he has 'a certain degree of confidence' in the verifiers."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS has RAGAS evals and a Crucible sandbox but no task-level harness for end-to-end pillar regressions; Harbor's task, verifier, oracle and repeated-trial split maps directly onto testing the proxy pillars (budgets, routing, memory) as one system.",
+   "action": "Build a small Harbor-style suite for AgentOS: fixed tasks with side-effect verifiers and an oracle per task, run k trials per pillar change, and report pass@k and reward deltas."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI with checkpoint/resume and loops, and it lacks a way to validate the harness before spending tokens; the oracle-first and verifiers-after-the-run pattern fits directly, and pass@k over repeated trials would give ProsHarness's own loops a regression signal.",
+   "action": "Add an oracle mode to ProsHarness: replay a scripted solution through the checkpoint and verifier pipeline before any Claude Code run, and report pass@k across repeated trials."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

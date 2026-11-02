@@ -1,0 +1,52 @@
+# This Tiny AI Never Stops Learning (mini-AGI)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `L-6O7R71CCg` · [watch](https://youtu.be/L-6O7R71CCg) · **date:** 2026-10-02 · **length:** 13:53 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** Andres · **orgs:** Better Stack
+- **topics:** training-finetuning-rl, local-ai, models-research · **tags:** continual-learning, catastrophic-forgetting, mixture-of-experts, train-from-scratch, consumer-hardware, apple-silicon, held-out-eval, tinystories
+
+> Better Stack walkthrough of "Mini-AGI," a toy mixture-of-experts model trained from zero on a MacBook to keep learning continuously; the author's retention and forgetting claims are single-run anecdotes.
+
+## Summary
+The speaker (Andres, Better Stack) trains a tiny byte-level language model from random weights on an M2 Max MacBook Pro with 32 GB RAM, using the Mini-AGI repo, which was only previously tested on Nvidia hardware. The model reads text in order, takes a small learning step after each chunk, and has no training end point. It is a mixture-of-experts design where each expert is its own file on disk, loaded to the GPU only when the current chunk needs it, and experts are added or pruned as the model runs. The author claims that a shared core updating 10x slower than the experts keeps 99.84% of prior knowledge after 500K characters of chess, versus roughly half lost with a normal setup. He runs a two-phase experiment: children's stories (TinyStories) first, then Tarantino screenplays with one script held out. The model learns screenplay layout within about 5 minutes, but after about 15 minutes it starts memorizing the scripts it trains on rather than generalizing. Resuming the next day recovers English within minutes, and adding more scripts improves the held-out score. The chat demo is incoherent, and the author concludes the model is toy scale with weights not yet released and not usable in production.
+
+## Key ideas
+- **Continual learning as the goal: the model reads text in order, one chunk at a time, and takes a small update after each chunk, with no finish line.** — Contrasts with frozen models that stop learning when shipped. The author frames the problem as stale knowledge (e.g. out-of-date answers about the current US president). ([2:11](https://youtu.be/L-6O7R71CCg?t=131))
+- **Training at home is memory-bound: training needs roughly 3-4x the memory of inference.** — The author says you can chat with a 30B model on a MacBook but cannot train even a small one there. He also names catastrophic forgetting: fine-tuning on chess erases English. ([3:15](https://youtu.be/L-6O7R71CCg?t=195))
+- **Experts live as files on disk and are paged onto the GPU per chunk, so the model can be much larger than VRAM.** — Before each chunk only the experts the text needs are loaded. New experts appear as new files, and unused experts are deleted, so the expert set grows and shrinks on its own. ([4:37](https://youtu.be/L-6O7R71CCg?t=277))
+- **Forgetting is mitigated by a two-speed update: experts adapt quickly while the shared core that every byte passes through changes 10x more slowly.** — New knowledge mostly lands in the specialists. The author's reported result is 99.84% retention after 500K characters of chess, versus about half lost in a normal setup (author's single run, no published protocol shown). ([5:38](https://youtu.be/L-6O7R71CCg?t=338))
+- **Curriculum: learn plain English first, then add a new domain (Tarantino screenplays) and watch the model drift.** — Layout (indentation, caps character names) was learned within about 5 minutes and the cast appeared within half an hour. Output degraded, and once upon a time came out as screenplay fragments. ([7:00](https://youtu.be/L-6O7R71CCg?t=420))
+- **A single held-out script exposed memorization: after about 15 minutes the model improved on the training scripts but stopped improving on the hidden one.** — The author compares this to memorizing five jokes instead of learning to be funny. Resuming the next day, English came back in about 5 minutes, and adding three more scripts improved the held-out score. ([8:12](https://youtu.be/L-6O7R71CCg?t=492))
+- **The demo is incoherent, and the author states it is far from usable.** — The chat demo repeats the phrase 'a silence' and loses the scene. Coherent dialogue would need hundreds of millions of characters, which means days of nonstop training. He calls it toy scale, with weights not yet released. ([10:50](https://youtu.be/L-6O7R71CCg?t=650))
+
+## Techniques
+- **Ordered streaming training with a small step per chunk** — Feed the corpus sequentially in chunks and apply a small gradient update after each chunk, with no epochs and no end condition. Run the process indefinitely. *When:* When the model must keep absorbing new data after deployment rather than being frozen after one training run.
+- **Expert-per-file paging for models larger than VRAM** — Store each mixture-of-experts expert as its own file containing everything needed to train it. Before each chunk, load only the experts that chunk routes to onto the GPU. Create expert files for new specialists and delete unused ones. *When:* When total parameter count exceeds GPU memory but only a few experts are active per chunk, and the expert set must evolve over time.
+- **Two-speed learning rates to limit forgetting** — Split the model into a shared core that every token passes through and specialist experts. Let experts update quickly and constrain the shared core to update roughly 10x slower, so new learning goes mostly into the experts. *When:* When fine-tuning on a new domain must not erase earlier domains, and you want a cheap anti-forgetting mechanism without replay data.
+- **Held-out script as a memorization detector** — Keep one document out of training for the whole run. Track its score alongside the training data. Stop or change data when training-set performance rises while the held-out score flattens. *When:* When a narrow corpus risks memorization and you need a signal that the model is generalizing (the author uses one held-out Tarantino script).
+- **Fixed probe prompt during training** — Every few minutes, run a fixed scene-opening prompt through the current checkpoint and inspect the completion. The probe is never trained on. *When:* For cheap qualitative tracking of progress during a long run when no metric is set up yet.
+- **Pause and resume across sessions** — Stop training, then restart the next day on the same checkpoint, switching data back to the earlier domain. The author reports the earlier skill returned within minutes because knowledge stayed on disk. *When:* When training on consumer hardware in intermittent sessions and you want to check whether earlier skills survive resumption.
+
+## Numbers
+- Training hardware: M2 Max MacBook Pro with 32 GB RAM; repo was previously tested only on Nvidia. ([2:11](https://youtu.be/L-6O7R71CCg?t=131))
+- Training needs roughly 3-4x the memory of running the same model for inference. ([3:15](https://youtu.be/L-6O7R71CCg?t=195))
+- Basic English learned in under 2 hours; first rough sentences after about 7 minutes of training. ([0:00](https://youtu.be/L-6O7R71CCg?t=0))
+- Shared core updates 10x slower than experts. ([5:38](https://youtu.be/L-6O7R71CCg?t=338))
+- Retention after 500K characters of chess: 99.84% with the Mini-AGI setup, versus roughly half of prior knowledge lost in a normal setup. Single author run, no published protocol shown. ([5:38](https://youtu.be/L-6O7R71CCg?t=338))
+- Model learned eight subjects (stories, code, math, and others) before the chess test. ([5:38](https://youtu.be/L-6O7R71CCg?t=338))
+- Screenplay layout learned in about 5 minutes; cast names appeared within about 30 minutes. ([7:00](https://youtu.be/L-6O7R71CCg?t=420))
+- Held-out improvement stalled after about 15 minutes of Tarantino training; English recovered in about 5 minutes after resuming the next day. ([8:12](https://youtu.be/L-6O7R71CCg?t=492))
+- Total training was about 7 to 9 hours for the demo model. ([10:50](https://youtu.be/L-6O7R71CCg?t=650))
+- Coherent dialogue would need hundreds of millions of characters of English, i.e. several days of nonstop training (author estimate). ([12:11](https://youtu.be/L-6O7R71CCg?t=731))
+
+## Hot takes
+- Title oversells it: 'AGI is finally here' is followed by the author saying it is not AGI, can barely write a coherent sentence, and should not be used in production.
+- The 99.84% retention figure and the 'half lost' baseline come from one run with no published protocol, eval set or repo link in the video, so treat them as a claim to verify.
+- Most of the content is a personal demo narrative. There is no reproducible setup, config or command, and the weights are not released, so it is not actionable yet.
+- The useful idea is the architecture for anti-forgetting: a slow shared core plus fast experts that page to disk. Weight-level continual learning is still an open research problem and this is a toy-scale proof point.
+- Held-out-script-as-memorization-detector is a simple, transferable eval habit even though the demo is a toy.
+
+## Tools mentioned
+Mini-AGI (toy continual-learning mixture-of-experts model; repo tested only on Nvidia GPUs; weights not yet released, per the speaker), TinyStories dataset (short children's stories), Screenplay corpus: Pulp Fiction, Jackie Brown, Inglourious Bastards, Django Unchained, Four Rooms, Kill Bill, Reservoir Dogs (held out), Apple M2 Max MacBook Pro, 32 GB RAM, Author's custom screenplay chat web app (not named)
+
+## Relevance to our work
+- **agentos** (1/3): AgentOS's L2D SkillForge and EvolveCraft self-improving agents raise a forgetting problem when agents update. This talk shows one idea (slow shared core vs fast experts) and a held-out check, but it is toy-scale weight training that does not map onto AgentOS's current pillars. → *Skim only if EvolveCraft ever updates model weights. For prompt or skill-library learning, add a held-out task set to detect memorization before accepting a skill.*

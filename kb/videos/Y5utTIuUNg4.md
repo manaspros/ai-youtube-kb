@@ -1,0 +1,45 @@
+# How Websites Track You Without Cookies
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `Y5utTIuUNg4` · [watch](https://youtu.be/Y5utTIuUNg4) · **date:** 2026-10-19 · **length:** 5:13 · **format:** tutorial · **quality:** 3/5 · **depth:** intro
+- **speakers:** Unnamed Better Stack host · **orgs:** Better Stack, EFF, Tor Project, Mullvad, Brave, Mozilla, Apple, AliExpress
+- **topics:** security-guardrails · **tags:** browser-fingerprinting, privacy, cookies, canvas-fingerprinting, audio-fingerprinting, bot-detection, tracking-protection, browser-privacy
+
+> Better Stack explainer on browser fingerprinting: how sites recognize a browser without cookies via screen, timezone, canvas and audio signals, how to test yourself with EFF's Cover Your Tracks, and which browsers defend best.
+
+## Summary
+The video shows that cookies, incognito mode and a VPN do not stop a site from recognizing a browser, because fingerprinting combines many browser attributes into a stable ID without storing anything. Basic attributes such as timezone, screen size, language and CPU core count each narrow the population, and the speaker argues that about 33 such halvings pick out one person. Canvas rendering and audio processing add further signals, since GPU, fonts and settings change pixel and sample output, and the speaker cites Fingerprint.js as a library implementing these techniques. Bot-detection scripts use the same tricks, illustrated by an AliExpress case where two such scripts broke Bluetooth headphone audio until they were blocked. To check your own browser, the speaker recommends EFF's Cover Your Tracks, which reports whether the fingerprint is unique and how many other browsers share each answer. Defenses described are browsers that make everyone look the same (Tor Browser, Mullvad Browser) or randomize per browser (Brave), plus built-in protections in Firefox and Safari; the speaker advises against privacy add-ons because they can make a browser stand out. The video is short and uses no code on screen, so its concrete value is the threat model and the self-test rather than implementation detail.
+
+## Key ideas
+- **Cookies, incognito and VPNs do not defeat tracking: a fingerprint built from browser attributes gives the same ID across a private window and a changed IP address.** — The demo page sets no cookies, yet returns the same ID in Chrome incognito and after switching on a VPN, because neither clears what the page reads from the browser. ([0:00](https://youtu.be/Y5utTIuUNg4?t=0))
+- **Fingerprinting replaces cookies because trackers wanted to recognize users without storing anything, so they read browser API values instead.** — Screen size, timezone, language and CPU core count come from browser APIs. Each is weak alone but they combine into a near-unique identifier, the 20-questions argument. ([0:49](https://youtu.be/Y5utTIuUNg4?t=49))
+- **Each attribute roughly halves the candidate pool, so a handful of them can single out one browser on Earth.** — Speaker's illustrative figures: timezone removes about 90% of people, screen size about 20% more, CPU cores about 20% more; around 33 halvings are enough to pick one person from the whole planet. ([1:54](https://youtu.be/Y5utTIuUNg4?t=114))
+- **Disabling JavaScript APIs is not enough, because canvas rendering and audio processing expose hardware and software differences.** — A hidden canvas with text, shapes and emoji renders slightly differently by GPU, settings and fonts, and reading raw pixels yields a data point. An oscillator run through an audio effect yields slightly different sample values per machine. Fingerprint.js implements these techniques. ([1:54](https://youtu.be/Y5utTIuUNg4?t=114))
+- **Bot-detection scripts use the same fingerprinting techniques, and blocking them can fix unrelated site breakage.** — An AliExpress user found two audio scripts from bot detection setting volume to zero, which silenced Bluetooth headphones. Those scripts also read canvas and GPU name; blocking them fixed the headphones. ([2:56](https://youtu.be/Y5utTIuUNg4?t=176))
+- **A browser can be tested with EFF's Cover Your Tracks, which shows uniqueness per answer and how many other browsers share it.** — Normal Chrome was reported as having a unique fingerprint. Results list every collected answer with a count of matching browsers, showing which answers single the browser out. ([3:36](https://youtu.be/Y5utTIuUNg4?t=216))
+- **Built-in browser protections work better than add-ons, and there are two strategies: make all users identical, or randomize each browser.** — Tor Browser and Mullvad Browser give all users the same fonts and timezone and round window size to 200x100 px steps. Brave gives each browser a different random answer. Privacy add-ons often make a browser more distinctive. ([3:36](https://youtu.be/Y5utTIuUNg4?t=216))
+- **Firefox and Safari have added anti-fingerprinting defenses, and the speaker reports a measurable effect for Firefox.** — Firefox says an update last November almost halved the share of users who look unique in private windows. Safari now blocks known fingerprint scripts from reading canvas. Both are vendor and speaker claims, not independently verified in the video. ([3:36](https://youtu.be/Y5utTIuUNg4?t=216))
+
+## Techniques
+- **Fingerprint probe (conceptual)** — Collect navigator and screen values (timezone, language, screen size, hardwareConcurrency), render text, shapes and emoji on a hidden canvas and read back raw pixels, and run an oscillator through an audio effect and read back the sample values; hash the combined result into an ID. The video shows no code; the speaker says the probe is under 100 lines of JavaScript and links it in the description. *When:* To understand or test what a site can learn about a browser without cookies, or when building a fingerprint-based check such as bot detection.
+- **Self-audit with Cover Your Tracks** — Open EFF's Cover Your Tracks site, click 'test your browser', read the verdict on whether the browser has a unique fingerprint, then scroll through the per-answer list to see which answers single it out and how many other browsers share each one. Re-run after changing browser or settings. *When:* To measure your baseline before and after changing browsers or privacy settings.
+- **Choose a browser with built-in fingerprint defenses instead of add-ons** — Use Tor Browser or Mullvad Browser so every user looks the same (uniform fonts and timezone, window size rounded to 200x100 px steps), Brave for per-browser randomized answers, or Firefox private windows and Safari, which now block known fingerprint scripts from reading canvas. *When:* When you want to reduce cross-site tracking without adding extensions that may make your browser more distinctive.
+- **Block suspected fingerprinting scripts when a page misbehaves** — The speaker's AliExpress example: inspect the page's scripts, identify those that read canvas or GPU name and set audio volume, and block them to restore the broken behavior. Note that this is a manual diagnosis, not a general fix. *When:* When a site's audio or other behavior breaks and the page is running bot-detection scripts.
+
+## Numbers
+- Timezone alone eliminates about 90% of people (speaker's illustrative figure, not sourced). ([1:54](https://youtu.be/Y5utTIuUNg4?t=114))
+- Screen size eliminates another about 20%, and CPU core count another about 20%. ([1:54](https://youtu.be/Y5utTIuUNg4?t=114))
+- About 33 binary halvings are enough to single out one person among everyone on the planet (speaker's arithmetic: a million halved 20 times leaves one). ([1:54](https://youtu.be/Y5utTIuUNg4?t=114))
+- Firefox says an update last November almost halved the number of users who look unique in private windows (vendor claim as relayed by the speaker). ([3:36](https://youtu.be/Y5utTIuUNg4?t=216))
+- Mullvad and Tor round window size to 200x100 px steps. ([3:36](https://youtu.be/Y5utTIuUNg4?t=216))
+
+## Hot takes
+- Privacy add-ons often make a browser more distinctive, so they can hurt more than help; the speaker prefers built-in browser protections.
+- Blocking audio and canvas scripts is presented as a practical fix for broken sites, but the video gives no guidance on the breakage risk.
+- The bits-of-entropy halving argument and the 90/20/20 percentages are simplified and unsourced; use them as intuition, not measurements.
+- The video is consumer privacy advice rather than AI or agent content; its main relevance here is to browser-driven agents that will be fingerprinted as automation.
+
+## Tools mentioned
+Fingerprint.js, EFF Cover Your Tracks, Tor Browser, Mullvad Browser, Brave, Firefox, Safari, Chrome
+
+## Relevance to our work
+- **agentos** (1/3): Crucible and any browser-driven tooling may be fingerprinted by sites as automated bots, which the video covers as the same canvas and audio signals used in bot detection. → *Before relying on a headless browser tool in Crucible, run it against a fingerprint probe such as Cover Your Tracks and check how it scores.*

@@ -1,0 +1,52 @@
+# How Is This Almost as Good as Opus?
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `B6P0Fn6xYfo` · [watch](https://youtu.be/B6P0Fn6xYfo) · **date:** 2026-03-02 · **length:** 6:53 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** Unnamed Better Stack host · **orgs:** MiniMax, Anthropic, Cursor, Ollama, Hugging Face
+- **topics:** models-research, token-cost-efficiency, coding-agents, local-ai · **tags:** minimax-m2.5, claude-opus-4.6, open-weights, model-pricing, cost-per-task, kanban-benchmark, swe-bench, mixture-of-experts, cursor, ollama
+
+> A one-prompt Kanban build comparison of open-weight MiniMax M2.5 against Claude Opus 4.6: near-equal results at roughly a tenth of the price, with UI gaps and one missed feature.
+
+## Summary
+The host compares MiniMax M2.5, an open-weight mixture-of-experts coding model (230B total, 10B active), with Claude Opus 4.6. Both get the same single prompt to build a full-stack Kanban board. Opus finishes in about four minutes with a polished UI, working drag-and-drop, task editing, and a folder label that updates as cards move. M2.5 takes about eight minutes (run inside Cursor) and gets drag-and-drop and task creation right, but misses the label and fails to save description edits, which would need a second prompt. The host then lists vendor-reported efficiency claims (fewer tool calls, less token waste, fewer search rounds) and vendor benchmark scores, where SWE-Bench Verified is just over 80% for both models. Pricing is the main argument: $0.15/$1.20 per million input/output tokens for standard and $0.30/$2.40 for Lightning, against Opus at $5/$25, which the host puts at about 10% of Opus cost per SWE task. The verdict is that performance is close for this task and cost is far lower, with Opus keeping an edge at the top end. The video is a single anecdotal run, so it is best read as a cost-vs-quality prompt for your own evals rather than as a benchmark result.
+
+## Key ideas
+- **M2.5 is pitched as near-Opus coding quality at about a tenth of the price, with open weights.** — 230B total parameters, 10B active per token (MoE), built for agent workflows including multi-file refactors, tool-calling loops, and Word/Excel automation. Two variants: standard (about 50 tok/s) and Lightning (about 100 tok/s). The host frames it as the headline story, with benchmarks and price as the two points. ([0:00](https://youtu.be/B6P0Fn6xYfo?t=0))
+- **Same single prompt, Opus vs M2.5, building a full-stack Kanban board. Opus is more polished and needed no reprompt.** — Opus took about four minutes. Drag-and-drop, task editing, and a folder label that updates as cards move all worked. The UI looked good for a starter project. The exact prompt is said to be in the video description. ([1:01](https://youtu.be/B6P0Fn6xYfo?t=61))
+- **M2.5 got the core functionality right from one prompt but missed a label and a description-edit bug.** — It took about eight minutes, run inside Cursor rather than the vendor site. Task creation and drag-and-drop between columns worked. The per-card label was missing, and editing a task description changed nothing, so the host would need a second prompt. ([2:02](https://youtu.be/B6P0Fn6xYfo?t=122))
+- **Efficiency claims: RL-trained task decomposition, which the vendor says reduces tool calls and wasted tokens.** — Vendor-reported figures: 20% fewer tool calls, 5% less token waste, and 20% fewer search rounds compared with M2.1. The host says tool calls are where agent costs and messes grow. Caching is supported, so repeated queries can get cheaper. The model is also said to plug into Ollama, local clusters, GitHub automations, and CI. ([2:50](https://youtu.be/B6P0Fn6xYfo?t=170))
+- **Benchmark picture is close to Opus on SWE-Bench Verified and mixed elsewhere.** — SWE-Bench Verified: M2.5 scored over 80%, and Opus 4.6 was slightly higher at just over 80%. Multi-SWE-Bench: over 51%, which tops other open models. On the 'Droid' benchmark (as named in the video), M2.5 is said to beat Opus by 0.2%. The host notes the result depends on which benchmark is read. All of these are vendor-reported. ([2:50](https://youtu.be/B6P0Fn6xYfo?t=170))
+- **Speed is a weak point: M2.5 is about 37% faster than its predecessor, but still slower than Opus in this run.** — Opus averages slightly faster per the host, though the gap is said to vanish under identical run conditions. The host's run took about eight minutes for M2.5 versus about four for Opus. The run was not like-for-like: different hosts (vendor site vs Cursor) and possibly different settings. ([4:03](https://youtu.be/B6P0Fn6xYfo?t=243))
+- **Pricing is the main argument: standard at $0.15/$1.20 per million tokens, and about 10% of Opus cost per SWE task.** — Standard: $0.15 input and $1.20 output per million tokens. Lightning is double that ($0.30/$2.40). Opus 4.6: $5 input and $25 output. The host's own run cost about 30 cents per hour on standard, and about one dollar per hour on Lightning at 100 tok/s. The claim that M2.5 is roughly 10% of Opus cost per SWE task includes the vendor's tool-call efficiency. ([4:03](https://youtu.be/B6P0Fn6xYfo?t=243))
+- **Verdict: near-identical performance on this task, with Opus still ahead at the very top end. Open weights add deployment and fine-tuning flexibility.** — The host says reasoning depth and completion time were comparable in this test. M2.5 can run locally, be fine-tuned, and avoid vendor lock-in. The host says Opus keeps an edge at the top of premium intelligence. A 59% win rate on advanced agent benchmarks is cited as a reason cheap agents become practical (repo bots, persistent coding agents). ([5:13](https://youtu.be/B6P0Fn6xYfo?t=313))
+- **Free API tier, Ollama integration, and fast release cadence.** — The host mentions a free API tier that was live at the time, Ollama and GitHub integrations ramping up, and a months-to-weeks release cadence. The closing question is whether M2.5 becomes the default for developer agents; the host leaves it open. ([6:20](https://youtu.be/B6P0Fn6xYfo?t=380))
+
+## Techniques
+- **Single-prompt head-to-head build eval** — Give the same full-stack build prompt to each candidate model. Grade the output against a feature checklist (create, drag-and-drop, edit, labels, persistence) and count how many reprompts each needs before it works. Record wall-clock time and the tool used to run the model. The host's Kanban prompt is in the video description. *When:* A quick bake-off before routing agent work to a cheaper model. It is a smoke test, not a benchmark: one run per model is too few to trust.
+- **Cost-per-task estimate instead of per-token price** — Estimate cost as (input tokens x input price) + (output tokens x output price), summed over the calls a task needs. Tool-call count matters as much as price, because fewer calls mean fewer tokens. The host's comparison was roughly 10% of Opus cost per SWE task, from per-token prices plus a vendor-reported call reduction. *When:* Choosing between a premium and an open-weight model for agent loops with many tool calls, where per-token price alone misleads.
+- **Open-weight model as a drop-in cheap tier** — The video says M2.5 can be served through Ollama or a local cluster, can be used in CI or GitHub automations, and supports caching for repeated queries. No commands or config are shown. A cheap open-weight tier would sit behind an OpenAI-compatible proxy with the premium model as fallback. *When:* Batch or background agent work where latency matters less than cost, or where data must stay on your own hardware.
+
+## Numbers
+- M2.5 is a 230B-total, 10B-active MoE model with open weights. ([0:00](https://youtu.be/B6P0Fn6xYfo?t=0))
+- Standard runs about 50 tok/s; Lightning about 100 tok/s. ([0:00](https://youtu.be/B6P0Fn6xYfo?t=0))
+- Opus build run took about 4 minutes; M2.5 run took about 8 minutes (in Cursor). ([1:01](https://youtu.be/B6P0Fn6xYfo?t=61))
+- M2.5 vendor-reported: 20% fewer tool calls, 5% less token waste, 20% fewer search rounds vs M2.1. ([2:50](https://youtu.be/B6P0Fn6xYfo?t=170))
+- SWE-Bench Verified: M2.5 over 80%; Opus 4.6 slightly higher, just over 80%. ([2:50](https://youtu.be/B6P0Fn6xYfo?t=170))
+- Multi-SWE-Bench: M2.5 over 51%. Droid: M2.5 beats Opus by 0.2% (vendor-reported). ([2:50](https://youtu.be/B6P0Fn6xYfo?t=170))
+- M2.5 is 37% faster than its predecessor. ([4:03](https://youtu.be/B6P0Fn6xYfo?t=243))
+- Prices per million tokens (input/output): M2.5 standard $0.15/$1.20; Lightning $0.30/$2.40; Opus 4.6 $5/$25. ([4:03](https://youtu.be/B6P0Fn6xYfo?t=243))
+- Running Lightning at 100 tok/s for an hour is about $1; standard run cost about $0.30 per hour. ([4:03](https://youtu.be/B6P0Fn6xYfo?t=243))
+- Per SWE task, M2.5 costs roughly 10% of Opus (includes the vendor's tool-call efficiency). ([4:03](https://youtu.be/B6P0Fn6xYfo?t=243))
+- 59% win rate on advanced agent benchmarks (vendor-reported). ([5:13](https://youtu.be/B6P0Fn6xYfo?t=313))
+
+## Hot takes
+- Title overstates it: one run per model, one prompt, and the host's own output shows functional gaps (missing label, non-saving description edit) that contradict 'almost as good'.
+- Unlike-for-like timing: Opus ran on its own site and M2.5 ran inside Cursor, so the 4-vs-8-minute gap is not a clean model comparison.
+- Most benchmark numbers and the 10%-of-Opus-cost-per-task figure are vendor-reported and were not reproduced in the video.
+- The host calls performance 'nearly identical' yet also says Opus keeps the top-end edge and was faster, so the conclusion is looser than the evidence.
+- The sales pitch appears in the framing ('changes your costs overnight', 'Opus-level coding performance at a budget price'). Quality is capped at 2 because the substance is thin and the title is hype.
+
+## Tools mentioned
+MiniMax M2.5, Claude Opus 4.6, Cursor, Ollama, Hugging Face, SWE-Bench Verified, Multi-SWE-Bench, Droid benchmark (as named in the video), GPT-5 (comparison only), Gemini 3 Pro (comparison only), MiniMax M2.1 (predecessor, comparison only)
+
+## Relevance to our work
+- **agentos** (1/3): Cheap open-weight coding model that could serve as a low-cost tier in model routing for the proxy. The video offers only anecdotal evidence, so it is not a basis for changing routing. → *Add MiniMax M2.5 as a candidate in the Govrix Scout strategy-routing config and compare cost and pass rate against the premium model on a fixed set of agent tasks before routing real traffic.*

@@ -1,0 +1,186 @@
+{
+ "one_line": "Cast.ai's Kimchi team argues for routing each task to the cheapest model that still meets a quality bar, judged by cost per task, with long-running sessions kept alive in remote sandboxes.",
+ "summary": "Laurent (Cast.ai) and Zilvinas (Kimchi engineering) present Kimchi, a coding agent whose harness picks a model per task, mixing proprietary models for hard cases with open-source models for the rest. They argue that cost per token is misleading and that cost per task at equal quality is the right comparison, citing a university white paper's figures. Over three months of internal use they report about 2.5x savings versus an all-Claude bill, and show the harness's model choice shifting over time. The team built Ferment, a milestone-based runner for tasks of two or more hours that scores its output and loops back on failed builds, and requires at least a B score before staging. Teleport runs the session in a remote VM so it survives a closed laptop, and Studio adds a shared Kanban-style board for team review of agent plans. Most of the talk is product promotion, and the savings figures are the speakers' own internal numbers.",
+ "speakers": [
+  "Laurent (co-founder and president, Cast.ai)",
+  "Zilvinas (leads engineering for Kimchi)"
+ ],
+ "orgs": [
+  "Cast.ai",
+  "Kimchi",
+  "Google",
+  "Anthropic",
+  "Uber"
+ ],
+ "format": "talk",
+ "topics": [
+  "token-cost-efficiency",
+  "infra-cost-scaling",
+  "coding-agents",
+  "sandboxing-execution"
+ ],
+ "tags": [
+  "kimchi",
+  "cast-ai",
+  "model-routing",
+  "cost-per-task",
+  "token-cost",
+  "coding-agent",
+  "ferment",
+  "teleport",
+  "studio",
+  "long-running-agents",
+  "scored-completion",
+  "remote-sandbox",
+  "open-source-models",
+  "agent-harness"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Compare models by cost per task at equal quality, not by price per token",
+   "detail": "The speaker cites a university white paper where a model with a low per-token price (Gemini 3 Flash, about $3.5 per million blended) cost about $705 per task, while Minimax 2.7 at about $1.5 per token cost about $148 per task. Per-token price does not predict task cost.",
+   "t": "2:38"
+  },
+  {
+   "idea": "Let the harness pick the model per task based on the outcome, not a fixed choice",
+   "detail": "The argument is that a human cannot keep re-testing new models, but an automated harness that tracks outcome and cost can. The speaker says the selected model shifted sharply on June 12 and that the top model changed several times in June, which is why the selection has to be automated.",
+   "t": "3:39"
+  },
+  {
+   "idea": "Limiting developer tokens is the wrong fix; make the cost per outcome cheaper",
+   "detail": "The speakers frame token caps as a bad experience for developers. Their goal is to keep the coding agent effectively unlimited while cutting cost per task, which they say grows far more slowly than token volume.",
+   "t": "1:39"
+  },
+  {
+   "idea": "Ferment: a long-running runner that scores output and loops until it passes",
+   "detail": "The user answers setup questions up front, then the run splits the work into milestones and runs for two or more hours with a human needed only about every two to three hours. A higher-order model checks quality, and failed builds send the agent back to fix and rebuild. A run is complete only at a B grade or better.",
+   "t": "7:08"
+  },
+  {
+   "idea": "Gate on staging, keep a human before production, and treat code review as insufficient",
+   "detail": "Changes deploy to staging automatically, but production is still gated by a human by design. The speakers name pod crash and health-check signals as checks still to be automated. They say reading diffs no longer scales, for example a product manager's 2,000-line PR, so review should focus on intent and spec.",
+   "t": "10:04"
+  },
+  {
+   "idea": "Teleport: run the agent session in a remote VM so it survives the laptop",
+   "detail": "The local environment is synced to a container in a hyperscaler (Google is named). It behaves the same from the laptop and keeps running after it closes, with notifications when the agent needs input. The speaker says 62% of their engineers use it for coding.",
+   "t": "11:27"
+  },
+  {
+   "idea": "Studio: share agent sessions and plans as a team Kanban board",
+   "detail": "Built on Teleport, Studio shows all running sessions in review, in progress and backlog. A teammate can claim a session that needs review, answer it, and send it back, so specs are checked before the agent executes them.",
+   "t": "14:25"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Per-task cost-at-quality model comparison",
+   "how": "Score each candidate model on the same task set by both quality and total cost per completed task, and compare on cost per task rather than list price per token.",
+   "when": "Choosing or routing among models whose per-token prices and token usage differ widely."
+  },
+  {
+   "name": "Outcome-scored harness with a grade gate",
+   "how": "After each milestone or full run, have a separate judge model grade the output. Loop back to fix and rebuild until the grade clears a threshold such as B, then promote to staging.",
+   "when": "Long autonomous coding runs where a run should only count as done when its output has been checked."
+  },
+  {
+   "name": "Milestone-based long-run planning with up-front questions",
+   "how": "Collect the requirements at the start, break the task into milestones, and let the agent run for hours, asking the human only at defined checkpoints.",
+   "when": "Multi-hour coding tasks where a human is needed only occasionally."
+  },
+  {
+   "name": "Remote sandbox session that outlives the client",
+   "how": "Mirror the local dev environment into a managed VM or container, keep the agent running there, and send notifications when input is needed. Access the session from laptop or mobile.",
+   "when": "Agent runs that must continue while the laptop is closed or offline, or that need team visibility."
+  },
+  {
+   "name": "Team review board for agent sessions",
+   "how": "Expose plans and in-progress sessions on a shared board with review, in progress and backlog columns, so teammates can review and take over a session before execution.",
+   "when": "Several engineers or a PM need to check agent specs before code is produced, not after."
+  }
+ ],
+ "tools": [
+  "Kimchi",
+  "Ferment",
+  "Teleport",
+  "Studio",
+  "pi-mono SDK (captioned as 'PyMono SSDK')",
+  "Claude"
+ ],
+ "numbers": [
+  {
+   "claim": "Company that spent $500M on Anthropic in one month (cited from news; not verified by the speaker)",
+   "t": "0:13"
+  },
+  {
+   "claim": "Uber CTO reportedly used the full-year Anthropic budget in four months (cited from a tweet)",
+   "t": "0:13"
+  },
+  {
+   "claim": "Kimchi team size: about 300 employees, about two-thirds developers",
+   "t": "2:38"
+  },
+  {
+   "claim": "Gemini 3 Flash: about $3.5 per million tokens blended, but about $705 per task in the cited study",
+   "t": "3:39"
+  },
+  {
+   "claim": "Minimax 2.7: about $1.5 per token, about $148 per task in the cited study",
+   "t": "3:39"
+  },
+  {
+   "claim": "About 2.5x savings versus the Claude bill over three months of internal use (speaker's internal figure)",
+   "t": "5:05"
+  },
+  {
+   "claim": "Token volume rose about 1.5x while cost fell about 1.5x; the speaker also says spend grew 2.5x to 3x slower than token volume, which is inconsistent with the 1.5x figure",
+   "t": "5:05"
+  },
+  {
+   "claim": "Model selection by the harness shifted sharply on June 12; Kimi 2.6 led on June 3 and Minimax 3 led on June 21",
+   "t": "6:09"
+  },
+  {
+   "claim": "Ferment runs for two or more hours, with humans needed about every two to three hours",
+   "t": "7:08"
+  },
+  {
+   "claim": "A run is accepted only at a B grade or higher, with staging as the last automatic step",
+   "t": "10:04"
+  },
+  {
+   "claim": "62% of Kimchi engineers use Teleport when coding (speaker's internal figure)",
+   "t": "12:54"
+  }
+ ],
+ "hot_takes": [
+  "Limiting developer tokens is the wrong response to token cost; the job is to make tokens cheap and effectively unlimited.",
+  "Per-token price is misleading; compare models on cost per completed task at equal quality.",
+  "Reading code is no longer enough once non-engineers and agents produce large PRs; review intent and spec instead.",
+  "Model selection should be automated by the harness and not left to humans."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "L1 strategy routing and budgets could use cost-per-task at equal quality as the routing metric, rather than per-token price. Also a pattern for scoring long-run outputs.",
+   "action": "Log per-request cost plus a quality grade per task type in the Govrix proxy, and compare candidate routing strategies by cost per graded task, not cost per token."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs long checkpointed Claude Code sessions. Ferment's grade-gated loop and milestone questions overlap with checkpoint/resume and the critique step.",
+   "action": "Add an outcome grade gate before a checkpointed run is marked done, with a fixed threshold and a bounded retry loop, and compare it against the existing Codex critique step."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Recurring interest in cheap-model pipelines and agent evals. The cost-per-task-at-quality method is a reusable comparison rule for Haiku versus larger models.",
+   "action": "When comparing a Haiku pipeline against a larger model, report cost per task at matched grader score, not per-token price."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,172 @@
+{
+ "one_line": "Hands-on workshop by a Qodo DevRel on wiring codified rules, skills, structured plans and deterministic gates into an agentic coding loop from planning through PR review and autofix.",
+ "summary": "The speaker argues that AI coding needs a verification layer: define code quality, write it down where agents can read it, and apply the same standards at planning, code generation and review. She walks through a fork-able payments API workshop repo with AGENTS.md, rules, skills, a hidden plan directory, Semgrep and CI. Agents read the rules, pick the relevant ones, and run a plan-mode step that names the first implementation skill and a TDD handoff. A structured plan template (scope, skill routing, behavior scenarios, verification gates, failure rules, commit plan) and an execution template (starting state, handoff, definition of done) keep the work auditable. Local deterministic checks (Ruff, Pyright, Bandit, pytest, Semgrep, conventional commits) run before the PR. A Qodo PR review then pulls in the org's rules and skills, flags one reliability bug and three rule violations, and a PR-resolver skill autofixes the findings, reruns verification, commits and posts a summary back to the PR. Rules carry severity levels, and the speaker says merge-blocking determinism is what regulated customers want, though the platform does not yet guarantee that an agent will check every relevant rule. The talk is part product demo, but the planning templates and the remediation loop are concrete.",
+ "speakers": [
+  "Nnenna Ndukwe"
+ ],
+ "orgs": [
+  "Qodo"
+ ],
+ "format": "workshop",
+ "topics": [
+  "pr-code-review",
+  "context-engineering",
+  "coding-agents",
+  "testing-verification"
+ ],
+ "tags": [
+  "quality-gates",
+  "planning-templates",
+  "pr-review",
+  "autofix",
+  "rules-and-skills",
+  "severity-levels",
+  "tdd",
+  "semgrep",
+  "conventional-commits",
+  "claude-code",
+  "codex",
+  "workshop"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Define code quality explicitly and codify it where agents can read it",
+   "detail": "Quality standards should be written down (locally in the repo or in a shared context layer) and pulled into every interface: CLI, IDE and CI. The goal is that the same standards are checked at planning, codegen and review.",
+   "t": "3:40"
+  },
+  {
+   "idea": "Verify early and often with the same standards in every phase",
+   "detail": "Operationalising context means using one set of rules and skills for planning, code generation and code review, so the agent is checked against the same bar at each step rather than only at the end.",
+   "t": "5:00"
+  },
+  {
+   "idea": "Detailed planning templates make agents follow the process and self-correct",
+   "detail": "The speaker's experience is that the more detailed and structured the plan document the agent must re-read, the better it adheres to the process and catches missing points on its own.",
+   "t": "11:36"
+  },
+  {
+   "idea": "Pair deterministic tools with AI checks",
+   "detail": "Linters, type checking, Bandit, pytest and Semgrep run as a local verification command. The speaker says the combination of deterministic and AI checks is the point, not either alone.",
+   "t": "12:50"
+  },
+  {
+   "idea": "Run a local code review before the PR, then automated review in CI",
+   "detail": "Small issues are cheaper to fix before another developer sees the code. Automated review in CI or the Git provider then acts as the second gate.",
+   "t": "28:54"
+  },
+  {
+   "idea": "Rules have severity levels, and only some should block a merge",
+   "detail": "Rules are grouped by category (accessibility, correctness, maintainability, architecture, security) and by severity. Action-required rules can block a merge, while others are good practice and advisory. Rules can be scoped by org or repo.",
+   "t": "33:56"
+  },
+  {
+   "idea": "Rules can be inferred from code, but inferred ones need human review",
+   "detail": "Explicit rule files are ingested directly. Conventions the platform infers from the codebase show up as suggestions with good and bad examples, and a human must accept them before they are activated.",
+   "t": "36:19"
+  },
+  {
+   "idea": "Determinism of rule enforcement is an open gap",
+   "detail": "A merge-block can be configured for high-severity findings, but the speaker admits the agent may not invoke a relevant rule at all. Regulated enterprise customers want deterministic enforcement, and she says this is being raised with the product team.",
+   "t": "45:23"
+  },
+  {
+   "idea": "Close the review loop with a remediation skill",
+   "detail": "A PR-resolver skill pulls the critical and high findings, then either autofixes all of them or reviews each one. It reruns verification, commits and posts a summary back to the PR, so the resolved issues are crossed out.",
+   "t": "49:08"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Codified rules and skills pulled per phase",
+   "how": "Keep engineering standards as rules (with good and bad examples, category and severity) and skills in a shared or repo-local context layer. Install or sync them into the coding agent and the review tool so the same standards apply at planning, codegen and review.",
+   "when": "Several repos or a team where standards should be consistent across agents and interfaces."
+  },
+  {
+   "name": "Structured high-level plan plus execution plan",
+   "how": "High-level plan: problem, constraints, applicable rules, skill routing, scope, behavior scenarios, verification gates, failure and recovery rules, commit plan. Execution plan: starting state (branch, local verification commands), skill handoff, step list, test plan, definition of done with deferred items noted.",
+   "when": "Multi-step agent changes, especially payment or other sensitive mutations, and when you want the agent to run loops unattended."
+  },
+  {
+   "name": "Read-only plan mode with an explicit skill handoff",
+   "how": "Run the planning step in plan mode, forbid writing code or plan files, and require the plan to name the first implementation skill and the TDD prompt it chains to.",
+   "when": "Before any implementation, so the agent's constraints and test strategy are settled first."
+  },
+  {
+   "name": "Local verification command as the gate",
+   "how": "One verification command runs the linter, type checker, security scanners (Bandit, Semgrep), tests and commit-format checks. The agent runs it after the change and again after review fixes.",
+   "when": "Any change an agent will open as a PR."
+  },
+  {
+   "name": "Audit skills during implementation",
+   "how": "Use audit-style skills (boundaries, drift, naming, abstractions, dead code, error handling) to tighten code while it is being written, rather than only in review.",
+   "when": "Agent-written code that tends to drift or leave dead code."
+  },
+  {
+   "name": "Review-findings autofix loop",
+   "how": "Pull the PR review findings, filter by severity, either autofix all or walk through them one by one, rerun verification, commit with conventional-commit format and post a fix summary to the PR.",
+   "when": "After an automated PR review flags issues on agent-authored code."
+  },
+  {
+   "name": "Severity-tiered rules with merge blocking",
+   "how": "Mark rules as action-required (block merge) versus advisory. The speaker notes that the blocking is deterministic at the platform level, but whether the agent checks each rule is not guaranteed.",
+   "when": "Teams that need some standards enforced hard and others only suggested."
+  }
+ ],
+ "tools": [
+  "Qodo",
+  "Claude Code",
+  "Codex",
+  "Semgrep",
+  "Ruff",
+  "Pyright",
+  "Bandit",
+  "pytest",
+  "GitHub CLI",
+  "uv",
+  "conventional commits",
+  "git worktrees",
+  "TESSL (skill evals, mentioned)",
+  "PacMind (open-source rules layer, mentioned)"
+ ],
+ "numbers": [
+  {
+   "claim": "Over 1,900 lines of changes in a deliberately large PR on an open-source project, Qodo's automated review found only one bug (a reliability bug).",
+   "t": "31:20"
+  },
+  {
+   "claim": "Demo PR review result: 5 skills invoked, one bug, three rule violations and two skill insights.",
+   "t": "47:18"
+  },
+  {
+   "claim": "Autofix-all run resolved six code issues from critical to high severity.",
+   "t": "50:09"
+  },
+  {
+   "claim": "Session length is 57:45.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Verification has to be built into agentic engineering from the start, not added after the code is written.",
+  "Deterministic tools and AI review should be combined rather than used as alternatives.",
+  "Enterprises in regulated industries need deterministic merge blocking, and the agent cannot be trusted to remember to check the rules."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The harness runs long Claude Code runs with checkpoints. The talk's plan template (scope, skill routing, verification gates, failure rules, definition of done) and its local verification gate map onto checkpoint and resume design, and its remediation loop is a model for a plan-then-verify step.",
+   "action": "Add a per-run plan template and a single verification command that the harness executes at each checkpoint before it marks the step done, then test whether a failed gate rolls back to the last checkpoint."
+  },
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Talk is about code-review gates for coding agents, not the AgentOS proxy, storage or serving layers.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

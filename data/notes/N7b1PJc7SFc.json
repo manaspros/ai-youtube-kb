@@ -1,0 +1,205 @@
+{
+ "one_line": "Together AI's voice AI lead on the cascading STT→LLM→TTS pipeline: per-stage latency budgets, streaming STT, co-locating models to cut network hops, and why speech-to-speech is not yet production-ready.",
+ "summary": "Rishabh Bhargava, who leads voice AI at Together AI, argues that voice agents are now an engineering problem and that the production default is still a cascading pipeline (speech-to-text, then LLM, then text-to-speech) run through an orchestrator. He breaks the pipeline into components and gives the metric that matters for each: word error rate and transcript completion time for STT, time-to-first-token for the LLM, and time-to-first-audio plus real-time factor for TTS. The main architectural point is the latency budget: the LLM takes most of it, then TTS, then STT, and network hops between services count too, so co-locating models and the orchestrator is worth a measurable gain. He covers streaming-native STT encoders, autoscaling that scales up early and drains long-lived connections on the way down, and guardrail or classifier stages that add latency. He calls speech-to-speech models the likely future (full duplex, backchannel, interruptions) but says they still lag on instruction following and tool calling. The eval advice is component-level tests, with tool-call validity near 100% as the baseline and conversation-level full-duplex evals later. The talk is short on benchmarks and methodology, and it doubles as a pitch for Together's hosting.",
+ "speakers": [
+  "Rishabh Bhargava"
+ ],
+ "orgs": [
+  "Together AI",
+  "Refuel",
+  "Cursor",
+  "Decagon",
+  "NVIDIA",
+  "OpenAI"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "infra-cost-scaling",
+  "evals",
+  "agent-architecture"
+ ],
+ "tags": [
+  "voice-agents",
+  "latency",
+  "streaming-stt",
+  "tts",
+  "pipeline-architecture",
+  "co-location",
+  "autoscaling",
+  "full-duplex",
+  "speech-to-speech",
+  "turn-detection",
+  "tool-calling",
+  "guardrails",
+  "thinker-talker"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Human turn-taking is about 300 ms; a voice agent over ~500 ms is noticeable, and at 1-2 s callers hang up. Latency is the first constraint, then intelligence and tool calling, then natural voice, then reliability at 1k-10k concurrent calls.",
+   "detail": "The speaker frames voice as a joint problem: every constraint has to hold at once, and a demo with one caller hides the scale failures.",
+   "t": "2:17"
+  },
+  {
+   "idea": "The dominant production architecture is cascading: streamed audio goes to an orchestrator (Pipecat or LiveKit, or a homegrown one), then STT, then an LLM that decides on tool calls, then TTS, and audio streams back.",
+   "detail": "Each stage streams into the next. The speaker says the components can only be added to, which is why reliability and per-component observability matter more over time.",
+   "t": "4:41"
+  },
+  {
+   "idea": "Each stage has its own metric: STT word error rate (about 6% on open benchmarks is state of the art) and transcript completion time (about 100 ms P90 on Together-hosted models); LLM time-to-first-token (about 300 ms target); TTS time-to-first-audio and real-time factor (below 1 so it does not buffer).",
+   "detail": "Errors compound. A misheard drug or customer name gets carried through the LLM and TTS, so keyword accuracy matters more than the average WER.",
+   "t": "6:01"
+  },
+  {
+   "idea": "Turn detection is still an unsolved problem: the agent must tell a pause from the end of a turn, because starting to speak over a user who is still talking is worse than a slow reply.",
+   "detail": "The speaker also flags multilingual turn detection as an important capability and calls it a talk-length topic on its own.",
+   "t": "6:01"
+  },
+  {
+   "idea": "Streaming STT is replacing batch models like Whisper, which was trained on 30-second clips and needed padding, chunking and stitching. Newer streaming encoders use small lookahead (about 80 ms to 1 s) and cache activations across frames.",
+   "detail": "The speaker cites a recent NVIDIA encoder as the example. The point is avoiding recomputation on each small audio step.",
+   "t": "7:30"
+  },
+  {
+   "idea": "The LLM should be around 8-30B parameters to hit roughly 300 ms TTFT. Bigger models blow the latency budget, and smaller ones lose the tool calling and instruction following the agent needs.",
+   "detail": "For tool-call accuracy, the speaker says customers fine-tune small LLMs on use-case data so quality rises while the model stays small.",
+   "t": "8:57"
+  },
+  {
+   "idea": "Latency and cost budget follows the same order: the LLM takes the largest share, then TTS, then STT. Network latency is also a budget item, and cutting cross-region hops from about 75 ms to about 5 ms was worth roughly 30% on an already optimized setup.",
+   "detail": "Co-location means putting the models and the orchestrator in the same data center or building. The London example: a voice agent calling a US-hosted LLM pays a transatlantic hop on every turn.",
+   "t": "12:39"
+  },
+  {
+   "idea": "Autoscaling needs asymmetric rules: scale up early, because queued requests hurt more than idle capacity, and scale down slowly, because stateful long-lived connections mean pods cannot be killed mid-conversation.",
+   "detail": "The speaker says he has seen teams scale up more aggressively than with asynchronous services.",
+   "t": "11:18"
+  },
+  {
+   "idea": "Extra models (guardrails, intent classifiers before the LLM, output checks before TTS) add latency, so each one needs an explicit SLA and independent scaling. The thinker-talker pattern puts a small LLM on the conversation and delegates one tool call to a larger model with more tools and guardrails.",
+   "detail": "The thinker-talker example: the small model says 'let me check' while the big model runs, then the small model speaks the cleaned-up answer through TTS.",
+   "t": "19:11"
+  },
+  {
+   "idea": "Speech-to-speech and full-duplex models keep tone and hesitation and allow backchanneling and better interruption handling, but they still struggle with instruction following and tool calling, so teams end up back on the pipeline. Evals then move from per-component checks to whole-conversation full-duplex evals.",
+   "detail": "Mentions NVIDIA's VoiceChat and OpenAI's realtime API as examples. Transcription can run alongside the audio as an audit trail.",
+   "t": "13:52"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Cascading voice pipeline with streamed hand-offs",
+   "how": "Stream audio chunks into an orchestrator (Pipecat, LiveKit or homegrown). Feed streaming STT output to the LLM, stream LLM tokens into TTS as they arrive, and stream TTS audio chunks back to the caller. Do not wait for full utterances at any stage.",
+   "when": "Default for production voice agents today, where tool calling and instruction following must be reliable. The speaker says it is still the dominant pattern."
+  },
+  {
+   "name": "Per-stage latency budget",
+   "how": "Give each model a latency and cost budget, with the LLM the largest share, then TTS, then STT. Track P90 and TTFT per component and fail a stage when it exceeds its share. Add network hop time to the budget as its own line.",
+   "when": "When the end-to-end turn latency target (around 500 ms) is at risk and you need to know which stage to fix first."
+  },
+  {
+   "name": "Streaming STT with lookahead-limited encoders",
+   "how": "Use a streaming-native speech encoder with small lookahead (about 80 ms to 1 s) and cached activations, so each new audio frame costs only the incremental compute. Avoid Whisper-style 30 s windows with padding and stitching.",
+   "when": "Live conversational transcription where waiting for a long window adds unacceptable delay."
+  },
+  {
+   "name": "Co-locate models with the orchestrator",
+   "how": "Run the STT, LLM and TTS services and the agent orchestrator in one data center or region, or on the same network segment. Prefer a self-hosted open-weight LLM over a distant API when the hop cost matters.",
+   "when": "When cross-region hops (around 75 ms) are a large part of the budget, or residency requirements call for regional deployment."
+  },
+  {
+   "name": "Asymmetric autoscaling for stateful voice",
+   "how": "Scale up aggressively and early, before queues build. Scale down by draining: wait for active conversations to finish instead of killing pods, since connections are long-lived and stateful.",
+   "when": "Any voice or long-lived streaming service where a killed pod drops live calls."
+  },
+  {
+   "name": "Pre- and post-LLM guardrail and routing stages",
+   "how": "Put a classifier before the LLM to route to specialized agents (for example refunds versus order tracking), and a guardrail after generation before TTS. Give each its own latency SLA and scale it independently.",
+   "when": "When one agent is not enough and a single prompt cannot cover all intents or safety checks."
+  },
+  {
+   "name": "Thinker-talker delegation",
+   "how": "A small, fast LLM handles the conversation and produces an immediate spoken acknowledgment. It issues one tool call to a larger model with full instructions, tools and guardrails, then voices the larger model's cleaned-up answer.",
+   "when": "When you need a fast spoken response but the correct answer requires a heavier model or more tools."
+  },
+  {
+   "name": "Tiered tool-call evals",
+   "how": "Measure first whether each tool call is well-formed and parseable (target near 100%), then whether it is correct for the use case. Test STT and TTS separately for keyword accuracy and naturalness, with listening tests for voices.",
+   "when": "Evaluating the LLM inside a voice pipeline, where the LLM's budget forces a small model that must still call tools correctly."
+  },
+  {
+   "name": "Full-duplex conversation evals",
+   "how": "For speech-to-speech systems, drop per-component text evals and run longer whole-conversation tests that cover turn-taking, backchannelling and interruptions. Keep a parallel transcription stream for audit.",
+   "when": "When the pipeline is replaced by a single speech-to-speech model."
+  }
+ ],
+ "tools": [
+  "Together AI (hosted inference, the speaker's company)",
+  "Pipecat (agent orchestrator, named as an example)",
+  "LiveKit (agent orchestrator, named as an example)",
+  "Whisper (OpenAI speech-to-text, cited as the batch model)",
+  "NVIDIA streaming speech encoder (named only as a recent NVIDIA model)",
+  "NVIDIA VoiceChat (speech-to-speech model)",
+  "OpenAI realtime API (speech-to-speech)",
+  "ChatGPT advanced voice mode",
+  "Claude Code and Cursor (cited as voice-interaction examples)"
+ ],
+ "numbers": [
+  {
+   "claim": "Human conversational response time is about 300 ms; an agent response over about 500 ms is noticed, and at 1-2 s callers hang up.",
+   "t": "2:17"
+  },
+  {
+   "claim": "State-of-the-art STT word error rate is about 6% on open benchmarks (speaker's figure, no benchmark named).",
+   "t": "4:41"
+  },
+  {
+   "claim": "Transcript completion time is about 100 ms P90 for some models run on Together.",
+   "t": "6:01"
+  },
+  {
+   "claim": "Whisper was trained on 30-second clips. Streaming encoders have lookahead of about 80 ms to 1 s.",
+   "t": "7:30"
+  },
+  {
+   "claim": "LLM time-to-first-token target is about 300 ms (200-300 ms range). Suitable model size is about 8-30B parameters.",
+   "t": "8:57"
+  },
+  {
+   "claim": "TTS real-time factor below 1 avoids buffering. Example: 10 s of audio in 5 s gives RTF 0.5.",
+   "t": "8:57"
+  },
+  {
+   "claim": "Latency and cost budget ranks LLM first, then TTS, then STT.",
+   "t": "11:18"
+  },
+  {
+   "claim": "Cross-region network latency of about 75 ms (for example US West to Europe) versus about 5 ms co-located. The speaker says this is roughly a 30% reduction on an already optimized 100-200 ms engine-latency setup.",
+   "t": "12:39"
+  }
+ ],
+ "hot_takes": [
+  "Speech-to-speech is the future, but it is not yet production-ready because of instruction following and tool calling; the cascading pipeline stays dominant for now.",
+  "Co-locating models with the orchestrator matters enough to justify self-hosting an open LLM over calling a distant API.",
+  "The talk is a partial vendor pitch: it promotes Together's hosting, shows customer logos and recruits hires, and the latency numbers are the speaker's own platform figures with no methodology.",
+  "Eval guidance is thin: it stops at tool-call validity and says the rest depends on the use case."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The per-stage latency budget, cross-hop network cost and pre-LLM classifier routing map onto the L1 proxy's strategy routing and the L2B serving stack, and the small-model fine-tune for tool calling fits the cheap-model interest.",
+   "action": "Add a per-hop timing breakdown (proxy, classifier, model backend, network) to the AgentOS gateway traces, then measure the cost of co-locating the proxy with the vLLM backend on the 5090, the same way the talk quantifies the 75 ms vs 5 ms case."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The thinker-talker split (a small model that acknowledges and delegates one heavy call to a larger model) is loosely related to ProsHarness handing long plan or critique work to a bigger model, but the talk is about voice.",
+   "action": "Optional: consider a small front-model that handles interactive turns and delegates heavy Claude Code runs, following the thinker-talker pattern, once the plan → critique loop exists."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

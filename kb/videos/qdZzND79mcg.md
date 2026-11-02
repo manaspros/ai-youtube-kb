@@ -1,0 +1,47 @@
+# Beyond the Harness: A Journey Towards Adaptative Engineering - Rajiv Chandegra, Annicha Labs
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `qdZzND79mcg` · [watch](https://youtu.be/qdZzND79mcg) · **date:** 2026-07-18 · **length:** 37:01 · **format:** talk · **quality:** 2/5 · **depth:** intro
+- **speakers:** Rajiv Chandegra · **orgs:** Annicha Labs
+- **topics:** agent-architecture, multi-agent · **tags:** adaptive-engineering, harness-engineering, emergence, self-organizing-agents, complexity-science, horizontal-intelligence, constraint-design, failure-modes
+
+> A London-based practitioner argues that fixed agent harnesses fail in messy real-world settings and proposes "adaptive engineering," where engineers set constraints and let multi-agent harnesses emerge and reshape at runtime.
+
+## Summary
+The speaker, Rajiv Chandegra of Annicha Labs, describes the current paradigm of AI engineering as a fixed harness: system prompts, AGENTS.md or CLAUDE.md files, tools, roles and sequencing are all set before the run starts. He says this gives reliability, auditability and traceability, but suppresses the variation that novelty needs, and it becomes brittle when agents meet dynamic, multi-human, multi-institution and physical environments. Drawing on complexity science, he separates complicated problems (planned and analysed) from complex ones (probed, sensed and responded to), and argues real-world work is the second kind. He defines adaptive engineering as designing constraints so the harness emerges, stabilises and changes during the run, making the harness the output rather than the input. In a simulation sketch, specialisation and conventions emerge from agent interactions, and the engineer's levers are the rules of the game and the coupling rate. He names failure modes (attractors and drift without selection pressure, monoculture, and collapsing legibility) and separates "vertical" intelligence (smarter single agents, as in Hermes) from "horizontal" intelligence (coordination among agents), which he calls the higher-leverage direction. The talk is conceptual, with no implementation, benchmark or deployment data.
+
+## Key ideas
+- **Fixed harnesses trade novelty for reliability** — Harnesses set roles, tools, sequencing and memory ahead of runtime. That gives reproducibility and traceable causality, but the speaker argues reliability is bought by suppressing variation, which real-world novelty needs. ([6:29](https://youtu.be/qdZzND79mcg?t=389))
+- **Factory-line harnesses break on moving problems** — Each agent has one job in a fixed sequence, which suits closed deterministic problems. In messy, changing settings every unanticipated case needs a human to patch the harness until it is more complicated than the problem. His summary: the factory method is right for a fixed problem and wrong for a moving one. ([9:04](https://youtu.be/qdZzND79mcg?t=544))
+- **Treat real-world problems as complex, not complicated** — Complicated systems (a jet engine, a clock) can be analysed and planned. Complex systems (flocks, markets, organisations) have interacting, adapting parts, so the speaker says to probe, sense and respond instead. He calls treating complex problems as complicated one of the costliest mistakes in engineering. ([16:18](https://youtu.be/qdZzND79mcg?t=978))
+- **Complex systems need diversity, local interaction and recursion** — Ingredients are a diverse set of actors (not clones), local interaction with neighbours, and recursive adaptation. Emergence then produces patterns that no part designed and that cannot be derived by taking the system apart. Flock of birds and water's wetness are the examples. ([17:18](https://youtu.be/qdZzND79mcg?t=1038))
+- **Adaptive engineering: the harness becomes the output** — The discipline is designing constraints so the harness emerges on its own, stabilises and adapts to the environment in ways you could not specify in advance. The engineer shapes the rules of play rather than the outcome. ([21:06](https://youtu.be/qdZzND79mcg?t=1266))
+- **Agent identity comes from its position, not from being assigned it** — In his simulation, agents start undifferentiated and coupling grows over time. Agents doing the same thing become redundant and the environment rewards differences, so small early advantages amplify into niches. Roles are what an agent takes relative to others and its environment. Conventions and clusters then form with no central governor. ([23:20](https://youtu.be/qdZzND79mcg?t=1400))
+- **Vertical versus horizontal intelligence** — He separates making individual agents smarter (vertical, as in Hermes creating skills from experience) from improving how groups of agents coordinate (horizontal). He calls horizontal the more adaptive and higher-leverage direction. Pi is adaptive at design time only, not at runtime. ([28:42](https://youtu.be/qdZzND79mcg?t=1722))
+- **Three questions for tuning emergent harnesses** — Do you want to enable agents or close them in and govern them? Do you reward agents for cohering to a goal, or cost them for leaving a container? How fast should coupling happen? Those are the engineer's runtime levers. You sense and respond to the emerging harness rather than editing it directly. ([31:02](https://youtu.be/qdZzND79mcg?t=1862))
+- **Known failure modes of adaptive systems** — Emergence tends to settle into attractors that feel stable but are not optimal, so genuine selection pressure is needed or the system just drifts. Other risks are monoculture (agents trained on the same data), and legibility collapsing as adaptability grows, which makes behaviour hard to explain. ([33:30](https://youtu.be/qdZzND79mcg?t=2010))
+
+## Techniques
+- **Constraint-setting instead of outcome-setting** — Define the rules of play (what agents may do, how they are rewarded or penalised, what they can access) and let the agent structure emerge. Do not prescribe the sequence or roles. *When:* Open-ended, changing environments where a fixed pipeline keeps breaking and needs manual patches.
+- **Sense-and-respond loop for complex work** — Run short probes, observe what the system does, then adjust constraints. Avoid up-front plan-and-predict for problems where the parts keep interacting. *When:* Problems that involve many interacting actors or a shifting environment, such as multi-agent or multi-institution workflows.
+- **Penalise redundancy to force specialisation** — Set environment rewards so that agents doing the same job lose out to ones that differ. Small early differences then amplify into distinct roles. This is his simulation mechanism, not a tested system. *When:* When you want agents to differentiate without assigning roles by hand.
+- **Dial the coupling rate** — Control how often agents interact. Start with sparse exchanges and raise coupling until clusters and conventions form, or dampen it if the system destabilises. *When:* Tuning how fast a multi-agent system self-organises.
+- **Three-question constraint review** — For each design, ask: enable or govern? reward cohesion or penalise leaving the container? what coupling speed? Use the answers to tune guardrails and incentives. *When:* Reviewing governance and incentive design for a multi-agent system.
+- **Selection pressure check against drift** — Confirm the environment rewards real improvement, not just stability. Check for monoculture by testing whether agents actually differ in behaviour. *When:* Before trusting an emergent multi-agent structure as optimal.
+
+## Numbers
+- Simulation threshold: coupling reaches roughly one connection on average per agent, at which point a system starts to appear. This is an illustrative simulation figure, not a measured result. ([23:20](https://youtu.be/qdZzND79mcg?t=1400))
+- Speaker has been doing AI engineering for about two years (self-reported; no benchmark data in the talk). ([6:29](https://youtu.be/qdZzND79mcg?t=389))
+
+## Hot takes
+- The limiting factor in engineering will be the adaptability of the harness, not the strength of the model.
+- The harness should become the output of a run, not the input.
+- The factory method is the right answer to a fixed problem and the wrong answer to a moving one.
+- Horizontal intelligence (how agents coordinate) is higher leverage than vertical intelligence (smarter individual agents).
+- Treating complex problems as complicated is one of the most expensive mistakes in engineering today.
+
+## Tools mentioned
+Claude Code, Codex, Pi, Cursor, LangChain, Hermes, Cline, Goose
+
+## Relevance to our work
+- **agentos** (1/3): AgentOS already has budgets, guardrails and routing as manifest-level policy. The talk's three constraint questions (enable vs govern, reward vs cost for leaving a container, coupling speed) could serve as a design checklist, but the talk has no implementation detail. → *Write the three constraint questions into the AgentOS policy design notes and check whether budgets and guardrails can reward cohesion as well as block violations.*
+- **prosharness** (1/3): ProsHarness is a fixed harness around Claude Code (plan, critique, debate, loops). The talk's critique of fixed roles and sequencing is relevant, but it offers no concrete method to adopt. → *Read the talk's failure-mode section (33:30) and add one test to ProsHarness that checks whether the fixed plan-critique-debate sequence degrades on a task where the environment changes mid-run.*

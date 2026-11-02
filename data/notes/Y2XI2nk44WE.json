@@ -1,0 +1,157 @@
+{
+ "one_line": "Tutorial on Open Memory, a self-hosted shared memory server that several MCP clients (Claude Desktop, Cursor) can read and write, with setup steps and the failure modes the host hit.",
+ "summary": "The host argues that AI tools need one shared memory, since clients like Claude Desktop and Cursor otherwise have no awareness of each other's work. He walks through running Open Memory, a memory server from the Mem0 repo, locally with Docker, adding its MCP server to Claude and Cursor, and saving a pasted plan that the server splits into about ten grouped memories. Cross-session continuity works in his test: a fresh Cursor chat retrieved progress notes and the app's status. He also reports two limits: only plain-text content saved properly (a directory tree came back empty), and memories from two different projects (MERN and Next.js stacks) were retrieved together with a vague query. No benchmarks are given; it is a single-developer walkthrough of a beta-like tool, with a cloud option behind a waitlist.",
+ "speakers": [
+  "Unnamed AI LABS host"
+ ],
+ "orgs": [
+  "Mem0",
+  "Anthropic",
+  "Cursor",
+  "OpenAI",
+  "Docker"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "memory",
+  "mcp-and-tools"
+ ],
+ "tags": [
+  "open-memory",
+  "mem0",
+  "mcp",
+  "cross-client-memory",
+  "docker",
+  "cursor",
+  "claude-desktop",
+  "project-scoping",
+  "memory-retrieval"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Motivation: AI tools (brainstorm in Claude Desktop, build in Cursor) share no context, so a change in one is invisible to the other. Open Memory aims to be one memory space across all MCP clients.",
+   "detail": "Local by default; cloud option is on a waitlist. Open Memory is the Mem0 project's sub-folder, so the whole Mem0 repo must be cloned.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Setup is Docker-based: build containers once, then start them on later runs. The MCP server must have Docker running, and the UI is served on localhost:3000.",
+   "detail": "Requires an OpenAI API key placed in a .env file in the API folder, because the server calls an LLM for ingestion.",
+   "t": "2:03"
+  },
+  {
+   "idea": "Clients are connected with generated one-click install commands (shown for Claude and Cursor) rather than hand-edited MCP config. Both clients then reach the same local server.",
+   "detail": "Each client registers under a name the user picks; the host confirmed both showed as connected.",
+   "t": "3:24"
+  },
+  {
+   "idea": "Ingestion is not a raw dump: pasting a whole plan led the server's LLM to split it into roughly ten tasks, grouped by plan and category.",
+   "detail": "The grouping mechanism is explained later; the host says memories linked to the same session get grouped together.",
+   "t": "5:25"
+  },
+  {
+   "idea": "Cross-session continuity worked in the test. Progress notes saved at the end of a Cursor session were chunked and stored, and a fresh chat retrieved them after a context-size error.",
+   "detail": "Retrieval goes through the MCP list/search tools; the client decides when to call them, so prompt wording matters.",
+   "t": "6:08"
+  },
+  {
+   "idea": "Limitation: structured content does not survive. Asking for a full directory tree returned an empty result, so the host concludes only plain text is saved reliably.",
+   "detail": "The agent also looped trying to locate a front-end folder it could not see, which the host tried to fix by saving the tree to memory.",
+   "t": "7:11"
+  },
+  {
+   "idea": "Retrieving one memory also pulls in memories from the same session, which surfaced related function context. Memory was consistent across sessions and across the local client and an MCP agent.",
+   "detail": "This linking is the server's grouping behaviour; the host inferred it from the search calls rather than from documentation.",
+   "t": "8:24"
+  },
+  {
+   "idea": "Main failure: no project scoping. After a MERN-stack project was stored, a vague 'which tech stack' query in a Next.js project returned both stacks together.",
+   "detail": "The host says it breaks multi-project use and suggests adding project separation; he also notes specific prompts (e.g. naming the app) help.",
+   "t": "9:24"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run Open Memory locally",
+   "how": "Clone the Mem0 repo (git clone <repo URL>), cd into the open-memory folder, make sure Docker is running, run `make build` once, then `make up` on later runs. Copy API/.env.example to API/.env, remove 'example' from the name, and set your OpenAI API key. The UI is at localhost:3000 and the MCP server runs alongside it.",
+   "when": "Trying a self-hosted shared memory layer for multiple MCP clients on one machine."
+  },
+  {
+   "name": "Install the MCP server via generated client commands",
+   "how": "In the Open Memory dashboard, copy the per-client install command (shown for Claude and Cursor) and run it; it registers the MCP server with the client automatically. Give each client a distinct server name.",
+   "when": "Connecting several MCP clients to one memory server without hand-editing config files."
+  },
+  {
+   "name": "Ingest a whole plan as one memory add",
+   "how": "Paste the full plan text into the memory add tool via the client. The server's LLM splits it into roughly ten task memories grouped by plan and category.",
+   "when": "Moving a plan from a brainstorming client (e.g. Claude Desktop) into a build client (e.g. Cursor)."
+  },
+  {
+   "name": "End-of-session progress checkpoint",
+   "how": "At the end of a coding session, ask the agent to save its progress notes to memory. In a new chat, ask it to search memory for progress on the project before continuing.",
+   "when": "Long build sessions that hit context limits, to resume without re-explaining state."
+  },
+  {
+   "name": "Scope retrieval with specific project wording",
+   "how": "Phrase queries with the project's name (e.g. 'tech stack for this specific app') and tell the client to use the MCP memory tools only, not the file system. The host's vague query caused cross-project bleed.",
+   "when": "Several projects share one memory store, to reduce cross-project retrieval."
+  },
+  {
+   "name": "Store plain-text memories, not structure",
+   "how": "Save memories as prose summaries. Directory trees and other structured content came back empty in the host's test.",
+   "when": "Writing memories that must be retrieved later verbatim."
+  }
+ ],
+ "tools": [
+  "Open Memory (Mem0 repo)",
+  "Mem0",
+  "Claude Desktop",
+  "Claude",
+  "Cursor",
+  "Docker",
+  "make",
+  "OpenAI API",
+  "MCP",
+  "Next.js",
+  "React",
+  "TypeScript",
+  "MERN stack"
+ ],
+ "numbers": [
+  {
+   "claim": "One pasted plan was split by the server into about ten task memories.",
+   "t": "5:25"
+  },
+  {
+   "claim": "Setup is one `make build` for the containers, then `make up` on later runs; the UI and API are reached at localhost:3000.",
+   "t": "2:03"
+  },
+  {
+   "claim": "Single-developer test only; no latency, cost, or accuracy measurements were reported.",
+   "t": "10:36"
+  }
+ ],
+ "hot_takes": [
+  "Cross-project memory bleed is a real failure mode: a vague query returned memories from two different stacks together, and the host calls it a problem that could break multi-project use (9:24).",
+  "Only plain text saved reliably; a directory tree returned an empty result (7:11).",
+  "Ingestion needs an OpenAI key because the server uses an LLM to split content, so saving memories is not free (2:03, 5:25).",
+  "The title ('All My AI Apps Are Connected to One MIND') oversells a single-user test; the host's own conclusion is 'a strong start' with scoping still missing (9:24)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh already plans tiered cross-session memory and conflict resolution with provenance. This video shows a shared memory server failing to scope memories per project, which is the same class of problem.",
+   "action": "Write a MemoryMesh test where two projects with overlapping names ('tech stack') are stored, then check that a scoped query returns only one project's memories; add a namespace or project key if it does not."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness does checkpoint/resume of long agent runs. The video's end-of-session progress note, then resume in a new chat, is the same pattern. Its failure (structured content lost) is a warning for checkpoint formats.",
+   "action": "Check that ProsHarness checkpoints survive a fresh Claude Code session when stored as plain-text summaries, and that structured state (e.g. file trees) is kept in a separate file rather than only in memory."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

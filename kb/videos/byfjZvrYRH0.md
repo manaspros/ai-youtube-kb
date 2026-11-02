@@ -1,0 +1,45 @@
+# Did This Open Source Model Just Fix AI Reasoning? (ThinkingCap)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `byfjZvrYRH0` · [watch](https://youtu.be/byfjZvrYRH0) · **date:** 2026-09-02 · **length:** 10:46 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** Andres (Better Stack host) · **orgs:** Better Stack, OpenAI, DeepSeek, BottleCap AI (as captioned), Hugging Face
+- **topics:** token-cost-efficiency, training-finetuning-rl, local-ai · **tags:** reasoning-models, overthinking, efficiency-reward, looping, qwen, fine-tuning, reasoning-tokens, rtx-5090, model-comparison
+
+> Better Stack tests ThinkingCap, a Qwen3.6-27B fine-tune trained to reason less: about 46% fewer thinking tokens with flat accuracy by vendor numbers, backed by one RTX 5090 demo.
+
+## Summary
+The host argues that reasoning models were trained to think but never to stop thinking, so they burn thousands of tokens on simple prompts and sometimes loop. He presents ThinkingCap, a fine-tune of Qwen3.6-27B from a European inference-efficiency startup (captioned as "BottleCap AI"). Its training rewards correct answers that are also efficient, rather than capping reasoning length. The vendor reports about 46% fewer thinking tokens on 12 out-of-domain benchmarks with under 1 point of accuracy change, about 58% fewer in-domain, and GSM8K accuracy rising from 93.3% to 96.5%. The host runs one test on an RTX 5090: a number-theory problem with one correct answer (405), where the base model used over 7,000 reasoning tokens and about 140 seconds, and ThinkingCap used about 1,100 reasoning tokens and about 29 seconds, with both answers correct. The video also covers a bug where the shortening also applied to final answers, and the team kept the shorter output. The model is said to be on Hugging Face under Apache 2.0. The evidence is vendor numbers plus a single-prompt demo.
+
+## Key ideas
+- **Reasoning-era context: thinking models arrived in Sept 2024 and DeepSeek R1 followed, and now some makers are shipping models fine-tuned to think less** — The host frames the trend as a return to basics that keeps what the reasoning era learned. ([1:13](https://youtu.be/byfjZvrYRH0?t=73))
+- **Reasoning models were never taught when to stop thinking** — Simple prompts trigger re-derivation, restating, and looping. The host's example is a one-word 'hello' that produces paragraphs of deliberation about the model's self-introduction. ([2:20](https://youtu.be/byfjZvrYRH0?t=140))
+- **ThinkingCap's goal is only to reduce compute, not change capability** — The team says it did not add skills, change personality, or touch safety behavior. It only aims to reach answers the base model could already give with fewer tokens. ([3:23](https://youtu.be/byfjZvrYRH0?t=203))
+- **A hard token cap is the naive fix and it hurts accuracy** — Cutting reasoning at a fixed budget lowers token counts but makes the model wrong more often. ThinkingCap instead trains on curated multi-domain problems and rewards efficiency alongside correctness, so the model learns when it has enough to answer. ([4:27](https://youtu.be/byfjZvrYRH0?t=267))
+- **Reported results: fewer reasoning tokens, similar accuracy, less looping** — Out-of-domain benchmarks show about 46% fewer thinking tokens with accuracy moving under 1 point. In-domain reduction is about 58%. Looping rate also dropped on most benchmarks, which the host reads as extra reasoning that was noise. ([5:54](https://youtu.be/byfjZvrYRH0?t=354))
+- **Hands-on test: same base model, same quantization, one problem, far fewer tokens** — The problem is the smallest n where n! has exactly 100 trailing zeros, which needs Legendre's formula and has the answer 405. Both models get 405. The base model spends over 7,000 tokens on reasoning, and ThinkingCap spends about 1,100 on reasoning and under 2,000 in total. ([6:55](https://youtu.be/byfjZvrYRH0?t=415))
+- **The shortening bug that became the shipped behavior** — The team meant to shorten only the thinking trace, but the shortening also hit the final answer. Internally people preferred the shorter answers, so the team shipped the buggy concise version and kept the technically correct one for later. The host's theory is that humans compress when tired and models never had that. ([8:59](https://youtu.be/byfjZvrYRH0?t=539))
+
+## Techniques
+- **Efficiency-aware reward during fine-tuning** — Start from a base checkpoint (Qwen3.6-27B). Fine-tune on a curated set of problems across several domains and difficulty levels. Reward correct answers that are also efficient, so verbosity has a cost and the model learns to commit once it has enough. The video does not describe the training algorithm. *When:* You want shorter reasoning without losing accuracy, and you can fine-tune. Prefer this over a hard reasoning-token cap, which the speaker says makes the model wrong more often.
+- **Separate reasoning and answer token counts** — Track reasoning tokens and answer tokens as two counters. Also track a looping rate, meaning how often the model rephrases the same reasoning without converging. *When:* Comparing reasoning models on cost. Total tokens hide whether the cost comes from thinking or from the answer.
+- **Single-answer A/B probe on fixed hardware** — Pick a problem with exactly one verifiable answer, such as the smallest n with 100 trailing zeros in n! (answer 405, via Legendre's formula). Run both models at the same quantization on the same GPU. Record reasoning tokens, answer tokens, total elapsed time, tokens per second, and whether the answer is correct. *When:* A quick sanity check before a bigger eval. A single prompt is anecdotal and does not establish a rate.
+
+## Numbers
+- Thinking tokens cut by an average of 45.8% on 12 out-of-domain benchmarks, with accuracy moving less than 1 percentage point on average (vendor-reported) ([4:27](https://youtu.be/byfjZvrYRH0?t=267))
+- Token reduction on in-domain benchmarks is almost 58% (vendor-reported) ([4:27](https://youtu.be/byfjZvrYRH0?t=267))
+- GSM8K accuracy rose from 93.3% to 96.5% (vendor-reported) ([5:54](https://youtu.be/byfjZvrYRH0?t=354))
+- Base Qwen3.6-27B demo: about 60 tokens/s, over 7,000 reasoning tokens, about 900 answer tokens, 140 s total, answer 405 ([6:55](https://youtu.be/byfjZvrYRH0?t=415))
+- ThinkingCap demo: about 62 tokens/s, under 2,000 total tokens with about 1,100 for reasoning, answer done in about 29 s (20 s reasoning, 9 s answer), answer 405 ([7:58](https://youtu.be/byfjZvrYRH0?t=478))
+
+## Hot takes
+- The title 'Fix AI Reasoning' overstates the evidence. The data is vendor-reported, and the host's own check is one prompt with no repeats or variance.
+- The '2x faster' claim comes from one run. Part of the wall-clock gap is just shorter output, not a faster model, and the host does not separate these.
+- The looping-rate reduction is reported only from the vendor's write-up. The host's demo does not measure looping.
+- The bug story is more interesting than the benchmark: the team shipped the concise-answer behavior it had not intended to ship, so the answer-length effect is not separated from the thinking-length effect.
+- Claims about the Apache 2.0 license and the Hugging Face release are stated without a link or on-screen check in the transcript.
+
+## Tools mentioned
+Qwen3.6-27B (27B parameters, quantized, base for ThinkingCap), ThinkingCap (fine-tune of Qwen3.6-27B), Step 3.5 Flash (reasoning model used as the overthinking example), GPT-3, GPT-3.5, GPT-4, OpenAI thinking model (Sept 2024, unnamed in transcript), DeepSeek R1, NVIDIA RTX 5090 (64 GB RAM test machine), GSM8K benchmark, Hugging Face (model distribution, Apache 2.0)
+
+## Relevance to our work
+- **agentos** (2/3): InferCraft runs on one RTX 5090 with token cost and latency as the constraints. ThinkingCap is a same-base, same-hardware comparison candidate for a cost-cutting model variant. It also bears on the reasoning-token budget question. → *Benchmark a ThinkingCap-style fine-tune of Qwen3.6-27B against the base on our RTX 5090 setup, measuring reasoning tokens, looping rate, and accuracy on our own eval set before routing any traffic to it.*
+- **prosharness** (1/3): Long Claude Code runs can loop or over-think, and checkpoint/resume logic could use a loop signal. This talk is about local model fine-tuning, not Claude. → *Consider a loop-detection signal (repeated reasoning without convergence) as a checkpoint trigger for long agent runs, using token counts as the proxy.*

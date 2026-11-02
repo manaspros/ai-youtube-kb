@@ -1,0 +1,143 @@
+{
+ "one_line": "Explains the \"gauntlet loop\" (agent builds, critic sub-agents judge against a reference) and its two failure modes, then shows a planning-skill fix: a settled spec and pass/fail answer key the critic checks against.",
+ "summary": "The video explains the \"gauntlet loop\", a prompt pattern that popularized one-shot builds of games and apps: a main agent splits the goal into sub-agents, each builder gets a critic sub-agent that sends work back until it passes, and a reference product (Call of Duty) is the stop condition. The speaker names two problems: the main agent controls how critics are spawned and what they judge, and the quality bar only works when an existing product exists to compare against, so for new software the critic invents its own standard. The proposed fix is Matt Pocock's Wayfinder planning skill, which turns fog (unsettled decisions) into a map of questions, resolves each by research, prototypes, or a real-world check, and writes a spec. The creator trimmed Wayfinder to two outputs, a map and a pass/fail answer key, ran a 34-question interview on an HR system, then pointed the gauntlet loop at the answer key. The build took 1h33m, used about 40% of a Max session limit, and would have cost about $116 on the API, with the creator reporting that every requested feature worked but some issues remained. The evidence is a single anecdotal build with no measured comparison against a baseline loop.",
+ "speakers": [
+  "AI LABS narrator (unnamed)"
+ ],
+ "orgs": [
+  "AI LABS",
+  "SerpAPI (sponsor)"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "multi-agent",
+  "testing-verification",
+  "coding-agents"
+ ],
+ "tags": [
+  "gauntlet-loop",
+  "critic-subagent",
+  "spec-driven-development",
+  "wayfinder",
+  "grill-me",
+  "planning",
+  "answer-key",
+  "dynamic-workflow",
+  "claude-code"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The gauntlet loop is a main agent that splits the goal into sub-agents, each with its own critic sub-agent that returns work until it passes.",
+   "detail": "Matt Shumer's three-line prompt defined the product and quality bar, told the main agent to split work into sub-agents, and attached a critic to each builder. Critics start with no memory of prior rounds and never build anything. A keyword at the end turns it into a dynamic workflow running a fleet of sub-agents, which the speaker describes as a diamond graph: one task, parallel sub-agents, then one synthesizing agent.",
+   "t": "2:43"
+  },
+  {
+   "idea": "The stop condition in the gauntlet loop is a blind side-by-side comparison against a shipped product.",
+   "detail": "The critic is told to compare the agent's output with a reference game without knowing which one the model made, and to pick the better one. Without a real reference the critic has nothing to stop against.",
+   "t": "4:10"
+  },
+  {
+   "idea": "Problem one: the main agent controls checking, so verification is not concrete.",
+   "detail": "The main agent decides how critics are spawned and what their judgment prompts say. The speaker argues checks should be planned explicitly, so that when something breaks you can tell which check failed and why.",
+   "t": "5:38"
+  },
+  {
+   "idea": "Problem two: for new products there is no reference, so the critic invents a standard and drifts.",
+   "detail": "The loop works for games, landing pages and 3D worlds because something close exists to copy. For novel business logic, the critic picks its own bar, and the speaker says a wrong direction can waste many tokens after a big batch of features is built against it.",
+   "t": "7:02"
+  },
+  {
+   "idea": "Wayfinder fixes the reference problem by turning planning fog into settled decisions and a spec.",
+   "detail": "Wayfinder builds a map of open decisions split into ready-to-settle and blocked-by-fog. Fog is cleared by research, a rough prototype to react to, or a real-world job such as signing up for a service. Answers go back onto the map and unblock dependent questions. The output is one spec the critic can use as the bar.",
+   "t": "8:21"
+  },
+  {
+   "idea": "The creator cut Wayfinder down to two files, a map and an answer key of pass/fail checks, instead of one requirement file per decision.",
+   "detail": "The modified skill writes .wayfinder/ with the decision map (decision, reasoning, finished-state) and an answer key where every line is a pass or fail check. The loop is then told the .wayfinder folder is the single source of truth. The modified skill uses Grill Me for questioning, and the speaker says only three skills are needed.",
+   "t": "11:14"
+  },
+  {
+   "idea": "The build ran in phases: plan, install tools, build a foundation, then launch many agents on separate parts.",
+   "detail": "The loop first plans what to build, then the tools to install, then the foundation, and only then fans out parallel agents, each on one part of the system. Every agent checks against the answer key, and the prompt forbids close-enough results and shortcuts.",
+   "t": "12:41"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Three-line gauntlet loop prompt",
+   "how": "Line 1: what to build plus a quality bar. Line 2: have the main agent split the goal into sub-agents and attach a critic sub-agent to each builder that returns work until it passes. Line 3: a concrete reference for the critic's stop condition, judged by blind pairwise comparison (the critic is not told which output the model made). Add the dynamic-workflow keyword at the end to run a fleet of sub-agents in parallel. Use this only when a shipped reference exists to compare against.",
+   "when": "Building something with a close existing analogue such as a game, landing page or 3D scene, where the critic can measure against something real."
+  },
+  {
+   "name": "Swap the reference for a planned answer key",
+   "how": "Run a planning interview first (Wayfinder with Grill Me in the video). The output is a .wayfinder folder: a decision map (each decision, its reasoning, what finished looks like) and an answer key of pass/fail checks. Then ask Claude to rewrite the gauntlet prompt so the source of truth is that folder and the critic checks everything against it. The speaker says the rewrite should keep the loop format and change only what it measures against.",
+   "when": "Building new software, business rules or anything with no existing product to copy, where you want the critic to check a spec instead of inventing a standard."
+  },
+  {
+   "name": "Planning fog map",
+   "how": "Keep a map of open decisions. Mark each as settleable now (all dependencies decided) or fogged (waiting on an unknown). For each fogged item, send a sub-task to clear it through research, a throwaway prototype to react to, or a real-world action such as signing up for a service. Write the answer back, unblock dependents, and repeat until no fog remains. Do not let the agent fill gaps with assumptions.",
+   "when": "Before a large agent build where the destination is clear but the path has unknowns, so the plan does not look finished while containing invented parts."
+  },
+  {
+   "name": "Phased build order inside one loop",
+   "how": "Direct the loop to produce, in order: a build plan, the tools to install, a foundation the other parts depend on, then parallel sub-agents, each owning one slice of the system, all checked against the answer key. Forbid close-enough results and shortcuts in the prompt.",
+   "when": "Multi-part app builds where parallel agents would otherwise start before shared infrastructure exists."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Wayfinder (Matt Pocock planning skill)",
+  "Grill Me (Matt Pocock skill)",
+  "Matt Pocock skill set (installed from GitHub)",
+  "Claude Max plan",
+  "Claude API (cost comparison)",
+  "SerpAPI (sponsor, not used in the method)"
+ ],
+ "numbers": [
+  {
+   "claim": "Schumer's demo prompt was three lines and built a full first-person shooter in one prompt (creator claim, no measured baseline).",
+   "t": "2:43"
+  },
+  {
+   "claim": "The Wayfinder interview ran 34 questions before the planning files were written.",
+   "t": "11:14"
+  },
+  {
+   "claim": "The full HR-system build took 1 hour 33 minutes and consumed about 40% of the session limit on a Max plan.",
+   "t": "12:41"
+  },
+  {
+   "claim": "The same build would have cost about $116 on the API, per the creator.",
+   "t": "12:41"
+  },
+  {
+   "claim": "The creator reports every requested feature worked correctly, with some unspecified issues remaining.",
+   "t": "12:41"
+  }
+ ],
+ "hot_takes": [
+  "Title says the skill 'fixed' gauntlet loop, but the evidence is one anecdotal HR-app build with no baseline run of the original loop to compare against.",
+  "The claim that the main agent controlling verification is a flaw is asserted, not demonstrated. The video shows no failure case from it.",
+  "Problem two (critic invents a standard for new products) is plausible and matches the design of the loop, but the fix's effectiveness is shown only by the creator's own build.",
+  "Promotional content: a SerpAPI sponsor read (about 30 seconds) and a call to join the creator's paid community for the skill files. Substance is real but thin on reproducibility (the install command and exact skill text are not shown on screen in the transcript).",
+  "Caption errors fixed in notes: 'Schumer' is Matt Shumer as cited; 'pokok' and similar are Matt Pocock; 'ultra code' is the keyword the speaker says turns the loop into a dynamic workflow."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already runs plan, critique and debate steps. This video's core point is that a critic should check against a written pass/fail spec produced at planning time, not a standard it invents, and that verification should be planned rather than left to the agent.",
+   "action": "Add a planning output to ProsHarness: a decisions-and-answer-key file (pass/fail lines) written before a long run, and make the critique step check against that file instead of a free-form judgment prompt."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Minor relevance to a self-improving or evaluator agent design: a judge sub-agent with no reference drifts. No direct change to the L1-L4 architecture is implied.",
+   "action": "When designing any LLM-judge or critic in AgentOS evals, require it to score against a fixed rubric or reference artifact rather than its own standard."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,143 @@
+{
+ "one_line": "Better Stack demo of a timing attack: an early-exit string comparison leaks key length and characters through response times, then the speaker covers why real-world impact is limited and how to mitigate it.",
+ "summary": "James from Better Stack builds a small Bun API protected by an API key, using a deliberately slowed string comparison (2 ms sleep per step) that exits early on the first mismatch or length mismatch. He first recovers the key length by timing requests for lengths 1 to 50, five samples each, and picks the length with the longest average response (12 characters, about 2.64 ms versus about 0.4 ms for the others). He then recovers each character by brute-forcing each position and keeping the slowest candidate, and the attack succeeds against his own key. He then admits the real JavaScript comparison produces noise that swamps the signal, so the attack fails against it on localhost. He notes that prior research suggests operations taking around 30 microseconds can be enough for a timing attack, and cites username enumeration and the Minerva ECDSA attack as real-world cases. The fixes he recommends are Node's constant-time crypto.timingSafeEqual, a hand-written constant-time comparison, or rate limiting to make brute force impractical.",
+ "speakers": [
+  "James"
+ ],
+ "orgs": [
+  "Better Stack"
+ ],
+ "format": "demo",
+ "topics": [
+  "security-guardrails",
+  "dev-tools"
+ ],
+ "tags": [
+  "timing-attack",
+  "side-channel",
+  "api-key",
+  "constant-time-comparison",
+  "timingSafeEqual",
+  "username-enumeration",
+  "rate-limiting",
+  "node-crypto",
+  "bun",
+  "typescript"
+ ],
+ "key_ideas": [
+  {
+   "idea": "An early-exit string comparison leaks timing. Length is checked first, then characters are compared one by one and the function returns at the first mismatch, so a longer response means more matching steps.",
+   "detail": "The demo's slowCompare adds a 2 ms sleep per step to exaggerate the effect. The speaker presents this as the same logic most string comparisons use in all languages.",
+   "t": "0:49"
+  },
+  {
+   "idea": "Key length can be recovered first by picking the length that gives the slowest average response time.",
+   "detail": "Each length from 1 to 50 is tried five times and averaged. The slowest length is taken as the key length because a matching length means more comparison steps run.",
+   "t": "2:12"
+  },
+  {
+   "idea": "Characters can then be recovered one position at a time, using the same timing signal.",
+   "detail": "Starting from a candidate padded with 'a' characters, every character is tried at each position and the slowest one is kept. The sampling is repeated for accuracy. This recovered a 12-character key the speaker had never seen before.",
+   "t": "3:16"
+  },
+  {
+   "idea": "The attack fails against the real JavaScript string comparison, because network and runtime noise hides the tiny differences in timing.",
+   "detail": "The length guess came back as 1 instead of 12, and the character guesses were wrong. The speaker says that in practice comparison time is negligible next to network latency, even on localhost.",
+   "t": "4:15"
+  },
+  {
+   "idea": "Prior research suggests operations taking around 30 microseconds can be exploitable, so the practical threat is not limited to artificial sleeps.",
+   "detail": "The speaker cites a paper listing susceptible operations, including MD5 of an 8x string, complex JSON parsing and SQLite memory select. He does not give the paper's method or results beyond that list.",
+   "t": "4:15"
+  },
+  {
+   "idea": "Timing differences leak more than secrets, and username enumeration is a common example.",
+   "detail": "If the code checks the password only when the username is valid, valid usernames respond more slowly. An attacker could use this to find which accounts from a list to target. He also cites the Minerva attack, which recovers ECDSA keys from signing-time differences, with CVEs up to 2024.",
+   "t": "5:20"
+  },
+  {
+   "idea": "The fixes are a constant-time comparison for secret checks and rate limiting to keep brute force impractical.",
+   "detail": "Node's crypto.timingSafeEqual compares two buffers in constant time with no early exit. A custom constant-time equal function also works. Rate limiting is presented as the simpler defence.",
+   "t": "5:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Timing-based key length discovery",
+   "how": "Send requests with candidate keys of each length (1 to 50 in the demo), repeat each five times, average the response times, and take the length with the highest average. Use a large enough signal, since the demo's 2 ms per-step sleep exaggerated the difference (about 2.64 ms vs about 0.4 ms).",
+   "when": "Probing an endpoint that compares a secret with an early-exit comparison, to test whether it leaks length. Useful as a self-audit: check whether length-dependent timing is measurable on your own endpoint."
+  },
+  {
+   "name": "Per-position timing recovery",
+   "how": "Start with a candidate of repeated 'a' characters of the known length. For each position in turn, try every character, sample each several times, and keep the slowest one as the correct character. Build up the full key from these choices.",
+   "when": "Demonstrating or testing a character-by-character early-exit comparison. Only realistic when timing noise is far below the per-character cost."
+  },
+  {
+   "name": "Constant-time comparison for secrets",
+   "how": "Replace the early-exit comparison with crypto.timingSafeEqual in Node, which takes two Buffers and runs in constant time regardless of early mismatch. A hand-written constant-time equal function is an alternative.",
+   "when": "Checking API keys, tokens, HMACs or any secret against user input on a critical path."
+  },
+  {
+   "name": "Rate limiting as the cheap mitigation",
+   "how": "Limit requests per client or per key on authentication endpoints so the number of timing samples an attacker can take is too small for brute force.",
+   "when": "Authentication endpoints where a constant-time compare is not yet in place, or as a second layer on top of one."
+  },
+  {
+   "name": "Timing check for username enumeration",
+   "how": "Compare response times for valid and invalid usernames when the password check runs only for valid users. If the difference is measurable, make both paths do comparable work, for example by running a dummy password check when the username is not found.",
+   "when": "Login or password-reset endpoints where account existence should not be revealed."
+  }
+ ],
+ "tools": [
+  "Bun",
+  "Node.js (crypto.randomBytes, crypto.timingSafeEqual)",
+  "TypeScript (generatekey.ts, crack scripts)",
+  "SQLite (named as a susceptible operation in the cited paper)",
+  "Claude (named as the summariser of the Minerva attack, not used in the demo)"
+ ],
+ "numbers": [
+  {
+   "claim": "Demo API key length is random between 5 and 15 characters.",
+   "t": "0:00"
+  },
+  {
+   "claim": "The slow comparison adds a 2 ms sleep per step.",
+   "t": "0:49"
+  },
+  {
+   "claim": "Length search covers lengths up to 50, sampled five times each.",
+   "t": "0:49"
+  },
+  {
+   "claim": "Correct length 12 measured at about 2.64 ms, versus around 0.4 ms for most other lengths.",
+   "t": "2:12"
+  },
+  {
+   "claim": "Prior research suggests operations taking about 30 microseconds can be enough for a timing attack.",
+   "t": "4:15"
+  }
+ ],
+ "hot_takes": [
+  "The attack is shown only against an artificial 2 ms sleep. Against the real JavaScript comparison, the speaker's own test failed, so the title's 'ONLY response times' overstates what was shown.",
+  "Timing attacks are real but mostly mitigated in mainstream libraries. The speaker himself says the common examples have largely been mitigated.",
+  "Rate limiting is presented as the simpler practical defence, even though it does not remove the leak."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The AgentOS proxy and its opt-in layers presumably validate API keys or tokens. Any such check that uses early-exit comparison leaks timing, which is a direct security gap for a proxy meant to guard agents.",
+   "action": "Audit every API-key, token and budget-key comparison in the Rust proxy and any Node or Python auth code. Replace them with a constant-time comparison (for example the subtle crate's ConstantTimeEq in Rust) and add rate limiting on auth failures."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness has phone-driven approvals and zero-token credential handling. Approval tokens or credential checks that use early-exit comparison would be exposed to the same timing leak.",
+   "action": "Make sure approval-token and credential checks in ProsHarness use a constant-time comparison, for example crypto.timingSafeEqual on Buffers."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

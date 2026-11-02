@@ -1,0 +1,139 @@
+{
+ "one_line": "Danilo Campos (PostHog) on making an autonomous integration agent reliable: feed fresh docs, use thin \"model airplane\" example apps, breadcrumb the task, interrogate the agent at each stop, and lock down secrets.",
+ "summary": "Danilo Campos from PostHog describes how the PostHog Wizard, a CLI that uses the Claude Agent SDK to install PostHog into users' projects, avoids the common failure modes of LLM codegen. He groups the failures into model rot (stale training data and invented APIs), weird architecture and odd paths, and unsafe handling of user files. His fixes are to serve fresh markdown docs that the agent picks from a menu, and to maintain thin example apps (model airplanes) that show the correct integration shape. The task is breadcrumbed so the agent first finds valuable files, then lists events without writing code, then implements. At the end of every run a stop hook asks the agent what would have helped, which surfaced missing-tool and wrong-language errors. Secrets are protected by tools that can only check a key exists or write a value, never read the file. He argues the wizard is mostly prose (about 90% markdown), because prose improves as models improve while code depreciates. The talk is short, specific to one product, and gives concrete patterns rather than benchmarks.",
+ "speakers": [
+  "Danilo Campos"
+ ],
+ "orgs": [
+  "PostHog"
+ ],
+ "format": "talk",
+ "topics": [
+  "coding-agents",
+  "context-engineering",
+  "skills-self-improvement",
+  "security-guardrails"
+ ],
+ "tags": [
+  "posthog-wizard",
+  "model-rot",
+  "fresh-docs",
+  "model-airplanes",
+  "breadcrumbing",
+  "stop-hook",
+  "self-report",
+  "secrets-handling",
+  "markdown-skills",
+  "claude-agent-sdk",
+  "prose-over-code"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Model rot is a real problem: a trained model is a frozen snapshot, so fast-moving APIs come out wrong. Fix it by putting current documentation in context at run time.",
+   "detail": "Without fresh docs, the agent invented keys, patterns and APIs. The wizard lets the agent pick relevant docs from a menu of fresh markdown and load them into context, which the speaker says beats RAG for this case given current context window sizes.",
+   "t": "2:17"
+  },
+  {
+   "idea": "Model airplanes: maintain thin, fake example apps that have the right shape of each integration point, so the agent learns a consistent pattern.",
+   "detail": "The apps are not production code. Auth can accept any password, but it looks like auth, so the agent learns where event tracking goes. Being smaller, they also cost fewer tokens. A context service flattens them into one markdown reference inside the skill file that the agent can grep.",
+   "t": "5:11"
+  },
+  {
+   "idea": "Breadcrumb the agent instead of giving the whole plan up front, to stop it improvising its own path.",
+   "detail": "Stages: find files with business value, then list candidate events without writing code, then implement with the docs loaded for the target framework. Telling a coding agent the full plan tends to make it take a shortcut through early steps and polish the last one.",
+   "t": "6:38"
+  },
+  {
+   "idea": "Ask the agent what would have helped at the end of every run, using a stop hook. It is cheap and finds errors you cannot see from outside.",
+   "detail": "The team found a tool named in the instructions that did not exist in the MCP server (hundreds of runs), contradictory directives, and a JavaScript instruction given to a Python project. The speaker treats the agent as a user for research.",
+   "t": "10:10"
+  },
+  {
+   "idea": "Design tool access so secrets never reach the model or the cloud. Give the agent narrow tools instead of raw file reads.",
+   "detail": "An early version read .env files, which put user secrets into inference logs. The fix was tools that only check whether a key exists and write a new value. This is a design choice about which reads are allowed, applied to a tool the user trusts with their machine.",
+   "t": "12:31"
+  },
+  {
+   "idea": "Prose is where durable value lives. Code depreciates as models change, while good instructions get better when a better model reads them.",
+   "detail": "The wizard is about 90% markdown, 8% tools for reading and writing markdown, and the rest harness. The speaker argues against heavy scaffolding that constrains the agent, and for giving it information in a sensible order.",
+   "t": "13:57"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Agent-selected fresh docs menu",
+   "how": "Publish current, framework-specific docs as markdown. Give the agent a menu it can select from by detected stack and load the chosen files into context. Use this when the library or API changes faster than model training.",
+   "when": "Integrating a fast-moving SDK or API where models hallucinate outdated keys or patterns."
+  },
+  {
+   "name": "Model airplane example apps",
+   "how": "Keep thin, non-production example apps in each framework and language with realistic shapes (for example an auth route that accepts anything). Flatten them into one reference file the agent can grep, and point to it from the skill.",
+   "when": "You need consistent integration patterns across many project shapes without the token cost of real apps."
+  },
+  {
+   "name": "Breadcrumbed multi-stage prompting",
+   "how": "Split the task into stages that do not reveal the end state. Stage 1 finds valuable code, stage 2 proposes events with no code written, stage 3 implements with the loaded docs. Each stage's output is saved to a file the next stage reads.",
+   "when": "Long agent tasks where a fully specified plan causes the agent to take shortcuts or drift."
+  },
+  {
+   "name": "Stop-hook self-interrogation",
+   "how": "Add a stop hook that asks the agent at the end of each run what could have been done better to help it succeed. Log the answers and group them to find missing tools, contradictory instructions and wrong assumptions.",
+   "when": "Running many agent runs in production and you need failure signals beyond exit codes."
+  },
+  {
+   "name": "Tool-gated secret access",
+   "how": "Do not let the agent read secret files directly. Provide tools that check whether a key exists and write a value, so the contents never enter model context or logs.",
+   "when": "Agents that must edit config or env files on a user's machine."
+  }
+ ],
+ "tools": [
+  "PostHog Wizard",
+  "Claude Agent SDK",
+  "Claude Code",
+  "Cursor",
+  "MCP",
+  "PostHog LLM gateway"
+ ],
+ "numbers": [
+  {
+   "claim": "About 15,000 people run the wizard each month, and it turns about two hours of integration work into roughly eight minutes.",
+   "t": "0:00"
+  },
+  {
+   "claim": "Two unprompted positive posts about the wizard appeared on Bluesky and Twitter within six hours of the talk's reference point.",
+   "t": "1:13"
+  },
+  {
+   "claim": "The wizard's skill content is about 90% markdown, 8% tools for delivering and processing markdown, and the rest agent harness.",
+   "t": "13:57"
+  },
+  {
+   "claim": "A missing-tool instruction (a tool name that was not in the MCP server) caused hundreds of runs to fail before the stop-hook question surfaced it.",
+   "t": "10:10"
+  }
+ ],
+ "hot_takes": [
+  "Code is a depreciating asset, and plain-text prose is where most value now lives.",
+  "Do not over-constrain the agent with scaffolding. Give it information and sequence it well instead.",
+  "Asking the agent what went wrong at the end of each run is cheap and finds errors you cannot see otherwise.",
+  "Using the agent's own run feedback is a form of user research, with the agent as the user."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Mining agent telemetry for skill-worthiness is an open question in SkillForge. The stop-hook self-report is one more run-level signal, but the talk describes a single product, not a telemetry pipeline.",
+   "action": "Consider logging a post-run agent self-report next to telemetry as a candidate input to SkillForge's success-signal question, and check it against real runs."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI and already has checkpoint/resume and zero-token credential handling. A stop hook that asks each run what blocked it, plus tool-gated secret access, fits its existing design.",
+   "action": "Add a Stop hook to the ProsHarness Claude Code wrapper that asks the run what would have helped and saves the answer to the checkpoint log. Then check for missing-tool and contradictory-directive messages across runs."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

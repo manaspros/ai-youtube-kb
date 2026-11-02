@@ -1,0 +1,220 @@
+{
+ "one_line": "EXL engineers show a graph neural network feeding XGBoost for card fraud, lifting true-positive capture 27-33% at a fixed alert rate and serving it in about 3 ms P99.",
+ "summary": "The talk argues that fraud is a property of a transaction's neighborhood (its user, merchant, and recent linked transactions), so per-row feature engineering hits a ceiling. EXL trains a GNN whose embeddings feed the existing XGBoost model, and compares XGBoost alone against XGBoost plus GNN embeddings at the same alert rate, window, and features. Card-present and online transactions get separate models because their base rates (0.05% vs 0.6%) and signal locations differ. Sampling keeps soft fraud targets (about 0.5% and 6%) while preserving full user histories so graph connectivity survives. Leakage is prevented by building each calendar month as a disjoint graph with only earlier-timestamped neighbors. Explainability comes from subgraph attribution, which the regulated setting requires. Serving precomputes embeddings for users and merchants only, cutting the cache from about 60 GB to 2-3 GB at a cost of a few points of TPR, for a 2.3 ms median and 3.1 ms P99 end to end. The speakers claim about $65M projected annualized incremental fraud capture.",
+ "speakers": [
+  "Somya Rai (listed as VP of AI engineering in the intro; the caption reads 'Sam Ray')",
+  "MD Sharique (principal AI architect; the caption reads 'Mohammed Sarik')"
+ ],
+ "orgs": [
+  "EXL"
+ ],
+ "format": "talk",
+ "topics": [
+  "models-research",
+  "inference-serving",
+  "governance-compliance"
+ ],
+ "tags": [
+  "fraud-detection",
+  "graph-neural-network",
+  "gnn",
+  "xgboost",
+  "stacking",
+  "feature-engineering",
+  "class-imbalance",
+  "temporal-leakage",
+  "explainability",
+  "subgraph-attribution",
+  "embedding-store",
+  "low-latency-serving",
+  "entity-resolution-adjacent"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Per-row features hit a ceiling; the signal is in the edges",
+   "detail": "The same transaction scores 0.04 alone and 0.91 once its user, merchant, and recent linked transactions are visible. Adding more row-level features moved the positive rate only about a point despite 2-5x more features.",
+   "t": "0:37"
+  },
+  {
+   "idea": "Use the GNN as an embedding generator, not a replacement",
+   "detail": "The GNN produces node embeddings that feed the existing gradient-boosted model. The fair comparison is XGBoost alone vs XGBoost plus GNN embeddings, same alert rate, window, and features.",
+   "t": "3:56"
+  },
+  {
+   "idea": "Keep soft fraud targets but preserve full user histories",
+   "detail": "Aggressive over- or under-sampling breaks the neighborhoods that make the graph useful. Targets are held near 0.5% and 6%, and class imbalance is handled later with balanced batch sampling in the trainer. Fraud users are never capped.",
+   "t": "6:48"
+  },
+  {
+   "idea": "Make leakage impossible by graph construction",
+   "detail": "Each calendar month is a separate disjoint graph. Aggregation only uses earlier-timestamped neighbors, the fraud label is never a feature or edge, and scalers and vocabularies are fit on the training month only and then frozen.",
+   "t": "8:29"
+  },
+  {
+   "idea": "Aggregate with mean, max, and standard deviation, not mean alone",
+   "detail": "Mean pooling dilutes one dangerous neighbor among genuine ones (0.92 becomes 0.32 in their example). Max keeps it, and standard deviation shows neighborhood disagreement. The inductive design lets new users and merchants embed without retraining.",
+   "t": "11:23"
+  },
+  {
+   "idea": "Explainability is a requirement, not a nice-to-have",
+   "detail": "Subgraph attribution across 200 flagged cases per channel shows which linked edges drove each score. Analysts act on explanations that match their suspicions, and the labels they produce feed the next training round.",
+   "t": "14:17"
+  },
+  {
+   "idea": "Full per-transaction embedding caches are too big; predict on edges",
+   "detail": "Caching every transaction's representation needs about 60 GB and a daily embedding lag that drops TPR from 48% to 44%. Precomputing only users and merchants fixes the footprint at 2-3 GB, about 20x smaller.",
+   "t": "18:16"
+  },
+  {
+   "idea": "Cheap tricks that matter for a 3 ms SLA",
+   "detail": "Pin math library threads to one before heavy libraries load (they report this as the gap between 30 ms and 1 ms), warm the model at startup, and keep a single in-memory process that can later move to a distributed cache. The GNN forward pass is the largest latency component at 1.61 ms.",
+   "t": "19:25"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Soft-target sampling that keeps graph connectivity",
+   "how": "Select users so the fraud rate sits about 10x the natural rate (0.5% card, 6% online). Keep every selected user's full transaction history. Cap only genuine users, never fraud users, and do class balancing in the batch sampler.",
+   "when": "Graph or relational training data where row-level down-sampling would cut the edges that carry the signal."
+  },
+  {
+   "name": "Disjoint time-window graphs for leakage control",
+   "how": "Build one graph per calendar month with no edges crossing month boundaries. Use only earlier-timestamped neighbors, keep the label out of features and edges, and fit all scalers and vocabularies on the training split before freezing them.",
+   "when": "Temporal prediction tasks where train/val/test leakage through shared neighbors is a risk."
+  },
+  {
+   "name": "Order-invariant multi-statistic neighbor aggregation",
+   "how": "For each hop, sample a fixed, recency-biased set of neighbors. Concatenate mean, max, and std of their vectors, combine with the node's own vector through learned weights, then embed to a fixed-length vector. Use 128 dimensions (64 underfits, 256 costs more with no gain).",
+   "when": "Heterogeneous graphs where a single extreme neighbor should not be averaged away, and where unseen nodes must be embedded at inference without retraining."
+  },
+  {
+   "name": "GNN embeddings as features for an existing gradient-boosted model",
+   "how": "Train the GNN, export node or edge embeddings, add them to the tabular feature set, and keep the production GBDT. Compare against the GBDT alone at a fixed alert rate.",
+   "when": "You have a strong tabular baseline in production and need relational signal without replacing it."
+  },
+  {
+   "name": "Entity-behavior deviation features",
+   "how": "Compute per-entity baselines (rolling mean/std/max of recent amounts, transaction counts over 5 min, 1 h, and 24 h windows, distinct counterparties, country-change rate) and score each transaction as a deviation from its own entity's norm rather than a global threshold.",
+   "when": "Fraud or anomaly detection where normal behavior differs by entity."
+  },
+  {
+   "name": "Layer-wise full-graph precomputation with a cached serving path",
+   "how": "Run the full-graph forward pass offline layer by layer, batched by destination node so memory stays bounded. Store per-layer representations in a low-latency store. At request time, assemble neighbor states from the cache and run only the new transaction's last layers.",
+   "when": "Online scoring that needs graph context but cannot afford a full graph pass per request."
+  },
+  {
+   "name": "Edge-level prediction with entity-only embedding cache",
+   "how": "Precompute embeddings for entities (users, merchants) only and score the transaction edge at request time from those embeddings plus the transaction's own features. Accept a small TPR loss in exchange for about 20x smaller cache and CPU-class serving.",
+   "when": "The per-transaction embedding cache is too large or too stale to operate."
+  },
+  {
+   "name": "Subgraph attribution for analyst-facing explanations",
+   "how": "For each flagged case, attribute the score to linked edges (for example transaction-to-user velocity edges vs transaction-to-merchant edges) and show the top linked transactions as the reason.",
+   "when": "Regulated decisions where a bare score will not be acted on or documented."
+  },
+  {
+   "name": "Latency hygiene for Python model serving",
+   "how": "Set math library thread pools to 1 before importing heavy libraries, warm the model at startup, and keep the interface behind a cache abstraction so it can move to a distributed cache later.",
+   "when": "Sub-5 ms online inference where cold-start and thread contention dominate tail latency."
+  }
+ ],
+ "tools": [
+  "XGBoost"
+ ],
+ "numbers": [
+  {
+   "claim": "Physical card-present fraud base rate is about 0.05% (1 in 2,000); online fraud base rate is about 0.6% (about 12x higher).",
+   "t": "1:11"
+  },
+  {
+   "claim": "Alert budget is the top 0.5% to 1.5% of scored transactions. Precision at a fixed K is the metric that matters.",
+   "t": "1:44"
+  },
+  {
+   "claim": "Feature engineering moved the card-present positive rate only from 35.5% to 36.6% after going from 40 raw attributes to 87 engineered features. Online needed about 200 features for about one point.",
+   "t": "2:17"
+  },
+  {
+   "claim": "Headline lift is 27-33% relative TPR over the XGBoost baseline at the same alert rate, same window, same features.",
+   "t": "4:30"
+  },
+  {
+   "claim": "Projected annualized incremental fraud capture is about $65M across the two channels (speaker claim).",
+   "t": "4:30"
+  },
+  {
+   "claim": "Serving latency is 3 ms P99 (talk headline); measured end to end is 2.3 ms median and 3.1 ms P99, against a 3-4 ms SLA.",
+   "t": "4:30"
+  },
+  {
+   "claim": "Soft target fraud rates: about 0.5% for card-present (10x the natural rate) and 6% for online (10x the natural rate).",
+   "t": "6:48"
+  },
+  {
+   "claim": "Average user degree at training is 11.5 to nearly 14 for card-present transactions, matching inference, and stable across 12 test months.",
+   "t": "7:54"
+  },
+  {
+   "claim": "Model uses 202 features across three node types: 73 user, 109 transaction, 20 merchant. 32 transaction features are derived for fraud (10 entity history, 8 risk aggregates, 14 rolling-window velocity and temporal).",
+   "t": "9:39"
+  },
+  {
+   "claim": "Hidden size: 128 dimensions is the sweet spot. 64 slightly underfits, 256 costs more GPU and validation performance flattens past 128.",
+   "t": "13:06"
+  },
+  {
+   "claim": "Card-present: XGBoost alone 36% TPR vs GNN plus XGBoost 48% at a fixed 0.5% alert rate (33% relative lift), about $5.66M captured at 83% capture rate.",
+   "t": "13:38"
+  },
+  {
+   "claim": "Online: 48% TPR up to 61% (27% relative lift), about $35.4M captured at 71% capture rate. Online carries most of the $65M.",
+   "t": "14:17"
+  },
+  {
+   "claim": "Attribution weights: transaction velocity edges 0.94 (card-present) vs 0.62 (online); merchant edges 0.19 (online) vs 0.04 (card-present). Based on 200 flagged cases per channel.",
+   "t": "14:54"
+  },
+  {
+   "claim": "Full per-transaction embedding cache needs about 60 GB. Precomputing user and merchant embeddings only needs 2-3 GB (about 20x smaller). Per-transaction caching with a one-day lag drops TPR from 48% to 44%.",
+   "t": "18:16"
+  },
+  {
+   "claim": "Latency breakdown: GNN two-layer forward is 1.61 ms, the largest piece. Preprocessing, cache lookup, and the XGBoost head are each a fraction of a millisecond. End to end 2.3 ms median, 3.1 ms P99.",
+   "t": "19:25"
+  },
+  {
+   "claim": "Aggregation example: mean of four neighbors (0.1, 0.1, 0.1, 0.92) is 0.32, while max is 0.92. Pooling by mean alone hides the fraud-ring neighbor.",
+   "t": "11:59"
+  }
+ ],
+ "hot_takes": [
+  "Fraud is a property of a transaction's neighborhood, not a property of the transaction.",
+  "More row-level feature engineering cannot fix a model that sees one row at a time.",
+  "Sampling tabular data the usual way (over or under sampling) breaks the graph; keep full histories and balance later.",
+  "Mean pooling is the wrong default for fraud graphs because it hides a single dangerous neighbor."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "MemoryMesh (L2A) does GraphRAG and hybrid retrieval over linked memory; the talk's max/mean/std neighbor pooling and the entity-only precompute pattern are relevant to graph-based retrieval, but this is a fraud GNN, not agent memory.",
+   "action": "Read a GNN neighbor-pooling reference later and note whether max+std pooling beats mean for GraphRAG neighbor summaries in MemoryMesh."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content about the Claude Code harness, checkpoints, or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The entity-resolution hackathon works on linked records. The talk's neighborhood-aware features (aggregate neighbor match scores with max and std, not mean alone) and leakage-safe time splits could carry over to ER candidate features.",
+   "action": "When building ER pair features, add neighbor-aggregate features that use max and std alongside mean, and check them on the dev split."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T16:26:27"
+}

@@ -1,0 +1,174 @@
+{
+ "one_line": "Walkthrough of Flue, an open-source TypeScript agent-harness framework from the Astro team, showing agents, workflows, HTTP triggers and an in-memory sandbox tier that avoids booting containers.",
+ "summary": "The host introduces Flue (transcribed as \"Flu\"), an open-source TypeScript framework from the Astro team that makes a Claude Code-style agent harness programmable, with skills, tools and sandboxes built in. Flue sits on top of Pi, a minimal agent harness, and supports both human-in-the-loop agents and fully automated workflows. The demo builds a basic agent (a model plus instructions in one file, run through the Flue CLI with an instance ID), then a workflow that uses an imported skill to generate and score YouTube titles. It shows that the default sandbox is Bash-only and cannot see project skill files, and fixes this either by running on the local system or by wrapping the skill's Python script as a validated custom tool. The last section shows triggering workflows over HTTP with a middleware and a built server file, then polling for status. The host argues the default in-memory sandbox (Vercel's Just Bash, a TypeScript Bash reimplementation) makes running many agents cheap, with real containers opt-in. The video gives no measurements to back the cost claim.",
+ "speakers": [
+  "Unnamed Better Stack host"
+ ],
+ "orgs": [
+  "Astro",
+  "Better Stack",
+  "Amplitude",
+  "Anthropic",
+  "Vercel",
+  "Cloudflare",
+  "Daytona",
+  "Mastra"
+ ],
+ "format": "review",
+ "topics": [
+  "agent-architecture",
+  "sandboxing-execution",
+  "skills-self-improvement",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "flue",
+  "agent-harness",
+  "typescript",
+  "pi-agent",
+  "workflows",
+  "skills",
+  "sandbox",
+  "just-bash",
+  "cloudflare-durable-objects",
+  "http-trigger",
+  "valibot",
+  "claude-code"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Flue is a harness-first framework: it turns what Claude Code does (tools, MCP, CLAUDE.md, sandboxes, skills) into code you can program and deploy.",
+   "detail": "Built on Pi, a minimal agent harness that the speaker says OpenClaw also uses. Pitched as deployable anywhere in a few lines of TypeScript.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Origin story: built for AI workflows inside Astro's own GitHub repo, then generalized after an Amplitude engineer adopted it.",
+   "detail": "The speaker's point is that the harness is not tied to a human at a terminal, so it suits fully automated workflows as well as interactive agents.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Human-free workflows are the differentiator versus Claude Code, which assumes a person driving the agent.",
+   "detail": "Flue supports agents that need human input and workflows that run unattended for narrow, stable processes.",
+   "t": "0:53"
+  },
+  {
+   "idea": "An agent is a model plus instructions in one file. The CLI compiles and serves it, and the instance ID identifies a running agent.",
+   "detail": "On the Cloudflare target, the instance ID maps to its own Durable Object, which gives per-instance persistence. The Node target serves an HTTP server built on Hono. Output includes text, input and output tokens, prompt cost and model.",
+   "t": "2:51"
+  },
+  {
+   "idea": "A workflow exports a run() function instead of an agent. Inside it, the agent opens a session with a skill, and the input comes from a typed payload.",
+   "detail": "The demo passes a script path from the payload as the prompt; the instructions tell the agent to study the script and produce 10 titles ranked by an imported title-scoring skill.",
+   "t": "4:16"
+  },
+  {
+   "idea": "The default sandbox is Bash-only and cannot see project files, including the skill's Python script, so skills silently fail. Fixes are local execution or a custom tool.",
+   "detail": "Switching to the local runtime makes the workflow run on the host, with the working directory set to the skill folder. The safer alternative wraps the Python script as a tool whose parameters are validated with Valibot.",
+   "t": "5:31"
+  },
+  {
+   "idea": "Workflows can be triggered over HTTP: add a router middleware, build with a target and port, run the generated server.mjs, POST to start a run, and GET status by workflow ID.",
+   "detail": "server.mjs inlines all agents and workflows, so it is the only file needed for any Node.js host. WebSockets are available for streaming workflow progress.",
+   "t": "6:52"
+  },
+  {
+   "idea": "Sandbox tiering is the cost argument: each agent gets an in-memory Just Bash sandbox by default, with a real container only when needed.",
+   "detail": "Just Bash gives grep, glob and read without booting a Linux machine. The speaker's claim is that this lets Flue run thousands of agents for next to nothing. No figures are shown.",
+   "t": "7:52"
+  },
+  {
+   "idea": "Versus Mastra, the speaker's (older) experience was manual wiring of sessions, memory, sandbox and tool loading; Flue ships those defaults.",
+   "detail": "The comparison relies on the speaker's last use of Mastra, which he says he may be out of date on. Subagents, agent profiles, Daytona and Cloudflare sandbox URLs, and auth or health-check routes are mentioned but not demonstrated.",
+   "t": "7:52"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Single-file agent definition",
+   "how": "Install the Flue runtime and CLI, set a provider API key (demo uses Anthropic), run `flue init` with a target (Node or Cloudflare) to write flue.config.ts, then create an agents/ file that sets the model and appends instructions to the system prompt. Start it with the Flue CLI, passing the file name and an instance ID.",
+   "when": "Starting a basic agent, or when each long-running agent needs its own ID (on Cloudflare the ID maps to a Durable Object)."
+  },
+  {
+   "name": "Skill-backed workflow",
+   "how": "Put skills in the skills/ directory and workflows in workflows/ at the project root. Import the skill with a skill import attribute. Export a run() function that takes the typed payload (for example a file path), opens a session in the harness, and passes the file contents as the prompt. Run it with `flue run <workflow> --target <target>` and a JSON payload.",
+   "when": "Automating a repeatable, unattended process that depends on a skill, such as generating and ranking content."
+  },
+  {
+   "name": "Local execution for skills that need files",
+   "how": "Import `local` from the Flue runtime's node entry and use it in place of the default sandbox. Change the working directory to the skill folder so the agent can find the files it needs.",
+   "when": "The agent must run host scripts such as Python. Accept the tradeoff that it has full access to the local system."
+  },
+  {
+   "name": "Safer custom tool instead of local mode",
+   "how": "Load the skill's Python script inside the agent file, define a tool (the demo calls it score title) with Valibot-validated parameters that runs the script, and register that tool on the agent.",
+   "when": "The agent should run one script without access to the whole filesystem."
+  },
+  {
+   "name": "HTTP-triggered workflows",
+   "how": "Add the Flue router middleware to the project. Run `flue build --target node` with an optional port, then run the generated server.mjs. Trigger with `curl -X POST` to the workflow route with a JSON body to get a workflow ID, then `curl` the workflow ID for status and results (piped to jq). WebSockets are available for streaming.",
+   "when": "Other services or cron-like callers need to start workflows and poll results without a CLI."
+  },
+  {
+   "name": "Tiered sandboxes",
+   "how": "Keep the default per-agent in-memory Just Bash sandbox (grep, glob, read, no container boot). Opt into a real container, or a Daytona or Cloudflare sandbox given by URL, only for agents that need a real OS.",
+   "when": "Running many light, mostly text-and-file agents where container cold start dominates cost. Not appropriate where real isolation or arbitrary binaries are needed."
+  }
+ ],
+ "tools": [
+  "Flue (Flue runtime, Flue CLI, flue.config.ts, server.mjs)",
+  "Pi (minimal agent harness)",
+  "OpenClaw (mentioned as built on Pi)",
+  "Astro",
+  "Bun",
+  "Vite",
+  "Hono",
+  "Node.js",
+  "Cloudflare Workers and Durable Objects",
+  "Cloudflare sandboxes",
+  "Vercel Just Bash",
+  "Daytona",
+  "Anthropic API",
+  "Claude Code",
+  "MCP",
+  "CLAUDE.md",
+  "Valibot",
+  "jq",
+  "Mastra",
+  "Vercel AI SDK",
+  "WebSockets"
+ ],
+ "numbers": [
+  {
+   "claim": "The speaker says Flue can run thousands of agents for next to nothing, because in-memory Just Bash avoids booting a container. No benchmark, price or latency figure is given.",
+   "t": "7:52"
+  },
+  {
+   "claim": "Each run prints input tokens, output tokens, prompt cost and model used. The example values are not shown on screen.",
+   "t": "2:51"
+  }
+ ],
+ "hot_takes": [
+  "The cost-saving claim of thousands of agents for next to nothing is unmeasured. Verify with your own sandbox timing before relying on it.",
+  "Just Bash is an in-memory TypeScript reimplementation of Bash, not a real Linux environment, and it is not a security boundary. The speaker shows that skills break in the default sandbox and that local mode gives the agent full host access.",
+  "The Mastra comparison relies on the speaker's older experience with Mastra and is not a fresh side-by-side test.",
+  "The demo covers two prompts and a single HTTP trigger. Subagents, agent profiles and auth routes are only listed, not shown."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Crucible (L2C) runs opt-in sandboxed code execution on celld or Cloudflare. Flue's tiering, with an in-memory Bash-like tier by default and real containers opt-in, is a direct design option for that split.",
+   "action": "Benchmark an in-memory, no-container exec tier against the celld container path for cold start, per-run cost and failure modes, and keep the container as an explicit opt-in."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI with checkpoint/resume, loops and schedules. Flue's run() sessions, instance IDs mapped to durable state, and HTTP-triggered workflows with status polling are a close reference design.",
+   "action": "Read Flue's workflow and session model (run(), instance IDs, the workflow status endpoint, the Durable Object mapping) and compare it with ProsHarness checkpoint/resume and schedules, then decide whether ProsHarness loops should be triggerable over HTTP with status polling."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

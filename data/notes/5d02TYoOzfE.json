@@ -1,0 +1,211 @@
+{
+ "one_line": "Hermes Agent cost-reduction tutorial from AI LABS: where the tokens go, and which model, context, tool, and hard-limit settings cut the bill without hurting output.",
+ "summary": "The speaker's team ran Hermes Agent on an OpenAI subscription, hit usage limits, moved to OpenRouter, and then found per-token billing exposed high costs, mostly from background tasks that were set up poorly. The video explains what consumes tokens (system prompt, conversation history, skill headers, MCP tool definitions, memory files, auto-evolving skills and memory, and always-on cron-style background runs) and how to inspect usage through Hermes's usage database and its insights command. The main levers are model choice (use an existing subscription where Hermes supports it, or the OpenRouter Pareto router), pointing auxiliary background tasks and sub-agents at cheaper models, and matching the effort level to the task. Context levers include compressing conversations early (lower compression threshold and target ratio), capping tool-result size, using ephemeral system prompts, and trimming memory and agent files, with auto memory optional. Tool and skill hygiene (disable unused tools, skills and MCP servers; set tool search to auto) and hard limits (lower max tokens, max turns 150 to 60, hard stop on, cron max-turns caps) finish the list. The speaker does not state a dollar savings figure, despite promising one.",
+ "speakers": [],
+ "orgs": [
+  "AI LABS",
+  "OpenRouter",
+  "OpenAI",
+  "Anthropic",
+  "Google (Gemini)",
+  "Luma"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "token-cost-efficiency",
+  "context-engineering",
+  "agent-architecture",
+  "coding-agents"
+ ],
+ "tags": [
+  "hermes-agent",
+  "token-cost",
+  "openrouter",
+  "pareto-router",
+  "context-compression",
+  "tool-search",
+  "mcp",
+  "cron",
+  "max-turns",
+  "hard-stop",
+  "sub-agents",
+  "effort-level",
+  "auto-memory",
+  "skills",
+  "usage-tracking",
+  "always-on-agent"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Hermes's per-token bill came mostly from background tasks that were set up incorrectly, not from active use, which is why OpenRouter's per-token billing made the cost visible.",
+   "detail": "The team moved from an OpenAI subscription to OpenRouter to escape usage limits. They then saw costs far above expectations, and most of the spend came from poorly configured recurring tasks.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Per-message input cost includes much more than the prompt: system prompt, full conversation history, every skill header, MCP tool definitions, and memory and user files.",
+   "detail": "Hermes ships with about 90 skills, and the count grows because it turns reusable workflows into new skills. Self-evolving skills and auto-updating memory also consume tokens, since Hermes scans conversations to create skills and extract user details.",
+   "t": "1:06"
+  },
+  {
+   "idea": "An always-on agent burns tokens through background tasks, so cost grows with repetition and the number of scheduled jobs.",
+   "detail": "Hermes runs 24/7 on a local server or a rented VPS. Each background run is cheap, but repeated and similar jobs pile up. Goals also cost money. Hermes stores token usage in a database in the root folder, and its insights command gives a 30-day cost breakdown by component, tool, and skill.",
+   "t": "2:33"
+  },
+  {
+   "idea": "The connected model drives most of the bill, so the first lever is which provider or subscription Hermes runs through.",
+   "detail": "The speaker says the Codex subscription is the best option for Hermes. He says Anthropic and Gemini subscriptions are listed but not usable this way, and that Claude Code needs a separate API key. On OpenRouter, the Pareto router routes each task to one of 13 models across price tiers.",
+   "t": "3:44"
+  },
+  {
+   "idea": "Auxiliary background tasks default to the main model, so pointing them at a lighter model removes a large hidden cost.",
+   "detail": "Auxiliary tasks include reading images, searching skills, loading MCP tools, and writing profile descriptions. Sub-agents are token-heavy because each runs its own session, so a cheaper sub-agent model saves on every spawn. Effort level should match the task, and thinking can be turned off for simple work.",
+   "t": "4:58"
+  },
+  {
+   "idea": "Context compression is the main way to shrink the per-turn payload, and the default threshold is high.",
+   "detail": "Compress often to start a fresh session built on a summary. The default compression threshold is 50% of the context window, and the speaker recommends a lower value. A lower target ratio carries less of the old conversation forward. Tool-result size limits control how much tool output enters context.",
+   "t": "6:40"
+  },
+  {
+   "idea": "Ephemeral system prompts and trimmed memory or agent files keep one-off instructions and standing context from taxing every message.",
+   "detail": "Use an ephemeral system prompt for a single-session instruction instead of writing it into the context files. Keep memory and agent files small, since they sit in context on every turn. Auto memory can be turned off, but the team keeps it on because it shares company context through Slack.",
+   "t": "7:59"
+  },
+  {
+   "idea": "Fix a bad turn with undo and a fresh, specific prompt rather than re-prompting on top of the mistake.",
+   "detail": "Undo steps back exactly one message. It is not a full rewind. The speaker prefers it because the next prompt can say what went wrong and what to avoid.",
+   "t": "9:26"
+  },
+  {
+   "idea": "Unused tools, skills, and MCP servers are dead weight in every request, so the agent's surface area should be trimmed.",
+   "detail": "Each enabled tool and MCP server adds to the context. The speaker split out a separate profile for code execution and disabled the unused tools. Set tool search to auto so tools load only when needed, as in Claude's tool search.",
+   "t": "10:29"
+  },
+  {
+   "idea": "Hard limits cap runaway cost: output max tokens, max turns, a hard stop on loops, and per-cron turn caps.",
+   "detail": "The default max turns is 150 and the team lowered it to 60. The hard-stop setting changes from false to true to halt stuck loops. Cron jobs have no turn limit by default, so the speaker sets one for each.",
+   "t": "11:48"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Audit token spend before tuning",
+   "how": "Ask an agent to read Hermes's usage database in the root folder and produce a breakdown of sessions, tokens, and cost since install. Or run Hermes's insights command for the last 30 days, which shows cost by component, most-used tools and skills, activity patterns, and longest sessions.",
+   "when": "Before changing any settings, to find which background jobs, skills, or sessions dominate the bill."
+  },
+  {
+   "name": "Route auxiliary and sub-agent work to a cheaper model",
+   "how": "In config.yaml, the auxiliary-task model defaults to auto, which falls back to the main model. Point auxiliary tasks (image reading, skill search, MCP tool loading, profile writing) at a lighter model, and set a cheaper model for sub-agents. The speaker did not name the exact config keys.",
+   "when": "When the main model is expensive and background or delegated work is simple and does not need heavy reasoning."
+  },
+  {
+   "name": "Use the OpenRouter Pareto router",
+   "how": "Set the OpenRouter provider and select the Pareto router, which picks a model per task across 13 models from cheap to powerful tiers.",
+   "when": "When you need many models under one API key and want per-task cost-quality routing for team-wide use."
+  },
+  {
+   "name": "Match effort level to task, and turn thinking off for simple work",
+   "how": "Lower the effort level from max for routine tasks, and disable thinking entirely for tasks that need little reasoning.",
+   "when": "For simple, mechanical, or repetitive tasks, where max effort burns tokens without better output."
+  },
+  {
+   "name": "Compress context early with a lower threshold and target ratio",
+   "how": "Run the compress command often to start a fresh session built on a summary. Lower the compression threshold from its 50% default, and lower the target ratio so less of the old conversation carries over.",
+   "when": "In long-running sessions where per-turn history resends dominate the cost."
+  },
+  {
+   "name": "Cap tool output in context",
+   "how": "Set the tool-result size limit lower than the high value used on the subscription setup. Higher limits avoid missed details, but cost more per turn.",
+   "when": "When tool outputs are large and the team has moved to per-token billing."
+  },
+  {
+   "name": "Use ephemeral system prompts for one-session instructions",
+   "how": "Pass a one-off instruction as an ephemeral system prompt, which applies to a single session only, rather than writing it into the Hermes context files.",
+   "when": "For instructions needed once, so they do not sit in the context window of every later session."
+  },
+  {
+   "name": "Keep knowledge in files the agent loads on demand",
+   "how": "Organize the local second-brain notes so the agent reads them piece by piece, rather than loading everything. Trim memory and agent files, since they sit in context on every message. Optionally turn off auto memory.",
+   "when": "When the agent holds a lot of reference material or the memory files keep growing."
+  },
+  {
+   "name": "Undo the last message and re-prompt with the failure described",
+   "how": "Use the undo command to step back one message. Then give a fresh prompt that states what went wrong and what to avoid, instead of stacking corrections.",
+   "when": "When the agent produces a wrong answer and the next prompt should correct it cleanly."
+  },
+  {
+   "name": "Trim tools, skills, and MCP servers to what is used",
+   "how": "Run the Hermes list command to see the more than 17 tools. Disable unused tools via the desktop app or the tool's disable command. Turn off unused skills, disconnect unused MCP servers, and set tool search to auto so tools load on demand.",
+   "when": "For a profile that does not need certain tools, such as a team profile with no code execution, or whenever the tool list is long."
+  },
+  {
+   "name": "Set hard limits on output, turns, and loops",
+   "how": "Set the model's max tokens to cap output length. Lower max turns from the 150 default (the speaker uses 60). Change the hard-stop setting from false to true to stop loops. Set a max-turns cap on each cron job, which has no limit by default.",
+   "when": "For always-on or scheduled agents that can get stuck and burn turns resending full context."
+  }
+ ],
+ "tools": [
+  "Hermes Agent",
+  "OpenRouter",
+  "Pareto router (OpenRouter)",
+  "OpenAI Codex subscription",
+  "OpenAI subscription",
+  "Claude Code",
+  "Anthropic API",
+  "Gemini",
+  "MCP servers",
+  "Slack",
+  "Luma (sponsor)",
+  "config.yaml"
+ ],
+ "numbers": [
+  {
+   "claim": "Hermes ships with about 90 pre-installed skills, and the number keeps growing as it creates new skills from workflows.",
+   "t": "1:06"
+  },
+  {
+   "claim": "Default compression threshold is 50% of the context window; the speaker recommends a lower value.",
+   "t": "6:40"
+  },
+  {
+   "claim": "The OpenRouter Pareto router selects among 13 models across cheap-to-expensive tiers.",
+   "t": "3:44"
+  },
+  {
+   "claim": "Default max turns is 150; the team lowered it to 60.",
+   "t": "11:48"
+  },
+  {
+   "claim": "Hermes has more than 17 built-in tools, viewable with the Hermes list command.",
+   "t": "9:26"
+  },
+  {
+   "claim": "The video promises to show how much money was saved, but no dollar figure or percentage is stated in the transcript.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Quality is capped at 2 because the video includes a sponsored segment for Luma (about 5:40 to 6:40) and the title ('Basically Free') overstates the result; the speaker gives no savings figure despite promising one.",
+  "The claim that Anthropic and Gemini subscriptions cannot be used with Hermes, and that doing so breaks provider policy, is stated without citation and should be verified before relying on it.",
+  "The settings are specific to one team's Hermes setup and the speaker's own usage, so the numeric values (60 max turns, lower compression) may not transfer to other workloads.",
+  "The advice to use the Codex subscription is presented as the best option, but it reflects the speaker's own setup and is not benchmarked."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS's Govrix Scout already has budgets and strategy routing. The video's per-task model routing (Pareto router), cheaper auxiliary-model tiers, and cron turn caps are concrete cost-control patterns to compare against it.",
+   "action": "Compare the Pareto router's tiered model selection with Govrix strategy routing, and add a per-job max-turns budget for scheduled agent runs."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs loops and schedules around Claude Code. The video's hard-stop loop guard, max-turns caps on cron jobs, tool-search auto-loading, and undo-then-reprompt pattern map directly onto those features.",
+   "action": "Add a max-turns cap and a no-progress hard stop to ProsHarness's scheduled loops, and check whether Claude Code's tool search is set to auto in the harness config."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

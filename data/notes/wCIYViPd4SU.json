@@ -1,0 +1,144 @@
+{
+ "one_line": "Two Sigma explains how it runs cloud agents as each employee's own identity, using a propagated attribution header and enterprise-grounded web search to cut exfiltration risk.",
+ "summary": "Xu Feng (credited as Shu Fang in the title) from Two Sigma describes how the firm moved cloud coding agents from local CLIs to remote runs under each employee's real identity. The naive shared \"shadow agent\" identity broke down on permission sync, licensing and blocked systems, so the firm reused per-user Kubernetes namespaces it already had in every region. The main risks he names are losing track of whether a human or an agent acted, and exfiltration or prompt injection through open web access. To handle attribution, every agent appends to an identity header, much like a trace ID, so the full action chain can be replayed. To handle web access, the native web search and fetch tools are denied and requests go through Google's enterprise web grounding inside the VPC, which trades freshness (about 6 to 24 hours) for removing external egress. He frames this as optimizing return over risk and says the firm lost no expected value while cutting risk. The firm now ships a managed fleet of cloud agents for every user. He also says he expects to move more token use to self-hosted open-weight models over time, for cost and to avoid volatility from model updates.",
+ "speakers": [
+  "Shu Fang (introduced as Xu Feng in the transcript)"
+ ],
+ "orgs": [
+  "Two Sigma",
+  "Google (Web Grounding for Enterprise)",
+  "Anthropic (Claude Code)"
+ ],
+ "format": "talk",
+ "topics": [
+  "security-guardrails",
+  "enterprise-adoption",
+  "claude-code",
+  "observability"
+ ],
+ "tags": [
+  "agent identity",
+  "attribution header",
+  "web grounding",
+  "egress control",
+  "prompt injection",
+  "regulated industry",
+  "cloud agents",
+  "claude code",
+  "kubernetes namespaces",
+  "mcp cli"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Run agents under the user's own identity, not a separate machine or shadow identity.",
+   "detail": "A separate agent identity was hard to keep in sync, doubled licensing, and was blocked by some systems such as Google Workspace. Running as the user avoids those constraints.",
+   "t": "2:13"
+  },
+  {
+   "idea": "Reuse existing per-user Kubernetes namespaces for remote agents.",
+   "detail": "Every user already had namespaces in every region for automated jobs. A sidecar identity service mounts the user's identity into the pod, so the agent runs as that person.",
+   "t": "3:42"
+  },
+  {
+   "idea": "Two core risks: attribution and external exfiltration.",
+   "detail": "Without a distinction, a human action and an agent action look the same and cannot be audited or blocked separately. Open web access also brings exfiltration, prompt injection and licensing risk.",
+   "t": "4:43"
+  },
+  {
+   "idea": "Frame the design as return over risk, not as a yes or no on agents.",
+   "detail": "The goal is to keep most of the value of agents running as users while reducing the two main risks.",
+   "t": "6:42"
+  },
+  {
+   "idea": "Propagate an attribution header the way trace IDs are propagated.",
+   "detail": "Every agent appends to the header. It is enforced through HTTP clients, MCP servers and skills. This lets the team replay the full chain of actions that led to a result, not only the first actor.",
+   "t": "8:10"
+  },
+  {
+   "idea": "Deny native web tools and route web access through enterprise grounding.",
+   "detail": "Native web search and fetch are removed from the agent's tool set. Requests go through an MCP CLI and skills to Google's web index inside the VPC. Freshness lags by hours (about 24 hours in general, about 6 hours for frequently updated sites).",
+   "t": "9:38"
+  },
+  {
+   "idea": "Tagging gives observability; identity verification is not the only control.",
+   "detail": "The speaker says the header adds a lot of observability over pure identity checks. The firm accepts index lag as the cost of removing egress.",
+   "t": "12:01"
+  },
+  {
+   "idea": "Enterprise infrastructure can make risky agent capabilities acceptable.",
+   "detail": "He argues that a personal machine with full permissions is the worse default. Using enterprise controls can reduce the risk and still deliver the value.",
+   "t": "13:30"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run agents as the user identity in existing per-user namespaces",
+   "how": "Trigger a controller that starts a pod in the user's namespace. A sidecar identity service provides the user's identity to the containers, so the agent acts as that user.",
+   "when": "You already run per-user namespaces for automated jobs and want remote agents without a separate machine identity."
+  },
+  {
+   "name": "Propagate an attribution header like a trace ID",
+   "how": "Populate an agent-actor header at the first entry point. Enforce it with HTTP clients, MCP tools and skills so every downstream hop appends to it. Record it on spans as you would a trace ID.",
+   "when": "You need to tell human actions from agent actions and replay the chain of actions behind an outcome."
+  },
+  {
+   "name": "Deny native web tools and route through enterprise grounding",
+   "how": "Remove the harness's built-in web search and fetch tools from the tool list. Expose search and fetch through an MCP CLI and skills that call the grounded index inside the network boundary.",
+   "when": "External egress and prompt injection from web content are the main risks, and slightly stale results are acceptable."
+  },
+  {
+   "name": "Enforce tool behaviour with existing harness primitives",
+   "how": "Use the agent harness's configuration to block tools, and use skills and MCP to make the intended path the default. Do not rely on the model's choice alone.",
+   "when": "You want policy enforcement on agent behaviour without changing the model."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Google Web Grounding for Enterprise",
+  "MCP CLI",
+  "Kubernetes",
+  "Brave Search (native web tool in Claude Code, per speaker)"
+ ],
+ "numbers": [
+  {
+   "claim": "Firm is about 25 years old and regulated.",
+   "t": "1:10"
+  },
+  {
+   "claim": "Claude Code GA around June 2025, when the local-machine pattern was common.",
+   "t": "2:13"
+  },
+  {
+   "claim": "Web grounding freshness: within 24 hours generally, within 6 hours for frequently updated sites (as the speaker last checked).",
+   "t": "10:38"
+  },
+  {
+   "claim": "Every user has a managed cloud agent; the work described happened over 2025.",
+   "t": "14:28"
+  }
+ ],
+ "hot_takes": [
+  "Running agents under a person's real identity is acceptable in a regulated firm if attribution and egress are controlled.",
+  "Stale enterprise search (hours old) is a good trade for removing external web egress.",
+  "A personal machine with full agent permissions is a worse default than enterprise infrastructure with guardrails.",
+  "Self-hosted open-weight models will win on cost and stability for many enterprise token workloads."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The attribution header and replayable action chain map onto AgentOS's Merkle audit log and proxy. Its L1 proxy could record an originating-actor header, which is the speaker's core observability idea.",
+   "action": "Add an originating-actor header to requests through the Govrix proxy, carry it into the Merkle audit entries, and check that an agent-to-tool hop keeps the same actor ID."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps the Claude Code CLI. The speaker's method of denying native web tools and routing through a controlled MCP path fits its approval and credential-safety goals.",
+   "action": "Test denying the native WebSearch and WebFetch tools in the Claude Code settings the harness generates, and route web lookups through one MCP tool that the harness controls and logs."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

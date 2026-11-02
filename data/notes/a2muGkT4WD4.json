@@ -1,0 +1,170 @@
+{
+ "one_line": "Adrien Grondin (Locally AI) shows how to run quantized Gemma 4 on iPhone with Apple's MLX, covering the mlx-swift-lm package, picking quantized weights, and speed on phones.",
+ "summary": "The speaker is the developer of Locally AI, an iPhone/iPad/Mac chatbot that runs on-device models with MLX, Apple's framework for Apple Silicon. He says a Gemma 4 model quantized to 4-bit runs at about 40 tokens per second on the latest iPhone, and that around 20 tokens per second is still useful on older phones. For developers, the path is the mlx-swift-lm package inside an iOS/macOS app, which loads a model directly by its Hugging Face ID. He recommends the mlx-community organization on Hugging Face, which posts pre-quantized weights (often within about 30 minutes of a release), and advises staying between 4-bit and 8-bit because quality drops noticeably below 4-bit. He names the model download size (roughly 1 to 3 GB) as the main barrier for users. He says tool calling works in mlx-swift-lm but structured generation does not yet. He also mentions that small on-device models (a Liquid model he describes as about 350 parameters) can power text-processing automations in Apple Shortcuts. The talk ends with a short note that LM Studio acquired Locally AI, and that LM Studio can serve local models over an OpenAI- or Anthropic-compatible server to compare MLX and llama.cpp engines. The talk is a short demo-driven intro with some product promotion.",
+ "speakers": [
+  "Adrien Grondin"
+ ],
+ "orgs": [
+  "Locally AI",
+  "LM Studio",
+  "Apple",
+  "Hugging Face"
+ ],
+ "format": "demo",
+ "topics": [
+  "local-ai",
+  "inference-serving"
+ ],
+ "tags": [
+  "on-device",
+  "MLX",
+  "Apple Silicon",
+  "iPhone",
+  "quantization",
+  "Gemma 4",
+  "mlx-swift-lm",
+  "Hugging Face",
+  "LM Studio",
+  "tool calling",
+  "Shortcuts"
+ ],
+ "key_ideas": [
+  {
+   "idea": "MLX is Apple's framework for running models on Apple Silicon, and the same stack covers iPhone, iPad and Mac.",
+   "detail": "Locally AI is built on MLX, so the app runs models fully on-device. The speaker says the stack is tuned for the chips in these devices.",
+   "t": "0:47"
+  },
+  {
+   "idea": "Integrating on-device models into a Swift app is quick with mlx-swift-lm.",
+   "detail": "The speaker says a working iOS app with a locally running model can take under 10 minutes using this package. Python and macOS users can use mlx-lm, mlx-vlm, and mlx-audio instead.",
+   "t": "1:59"
+  },
+  {
+   "idea": "Pick pre-quantized weights from the mlx-community Hugging Face org instead of quantizing yourself.",
+   "detail": "The speaker says new models usually appear there in several quantized versions, often about 30 minutes after release. You pass the model ID to the framework and it downloads the weights.",
+   "t": "3:14"
+  },
+  {
+   "idea": "Quantization level is a quality trade-off: stay between 4-bit and 8-bit.",
+   "detail": "Full-size weights are too large for phones. The speaker says quality starts to drop noticeably below 4-bit, so 4-bit is his lower bound and 8-bit is his upper bound for small models.",
+   "t": "4:27"
+  },
+  {
+   "idea": "Gemma 4 at 4-bit is fast enough on a current iPhone for interactive chat.",
+   "detail": "He reports about 40 tokens per second, shown live offline with streaming output. He says a non-streaming UI that waits a few seconds also works for long outputs.",
+   "t": "5:39"
+  },
+  {
+   "idea": "Model download size, not speed, is the main barrier for end users.",
+   "detail": "Models are roughly 1 to 3 GB. The speaker expects this to improve as models get smaller and phones get faster.",
+   "t": "6:39"
+  },
+  {
+   "idea": "Tool calling works on-device, but structured generation is not supported yet.",
+   "detail": "In Q&A he says mlx-swift-lm supports tool calling and models have improved at it. Structured generation is not supported in the package and he points to third-party packages.",
+   "t": "8:02"
+  },
+  {
+   "idea": "Very small local models are useful for automation rather than chat.",
+   "detail": "He describes a small Liquid model he calls 350 parameters that runs fast enough in Shortcuts for text processing steps.",
+   "t": "4:27"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Load quantized models by Hub ID in an on-device Swift app",
+   "how": "Add the mlx-swift-lm package to the app, then pass a Hugging Face model ID from the mlx-community org. The framework downloads the weights and runs them locally.",
+   "when": "Shipping a private, offline chat or text feature in an iOS, iPadOS or macOS app."
+  },
+  {
+   "name": "Choose quantization between 4-bit and 8-bit",
+   "how": "Start from a 4-bit build for speed on phones. Move up to 8-bit for small models if quality matters more, and avoid going below 4-bit where quality drops.",
+   "when": "Fitting a model into phone memory and latency budget while keeping output usable."
+  },
+  {
+   "name": "Stream tokens to the UI",
+   "how": "Show streamed output so users see tokens as they arrive at about 40 tok/s, or wait for the full answer when outputs are long and streaming adds no value.",
+   "when": "Building UI on top of on-device generation with variable output length."
+  },
+  {
+   "name": "Small local model for automation steps",
+   "how": "Use a very small model in a system automation tool such as Shortcuts for text processing steps, not for open-ended chat.",
+   "when": "Doing fast, cheap text transforms on the device."
+  },
+  {
+   "name": "Compare inference engines via a local server",
+   "how": "Run LM Studio, load the same model in MLX and llama.cpp builds, and open its local server so an app can point at it through an OpenAI- or Anthropic-compatible API.",
+   "when": "Benchmarking engines or testing an app against a local model before moving to a hosted endpoint."
+  }
+ ],
+ "tools": [
+  "MLX",
+  "mlx-swift-lm",
+  "mlx-lm",
+  "mlx-vlm",
+  "mlx-audio",
+  "Hugging Face",
+  "mlx-community",
+  "LM Studio",
+  "llama.cpp",
+  "Apple Shortcuts",
+  "Gemma 4",
+  "Qwen",
+  "Liquid models"
+ ],
+ "numbers": [
+  {
+   "claim": "Gemma 4 at 4-bit runs at about 40 tokens per second on the latest iPhone, streaming, offline (speaker's live demo).",
+   "t": "5:39"
+  },
+  {
+   "claim": "Speaker says about 20 tokens per second on older iPhones is still useful (estimate, not a measurement shown).",
+   "t": "6:39"
+  },
+  {
+   "claim": "Quantized models are typically about 1 to 3 GB to download, which the speaker calls the biggest barrier.",
+   "t": "6:39"
+  },
+  {
+   "claim": "Speaker recommends quantization between 4-bit and 8-bit; below 4-bit output quality drops noticeably.",
+   "t": "4:27"
+  },
+  {
+   "claim": "The mlx-community org hosts almost 4,000 to 5,000 models, and new ones appear about 30 minutes after release.",
+   "t": "3:14"
+  },
+  {
+   "claim": "A working iOS app with an on-device model can be set up in under 10 minutes (speaker's estimate).",
+   "t": "1:59"
+  }
+ ],
+ "hot_takes": [
+  "Quantizing below 4-bit makes small models not worth using, so 4-bit is the floor.",
+  "On-device LLMs are already fast enough for interactive chat on current phones, and model size is now the main barrier.",
+  "Integrating an on-device model into a Swift app is easy enough to hand to a coding agent."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS InferCraft targets vLLM on one RTX 5090, not phones, so this talk only touches its quantization trade-off and local-engine comparison.",
+   "action": "When choosing quantized weights for InferCraft tests, reuse the speaker's 4-bit floor as a quality check, and compare MLX vs llama.cpp only if a local-model baseline is needed."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The talk covers on-device inference and says nothing about Claude Code harnesses, checkpoints, or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "Short product demo about on-device chat, with no evals, agent design or cost data relevant to the team's work.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

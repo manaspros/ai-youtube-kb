@@ -1,0 +1,178 @@
+{
+ "one_line": "Arize's PM on two years of shipping Alex, its in-product agent: keep the loop, plan, stop rule and memory in harness code, use small capped memory files, and treat production traces as regression tests.",
+ "summary": "Fuad Ali, an AI PM at Arize AI, walks through two years of rebuilding Alex, the in-product agent inside Arize AX, from a 2023 router-over-skills prototype to a single-agent design with on-demand skills and long-term memory. The team deliberately owns the agent loop, plan, stopping rule and memory in harness code and does not use an agent framework. Their lessons cover moving the plan out of a to-do tool and into the harness, making a finish call a gate the harness enforces, and keeping oversized tool results out of context by truncating them and letting the agent query the rest with code. For memory, a single markdown file per user capped at 8,000 characters, written by a background job after the session, beat vector stores and knowledge graphs. The talk also covers choosing a fast default model, replacing page-specific specialists with one agent, and using production sessions as regression datasets with judges calibrated against human gold labels. Much of it is generic harness engineering, and the Arize product is mentioned throughout.",
+ "speakers": [
+  "Fuad Ali"
+ ],
+ "orgs": [
+  "Arize AI"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "context-engineering",
+  "memory",
+  "evals"
+ ],
+ "tags": [
+  "agent harness",
+  "planning",
+  "finish gate",
+  "iteration limit",
+  "tool result truncation",
+  "jq",
+  "long-term memory",
+  "markdown memory file",
+  "single agent",
+  "on-demand skills",
+  "model selection",
+  "production traces",
+  "regression datasets",
+  "LLM judges",
+  "gold labels",
+  "Arize AX",
+  "trace analysis agent"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Alex started in late 2023 as a router over skills with a tool-calling loop, and it moved to iterative tool calling plus a to-do tool in August 2025 and a Sonnet 4.5-based relaunch in February 2026.",
+   "detail": "Early on, math was moved out of the model and into harness code. The speaker's early prototype with 3.5-era models was about 50% hallucination and 50% useful, by a staff engineer's account. By June the team had merged specialist agents into one agent that loads skills on demand.",
+   "t": "3:53"
+  },
+  {
+   "idea": "The team deliberately owns the harness. They do not use an agent framework, and the loop, plan, stopping rule and memory are all their own code.",
+   "detail": "Almost everything they rebuilt was harness code rather than model training. The speaker argues this gives control and room to learn, and that a frontier model alone will not do the whole job.",
+   "t": "5:12"
+  },
+  {
+   "idea": "A to-do tool made the model waste calls on checking off items. The plan moved into the harness one step at a time.",
+   "detail": "The model spent most calls updating the list, lost focus after several tool calls, and needed 20+ iterations on the tool. The fix was to render the plan into the messages on every model call, and then to drop the in-progress marker, since the next item is just the first unfinished one in ranked order. They are now testing with no to-do tool at all, letting the harness keep state and the completion check.",
+   "t": "6:42"
+  },
+  {
+   "idea": "Finishing became a gate the harness enforces, not a text cue. The model has to make an explicit finish call.",
+   "detail": "Detecting completion from text without tool calls broke on models that announce a step in one turn and act in the next. Because users can pick their own provider, the team designed for every model. The finish call bounces back up to three times while plan items are still open, and the agent gets a warning one step before the iteration limit, followed by a forced finish.",
+   "t": "8:10"
+  },
+  {
+   "idea": "Oversized tool results are treated like files. The context holds a pointer and a summary, and the agent queries the rest with code.",
+   "detail": "A huge JSON block in a trace blows up the context window. The harness truncates within the JSON and lets the agent use jq to fetch the parts it needs. The agent's own history is checkpointed past a window, with a fixed token budget for history.",
+   "t": "10:34"
+  },
+  {
+   "idea": "For long-term memory, one small capped markdown file per user beat vector retrieval, episodic and semantic stores, and temporal knowledge graphs.",
+   "detail": "The file is capped at 8,000 characters and loaded on every full request. A background job edits it after the session ends, so only one writer runs at the end, which keeps other users' data out of the file. Humans can audit it and tune the job's instructions.",
+   "t": "12:01"
+  },
+  {
+   "idea": "They consolidated from many page-level specialist sub-agents into one agent that loads skills and tools on demand, and they default to a fast, good-enough model.",
+   "detail": "The team says the newest model is not always the best default, and that the best model depends on the task. They are exploring auto-routing and narrow post-trained small models. Some features need only a single model call and no loop, such as AI-generated filters.",
+   "t": "13:00"
+  },
+  {
+   "idea": "Production sessions become regression tests. Bugs in agents rarely show up as errors, so they need qualitative metrics, and judges need human gold labels.",
+   "detail": "Live traces are saved as datasets, including whole sessions that can be replayed at one turn. A trace-reading agent called Signal finds issues such as 43 identical tool calls in one turn or a 227-second response. Judges are aligned to engineers' judgments, and speed versus quality stays a human decision.",
+   "t": "15:55"
+  },
+  {
+   "idea": "The six things that survived every rebuild are tracing, math in code, golden datasets in CI, errors with an obvious fix, streaming and persistence, and skills defined as a capability around an external system.",
+   "detail": "The team computes aggregations in code and lets the model explain the results. Tools expose those computations, so the model is not asked to do plain-text math. Skills, routers and tools all reduce to giving the model a capability over an external system.",
+   "t": "18:45"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Render the plan into the harness on every call",
+   "how": "Keep the plan in harness state and inject it as a message on each model call, with the rules placed next to the data. Stack-rank the open items so the next step is simply the first unfinished item. Drop any in-progress marker and do not expose a to-do tool, so the model does not burn calls updating a list.",
+   "when": "Multi-step agent runs where the model loses focus or wastes iterations on list maintenance, such as checkpoint/resume plans in ProsHarness."
+  },
+  {
+   "name": "Explicit finish call as a harness gate",
+   "how": "Require an explicit finish tool call to end the turn instead of inferring completion from text. Bounce it back up to three times while plan items remain open. Warn the model one step before the iteration limit, then force finish.",
+   "when": "Any agent that supports several model providers, because text-based completion checks break when models announce a step in one turn and act in the next."
+  },
+  {
+   "name": "Tool results as pointers, not inline content",
+   "how": "When a tool result is too big, truncate it inside the structure (for example a JSON blob) and keep a short summary plus a handle. Give the agent a code tool such as jq to pull out the parts it needs. Checkpoint the agent's own history past a window with a fixed token budget.",
+   "when": "Trace analysis or any agent that reads large payloads and would otherwise fill its context."
+  },
+  {
+   "name": "One small capped markdown memory file per user",
+   "how": "Store one markdown file per user, capped at 8,000 characters. Load it into every full request. Write it in a single background job after the session ends, and screen out other users' data in that job. Have a human audit the file and tune the job's instructions.",
+   "when": "Cross-session memory where the stored facts are small. The speaker found this beat vector retrieval, episodic and semantic stores, and temporal knowledge graphs. Try it before adding retrieval."
+  },
+  {
+   "name": "Single model call instead of a loop for narrow features",
+   "how": "For narrow features such as turning a natural-language request into a filter, make one call to a small model. Skip the agent loop and its tools entirely.",
+   "when": "Features with a fixed input and output shape, where the loop only adds latency and failure modes."
+  },
+  {
+   "name": "Production sessions as living regression fixtures",
+   "how": "Save live traces as datasets, including whole sessions that can be replayed from one turn. Add new error cases as they show up, and A/B test harness changes with experiments.",
+   "when": "Continuous evaluation of an agent that changes frequently, where the test set should reflect real user queries."
+  },
+  {
+   "name": "Trace-reading agent for silent failures",
+   "how": "Use a separate agent to read traces and flag qualitative problems, such as many identical tool calls in one turn or unusually long latency. Calibrate its judges against human gold-label datasets, and keep speed versus quality decisions with humans.",
+   "when": "Agents whose failures look like a successful status, where latency and error counts do not reveal the real issues."
+  }
+ ],
+ "tools": [
+  "Arize AX",
+  "Alex (Arize in-product agent)",
+  "Signal (Arize trace-reading agent)",
+  "Sonnet 4.5 (auto-caption 'Sonic 4.5')",
+  "jq",
+  "Arize experiments"
+ ],
+ "numbers": [
+  {
+   "claim": "Early prototype on 3.5-era models was about 50% hallucination and 50% useful, per a staff engineer's quote.",
+   "t": "3:53"
+  },
+  {
+   "claim": "Plan-in-harness iteration needed 20+ iterations on the to-do tool itself before moving the plan out of the model.",
+   "t": "6:42"
+  },
+  {
+   "claim": "The finish call bounces back up to 3 times while plan items are open.",
+   "t": "8:10"
+  },
+  {
+   "claim": "Long-term memory is one markdown file per user, capped at 8,000 characters.",
+   "t": "12:01"
+  },
+  {
+   "claim": "Earlier design had about 10 page-level specialist sub-agents, later collapsed to one agent.",
+   "t": "13:00"
+  },
+  {
+   "claim": "Example traces flagged 43 identical tool calls within one turn and a 227-second response time as problems.",
+   "t": "17:21"
+  }
+ ],
+ "hot_takes": [
+  "Mostly generic harness-engineering advice, but backed by hard-won production details.",
+  "Vendor talk by an Arize employee that promotes Arize AX and its Alex agent. The speaker says the single-file memory works better than knowledge graphs, a claim based on one team's experience with no numbers shown.",
+  "Auto-captions transcribe Arize as 'Arise' and misspell the model name, which is fixed here.",
+  "The 'what still needs a person' section is the most actionable part: gold labels and speed-versus-quality calls stay human."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 3,
+   "why": "The talk covers harness-owned plans, a finish gate with bounce-back, iteration-limit warnings and forced finish, and checkpointing history. These map directly onto ProsHarness's checkpoint/resume and plan loops.",
+   "action": "Add an explicit finish tool to the ProsHarness loop that rejects completion while plan items are open (up to 3 bounces), warns one step before the iteration limit, and then forces a finish."
+  },
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The per-user capped markdown memory and the regression-dataset approach bear on MemoryMesh's tiered memory and on the eval work. The talk also reinforces avoiding over-engineered memory.",
+   "action": "Benchmark a baseline of one per-user markdown memory file (capped at 8,000 characters, written by a post-session job) against MemoryMesh's tiered memory before adding retrieval layers."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

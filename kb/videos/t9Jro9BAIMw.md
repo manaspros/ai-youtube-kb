@@ -1,0 +1,48 @@
+# I Hid a Raspberry Pi in a Pumpkin to Fix Smart Speakers
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `t9Jro9BAIMw` · [watch](https://youtu.be/t9Jro9BAIMw) · **date:** 2026-10-30 · **length:** 10:22 · **format:** tutorial · **quality:** 3/5 · **depth:** intro
+- **speakers:** Better Stack presenter (not named in transcript) · **orgs:** Better Stack, Raspberry Pi, DeepSeek, Google, ElevenLabs, Anthropic
+- **topics:** voice-multimodal, local-ai, dev-tools · **tags:** raspberry-pi, voice-assistant, wake-word, speech-to-text, tts, latency, model-selection, hardware, soldering, hybrid-local-remote, maker
+
+> Better Stack builds a Raspberry Pi voice assistant inside a pumpkin: local wake word and speech-to-text, a fast remote LLM for replies, and remote TTS. Practical on latency and soldering, light on reproducible detail.
+
+## Summary
+The presenter builds a voice assistant ("Hey Pumpkin") in a carved pumpkin. A Raspberry Pi runs the wake word and speech-to-text locally, sends the transcript to a remote LLM, and plays back speech from a remote TTS service through a small amplifier and speaker. The main constraint is reply speed: the presenter says replies need to come back within about a second, and that drove model choice. DeepSeek Flash was picked as the fastest of the models tested that still answered at a reasonable level, ahead of Gemini Flash and Haiku. Running TTS locally on the Pi sounded poor, so ElevenLabs Flash was used instead. The hardware section covers soldering LED rings and a Perma-Proto hat, plus a short circuit between the hat's underside pins and the active cooler that killed the speaker until it was insulated. The demo conversation handles small talk and a night-out plan that respects a request to avoid the city centre, but the video does not show how the answers were produced, so tool use (web, location) is a stated plan rather than a shown result. The build cost more than a commercial smart speaker, which the presenter says was worth it for the learning.
+
+## Key ideas
+- **Voice pipeline split: wake word and speech-to-text run locally on the Pi, the text goes to a remote fast LLM, and the reply is spoken via TTS. The presenter says the goal is fast local response, with remote calls only where needed.** — Plan is laid out at the start: local model for speech-to-text, remote LLM with web and location access, then TTS either local or remote depending on quality. Auto-captions say 'text-to-speech' for the Parakeet model at 6:09, but the design makes it a speech-to-text step. ([0:47](https://youtu.be/t9Jro9BAIMw?t=47))
+- **Reply latency, not peak intelligence, decided the LLM. Among the models tested (Gemini Flash, Haiku, DeepSeek Flash), DeepSeek Flash gave the fastest replies at reasonable quality. The presenter says voice needs replies within about a second.** — Model choice is described as limited by the one-second reply requirement. The presenter does not share measured timings or the quality rubric. ([6:09](https://youtu.be/t9Jro9BAIMw?t=369))
+- **Local TTS on the Pi sounded bad, and fast local voice needs a much stronger machine. The presenter kept TTS remote (ElevenLabs Flash) to keep the voice quality and speed the build wanted.** — Stated as a trade-off, not measured. The presenter wanted a specific Halloween-style voice, which also motivated the remote choice. ([6:09](https://youtu.be/t9Jro9BAIMw?t=369))
+- **Solder the components onto a Perma-Proto hat, not onto the Pi, then plug the hat into the Pi's 40-pin header. This keeps the Pi swappable and limits soldering to a separate board.** — Hat carries the mic, amplifier (six-pin strip) and LED wiring, with eight or nine wires in total. The presenter checks connections with a multimeter before powering up. ([3:20](https://youtu.be/t9Jro9BAIMw?t=200))
+- **The speaker died after a short from the hat's underside pins touching the active cooler. Fixed by wedging card between them. The presenter calls it the dodgiest setup and says it may catch fire.** — Took a couple of hours to debug. Lesson: check clearance between the hat's solder joints and any metal on the Pi stack, especially a fan or cooler. ([4:40](https://youtu.be/t9Jro9BAIMw?t=280))
+- **Splicing two LED rings was the hardest part: each ring hole fits one cable, so the cables had to be spliced and the thin wires snapped repeatedly. Practice on a kit first.** — The LED work took a couple of hours. The presenter bought a practice kit and watched soldering videos before starting. ([1:55](https://youtu.be/t9Jro9BAIMw?t=115))
+- **The demo conversation shows the assistant handling small talk, a Halloween joke, and a night-out itinerary that honours 'no city centre', with specific venues and times. The video does not show how those answers were made.** — Answers name venues and times, and the presenter's constraint is respected. Whether the model used web search or location was not shown, so treat the demo as a conversation sample, not a tool-use test. ([7:30](https://youtu.be/t9Jro9BAIMw?t=450))
+- **Cost and build-time framing: the presenter says the parts cost more than a commercial smart speaker and that the build was for learning, not savings.** — No totals are given. The build took about two days, including unboxing, soldering practice and debugging. ([7:30](https://youtu.be/t9Jro9BAIMw?t=450))
+
+## Techniques
+- **Wake word -> local STT -> remote fast LLM -> TTS voice loop** — Run a wake-word detector (trigger 'Hey Pumpkin') and speech-to-text locally on the Pi using Python with sherpa-onnx and a Parakeet model. Send the transcript to a fast hosted LLM (DeepSeek Flash in the build). Turn the reply into audio with ElevenLabs Flash and play it through an amplifier and speaker. Commands, config keys and file names were not shown. *When:* Edge voice assistant on low-power hardware where speech-to-text can run on-device but LLM quality needs a hosted model, and the whole loop must answer within about a second.
+- **Pick the LLM on measured reply speed first, then check quality** — Try each candidate model on the same voice prompts, time the replies, and drop any that miss the latency target. Among the survivors, pick the one with acceptable answers. The presenter compared Gemini Flash, Haiku and DeepSeek Flash this way. *When:* Any interactive or voice path where the latency budget is tight and a slower model would feel broken, such as a gateway or router choosing between cheap fast models.
+- **Keep TTS remote when local voice quality or speed falls short** — Run speech-to-text locally, but if the local voice is too slow or sounds poor on the target hardware, send TTS to a hosted service. The presenter made this call after local TTS on the Pi sounded bad. *When:* A small device can run recognition but not high-quality, low-latency speech synthesis.
+- **Solder to a separate hat, then mate it to the Pi header** — Solder the mic, amplifier (six-pin strip), LEDs and wiring onto a Perma-Proto hat. Check connections with a multimeter. Plug the hat onto the Pi's 40-pin header. Add the active cooler first (two white pins on the corners). *When:* Hardware prototyping where you may need to swap the computer later and want no permanent solder on the board.
+- **Check clearance between solder joints and the cooler before power-up** — Inspect the underside of the hat for pins or joints touching the active cooler or other metal on the stack. Insulate with card or tape if needed. The presenter used card after a short killed the speaker. *When:* Any stacked board build where a fan, heatsink or bracket sits under or next to exposed pins.
+- **Insulate the pumpkin's internals with cling film** — Fill the carved pumpkin with cling film so the electronics do not touch anything conductive inside the pumpkin. The presenter was unsure whether the pumpkin was conductive and chose insulation over testing. *When:* Any project housed in an organic or uncertain-conductivity enclosure where a short would destroy expensive parts.
+
+## Numbers
+- Build took about two days, including practice soldering and debugging. ([0:00](https://youtu.be/t9Jro9BAIMw?t=0))
+- Target reply time: within about one second for voice to feel usable. ([6:09](https://youtu.be/t9Jro9BAIMw?t=369))
+- LED ring soldering took a couple of hours. ([1:55](https://youtu.be/t9Jro9BAIMw?t=115))
+- Speaker debugging after the short took a couple of hours. ([4:40](https://youtu.be/t9Jro9BAIMw?t=280))
+- Hardware carries 40-pin header, a six-pin amplifier strip, and about eight or nine hand-soldered wires. ([3:20](https://youtu.be/t9Jro9BAIMw?t=200))
+- Parts cost more than buying a commercial smart speaker (no figure given). ([7:30](https://youtu.be/t9Jro9BAIMw?t=450))
+
+## Hot takes
+- Running TTS locally on a Pi sounds bad and needs much more powerful hardware for speed; keep it remote on small devices.
+- Model choice for voice is set by reply latency (about one second), not benchmark intelligence.
+- A DIY voice assistant costs more than a commercial smart speaker; the value is the learning.
+- Hobby builds with exposed solder joints near a cooler can short out and kill parts.
+
+## Tools mentioned
+Raspberry Pi, Perma-Proto hat (Adafruit board, as named in captions), sherpa-onnx, Parakeet (speech-to-text model), Python, DeepSeek Flash, Gemini Flash, Haiku, ElevenLabs Flash, multimeter, active cooler (Raspberry Pi)
+
+## Relevance to our work
+- **agentos** (1/3): The routing choice (fast cheap model chosen on measured reply latency at acceptable quality) is a small data point for AgentOS's gateway routing. The local-voice conclusion (small devices cannot run fast local TTS) is weakly relevant to InferCraft's local-inference plans.

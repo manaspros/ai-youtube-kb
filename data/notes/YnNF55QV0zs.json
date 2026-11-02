@@ -1,0 +1,165 @@
+{
+ "one_line": "Ishan Anand (InsightSciences) on synthetic personas as bounded forecasts: where LLM personas fail (confounders, order bias, attitudes vs behavior), and how to measure them against human distributions and noise floors.",
+ "summary": "The speaker, chief AI officer at InsightSciences, argues that LLM synthetic personas are like weather forecasts: unlocked by compute and data, accurate only within a bounded regime, and only trustworthy when validated against reality. He describes three failure modes: underspecified prompts make the model invent confounders (price used as a proxy for other product traits), option-order swaps flip answers so that averaged results drift to 50-50, and models predict stated attitudes far better than behaviors. For techniques he covers prompt-based personas (validated empirically, not assumed), fine-tuning on demographic-conditioned survey distributions, which also improved unseen groups, and mapping free-text answers to a scale via semantic similarity to human-written exemplars so the output is a distribution rather than a single mean. For evaluation he says synthetic samples cannot buy statistical significance, that distribution-level metrics (correlation plus shape) are needed, and that a noise floor should be set by human retest consistency or a split-half simulation. The talk is practitioner-level and based on published research, though the speaker is a vendor and closes with a sales pitch.",
+ "speakers": [
+  "Ishan Anand"
+ ],
+ "orgs": [
+  "InsightSciences",
+  "Simulmatics (historical reference)"
+ ],
+ "format": "talk",
+ "topics": [
+  "evals",
+  "context-engineering",
+  "models-research",
+  "product-ux"
+ ],
+ "tags": [
+  "synthetic-personas",
+  "market-research",
+  "simulation",
+  "prompt-sensitivity",
+  "order-bias",
+  "distribution-evals",
+  "noise-ceiling",
+  "attitudes-vs-behavior",
+  "fine-tuning",
+  "semantic-similarity-scoring"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Treat synthetic personas like weather forecasts: bounded, improving, and only trustworthy when checked against reality.",
+   "detail": "More compute and data unlocked both forecasts and personas. Both have a regime where they work and go wrong beyond it. Rerunning a forecast does not make it more accurate, and the same holds for personas.",
+   "t": "1:10"
+  },
+  {
+   "idea": "An underspecified persona makes the LLM invent confounders, so the prompt has to paint the whole world.",
+   "detail": "In a price-sensitivity test, humans showed the expected downward demand curve, but the LLM showed an inverted U where purchase rose with price. It was using price as a proxy for expiry date, competitor prices and similar hidden traits. Human subjects are shielded from the study's construction, but an LLM has no world beyond its prompt.",
+   "t": "5:31"
+  },
+  {
+   "idea": "Models have strong option-order bias, so persona answers must be durability-tested under reordering and rewording.",
+   "detail": "Swapping the order of answer choices made the model's answers wash out to roughly 50-50 when results were averaged. Humans have order bias too, but much less. The speaker recommends testing under reorderings, rewordings and adversarial challenges.",
+   "t": "6:56"
+  },
+  {
+   "idea": "LLMs predict stated attitudes better than behavior, so ask attitude questions that triangulate to behavior.",
+   "detail": "Across social-science experiments the model roughly matched experts, but it did better on survey-style attitude questions than on field experiments that measure behavior. Instead of asking about gym attendance directly, ask about attitudes toward working out.",
+   "t": "8:15"
+  },
+  {
+   "idea": "Persona detail can amplify bias, so each persona construction must be validated against ground truth.",
+   "detail": "In a voting-pattern study, adding more persona detail moved the simulated results further from reality, because the construction amplified biases already in the model. The speaker's advice is to test each construction empirically rather than assume more detail helps.",
+   "t": "11:11"
+  },
+  {
+   "idea": "Score free-text answers against human-written exemplars to get a distribution instead of a single rating.",
+   "detail": "Instead of a 1-5 scale, the model answers in free text. Humans wrote example answers for each scale point, and the model's text is scored by semantic similarity to them. This produces a probability distribution that captures variation across answers, not only the average.",
+   "t": "13:33"
+  },
+  {
+   "idea": "Synthetic samples cannot raise statistical significance, and the noise floor should come from human consistency.",
+   "detail": "Repeated runs with the same input only refine the model's estimate, not the forecast itself. Evaluate with distribution metrics (a correlation plus a shape metric). For a noise floor, split human data in half, treat one half as synthetic, and average the agreement over many splits. The headline 83% in the study was normalized against humans' 80% self-consistency on a two-week retest.",
+   "t": "15:45"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Validate personas against held-out human ground truth",
+   "how": "Build the persona with a prompt, run the same survey on humans and synthetic respondents, and compare distributions. Choose the prompt and model by measured fit, not by intuition.",
+   "when": "Before trusting any synthetic persona for product testing or messaging research."
+  },
+  {
+   "name": "Ground the persona in the full world of the study",
+   "how": "Put context into the prompt that a human would already have, such as the product's price, competitors, expiry and setting, so the model does not invent confounders.",
+   "when": "When a persona response changes in an unexpected direction as one variable moves (for example, purchase rising with price)."
+  },
+  {
+   "name": "Durability tests for option order and wording",
+   "how": "Run each question with reordered answer choices, reworded questions and adversarial pushback. Average across orders and check whether the answer flips.",
+   "when": "For any multiple-choice LLM judgment, including classifiers and LLM-as-judge setups."
+  },
+  {
+   "name": "Attitude-to-behavior triangulation",
+   "how": "When the target is a behavior that is rarely written down, ask about the attitudes that lead to it, and check that the attitude correlates with the behavior in ground truth.",
+   "when": "When the behavior is unlikely to be in training text, such as field experiments or real purchase actions."
+  },
+  {
+   "name": "Free-text answers mapped to scale via semantic similarity",
+   "how": "Ask for a natural-language answer, embed it, and compare it to human-written exemplar answers for each scale point. Turn the similarities into a probability distribution over the scale.",
+   "when": "When the goal is a distribution of answers, not only a mean, and when numeric ratings are unnatural for the model."
+  },
+  {
+   "name": "Fine-tune on survey distributions conditioned on demographics",
+   "how": "Build prompts from demographic attributes and a survey question, then fine-tune until the model's answer distribution matches the human distribution for that group.",
+   "when": "When you have labelled human survey data and the base prompt-only results are poor. The speaker reports gains even for groups not in training."
+  },
+  {
+   "name": "Noise floor via split-half simulation",
+   "how": "Split human ground-truth data into two halves, treat one half as synthetic, measure agreement, and repeat thousands of times. The average sets the best accuracy a model could reach.",
+   "when": "When humans cannot be re-surveyed to measure their own consistency."
+  }
+ ],
+ "tools": [],
+ "numbers": [
+  {
+   "claim": "About 1,000 humans were interviewed for about 2.5 hours, then took surveys and personality tests. An AI agent built from their transcripts reached about 83% alignment with each person, normalized against human noise.",
+   "t": "4:04"
+  },
+  {
+   "claim": "Humans retested two weeks later were only about 80% consistent with their own earlier answers. This sets the noise ceiling for the 83% figure.",
+   "t": "16:55"
+  },
+  {
+   "claim": "On a willingness-to-pay test, humans showed the expected downward demand curve. The LLM showed an inverted U, with purchase probability rising as price rose in part of the range.",
+   "t": "5:31"
+  },
+  {
+   "claim": "With answer options swapped, the model showed strong order bias. Averaging the two orders washed results out to about 50-50. Humans show much less order bias.",
+   "t": "6:56"
+  },
+  {
+   "claim": "Across social-science experiments, the LLM was roughly as good as human experts. It did better on survey-style attitude questions than on field experiments measuring behavior. The talk gives no exact percentages for this comparison.",
+   "t": "8:15"
+  },
+  {
+   "claim": "In the text-to-scale method, the best variant scored near the top of a 0-1 shape-similarity range. The naive rating-prompt baseline scored much lower. Exact values are not given.",
+   "t": "14:32"
+  },
+  {
+   "claim": "After fine-tuning on survey distributions, accuracy improved on the trained groups and by almost the same amount on groups held out from training.",
+   "t": "11:11"
+  }
+ ],
+ "hot_takes": [
+  "Rerunning a synthetic persona many times does not make your results statistically significant. More synthetic samples do not buy certainty.",
+  "Adding more detail to a persona can push it further from reality by amplifying the model's own biases.",
+  "The headline 83% human-agent alignment only means something once it is normalized against the humans' own 80% retest consistency.",
+  "Synthetic personas are complementary to human research, not a replacement. The alternative to a synthetic persona is often no research at all, not a human survey."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The talk's measurement method (distribution metrics plus a split-half noise floor) is a useful way to judge LLM-based evals like the RAGAS evals in MemoryMesh, but it is not about building the system.",
+   "action": "Add a split-half noise-floor check to the AgentOS eval harness before treating small score differences between runs as real."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "Persona simulation is not part of checkpointing, planning, loops or approvals in ProsHarness.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The order-bias result applies to any LLM multiple-choice classifier or judge, including cheap Haiku pipelines. The durability-test idea is worth reusing.",
+   "action": "Run an answer-option-order swap test on any Haiku multiple-choice classifier and report agreement across orders before trusting it."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

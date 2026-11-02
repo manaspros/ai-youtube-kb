@@ -1,0 +1,169 @@
+{
+ "one_line": "Snorkel AI and UC Berkeley Sky lab trained a 4B Qwen3 agent with RL for under $500 that beats its 235B variant on finance QA; simple binary rewards and single-table curricula won.",
+ "summary": "Charles Dickens (Snorkel AI) describes building FinQA, an expert-validated financial question-answering benchmark built from SEC 10-K tables, and training a 4B Qwen3 model with RL (GRPO, RLLM framework) that reaches about 60% pass rate versus 51% for the 235B variant. The data pipeline has three stages: table and schema extraction from EDGAR filings, QA generation with lineage metadata, and three-layer verification (programmatic checks, independent agent review, expert manual review). He names three recurring failure modes in frontier models: schema hallucination, context flooding from poorly planned queries, and repeating failed strategies instead of adapting. Training uses a ReAct-style agent with table tools, a binary correctness reward from a GPT-5 nano judge, and about 1,000 concurrent environments on eight H100s, costing about $460 in total. Ablations show that training on single-table data gives the most lift, that gains transfer to multi-table questions and to BFCL tool calling, and that a binary reward beat a weighted expert rubric. He closes with three evaluation axes for agents (environment complexity, autonomy horizon, output complexity) and a pitch for Snorkel's open benchmark grants.",
+ "speakers": [
+  "Charles Dickens"
+ ],
+ "orgs": [
+  "Snorkel AI",
+  "UC Berkeley Sky Computing Lab"
+ ],
+ "format": "talk",
+ "topics": [
+  "training-finetuning-rl",
+  "evals",
+  "data-engineering"
+ ],
+ "tags": [
+  "small-models",
+  "GRPO",
+  "binary-reward",
+  "LLM-as-judge",
+  "synthetic-data",
+  "finance",
+  "FinQA",
+  "curriculum",
+  "tool-use",
+  "BFCL",
+  "Qwen3",
+  "RLLM"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Specialization can beat raw scale for enterprise agents when the training data matches the target domain and task distribution.",
+   "detail": "A 4B model trained on domain-representative data outperforms a 235B generalist on FinQA at a small fraction of the cost. The speaker says the goal is parity with frontier models, not general reasoning.",
+   "t": "0:08"
+  },
+  {
+   "idea": "Synthetic benchmark data needs three verification layers.",
+   "detail": "Programmatic checks use lineage and table/column metadata to catch hallucinated names, then independent agent reviews run, then expert humans check realism and answer correctness.",
+   "t": "5:18"
+  },
+  {
+   "idea": "Frontier models show three repeated failure modes on this environment.",
+   "detail": "Schema hallucination (assuming tables or columns exist), context flooding (e.g. SELECT * with poorly planned queries), and poor recovery (the 235B model repeats the same failed strategy instead of adapting to the error message).",
+   "t": "6:42"
+  },
+  {
+   "idea": "Simple binary reward beat a carefully engineered rubric.",
+   "detail": "A weighted, expert-designed rubric scoring intermediate steps (table access, query completeness) did worse than a single binary correctness reward from an LLM judge, which the speaker says became the basis of an enterprise agent blueprint.",
+   "t": "13:28"
+  },
+  {
+   "idea": "The bottleneck was tool-use discipline, not reasoning depth.",
+   "detail": "Training only on simple single-table questions lifted multi-table accuracy with no multi-table training data. A single-to-multi curriculum was not needed to get that lift, and the speaker suggests the model learned reliable tool use that composes.",
+   "t": "11:54"
+  },
+  {
+   "idea": "Specialist RL did not erode general tool calling.",
+   "detail": "On BFCL, overall accuracy rose slightly, with small gains on multi-turn and memory categories, so the fine-tune kept broader tool-use competence.",
+   "t": "11:54"
+  },
+  {
+   "idea": "Evaluate agents on three axes.",
+   "detail": "Environment complexity (how realistic and dynamic the environment is), autonomy horizon (whether tests match the task lengths people actually run and whether agents judge safely alone or as co-pilots), and output complexity (beyond text artifacts, which he says is underexplored).",
+   "t": "14:53"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Multi-stage synthetic eval and training data pipeline",
+   "how": "Extract schema from real documents (10-K tables from EDGAR), generate one QA pair per table with lineage metadata and a domain-expert question taxonomy, then verify in three layers: programmatic metadata checks, independent agent review, and expert manual review.",
+   "when": "Building domain benchmarks or RL training sets where no labelled data exists and hallucinated table or column names are a risk."
+  },
+  {
+   "name": "Company-level data split to prevent leakage",
+   "how": "Split the data so no company (entity) appears in more than one of train, validation and held-out benchmark.",
+   "when": "Benchmarks where the same entity can show up in many items and inflate held-out scores."
+  },
+  {
+   "name": "Binary reward with reference-based LLM judge",
+   "how": "Reward 1 only for a correct final answer, scored by a cheap judge model (GPT-5 nano) against a reference answer, rather than rubric points for intermediate steps.",
+   "when": "RL on tasks with single verifiable final answers, where judge cost matters and rubric weights are hard to tune."
+  },
+  {
+   "name": "Single-table-first data mixture",
+   "how": "Train on simple single-table questions only. The ablation found this beat a mixed set and a single-to-multi curriculum.",
+   "when": "When a small model must learn tool use cheaply and the harder compositional tasks are expected to transfer."
+  },
+  {
+   "name": "Decorator-based RL wrapper for existing agents",
+   "how": "The RLLM framework wraps an existing agent with a decorator, with near-zero code changes, a CLI-first workflow, and pluggable RL algorithms and training backends.",
+   "when": "Adding RL training to an agent that already runs, without rewriting its loop."
+  },
+  {
+   "name": "Large concurrent rollout generation",
+   "how": "Run about 1,000 environment instances concurrently to generate trajectories for GRPO, on eight H100s.",
+   "when": "Keeping RL rollout cost low by parallelising environment episodes."
+  }
+ ],
+ "tools": [
+  "RLLM",
+  "GRPO",
+  "Qwen3 4B and 235B",
+  "GPT-5 nano (judge)",
+  "FinQA benchmark",
+  "BFCL",
+  "EDGAR",
+  "H100"
+ ],
+ "numbers": [
+  {
+   "claim": "Qwen3 4B RL-trained agent reaches about 60% pass rate versus 51% for the 235B variant on the 290-sample held-out FinQA benchmark (transcript says 'pass at run'; likely pass@1)",
+   "t": "2:34"
+  },
+  {
+   "claim": "Base 4B model accuracy more than doubled after RL training",
+   "t": "10:30"
+  },
+  {
+   "claim": "Total training cost under $500: about $420 compute on eight H100s and about $40 judge API",
+   "t": "9:00"
+  },
+  {
+   "claim": "About 1,000 concurrent environments used to generate trajectories",
+   "t": "9:00"
+  },
+  {
+   "claim": "About 6,900 SQL tables extracted from 10-K filings; split into about 4,000 train, 500 val, 290 held-out benchmark",
+   "t": "5:18"
+  },
+  {
+   "claim": "Multi-table FinQA dataset: about 1,000 train, 120 val, 80 benchmark; tables span 2 to 5",
+   "t": "14:00"
+  },
+  {
+   "claim": "BFCL overall accuracy slightly improved after specialist RL, with minor gains on multi-turn and memory",
+   "t": "11:54"
+  }
+ ],
+ "hot_takes": [
+  "You wouldn't call Terence Tao for a tax audit: specialised workflows don't need generalists.",
+  "Simpler reward beat the expert rubric: a single binary signal gave more lift than weighted intermediate-step scoring.",
+  "The reasoning bottleneck was never depth; it was tool-use reliability."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Evals and benchmark-building for agents are a recurring interest, and AgentOS has RAGAS evals. The three-layer verification and company-level split are reusable ideas, but no RL training is planned.",
+   "action": "When building an eval set for AgentOS MemoryMesh, split by entity so no entity crosses train/val/benchmark, and add a metadata-based programmatic check before any LLM review."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The failure mode of repeating a failed strategy instead of reading the error is relevant to long checkpointed agent runs, but the talk gives no harness-level method.",
+   "action": "Add an error-aware check to the ProsHarness retry path: if the same tool call fails twice with the same error, force a re-plan step and log it."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Small-model specialisation with cheap LLM-judge binary rewards (about $460 total) is a concrete cost benchmark for cheap-model pipelines, and the verification layering applies to data-quality and entity-resolution labelling with LLMs.",
+   "action": "For the entity-resolution labelling work, try a binary LLM-judge with a cheap model against reference answers and compare it with a weighted rubric before investing in rubric design."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

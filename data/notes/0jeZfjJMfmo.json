@@ -1,0 +1,180 @@
+{
+ "one_line": "Hugging Face's Andres Marafioti on the open-source $300-450 Reachy Mini robot, its voice pipeline, and how a streaming TTS model was made fast enough for real-time voice agents.",
+ "summary": "Marafioti argues that cheap, open, hackable robots are needed because current humanoids cost 50k+ and are aimed at companies, and that voice is the natural way to talk to them. He presents Reachy Mini, sold unassembled at $300 (no battery or Pi) or $450 (with Raspberry Pi and battery), with 7,500 units shipped and its conversation app as the fleet's most-used feature. The voice stack is VAD, then streaming STT (Parakeet, partial transcripts every 150 ms), then an LLM with tool calling (Qwen 3.5 27B, scaled on its own endpoints), then TTS (Qwen3-TTS), with a robot-side app handling echo cancellation, tool dispatch, and face tracking. The core technical section covers making Qwen3-TTS fast: the released model generated whole outputs before returning audio and ran about 500 autoregressive steps per audio packet with CPU-GPU round trips each step. He fixed this over about two weeks with Codex by adding streaming, switching to a static KV cache, and capturing the graph, which moved the real-time factor from below 1 to several times real-time and cut time-to-first-audio to milliseconds. He stresses that user-perceived latency includes infrastructure overhead, which can equal the model's own time. He ends by saying a non-coder could build robot apps by pointing Codex at the repo.",
+ "speakers": [
+  "Andres Marafioti"
+ ],
+ "orgs": [
+  "Hugging Face",
+  "Mistral",
+  "Qwen (Alibaba)",
+  "OpenAI"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "inference-serving",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "reachy-mini",
+  "open-source-robotics",
+  "voice-agent",
+  "streaming-tts",
+  "qwen3-tts",
+  "static-kv-cache",
+  "cuda-graphs",
+  "speech-to-speech",
+  "latency",
+  "codex",
+  "hackable-hardware"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Voice pipeline is VAD, then streaming STT, then LLM with tool calls, then TTS, with the robot app handling audio and actions",
+   "detail": "Parakeet STT emits partial transcripts every 150 ms so the robot can react early. The LLM handles tool calls for movement and camera use. Qwen3-TTS produces the speech. The robot app does echo cancellation, tool dispatch, emotions, and face tracking.",
+   "t": "10:19"
+  },
+  {
+   "idea": "Streaming TTS was slow for structural reasons, not just model quality",
+   "detail": "The released Qwen3-TTS matched the quality shown in the paper but not its latency. It generated the full output before returning any audio, and it ran about 500 autoregressive steps per audio packet, with CPU-GPU sync on every step.",
+   "t": "12:56"
+  },
+  {
+   "idea": "Make decode run entirely on the GPU with a static KV cache and graph capture",
+   "detail": "The dynamic KV cache grew with input size and forced host-device round trips. A static cache uses more RAM up front but allows compiling the model and capturing the full graph, which removes most of the per-step CPU-GPU traffic.",
+   "t": "14:20"
+  },
+  {
+   "idea": "Scale the LLM separately from conversation nodes",
+   "detail": "Each conversation node can hold many concurrent users, but load varies a lot: eight talkative users and eight silent users load a node very differently. Separate LLM endpoints with their own load balancer use resources better.",
+   "t": "11:32"
+  },
+  {
+   "idea": "Perceived latency is more than model time-to-first-audio",
+   "detail": "Network and infrastructure hops add as much delay as the model itself, even though the model is quite fast. Voice-agent latency has to be budgeted across the whole path.",
+   "t": "15:52"
+  },
+  {
+   "idea": "Coding agents make hardware apps approachable for non-coders",
+   "detail": "He gave Codex the robot repo and a plain description of the desired movements, and it built the app. The claim is that you can start today without deep robotics knowledge.",
+   "t": "18:05"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Stream TTS audio instead of generating full utterances",
+   "how": "Emit audio chunks as they are produced so time-to-first-audio is set by the first chunk, not the full clip length.",
+   "when": "Any voice agent where the user should hear the reply before the model finishes generating."
+  },
+  {
+   "name": "Static KV cache plus graph capture for autoregressive audio models",
+   "how": "Preallocate the KV cache at its maximum size, compile the model, and capture the whole decode graph so each step stays on the GPU without host sync. The cost is extra VRAM from the start.",
+   "when": "Small autoregressive models with many decode steps per output (TTS, codecs) where per-step CPU-GPU round trips dominate latency."
+  },
+  {
+   "name": "Partial STT every 150 ms",
+   "how": "Stream partial transcripts from the speech recognizer while the user is still talking, so the agent can start reacting before the utterance ends.",
+   "when": "Interactive voice agents that need low turn-taking latency."
+  },
+  {
+   "name": "Separate scaling of LLM inference from stateful conversation nodes",
+   "how": "Put conversation handling (audio I/O, tool dispatch) on nodes sized by concurrent users, and put LLM inference behind its own load-balanced endpoints sized by token load.",
+   "when": "Fleets where many users are connected but only some are generating tokens at a given time."
+  },
+  {
+   "name": "Measure the whole latency path, not just the model",
+   "how": "Compare model time-to-first-audio with what the client perceives, and account for transport and infrastructure overhead as separate items.",
+   "when": "Any latency SLO for agents or voice products, where model benchmarks alone understate delay."
+  },
+  {
+   "name": "Codex-driven hardware app development",
+   "how": "Give a coding agent the repo and a short description of the target behavior, then iterate on the result.",
+   "when": "Prototyping device or robot apps where the developer is not an expert in the hardware stack."
+  }
+ ],
+ "tools": [
+  "Reachy Mini",
+  "Raspberry Pi",
+  "Codex",
+  "Parakeet",
+  "Qwen3-TTS",
+  "Qwen 3.5 27B",
+  "Kokoro",
+  "Voxtral",
+  "Hugging Face Inference Endpoints",
+  "speech-to-speech pipeline",
+  "GPT Realtime"
+ ],
+ "numbers": [
+  {
+   "claim": "Reachy Mini price: $300 (cheaper model with no Pi and no battery) or $450 (with Raspberry Pi and battery)",
+   "t": "9:18"
+  },
+  {
+   "claim": "Humanoid and robotaxi systems cost at least mid five figures, with some at six figures",
+   "t": "1:04"
+  },
+  {
+   "claim": "Robots shipped: 7,500, and the conversation app is the most-used app in the fleet",
+   "t": "10:19"
+  },
+  {
+   "claim": "Parakeet STT emits partial transcripts every 150 ms",
+   "t": "10:19"
+  },
+  {
+   "claim": "Real-time factor for Qwen3-TTS went from 0.8 (slower than real time) to 5.8 after optimization. The speaker later says it runs at about 4x real time, so the figures are inconsistent.",
+   "t": "14:20"
+  },
+  {
+   "claim": "Autoregressive decode used about 500 steps per audio packet, each with a CPU-GPU sync, before optimization",
+   "t": "12:56"
+  },
+  {
+   "claim": "Time to first audio fell from several seconds to a few milliseconds",
+   "t": "14:20"
+  },
+  {
+   "claim": "First-token latency under 200 ms for the optimized FasterQwen3-TTS",
+   "t": "15:52"
+  },
+  {
+   "claim": "Optimization took about two weeks of work with Codex",
+   "t": "12:56"
+  },
+  {
+   "claim": "Kokoro TTS is about 80M parameters",
+   "t": "3:51"
+  }
+ ],
+ "hot_takes": [
+  "Humanoid robots copy human form for no good reason, and a non-humanoid design would be faster, more agile, and more stable",
+  "Voice AI is mature across commercial and open-source options, but almost nobody is working on how people talk to robots",
+  "Robots will be interacted with by voice, not by keyboard"
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Static KV cache plus graph capture to remove per-step CPU-GPU sync is a decode-loop trick that could apply to InferCraft on the single 5090, but the talk is about a TTS model, not an LLM.",
+   "action": "Benchmark a static KV cache with CUDA graph capture on the InferCraft decode path on the 5090 and compare per-token sync overhead against the current dynamic cache."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No content on long-running agent checkpointing, planning, approvals, or credentials.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 0,
+   "why": "Voice and robotics content; no direct link to context engineering, evals, or Haiku pipelines.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

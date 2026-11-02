@@ -1,0 +1,181 @@
+{
+ "one_line": "Lance Martin (Anthropic) on designing long-horizon async agents: decouple brain from hands, verify in a separate context, dream offline to fix memory, and run org-level shared harnesses.",
+ "summary": "Lance Martin argues that async agents became practical only once models could work for much longer than an hour, and that product surfaces should be chosen to match the model's task horizon. He describes Anthropic's Managed Agents architecture, which separates the stateless harness (brain) from sandboxed execution containers (hands), keeps credentials in a separate vault, and stores the session as an append-only event log so that context is never destructively compacted. He recommends running a separate verifier context in a build/verify loop against an explicit rubric or outcome, and reports a parameter-golf experiment using this pattern. On memory, he shows that in-band memory writing (a plain file-system memory directory) improves across model generations, but that raw memory stores accumulate errors, which an offline \"dreaming\" consolidation pass corrects. He closes with the case for multiplayer org-level harnesses that have their own identity and proactive alerts, and in Q&A argues that memory substrates should be general rather than prescribed schemas. The talk is partly a product showcase for Anthropic's offerings, but the architecture and memory findings are concrete.",
+ "speakers": [
+  "Lance Martin"
+ ],
+ "orgs": [
+  "Anthropic"
+ ],
+ "format": "workshop",
+ "topics": [
+  "agent-architecture",
+  "memory",
+  "multi-agent",
+  "context-engineering"
+ ],
+ "tags": [
+  "long-horizon agents",
+  "async agents",
+  "managed agents",
+  "decoupling brain and hands",
+  "append-only session log",
+  "verifier loop",
+  "separate verifier context",
+  "outcomes",
+  "dreaming",
+  "offline memory consolidation",
+  "in-band memory",
+  "memory tool",
+  "org-level harness",
+  "multiplayer agent",
+  "proactive agents",
+  "bitter lesson memory",
+  "METR time horizon",
+  "parameter golf",
+  "Claude Code",
+  "Agent SDK",
+  "Slack"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Product surfaces should follow the model's task horizon.",
+   "detail": "In 2024 models did about 10-20 minutes of autonomous work, which suited autocomplete and chat. About an hour of work suited synchronous coding agents. Async agents only became a good experience once horizons got much longer, and async is bad when an agent hits an error and returns after a short wait.",
+   "t": "1:08"
+  },
+  {
+   "idea": "Decouple the brain (harness) from the hands (sandboxes).",
+   "detail": "Putting the harness in the same container as the sandbox means a container crash loses the session, and it puts secrets next to a long-running model. Managed Agents makes the harness a stateless process, the session an append-only log, and the hands separate containers. Credentials sit in a vault and never enter the sandbox. A dead harness or sandbox can be replaced without losing the session.",
+   "t": "2:34"
+  },
+  {
+   "idea": "Keep context append-only and let the model re-fetch it instead of compacting destructively.",
+   "detail": "Compaction discards whatever it does not keep. If the session is a persistent, append-only object the model can query, nothing is lost, and the model can go back for old details. He ties this to recursive language model work.",
+   "t": "4:59"
+  },
+  {
+   "idea": "Verify in a separate context window, not the one that did the work.",
+   "detail": "When the same context does the work and then grades it, the model tends to confabulate and self-approve. A verifier in its own context, tuned for critique and given a rubric, runs in a loop with the build agent until the verifier passes. The loop exits only on verification. Claude Code calls this a goal and Managed Agents calls it outcomes.",
+   "t": "6:25"
+  },
+  {
+   "idea": "Encode the steering signal in the environment rather than in a human in the loop.",
+   "detail": "In a parameter-golf run, a verifier loop with an explicit outcome (finish exactly 20 iterations and meet the benchmark's experimental criteria) let the frontier model self-correct from verifier feedback. Strong results depended on high-capacity models.",
+   "t": "8:51"
+  },
+  {
+   "idea": "In-band memory writing has improved with model generations, but the abstraction level differs by model capacity.",
+   "detail": "Given only a memory directory and memory tools, Sonnet 3.5 wrote tactical, weak notes in Pokemon, while 4.6 wrote strategic notes and got much further. Higher-capacity models are better at distilling a note that generalizes to future sessions rather than recording a specific fact.",
+   "t": "10:16"
+  },
+  {
+   "idea": "Dreaming, an offline consolidation pass over memory and traces, corrects errors that in-band writing introduces.",
+   "detail": "In-band memory can record locally optimal but wrong facts. In Pokemon, a bad memory about location caused the agent to fall through the same trap in 5 of 5 replicates with a raw memory store. A dreaming pass that reviews the memory store and prior traces removed the error and let the agent advance. He notes that evals are still needed to confirm the offline compute is worth it.",
+   "t": "13:00"
+  },
+  {
+   "idea": "Org-level, multiplayer harnesses are a different unit from personal agents.",
+   "detail": "Claude Tag is a shared harness with its own identity and credentials, not tied to one user, and it can use organization-level context. Benefits include checking colleagues' work, deduplicating findings, and giving new hires a fully configured harness on day one. Agents can also be proactive, alerting people to things they should know, and can be steered by many people at once.",
+   "t": "16:37"
+  },
+  {
+   "idea": "Memory should use general, programmable substrates, not prescribed schemas.",
+   "detail": "A file system or a database both work, provided the model can manage them with simple primitives. Pre-specifying memory types or a schema in advance hurts performance, because models can structure their own memory better than designers can predict. This is a bitter-lesson argument.",
+   "t": "22:27"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Brain/hands split with an append-only session log",
+   "how": "Run the harness as a stateless process. Write every event to an append-only session log. Call sandboxes ('hands') over tool execution. Store credentials in a separate vault that the sandbox never sees.",
+   "when": "Long-running agents where a container or harness crash must not lose work, or where the agent should not hold raw secrets for hours."
+  },
+  {
+   "name": "Non-destructive context via append-only session object",
+   "how": "Do not compact the context in place. Keep the full history as an external object the model can search or re-read, and only append to it.",
+   "when": "Long-horizon tasks where compaction would discard details that later steps need."
+  },
+  {
+   "name": "Build/verifier loop in separate contexts",
+   "how": "A build agent does the work. A verifier agent with its own context checks the output against a written rubric or measurable outcome. Loop until the verifier passes, with an iteration cap.",
+   "when": "Tasks with a checkable end state (benchmarks, experiments, code that must pass criteria), especially with high-capacity models."
+  },
+  {
+   "name": "Dreaming: offline memory consolidation",
+   "how": "After sessions, run a separate pass that reads the memory store and the prior traces, finds incorrect or locally optimal memories, and rewrites them. Measure the gain with evals before paying for the offline compute.",
+   "when": "An agent writes its own memory in-band and errors persist across sessions."
+  },
+  {
+   "name": "General memory substrate with the model managing its own structure",
+   "how": "Give the model a file system or database with simple read/write primitives. Do not pre-define memory types or schemas.",
+   "when": "Designing cross-session memory for models that are capable enough to organize their own notes."
+  },
+  {
+   "name": "Org-level shared harness with its own identity",
+   "how": "Run one harness for an organization with a service identity and org-wide context. Expose it in chat tools, and let it run proactive alerts for many users at once.",
+   "when": "Teams that need shared research, deduplication, or fast onboarding without each person tuning a personal agent."
+  }
+ ],
+ "tools": [
+  "Claude Managed Agents",
+  "Claude Agent SDK",
+  "Claude Code",
+  "Claude Tag",
+  "Message API",
+  "Continued Learning Bench",
+  "METR time-horizon benchmark",
+  "Slack"
+ ],
+ "numbers": [
+  {
+   "claim": "In 2024, models could do roughly 10-20 minutes of autonomous work (METR measure).",
+   "t": "1:08"
+  },
+  {
+   "claim": "Synchronous coding agents such as Claude Code operate on about an hour of autonomous work.",
+   "t": "1:08"
+  },
+  {
+   "claim": "Parameter-golf task: train a small model on 8 H100 GPUs in under 10 minutes; the verifier loop ran until exactly 20 iterations were done. No loss figures are given.",
+   "t": "8:51"
+  },
+  {
+   "claim": "Raw memory store: the agent fell into the same trap in 5 of 5 replicates. With dreaming, the error was corrected.",
+   "t": "15:35"
+  },
+  {
+   "claim": "Frontier models (Claude mythos-class, Codex 5.6, per the speaker) reach a 12-plus-hour regime on METR's time-horizon measure.",
+   "t": "19:16"
+  }
+ ],
+ "hot_takes": [
+  "Claude Tag is interesting mainly for its org-level harness, not for being a Slack bot.",
+  "Having the same context both do and grade the work produces confabulation, so verification needs a separate context.",
+  "Prescribing a memory schema for the model makes performance worse. General substrates that the model manages itself do better.",
+  "Long-horizon async agents need architecture, security, and memory together, not just a stronger model."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Its MemoryMesh tiered cross-session memory and conflict-resolution work match the talk's in-band write plus offline dreaming consolidation finding, and the general-substrate point against fixed schemas.",
+   "action": "Add an offline consolidation job to MemoryMesh that re-reads recent sessions and corrects or merges memory entries, then A/B it against raw in-band memory on a repeatable task that shows errors persisting."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "Its plan -> critique -> debate loop and checkpoint/resume are the same build/verifier loop and append-only session pattern the talk describes.",
+   "action": "Check whether ProsHarness's critique step runs in a fresh context with its own rubric. If it runs in the same context, split it out and compare error rates on one task."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Context engineering and multi-agent verification patterns apply directly to the recurring interests in context design and subagent orchestration.",
+   "action": "Read the talk's verifier-loop and append-only context sections, then write a short note comparing them with the current CLAUDE.md and subagent workflow."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

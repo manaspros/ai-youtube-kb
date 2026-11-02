@@ -1,0 +1,126 @@
+{
+ "one_line": "A short Better Stack tool walkthrough of grep.app, a fast regex code search over GitHub, and its MCP server, which lets Claude Code or Cursor pull real library usage into context instead of hallucinating APIs.",
+ "summary": "The presenter pitches grep.app as a Stack Overflow replacement for niche, new, or poorly documented libraries, where LLMs tend to invent code. He demos literal and regex search over millions of GitHub repositories that returns results as he types, with filters for repo, path, and language. He shows a regex used to find hardcoded OpenAI keys in public repos, and notes security researchers use the same approach to find packages with known vulnerabilities. He also uses it to find current usage of packages newer than an LLM's training data, such as React Router v7. The grep.app MCP server lets an agent search GitHub on its own; the tool description tells the model when to call it, and the user can approve it once with \"don't ask again\". In the demo, Claude Code searched for the Lexical convert-from-markdown function, looked at real projects, and then wrote working code in Cursor. The video is short and mostly a demo with no benchmarks.",
+ "speakers": [],
+ "orgs": [
+  "Better Stack",
+  "GitHub",
+  "Anthropic",
+  "Cursor"
+ ],
+ "format": "review",
+ "topics": [
+  "coding-agents",
+  "mcp-and-tools",
+  "rag-retrieval"
+ ],
+ "tags": [
+  "grep.app",
+  "code search",
+  "MCP",
+  "Claude Code",
+  "Cursor",
+  "hallucinated APIs",
+  "up-to-date library usage",
+  "regex",
+  "secret scanning"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Use real code search as a stand-in for Stack Overflow when docs are thin, since LLMs hallucinate niche or new APIs.",
+   "detail": "The speaker's core claim: grep.app over GitHub gives real usage examples to load into the model's context, so the agent writes correct code for the Lexical convert-from-markdown function.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Search is literal and very fast, with filters for repo, path, and language.",
+   "detail": "Results update on every keystroke across millions of repos. Filtering by repo narrows to official examples (e.g. the Lexical repo) and by path (e.g. app/ for Next.js app router) narrows to a project structure.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Regex search finds hardcoded secrets, and security researchers use it to find vulnerable dependencies.",
+   "detail": "A regex for OpenAI API keys returned several public-repo hits, including test fixtures. The speaker says researchers also search for outdated, vulnerable package versions; he does not recommend that unless the vulnerability is reported.",
+   "t": "1:13"
+  },
+  {
+   "idea": "Search for version-specific usage when the model's training data is out of date.",
+   "detail": "Google and LLMs gave poor results for React Router v6 and the newer v7. Searching for the new version surfaces projects already on it, showing how they structure the code.",
+   "t": "2:11"
+  },
+  {
+   "idea": "Expose the search as an MCP server so the agent calls it without being asked.",
+   "detail": "The grep.app MCP tool description says it searches literal code patterns and when to use it (unfamiliar APIs, unsure of syntax). The agent picked it up automatically and sent the search with the user's project languages (TypeScript, JavaScript).",
+   "t": "2:11"
+  },
+  {
+   "idea": "Agent output after the search is grounded in the retrieved repos.",
+   "detail": "After a one-time approval, the agent found Payload CMS, Facebook Lexical and other projects, explained how to call the function, and then implemented it in Cursor. The speaker presents this as the reason LLMs stop inventing niche APIs.",
+   "t": "3:20"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Add grep.app as an MCP server in Cursor or Claude Code",
+   "how": "Cursor: add the server entry to mcp.json. Claude Code: run an add command from the CLI. The exact JSON and CLI command are not shown on screen; check the grep.app docs. Approve the search tool once with 'don't ask again'.",
+   "when": "When the coding agent needs real usage of an unfamiliar or fresh library and you don't want to paste examples by hand."
+  },
+  {
+   "name": "Literal and regex code search with filters",
+   "how": "Type the function name (e.g. convert from markdown) to see results as you type. Filter by repo (e.g. the official Lexical repo), path (e.g. app/ for Next.js app router) and language (e.g. JSON). Turn on match case, match whole words, or regex.",
+   "when": "Finding how a specific function, config key or file layout is used in real projects before writing code."
+  },
+  {
+   "name": "Version-specific search for new packages",
+   "how": "Search for the new major version string or API (the demo used 'react router v7') and read the projects already on it, instead of relying on web search or model memory.",
+   "when": "A package has shipped breaking changes after the model's training cutoff."
+  },
+  {
+   "name": "Regex to detect committed secrets (defensive use)",
+   "how": "Paste a provider key regex (the demo used an OpenAI key pattern) into the regex search to see public repos with leaked keys. The speaker blurred the results and did not share the regex itself.",
+   "when": "Auditing your own org's public repos for leaked credentials, or security research tied to responsible disclosure."
+  }
+ ],
+ "hot_takes": [
+  "'Stack Overflow is dead' and 'the perfect replacement for Stack Overflow' oversell what is really a code search engine. It finds usage examples; it does not answer questions.",
+  "Hype framing ('honestly insane', 'blows my mind') with no latency or accuracy measurements. Speed is shown only as a live demo.",
+  "Mentions security researchers scanning for vulnerable package versions, and says he would not do it unless reporting the issue."
+ ],
+ "numbers": [
+  {
+   "claim": "Searches millions of GitHub repositories with results updating on every keystroke (speaker's description, not measured).",
+   "t": "0:00"
+  },
+  {
+   "claim": "Regex search for an OpenAI API key format returned several public GitHub hits; some were test fixtures.",
+   "t": "1:13"
+  }
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Code search over public repos is a retrieval source for coding agents. It is a different layer from MemoryMesh's hybrid retrieval over knowledge buckets.",
+   "action": "Compare a grep.app-style code-search MCP against MemoryMesh's BM25 + pgvector retrieval on niche-library questions, and note whether results beat the model's own knowledge."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs the Claude Code CLI, and adding an MCP code-search server to those runs would help with unfamiliar-library tasks.",
+   "action": "Test adding a grep.app-style MCP server to the Claude Code config ProsHarness launches, then check whether it reduces hallucinated APIs on a sample task."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "tools": [
+  "grep.app",
+  "GitHub",
+  "Claude Code",
+  "Cursor",
+  "MCP",
+  "Lexical",
+  "Next.js",
+  "React Router",
+  "Payload CMS"
+ ],
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

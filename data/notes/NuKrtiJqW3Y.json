@@ -1,0 +1,173 @@
+{
+ "one_line": "Tips for testing web apps with Claude Code's Chrome extension: full-page screenshot scripts, CLAUDE.md context and cookie-banner rules, split test files, progress reports across compaction.",
+ "summary": "AI LABS presents workflow tips for Claude Code's Chrome extension, which the speaker says is now integrated as an MCP and works better than the Playwright and Puppeteer MCPs for context bloat, screenshot clutter and reliability. The first ~1:28 is a sponsored segment for a done-for-you app-building service. The main content covers four fixes: a full-page screenshot script called from a slash command instead of scroll-and-stitch, CLAUDE.md rules that limit DOM extraction and run a cookie-banner dismissal script first, and logging in manually before handing off tasks that need auth or CAPTCHA. For end-to-end testing, the speaker splits the suite into per-area test files (priority, preconditions, steps, expected results) because Chrome's Manifest V3 can stop long extension sessions. Progress reports written after each test file, a compact before testing, and a guided-test slash command are meant to survive context compaction, and console output is used to catch errors not visible on the page. No benchmarks are given; the speed and accuracy claims are anecdotal, and the scripts and CLAUDE.md text are described rather than shown.",
+ "speakers": [],
+ "orgs": [
+  "AI LABS",
+  "Anthropic",
+  "Google",
+  "Automata"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "testing-verification",
+  "coding-agents",
+  "context-engineering",
+  "voice-multimodal"
+ ],
+ "tags": [
+  "claude-code",
+  "chrome-extension",
+  "browser-automation",
+  "claude-md",
+  "slash-commands",
+  "compaction",
+  "e2e-testing",
+  "playwright",
+  "puppeteer",
+  "manifest-v3",
+  "cookie-banners",
+  "sponsored"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Claude Code's Chrome extension, now exposed as an MCP, is preferred over the Playwright and Puppeteer MCPs",
+   "detail": "Speaker says the older MCP browser tools bloat the context window, clutter the project folder with screenshots, and often fail to finish actions. The native extension uses the user's signed-in Chrome session, so it can work with services like Google Docs and Sheets.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Full-page screenshots should replace section-by-section scrolling for visual page tests",
+   "detail": "The default behaviour scrolls each section, screenshots it, and stitches the images. A script that captures the full page, invoked from a custom slash command whose instructions tell Claude to use it for full-page tests, is said to be faster with the same accuracy.",
+   "t": "1:28"
+  },
+  {
+   "idea": "Whole-DOM extraction is the main context sink for browser tools",
+   "detail": "MCP browser tools often load all the HTML inside the main tag. The speaker adds a CLAUDE.md rule to extract only specific divs, so simple tasks do not fill the context window.",
+   "t": "1:28"
+  },
+  {
+   "idea": "Cookie and consent banners are handled by a script that runs before the main task",
+   "detail": "A JavaScript script holds common accept-button selectors and text patterns. A CLAUDE.md instruction makes Claude run it first after navigating to a site, avoiding repeated screenshot and scroll loops.",
+   "t": "2:46"
+  },
+  {
+   "idea": "Login and CAPTCHA steps must be completed by the user before the task starts",
+   "detail": "Speaker says Claude is restricted from solving CAPTCHAs or completing authentication, so the user should log in ahead of time to avoid the task being blocked.",
+   "t": "2:46"
+  },
+  {
+   "idea": "Browser tool calls are compute-heavy, so auto-compaction needs watching",
+   "detail": "Speaker says the browser integration uses much more context than ordinary tool calls, and the vendor has said so in its own blog post.",
+   "t": "3:48"
+  },
+  {
+   "idea": "The extension only works with Google Chrome and can open the wrong profile",
+   "detail": "Other Chromium browsers are not supported, and users with several Chrome profiles report that it keeps opening the wrong one. Speaker says the problem cannot be solved from the user side.",
+   "t": "5:01"
+  },
+  {
+   "idea": "Manifest V3 can block long extension runs, so the test suite is split into per-area files",
+   "detail": "Chrome can stop the extension after a long run, halting Claude mid-task. Instead of one end-to-end run, the speaker writes separate test files, each with priority, preconditions, steps and expected results, plus a testing guide and README.",
+   "t": "5:01"
+  },
+  {
+   "idea": "Progress reports and a pre-test compaction keep test state across context loss",
+   "detail": "CLAUDE.md tells Claude to write a comprehensive test report after each file, so progress survives compaction. The speaker runs /compact before testing and wants Claude to check its context before starting a task. Console output is read to catch errors not visible on the page.",
+   "t": "6:16"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Full-page screenshot script behind a slash command",
+   "how": "Write a script that uses the available web tools to capture the full page. Add it to the project and give a custom slash command instructions to use the script for full-page checks, not scroll-and-stitch per section. Speaker's script and command text are not shown on screen.",
+   "when": "Visual landing-page or layout checks where section-by-section screenshots waste time and tokens."
+  },
+  {
+   "name": "CLAUDE.md rule to limit DOM extraction",
+   "how": "Add a CLAUDE.md instruction telling Claude to extract only the specific divs or elements the task needs, not the whole main tag.",
+   "when": "Any browser read on a large page where whole-page HTML bloats the context."
+  },
+  {
+   "name": "Cookie-banner dismissal script run first",
+   "how": "Write a JavaScript snippet with common accept-button selectors and text patterns, find matching elements and click them. Add a CLAUDE.md instruction to run it before the main content on each site visit.",
+   "when": "Sites with consent or cookie popups that otherwise cost screenshot and scroll cycles."
+  },
+  {
+   "name": "Authenticate before handing off the task",
+   "how": "Log in and clear any CAPTCHA in the signed-in Chrome profile yourself, then give Claude the task. The extension keeps the session, and Claude will not do auth or CAPTCHA steps.",
+   "when": "Testing or automating sites that require login or CAPTCHA verification."
+  },
+  {
+   "name": "Split end-to-end testing into per-area test files",
+   "how": "Create one test file per feature area. Each file lists priority, preconditions, testing steps and expected results. Add a testing guide that explains how to run them and a README for the test docs.",
+   "when": "Testing a large web app where one long browser run may be stopped by the Manifest V3 limit."
+  },
+  {
+   "name": "Progress report after each test file",
+   "how": "Add a CLAUDE.md instruction to write a comprehensive test report after finishing each file. After a compaction, Claude reads these progress files to see what has been tested and what remains.",
+   "when": "Multi-file browser test runs that will exceed the context window."
+  },
+  {
+   "name": "Compact and check context before browser test runs",
+   "how": "Run /compact before starting browser testing. Add a CLAUDE.md instruction to check context usage before starting any task so compaction does not happen midway through a test.",
+   "when": "Browser-heavy sessions where the extension consumes a lot of context."
+  },
+  {
+   "name": "Guided testing slash command",
+   "how": "Create a slash command that takes a test file as argument. It tells Claude to run the file's steps in the browser, read console output for hidden errors, and write the results into a fixed report structure as specified in CLAUDE.md.",
+   "when": "Systematic QA of a web app driven by a set of test files."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Claude Code Chrome extension (Claude in Chrome integration)",
+  "Playwright MCP",
+  "Puppeteer MCP",
+  "Google Chrome",
+  "Google Docs",
+  "Google Sheets",
+  "CLAUDE.md",
+  "Chrome Manifest V3 extensions"
+ ],
+ "numbers": [
+  {
+   "claim": "No benchmarks, timings or token counts are given. The full-page approach is described as 'significantly faster' with 'the same accuracy', but neither is measured.",
+   "t": "1:28"
+  },
+  {
+   "claim": "Video length is 7:49, and the sponsored segment for automata.dev runs from 0:00 to about 1:28 (about 19% of the runtime).",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "The first ~1:28 is a sponsored plug for a done-for-you app-building service (automata.dev). The speaker's tips are not the main content there, so quality is capped at 2.",
+  "Speaker says native Chrome integration beats Playwright and Puppeteer MCPs because it keeps signed-in sessions and avoids screenshot clutter. This is opinion, not measured.",
+  "Speaker says he was never an advocate of AI-driven automated testing before this extension.",
+  "Most fixes are CLAUDE.md rules and slash commands. The script contents and CLAUDE.md text are described but not shown on screen, so the workflow is hard to reproduce exactly from the video.",
+  "The title ('Claude Released Something To Fix Your Errors') overstates it. The content is workflow tips for an existing extension, not a fix for errors in Claude."
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness does checkpoint/resume of long agent runs. The video's per-file progress reports and split, independently runnable test files map onto that pattern. Its point that long browser runs get cut off mid-task is also relevant to resume design.",
+   "action": "Write a progress report after each unit of work and have the resume path re-read those files after compaction or restart. Split long browser runs into independently resumable units rather than one long run."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS has Crucible (sandboxed execution) and L4 observability, and an E2E or load test suite would benefit from the same layout. The speaker's test layout is generic, not AgentOS-specific.",
+   "action": "If any AgentOS test suite drives a browser or UI, adopt the per-area test file layout with priority, preconditions, steps and expected results."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The native Claude Code Chrome extension is a practical option for checking signed-in web apps. The speaker notes it only works with Google Chrome and can open the wrong profile.",
+   "action": "Try the Claude Code Chrome extension for signed-in browser checks on a real app, and watch for the wrong-profile problem with multiple Chrome profiles."
+  }
+ ],
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

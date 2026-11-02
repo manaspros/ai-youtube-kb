@@ -1,0 +1,181 @@
+{
+ "one_line": "Walkthrough of a Karpathy-style loop for Claude Code: frozen checks, fresh builder subagents, and an outer loop that rewrites instructions from failure logs. The \"10x\" claim is not measured.",
+ "summary": "AI LABS sets up Andrej Karpathy's autoresearch-style loop on their own app and reports one change they made to it. They first explain the original pattern (one editable file, a locked scoring file, a plain-English program.md, keep-or-undo per round) and list four conditions a task needs before a loop is worth building. Their Claude Code setup uses skills for project context, writing checks, and the build run, and a script that freezes the checks in a folder the agent cannot edit. Each feature is handed to a feature-builder subagent with fresh context, and each round is logged to a results file. The main addition is an outer \"auto loop\" that reads the results file, finds recurring failures, and rewrites the how-to-work section of program.md, without touching the checks. The demo is one feature built in about 6 minutes and a three-round test on a second app, with no baseline timing or repeated runs to support the 10x headline. Part of the video is a sponsor segment for Upstash Box.",
+ "speakers": [
+  "AI LABS host (unnamed narrator)"
+ ],
+ "orgs": [
+  "AI LABS",
+  "Upstash",
+  "Shopify"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "claude-code",
+  "testing-verification",
+  "skills-self-improvement",
+  "multi-agent"
+ ],
+ "tags": [
+  "karpathy loop",
+  "autoresearch",
+  "loop engineering",
+  "frozen checks",
+  "program.md",
+  "outer loop",
+  "feature builder subagent",
+  "results file",
+  "project context skill",
+  "claude code settings deny rule",
+  "upstash box",
+  "agent habits"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Loops only pay off for tasks that repeat, have a machine-checkable score, tolerate the token cost of failed rounds, and let the agent run what it built. One-off jobs are better done with one good prompt. Never let a whole app be built in one loop.",
+   "detail": "The host lists four conditions. A loop takes time to build, so the task must recur. Failed rounds still burn tokens, so a long loop on a $20 plan can hit the usage limit before the work is done. The score must come from code, not a human. The agent must be able to run the app and see what broke. They only loop on single features or a simple version of the app.",
+   "t": "2:32"
+  },
+  {
+   "idea": "The Karpathy autoresearch pattern: the agent may edit only one training file, a separate scoring file is off limits so the agent cannot make the score easier, and program.md gives plain-English rules. A change is kept if the score improves and undone otherwise.",
+   "detail": "Karpathy's run covered about two days, about 700 experiments, and about 20 speedups. The host also cites a Shopify CEO who ran the same kind of loop overnight, with 37 experiments and a model 19% better by morning.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Freeze the checks before building. Checks are written first, the user reviews them in plain language, a script moves them into a locked folder, a Claude Code settings rule blocks edits to that folder, and the checks are committed to git.",
+   "detail": "The point is that the loop cannot make its own tests easier to pass. The host says a commit adds a second layer of protection. The exact settings key is not shown.",
+   "t": "5:00"
+  },
+  {
+   "idea": "Keep each feature's context clean. A project-context skill stores what the app is, its pages, conventions, and things to avoid. The build run hands each feature to a feature-builder subagent that starts fresh, and each round is written to a results file.",
+   "detail": "The host chose a skill over a plain file because only a skill's short description stays in context all the time, and the full text loads only when needed.",
+   "t": "4:00"
+  },
+  {
+   "idea": "A passing score can miss integration gaps. In the demo, all 11 checks passed in round one, but the checks only covered the ordering rules. The loop still had to build the order form the guest uses and connect it to those rules before it marked the feature done.",
+   "detail": "The host added a guest-email check, which took the list from 10 to 11 checks. The check verified that the email is a real address. The build took about 6 minutes.",
+   "t": "7:36"
+  },
+  {
+   "idea": "Agent habits do not persist across rounds, so the same mistake recurs in each new feature. The fix is an outer loop, the auto loop, which reads the results file, finds recurring problems, and rewrites the how-to-work section of program.md. It is not allowed to edit the checks.",
+   "detail": "The host frames this as the Karpathy program.md step, but the agent writes the program.md rules rather than a person.",
+   "t": "8:38"
+  },
+  {
+   "idea": "Run the outer loop one feature at a time and review after each. Two habits came out of the test on a project-management app: wire each feature into the live app in the same round its checks pass, and find every existing code path that already does the job and update it.",
+   "detail": "The shared-database feature passed all 10 checks but never saved anything, which is the failure that led to the first habit. The mentions feature broke an older code path that still read @ the old way, which led to the second.",
+   "t": "9:55"
+  },
+  {
+   "idea": "The checks catch real errors in the test. Round 1 broke mentions and was undone. Round 2 split shares 33/33/33, which sums to 99, and failed the check. Round 3 passed all 10 checks.",
+   "detail": "The host ends with a report that says where the agent went wrong, how it was fixed, and how the workflow changed. The whole test covers one app.",
+   "t": "11:23"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Loop-fit test before building a loop",
+   "how": "Check four things before setting up a loop: the task recurs often, the token budget covers failed rounds, the result can be scored by code with no human, and the agent can run the app and see failures. If any fails, use one prompt instead.",
+   "when": "Before deciding whether to build any loop for a coding task."
+  },
+  {
+   "name": "Project-context skill as app memory",
+   "how": "Ask the agent to create a skill that records the app's pages, conventions, and do-not-do list. Keep it updated as the app grows. Store it as a skill, not a plain file, so only its short description sits in the context window.",
+   "when": "When a loop or agent needs per-app knowledge without loading all of it into every task."
+  },
+  {
+   "name": "Write, review, approve, lock, and commit checks",
+   "how": "A write-checks skill generates the checks before any feature is built. The agent lists each check in plain words, and you iterate until coverage is right (the demo added an email-validity check). An Approve Checks script moves the checks into a locked folder. A Claude Code settings rule blocks the agent from editing that folder. Then commit the checks. The video does not show the settings key.",
+   "when": "In any loop where the agent could otherwise weaken its own tests to pass."
+  },
+  {
+   "name": "Fresh feature-builder subagent per feature, with a results file",
+   "how": "The build skill runs one pass per feature and never builds in its own context. It delegates each feature to a feature-builder agent that starts fresh. Every round writes to a results file recording kept or undone, what was tried, and which checks still fail. End with a report.",
+   "when": "Multi-feature builds where context carry-over causes drift or contamination."
+  },
+  {
+   "name": "Karpathy-style keep-or-undo loop with program.md",
+   "how": "Give the agent one editable file. Put the scoring file out of its reach. Write the rules in program.md in plain English, with a fixed-rules section and a how-to-work section. Keep a change if the score improves, and undo it otherwise.",
+   "when": "Any task with a numeric or pass/fail score that the agent can run repeatedly."
+  },
+  {
+   "name": "Outer auto loop that rewrites instructions from failures",
+   "how": "After each feature, read the results file and group failures that recur across rounds. For each habit, record the rounds that show it. Rewrite only the how-to-work section of program.md for the next feature. The checks stay read-only to this loop. Run one feature at a time, with a review after each.",
+   "when": "When the inner loop repeats the same mistake across features and the fix should carry forward."
+  },
+  {
+   "name": "Wire-up and sweep instructions",
+   "how": "Add two rules to the instructions. Connect each feature to the live app in the same round its checks pass. Find every existing place that already does the job and make each one follow the new rule.",
+   "when": "When features pass unit-style checks but stay unreachable from the app, or old code paths keep using the previous behaviour."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Karpathy autoresearch (Auto Research)",
+  "Upstash Box (sponsor; per-agent cloud sandbox)",
+  "Approve Checks (custom script)",
+  "program.md",
+  "features.md (feature tracking file)",
+  "results file (custom per-round log)",
+  "Project Context skill (custom)",
+  "build skill (custom)",
+  "write checks skill (custom)",
+  "auto loop skill (custom)",
+  "feature builder agent (custom subagent)"
+ ],
+ "numbers": [
+  {
+   "claim": "Karpathy's autoresearch ran about 700 experiments over two days and found 20 changes that made the model train faster.",
+   "t": "1:09"
+  },
+  {
+   "claim": "A Shopify CEO's overnight loop ran 37 experiments, and the model was 19% better by morning (cited by the host).",
+   "t": "1:09"
+  },
+  {
+   "claim": "A long loop on a $20 plan can hit the usage limit before the work is done, because failed rounds still consume tokens.",
+   "t": "2:32"
+  },
+  {
+   "claim": "The demo guest-ordering feature built in about 6 minutes. Checks went from 10 to 11 after adding an email-validity check, and all 11 passed in round one.",
+   "t": "7:36"
+  },
+  {
+   "claim": "The shared-database feature passed all 10 checks but never saved data, which led to the habit of wiring features in the same round.",
+   "t": "9:55"
+  },
+  {
+   "claim": "On the mentions test: round 1 broke mentions and was undone, round 2 split shares 33/33/33 summing to 99 and failed, and round 3 passed all 10 checks.",
+   "t": "11:23"
+  },
+  {
+   "claim": "Sponsor claim: Upstash Box gives each agent its own cloud sandbox, the host spun up 10 of them, and it has a free tier that scales to zero.",
+   "t": "6:28"
+  }
+ ],
+ "hot_takes": [
+  "The title's '10x' is not measured. There is no baseline timing or repeated runs. The evidence is one feature built in about 6 minutes and one three-round test on a second app.",
+  "The skills, the Approve Checks script, and the auto loop are not shared in the video. The host points viewers to a paid community tier, so the setup cannot be reproduced from the video alone.",
+  "The lock is described only at a high level: a folder and a Claude Code settings rule, with no config key, file path, or permission syntax shown.",
+  "The 'agent learns habits across features' claim rests on three features in one test app. The video does not test whether the rewritten instructions help on a fresh project.",
+  "The Upstash segment at 6:28 is a sponsor pitch. Its free-tier and scale-to-zero claims are not checked in the video."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Frozen, pre-committed checks plus an outer loop that rewrites instructions from failure logs map directly to AgentOS's eval and self-improvement goals (EvolveCraft, SkillForge). The idea that a loop must not edit its own tests fits the distributed-correctness thesis.",
+   "action": "Prototype an AgentOS eval harness where checks are written, committed, and locked before a loop runs, then have an outer loop propose instruction changes from per-round failure logs, with the checks read-only to it."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already wraps Claude Code loops and schedules. This video gives a concrete loop design (approve-and-lock checks, fresh subagent per feature, results file, outer instruction-rewriting loop) that could be added as a loop mode.",
+   "action": "Add an approve-checks step to ProsHarness loops that writes and commits checks, then locks them with a Claude Code deny rule on the checks folder before any builder subagent runs. Log each round to a results file, and test an outer pass that rewrites a how-to-work section of program.md, one feature at a time."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

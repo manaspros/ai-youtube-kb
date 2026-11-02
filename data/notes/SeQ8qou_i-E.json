@@ -1,0 +1,203 @@
+{
+ "one_line": "Xiaomi AI Cube vs DGX Spark: headline specs measure different things. Batch size, concurrency, serving config and the network decide real throughput; the Cube is still unshipped.",
+ "summary": "Kai Explains compares Xiaomi's unannounced AI Cube (D100 chip) with NVIDIA's DGX Spark and argues that the viral spec-sheet comparison mixes incompatible measurements. The video walks through five rounds (capacity, memory bandwidth, batch-size throughput, software configuration, multi-node scaling) and ends with buying guidance by workload. Xiaomi's 1.22 TB/s figure applies only to a small pool bonded next to the compute, and its 330 tok/s is a batch-one result on a 3B model, whereas a Spark developer published 1,095 tok/s across 32 concurrent requests on a 27B model. The speaker says his earlier \"memory bandwidth decides everything\" framing holds only for one machine and one user; above one box, the network fabric sets the ceiling. He also shows a Spark owner gaining roughly 10x from configuration flags, mainly by enabling prefix caching that the serving stack leaves off by default. Verdict: for one user, a used gaming GPU is faster; for parallel agents or a small team, the Spark works as a cheap server; the Cube has no price, date or public runtime yet.",
+ "speakers": [
+  "Host of Kai Explains (not named in the transcript)"
+ ],
+ "orgs": [
+  "Xiaomi",
+  "NVIDIA",
+  "TSMC"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "unified-memory",
+  "dgx-spark",
+  "xiaomi-ai-cube",
+  "memory-bandwidth",
+  "batch-size",
+  "concurrency",
+  "prefix-caching",
+  "multi-node-clustering",
+  "hardware-buying-guide"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The headline numbers in the viral Xiaomi post describe different chips and conditions, so the 330 tok/s vs $4,500 Spark comparison is invalid even though both figures are real.",
+   "detail": "Each of Xiaomi's five specs belongs to a different component; the speaker sorts them by chip and by measurement condition before any comparison.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Capacity is a gate, and Xiaomi's memory figure is unresolved.",
+   "detail": "The Spark has a verified 128 GB, in stock at $4,699. Xiaomi's English headlines say 160 GB, but its Chinese copy attaches that to the D100 die ceiling; three readers independently got about 80 GB for the prototype.",
+   "t": "2:41"
+  },
+  {
+   "idea": "The 1.22 TB/s figure is the speed of a small near-memory pool, not the bandwidth serving the large model.",
+   "detail": "Xiaomi bonds two memory wafers onto the processor face to face at a claimed 1.4 micron pitch (TSMC production stacking about 6 microns, HBM4 about 10). One analyst estimates the pool at 3.5 to 4 GB, which the speaker flags as inference. A 120B model at 4-bit (~60 GB) can't run from that pool, so the demo must have used ordinary memory.",
+   "t": "4:53"
+  },
+  {
+   "idea": "Batch size one is the bandwidth-bound regime; batching changes the picture completely.",
+   "detail": "Xiaomi's 330 tok/s is a batch-one lab result on its 3B MIMO model. A developer's Spark run on a 27B model published 86 tok/s at 1 concurrent request, 508 at 8 and 1,095 at 32, because one weight read serves all concurrent answers.",
+   "t": "7:28"
+  },
+  {
+   "idea": "Serving-stack defaults can leave a box running at a fraction of its capability.",
+   "detail": "A Spark owner measured 7.9 tok/s at stock settings on a 27B model. After tuning, the same box hit 58.5 on edit-heavy work and 75 at 4-bit, roughly 10x from flags alone. The main factor was prefix caching, off by default for that model class and not announced at startup; enabling it made shared prompt processing 14 to 22 times faster.",
+   "t": "8:48"
+  },
+  {
+   "idea": "Xiaomi has not published a runtime, so there is nothing to benchmark yet.",
+   "detail": "No backend in llama.cpp or vLLM, no quantization path and no loading docs. The speaker's signal to watch is an X-ring backend merging into llama.cpp or vLLM; until then he guesses the first customer is a Xiaomi robot.",
+   "t": "10:07"
+  },
+  {
+   "idea": "Above one machine, the network fabric decides performance, and memory bandwidth stops being the ceiling.",
+   "detail": "A 16-node Spark cluster on a 400 Gb switch runs a frontier-class open model at over 50 tok/s single-stream. Four Sparks reach 124 tok/s on one model where two reach 85. The speaker's earlier framing was corrected: dropping fabric from 200 Gb to 100 Gb cost 2% token generation but 20% prompt processing.",
+   "t": "11:28"
+  },
+  {
+   "idea": "Buy by workload: single-user, parallel agents, or capacity for a small team.",
+   "detail": "For one person asking one question at a time, a used gaming GPU is 2 to 4x faster on models that fit its VRAM. For parallel agents or a small team, the Spark is an inexpensive server; one buyer estimated about two years to pay back at six concurrent sessions against current API pricing, and never at one request at a time.",
+   "t": "12:52"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Normalize vendor throughput claims before comparing",
+   "how": "For each figure, record the chip, model size, precision, batch or concurrency level, and which memory pool it measures. Only compare numbers that match on all of those; mismatched figures get labelled as different products.",
+   "when": "Reading or writing any hardware comparison for local inference, or any tokens-per-second claim."
+  },
+  {
+   "name": "Benchmark a box at several concurrency levels",
+   "how": "Run the same model at 1, 8 and 32 concurrent requests and report tok/s per level as a table (the speaker's example: 86, 508, 1,095 tok/s on a 27B model on one Spark). Reading the table shows whether the workload is bandwidth-bound (batch 1) or compute-bound (high batch).",
+   "when": "Sizing a local inference box for a team or parallel agents, or deciding whether batching is worth configuring."
+  },
+  {
+   "name": "Check the serving stack's defaults before judging hardware",
+   "how": "Compare stock and tuned runs of the same model (speaker: 7.9 vs 58.5 and 75 tok/s). Look for features that default to off without a startup warning, and prefix caching in particular: enable it when many requests share a prompt prefix (speaker: 14 to 22x faster shared prompt processing).",
+   "when": "Benchmarking a local serving stack (vLLM, llama.cpp or similar), or when a box looks slow for its spec."
+  },
+  {
+   "name": "Test network sensitivity before scaling out",
+   "how": "Measure token generation and prompt processing separately while halving the inter-node link speed (speaker: 200 to 100 Gb cost 2% and 20%). Prompt processing is the more fabric-sensitive metric.",
+   "when": "Designing a multi-node inference cluster or deciding whether a fabric upgrade is worth it."
+  },
+  {
+   "name": "Fit check and payback arithmetic for a purchase",
+   "how": "Check that the model fits the memory pool it actually runs from (speaker: 120B at 4-bit is about 60 GB, so it cannot run from a 3.5 to 4 GB near-memory pool). Then compare the box's cost against API spend at the expected concurrency: payback at six concurrent sessions was about two years, and never at one request at a time.",
+   "when": "Deciding whether to buy a unified-memory box or a GPU for local models versus paying for hosted APIs."
+  }
+ ],
+ "tools": [
+  "Xiaomi AI Cube (D100 chip, prototype, unannounced)",
+  "NVIDIA DGX Spark",
+  "Xiaomi MIMO (3B model at the batch-one lab result)",
+  "MIMO 2.5 (Xiaomi flagship, over 300B parameters)",
+  "llama.cpp",
+  "vLLM",
+  "X-ring backend (name as spoken in the transcript, unverified)",
+  "HBM4 (memory in data-center GPUs)",
+  "NVIDIA H200 (comparison reference)",
+  "Xiaomi phone processor (113 GB/s memory bandwidth, not the Cube chip)"
+ ],
+ "numbers": [
+  {
+   "claim": "Xiaomi's five headline figures: 200 TOPS, 1.22 TB/s, up to 160 GB unified memory, 150 W, 120B parameters running locally. The post behind it had 743,000 views.",
+   "t": "0:00"
+  },
+  {
+   "claim": "DGX Spark: 128 GB memory, verified, in stock at $4,699.",
+   "t": "2:41"
+  },
+  {
+   "claim": "Xiaomi memory: English headlines say 160 GB; Chinese copy ties it to the D100 die ceiling; three readers got about 80 GB for the prototype.",
+   "t": "3:46"
+  },
+  {
+   "claim": "Bonding pitch 1.4 microns (Xiaomi) vs about 6 microns (TSMC production stacking) vs about 10 microns (HBM4).",
+   "t": "4:53"
+  },
+  {
+   "claim": "Near-memory pool size estimated at 3.5 to 4 GB by one analyst (speaker flags this as inference). A 120B model at 4-bit is about 60 GB.",
+   "t": "4:53"
+  },
+  {
+   "claim": "Xiaomi phone processor memory bandwidth: 113 GB/s (the only published ordinary-memory figure in the family; not the Cube chip). Spark unified memory: 273 GB/s.",
+   "t": "6:11"
+  },
+  {
+   "claim": "Xiaomi 330 tok/s is a batch-one result on a 3B MIMO model. Spark on a 27B model: 86 tok/s (1 request), 508 (8 requests), 1,095 (32 requests).",
+   "t": "7:28"
+  },
+  {
+   "claim": "Spark stock 7.9 tok/s on a 27B model; tuned 58.5 tok/s (edit-heavy) and 75 tok/s at 4-bit, roughly 10x from configuration flags.",
+   "t": "8:48"
+  },
+  {
+   "claim": "Enabling prefix caching made shared prompt processing 14 to 22 times faster.",
+   "t": "8:48"
+  },
+  {
+   "claim": "16-node Spark cluster on a 400 Gb switch runs a frontier-class open model at over 50 tok/s single-stream and about 100 W per box. Another setup has 36 boxes with 4.6 TB unified memory.",
+   "t": "10:07"
+  },
+  {
+   "claim": "Four Sparks on one model: 124 tok/s, vs 85 for two Sparks; six simultaneous conversations at 75 tok/s each.",
+   "t": "10:07"
+  },
+  {
+   "claim": "Fabric 200 Gb to 100 Gb: token generation down 2%, prompt processing down 20%.",
+   "t": "11:28"
+  },
+  {
+   "claim": "Payback about two years at six concurrent sessions vs current API pricing; no payback at one request at a time. Used gaming GPU is 2 to 4x faster for one user on models that fit in VRAM.",
+   "t": "12:52"
+  },
+  {
+   "claim": "Xiaomi's MIMO 2.5 is over 300B parameters; the D100 ceiling is just above 200B. Xiaomi has a public pledge capping hardware margins at 5%. The two chips reach commercial availability in 2027.",
+   "t": "12:52"
+  },
+  {
+   "claim": "NVIDIA raised Spark price by $700 this year because memory got more expensive.",
+   "t": "14:15"
+  }
+ ],
+ "hot_takes": [
+  "Comparing Xiaomi's 330 tok/s with the $4,500 Spark is an apples-to-oranges comparison; both figures are real but measure different things.",
+  "Memory bandwidth decides speed for one machine and one user only; above one box, the network fabric matters more.",
+  "The Spark's throughput at high concurrency (1,095 tok/s on a 27B model) is far higher than its batch-one number, so single-stream benchmarks mislead for multi-user workloads.",
+  "Xiaomi's first customer for the chip is probably a Xiaomi robot (speaker's guess), and its Cube will probably be cheap (speaker's prediction; cites the 5% margin pledge).",
+  "Default serving configurations can leave hardware at a tenth of its capability with no warning (the prefix-caching example)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft runs vLLM plus Ray Serve on one RTX 5090 with KV-cache strategies and a priority scheduler. The video's batch-size scaling, the prefix-caching default, and the multi-node fabric sensitivity bear directly on that serving layer.",
+   "action": "Benchmark the InferCraft vLLM setup at 1, 8 and 32 concurrent requests, report tok/s at each level, and confirm prefix caching is enabled in the serving config."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The video covers local inference hardware and serving stacks, not the Claude Code harness, checkpointing, or approvals.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The normalization checklist (batch size, concurrency, memory pool, fit, payback vs API spend) is a reusable method for judging any local-model hardware or throughput claim.",
+   "action": "Add a short checklist for hardware and tokens-per-second claims (chip, model size, precision, concurrency, memory pool, stock vs tuned config) to the team's notes on local AI."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

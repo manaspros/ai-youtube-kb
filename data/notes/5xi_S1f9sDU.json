@@ -1,0 +1,155 @@
+{
+ "one_line": "Why 99%-accurate browser agents still fail in production, and how moving deterministic steps out of the model and verifying outcomes makes transactional browser workflows profitable.",
+ "summary": "Derek Meegan (Browserbase) argues that a browser agent demo is easy but production runs are not, because cost accumulates per step while value is only realized when the whole transaction succeeds. He shows that a 99% per-step success rate over 100 steps gives only about 36% end-to-end. He proposes judging agents by profit (revenue minus cost) and ranking performance first, then cost, then maintainability. Success should be defined by a concrete artifact the run leaves behind, measured per transaction with retries allowed. He walks through a health-insurance portal example that starts as a bare agent and is refactored step by step: a single download tool, an OCR-based verify tool checked against the system of record, a serverless auth function outside the model, and a skill written as an agent SOP for the critical path. The talk is practitioner-level with some vendor framing.",
+ "speakers": [
+  "Derek Meegan"
+ ],
+ "orgs": [
+  "Browserbase"
+ ],
+ "format": "talk",
+ "topics": [
+  "voice-multimodal",
+  "testing-verification",
+  "agent-architecture"
+ ],
+ "tags": [
+  "browser-agents",
+  "production",
+  "deterministic-tools",
+  "unit-economics",
+  "per-transaction-success",
+  "retries",
+  "skills-as-sop",
+  "computer-use"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Cost accumulates with every step, but value is only realized when the whole task is done. Browser agents get no partial credit.",
+   "detail": "Each step adds cost and risk. Value arrives only at the end of the trajectory, so the success of the full chain is what matters.",
+   "t": "4:19"
+  },
+  {
+   "idea": "Compounding per-step failure makes long browser trajectories fragile.",
+   "detail": "With a 99% success rate per step over 100 steps, end-to-end success is about 36%. The speaker says this is not a reason to avoid browser agents, because the math is not the whole story.",
+   "t": "5:20"
+  },
+  {
+   "idea": "Judge agents by profit (revenue minus cost), in priority order: performance, then cost, then maintainability.",
+   "detail": "Performance comes first because cost and maintainability become optimization problems once the agent reliably completes the task. The speaker says optimization problems can be solved with engineering.",
+   "t": "6:47"
+  },
+  {
+   "idea": "Define success as a concrete artifact the run leaves behind, and measure per transaction, not per run.",
+   "detail": "Examples are a confirmation email, an order ID, or a record that can be queried deterministically. Allowing retries, one agent at 50% per run reaches about 94% per transaction. The customer cares about the completed workflow, not the number of attempts.",
+   "t": "8:13"
+  },
+  {
+   "idea": "Costs have a per-run part and a maintenance part, and maintenance is often the larger one.",
+   "detail": "Per-run costs are mostly model cost now, but the speaker expects model cost to shrink as open models cut prices. Maintenance covers observability of what happened in the browser, developer time to fix breakage, and re-evaluation as sites and models change.",
+   "t": "9:40"
+  },
+  {
+   "idea": "Move steps that do not need judgment out of the model and into deterministic code.",
+   "detail": "The speaker's example refactor encapsulates the download in one tool, pulls the fixed login flow into a serverless function, and adds a verify tool. Each change reduces the steps the model must take, which lowers cost and raises performance.",
+   "t": "12:38"
+  },
+  {
+   "idea": "Give the agent a deterministic verifier so it can check its own outcome.",
+   "detail": "An OCR tool extracts entities from the downloaded document and compares them with the system of record. The agent then knows authoritatively whether its trajectory succeeded.",
+   "t": "13:35"
+  },
+  {
+   "idea": "Write a skill as an agent SOP that narrows the critical path.",
+   "detail": "Because the output is a probability distribution, naming the next step in a skill makes the model more likely to take it. The speaker says this removes ambiguity and keeps the agent on the critical path.",
+   "t": "15:00"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Three browser interaction strategies",
+   "how": "Textual representation (HTML plus accessibility tree hybrid), computer use (screenshot series), or de-harnessed execution (agent writes arbitrary JS or CDP code). Most production systems use the first, the second, or a combination.",
+   "when": "Choose the representation based on how much the task depends on visual layout versus semantic structure."
+  },
+  {
+   "name": "Transactional scope for browser agents",
+   "how": "Target workflows that complete one unit of work end to end, such as paying a bill, placing an order, or submitting a form, and treat the browser as the execution environment for ambiguity.",
+   "when": "At scale, when each run must produce a verifiable outcome and partial completion has no value."
+  },
+  {
+   "name": "Per-transaction success with bounded retries",
+   "how": "Measure success against the completed business artifact, not per attempt, and allow a fixed number of retries per transaction.",
+   "when": "When the customer cares about reliable completion and retry cost is small compared with the value of the outcome."
+  },
+  {
+   "name": "Artifact-based success check",
+   "how": "Define the artifact a successful run leaves behind and check it with deterministic code, for example by querying a system of record or comparing extracted entities.",
+   "when": "Any workflow where the agent might believe it succeeded when it did not."
+  },
+  {
+   "name": "Single-transaction tool encapsulation",
+   "how": "Wrap a multi-step browser operation, such as navigate, click through a download, and retrieve the file, into one tool call that the model invokes.",
+   "when": "When a sub-procedure is fixed and the model's choices inside it add cost and failure risk without adding value."
+  },
+  {
+   "name": "Deterministic auth outside the model",
+   "how": "Run login or other invariant authentication in a separate serverless function that hands an authenticated browser to the agent runtime.",
+   "when": "When the same login flow is reused across many business workflows on one site."
+  },
+  {
+   "name": "Skill as SOP for the critical path",
+   "how": "Write a skill document that lists the steps for the agent in order, like a human standard operating procedure, so the agent knows its next step.",
+   "when": "When the agent has a small area of real ambiguity and the rest of the workflow is known."
+  }
+ ],
+ "tools": [
+  "Browserbase",
+  "Chrome DevTools Protocol (CDP)",
+  "OCR",
+  "accessibility tree",
+  "serverless functions"
+ ],
+ "numbers": [
+  {
+   "claim": "Per-step success of 99% over 100 steps gives about 36% end-to-end success (speaker's example).",
+   "t": "5:20"
+  },
+  {
+   "claim": "A browser agent with 50% success per run reaches about 94% per transaction when up to four retries are allowed (speaker's figure).",
+   "t": "8:13"
+  },
+  {
+   "claim": "Model cost is currently the main per-run cost, and the speaker expects it to fall as open-source model pricing drops.",
+   "t": "9:40"
+  }
+ ],
+ "hot_takes": [
+  "Performance comes first and cost and maintainability are optimization problems that engineering can solve once the agent reliably completes the task.",
+  "Measure browser agents per transaction with retries allowed, because customers do not care how many retries it took.",
+  "An agent is just another line item, and it should return more than it costs."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code runs with checkpoint/resume and verification steps. The talk's split between model-driven steps and deterministic tools, plus its verify-against-record pattern, applies directly to long agent runs.",
+   "action": "In ProsHarness checkpoint loops, route fixed sub-steps through deterministic tool calls and add a verifier that checks the produced artifact against ground truth, not the agent's own claim of success."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Crucible runs sandboxed code execution, and browser-driving tasks would fall under it. The talk's guidance on deterministic tools and artifact verification is relevant only if AgentOS handles browser workflows.",
+   "action": "If Crucible ever runs browser tasks, read the deterministic-tool-plus-verify pattern before designing its exec-gate checks."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The per-transaction success metric and the artifact-based success definition apply to any agent workflow, not only browsers.",
+   "action": "For each agent task we measure, define the artifact that proves success and report success per transaction after retries."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

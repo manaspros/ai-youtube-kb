@@ -1,0 +1,225 @@
+{
+ "one_line": "EXO Labs' Alex Cheema argues decode is memory-bound, so local frontier inference is a memory, bandwidth and energy problem. He demos Mac clusters over Thunderbolt RDMA and a Mac plus DGX Spark prefill/decode split.",
+ "summary": "Alex Cheema of EXO Labs argues that running frontier-scale models locally is mainly a decode-phase problem, since decode is memory-bound and a single local user cannot batch requests the way a data center can. He frames the decode limits as three things: the model must fit in memory, memory bandwidth sets speed, and energy per byte moved sets power draw and battery life. He claims gains compound across the stack (kernels, harness, hardware, models), and he projects that a roughly $5,000 box could reach near-frontier performance within about 18 months. Most of the talk is a live demo: four Mac Studios connected by Thunderbolt 5 with RDMA running GLM 5.1 (4-bit, about 400 GB) via tensor parallelism, plus a Mac and DGX Spark setup that splits prefill onto the Spark and decode onto the Mac, streaming the KV cache over 10 GbE. The demo's ~2x end-to-end speedup is on one large prompt, and several demos were disrupted by Wi-Fi and macOS version mismatches. He ends by proposing public, budget-based benchmarks showing a quality-versus-speed Pareto frontier, and he warns against unrigorous auto-research and heavy quantization claims.",
+ "speakers": [
+  "Alex Cheema"
+ ],
+ "orgs": [
+  "EXO Labs",
+  "NVIDIA",
+  "Apple",
+  "Stanford Hazy Research",
+  "Hugging Face",
+  "Cerebras",
+  "AWS",
+  "Tailscale"
+ ],
+ "format": "talk",
+ "topics": [
+  "local-ai",
+  "inference-serving",
+  "infra-cost-scaling"
+ ],
+ "tags": [
+  "local-inference",
+  "prefill-decode",
+  "kv-cache",
+  "tensor-parallelism",
+  "rdma",
+  "thunderbolt-5",
+  "heterogeneous-hardware",
+  "apple-silicon",
+  "intelligence-per-joule",
+  "event-sourcing",
+  "quantization",
+  "test-time-scaling",
+  "continual-learning",
+  "pareto-benchmarks"
+ ],
+ "tools": [
+  "EXO",
+  "Claude Code",
+  "OpenCode",
+  "OpenClaw",
+  "Tailscale",
+  "MLX",
+  "llama.cpp",
+  "Thunderbolt 5 RDMA",
+  "10GbE"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Decode is memory-bound and prefill is compute-bound, and a local user runs at batch size 1.",
+   "detail": "Cloud providers batch many users to amortize weight reads. A single local user cannot, so decode speed is set by memory capacity and bandwidth. Prefill matters less for local use, though the speaker admits long prompts make it significant.",
+   "t": "11:10"
+  },
+  {
+   "idea": "Decode is limited by three things: fit in memory, memory bandwidth, and energy per byte moved.",
+   "detail": "If the model does not fit, it loads from disk, which is very slow. Bandwidth sets tokens per second. Energy per byte determines power draw, which matters most on battery devices. He cites a phone example where inference at 10 to 15 W drains a 10 to 15 Wh battery in about an hour.",
+   "t": "12:35"
+  },
+  {
+   "idea": "Gains compound across the whole stack, not only the hardware.",
+   "detail": "He cites a 5x intelligence-per-watt gain over about two years from hardware and about 3x from models, and says the stack as a whole could reach roughly 100x price-performance. These are the speaker's own projections.",
+   "t": "16:59"
+  },
+  {
+   "idea": "Unnecessary GPU kernel launches are a large, fixable overhead in local inference.",
+   "detail": "On Qwen 3.5 on Apple Silicon, measured speed was about 50% below the theoretical rate. The cause was many separate kernel launches. Fusing them gave about a 30% speedup, and the speaker says the same kind of overhead appears in orchestration, communication and the harness.",
+   "t": "8:42"
+  },
+  {
+   "idea": "The harness changes performance: the same model behaves differently in different coding harnesses.",
+   "detail": "A good harness keeps the prompt prefix stable so the KV cache gets hits. He suggests inspecting the prompt breakdown with the /context command in Claude Code. Most of the prompt (system prompt and tools) does not change between turns.",
+   "t": "10:09"
+  },
+  {
+   "idea": "Prefill and decode can run on different devices, with the KV cache streamed between them.",
+   "detail": "Prefill is run on a compute-heavy box (DGX Spark) and decode on a bandwidth-heavy one (Mac). The KV cache must move between them, and transfer has to overlap with compute or the split becomes slower. The split only pays off for large prompts. Short prompts show no speedup.",
+   "t": "41:38"
+  },
+  {
+   "idea": "RDMA over Thunderbolt 5 makes tensor parallelism across Macs practical.",
+   "detail": "Plain Mac-to-Mac latency was about 300 microseconds. A 60-layer model with tensor parallelism needs two syncs per layer, so about 120 per token, which costs roughly 40 ms per token at that latency. RDMA brings latency to single-digit microseconds. RDMA needs Thunderbolt 5 and a recovery-mode enable step.",
+   "t": "1:09:43"
+  },
+  {
+   "idea": "The cluster uses event sourcing: append-only logs per node that are merged, with full history replayed when a node joins.",
+   "detail": "Devices can sleep or leave at any time, so the design keeps request history from being lost. Every node holds the full model weights, because a partial shard would change when a node dies.",
+   "t": "1:20:48"
+  },
+  {
+   "idea": "Judge local setups by a quality-versus-speed Pareto frontier at a fixed budget, not by raw tokens per second.",
+   "detail": "The planned public benchmark covers hardware, models, quantizations and pruning, with quality measured via intelligence per joule. The speaker warns that 1-bit quantization or heavy expert pruning often gives worse results than a smaller unquantized model.",
+   "t": "1:32:53"
+  },
+  {
+   "idea": "Auto-research needs the scientific method (hypothesis and controlled tests), or it is only a slot machine.",
+   "detail": "He calls brute-force automated search a slot machine that can show false breakthroughs. Quality regressions from automated changes can go unnoticed when only speed is checked.",
+   "t": "1:37:34"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Kernel fusion of redundant launches",
+   "how": "Profile per-token execution, find many small separate kernels, and fuse them into fewer launches, which cut per-token overhead.",
+   "when": "Decode is latency-bound and per-token compute is small, so launch overhead is a significant share of step time."
+  },
+  {
+   "name": "Cache-stable prompt prefix in the harness",
+   "how": "Keep the system prompt and tool definitions byte-identical across turns, and inspect the prompt breakdown (the speaker uses /context in Claude Code) to confirm cache hits.",
+   "when": "Long multi-turn agent sessions, especially local runs where prefill cost matters and cache hits save it."
+  },
+  {
+   "name": "Prefill/decode disaggregation across devices",
+   "how": "Run prefill on a compute-heavy device, stream the KV cache to a bandwidth-heavy device for decode, and overlap the transfer with compute so it does not stall decode.",
+   "when": "Very large prompts (the demo used a roughly 38 KB to 100 KB paper) on heterogeneous hardware with a link fast enough to hide transfer time."
+  },
+  {
+   "name": "Tensor parallelism over RDMA",
+   "how": "Split each layer across machines and sync per layer over a low-latency link. Count syncs per token times per-sync latency to check whether the speedup survives.",
+   "when": "A model too big for one machine, with machines connected by a microsecond-latency fabric such as Thunderbolt 5 RDMA."
+  },
+  {
+   "name": "Full-replica weights with append-only event logs for cluster state",
+   "how": "Each node keeps an append-only log that is merged across nodes, and a joining node replays history. Every node holds the whole model so a node failure does not reshape the shards.",
+   "when": "Dynamic clusters where devices sleep or leave, and in-flight requests must not be lost."
+  },
+  {
+   "name": "Expose each node over HTTP and reach it through a mesh VPN",
+   "how": "Each device serves an HTTP API. Remote access is through Tailscale rather than a bundled networking layer.",
+   "when": "Accessing a home cluster from a phone or another network without managing firewall or NAT setup."
+  },
+  {
+   "name": "Budget-based Pareto benchmarking",
+   "how": "Benchmark each hardware, model, quantization and pruning combination for speed, prefill time and quality, then present the frontier for a given budget.",
+   "when": "Choosing local hardware and models for a fixed spend, and tracking progress as software, hardware and models change."
+  },
+  {
+   "name": "Hypothesis-driven auto-research",
+   "how": "Form a hypothesis, run a controlled experiment, check quality as well as speed, and iterate. Do not accept an automated change just because it runs.",
+   "when": "Using automated search or agents on performance work, where a silent quality regression is easy to miss."
+  }
+ ],
+ "numbers": [
+  {
+   "claim": "Qwen 3.5 on Apple Silicon ran about 50% slower than the theoretical rate. Fusing redundant kernels gave about 30% faster inference. A 150 tok/s target equals under 10 ms per token.",
+   "t": "7:43-8:42"
+  },
+  {
+   "claim": "Intelligence per watt has improved about 5x over the past two years (speaker's cited Stanford Hazy Research metric).",
+   "t": "15:26"
+  },
+  {
+   "claim": "Hardware gave about 5x and models about 3x in intelligence per joule. The speaker expects the whole stack to reach about 100x price-performance.",
+   "t": "16:59-21:36"
+  },
+  {
+   "claim": "A phone with a 10 to 15 Wh battery running inference at 10 to 15 W gets about one hour of use.",
+   "t": "14:00"
+  },
+  {
+   "claim": "Mac Studio: 512 GB unified memory, about 800 GB/s bandwidth, roughly 10x less compute than an RTX 5090. RTX 5090 has 32 GB VRAM and roughly 1.5 TB/s bandwidth. MacBook M5 Max: up to 128 GB and 614 GB/s.",
+   "t": "16:59-38:51"
+  },
+  {
+   "claim": "Running a 1T-parameter model (GLM 5.1) at FP16 needs about 1.5 TB. Four 512 GB Mac Studios cost about $40,000. Such a setup gives about 20 tok/s, which the speaker says is below the roughly 50 tok/s people expect from cloud.",
+   "t": "20:35-21:36"
+  },
+  {
+   "claim": "DGX Spark costs about $4,000 and has about 273 GB/s bandwidth and roughly 4x the compute of the MacBook (546 GB/s).",
+   "t": "41:38-1:28:52"
+  },
+  {
+   "claim": "Mac-to-Mac latency was about 300 microseconds before RDMA and is now single-digit microseconds, about 100x faster. A 60-layer model with tensor parallelism needs 120 syncs per token, about 40 ms at the old latency.",
+   "t": "1:08:40-1:09:43"
+  },
+  {
+   "claim": "Demo: GLM 5.1 4-bit (about 400 GB) runs across four Macs at about 112 GB each. A small Qwen model reached about 77 tok/s over Wi-Fi.",
+   "t": "1:12:14-1:16:02"
+  },
+  {
+   "claim": "Prefill on the Spark with decode on the MacBook, with KV cache streamed over 10 GbE, was about 2x faster end to end on a large prompt. The speaker gave a 4.8 figure at the end, which the transcript does not clarify.",
+   "t": "1:40:09-1:42:53"
+  },
+  {
+   "claim": "Speaker's forecast: a roughly $5,000 box could reach near-frontier quality and speed within about 18 months, and within about two years there will be purchasable products. This is a projection, not a measurement.",
+   "t": "21:36-23:05"
+  },
+  {
+   "claim": "Test-time scaling example: a 1B model with more test-time search can match a much larger model (speaker citing a Hugging Face study he did not show in full). Multi-agent single-user requests can push local batch size to about 8.",
+   "t": "54:21-55:46"
+  }
+ ],
+ "hot_takes": [
+  "Renting out spare local compute at the hardware layer tends to fail. Rent out tokens or tasks instead.",
+  "Running a large model from SSD or disk is not interesting. The memory-hierarchy problem is the real target.",
+  "Raspberry Pi cluster demos are usually heavily quantized and not useful. Phone inference of frontier models is years away.",
+  "Auto-research without hypotheses and controlled tests is a slot machine that can produce false breakthroughs.",
+  "Most consumer tasks (transcription, summarization, to-do lists) do not need a huge model, so most usage can run locally."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft targets vLLM-style serving on one RTX 5090 and includes prefill/decode and KV-cache strategy work. The talk's claim that prefill/decode splitting only helps for large prompts is directly testable there.",
+   "action": "Add separate prefill and decode timing to InferCraft benchmarks on the RTX 5090 across short and long prompts, to check whether the talk's point about large prompts holds before building any split-device path."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code, and the talk says harness-level prompt stability drives cache hits and performance. ProsHarness also does checkpoint/resume, so resumed prompts can break the cache.",
+   "action": "Audit how ProsHarness builds prompts for Claude Code runs so the system prompt and tool block stay identical across checkpoint resumes, then confirm cache hits with the /context view."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The speaker's argument for hardware-aware inference research and the critique of cherry-picked benchmark claims are useful background for judging local-model claims.",
+   "action": "Read Sarah Hooker's 'hardware lottery' essay, which the speaker recommends, for background on hardware-aware inference choices."
+  }
+ ],
+ "quality": 3,
+ "depth": "deep",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

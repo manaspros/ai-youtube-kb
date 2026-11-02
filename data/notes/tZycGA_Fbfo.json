@@ -1,0 +1,208 @@
+{
+ "one_line": "Credit Karma's senior staff engineer walks through a governed enterprise agent stack: scaffolded agent repos, a central MCP gateway, risk-gated execution, per-run evals, PII blocking, and a context optimizer that cut token use about 90% in demos.",
+ "summary": "Harish Gaggar (Credit Karma, Intuit) argues that most enterprise agents fail in production because foundation controls are missing: auth through a gateway, governed tools, tracking and evals, memory, and secret handling. He describes a platform where an internal dev portal scaffolds each agent as a repo that already includes the LangGraph agent, memory, tracking/eval, PII blocking and context optimizer. Agents reach tools only through a central MCP gateway that issues a JWT, routes by namespace and attaches the user's token, and every tool is reviewed by a security team. Monitoring splits into logs (ELK/Loki/CloudWatch), traces (OpenTelemetry to Tempo) and metrics (Prometheus). The agent plan classifies each request as read, modify, delete or sensitive, and writes or sensitive actions wait for human approval, with every decision audited. Live demos show a per-run eval scoreboard, thread/run checkpoints in SQLite or Cloud Spanner, and a context pipeline (token budget, re-rank, dedupe, compress) that cut tokens from about 24,000 to about 1,500 to 2,400 on repeated queries. The talk is a practitioner overview with demos, not a benchmark study.",
+ "speakers": [
+  "Harish Gaggar"
+ ],
+ "orgs": [
+  "Credit Karma",
+  "Intuit",
+  "LangChain"
+ ],
+ "format": "talk",
+ "topics": [
+  "mcp-and-tools",
+  "security-guardrails",
+  "observability",
+  "context-engineering"
+ ],
+ "tags": [
+  "enterprise agents",
+  "MCP gateway",
+  "LangGraph",
+  "human-in-the-loop",
+  "audit log",
+  "agent registry",
+  "PII redaction",
+  "context optimizer",
+  "token savings",
+  "OpenTelemetry",
+  "Prometheus",
+  "Tempo",
+  "workload identity",
+  "Kubernetes",
+  "per-run evals",
+  "agent memory checkpoints"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Enterprise agents fail in production because the foundation is missing, not because the model is weak.",
+   "detail": "He lists the gaps: no gateway for auth and routing, no governed MCP tools, no tracking or evals per query, no memory across days, and no guard against secrets reaching the LLM, traces or memory. He says to build these frameworks before shipping the agent.",
+   "t": "1:41"
+  },
+  {
+   "idea": "Scaffold every agent from a dev portal so the cross-cutting pieces are consistent.",
+   "detail": "A developer registers the agent to get an ID, then submits the use case, framework (LangGraph or LangChain), language and skills. The portal generates one repo that already includes memory, tracking/eval, context optimizer and PII blocking, plus production resources such as workload identity, tables and secret management.",
+   "t": "4:57"
+  },
+  {
+   "idea": "All tool traffic goes through one MCP gateway; direct endpoint access is not allowed.",
+   "detail": "The client authenticates once and the gateway stores session state in Redis and returns a JWT. Tool calls name a namespace (for example Artifactory or GitHub MCP), the gateway unwraps the JWT and attaches the user token, and the MCP server returns only the data that user's scope allows.",
+   "t": "9:56"
+  },
+  {
+   "idea": "Every MCP tool gets a security review, and servers strip fields the LLM should not see.",
+   "detail": "Internal security must approve each tool before it reaches production. Filters and limits in the MCP server block fields that are not needed, so the model never receives them. For air-gapped setups he recommends building your own servers and gateway.",
+   "t": "8:49"
+  },
+  {
+   "idea": "Split monitoring into logs, traces and metrics, each with its own store.",
+   "detail": "Operational logs (auth failures, token refresh errors) go to ELK, Loki or CloudWatch. Traces go through OpenTelemetry to Tempo to show slow tools and error origins. Prometheus holds per-tool p95 latency and auth-rejection spikes.",
+   "t": "12:07"
+  },
+  {
+   "idea": "Route each request by risk: reads run directly, writes and sensitive actions wait for approval.",
+   "detail": "After interpreting and classifying the question, the plan subgraph fetches evidence through the gateway and MCP tools, then checks policy. Read-only actions execute and are logged. Modify, delete or sensitive actions go through a human-in-the-loop approval, and approved or rejected outcomes both go to the audit log.",
+   "t": "14:20"
+  },
+  {
+   "idea": "Per-run eval scores and tool trajectories are stored from day one so you can roll them up across hundreds of agents.",
+   "detail": "Each agent has its own tracking project with several tables: a job table, quality checks (about eight per run, such as success, latency, cost, tool accuracy and safety), tool invocations and node executions. He says that with a thousand-plus agents, stored data is what makes ROI dashboards possible six months later.",
+   "t": "19:50"
+  },
+  {
+   "idea": "Block secrets and PII before they reach the model, memory or tracing systems.",
+   "detail": "Data types are assigned severity levels. Above a high threshold (he says about 90%), the content is redacted at input, so it never reaches the LLM, memory DB, tracking tables or traces. The goal is to block the moment text is typed or ingested.",
+   "t": "23:41"
+  },
+  {
+   "idea": "A context pipeline (budget, re-rank, dedupe, compress) gives the biggest cost savings he saw.",
+   "detail": "Before the LLM call, the payload is cut to a token limit, re-ranked by relevance, deduplicated and compressed. In his demos the same query fell from about 24,000 tokens to about 2,400 (Artifactory) and about 1,500 (Slack bot). He reports 70 to 78% savings as typical.",
+   "t": "24:50"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Dev-portal agent scaffolding",
+   "how": "Register the agent to get an ID, then generate a repo from the portal with the agent framework plus memory, eval/tracking, context optimizer and PII modules. Provision workload identity, tracking tables and secrets in the same step. The CI pipeline scans the image, requires two PR approvals, registers the agent, and deploys it to a Kubernetes namespace with the identity binding already in place.",
+   "when": "Many teams build agents with different frameworks and need the same governance pieces in each one."
+  },
+  {
+   "name": "Gateway token exchange with namespace routing",
+   "how": "Authenticate once at the MCP gateway, store session state in Redis, and hand the client a JWT. Each tool call names the target server namespace and carries the JWT. The gateway swaps it for the user's token and forwards the call. The MCP server returns data limited to that user's scope.",
+   "when": "Coding assistants and agents must reach internal tools and APIs with per-user authorization and no direct endpoint access."
+  },
+  {
+   "name": "Risk-classified plan graph with HITL gate",
+   "how": "In LangGraph, interpret and classify each request (read, modify, delete, sensitive), then build a plan subgraph that fetches evidence through tools. Run reads directly. Pause writes and sensitive actions for human approval. Write every outcome, approved or rejected, to the audit log.",
+   "when": "Agents can call tools that change state and the approval policy must be auditable."
+  },
+  {
+   "name": "Thread, run and checkpoint memory",
+   "how": "Each conversation is a thread. Each question creates a run ID. Each LangGraph node saves a checkpoint, so a thread can be recalled or resumed. Use SQLite locally and a managed store such as Cloud Spanner in production.",
+   "when": "Agents need durable state across many queries, and you need to inspect what happened at each node."
+  },
+  {
+   "name": "Severity-based redaction before every sink",
+   "how": "Classify data types by severity. Above the threshold, redact at input so the content never reaches the model, memory store, eval tables or trace exporter. Apply the rule at keystroke or upload time, not later.",
+   "when": "Users may paste API keys or sensitive documents into agent prompts."
+  },
+  {
+   "name": "Context pipeline: budget, re-rank, dedupe, compress",
+   "how": "Before each LLM call, select content under a token limit, re-rank it by relevance, remove duplicates, then compress the result. Measure tokens per run with the optimizer on and off using the same query.",
+   "when": "Queries pull in large file listings or tool outputs and token cost has to be justified per agent."
+  },
+  {
+   "name": "Per-run eval scoreboard with nested detail",
+   "how": "Store one scoreboard row per run with scores from 0 to 1 across dimensions (success, latency, cost, tool accuracy, safety). Store the detailed quality fields and tool-call trajectory alongside it, so both the summary and the step-by-step run can be inspected.",
+   "when": "You need to compare many agents on quality and cost over months, not just debug single runs."
+  },
+  {
+   "name": "Three-layer monitoring split",
+   "how": "Send operational logs to a log store, traces to OpenTelemetry then Tempo, and metrics to Prometheus. Use traces for per-request slowness and error origin, and metrics for p95 by tool and auth-rejection rates over time. Visualize all three together.",
+   "when": "A gateway serves many agents and you need to alert on auth spikes and tool latency."
+  }
+ ],
+ "tools": [
+  "LangGraph",
+  "LangChain",
+  "FastMCP",
+  "Redis",
+  "JWT",
+  "Docker",
+  "Kubernetes",
+  "OpenTelemetry",
+  "Grafana Tempo",
+  "Prometheus",
+  "ELK",
+  "Loki",
+  "CloudWatch",
+  "SQLite",
+  "Cloud Spanner",
+  "BigQuery",
+  "JFrog Artifactory",
+  "Slack bot",
+  "Langfuse (auto-caption 'length fuse')"
+ ],
+ "numbers": [
+  {
+   "claim": "Token use for the JFrog Artifactory query fell from about 24,000 to about 2,400 tokens with the context optimizer on (about 90% saving) in a live demo",
+   "t": "25:56"
+  },
+  {
+   "claim": "Token use for the Slack bot Docker-image query fell from about 24,000 to about 1,500 tokens with the optimizer on (about 90% saving)",
+   "t": "27:03"
+  },
+  {
+   "claim": "Typical token savings across production queries: 70 to 78%",
+   "t": "27:03"
+  },
+  {
+   "claim": "Eight quality checks stored per run (success, latency, cost, tool accuracy, safety, and others)",
+   "t": "22:00"
+  },
+  {
+   "claim": "Six tables per agent tracking project (job, quality, tool invocations, node executions, and related)",
+   "t": "21:26"
+  },
+  {
+   "claim": "Secret/PII redaction triggers when a data type's severity is above about 90%",
+   "t": "23:41"
+  },
+  {
+   "claim": "Scale he designs for: a thousand-plus agents, each with its own tracking project and tables",
+   "t": "20:23"
+  }
+ ],
+ "hot_takes": [
+  "Most agents fail in production because the foundation (gateway, governed tools, evals, memory, secret handling) is missing, not because the model is weak.",
+  "Do not rush to ship an agent. Put the enterprise framework underneath it first.",
+  "Every tool call, from a laptop or from an agent, should pass a central MCP gateway for auth before it reaches an MCP server.",
+  "Keep a human in the loop for every high-risk action, and log both approvals and rejections.",
+  "A context optimizer is not optional: it is what justifies the cost of running agents."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The talk's gateway (auth, namespace routing, audit), PII/secret blocking before the LLM, and context pipeline map directly onto AgentOS L1 (Scout proxy) and the MCP/tool layer. The talk supplies a concrete token-savings pipeline to compare against.",
+   "action": "Add a budget, re-rank, dedupe and compress step in front of the Scout proxy, then measure tokens on a fixed set of repeated queries with the step on and off."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already plans phone-driven approvals and checkpoint/resume. The talk's read/modify/delete/sensitive classification with HITL gating and thread/run/checkpoint storage is a concrete design to copy for deciding which harness actions need approval.",
+   "action": "Classify each ProsHarness action as read, modify, delete or sensitive, gate only the last two behind approval, and write every approve or reject decision to an audit log."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "Context engineering and cheap-model pipelines: the context optimizer (budget, re-rank, dedupe, compress) is a concrete and measured method for reducing tokens per query, which matters for Haiku-based pipelines.",
+   "action": "Benchmark the talk's budget, re-rank, dedupe and compress steps on one of our Haiku pipelines and record token counts before and after."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T16:26:27"
+}

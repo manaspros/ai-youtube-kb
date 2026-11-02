@@ -1,0 +1,184 @@
+{
+ "one_line": "Ben Burtenshaw (Hugging Face) argues coding agents can take on AI systems work: writing CUDA kernels, fine-tuning models, and running a multi-agent automated research lab, using open skills, open Hub repos and an open dashboard data layer.",
+ "summary": "Ben Burtenshaw from Hugging Face argues that coding agents should move from app code toward AI systems and ML engineering, which he frames as going closer to the silicon. He walks through three escalating \"bosses\": an interactive agent writing a CUDA kernel, a zero-shot agent fine-tuning an LLM from a prompt, and a multi-agent \"automated AI lab\" for research. For kernels, he says memory bandwidth, not FLOPs, is usually the bottleneck, and that Hub-hosted kernel repos with hardware/CUDA metadata plus file-based skills let agents go from zero-shot to few-shot. He reports one benchmark (a 94% speedup on Qwen3 8B on H100) and presents Upskill, a tool that generates a skill plus an eval and compares models on it. For the research setup, he splits Karpathy's single-agent autoresearch loop into researcher, planner, workers and reviewer/reporter roles that share state through a git repo, an HF bucket, and a Trackio dashboard backed by open Parquet files. His closing point is that agents do best with open primitives, since abstracted APIs without an escape hatch become a ceiling. Most content is a walkthrough with shared repos, so verify the speedup and fine-tuning claims before relying on them.",
+ "speakers": [
+  "Ben Burtenshaw"
+ ],
+ "orgs": [
+  "Hugging Face",
+  "GPU Mode",
+  "Unsloth"
+ ],
+ "format": "talk",
+ "topics": [
+  "coding-agents",
+  "skills-self-improvement",
+  "multi-agent",
+  "training-finetuning-rl"
+ ],
+ "tags": [
+  "cuda-kernels",
+  "hugging-face-kernels",
+  "skills",
+  "upskill",
+  "autoresearch",
+  "multi-agent-research",
+  "trackio",
+  "parquet",
+  "open-primitives",
+  "fine-tuning",
+  "hf-jobs",
+  "opencode"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Coding agents can now write valid, optimized CUDA kernels, so kernel and systems work is reachable for agent-assisted engineers.",
+   "detail": "He points to GPU Mode hackathons, an AMD hackathon and the KernelBench paper as evidence that agents produce working, optimized kernels. He presents this as a career move toward systems engineering.",
+   "t": "1:09"
+  },
+  {
+   "idea": "Memory bandwidth, not compute, is usually the GPU bottleneck, and custom kernels help by raising arithmetic intensity.",
+   "detail": "Efficiency splits into compute, memory and overhead. A kernel keeps tensors on-chip and does more math per read/write, so the GPU is not idle waiting on data. Flash attention is his main example.",
+   "t": "3:29"
+  },
+  {
+   "idea": "Kernels can be distributed as Hub repos with a TOML file that declares hardware and CUDA compatibility.",
+   "detail": "The Hugging Face kernels library treats kernels like model repos, so kernel writers can publish them and users can see which GPUs and software versions each one supports.",
+   "t": "4:54"
+  },
+  {
+   "idea": "Skills are file-based context, and giving an agent kernel examples moves it from zero-shot to few-shot.",
+   "detail": "Project maintainers keep skills in their own repos so they stay maintained. Experimental skills go in a separate skills repo. The kernel skill bundles benchmark and test scripts.",
+   "t": "6:17"
+  },
+  {
+   "idea": "Skill quality should be measured, and Upskill compares cheaper models on the same skill.",
+   "detail": "Upskill generates a skill and an eval for it, then runs several models against that eval. The aim is to find cheaper models that keep accuracy and to iterate on the skill.",
+   "t": "7:36"
+  },
+  {
+   "idea": "Single-agent autoresearch can be split into roles: researcher, planner, workers and a reporter.",
+   "detail": "The researcher turns papers into hypotheses, the planner keeps a job queue, workers implement training-script changes and run them as HF jobs, and the reporter monitors jobs and keeps the dashboard current. A reviewer role rejects duplicate or stale ideas.",
+   "t": "11:02"
+  },
+  {
+   "idea": "Shared state in a git repo and a bucket lets parallel agents coordinate without a bespoke orchestrator.",
+   "detail": "Each experiment lives on a branch, the main branch keeps the scores, and an HF bucket holds the training scripts so nothing has to be uploaded or downloaded on every run. Prompts use templates that carry current state, the job list, and what has worked.",
+   "t": "14:00"
+  },
+  {
+   "idea": "An open data layer, not a closed dashboard, lets agents read results directly.",
+   "detail": "Trackio stores runs as Parquet, so an agent can skip the dashboard and build its own charts such as a Gantt view. Events and warnings from agents can feed notifications.",
+   "t": "12:34"
+  },
+  {
+   "idea": "Agents work best on open primitives; abstractions without an escape hatch cap what they can do.",
+   "detail": "His takeaway is to expose well-designed tools that the agent can control directly, and not to hide everything behind an abstracted API. He also says the Hub already has storage, tracking and compute for these workloads.",
+   "t": "16:45"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Skill-as-few-shot-examples with bundled benchmark scripts",
+   "how": "Put working kernel examples, plus scripts that benchmark and test them, into a skill file that the agent opens on demand. Keep the skill in the project's own repo so its maintainers own it.",
+   "when": "When an agent must write hardware-specific code it has not seen often, such as CUDA kernels, and it needs a measurable correctness and speed check."
+  },
+  {
+   "name": "Skill eval across models (Upskill)",
+   "how": "Generate a skill, generate an eval for it, run several models (including cheap or open ones) against the same eval, and compare accuracy against token use.",
+   "when": "Before sharing a skill with others or moving a recurring agent task to a cheaper model."
+  },
+  {
+   "name": "Role-split autoresearch loop",
+   "how": "Use a researcher to draft hypotheses from papers, a planner to keep a job queue, workers to implement and run each change, a reviewer to reject duplicates and stale ideas, and a reporter to monitor jobs and update the dashboard. Each role gets a fixed prompt template with current state, past results and the current scores.",
+   "when": "For long-running experiment loops where one agent doing everything serially is too slow, and each experiment yields a verifiable score."
+  },
+  {
+   "name": "Git and bucket as agent shared state",
+   "how": "Keep experiment branches in git, store scores in a data file on the main branch, and keep large artifacts (training scripts) in a shared object-storage bucket that all agents read.",
+   "when": "When several agents must coordinate and see one another's results without a central service."
+  },
+  {
+   "name": "Open-format dashboard as an agent data source",
+   "how": "Write run metrics and events to an open format such as Parquet, so the same data drives the dashboard and any ad-hoc analysis an agent wants to do.",
+   "when": "When agents need to answer custom questions about run history beyond what a fixed dashboard shows."
+  },
+  {
+   "name": "Verifiable-experiment precondition",
+   "how": "Choose tasks where success is measurable, such as kernel speed, or training loss in bits-per-byte, so the loop can rank experiments automatically.",
+   "when": "Before letting agents run unattended experiment loops; without a score the loop has nothing to optimize."
+  }
+ ],
+ "tools": [
+  "CUDA",
+  "Hugging Face kernels library",
+  "Upskill",
+  "Hugging Face Skills repo",
+  "HF Papers CLI",
+  "HF Jobs",
+  "OpenCode",
+  "Codex",
+  "Claude Code",
+  "Trackio",
+  "Parquet",
+  "Unsloth",
+  "Gastown",
+  "KernelBench",
+  "nanoGPT",
+  "nanochat",
+  "autoresearch"
+ ],
+ "numbers": [
+  {
+   "claim": "H100 can do about 1 petaflop/s of compute but has about 3 TB/s memory bandwidth, so the GPU often waits on memory.",
+   "t": "3:29"
+  },
+  {
+   "claim": "Kernel generated by an agent with the kernel skill for Qwen3 8B on H100 gave a 94% speedup. He says this is not state-of-the-art, mainly a compatibility-matrix fix.",
+   "t": "7:36"
+  },
+  {
+   "claim": "Upskill comparison: GPT-OSS slightly less accurate at the same token use; Kimi more accurate with fewer tokens; Haiku slightly more accurate with fewer tokens. Results are anecdotal, not a stated benchmark.",
+   "t": "9:01"
+  },
+  {
+   "claim": "Autoresearch measured experiments by bits-per-byte of the training run, with the best score kept at the end of the process.",
+   "t": "10:00"
+  }
+ ],
+ "hot_takes": [
+  "Systems and ML engineering, close to the hardware, is the place for engineers to grow their careers as coding agents take over application code.",
+  "Memory bandwidth, not FLOPs, is usually the real bottleneck in deep learning inference.",
+  "Abstracted APIs without an escape hatch are a ceiling; agents need open primitives they can control directly."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft runs vLLM on one RTX 5090, and kernel-level speedups or hardware-specific kernels bear directly on its throughput. The talk's benchmark-first kernel skill is a concrete method for that.",
+   "action": "Pick one hot op in the InferCraft serving path, have an agent write a kernel with a benchmark-and-test skill, and measure it against the stock kernel on the 5090 before any integration."
+  },
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "SkillForge has an open question about skill-worthiness scoring, and Upskill's per-skill eval across models is a concrete approach to scoring a skill.",
+   "action": "Read the Upskill approach (skill plus generated eval, compared across models) and prototype a per-skill eval score as one input to SkillForge's skill-worthiness check."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "The role-split loop (planner, worker, reviewer, reporter) with shared git and file state closely matches ProsHarness's plan, critique and debate loops that run for hours.",
+   "action": "Prototype a planner/worker/reviewer split in a ProsHarness loop that uses a scores file on a main branch and a per-role prompt template with current state, then compare it to the single-agent loop."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The talk's advice to measure a skill across cheaper models before moving a recurring task to them fits the cheap-model Haiku pipeline interest, though the evidence shown is anecdotal.",
+   "action": "Before switching a recurring agent step to a cheaper model, write a small eval for that skill and compare accuracy and token use across two or three models."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

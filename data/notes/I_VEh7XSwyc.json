@@ -1,0 +1,146 @@
+{
+ "one_line": "Rafael Levi (Bright Data) argues physical-AI training is limited by usable action data, not models, and pitches searching indexed public video by action before collecting it.",
+ "summary": "The speaker argues that for robotics and world models the scarce input is the right data, not the model. Robotics video is small (about a million videos) compared with text and labeled images, and staged or instructed recordings behave differently from natural human motion. Public web video, such as YouTube and dash-cam footage, covers far more natural actions but is noisy. He cites a Meta model that was pretrained on about a million hours of video and then needed only 62 hours of robot data, and he says NVIDIA's Cosmos pipeline keeps about 4% of downloaded video. Bright Data's proposed fix is \"search first, collect second\": an indexed video corpus that returns clips for an action-based query, with timestamps, match scores and frame counts, through an API. The demo showed a corpus he says has grown to 1.1 billion videos, and he claims more detailed queries return better clips. Most of the talk is a product pitch, and the data-volume and waste figures are the speaker's own claims that were not sourced on the slides.",
+ "speakers": [
+  "Rafael Levi"
+ ],
+ "orgs": [
+  "Bright Data",
+  "Google",
+  "Meta",
+  "NVIDIA",
+  "Stability AI",
+  "Wayve",
+  "YouTube",
+  "Vimeo"
+ ],
+ "format": "talk",
+ "topics": [
+  "data-engineering",
+  "voice-multimodal"
+ ],
+ "tags": [
+  "physical-ai",
+  "robotics",
+  "world-models",
+  "video-data",
+  "data-collection",
+  "action-search",
+  "bright-data",
+  "product-pitch",
+  "dash-cam",
+  "data-waste"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Physical AI is limited by data, not models.",
+   "detail": "The speaker says the AI is no longer the hard part and that the usable data for robots and world models is the bottleneck.",
+   "t": "0:12"
+  },
+  {
+   "idea": "Staged recordings produce biased robot training data.",
+   "detail": "People told to perform an action act differently from natural behavior, so instructed recordings are a weak substitute. Camera-shy subjects also change how they move.",
+   "t": "2:41"
+  },
+  {
+   "idea": "Public web video covers many natural actions but is noisy.",
+   "detail": "YouTube-style footage shows gravity, cause and effect, and human handling of objects at large scale, but it needs filtering before use.",
+   "t": "5:34"
+  },
+  {
+   "idea": "Motion can be recovered from video without sensors, according to the speaker.",
+   "detail": "He describes measuring frame-to-frame change to estimate movement. He admits raw video still needs processing before it is usable.",
+   "t": "6:35"
+  },
+  {
+   "idea": "Most downloaded video is discarded in current pipelines, per the speaker.",
+   "detail": "He says NVIDIA keeps about 4% of its downloaded video for Cosmos and Stable Video Diffusion discards about 74%, which he treats as wasted compute, bandwidth and storage.",
+   "t": "7:38"
+  },
+  {
+   "idea": "Search first, collect second.",
+   "detail": "Query the indexed corpus by the action wanted (for example, person washing dishes) and download only the matching clips, instead of collecting broadly and filtering afterward.",
+   "t": "8:37"
+  },
+  {
+   "idea": "Index scale and query detail drive result quality.",
+   "detail": "The demo corpus is shown growing from about 100 million to 1.1 billion videos. The speaker says more descriptive queries return more relevant clips, and some results are still off-topic.",
+   "t": "10:12"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Action-based clip retrieval before collection",
+   "how": "Index a large public video corpus, then query it with a natural-language description of the action. Receive clips with a timestamp, a similarity score, a frame count and the source URL, and download only those.",
+   "when": "When you need specific behavior examples for training and bulk-downloading or storing video would waste compute, storage and bandwidth."
+  },
+  {
+   "name": "Frame-to-frame motion estimation from plain video",
+   "how": "Compare consecutive frames and measure the pixel change over time to infer motion, then derive angles and distances from that signal. The speaker says this removes the need for sensor logs, but he gives no detail.",
+   "when": "When you have video without sensor data and want approximate motion signals as a starting point for robot training."
+  },
+  {
+   "name": "Descriptive queries for retrieval",
+   "how": "Write longer, more detailed queries that name the object, the setting and the motion. The speaker says detail increases relevance and reduces hits that only share keywords.",
+   "when": "When searching video by content rather than by title, where titles are often unrelated to what happens in the video."
+  }
+ ],
+ "tools": [
+  "Bright Data video indexing API"
+ ],
+ "numbers": [
+  {
+   "claim": "Robotics video data is about 1 million videos, compared with trillions of words of text and billions of labeled images.",
+   "t": "2:41"
+  },
+  {
+   "claim": "Human-recorded robot data is limited to roughly 8 hours of recording per person per day.",
+   "t": "4:11"
+  },
+  {
+   "claim": "A Meta model was pretrained on about 1 million hours of real-world video and needed about 62 hours of robot data to control a real robot (speaker's account).",
+   "t": "6:35"
+  },
+  {
+   "claim": "NVIDIA keeps about 4% of downloaded video (about 1 million hours) for Cosmos, according to the speaker.",
+   "t": "7:38"
+  },
+  {
+   "claim": "Stable Video Diffusion discards about 74% of the videos it downloads, according to the speaker.",
+   "t": "7:38"
+  },
+  {
+   "claim": "The indexed corpus is claimed to reach 1.1 billion videos; the demo's earlier index had about 100 million.",
+   "t": "10:12"
+  }
+ ],
+ "hot_takes": [
+  "Robot training data is the bottleneck, not model capability.",
+  "Instructed or staged recordings are biased and do not transfer well to natural robot behavior.",
+  "Most of the web video used in current pipelines is thrown away, so action search should replace bulk collection."
+ ],
+ "relevance": [
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Speaker describes search-before-collect for video data, a general data-pipeline idea, with no implementation detail.",
+   "action": "Try filtering candidate records by a query before storing or processing bulk data, for example in data-quality pipelines."
+  },
+  {
+   "project": "agentos",
+   "score": 0,
+   "why": "Physical-AI video data is outside the AgentOS infra stack (proxy, memory, serving, sandbox, observability).",
+   "action": ""
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No harness, checkpoint, planning or approval content.",
+   "action": ""
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

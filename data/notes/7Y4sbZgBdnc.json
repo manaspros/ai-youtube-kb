@@ -1,0 +1,161 @@
+{
+ "one_line": "Jediah Katz (SpaceXAI, formerly Cursor's harness lead) argues the agent harness is not dead: smarter models absorb coding scaffolding, but the harness keeps unlocking new frontiers, handles runtime, trust, and cost, and is moving toward agents as building blocks.",
+ "summary": "Jediah Katz, who led agent harness work at Cursor before its acquisition by SpaceX, argues that \"is the harness dead?\" is the wrong frame. He splits the harness into a runtime layer (core loop, durable state, cloud execution) and a context/orchestration layer (prompts, tools, memory, compaction). He says smarter models have absorbed coding-specific scaffolding such as codebase exploration, long-run persistence, and self-testing, so Cursor deleted many of its patches. He describes a \"data flywheel\": the harness makes harder tasks reachable, users share data, labs train the models, and the models then absorb those skills, which lets the harness delete them. He claims the harness still matters for three reasons: it opens new task frontiers (GrokBot, a long-lived coordinator-plus-workers product for knowledge work, needed new prompts and guardrails), it provides infrastructure and trust that models cannot absorb, and it drives cost per task. Forward-looking points include shipping faster than models, exposing fewer internals, primitives such as an event-subscription tool, a central shim registry with a bot that proposes removing shims that stop firing, and moving most agent work off the laptop. Evidence is largely anecdotal and internal. The two cited studies (a UC Berkeley SWE-bench Lite comparison across harnesses and an Apple/EPFL MLE-bench study) are mentioned without numbers, and the talk is partly a product pitch for GrokBot.",
+ "speakers": [
+  "Jediah Katz"
+ ],
+ "orgs": [
+  "SpaceX",
+  "SpaceXAI",
+  "Cursor",
+  "Anthropic",
+  "UC Berkeley",
+  "Apple",
+  "EPFL"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "coding-agents",
+  "context-engineering",
+  "token-cost-efficiency"
+ ],
+ "tags": [
+  "agent harness",
+  "harness engineering",
+  "data flywheel",
+  "shims",
+  "primitives",
+  "subscriptions",
+  "runtime vs context layer",
+  "GrokBot",
+  "software factory",
+  "cost per task",
+  "cache hit rate",
+  "agents as building blocks",
+  "off-laptop agents"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The harness has two layers: a runtime (core agent loop plus durable state so work can resume, built like traditional software engineering) and a context/orchestration layer (which model is called when, what context it sees, prompts, tools, memory, compaction).",
+   "detail": "The speaker calls the context/orchestration layer the 'Wild West' and says it is where most people mean 'harness'. Runtime work is conventional engineering.",
+   "t": "1:13"
+  },
+  {
+   "idea": "Smarter models have absorbed much of what the harness used to patch over, such as codebase exploration, long persistent runs, and running tests to check work.",
+   "detail": "Cursor removed guardrails, a small model used only to apply edits, and coding-specific instructions. The speaker says a fancy harness no longer adds coding intelligence.",
+   "t": "3:18"
+  },
+  {
+   "idea": "The data flywheel: a harness makes harder tasks reachable, more users attempt them, more coding data reaches the labs, and the models learn those skills natively, so the harness can delete the scaffolding.",
+   "detail": "This explains why people say the harness is dead. The speaker presents it as the harness making itself obsolete on coding tasks, which then opens new frontiers.",
+   "t": "6:25"
+  },
+  {
+   "idea": "The harness still matters because it opens new task frontiers: when a capability is commoditized, the harness unlocks the next area for the model.",
+   "detail": "GrokBot (long-lived coordinator bots orchestrating worker agents for knowledge work) needed new prompting and guardrails for slide decks, travel booking, acting vs asking, and memory. Those tasks were not new, but the models had not yet solved them.",
+   "t": "7:28"
+  },
+  {
+   "idea": "Parts of the harness the model cannot absorb: cloud runtime for long-running autonomous work, trust and security scoping, and efficiency (cost per task).",
+   "detail": "Two cited studies found no significant score difference across harnesses but a significant cost-per-task difference. The speaker reports cutting GrokBot cost and latency by tuning cache hit rate, token efficiency, and model mix, without quality loss.",
+   "t": "12:33"
+  },
+  {
+   "idea": "Forward-looking trends: the product will move faster than the model, so harnesses will get messier before they are cleaned up. Expose fewer internals, build primitives, track shims, and move agents to run off the laptop.",
+   "detail": "Hyrum's law is cited as the reason exposed internals become dependencies. Primitives such as a single subscription tool (wake on Slack post, red CI, or a schedule) replace per-event integrations. The speaker predicts that within six months 90% of agent work runs off the laptop.",
+   "t": "19:50"
+  },
+  {
+   "idea": "Shims: deterministic guardrails that patch model gaps are logged centrally. A bot watches the dashboard and opens a PR to remove a shim once it stops firing.",
+   "detail": "This is a practical way to keep harness debt tied to model checkpoints. The speaker describes it as a hack to be fixed now rather than waiting for the next checkpoint. Abstraction also rises: newer harnesses use agents, not chained LLM calls, as the core block.",
+   "t": "16:29"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Two-layer harness split",
+   "how": "Separate the runtime (core agent loop, durable state so work resumes, cloud execution) from the context/orchestration layer (model selection, prompts, tools, memory, compaction, per-model context). Engineer the runtime conventionally and expect the context layer to churn.",
+   "when": "Designing or auditing an agent harness, to decide which parts to version carefully and which to expect to delete as models improve."
+  },
+  {
+   "name": "Shim registry with a removal bot",
+   "how": "Give every model-patching guardrail (shim) an ID. Log each time the model triggers one to a central dashboard. A bot or agent watches for shims that stop firing and opens a PR to remove them.",
+   "when": "A codebase accumulates deterministic patches for model weaknesses and you want them to get cleaned up after model upgrades instead of persisting forever."
+  },
+  {
+   "name": "Event subscription primitive",
+   "how": "Expose one framework and one tool that lets the agent subscribe to events (Slack message, CI status on a PR, time of day) rather than building a separate integration per event source.",
+   "when": "Long-lived autonomous agents need to wake on external events, and you want to add event types without changing the agent's prompt surface."
+  },
+  {
+   "name": "Nudge guardrails for responsiveness",
+   "how": "Add a deterministic nudge when the agent is slow to respond to the user (for example, 'user is waiting on you'), as a stopgap until the next model checkpoint fixes the behavior.",
+   "when": "A long-running agent is too slow to respond to a waiting user and you need a fix before the model improves."
+  },
+  {
+   "name": "Efficiency tuning levers",
+   "how": "Reduce cost per task by raising the prompt cache hit rate, improving token efficiency, and choosing a cheaper model mix per step, without reducing output quality.",
+   "when": "Agent costs and latency are rising as usage grows, and cost per task matters more than raw eval score."
+  }
+ ],
+ "tools": [
+  "Cursor",
+  "Cursor Agent Harness",
+  "GrokBot",
+  "Grind Swarm",
+  "Rollouts",
+  "Claude Code",
+  "Pi",
+  "Codex",
+  "SWE-bench Lite",
+  "MLE-bench"
+ ],
+ "numbers": [
+  {
+   "claim": "Cursor's browser-from-scratch demo using the multi-model Grind Swarm harness was expensive and took down Cursor once or twice.",
+   "t": "3:18"
+  },
+  {
+   "claim": "A UC Berkeley study tried seven frontier models across several harnesses (including Pi, Codex, Claude Code). On newer, smarter models the harness choice made no significant difference on SWE-bench Lite. No figures were given in the talk.",
+   "t": "4:20"
+  },
+  {
+   "claim": "An Apple and EPFL study found a dedicated MLE harness made no big difference on MLE-bench. No figures were given.",
+   "t": "5:20"
+  },
+  {
+   "claim": "The two studies found a significant difference in cost per task across harnesses even when eval scores matched.",
+   "t": "12:33"
+  },
+  {
+   "claim": "Predicted: within six months, 90% of agent work runs off the laptop.",
+   "t": "19:50"
+  }
+ ],
+ "hot_takes": [
+  "The harness is not dead, but it is a flywheel that deletes its own coding scaffolding. The durable value is in runtime, trust, cost, and new task frontiers.",
+  "Harness choice no longer changes coding eval scores for frontier models, so cost per task is the axis that matters.",
+  "Shim-removal bots and centralized shim dashboards are a practical way to keep harness debt tied to model checkpoints.",
+  "Predicted: 90% of agent work runs off the laptop within six months.",
+  "Speaker concedes that GrokBot-era harnesses are being re-hardened with prompts and guardrails, the reverse of the Cursor trend."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "Shows how a harness that orchestrates many agents needs durable runtime, cost tuning (cache hit rate, model mix), and trust scoping. Matches AgentOS L2C/L4 and cost-control pillars. Talk is anecdotal, though.",
+   "action": "Add a per-task cost and cache-hit-rate panel to the AgentOS observability stack (Prometheus/Grafana) and track cost per completed task, not only eval score."
+  },
+  {
+   "project": "prosharness",
+   "score": 3,
+   "why": "ProsHarness is a harness around the Claude Code CLI, which is the exact runtime/context split this talk describes. Checkpoint/resume (runtime), loops and schedules (event subscriptions), and phone approvals (trust) map directly onto its roadmap.",
+   "action": "Split ProsHarness into a runtime layer (checkpoint/resume, state) and a context layer (prompts, skills), and add an event-subscription primitive for scheduled loops and CI-triggered resumes."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

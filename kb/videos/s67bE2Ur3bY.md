@@ -1,0 +1,51 @@
+# Wearing the Agent: From Group Chats to Glasses — Sai Krishna Rallabandi
+
+- **channel:** [AI Engineer](../channels/aie.md) · **id:** `s67bE2Ur3bY` · [watch](https://youtu.be/s67bE2Ur3bY) · **date:** 2026-08-18 · **length:** 19:09 · **format:** talk · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Sai Krishna Rallabandi · **orgs:** ?
+- **topics:** security-guardrails, memory, multi-agent · **tags:** group-chat agents, wearables, prompt injection, action-boundary guard, LoRA, SLM classifier, agent memory, atomic facts, relevance scoring forgetting, KV cache, privacy, per-user adapters, speak-or-not, routing, personal agents
+
+> Sai Krishna Rallabandi on moving agents from one-user assistants to group-chat and wearable agents. Covers the security boundary, memory curation and forgetting, privacy as context, and when to speak.
+
+## Summary
+The speaker argues that most agents today serve a single customer, but the next wave will serve groups and run all day on wearables like glasses. He describes eight months of a group-chat agent deployed among friends and family, with examples of it choosing to DM privately, syncing calendars, and speaking proactively through glasses. He frames group agents around three concerns: the security guard, memory, and routing information to the right person. For security, he argues you cannot guard the input because the attack surface is too large, so the guard should sit at the action boundary and be deterministic first, then learned via a LoRA-tuned SLM that separates data from instructions. For memory, he recommends storing atomic facts, curating them, and continuously scoring relevance so the agent forgets. He ends with privacy as a property of the room rather than the data, suggesting per-user LoRA adapters over a shared memory layer, and a learned classifier for when an agent should stay quiet. The talk is conceptual with some concrete design direction, and the benchmark numbers are thin.
+
+## Key ideas
+- **Most agents are built for a customer of size one, but the next ones will serve groups, wearables and run all day.** — The speaker sees the next shift as group deployments on glasses, which raises privacy, memory and routing problems that single-user agents do not have. ([1:03](https://youtu.be/s67bE2Ur3bY?t=63))
+- **You cannot secure an agent the way you secure an LLM, because its attack surface is much larger.** — An agent reads web pages, group messages, screenshots, GitHub issues and email, and any of them can carry injection. The surface is amplified in group settings, so you cannot try to block everything at input. ([6:05](https://youtu.be/s67bE2Ur3bY?t=365))
+- **Passing static scans does not mean safe, since skills can break when run together at runtime.** — He cites papers showing individually benign skills (an OCR skill and a reporting skill) can leak PII when chained, because injected content in the data steers the combined flow. ([7:29](https://youtu.be/s67bE2Ur3bY?t=449))
+- **Put the guard at the action boundary, not on what the agent reads.** — Let the agent read everything, then use deterministic checks on actions like exporting data, reading secret variables or config. Sort actions into three classes: allow, needs approval, block. ([8:55](https://youtu.be/s67bE2Ur3bY?t=535))
+- **A learned classifier beats regex on obfuscated injection, and separating data from instructions helps.** — An LoRA-tuned SLM splits the data channel from the instruction channel and passes only benign content. A naive approach sits near a coin flip on a benchmark, and the learned model improves on it. Regex misses letters interspersed with dots. ([9:53](https://youtu.be/s67bE2Ur3bY?t=593))
+- **In a group, the memory is what the agent becomes, so curation and forgetting matter.** — Storing and compacting whole conversations is the naive approach. He prefers extracting atomic facts that are linked hierarchically, time-weighted, and retrieved through a graph, with less stored to save latency and tokens. ([12:40](https://youtu.be/s67bE2Ur3bY?t=760))
+- **Forgetting should be continuous, using a relevance scorer that keeps adapting.** — Group context keeps shifting, so a one-time importance score goes stale. A continuously updated scorer enables knowledge-based compaction and cuts token use. ([14:08](https://youtu.be/s67bE2Ur3bY?t=848))
+- **Ingestion should be KV-cache aware, because cache breaks when the model is changed.** — Whether serving is cloud or local, changes to the model or prompt can invalidate KV caches, so the memory ingestion path should account for that. ([15:28](https://youtu.be/s67bE2Ur3bY?t=928))
+- **Privacy depends on the room, not the data, so bake permissions into per-user adapters.** — The same grocery list is public or private depending on who is present. He proposes a shared memory layer with a separate LoRA adapter per user, so permissions are encoded in the model rather than in code. ([16:51](https://youtu.be/s67bE2Ur3bY?t=1011))
+- **Group agents over-talk, so they need a learned decision about when to speak.** — He is building a classifier that decides whether the agent may speak, which he calls still in progress. He suggests it could be as simple as a small classifier. ([17:49](https://youtu.be/s67bE2Ur3bY?t=1069))
+
+## Techniques
+- **Action-boundary deterministic guard** — Intercept agent actions such as shell variable reads, exports, and secret or config reads. Classify each as allow, approve or block with regex or traditional NLP, so the check is fast and adds no model latency. *When:* When the agent reads untrusted content (web, email, group chat) and can take side-effecting actions, and input-level filtering would block everything.
+- **Data/instruction channel split with a trained SLM** — Fine-tune a small model with LoRA to flag malicious content in the data channel, separate it from the instruction channel, and pass only benign data to the main agent. Benchmark against a naive baseline and hill-climb later. *When:* When static patterns miss obfuscated injections and you can afford a small model call at the action boundary.
+- **Atomic fact extraction with hierarchical and temporal links** — Instead of storing or compacting raw conversation, extract atomic facts, relate them hierarchically, weight them over time, and retrieve them via a graph with a query-relevant filter. Evaluate on whether facts are high value, relevant, and correctly linked. *When:* For long-running group conversations where memory grows and naive compaction loses or bloats context.
+- **Continuous relevance scorer for forgetting** — Train a simple model or SLM that re-scores memory items on an ongoing basis and drops low-relevance items. He cites a paper, learning what not to forget, as the reference. *When:* When memory is bloating and the important context shifts over time.
+- **Per-user LoRA adapters over a shared memory layer** — Keep one shared memory and train a separate LoRA adapter per user so access rules live in the model. He cites a paper, the user as an engram, as a reference. *When:* When the same data must be shown or hidden depending on who is in the room and code-level permissions are too coarse.
+- **KV-cache aware memory ingestion** — Design the ingestion path so that changes to the model or prompt do not break cached prefixes, whether serving is cloud or local. *When:* When memory is injected into prompts and latency and cost depend on cache hits.
+- **Learned speak/stay-quiet classifier** — Train a small classifier that decides whether the agent should respond in a group, to counter over-talking when no question was asked. *When:* When an agent is deployed in a multi-person chat and responds too often.
+- **Private routing via DM** — When a question has privacy implications in a group, answer privately instead of in the group, as the agent did for the venue question. *When:* When the response contains information that not everyone in the group should see.
+
+## Numbers
+- Agent deployed in a friends and family group chat for eight months. ([2:27](https://youtu.be/s67bE2Ur3bY?t=147))
+- A naive guard on the benchmark is at about 50%, roughly a coin flip, and the learned SLM improves on it. ([9:53](https://youtu.be/s67bE2Ur3bY?t=593))
+- Cited papers observe that around 90% of attacks show the composition pattern, where benign-looking skills combine to leak data. ([8:55](https://youtu.be/s67bE2Ur3bY?t=535))
+
+## Hot takes
+- We cannot read our way to safety; checking static artifacts is not enough once skills run together.
+- The model is just the engine; the memory is what the agent becomes.
+- Privacy is a property of the room, not the data.
+- Agents built today are mostly for a customer of size one, and that assumption breaks in groups and wearables.
+
+## Tools mentioned
+LoRA, SLM classifier, regex and traditional NLP guards
+
+## Relevance to our work
+- **agentos** (2/3): L1 Govrix already scans for PII and prompt injection at the proxy, and the talk argues for deterministic action-boundary checks on exports and secret reads, plus a learned classifier fed by those checks. This is a direct extension of the L1 scan. → *Add an action-boundary check in the Govrix proxy that classifies tool-call actions (exports, secret or env reads) as allow, approve or block with deterministic rules, and log each decision to the Merkle audit trail before trying any learned classifier.*
+- **agentos** (2/3): MemoryMesh already does tiered cross-session memory with provenance and conflict resolution. The talk's atomic-fact extraction and continuous relevance-based forgetting are concrete memory design points that MemoryMesh does not yet cover. → *Prototype atomic-fact extraction with a relevance scorer that continuously re-ranks and evicts memory items in MemoryMesh, and measure token use and retrieval precision against the current tiered memory on a group-style conversation set.*
+- **prosharness** (1/3): The harness wraps the Claude Code CLI and runs long agent loops. The action-boundary guard idea applies to its shell actions, but the talk does not address harness design directly. → *Read the action-boundary section (8:55 to 9:53) and decide whether a deterministic allow/approve/block check on secret reads and exports fits the phone-driven approval flow in ProsHarness.*

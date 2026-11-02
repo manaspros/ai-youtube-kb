@@ -1,0 +1,169 @@
+{
+ "one_line": "AI LABS shows seven ways to wire Google's NotebookLM CLI into Claude Code as a grounded knowledge base: a second brain, research store, codebase onboarding, debugging KB, agent-readable visualizations, and a security handbook.",
+ "summary": "The video argues that coding agents underperform mainly because they lack a controlled source of truth, and proposes Google's NotebookLM as that grounding layer. The team installs the NotebookLM CLI with one command, verifies it with the help command, and has Claude Code drive it to create notebooks, add sources and query them. They present seven uses: a project \"second brain\" referenced from CLAUDE.md, offloading web research into a notebook, codebase onboarding via a Repomix export, a debugging knowledge base that replaces web search, shared docs for non-technical readers and other agents, agent-readable mind maps and tables, and a security handbook built from OWASP and advisory material. The CLI is chosen for token efficiency on long-horizon runs. Evidence is a single team's anecdotes; no token counts, timings or accuracy measurements are given. A short sponsored segment for Make appears mid-video.",
+ "speakers": [
+  "AI LABS team (unnamed presenter)"
+ ],
+ "orgs": [
+  "AI LABS",
+  "Google",
+  "Make",
+  "OWASP"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "context-engineering",
+  "rag-retrieval",
+  "claude-code",
+  "coding-agents"
+ ],
+ "tags": [
+  "notebooklm",
+  "notebooklm-cli",
+  "claude-md",
+  "second-brain",
+  "repomix",
+  "knowledge-base",
+  "grounding",
+  "plan-mode",
+  "mind-maps",
+  "security-handbook",
+  "web-search-replacement",
+  "token-efficiency"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agents underperform because they are not grounded in a controlled source of truth, not because they lack information or memory.",
+   "detail": "The speaker frames the core problem as agents working from bad or ungoverned context, and positions a curated notebook as the fix.",
+   "t": "0:00"
+  },
+  {
+   "idea": "The CLI, not an MCP-style integration, was chosen because it is token efficient on long-horizon tasks.",
+   "detail": "The team says the CLI keeps overhead low for long runs. No token figures are given to back this up.",
+   "t": "1:02"
+  },
+  {
+   "idea": "A notebook can act as the project's single source of truth, referenced from CLAUDE.md.",
+   "detail": "Claude creates the notebook through the CLI, its ID is stored in CLAUDE.md, and architectural decisions are written there after each feature build passes. Plan mode is used before implementation. The notebook's RAG answers replace raw file searches, so Claude gets synthesized answers rather than document dumps.",
+   "t": "1:02"
+  },
+  {
+   "idea": "Offloading research into a notebook saves context and makes sources reusable.",
+   "detail": "Claude adds the sources to a notebook, the context is cleared, and then a notebook chat query returns the key findings. Sources stay in the notebook for later runs, so they do not need to be re-researched.",
+   "t": "2:22"
+  },
+  {
+   "idea": "Repomix plus NotebookLM gives an onboarding path for an unfamiliar codebase.",
+   "detail": "Claude clones the repo with the GitHub CLI, packs it into a single token-efficient TXT file with the globally installed Repomix CLI, adds that file as a notebook source, and generates atlases, mind maps per feature and infographics in the studio.",
+   "t": "3:34"
+  },
+  {
+   "idea": "A debugging knowledge base can replace web search for error resolution.",
+   "detail": "The team gathers official docs, forums, GitHub repos and blogs into one notebook, adds its ID to CLAUDE.md, and instructs Claude to query the notebook before searching the web. In the example, a deprecated middleware was resolved by asking the notebook how to migrate, which returned a structured answer.",
+   "t": "5:54"
+  },
+  {
+   "idea": "Notebook exports can give agents a navigable map instead of crawling the file tree.",
+   "detail": "Mind maps are exported as JSON, and tables as CSV and Markdown, into a visualizations folder. The agent checks the relevant mind map for flows and endpoints before reading files, then queries the notebook.",
+   "t": "8:24"
+  },
+  {
+   "idea": "A notebook of security sources can ground an agent's security review.",
+   "detail": "A security handbook notebook of OWASP cheat sheets, advisories and stack-specific guidance (61 sources) was used for a quick check. The agent produced a severity-ranked report that flagged a floating-point error in transaction handling. This is one anecdote, not a measured detection rate.",
+   "t": "9:32"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Install and verify the NotebookLM CLI",
+   "how": "Install with a single command, run the CLI help command to list the source, notebook, multimodal and generation subcommands, then authenticate. The exact authentication command is cut off in the available transcript, and the exact subcommand names other than help and the notebook query tool are not shown.",
+   "when": "Before any of the workflows below. Use the CLI rather than an MCP server when token overhead on long runs matters."
+  },
+  {
+   "name": "Notebook as project second brain via CLAUDE.md",
+   "how": "Have Claude create a notebook through the CLI and save the notebook ID in CLAUDE.md. Add an instruction that all project knowledge, architectural decisions and documentation live in that notebook. Use plan mode to plan each feature. After the build passes, have Claude write the implementation and the decisions it made into the notebook.",
+   "when": "On a long-running project where decisions need to survive context resets, and where Claude should query synthesized answers instead of searching files."
+  },
+  {
+   "name": "Research offload to a notebook",
+   "how": "Give Claude the research topic and ask it to find sources, create a notebook and upload them. Clear the context. Then ask Claude to locate the notebook through the CLI and run a chat query for the key findings.",
+   "when": "Multi-source research where the sources should be reusable and the research should not clutter the working context."
+  },
+  {
+   "name": "Codebase onboarding via Repomix",
+   "how": "Clone the repo with the GitHub CLI, install Repomix globally through npm, pack the repo into a TXT file, create a notebook, and add that file as a source. Generate mind maps, infographics and an atlas from the studio.",
+   "when": "Learning or documenting a codebase you did not write, or a repo you need to explain to others."
+  },
+  {
+   "name": "Debugging knowledge base in place of web search",
+   "how": "Collect official docs, community forums, GitHub repos and blogs into one notebook. Store its ID in CLAUDE.md with the rule to query the notebook first when a bug is hit and to search the web only afterwards. Ask specific migration or error questions against it.",
+   "when": "Recurring error classes in a stack with fast-moving docs, such as deprecated APIs or middleware."
+  },
+  {
+   "name": "Export mind maps and tables as agent-readable artifacts",
+   "how": "Generate mind maps, data tables and a slide deck in the notebook. Download them into a project folder: mind maps as JSON, tables as CSV and Markdown. Instruct the agent to check the relevant mind map before crawling the file system for flows and endpoints.",
+   "when": "When an agent repeatedly explores a large codebase to answer structural questions about flows or endpoints."
+  },
+  {
+   "name": "Security handbook notebook for grounded reviews",
+   "how": "Create a notebook from the stack's security resources: OWASP cheat sheets, the tech stack's own security guidance, GitHub and CVE advisories, and feature specs. Ask Claude to run a security check that is grounded in that notebook and to report findings with severities.",
+   "when": "Security reviews of AI-generated apps where the reviewer should cite authoritative sources rather than model recall."
+  },
+  {
+   "name": "Shared notebook as knowledge base for people and other agents",
+   "how": "Share the notebook link so non-technical readers can chat with it. Other agents such as Cursor or Gemini CLI can query the same notebook with the CLI's query tool instead of searching project files.",
+   "when": "Onboarding non-engineers, or multi-agent setups where several tools need the same project context."
+  }
+ ],
+ "tools": [
+  "NotebookLM (Google)",
+  "NotebookLM CLI (version not stated)",
+  "Claude Code",
+  "CLAUDE.md",
+  "Repomix (CLI, installed via npm)",
+  "GitHub CLI (gh)",
+  "Gemini (answers NotebookLM queries, per the speaker)",
+  "Cursor",
+  "Gemini CLI",
+  "OWASP cheat sheets",
+  "Make (sponsor, pre-built market research agent)"
+ ],
+ "numbers": [
+  {
+   "claim": "The security handbook notebook contained 61 sources of security advisories and guides.",
+   "t": "10:32"
+  },
+  {
+   "claim": "No token counts, latencies or accuracy figures are given for any workflow; 'token efficient' and 'much faster than normal Claude research' are unmeasured assertions.",
+   "t": "1:02, 2:22"
+  },
+  {
+   "claim": "Install of the NotebookLM CLI is described as a single command; the Repomix CLI was installed globally via npm.",
+   "t": "0:00, 3:34"
+  }
+ ],
+ "hot_takes": [
+  "The video presents its seven uses as proven, but every example is one team's single run; no baseline comparison or failure cases are shown.",
+  "The 'token efficient' and 'faster' claims are asserted without measurement, and the security check's value rests on one flagged bug.",
+  "A sponsored Make segment appears at about 4:51, and the video closes with a pitch for a paid community tier that holds the CLAUDE.md file and templates.",
+  "Claude's answers from the notebook are described as coming from Gemini; the grounding quality depends on that hosted service rather than on the local workflow."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "An externally hosted, RAG-backed knowledge base that agents query for synthesized answers is prior art for MemoryMesh knowledge buckets, including the idea of grounding answers in governed sources.",
+   "action": "Compare MemoryMesh knowledge buckets with this 'query the notebook before web search' rule, and check whether MemoryMesh answers can carry source provenance and citations the same way."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "The CLAUDE.md pointer plus plan mode plus a post-build write-back of decisions is a lightweight pattern for keeping run state outside the context window, relevant to checkpoint/resume.",
+   "action": "Test whether a ProsHarness checkpoint step that writes decisions to an external store after each passing build improves resume after a context reset."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

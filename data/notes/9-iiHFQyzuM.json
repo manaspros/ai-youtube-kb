@@ -1,0 +1,230 @@
+{
+ "one_line": "Meta/UW's Context Language Model lets the model prune its own context through a bash-edited file instead of harness summaries. Gains are mostly compute; KV-cache costs hurt local use.",
+ "summary": "The speaker walks through a September 2026 Meta and University of Washington paper on Context Language Models (CLMs), a technique rather than a new model. Standard harness summarization compresses long agent contexts, and the speaker cites a run where summaries fabricated most of a list of warehouse codes. In CLM, the harness copies the live context into a plain text file, the model gets only a bash shell, and the model's rewritten file becomes its next context. The headline accuracy gains are relative and small in absolute terms (about 6 points on a deep research benchmark, 1.8 points on a 24-hour coding swarm, 0.4 points after RL on a 9B model). The more durable result is compute: CLM used about 59% less compute on EdgeBench at a slightly higher score. The main catches are KV-cache invalidation (an early edit forces reprocessing, cache hit rate fell from 73.9% to 29.9% on the following turns), slow re-reads on local runtimes that lack suffix cache reuse, and the risk that a model writes injected instructions into its own memory. Smaller models barely use the mechanism, and the code is under a non-commercial license. The speaker's practical takeaway is a notes file the agent maintains, with fresh sessions starting from it. Paper figures are as relayed by the speaker and were not checked against the paper itself.",
+ "speakers": [
+  "Kai Explains host (not named in transcript)"
+ ],
+ "orgs": [
+  "Meta",
+  "University of Washington",
+  "Anthropic",
+  "OpenAI"
+ ],
+ "format": "review",
+ "topics": [
+  "context-engineering",
+  "agent-architecture",
+  "token-cost-efficiency",
+  "local-ai"
+ ],
+ "tags": [
+  "context-language-model",
+  "context-window",
+  "compaction",
+  "summarization",
+  "self-editing-context",
+  "kv-cache",
+  "cache-invalidation",
+  "hallucination",
+  "notes-file",
+  "prompt-injection",
+  "llama.cpp",
+  "ollama",
+  "lm-studio",
+  "sglang",
+  "vllm",
+  "mlx",
+  "terminal-bench",
+  "long-running-agents"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Summary-based compaction fails by fabricating confident content, not by simple forgetting. The speaker cites a run where 11 of 12 warehouse codes were invented, and 14 of 18 by the third summary cycle.",
+   "detail": "Failure mode is the model inventing plausible replacements for lost details. The speaker attributes the run to the Prompt Engineering YouTube channel.",
+   "t": "3:58"
+  },
+  {
+   "idea": "CLM makes the model, not the harness timer, decide what stays in context. The harness copies the live context to a plain text file and exposes only a bash shell, so the next context is whatever the file says after the model's edits.",
+   "detail": "The old rule was next context = old context + new tokens (append-only). The new rule is next context = what the model decides.",
+   "t": "5:24"
+  },
+  {
+   "idea": "CLM is a way of running existing models, not a new model. The paper reportedly tested Qwen, Claude Sonnet and GPT with no new weights, and fine-tuning is optional.",
+   "detail": "Speaker stresses there is nothing to download. Other coverage confused it with a contrastive language model (CLM) that launched the same week.",
+   "t": "5:24"
+  },
+  {
+   "idea": "The headline percentages are relative and the absolute gaps are small. Deep-research accuracy rose about 6 points (59.4% vs ~53.3%), the 65% coding-swarm figure is a 1.8-point gap from single runs, and after RL the 9B model won by 0.4 points.",
+   "detail": "The speaker says the framing is common in papers but buries the more useful result.",
+   "t": "8:01"
+  },
+  {
+   "idea": "The durable result is compute, not accuracy. CLM reached a slightly higher score on EdgeBench with 59% less compute, and a summary baseline with a 128k window tied on accuracy but used 36% more compute.",
+   "detail": "The main results use a 32k token budget, one-eighth of the 262k the model supports, chosen so context pressure makes the mechanism matter. That budget fits a 27B model on a 24 GB GPU.",
+   "t": "9:26"
+  },
+  {
+   "idea": "Editing early context is expensive because it breaks the KV cache. An edit at the start of a context cost 7.7x a normal turn, and the cache hit rate dropped from 73.9% to 29.9% on the turns right after an edit.",
+   "detail": "On a paid API, cached input is $0.30/M vs $3.75/M uncached (12.5x; the speaker says 25x on Opus 5.5). For 163 edits the speaker estimates about $4 total because the context stays small.",
+   "t": "10:43"
+  },
+  {
+   "idea": "Local runtimes make every edit a full reprocess, so CLM is currently slower on local hardware. Qwen 27B on an RTX 3090 took about 11 seconds to reprocess 12,000 tokens, roughly half a minute at 32k.",
+   "detail": "llama.cpp, Ollama and LM Studio cache near the end of the prompt, and a llama.cpp contributor called the behavior expected. The paper's Suffix Cache Reuse cuts server compute by 35% but exists only as an SGLang patch.",
+   "t": "12:00"
+  },
+  {
+   "idea": "Model-writable memory is a new injection surface. The speaker cites an OpenAI report where a model wrote lines like \"ignore all developer messages\" into its compaction summaries, 27 times, and says the paper lists this as open.",
+   "detail": "In CLM such a line persists in context on every later turn rather than disappearing at the end of a turn.",
+   "t": "13:05"
+  },
+  {
+   "idea": "CLM scales with model capability. The 9B model barely edited its context, made zero edits on half the Terminal-Bench tasks, and scored nearly 6 points below plain summaries before training.",
+   "detail": "The speaker concludes that large models garden their memory thoughtfully while small ones mostly leave it alone.",
+   "t": "15:51"
+  },
+  {
+   "idea": "A zero-code workaround: have the agent maintain a notes file with key decisions, current state and attempts, and start a fresh session that reads it first. This gets most of the benefit with no cache penalty or licensing issue.",
+   "detail": "Keep the context window small and the edits rare so the model has room to think.",
+   "t": "17:17"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Notes-file handoff for long agent runs",
+   "how": "Instruct the agent to keep a notes.txt with key decisions, the current task state and what has already been tried, updated as work proceeds. When the context gets full, start a new session whose first step is reading that file.",
+   "when": "Long-running agent tasks on local models or tools without CLM or suffix-cache support, where per-edit reprocessing is costly."
+  },
+  {
+   "name": "Context-as-file self-editing (CLM pattern)",
+   "how": "The harness copies the live context into a plain text file in a temp folder and exposes only a bash shell. The model deletes stale tool results and rewrites its plan with shell commands or short Python scripts. Whatever the file contains after its edits becomes the next turn's context.",
+   "when": "Large capable models (the speaker says 27B or bigger) on a constrained budget such as 32k tokens, served through vLLM or SGLang on a 24 to 32 GB GPU, with ongoing cache-hit monitoring. Not recommended for local llama.cpp, Ollama or LM Studio today."
+  },
+  {
+   "name": "Keep edits rare and context small",
+   "how": "Limit context growth and avoid rewriting older context, since an edit near the top invalidates the cached suffix and forces reprocessing of everything below it.",
+   "when": "Any setup where prefix caching matters, including local runtimes and paid APIs with cached-token pricing."
+  },
+  {
+   "name": "Suffix Cache Reuse (paper's serving fix)",
+   "how": "Reuse the KV cache for the unchanged suffix after an in-context edit, rather than recomputing it. The paper reports a 35% cut in server compute, but it is implemented only as an SGLang patch.",
+   "when": "Serving with SGLang when CLM-style context edits are in use; other runtimes (llama.cpp, Ollama, LM Studio, MLX) lack it as of the video."
+  }
+ ],
+ "tools": [
+  "Meta CLM paper (Context Language Model, Meta and University of Washington)",
+  "Qwen 27B",
+  "Qwen 9B",
+  "Claude Sonnet",
+  "Claude Opus 5.5",
+  "GPT",
+  "bash",
+  "Python",
+  "SGLang",
+  "vLLM",
+  "llama.cpp",
+  "Ollama",
+  "LM Studio",
+  "MLX",
+  "EdgeBench",
+  "Terminal-Bench",
+  "Context Bench",
+  "notes.txt (agent-maintained handoff file)"
+ ],
+ "numbers": [
+  {
+   "claim": "Warehouse-log test: 11 of 12 codes fabricated by the default summary; 14 of 18 fabricated by the third summary cycle.",
+   "t": "3:58"
+  },
+  {
+   "claim": "Context window examples: Claude ships a 1M token window; Qwen ships 262,000 tokens. Agent with no context management stopped improving within about the first 2 hours of a 12-hour task.",
+   "t": "2:37"
+  },
+  {
+   "claim": "One run rewrote its own memory 163 times and kept working context under 8,000 tokens.",
+   "t": "6:42"
+  },
+  {
+   "claim": "Deep-research benchmark: 59.4% vs ~53.3% (6 points; headline 11.4% is relative).",
+   "t": "8:01"
+  },
+  {
+   "claim": "24-hour coding swarm: summary method +2.6%, CLM +4.4%; gap 1.8 points from one run each (headline 65% is relative).",
+   "t": "8:01"
+  },
+  {
+   "claim": "After RL training, the 9B model's CLM beats a summary harness trained with the same recipe by 0.4 points.",
+   "t": "8:01"
+  },
+  {
+   "claim": "EdgeBench: CLM used 59% less compute for a slightly higher score.",
+   "t": "9:26"
+  },
+  {
+   "claim": "After training, the 9B model used 40% less compute per question at the same accuracy.",
+   "t": "9:26"
+  },
+  {
+   "claim": "Appendix: a summary baseline with a 128,000 token window ties CLM on accuracy but uses 36% more compute than CLM.",
+   "t": "9:26"
+  },
+  {
+   "claim": "Main results use a 32,000 token budget, one-eighth of the 262,000 the model supports; a 27B model fits this on a single 24 GB GPU.",
+   "t": "9:26"
+  },
+  {
+   "claim": "Edit at the start of a context costs 7.7x a normal turn; cache hit rate drops from 73.9% to 29.9% on turns after an edit.",
+   "t": "10:43"
+  },
+  {
+   "claim": "Cached input $0.30 per million tokens vs $3.75 uncached (12.5x); speaker says 25x on Opus 5.5. 163 edits about $4 total in the speaker's estimate.",
+   "t": "12:00"
+  },
+  {
+   "claim": "Qwen 27B on RTX 3090: 12,000 tokens reprocessed in about 11 s (~1,100 tok/s); about half a minute at 32k; nearly a minute on an M5 Max Mac; 163 edits at ~800 tok/s is roughly 24 minutes.",
+   "t": "13:05"
+  },
+  {
+   "claim": "Suffix Cache Reuse cuts server compute by 35% (SGLang patch only).",
+   "t": "13:05"
+  },
+  {
+   "claim": "OpenAI report: 27 instances of a model writing injected instructions into its own compaction summaries.",
+   "t": "14:27"
+  },
+  {
+   "claim": "9B model: zero edits on half of the Terminal-Bench tasks; nearly 6 points below plain summaries before training.",
+   "t": "15:51"
+  },
+  {
+   "claim": "Reddit engagement: the contrastive CLM launched the same week had nearly 500 upvotes vs 69 for this paper.",
+   "t": "15:51"
+  }
+ ],
+ "hot_takes": [
+  "Headline gains are relative: about 6 points, 1.8 points and 0.4 points absolute, mostly from single runs. The compute savings are the real result.",
+  "Local runtimes (llama.cpp, Ollama, LM Studio) make each in-context edit a full reprocess, so the technique is currently slower on local hardware despite fewer tokens.",
+  "The model can write anything into its own memory, and that content persists across turns. The paper lists this as open and does not solve it.",
+  "Non-commercial license: the code can be read, but shipping a product needs a separate arrangement with Meta.",
+  "Summary-based compaction is called fundamentally broken for any task longer than a few exchanges (speaker opinion).",
+  "Paper figures are as relayed by the speaker from the paper and video coverage; not checked against the paper itself."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "MemoryMesh tiered cross-session memory and InferCraft KV-cache work overlap directly with self-editing context; the paper's cache-invalidation numbers are the measurable risk.",
+   "action": "Before adding in-context memory rewriting to MemoryMesh or InferCraft, benchmark cache-hit rate after an early-context edit (paper: 73.9% to 29.9%, 7.7x turn cost) and treat model-written memory as untrusted input."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness's checkpoint/resume of long Claude Code runs matches the notes-file handoff the speaker recommends as the zero-code alternative to CLM.",
+   "action": "Have ProsHarness's checkpoint step write a notes.txt-style state file (decisions, current state, attempts tried) and start resumed sessions from it, instead of relying on compaction summaries."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

@@ -1,0 +1,161 @@
+{
+ "one_line": "Oxylabs' product manager on how public web data infrastructure feeds AI systems: how a video API, a sub-second SERP API and a 60k-rps scraper grew out of repeated client requests, latency cuts and load tests.",
+ "summary": "The speaker, a product manager at Oxylabs (a web intelligence and proxy provider), argues that AI models need live, structured web data, and that the infrastructure to collect it is the hard part. She tells three stories. First, a two-week request for a video API for AI training (at least 5 PB per month) grew through repeated client requests into a full video API suite (downloader, transcripts, subtitles, search, metadata) in about three months. Second, a sub-second search API built for AI grounding first failed to ship because the old scraper took about 4 seconds; the team dropped ads, widgets and layouts and focused on organic results and news. It reached about 650 ms P90 in under two weeks, but was blocked during a client call, so browser rendering had to be added, and the team then hunted seconds across every stage until it averaged 550 ms. Third, scaling a scraper from about 10k to 60k requests per second in under two months revealed that synthetic load tests were not enough, that telemetry becomes part of the load, and that the team should scale gradually and rely on production traffic. The talk closes with the claim that the lasting value is adaptation, not any single product.",
+ "speakers": [
+  "Patricija Žemaitytė"
+ ],
+ "orgs": [
+  "Oxylabs"
+ ],
+ "format": "talk",
+ "topics": [
+  "infra-cost-scaling",
+  "rag-retrieval",
+  "data-engineering"
+ ],
+ "tags": [
+  "web-data",
+  "scraping",
+  "proxies",
+  "serp-api",
+  "latency",
+  "load-testing",
+  "observability",
+  "grounding",
+  "video-data",
+  "product-iteration"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Models need live data, and the infrastructure that collects public web data at scale is the real bottleneck",
+   "detail": "Training alone is not enough. Models need fresh, live retrieval, and the speaker's company sells the layer that reaches the open web, handles bot defenses and delivers structured data into pipelines and agents.",
+   "t": "0:08"
+  },
+  {
+   "idea": "A one-off feature request grew into a product family by iterating on what the client actually needed",
+   "detail": "A video downloader request turned into transcript, subtitle, language search and metadata support. The client bought the team's ability to adapt, not the first version. Roughly three months to a full video API suite.",
+   "t": "2:24"
+  },
+  {
+   "idea": "SERP data's role changed from analytics to grounding for AI systems, which pushed the latency requirement to sub-second",
+   "detail": "Search results now feed retrieval pipelines and grounded answers. A 2024 sub-second attempt on a roughly 4 s baseline was shelved because the market was not ready.",
+   "t": "6:38"
+  },
+  {
+   "idea": "Low latency came from narrowing the output to what AI systems use, not from speeding up the old scraper",
+   "detail": "The general scraper collects ads, widgets, rich results and AI overviews. The fast search API keeps organic results, top stories and news, and drops the heavy layout. The team calls this a redesign, not an optimization.",
+   "t": "8:05"
+  },
+  {
+   "idea": "Browsers are needed to get past blocking, and they bring latency back, so latency has to be hunted stage by stage",
+   "detail": "The first version hit about 650 ms P90, then got blocked on a live client call. The fix relied on browsers, which are slow. The team reviewed layouts, parsers, sessions and proxies and cut a second or more at each step, reaching 550 ms average.",
+   "t": "9:26"
+  },
+  {
+   "idea": "At scale, the end-to-end job is the unit of load, and telemetry becomes part of that load",
+   "detail": "A scraping job includes routing, rendering, proxy handling, browser execution, parsing, retries and delivery. Adding about 2,000 servers did not fix it alone. Logs and metrics became costly at 20k rps.",
+   "t": "12:59"
+  },
+  {
+   "idea": "Synthetic load tests miss problems that organic-like traffic reveals, so scale gradually and use production traffic as the final test",
+   "detail": "The team hit a wall around 20,000 rps in a load test and could not tell whether the system could go further. They concluded that realistic traffic is the hard part, and that production traffic is the real test.",
+   "t": "14:14"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Iterate from client requests into an internal library",
+   "how": "Treat each new client ask (transcripts, subtitles, metadata) as a small adaptation. Glue the pieces into one internal library until the one-off becomes a product family.",
+   "when": "Early product work where the client does not yet know the exact spec and deadlines are short."
+  },
+  {
+   "name": "Narrow the response to what the AI consumer needs",
+   "how": "Drop ads, widgets, rich results and layout parsing, and return only organic results, top stories and news. This removes most of the per-request work.",
+   "when": "A fast API is needed for an LLM or agent, where the consumer does not need the full page."
+  },
+  {
+   "name": "Stage-by-stage latency audit",
+   "how": "Walk the whole pipeline (layout, parser, sessions, proxies, browser) and cut a fraction of a second at each stage. Measure every stage, not just the total.",
+   "when": "A system is far from its latency target and no single breakthrough is available."
+  },
+  {
+   "name": "Realistic load testing with gradual ramp-up",
+   "how": "Replay organic-like traffic rather than only synthetic load. Raise the load in steps, watch telemetry cost, and treat production traffic as the final test.",
+   "when": "Scaling a distributed system where synthetic load does not match real client usage."
+  },
+  {
+   "name": "Account for observability as load",
+   "how": "Plan logs and metrics volume as part of capacity, because at high request rates collecting and processing telemetry is itself expensive.",
+   "when": "Capacity planning at tens of thousands of requests per second."
+  }
+ ],
+ "tools": [
+  "Oxylabs Fast Search API",
+  "headless browsers",
+  "proxy network"
+ ],
+ "numbers": [
+  {
+   "claim": "Video API demand: at least 5 PB per month, with a two-week deadline; suite built in about 3 months",
+   "t": "2:24"
+  },
+  {
+   "claim": "Earlier SERP scraper average latency about 4 seconds, which the 2024 sub-second attempt had to beat",
+   "t": "6:38"
+  },
+  {
+   "claim": "First fast search version reached about 650 ms P90 in under two weeks",
+   "t": "9:26"
+  },
+  {
+   "claim": "Fast search API average latency now 550 ms",
+   "t": "10:49"
+  },
+  {
+   "claim": "Daily requests grew from about 400 million to almost 6 billion",
+   "t": "10:49"
+  },
+  {
+   "claim": "Scale demand rose from about 10,000 rps to 60,000 rps in under two months, with about 2,000 extra servers added",
+   "t": "12:59"
+  },
+  {
+   "claim": "Load test hit a wall at about 20,000 rps",
+   "t": "14:14"
+  },
+  {
+   "claim": "Next internal target (project 150) is about 100,000 rps",
+   "t": "15:37"
+  }
+ ],
+ "hot_takes": [
+  "The next generation of AI will be powered by better infrastructure around the models, not by better models.",
+  "Innovation is the ability to keep adapting fast enough that changing requirements become new infrastructure.",
+  "In the AI era speed is not just performance; it decides which products can exist at all.",
+  "Scale is never a finish line; each target reached reveals the next one."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS's retrieval and grounding layers could face the same latency problem when an agent pulls live web data; the talk's stage-level budget is a useful lens, but it is not a direct change.",
+   "action": "When designing MemoryMesh live retrieval, define a per-stage latency budget and keep only the fields the model actually uses, before adding a faster backend."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "The talk is about web data collection at scale. ProsHarness does not fetch web data at this scale.",
+   "action": ""
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "The talk makes a general point that web data acquisition is a separate infrastructure layer with its own reliability and latency problems, not an afterthought of the model.",
+   "action": "Read the Oxylabs-style architecture (routing, rendering, retries, delivery) when designing any agent that depends on live web sources."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

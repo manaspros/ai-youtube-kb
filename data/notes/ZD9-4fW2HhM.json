@@ -1,0 +1,141 @@
+{
+ "one_line": "Angie Jones on designing agentic systems like software: systems thinking, workflow paths, decomposition, code-vs-model-vs-human splits, contracts, idempotent retries, and maintainable agents.md files.",
+ "summary": "Angie Jones walks through designing a reusable house-hunting agent (Relocation Scout) as a system rather than a one-off prompt. She argues the agent is only one part of a larger system with files, tools, humans and other agents, so it needs boundaries, dependencies and a defined failure path. Each run should end in stop, retry or escalate, and that workflow shapes the architecture. Giant prompts are the agentic version of a god class and should be decomposed into skills, schemas, scripts and subagents. Her rule of thumb is code for exact answers, the model for judgment, and humans for authority. Handoffs between steps should use structured contracts so decisions are queryable, and side-effecting steps must be idempotent because retries happen. Untrusted web input is treated as evidence rather than instructions, external actions sit behind approval, and every level of the system carries an agents.md so a fresh agent can start cold.",
+ "speakers": [
+  "Angie Jones"
+ ],
+ "orgs": [
+  "Agentic AI Foundation"
+ ],
+ "format": "talk",
+ "topics": [
+  "agent-architecture",
+  "context-engineering",
+  "multi-agent",
+  "security-guardrails"
+ ],
+ "tags": [
+  "agentic systems design",
+  "idempotency",
+  "decomposition",
+  "separation of concerns",
+  "agent skills",
+  "subagents",
+  "agents.md",
+  "structured contracts",
+  "untrusted input",
+  "approval gates",
+  "maintainability",
+  "Relocation Scout"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Treat the agent as one component inside a larger system",
+   "detail": "The system includes files, tools, humans and other agents. Think about the agent's job, its dependencies, and how it can fail, the same way you would for any other service.",
+   "t": "1:24"
+  },
+  {
+   "idea": "Design the workflow path, not just the goal",
+   "detail": "A goal like 'review this listing' is not enough. The workflow defines the steps (gather, weigh against criteria, act). Every run ends in one of three outcomes: stop, retry or escalate. That path decides what context the agent needs and when a tool or person takes over.",
+   "t": "2:38"
+  },
+  {
+   "idea": "Giant prompts are the agent version of a god class",
+   "detail": "Instructions grow one edge case at a time. In the example, one prompt held four jobs: listing normalization, output format, commute calculation and neighborhood research. Decomposing it makes the agent less likely to drift and easier to test and change.",
+   "t": "3:50"
+  },
+  {
+   "idea": "Split each job into the right kind of module",
+   "detail": "Normalizing listings becomes a reusable skill. The output shape becomes a schema. Commute math becomes a plain script. Neighborhood research becomes a subagent with its own scope. Reusable pieces can be shared across markets and agents.",
+   "t": "5:15"
+  },
+  {
+   "idea": "Code for exact answers, agents for judgment, humans for authority",
+   "detail": "If a task has one correct answer (commute time, dedupe of seen listings), use code, since it is cheaper and more reliable. Use the model for fuzzy judgment. Keep the final decision to act, such as booking a tour, with the human.",
+   "t": "9:05"
+  },
+  {
+   "idea": "Use structured contracts for handoffs and memory",
+   "detail": "When another system will act on the output, free text is a dead end. Write decisions, scores and reasons into structured fields. Then later queries (for example, rated 4 or better with a commute of 15 minutes or less) and downstream steps can read them without a human in the loop.",
+   "t": "10:21"
+  },
+  {
+   "idea": "Make side-effecting steps idempotent and check the recorded state before retrying",
+   "detail": "Webhooks can fire twice and runs can crash halfway. Log each action as it happens (for example, the email was sent). On retry, check what was recorded and finish only the missing step (block the calendar). A lint pass can do this cleanup. Do not trust the model to reword the request into a new task.",
+   "t": "12:47"
+  },
+  {
+   "idea": "Treat external content as evidence, and wall off risky actions",
+   "detail": "Listing copy and forum posts from strangers are untrusted input, so the agent should treat them as evidence, not instructions. Reads and shortlisting can be autonomous. Emailing sellers, booking tours or making offers sit behind human approval to reduce the blast radius.",
+   "t": "15:23"
+  },
+  {
+   "idea": "Give every level of the system an agents.md, and test it with a cold start",
+   "detail": "Each level documents its workflow, where policy lives, its supporting skills, scripts and subagents, and how to keep memory current. The test: a fresh agent in a new context should be able to start cold. If an update fails, that signals the system needs better maintainability.",
+   "t": "18:05"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Decompose a giant agent prompt by responsibility",
+   "how": "Identify distinct jobs inside one prompt. Move reusable procedures into skills, fixed output formats into schemas, deterministic math into scripts, and bounded research into subagents.",
+   "when": "When the prompt keeps growing with edge cases and the agent starts drifting from the script."
+  },
+  {
+   "name": "Route work by task type: code, model, or human",
+   "how": "Use code for tasks with exact answers (math, filtering, dedupe). Use the model for interpretation and judgment. Require a human sign-off for authority-bearing actions.",
+   "when": "When designing any agent pipeline, to cut cost, improve reliability, and avoid day-to-day variance in deterministic steps."
+  },
+  {
+   "name": "Structured decision records as agent memory",
+   "how": "Store each decision with explicit fields (score, reason, criteria values) instead of prose in the session. Downstream steps and later queries read those fields. The speaker uses Karpathy's LLM Wiki as the memory layer for this.",
+   "when": "When another step or a later session must query or act on what the agent decided."
+  },
+  {
+   "name": "Idempotent action log with state-based resume",
+   "how": "Record each side-effecting action as it completes. On retry or resume, compare the log against the intended plan and run only the missing actions. Add a periodic lint pass to find and finish half-done runs.",
+   "when": "When runs can be interrupted or webhooks can fire more than once, for example with emails, bookings or calendar writes."
+  },
+  {
+   "name": "Evidence-not-instructions handling for untrusted content",
+   "how": "Label scraped or third-party text explicitly as evidence in the prompt. Limit tools to least privilege, and put external-facing actions behind an approval step.",
+   "when": "When an agent reads content written by strangers (listings, forums, reviews) and can also act in the outside world."
+  },
+  {
+   "name": "agents.md at every level with a cold-start test",
+   "how": "Each folder or component has an agents.md covering its workflow, policy location, resources, and how memory gets updated. Check it by starting a fresh agent with no prior context and asking it to do a task.",
+   "when": "When multiple agents or harnesses must be understood and modified by other people or agents."
+  }
+ ],
+ "tools": [
+  "agents.md",
+  "agent skills",
+  "subagents",
+  "Karpathy LLM Wiki (agent memory layer)"
+ ],
+ "numbers": [],
+ "hot_takes": [
+  "Letting a coding agent design your other agents tends to produce a giant prompt that technically works but is hard to maintain.",
+  "An agent is not the system; it is one component, and it should be treated like any other component with boundaries and failure modes.",
+  "If a task has an exact answer, use code instead of the model. Use the model for judgment and humans for authority.",
+  "Retries in agent systems must not repeat side effects; check what was recorded before running the next step."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 3,
+   "why": "ProsHarness does checkpoint/resume of long agent runs and phone-driven approvals. The talk's idempotent action log and approval-wall guidance apply directly to that.",
+   "action": "Make each side-effecting step in checkpoint/resume idempotent: log the action when it completes, and on resume run only the steps missing from the log. Check the approval gate covers every outbound action."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "Its policy layer could gate outbound actions, which matches the talk's approval-wall point. The talk does not cover budgets, routing or the proxy itself.",
+   "action": "Review whether the Crucible or guardrail layer can require an approval step for outbound side-effect tool calls."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

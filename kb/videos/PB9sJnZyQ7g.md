@@ -1,0 +1,48 @@
+# Google's Biggest Fail of the year
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `PB9sJnZyQ7g` · [watch](https://youtu.be/PB9sJnZyQ7g) · **date:** 2026-01-02 · **length:** 8:14 · **format:** review · **quality:** 2/5 · **depth:** intro
+- **speakers:** Channel host (unnamed, AI LABS) · **orgs:** Google, Automata, Supabase
+- **topics:** context-engineering, coding-agents, testing-verification · **tags:** conductor, gemini-cli, spec-driven-development, context-files, git-revert, bmad, supabase, negative-review, sponsored
+
+> A solo review of Google's Conductor, a Gemini CLI extension for spec-driven "track" workflows. The host finds the file layout sound but the command instructions weak, with destructive and falsely-completed steps.
+
+## Summary
+The host walks through Conductor, a Gemini CLI extension that bundles five slash commands (setup, implement, status, new track, revert) into a spec-first workflow. Setup creates product, tech-stack and code-style docs, then splits the work into tracks, each with a spec.md and a plan.md, tracked in a status file. The host likes the track structure, the 80% coverage default, per-task commits with git notes, and the git-aware revert. He argues the command instructions do not manage the context loop, so changes do not propagate properly across the docs. In his test the tech stack and database schema missed requirements he had stated, the agent deleted the whole planning folder during a npm-to-pnpm switch and rebuilt it from memory, and it marked a Supabase setup task done with a dummy key. His verdict is that the setup is good but he would not use the workflow for end-to-end spec work yet, preferring BMAD, and he keeps his own context files for small projects. The video opens with a sponsored segment for Automata.
+
+## Key ideas
+- **Conductor is a Gemini CLI extension that bundles five slash commands (setup, implement, status, new track, revert) into a spec-first, track-based workflow. The host compares extensions to Claude's plugins.** — Installed from a command in the linked article. Setup generates the planning docs and asks clarifying questions to refine the product doc. ([0:59](https://youtu.be/PB9sJnZyQ7g?t=59))
+- **Setup refines a product.md through questions, then the tech stack and code style guides are generated. The host says the stack recommendations were not appropriate for a project he described as scalable to many users.** — The stack was corrected and approved after he pushed back. Code style guides are only added for languages the project is expected to use. ([2:25](https://youtu.be/PB9sJnZyQ7g?t=145))
+- **Work is organized into tracks. Each track has a spec.md (objective and technical details) and a plan.md (ordered tasks), and a tracks status file (not started / in progress / complete) decides what implement runs next.** — The host says the first generated track was too broad and had to be split. The new track command re-asks the discovery questions. In an existing repo, it asked clarifying questions instead of creating a track. ([3:53](https://youtu.be/PB9sJnZyQ7g?t=233))
+- **The default discipline is strong: an 80% coverage target, tests written while building and re-run after each task, a commit after every task, and git notes so failures can be traced.** — The host praises these defaults. The revert command is git-aware and can undo damage. ([2:25](https://youtu.be/PB9sJnZyQ7g?t=145))
+- **The host's main criticism is that the command instructions do not manage the context loop. When one decision changes, dependent docs are not reliably updated, and many errors appeared even during setup.** — He says the file management and track model are good but the command files need work. He also had to guide each generated document himself. ([5:03](https://youtu.be/PB9sJnZyQ7g?t=303))
+- **The database schema the workflow produced was incomplete, and the host had to steer it toward what was crucial for the app.** — Stated requirements (scale to many users) were not reflected in the generated plan until he clarified them. ([6:08](https://youtu.be/PB9sJnZyQ7g?t=368))
+- **A destructive failure: after he asked to switch npm to pnpm, the agent tried to back up, deleted the entire conductor folder with all planning files, then rebuilt it from memory.** — The host's point is that a change should touch only the main context files and the files for the affected task, not regenerate the whole planning state. ([6:08](https://youtu.be/PB9sJnZyQ7g?t=368))
+- **Task status cannot be trusted. The agent marked an environment-configuration task complete with a dummy Supabase key, then tried to push the schema and failed.** — He concludes the workflow is not following its own task definitions, so he would not use it for end-to-end spec development now. ([7:36](https://youtu.be/PB9sJnZyQ7g?t=456))
+
+## Techniques
+- **Per-track spec + plan with a status index** — Give each feature track its own spec.md (objective and technical details pulled from the tech stack and intake answers) and plan.md (ordered tasks). Keep a tracks status file with not-started, in-progress and complete states. The implement command reads the status file and works through tracks in order, so a long build can resume across sessions. *When:* Multi-feature agent work that must survive restarts, or where each feature should be reviewable on its own. Consider it for ProsHarness-style checkpoint/resume.
+- **Commit per task with git notes and git-aware revert** — Commit after each completed task. Attach git notes so you can see where a problem started. Use the revert command, which relies on git, to undo a bad step instead of hand-editing. *When:* Any agent-driven build where you need to locate and undo the step that broke things.
+- **Default test gate on every task** — Set a coverage target in the workflow defaults (the example is 80%). Write tests while implementing a task and run them again after the task is marked done. *When:* When you want each agent task verified before moving on, rather than trusting the agent's own claim that it is done.
+- **Review each generated doc before auto-generation** — Review each spec section yourself, correct it, and only then let the agent fill in the remaining sections. The host says this is necessary because the agent drifted when it generated the rest unattended. *When:* Setup of a new spec-driven project, where early mistakes in the stack or schema propagate into every track.
+- **Scope context updates to what changed** — When a requirement changes (the example is switching package managers), update only the main context files and the files for the affected track. Do not delete and regenerate the planning folder. The host says BMAD works this way. *When:* Mid-project changes to tooling, stack or requirements, and any time an agent is about to remove a directory it uses as state.
+- **Verify completion against real state** — Do not accept the agent's task checkbox at face value. Check that configuration is real (for example, a real service key rather than a placeholder) before the next step runs. *When:* Any task that touches credentials or external services, such as database setup or schema pushes.
+
+## Numbers
+- Conductor exposes five slash commands: setup, implement, status, new track, revert. ([0:59](https://youtu.be/PB9sJnZyQ7g?t=59))
+- Default workflow targets 80% test coverage. ([2:25](https://youtu.be/PB9sJnZyQ7g?t=145))
+- Each track produces two files, spec.md and plan.md. ([3:53](https://youtu.be/PB9sJnZyQ7g?t=233))
+- The workflow deleted the entire conductor planning folder during an npm-to-pnpm switch and had to rebuild it from memory. ([6:08](https://youtu.be/PB9sJnZyQ7g?t=368))
+- Supabase environment task was marked complete with a dummy key. ([7:36](https://youtu.be/PB9sJnZyQ7g?t=456))
+- Video length is 8:14. Sample size is one new project plus one existing repo. ([0:00](https://youtu.be/PB9sJnZyQ7g?t=0))
+
+## Hot takes
+- Google's Conductor is not better than existing context-engineering workflows, even within the Gemini ecosystem (0:00).
+- The file structure and track model are good, but the command instructions do not manage the context loop and need work (5:03).
+- Would not use this workflow now for end-to-end spec development; BMAD is the better option, and for small projects he keeps his own context files (7:36).
+- Sponsored segment for Automata at the start of the video, so quality is capped at 2. The evidence is one host's experience on two projects.
+
+## Tools mentioned
+Conductor (Google Gemini CLI extension), Gemini CLI, Gemini (model), Claude Code plugins (mentioned as comparison), BMAD (recommended alternative), Supabase, npm, pnpm, git, git notes, GitHub
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness does checkpoint/resume of long Claude Code runs. Conductor's per-track spec.md and plan.md with a status index is a concrete state layout for that. Its git-aware revert is a model for undoing bad steps, and its destructive folder deletion is a warning about agents rewriting their own state. → *Compare ProsHarness's checkpoint format with a per-track spec.md + plan.md + status index. Make revert git-based, and make sure no agent step can delete the state directory during a refactor.*

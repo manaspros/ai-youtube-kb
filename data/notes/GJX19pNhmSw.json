@@ -1,0 +1,165 @@
+{
+ "one_line": "Microsoft's Tisha Chawla and Susheem Koul argue agent cost control belongs at the agent-run layer, not the request layer. They show an out-of-band \"TokenOps\" plane that attributes spend per run, steers runs toward budget before halting them, and reports vendor benchmarks.",
+ "summary": "The talk starts from runaway agent bills and argues the industry is \"token maxing\" when it should be \"value maxing.\" It proposes first principles: tokens are the cost unit, cost is created at the model-call boundary, and every call needs attribution to a run or agent so policies can act. Existing model gateways (LiteLLM, Portkey, Cloudflare named in the talk) route or hard-cap at the request level, which the speaker says cannot control loops, sub-agent spawning, or context growth. The proposed architecture is an out-of-band control plane with instrumentation, accounting (a ledger), and enforcement modules, plus a bridge that annotates methods and pushes allowed actions down to the agent through a governor. Policies are ordered: steer first (compaction, tool output reduction, loop detection), with halt as the last resort. The demo uses a two-agent research and summary workflow in preview mode, then enforcement, showing a halt and a cost-guard steer. The speaker reports vendor benchmarks on browser-use and MetaGPT: average spend down about 78% and completion up from 67% to about 96% versus plain throttling, but no methodology is given. The talk closes with a planned self-learning module that reads the ledger and generates or refines policies.",
+ "speakers": [
+  "Tisha Chawla",
+  "Susheem Koul"
+ ],
+ "orgs": [
+  "Microsoft",
+  "Uber (news reference)"
+ ],
+ "format": "talk",
+ "topics": [
+  "token-cost-efficiency",
+  "governance-compliance",
+  "observability",
+  "agent-architecture"
+ ],
+ "tags": [
+  "token-budgets",
+  "cost-attribution",
+  "runaway-loops",
+  "context-compaction",
+  "steering-vs-halting",
+  "circuit-breaker",
+  "out-of-band-control-plane",
+  "preview-mode",
+  "cost-guard"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Industry is moving from token maxing to value maxing",
+   "detail": "Speaker says teams currently brag about token spend. The goal should be value per token. Their framing borrows from SaaS (seat caps), cloud (auto-scaling), and now agentic (per-call cost).",
+   "t": "1:01"
+  },
+  {
+   "idea": "Cost lives at the model-call boundary, so attribution is required before control",
+   "detail": "Without knowing which run or agent made a call, you only see the total bill. Attribution comes first; policies can then target the specific runaway run.",
+   "t": "4:37"
+  },
+  {
+   "idea": "Steer first, halt last",
+   "detail": "Runaway loops and growing context should trigger in-place fixes such as compaction or caching. A budget halt is only the final step after those policies are exhausted.",
+   "t": "7:19"
+  },
+  {
+   "idea": "Request-level gateways miss the run-level problem",
+   "detail": "Gateways can route or hard-cap per request. Loops between agent and tools, sub-agent spawning, and context growth happen across many calls, so they need run-level visibility.",
+   "t": "11:31"
+  },
+  {
+   "idea": "Out-of-band control plane with instrumentation, accounting and enforcement",
+   "detail": "Telemetry (OpenTelemetry, cost metrics) with enrichment feeds a ledger. Enforcement applies steer or halt actions. The plane sits outside the agent's code path and runs in the customer's own tenant.",
+   "t": "8:38"
+  },
+  {
+   "idea": "Bridge with a boundary annotation and a governor",
+   "detail": "A decorator on any method records inputs and outputs as ledger entries and also receives actions from the control plane. A governor runs in the agent process and applies only the actions the developer allowed in config, so the control plane cannot make arbitrary changes.",
+   "t": "11:31"
+  },
+  {
+   "idea": "Cost guard predicts budget overrun from consumption and velocity",
+   "detail": "It compares the fraction of budget used with the token burn rate. If the run is projected to exceed budget, it injects an instruction into the system prompt, such as asking for more succinct outputs. The demo shows this steer working on a second prompt.",
+   "t": "17:09"
+  },
+  {
+   "idea": "Preview mode before enforcement to tune thresholds",
+   "detail": "Policies run and log what they would do, but no actions are enforced. Teams can see the effects in production, adjust guardrails, and only then turn enforcement on.",
+   "t": "17:09"
+  },
+  {
+   "idea": "Future self-learning loop over the ledger",
+   "detail": "Planned: a module reads the ledger, finds failure modes the current policies miss, then generates new policies or tunes existing thresholds. This is described as the end state, not shipped.",
+   "t": "19:50"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run-scoped attribution tags and budgets",
+   "how": "Attach user or cohort dimensions (for example a cohort tag) to every agent run. Group runs into segments and set budgets on a segment or a single run over a time window, so you can roll up or drill down.",
+   "when": "Use when several users or agents share a cost pool and you need to know which run caused a spike."
+  },
+  {
+   "name": "Boundary decorator on agent methods",
+   "how": "Annotate the methods (or wrap provider response objects with a wrap-complete helper) so each call records input, output and run ID to a ledger. The same hook lets the control plane push actions back into the method.",
+   "when": "Use when you want cost telemetry and control without rewriting agent code, and the framework is not fixed."
+  },
+  {
+   "name": "Governor with a developer-declared action allowlist",
+   "how": "The agent process loads a config that lists which actions (allow, mutate, inject, kill) the control plane may take. Actions outside the list are rejected. Actions are applied in a non-destructive way.",
+   "when": "Use when a remote control plane should steer agents but must not have unlimited write access to them."
+  },
+  {
+   "name": "Tiered policy ladder: steer, then halt",
+   "how": "Order policies as: compaction when context grows, tool output reduction (for example cap retrieval results to the top 5 chunks), caching, loop and progress detection, and only then halt on budget. Steer types include allow, mutate, inject; halt is a plain kill.",
+   "when": "Use when hard kills waste completed work and throttling kills runs that could have finished on a smaller budget."
+  },
+  {
+   "name": "Cost guard: projected-overrun steering",
+   "how": "Track budget used and the token burn velocity per run. If the projection says the run will exceed its budget, inject a short instruction into the system prompt (for example be more concise) instead of killing the run.",
+   "when": "Use for long-running agents where a tight budget would otherwise end the run before it finishes."
+  },
+  {
+   "name": "Preview (shadow) mode for guardrails",
+   "how": "Run the full policy set with enforcement disabled. Record what would have fired, review it on the dashboard, then tune thresholds and enable enforcement.",
+   "when": "Use before turning on any automated halt or steer in production."
+  },
+  {
+   "name": "Benchmark against throttling baseline",
+   "how": "Compare average spend and task completion rate with the policy set on versus simple throttling across several iterations, including stress and hard scenarios.",
+   "when": "Use when you want to show cost controls do not just trade away completion rate."
+  }
+ ],
+ "tools": [
+  "OpenTelemetry",
+  "LangChain",
+  "LangSmith",
+  "LiteLLM",
+  "Portkey",
+  "Cloudflare AI Gateway",
+  "browser-use",
+  "MetaGPT"
+ ],
+ "numbers": [
+  {
+   "claim": "Average spend down about 78% with the full TokenOps policy suite (vendor benchmark on browser-use and MetaGPT, across stress and hard scenarios)",
+   "t": "18:32"
+  },
+  {
+   "claim": "Task completion rose from about 67% (plain throttling) to about 96% with TokenOps policies",
+   "t": "18:32"
+  },
+  {
+   "claim": "Example scenario: a RAG tool returns 20 chunks per call but the LLM uses only the top 5; the proposed steer action caps output to 5",
+   "t": "12:52"
+  },
+  {
+   "claim": "Cited news example: one company's AI budget was reportedly exhausted within four months; others reportedly hit hundreds of millions of dollars within months or days",
+   "t": "2:23"
+  }
+ ],
+ "hot_takes": [
+  "Request-level model gateways (LiteLLM, Portkey, Cloudflare) cannot control agent cost because loops and context growth happen across calls, so cost control needs to sit at the run layer.",
+  "Hard budget halts should be the last resort; steering a run (compaction, tool output caps, brevity instructions) to fit the budget beats killing it.",
+  "The metric that matters is value per token, not token volume."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The AgentOS L1 budget pillar works at the proxy and request level. The talk argues run-level attribution and steer-before-halt are needed. Its ideas about tool output caps and compaction fit AgentOS's plan to govern agent cost.",
+   "action": "Prototype a run-scoped budget in the L1 proxy: take the agent run ID and a cohort tag from request headers, keep a per-run token ledger, and add one steer action (inject a brevity instruction when projected spend exceeds budget) before any hard cutoff. Read the TokenOps benchmark method first, since the 78% figure has no published method."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs long Claude Code agent loops with checkpoint and resume. The talk's runaway-loop detection, context-growth compaction, and budget halt as the last step map directly onto that work.",
+   "action": "Add a per-run token budget with a loop or progress detector and a context-size trigger that compacts before halting. Use the checkpoint to halt cleanly when the budget runs out."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

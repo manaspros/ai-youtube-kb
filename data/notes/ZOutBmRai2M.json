@@ -1,0 +1,167 @@
+{
+ "one_line": "Docker's MCP toolkit walkthrough: one gateway in front of a vetted catalog, on-demand tool loading, and \"code mode\" where the agent chains MCP calls in a sandbox, keeping bulky results out of context.",
+ "summary": "The host argues that MCP setups with hundreds of servers and thousands of tools bloat agent context, and that Docker's MCP Toolkit addresses this in three ways. A curated MCP catalog and gateway let a client connect to one endpoint and choose which servers to trust. Dynamic tool selection (mcp find, add, remove) loads only the tool definitions a session needs, so a GitHub server's roughly 40 other tools stay out of context. Code mode exposes a single JavaScript-capable tool that calls other MCP tools inside a Docker sandbox, with volumes holding intermediate data so the model sees only summaries. The demo has Claude Code merge six repo searches into one tool, then redirect its output to a text file so only descriptions reach the model, followed by a GitHub-to-Notion tool. The video names commands but shows no config, benchmarks or token measurements, and the title's \"fixed 90% of AI coding\" claim is not backed by anything in the video. Treat it as a product tour of a useful pattern set rather than evidence of savings.",
+ "speakers": [
+  "unnamed AI LABS host"
+ ],
+ "orgs": [
+  "Docker",
+  "Anthropic",
+  "Cloudflare",
+  "GitHub",
+  "Notion"
+ ],
+ "format": "review",
+ "topics": [
+  "mcp-and-tools",
+  "token-cost-efficiency",
+  "sandboxing-execution"
+ ],
+ "tags": [
+  "docker",
+  "mcp",
+  "mcp-gateway",
+  "mcp-catalog",
+  "dynamic-tool-selection",
+  "code-mode",
+  "context-bloat",
+  "sandbox",
+  "volumes",
+  "claude-code",
+  "github-mcp",
+  "notion-mcp"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Context bloat is the core MCP problem now: hundreds of servers and thousands of tools, most unused in any one session.",
+   "detail": "Cloudflare raised this first and Anthropic published a related post; the host frames the two costs as tool definitions in context and raw intermediate tool results.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Docker's catalog and gateway solve trust and connection management: the client connects to one Docker endpoint that manages the catalog servers.",
+   "detail": "The catalog lists verified servers; the client sees a single MCP connection and the gateway handles which servers are attached.",
+   "t": "1:02"
+  },
+  {
+   "idea": "Dynamic tool selection loads only the tools a session needs, using find/add/remove meta-tools.",
+   "detail": "Example: keep only the GitHub search-repos tool out of about 40 others. Find searches the catalog by name or description, and the gateway injects definitions on demand.",
+   "t": "2:05"
+  },
+  {
+   "idea": "Raw tool results are the second token sink; a few search calls can fill the window.",
+   "detail": "The GitHub search returned links, stars, descriptions and dates for every hit, while the user wanted only descriptions. The host estimates about 20 tool calls can fill the context.",
+   "t": "3:09"
+  },
+  {
+   "idea": "Code mode: the agent writes JavaScript that calls MCP tools inside a sandbox, and the model only sees one code-mode tool.",
+   "detail": "Three claimed benefits: sandboxing contains untested agent-written code; only one tool definition is sent per request; volumes persist data between calls so it never reaches the model.",
+   "t": "4:24"
+  },
+  {
+   "idea": "Volume-backed state keeps large data out of context; the model gets status and summaries only.",
+   "detail": "Example: download a 5GB dataset to a volume, have the model report success, then process the first 10,000 rows from the volume and return only the summary.",
+   "t": "5:51"
+  },
+  {
+   "idea": "Practical pattern from the demo: merge repeated tool calls into one generated tool, then write its output to a file and return only the needed fields.",
+   "detail": "Claude Code combined six keyword searches into one multi-search tool (29 unique repos), run via the mcp exec tool. Results were then written to a repo text file so the model only received descriptions. The host says reusable saving of such tools is still manual.",
+   "t": "7:37"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Single MCP gateway front door",
+   "how": "Install or update Docker, enable the Docker MCP toolkit (it may sit under beta features), then connect the MCP client (Claude Code in the demo) to the Docker MCP endpoint and add servers from the catalog. Features are on by default once connected.",
+   "when": "When you run many MCP servers and want vetted sources and one connection point instead of configuring each server in the client."
+  },
+  {
+   "name": "On-demand tool discovery with find/add/remove",
+   "how": "Ask the agent to find an MCP server by name or description using mcp find, then add it or remove it with the matching commands. The gateway loads only the tool definitions it needs. The video shows no config files.",
+   "when": "In sessions where you use 2-3 tools out of dozens, so unused definitions do not consume context on every request."
+  },
+  {
+   "name": "Code mode: chain MCP calls in a sandboxed script",
+   "how": "Have the agent write JavaScript that calls the MCP tools it needs, package it as a reusable tool, and invoke it through the mcp exec tool. Run it in the Docker sandbox so untested code cannot affect the host.",
+   "when": "For multi-step or batch tool use, such as repeated searches or pipelines, where intermediate results would otherwise flood the context."
+  },
+  {
+   "name": "Write bulky tool output to a file and return only the fields needed",
+   "how": "Tell the agent to write all raw results to a file in the repo, and return only the fields the model needs (the demo used descriptions). Later lookups read the file.",
+   "when": "Whenever a tool returns large payloads like search results or datasets. This works without Docker, using any tool that can write files."
+  },
+  {
+   "name": "Volume-backed state between tool calls",
+   "how": "Store intermediate data such as downloads or processed rows in a persistent volume. Return to the model only status messages, final results, summaries or errors.",
+   "when": "Data pipelines where the raw data is too large for context but the model needs to decide the next step."
+  },
+  {
+   "name": "Merge repeated tool calls into one generated tool",
+   "how": "After noticing the agent making many similar calls (e.g. the same search with different keywords), ask Claude Code to write one tool that runs all the queries and returns combined output.",
+   "when": "Repetitive research or lookup workflows that run the same tool with varied inputs."
+  }
+ ],
+ "tools": [
+  "Docker MCP Toolkit",
+  "Docker MCP Catalog",
+  "Docker MCP Gateway",
+  "Docker MCP find/add/remove tools",
+  "mcp exec tool",
+  "Docker containers and volumes (sandbox)",
+  "Claude Code",
+  "GitHub MCP server",
+  "Notion MCP server",
+  "Cloudflare code mode (referenced)",
+  "Anthropic MCP token post (referenced)"
+ ],
+ "numbers": [
+  {
+   "claim": "Users reportedly run hundreds of MCP servers with thousands of tools.",
+   "t": "0:00"
+  },
+  {
+   "claim": "The GitHub MCP server exposes about 40 tools; the user needed one (search repos).",
+   "t": "2:05"
+  },
+  {
+   "claim": "About 20 tool calls can fill the context window with raw MCP results (host estimate, not measured).",
+   "t": "3:09"
+  },
+  {
+   "claim": "Six keyword searches produced 29 unique repos in one multi-search tool run.",
+   "t": "7:37"
+  },
+  {
+   "claim": "Example data pipeline: 5GB dataset kept on a volume; only the first 10,000 rows processed for the summary.",
+   "t": "5:51"
+  },
+  {
+   "claim": "The video gives no benchmark, token count or cost measurement for any savings claim.",
+   "t": "9:03"
+  }
+ ],
+ "hot_takes": [
+  "The title's claim that Docker fixed 90% of AI coding is not supported by anything shown in the video.",
+  "Code mode puts agent-written, untested code in the path; the safety case depends entirely on the sandbox, and the video does not test it.",
+  "The trust problem is addressed by a curated catalog run by Docker, which means trusting Docker's vetting; the video does not explain the verification process.",
+  "Vendor walkthrough: the presenter is demoing a Docker product, and the video contains no comparison with alternative approaches.",
+  "Minor inconsistency: the host cites about 40 other GitHub tools at 2:05 and 47 at 5:51."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS's L1 proxy and L2C sandboxed execution are the same layer that Docker's gateway and code mode occupy; the on-demand tool loading and large-result-to-volume pattern map directly onto that design.",
+   "action": "Compare Docker's find/add/remove plus code-mode approach with AgentOS's proxy and Crucible sandbox. Prototype whether the proxy can cap tool-result size and write oversized results to storage, returning only summaries to the model."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code, so unused MCP tool definitions and large tool outputs add to every run's context, which matters for checkpoint and resume of long runs.",
+   "action": "Test whether ProsHarness can scope MCP servers per run so unused tool definitions stay out of the session, and whether tool outputs over a size limit can be written to a file instead."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

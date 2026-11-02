@@ -1,0 +1,142 @@
+{
+ "one_line": "PayPal's developer tools leads run a live workshop where attendees make a coffee-ordering CLI work for agents. Main point: interactive prompts fail silently under agents, so CLIs need machine-readable side channels, injected context, and determinism.",
+ "summary": "Mark Lummus (head of developer tools) and Navinkumar Patil (tech lead) ran a hands-on workshop built around \"Barista 9000,\" a CLI for ordering coffee that fails when an agent runs it because it is interactive. The core claim is that agents call CLIs through Bash, and an interactive prompt makes the agent see only a redraw loop while the harness loses UI state, so the failure is silent. Flags work only when all options are known up front and independent; they break when the next question depends on earlier answers or on live API responses. The speakers argue that agent-facing CLI design should follow the same discipline as accessibility for humans, treating the agent as a new kind of reader. Their suggested fixes were tmux send-keys and capture-pane as a low-effort way to drive an existing CLI, a machine-readable side channel (JSON read/send, like a REST API next to a web UI), and context injection through one input file that lists the fields and the questions the agent should ask. They also argued that a CLI used by an LLM should be small and deterministic, with reasoning kept in the calling model. Participants competed on a leaderboard scored by accuracy and then response time, and the winning entry was a deterministic solver built by an agent (Opus 4.8 via the Claude Agent SDK) and driven through tmux. The talk is mostly hands-on game flow, so the reusable data is thin, but the failure-mode framing and the determinism argument are useful.",
+ "speakers": [
+  "Mark Lummus",
+  "Navinkumar Patil"
+ ],
+ "orgs": [
+  "PayPal"
+ ],
+ "format": "workshop",
+ "topics": [
+  "coding-agents",
+  "mcp-and-tools",
+  "context-engineering"
+ ],
+ "tags": [
+  "interactive-cli",
+  "agent-tool-design",
+  "tmux",
+  "cli-design",
+  "side-channel",
+  "context-injection",
+  "determinism",
+  "workshop",
+  "leaderboard"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Interactive CLIs fail silently when an agent runs them.",
+   "detail": "The agent sees a redraw loop instead of a question, and the harness loses the UI state. There is no error, so the failure is invisible.",
+   "t": "3:49"
+  },
+  {
+   "idea": "Flags only cover flows whose options are known in advance.",
+   "detail": "Flags work for single-pass, independent options. They break when the next question depends on an earlier answer or on a live API response, because you cannot enumerate every path as flags.",
+   "t": "4:58"
+  },
+  {
+   "idea": "Treat agents as a new kind of reader and apply accessibility thinking.",
+   "detail": "The speaker's framing: map what is done for human accessibility to what agents need. Agents can reason, ask, retry, and walk a decision tree if one is provided, unlike scripts.",
+   "t": "4:58"
+  },
+  {
+   "idea": "Tmux send-keys and capture-pane is the low-effort first step.",
+   "detail": "Run the CLI in a detached tmux session, send keys, and capture the pane. The speaker calls this screen scraping. Long-running and multiple sessions are easy to manage this way.",
+   "t": "26:25"
+  },
+  {
+   "idea": "Add a machine-readable side channel next to the human UI.",
+   "detail": "Expose read-state and send-input as structured data (JSON output) so agents do not scrape the screen. The speaker compares this to adding a REST API next to a website.",
+   "t": "28:37"
+  },
+  {
+   "idea": "Give the agent context in one input file instead of interactive prompts.",
+   "detail": "Context injection: supply the fields, defaults, and the questions the agent should ask the user in a single structured input. The speaker's example: low on oat milk, so the agent should confirm whether a smaller amount is acceptable and offer a backup.",
+   "t": "31:44"
+  },
+  {
+   "idea": "Keep the CLI deterministic and leave reasoning to the calling LLM.",
+   "detail": "The LLM is the non-deterministic part. A CLI meant for LLM use should be a small, sharp tool that returns the same output for the same command. Do not embed an agent inside the CLI.",
+   "t": "41:29"
+  },
+  {
+   "idea": "Winning entry: an agent built a deterministic solver and drove it through tmux.",
+   "detail": "The winner used an agent (Opus 4.8 via the Claude Agent SDK, driven through Slack) to write a deterministic CLI solver, then ran it through tmux. The speaker notes a prior eval-bench skill helped. A second entrant's approach was also a deterministic parser.",
+   "t": "46:46"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Side-channel JSON interface for CLIs",
+   "how": "Add a non-interactive agent mode (the workshop used a --agent flag on the brew command) that reads state and accepts input as structured data, next to the human TUI.",
+   "when": "Any CLI that agents will call and that today depends on prompts or a visual UI."
+  },
+  {
+   "name": "Tmux driver for interactive CLIs",
+   "how": "Start the CLI in a detached tmux session (tmux new -d), use send-keys to input, and capture-pane to read the screen. Run multiple sessions for multiple agents.",
+   "when": "As a quick stopgap when a CLI has no structured interface, or for long-running interactive tasks. The speaker calls it low effort and screen scraping."
+  },
+  {
+   "name": "Context injection via a single input file",
+   "how": "Give the agent one structured file that holds all the inputs, defaults, and the decision points where it should ask the user, so it does not need to walk an interactive flow.",
+   "when": "When the decision points and defaults are known before the run starts."
+  },
+  {
+   "name": "Deterministic CLI, reasoning outside",
+   "how": "Keep the CLI as a small tool with fixed, repeatable outputs for each command. Keep all model reasoning in the calling agent and do not embed an agent in the CLI.",
+   "when": "When an LLM will call the CLI repeatedly and needs predictable results."
+  },
+  {
+   "name": "Have an agent build the solver",
+   "how": "Describe the task to a coding agent, let it write a deterministic CLI solver, then run it under tmux. The speaker's winner also used a prior eval-bench skill to optimize.",
+   "when": "A repeated, latency-sensitive task where a fixed program beats per-call model reasoning."
+  }
+ ],
+ "tools": [
+  "tmux",
+  "Claude Code",
+  "Codex",
+  "Claude Agent SDK",
+  "Opus 4.8",
+  "Slack"
+ ],
+ "numbers": [
+  {
+   "claim": "Leaderboard leader was close to 5,000 points. Ties were broken by response time, and several entries reportedly finished 3 of 3 in zero seconds, which the speakers called not possible.",
+   "t": "34:19"
+  },
+  {
+   "claim": "One entry hit a round trip of about 29 ms, which the winner attributed to running in the same region as the server.",
+   "t": "46:46"
+  },
+  {
+   "claim": "The workshop used a 25 to 30 minute hands-on window, with a hint shared every 15 to 20 minutes.",
+   "t": "12:36"
+  }
+ ],
+ "hot_takes": [
+  "Interactive prompts in CLIs that agents call fail silently. Flags alone are not enough once the flow depends on context.",
+  "A CLI used by an LLM should be deterministic. The LLM is the non-deterministic part, so do not put an agent inside the CLI.",
+  "The real test is whether a mid-tier model (Haiku or Sonnet class) can run the CLI cheaply, not whether the top thinking model can brute-force it."
+ ],
+ "relevance": [
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness drives the interactive Claude Code CLI. The talk's failure mode (silent stalls on interactive prompts) and its tmux send-keys and capture-pane approach apply directly to how the harness drives that CLI.",
+   "action": "Check whether the ProsHarness Claude Code driver detects interactive prompts (permission or approval screens) and fails loudly instead of stalling. Then prototype a JSON status side channel for the harness's own CLI commands."
+  },
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS exposes tools that agents call. The talk's determinism and side-channel guidance applies to any CLI AgentOS exposes to agents, though the talk does not address proxy or infra design.",
+   "action": "Apply the rule of a deterministic CLI with JSON output to any AgentOS command an agent is expected to call, and write a test that runs it non-interactively."
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

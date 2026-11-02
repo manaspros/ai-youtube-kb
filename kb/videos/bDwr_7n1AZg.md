@@ -1,0 +1,42 @@
+# This Framework Might Be the FUTURE of Cross-Platform Apps (Dioxus)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `bDwr_7n1AZg` · [watch](https://youtu.be/bDwr_7n1AZg) · **date:** 2026-02-02 · **length:** 7:19 · **format:** tutorial · **quality:** 2/5 · **depth:** intro
+- **speakers:** Andrus (host, as captioned) · **orgs:** Better Stack
+- **topics:** dev-tools · **tags:** rust, dioxus, cross-platform, ui-framework, wasm, hot-reload, tailwind, reqwest, serde, desktop-apps, mobile-apps
+
+> Better Stack walkthrough of Dioxus, a Rust UI framework that targets web, desktop, iOS and Android from one codebase, ending with a small Chuck Norris joke app that fetches from a REST API.
+
+## Summary
+The host presents Dioxus (captioned as "Dioxys") as a Rust-based UI framework that builds web, desktop and mobile apps from one codebase, with UI written in RSX (a JSX-like syntax) and styled with HTML/CSS. He says the 0.7 release added automatic Tailwind styling, Radix UI component support, and a new native GPU-painted renderer with an integrated debugger and Bevy integration. The tutorial installs Rust and the wasm32 toolchain, installs the dx CLI, creates a project with `dx new` (bare-bones template, Tailwind on, no router or fullstack), and runs `dx serve` for a hot-reloaded desktop app. It then builds the same app for iOS, Android and web by changing the platform flag. The final section adds async data fetching with reqwest and serde to a joke generator that loads on mount and refreshes on click. The host calls the framework early-stage and says it is still unproven against mature cross-platform stacks. The video names no benchmarks and omits the exact install commands from the narration.
+
+## Key ideas
+- **One Rust codebase targets web, desktop, iOS and Android.** — UI is written in Rust using RSX, a JSX-like syntax, and styled with HTML/CSS. The framework handles rendering on each target and provides a component and state model, hot reload, and native bundles per target. ([0:00](https://youtu.be/bDwr_7n1AZg?t=0))
+- **Version 0.7 is the release the host highlights.** — It adds automatic Tailwind styling and Radix UI component support. It also introduces a new native renderer that paints apps entirely on the GPU, with an integrated debugger that works on all built targets and integration with the Bevy game engine. The captions spell the renderer name inconsistently, so the exact name is unverified. ([0:00](https://youtu.be/bDwr_7n1AZg?t=0))
+- **Setup is a short CLI loop: install the wasm32 target, install dx, scaffold, serve.** — The host says the wasm32 toolchain is installed with two commands and the Dioxus CLI with one, then checks `dx --version`. `dx new <name>` prompts for a template. He picks bare-bones, no fullstack or router, Tailwind on, no AI prompts, and desktop as the base target. `dx serve` launches the app. ([1:20](https://youtu.be/bDwr_7n1AZg?t=80))
+- **Hot reload covers markup edits, but signature changes trigger a full reload.** — Removing or editing elements updates the running desktop app immediately. Adding a prop to a component's function signature (a name parameter passed from the app function) causes a full reload, which the host says is still fast. ([3:19](https://youtu.be/bDwr_7n1AZg?t=199))
+- **Other targets come from the same project using a platform flag.** — iOS opens the simulator automatically. Android needs an emulator already running before the app installs. Web runs in the browser. The host stresses fast compile times but gives no measurements. ([3:19](https://youtu.be/bDwr_7n1AZg?t=199))
+- **Async data fetching needs two crates and a serde struct.** — reqwest handles the HTTP call and serde derives deserialization. The joke API response has a value key (joke text) and an icon URL key, and a struct with serde derive maps them. A JokeDisplay component holds the two values, a fetch_joke method sets them from a random joke, and a generate method is wired to the button click. ([4:15](https://youtu.be/bDwr_7n1AZg?t=255))
+- **Loading the first result on mount uses a React-style effect.** — A use-effect hook runs fetch_joke when the component mounts, so the app shows a joke at launch. The component is then added to the root app tree. ([5:28](https://youtu.be/bDwr_7n1AZg?t=328))
+- **The host's verdict is cautious optimism.** — He calls the framework impressive with strong potential and says it is early days, with maturity relative to established cross-platform stacks still to be seen. The argument rests on Rust's low-level strengths, not on measured results. ([6:23](https://youtu.be/bDwr_7n1AZg?t=383))
+
+## Techniques
+- **Dioxus project bootstrap and multi-target dev loop** — 1) Install Rust. 2) Install the wasm32 toolchain (narration says two commands; the commands are not shown). 3) Install the Dioxus CLI (one command, not shown). 4) Verify with `dx --version`. 5) `dx new <app-name>`: choose the bare-bones template, no fullstack, no router, add Tailwind, no AI prompts, desktop base target. 6) `cd` into the project and run `dx serve`. 7) For other targets, rerun `dx serve` with the platform flag set to ios, android or web. Start the Android emulator before serving. The flag name is spoken as 'platform', so `--platform` is inferred. *When:* Starting a new Rust UI app that must ship to several platforms, or evaluating Dioxus quickly. The hot-reload loop is the main draw for iteration.
+- **Props and hot-reload behaviour** — Pass a value into a component through its function signature (e.g. a name parameter on a hero component, supplied as 'Joe' from the app function) and render it in a new P tag. Expect hot reload for markup and text edits, and a full reload for signature changes. *When:* Iterating on component layout and text. Plan on full rebuilds when you change component props.
+- **Fetch JSON into a typed struct with reqwest and serde** — Add reqwest (HTTP client) and serde (deserialization) as dependencies. Define a struct with the serde derive and fields for the response keys you need (value for the joke text, and an icon URL field). Use a fetch method to request the endpoint and deserialize the response into the struct, then write the fields into component state. *When:* Adding a REST data source to a Dioxus UI. The same pattern applies to any JSON endpoint.
+- **Component state with a fetch-on-click and fetch-on-mount** — Build a component (JokeDisplay) holding state variables for each response field. Define fetch_joke, which requests a random joke and sets the fields. Define generate, which calls fetch_joke and is bound to a button's onclick. Render the icon, the text box and the button. Call fetch_joke from a use-effect hook so the first item loads on mount, then add the component to the root tree. *When:* Any UI that should show initial data on load and refresh on user action. The effect hook plays the role of React's useEffect.
+
+## Numbers
+- No benchmarks or timing figures are given. Compile speed is described only as 'blazingly fast' and 'so elegant'. ([3:19](https://youtu.be/bDwr_7n1AZg?t=199))
+- Dioxus 0.7 is the newest release cited. ([0:00](https://youtu.be/bDwr_7n1AZg?t=0))
+- Video length 7:19. ([0:00](https://youtu.be/bDwr_7n1AZg?t=0))
+
+## Hot takes
+- The title says this 'might be the FUTURE of cross-platform apps'. The video offers no measured comparison to other frameworks, and the host admits it is early days and still to be tested against mature stacks.
+- The one-file, one-codebase, 'blazingly fast' claims are asserted, not demonstrated. Only the web and desktop targets are shown running. iOS and Android are described but not shown working.
+- The setup omits the actual install commands for the wasm32 target and the CLI, so the video cannot be followed step by step without outside docs. Quality is capped at 2 for a hype title with thin specifics.
+
+## Tools mentioned
+Dioxus (0.7 cited), dx (Dioxus CLI), Rust, wasm32 toolchain, RSX, Tailwind CSS, Radix UI, Dioxus native GPU renderer (name unverified in captions), Bevy, reqwest, serde, Chuck Norris joke API (unnamed REST endpoint), iOS Simulator, Android emulator
+
+## Relevance to our work
+- **prosharness** (1/3): ProsHarness has phone-driven approvals. A single codebase targeting iOS and Android is a possible stack for that UI, but the video shows only desktop and web running and no mobile results. → *If ProsHarness's phone approval UI needs a native client, check Dioxus's iOS and Android docs against the alternatives before choosing a stack. No change needed now.*

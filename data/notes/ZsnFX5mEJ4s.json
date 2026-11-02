@@ -1,0 +1,247 @@
+{
+ "one_line": "Kai argues that OpenRouter \"nerfed model\" complaints are mostly not quantization. The real causes are price-sorted provider routing, silent context and output caps, tool-call failures and cache pricing. Fix them by pinning providers and logging which endpoint served each request.",
+ "summary": "The speaker's document-summarizing agent gave weak output on DeepSeek V4 Pro through OpenRouter, and online threads blamed quantization. He argues the main cause is that OpenRouter routes each request to one of many third-party providers, by default weighted toward the lowest listed price. Providers differ in precision labels, context windows, max output tokens, tool-call reliability and cache pricing, and none of these differences are surfaced in the price-sorted choice. He cites counts from the Endpoints API across 335 endpoints and 54 providers, plus an Artificial Analysis per-endpoint accuracy gap on GLM 5.2 (100% vs 73% at the same FP4 label). He concedes that a real FP4 downgrade does happen for GLM 5.3, which ships natively in FP8. His fix is a provider block in the request body that pins trusted providers, requires supported parameters, sets max_tokens explicitly and optionally sets a quantization floor. He also recommends checking the activity log for the serving provider of any bad output.",
+ "speakers": [
+  "Kai (host of Kai Explains; name not stated in transcript)"
+ ],
+ "orgs": [
+  "OpenRouter",
+  "Novita",
+  "DeepInfra",
+  "Together",
+  "Morph",
+  "Relace",
+  "DigitalOcean",
+  "Nebius",
+  "Z.ai (ZAI)",
+  "Moonshot",
+  "OpenAI",
+  "DeepSeek",
+  "Meta",
+  "Artificial Analysis",
+  "Epoch.ai"
+ ],
+ "format": "review",
+ "topics": [
+  "infra-cost-scaling",
+  "token-cost-efficiency",
+  "inference-serving"
+ ],
+ "tags": [
+  "openrouter",
+  "provider-routing",
+  "quantization",
+  "fp4",
+  "fp8",
+  "context-window",
+  "max-output-tokens",
+  "tool-calling",
+  "prompt-caching",
+  "llm-gateway",
+  "endpoint-selection",
+  "agent-reliability"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Symptoms of a 'nerfed' model on OpenRouter are usually endpoint selection, not quantization",
+   "detail": "The speaker's summarization agent gave short outputs and missed a system-prompt instruction on DeepSeek V4 Pro. He says the quantization theory is mostly wrong and the real cause is what the router picked.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Default routing is a weighted lottery on price",
+   "detail": "OpenRouter forwards each request to one of many providers (it takes a 5.5% cut). By default it uses inverse-square price weighting, so a $1/M provider is 9x as likely to be chosen as a $3/M one.",
+   "t": "2:24"
+  },
+  {
+   "idea": "Precision labels are a weak signal",
+   "detail": "Of 335 endpoints across 54 providers for 27 open-weight models, 54 are labelled 4-bit and 120 (35%) are UNKNOWN. Labs ship some models natively in 4-bit (Kimi K3 MXFP4, gpt-oss MXFP4, DeepSeek V4 Pro expert dtype FP4), so an FP4 label can just mean the original weights.",
+   "t": "3:40"
+  },
+  {
+   "idea": "Same precision label can still mean very different accuracy",
+   "detail": "Artificial Analysis scored each endpoint separately. On GLM 5.2 both Nebius and DeepInfra are labelled FP4, yet Nebius scored 100% and DeepInfra 73%. The cheapest Kimi K3 endpoint (Morph) is FP8, so it runs more bits than the lab shipped.",
+   "t": "5:03"
+  },
+  {
+   "idea": "Context window and max output caps silently truncate reasoning",
+   "detail": "Novita serves Llama 3.3 70B with 12,288 context against Meta's 131,072. Together caps output at 2,048 tokens. A reasoning model cut off mid-thought returns a half-formed answer without saying it was truncated, so it looks dumb.",
+   "t": "6:22"
+  },
+  {
+   "idea": "Tool-call routing was a real routing bug that OpenRouter fixed by default",
+   "detail": "Exacto (October last year) routed tool calls by reliability. In March it became AutoExacto, on by default for requests with tools. Published figures: GLM-5 tool-call errors fell 88% (about 8% to 1%). Across endpoints, 26 cannot call tools at all.",
+   "t": "7:44"
+  },
+  {
+   "idea": "Price sort ignores cache pricing and real usage ratios; only tool-using requests get AutoExacto",
+   "detail": "The formula sorts on a list-price blend weighted about 95:5 input:output, while real usage is closer to 6:1. It ignores cache-hit pricing, where DeepSeek's endpoint has a 94.5% hit rate against 51-69% for most third parties. About 85% of requests (no tools) still route purely by price.",
+   "t": "9:02"
+  },
+  {
+   "idea": "Quantization is a real problem in one case: GLM 5.3",
+   "detail": "GLM 5.3 ships in FP8. 11 of its 42 endpoints are tagged FP4 or NVFP4, and most of those charge the same as Z.ai's full-precision endpoint. The discount went to the provider, not the user.",
+   "t": "10:28"
+  },
+  {
+   "idea": "Pin providers, require parameters, set max_tokens, and check the served endpoint per request",
+   "detail": "The fix is a provider object in the request body: order for trusted providers, require parameters set to true, an explicit max_tokens, and an optional quantizations floor. Price sorting and floor suffixes opt out of AutoExacto. The activity log records which provider served each request.",
+   "t": "11:50"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Pin trusted providers with provider.order",
+   "how": "Add a provider object to the request body. Set order to a list of providers you have verified. The speaker describes the whole fix as about four lines of JSON; the key names here are as he names them (order, require parameters, quantizations, max tokens) and should be checked against OpenRouter's docs.",
+   "when": "Chat or pipeline work where you know which provider gives acceptable quality. Use it for volume workloads and agents, where the cheapest-listed endpoint is a bad default."
+  },
+  {
+   "name": "Require supported parameters and set max_tokens explicitly",
+   "how": "Set require parameters to true so endpoints that cannot honour the seed, max tokens or tool definitions are skipped. Set max_tokens explicitly so the router only considers providers that can write an answer that long.",
+   "when": "Any reasoning model or long-output job where a silent output cap would cut the answer short. Also any request that depends on a specific seed or tool schema."
+  },
+  {
+   "name": "Set a precision floor with quantizations",
+   "how": "Use the quantizations field with a minimum bit depth. It filters out real downcasts on models whose original weights are higher precision (the speaker's example is GLM 5.3 at FP8). Using it opts out of AutoExacto.",
+   "when": "Only when the model's native precision is known to be higher than the cheapest endpoint's, and you have checked the model config or repo."
+  },
+  {
+   "name": "Leave tool-call requests on default AutoExacto",
+   "how": "Do not add a price sort or floor suffix to requests that include tools. Those requests get AutoExacto routing by default. Use explicit pinning for chat requests instead.",
+   "when": "Any agent or workflow that sends tool definitions."
+  },
+  {
+   "name": "Audit the served provider per request",
+   "how": "Open the OpenRouter activity log for the request, or use the session ID of a bad output, to see which provider and endpoint served it and what it charged. Compare that with the endpoint's context window and max output limits.",
+   "when": "After any bad or truncated output, before blaming the model or quantization."
+  },
+  {
+   "name": "Check endpoint caps before choosing a provider",
+   "how": "Compare each endpoint's context window, max output tokens and tool support with the model's published limits. The speaker's rule of thumb is that the output cap must exceed the model's reasoning length; he cites Epoch.ai as needing over 32,000 tokens on a hard benchmark question.",
+   "when": "Before deploying a reasoning model through a multi-provider router."
+  },
+  {
+   "name": "Rank providers by effective cost, not listed price",
+   "how": "Estimate cost from the real input:output ratio of your traffic (about 6:1 in his cited data, not 95:5), and include cache-hit pricing for repeated system prompts. The speaker's example is DeepSeek's endpoint ranking first on invoice cost but tenth on list price.",
+   "when": "Agents that resend the same long system prompt on every turn."
+  }
+ ],
+ "tools": [
+  "OpenRouter",
+  "DeepSeek V4 Pro",
+  "DeepSeek V4.1 Flash",
+  "Kimi K3",
+  "GLM 5.2",
+  "GLM 5.3",
+  "GLM-5",
+  "GPT-OSS-120B",
+  "Llama 3.3 70B",
+  "Novita",
+  "DeepInfra",
+  "Together",
+  "Morph",
+  "Relace",
+  "DigitalOcean",
+  "Nebius",
+  "Artificial Analysis",
+  "Epoch.ai",
+  "Exacto",
+  "AutoExacto",
+  "MXFP4",
+  "NVFP4",
+  "NVIDIA B200 GPU"
+ ],
+ "numbers": [
+  {
+   "claim": "OpenRouter forwards requests to providers and takes a 5.5% cut",
+   "t": "1:08"
+  },
+  {
+   "claim": "Inverse-square price weighting: a $1/M provider is 9x as likely to be picked as a $3/M one",
+   "t": "2:24"
+  },
+  {
+   "claim": "Endpoints API: 335 endpoints, 54 providers, 27 open-weight models; 54 endpoints at 4-bit labels; 120 endpoints (35%) labelled UNKNOWN",
+   "t": "3:40"
+  },
+  {
+   "claim": "GLM 5.2 accuracy by endpoint (Artificial Analysis): Nebius 100%, DeepInfra 73%, both labelled FP4",
+   "t": "5:03"
+  },
+  {
+   "claim": "Morph's Kimi K3 endpoint is FP8 and charges 39% less on output than the alternative",
+   "t": "5:03"
+  },
+  {
+   "claim": "Llama 3.3 70B at Novita: 12,288 context vs Meta's 131,072 (about 9%)",
+   "t": "6:22"
+  },
+  {
+   "claim": "Together caps output at 2,048 tokens; DigitalOcean caps GPT-OSS-120B output at 4,096",
+   "t": "6:22"
+  },
+  {
+   "claim": "Epoch.ai: a hard benchmark question needs over 32,000 tokens, so a 4,096 cap allows about one-eighth of that",
+   "t": "6:22"
+  },
+  {
+   "claim": "Across 335 endpoints: 27 under half the model's context window, 19 with output caps of 16,384 or less, 26 unable to call tools",
+   "t": "7:44"
+  },
+  {
+   "claim": "Exacto/AutoExacto: GLM-5 tool-call errors fell 88% (about 8% to 1%); GPT-OSS-120B 5.6% to 3.5%",
+   "t": "7:44"
+  },
+  {
+   "claim": "About 15% of users include tools in requests, so about 85% of requests route purely by price",
+   "t": "9:02"
+  },
+  {
+   "claim": "Price sort blends input and output at about 95:5, while real usage is about 6:1",
+   "t": "9:02"
+  },
+  {
+   "claim": "Cache-hit rate: DeepSeek endpoint 94.5% vs 51-69% for most third-party providers",
+   "t": "9:02"
+  },
+  {
+   "claim": "Researcher Tarun Chitra's estimate of value lost to the price-sort misalignment: about $3.5M per year (secondhand)",
+   "t": "9:02"
+  },
+  {
+   "claim": "GLM 5.3 (native FP8): 11 of 42 endpoints labelled FP4 or NVFP4; Z.ai charges $1.40/M in and $4.40/M out; 7 of the 11 charge $4.40 or more out, one $4.84",
+   "t": "10:28"
+  },
+  {
+   "claim": "Novita serves GLM 5.3 at full FP8 for about 30% of the lab's price",
+   "t": "10:28"
+  },
+  {
+   "claim": "One compressed GLM 5.3 copy frees nearly two B200 GPUs worth of VRAM",
+   "t": "10:28"
+  }
+ ],
+ "hot_takes": [
+  "Quantization labels are a weak signal. FP4 can just mean the lab's native weights, and 35% of endpoints say UNKNOWN; check the model config instead.",
+  "The headline ('model is quietly nerfed') is contradicted by the speaker's own GLM 5.3 example, where a real FP4 downgrade happened at unchanged prices.",
+  "The problem is the default routing: price-sorted selection costs quality and money at volume, and chat use with a few hundred messages a month is unaffected.",
+  "The $3.5M/year figure is a single researcher's estimate relayed secondhand, as are the Artificial Analysis and DeepInfra engineer quotes."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 3,
+   "why": "The Govrix Scout L1 proxy already has strategy routing and budgets. This talk shows cheapest-listed routing silently degrades agent quality (caps, tool errors, cache pricing) and that provider choice needs pinning and per-request logging.",
+   "action": "In the Scout strategy router, rank upstream candidates by effective cost (blended input:output from real traffic, cache-hit pricing) rather than list price. Add a provider allowlist, require-params and max_tokens checks, and log the served endpoint, context and output caps with each request in the Merkle audit log."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI, which uses Anthropic directly. The routing lesson applies only if a run is routed through a multi-provider proxy.",
+   "action": "Only if ProsHarness is ever pointed at a multi-provider router, record the serving endpoint and max output setting on each checkpoint. Otherwise skip."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

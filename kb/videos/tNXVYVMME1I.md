@@ -1,0 +1,44 @@
+# How does an LLM ACTUALLY Work? (Visual Breakdown)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `tNXVYVMME1I` · [watch](https://youtu.be/tNXVYVMME1I) · **date:** 2025-11-02 · **length:** 11:33 · **format:** other · **quality:** 3/5 · **depth:** intro
+- **speakers:** Andrus (host, name as it appears in the closing; auto-caption spelling uncertain) · **orgs:** Better Stack, Anthropic
+- **topics:** models-research, inference-serving · **tags:** llm-internals, transformers, self-attention, causal-masking, multi-head-attention, mlp, layer-norm, softmax, temperature, logits, mechanistic-interpretability, explainer
+
+> A visual, conceptual walkthrough of transformer internals (embeddings, layer norm, self-attention, MLP, stacking, softmax and temperature), using Brandon Bycroft's mini-LLM visualization. No code or steps; useful as grounding, not as new practice.
+
+## Summary
+Better Stack's host explains how a decoder-only LLM turns input text into a next-token probability distribution. The walkthrough covers tokenization and embeddings, layer normalization, and self-attention with query, key and value vectors plus causal masking. It then covers multi-head attention, the per-token MLP (expand, nonlinearity, project back), residual connections, and why stacking many blocks gives depth. The video ends with the logits-to-softmax step, the effect of temperature, and a list of modern changes (FlashAttention, Mixture of Experts, rotary embeddings, SwiGLU) on top of the 2017 transformer design. The content is conceptual and leans on Brandon Bycroft's visualization of a small model. It has no sponsor segment and no code or benchmarks. The Golden Gate Claude anecdote is the most memorable part but is given without a source in the video.
+
+## Key ideas
+- **An LLM is a stack of transformer blocks that repeatedly refine token vectors, and the final step predicts a probability distribution over the next token.** — Input is tokenized and embedded; blocks refine the vectors; the last vectors are projected to vocabulary size as logits, then softmax turns them into probabilities. The speaker frames the whole model as next-token prediction. ([0:00](https://youtu.be/tNXVYVMME1I?t=0))
+- **Layer normalization runs before each major step to keep activations from drifting, with learned gamma and beta parameters.** — Vectors can grow too large or too small across dozens of layers, destabilizing training. Normalization centers and scales them, and gamma and beta let the model re-stretch and shift the values. The speaker says deep networks would collapse without it. ([1:04](https://youtu.be/tNXVYVMME1I?t=64))
+- **Self-attention uses query, key and value vectors per token, and causal masking means each token only attends to earlier tokens.** — Queries are compared with keys via dot products to get similarity scores. GPT-style models use causal attention, so predicting the sixth word uses only words one to five. This left-to-right constraint is what makes generation possible. ([2:12](https://youtu.be/tNXVYVMME1I?t=132))
+- **Multi-head attention runs many attention calculations in parallel, each head capturing a different kind of relationship.** — The speaker gives grammar, long-range dependencies and subtle word associations as examples. Head outputs are concatenated, projected back to the model dimension, and added to the input through a residual connection. ([3:19](https://youtu.be/tNXVYVMME1I?t=199))
+- **The MLP (feed-forward) sublayer processes each token independently, and its nonlinearity is what makes it expressive.** — The token vector is expanded to a larger size, passed through a nonlinear activation such as GELU, then projected back down. The speaker says without the activation the whole model would collapse into a single linear transformation. ([3:19](https://youtu.be/tNXVYVMME1I?t=199))
+- **Individual MLP neurons can be highly specific; the Golden Gate Bridge example shows a near-monosemantic feature, and boosting it changed the model's outputs.** — The speaker cites a 2024 Anthropic finding that a neuron fired for the Golden Gate Bridge and related concepts, and that amplifying it made the model bring up the bridge in unrelated answers. He says most neurons are polysemantic, so such clean features are rare. ([4:45](https://youtu.be/tNXVYVMME1I?t=285))
+- **Depth gives a rough hierarchy: early layers capture local syntax, middle layers context and relations, deeper layers more abstract meaning.** — The speaker describes this as the reason stacking dozens or hundreds of blocks matters. The hierarchy is presented as a conceptual picture, not measured in the video. ([7:05](https://youtu.be/tNXVYVMME1I?t=425))
+- **Temperature reshapes the softmax distribution: low values make the model pick the likeliest token, high values give more varied output.** — The worked example gives 80% cat, 15% dog and 5% banana as illustrative probabilities. The speaker presents temperature as the dial between precise and creative generation. ([8:15](https://youtu.be/tNXVYVMME1I?t=495))
+- **Modern LLMs keep the 2017 transformer design; the changes are mostly scale plus efficiency and routing techniques.** — The speaker lists FlashAttention for faster and more memory-efficient attention, Mixture of Experts for routing each token to a few specialized subnetworks, rotary embeddings for word-order tracking in long contexts, and SwiGLU as a GELU alternative. ([9:33](https://youtu.be/tNXVYVMME1I?t=573))
+
+## Techniques
+- **Causal (left-to-right) attention masking** — Each token's attention scores are restricted to itself and earlier positions, so position n only sees positions 1 to n-1 when predicting the next token. The video describes this as the mechanism behind autoregressive text generation. No code is shown. *When:* Use as the mental model when reasoning about why decoder-only LLMs cannot use future context at generation time, for example when designing prompts or context layout.
+- **Temperature as a sampling dial** — Divide the logits by a temperature before softmax. Low temperature sharpens the distribution toward the top token; high temperature flattens it so less likely tokens get sampled. The speaker states this as the knob between precision and creativity. *When:* Pick a low setting for deterministic tasks such as extraction or classification, and a higher one for brainstorming or varied generation.
+- **Residual connections around attention and MLP sublayers** — Each sublayer's output is added back to its input, so the original signal is kept while each block refines it. The speaker describes this as the shortcut that stops the model losing information across dozens of blocks. *When:* Useful background when reasoning about why deep stacks train at all, and why hidden states can be inspected layer by layer.
+
+## Numbers
+- Illustrative next-token distribution: about 80% 'cat', 15% 'dog', 5% 'banana' (a worked example, not a measurement). ([8:15](https://youtu.be/tNXVYVMME1I?t=495))
+- Causal attention example: predicting the sixth word uses only words one through five. ([2:12](https://youtu.be/tNXVYVMME1I?t=132))
+- The speaker says the newest models are about 100x larger than the mini example, and GPT-3 is shown as large relative to it (no exact parameter counts given). ([7:05](https://youtu.be/tNXVYVMME1I?t=425))
+- The 'Golden Gate Claude' experiment was publicly available for about 24 hours (speaker's account). ([4:45](https://youtu.be/tNXVYVMME1I?t=285))
+
+## Hot takes
+- The speaker frames FlashAttention as replacing self-attention. It is an efficient way to compute the same attention, so this framing is imprecise and could mislead a beginner.
+- The 2024 Golden Gate Claude story is told as an anecdote with no citation in the video. It should be checked against the original research before being relied on.
+- Title and framing ('ACTUALLY Work') oversell a 11-minute conceptual overview; the content is accurate at a high level but does not explain training, KV caching, or inference cost.
+- Several auto-caption errors (e.g. 'casual' for causal, 'Swigloo' for SwiGLU, 'clod' for Claude) show the transcript was not proofread; the notes correct these.
+
+## Tools mentioned
+GPT-4 (named as a model), GPT-3 (named in passing, ~100x smaller than current models per the speaker), Claude (named as a model), DeepSeek (named as a model), GELU (activation function), SwiGLU (transcribed as 'Swigloo'), FlashAttention, Mixture of Experts, Rotary Embeddings, Brandon Bycroft's mini-LLM visualization (external project credited in the video)
+
+## Relevance to our work
+- **agentos** (1/3): Conceptual grounding for InferCraft's KV-cache and attention work, but the video has no serving, cache or scheduling detail. → *Skim Brandon Bycroft's mini-LLM visualization (credited at 1:04) when onboarding someone to the InferCraft attention and KV-cache docs.*

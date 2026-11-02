@@ -1,0 +1,154 @@
+{
+ "one_line": "WorkOS PM walks through letting AI agents sign up for and act inside an app safely, using AuthMD, ID-JAG identity assertions, and agent tokens scoped to a user-bounded ceiling.",
+ "summary": "Isabelle Williams (WorkOS) argues that agents are becoming the first users of apps and need a standard way to discover, register, and act on behalf of real users. She presents AuthMD, an open protocol in which a markdown file hosted at the app tells agents how to get access, while the app's own API still enforces auth. Two onboarding paths are covered: an anonymous trial mode where an agent holds a claim token that a user later redeems with a one-time code, and an identity-assisted path where the agent provider issues a signed ID-JAG (an IETF identity assertion grant) that the app verifies before deciding whether to create or link an account. A live demo shows a fresh agent-created account booking a dinner with no manual steps, after the user consents to share name and verified email. For corporate spend, she shows agent tokens whose scopes are the intersection of the invoking user's permissions and a per-agent blueprint ceiling, so an agent can move budget but cannot change budget rules, and can be revoked without ending the user's session. The talk is a vendor pitch for WorkOS Agent Auth, and the protocol claims are the speaker's, presented without measurements.",
+ "speakers": [
+  "Isabelle Williams"
+ ],
+ "orgs": [
+  "WorkOS",
+  "Anthropic",
+  "OpenAI",
+  "Cursor",
+  "Okta",
+  "IETF"
+ ],
+ "format": "talk",
+ "topics": [
+  "security-guardrails",
+  "mcp-and-tools",
+  "governance-compliance",
+  "product-ux"
+ ],
+ "tags": [
+  "agent-auth",
+  "authmd",
+  "id-jag",
+  "oauth",
+  "agent-tokens",
+  "scoped-permissions",
+  "revocation",
+  "agent-identity",
+  "product-led-growth",
+  "mcp-authorization"
+ ],
+ "key_ideas": [
+  {
+   "idea": "AuthMD is a markdown file hosted at the app that tells agents how to register and get access; it describes access and operations, but the app's API is what enforces auth.",
+   "detail": "The speaker frames AuthMD as an open protocol aimed at the agent, not the human, and stresses that enforcement stays with the application's API.",
+   "t": "1:36"
+  },
+  {
+   "idea": "Anonymous trial, then claim: an agent can act before any signup, and a user later redeems a link and one-time code to move those actions into their account.",
+   "detail": "The agent receives an access token and a claim token. After the user signs up, signs in, and enters the code, the app's OAuth server issues an access token on the user's behalf to the agent.",
+   "t": "3:08"
+  },
+  {
+   "idea": "ID-JAG (Identity Assertion JWT Authorization Grant) lets the agent provider vouch for the user's identity so the app can skip manual signup.",
+   "detail": "The agent provider signs an assertion carrying the user's name, email, and email-verified flag, scoped to a specific audience (the app) and client ID, with an expiry. The speaker notes Anthropic's enterprise MCP authorization and Okta's Cross App Access use the same spec.",
+   "t": "5:57"
+  },
+  {
+   "idea": "The app keeps full control over an incoming ID-JAG: verify the signature, then decide whether to create, link, or refuse the account and which scopes to grant.",
+   "detail": "Trust in the issuer is the app's choice. The authorization server maps the assertion to an account and hands an access token back to the agent.",
+   "t": "6:52"
+  },
+  {
+   "idea": "Live demo: a fresh agent-created account books a dinner and produces a shareable itinerary with no manual steps, after the user consents to name and verified email and to a higher-privilege booking permission.",
+   "detail": "The agent harness tries several third-party planning tools; the ones requiring a browser signup or an API key are skipped, and the app that accepts agent signup gets used.",
+   "t": "10:31"
+  },
+  {
+   "idea": "Agents should get their own tokens, not the user's token or an API key. The agent token's subject is the agent ID, and its permissions are the intersection of the user's permissions and the agent blueprint's ceiling.",
+   "detail": "This gives attribution (the action is tied to the agent acting for the user), a per-agent scope limit, and revocation without touching the user's session.",
+   "t": "14:02"
+  },
+  {
+   "idea": "Authority is split: the agent can move funds within budget rules but cannot change the budget itself; the human can. Revoking the agent leaves the human's session intact.",
+   "detail": "In the demo, the agent moved $70 toward a $250 shortfall, hit the budget ceiling, and only fixed the shortfall after the human raised the budget to $2,000.",
+   "t": "15:04"
+  },
+  {
+   "idea": "The speaker argues agent-to-service interactions (sign-up, actions, payments) need open standards to be trusted.",
+   "detail": "A call for standardization across agents and services rather than a single vendor's login, citing several standardization efforts announced in the preceding week.",
+   "t": "11:36"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "AuthMD discovery file",
+   "how": "Host a markdown file at a well-known path on your app (the speaker's example ends in /auth.md). Describe how an agent registers, how it gets access, and which API operations exist. Keep auth enforcement in the API itself, since the file only describes it. Agents read it to onboard without a browser.",
+   "when": "You want agents to self-onboard to your product, for example product-led-growth where an agent trials the app before any human signs up."
+  },
+  {
+   "name": "Anonymous trial with claim token",
+   "how": "Issue the agent an access token for limited anonymous actions plus a claim token. Give the agent a link and a one-time code to hand the user. When the user signs up, signs in, and enters the code, bind the agent's prior actions to the user's account. Then issue an OAuth access token to the agent on the user's behalf.",
+   "when": "You want the agent to prove value before asking for signup, but still need to attribute the work to a real account later."
+  },
+  {
+   "name": "ID-JAG identity assertion grant",
+   "how": "Flow: (1) the agent discovers the protected resource and authorization server via standard OAuth metadata; (2) the user consents to share name and verified email with the app; (3) the agent asks its own provider for an ID-JAG; (4) the agent sends the ID-JAG to the app's authorization server; (5) the server verifies the issuer's signature, checks the audience (the app) and client ID, and decides on account creation, linking, and scopes; (6) the agent receives an access token. Payload fields the speaker lists: issuer, user name, email, email-verified, audience, client ID, and expiry. Header carries type, signing algorithm, and key ID.",
+   "when": "The user already has a verified identity with the agent provider and you want to skip manual signup while staying in control of account decisions."
+  },
+  {
+   "name": "Blueprint ceiling with scope intersection",
+   "how": "Define an agent blueprint with the maximum scopes that agent type may ever hold. When a user invokes the agent, mint an agent token whose scopes equal the intersection of the user's current permissions and the blueprint's scopes. Set the token's subject to the agent ID and record the on-behalf-of user. Keep sensitive actions (such as changing budgets or approval rules) out of the blueprint so only the human token can perform them.",
+   "when": "Agents act on money or permissions, and you need auditable attribution, per-agent least privilege, and independent revocation."
+  },
+  {
+   "name": "Separate agent principal from user session",
+   "how": "Never hand an agent the user's session token. Issue each invocation its own token. Revoke that agent from the app's side or from the human's side without invalidating the human's session.",
+   "when": "Agents are invoked by a human but may misbehave, and you need to revoke one agent quickly without logging the user out."
+  }
+ ],
+ "tools": [
+  "AuthMD (open markdown-based agent onboarding protocol)",
+  "WorkOS Agent Auth",
+  "ID-JAG (Identity Assertion JWT Authorization Grant, IETF spec)",
+  "OAuth 2.0",
+  "MCP authorization spec (Enterprise Managed Authorization)",
+  "Okta Cross App Access",
+  "Claude (referred to as Claude / Cloud Code in the transcript)",
+  "Cursor (used to vibe-code the demo app)",
+  "Waypoint (speaker's demo travel-planning app)",
+  "Muse and Instinct (personal agents mentioned, no detail given)",
+  "Maple Itinerary and Trip Ledger (other planning tools the demo agent tried)"
+ ],
+ "numbers": [
+  {
+   "claim": "WorkOS says it is trusted by over 3,000 customers, including OpenAI, Anthropic, and Cursor (vendor claim, unverified).",
+   "t": "0:12"
+  },
+  {
+   "claim": "Demo budget: an agent moved $70 toward a $250 shortfall and was blocked by the budget ceiling; after the human raised the budget to $2,000, the agent completed the rebalance.",
+   "t": "15:04"
+  },
+  {
+   "claim": "Demo: a fresh agent-created account was set up and a dinner reservation booked with zero manual user steps (the speaker's demo, not a measured result).",
+   "t": "10:31"
+  }
+ ],
+ "hot_takes": [
+  "This is a vendor pitch from WorkOS, and the closing QR codes promote WorkOS Agent Auth, so the protocol claims need independent verification.",
+  "The demo is a staged vibe-coded app, and the single happy-path run shows no failure modes, abuse cases, or latency data.",
+  "The claim that the app should trust an agent provider's assertion that the email is verified shifts trust to the agent provider; the speaker leaves that trust decision to each app.",
+  "The speaker says ID-JAG is an IETF spec and that several major vendors use it, but gives no spec reference or adoption numbers."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The L1 proxy budgets and the PII/injection gate need a principal for each agent call; the blueprint-ceiling scoping and per-agent revocation fit AgentOS's budget and policy layer, though auth is not on the current roadmap.",
+   "action": "Design an agent-principal model for the L1 proxy: mint per-invocation tokens whose scopes are the intersection of the user's permissions and a per-agent blueprint, and tie budget revocation to that token."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs the Claude Code CLI with zero-token credential handling. The argument against passing the user's token to an agent applies directly to spawned runs and to phone-approved actions.",
+   "action": "Audit how ProsHarness passes credentials to spawned Claude Code runs and move toward a per-run, revocable, narrowed token instead of the user's session credential."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:06:23"
+}

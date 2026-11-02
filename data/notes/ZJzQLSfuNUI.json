@@ -1,0 +1,136 @@
+{
+ "one_line": "A 5-minute Better Stack walkthrough of OpenFeature, a vendor-neutral feature-flag API, showing flagd flags, device-type targeting, and an OpenTelemetry tracing hook.",
+ "summary": "The video introduces OpenFeature as a standard API and rule set for feature flags that works across languages and vendors, so switching providers (the example is LaunchDarkly to GrowthBook) should not require rewriting application code. It explains the evaluation path: the app calls the evaluation API, evaluation context is attached, before-hooks run, the provider fetches flag state from the management system, and after-hooks run before the value reaches the app. The demo wires a Python API and a React app to flagd, an open-source flag engine, using a boolean flag that defaults to false when flagd is unreachable. It then adds targeting: React passes device type (derived from window width) as evaluation context, and a targeting object in the flags JSON turns the feature off for mobile. Finally it adds the OpenTelemetry tracing hook so flag values appear on trace spans, with an OTel collector added to Docker Compose. The walkthrough is short and follows a clear sequence, but it skips the collector config and full flags JSON and gives no tradeoffs or production guidance.",
+ "speakers": [],
+ "orgs": [
+  "OpenFeature",
+  "LaunchDarkly",
+  "GrowthBook",
+  "Better Stack",
+  "OpenTelemetry"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "dev-tools",
+  "observability"
+ ],
+ "tags": [
+  "feature-flags",
+  "openfeature",
+  "flagd",
+  "opentelemetry",
+  "a-b-testing",
+  "canary-release",
+  "react",
+  "python",
+  "docker-compose",
+  "targeting"
+ ],
+ "key_ideas": [
+  {
+   "idea": "OpenFeature is a vendor-neutral standard API and rule set for feature flags, so the provider can change without rewriting app code.",
+   "detail": "The speaker's example is switching from LaunchDarkly to GrowthBook. Works across many languages.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Flag evaluation has a defined pipeline of evaluation API, evaluation context, before-hooks, provider, and after-hooks.",
+   "detail": "The provider is the adapter to any flag management system (LaunchDarkly, flagd, etc.). After-hooks run on the result before the value reaches the app.",
+   "t": "0:00"
+  },
+  {
+   "idea": "Safe defaults matter: the boolean evaluation takes a default value that is used when the flag engine is down.",
+   "detail": "The demo sets the default to false. The backend returns 404 when the flag is not found and the payment-success response when it is.",
+   "t": "1:26"
+  },
+  {
+   "idea": "Flag changes in flagd take effect without a page refresh.",
+   "detail": "The speaker edits the flags JSON while the app is open and the feature appears on the next click, with no reload.",
+   "t": "2:51"
+  },
+  {
+   "idea": "Targeting is driven by evaluation context sent from the client, which makes device-type rollouts possible.",
+   "detail": "React sends device type derived from window width. A targeting object in the flags JSON sets the flag off when device type is mobile. The speaker notes the same mechanism can use user ID, user agent, or any other value for A/B tests and canary rollouts.",
+   "t": "2:51"
+  },
+  {
+   "idea": "Flag evaluation data can be attached to OpenTelemetry trace spans through a tracing hook.",
+   "detail": "The hook fires after the provider returns the flag state. Hooks can also run before evaluation. Once the collector is in Docker Compose, each API call's trace span includes flag data.",
+   "t": "4:16"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Backend OpenFeature setup with flagd",
+   "how": "Install the OpenFeature SDK and the flagd provider in the Python API. Configure OpenFeature with a provider and a client. Get a boolean with the flag name and default false, return 404 when the flag is missing, and return the success response when it is on. Run flagd with Docker Compose and point its flags JSON at a flag with on and off variants, default variant off.",
+   "when": "Replacing hard-coded feature checks in a service so the flag source can change later without code edits."
+  },
+  {
+   "name": "React client setup with the flagd web provider",
+   "how": "Install the OpenFeature React SDK and the flagd web provider. Set the provider to flagd on localhost port 8013. Wrap the app in the OpenFeature provider component. In components, call the useFlag hook with the flag name and a default value, then render with a ternary that shows the feature only when the flag exists.",
+   "when": "Gating UI features behind a flag while the flag can be toggled live in flagd."
+  },
+  {
+   "name": "Device-type targeting via evaluation context",
+   "how": "On the client, pass an evaluation context object whose device-type field is derived from window width. In the flags JSON, add a targeting object that checks device type equals mobile and returns the off variant when it matches, and the on variant otherwise. Refresh to test each width.",
+   "when": "A/B tests or canary rollouts that need segmentation by user attribute, such as device, user ID, or user agent."
+  },
+  {
+   "name": "Flag data on OpenTelemetry traces",
+   "how": "Add the OpenTelemetry packages and an exporter function that sends trace data to the OTel collector. Install the OpenFeature tracing hook and add it to the OpenFeature client. Add an OTel collector service to docker-compose.yml with its configuration (the speaker does not show the file contents).",
+   "when": "Debugging whether a request's behaviour came from a particular flag value, by filtering traces on flag attributes."
+  }
+ ],
+ "tools": [
+  "OpenFeature",
+  "OpenFeature SDK (Python)",
+  "OpenFeature React SDK",
+  "flagd",
+  "flagd web provider",
+  "OpenTelemetry (traces)",
+  "OpenTelemetry Collector",
+  "Docker Compose",
+  "React",
+  "LaunchDarkly",
+  "GrowthBook"
+ ],
+ "numbers": [
+  {
+   "claim": "flagd is configured to listen on localhost port 8013 for the React client.",
+   "t": "1:26"
+  },
+  {
+   "claim": "Boolean flag evaluation uses default value false when flagd is unavailable.",
+   "t": "1:26"
+  },
+  {
+   "claim": "Flag variants are on (true) and off (false), with the default variant set to off.",
+   "t": "2:51"
+  },
+  {
+   "claim": "Video length is 5:25. No benchmarks, costs or adoption figures are given.",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "OpenFeature's vendor-neutral API means flag providers can be swapped without changing application code.",
+  "Title promises it will change how you deploy code, but the content is a basic setup tutorial."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "L4 observability uses OTel. Per-request flag or pillar-config values on trace spans would help debugging, but AgentOS toggles pillars through a manifest rather than a flag service.",
+   "action": "Attach the active manifest pillar settings or flag-style toggle values as attributes on OTel spans so traces show which configuration each request ran under."
+  },
+  {
+   "project": "prosharness",
+   "score": 0,
+   "why": "No overlap with checkpoint/resume, plan-critique-debate, or the Claude Code CLI wrapper.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:32"
+}

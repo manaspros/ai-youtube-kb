@@ -1,0 +1,149 @@
+{
+ "one_line": "Rafal Wilinski (Runlayer) argues agents should distill successful and failed runs into skills, serve them via MCP as a governed company-wide library, and reports a 36% to 100% success jump after one distilled skill.",
+ "summary": "The speaker frames skills as progressive-disclosure playbooks that narrow an agent's search space, and says most company know-how is lost when a session closes. He lists three problems with today's skills: they are local and developer-centric, nobody writes down hard-won procedures, and many non-developer clients do not support skills. His answer is to serve skills through a remote MCP server as the distribution layer, using tools rather than resources because resource support is inconsistent across clients. He credits the Voyager Minecraft paper for the idea of turning exploration into a reusable skill library. Runlayer's pipeline takes traces from runs, distills a skill with an LLM, and treats failed runs as the richest signal for refining it. Before a skill enters the shared library, it passes checks for prompt injection and PII. He reports a Chromium-in-Lambda task going from 36% to 100% success with Sonnet 4.6 after one distilled skill, a single anecdote with no sample size given. He closes by arguing that a company's distilled internal procedures are a moat and a hedge against model deprecation.",
+ "speakers": [
+  "Rafal Wilinski"
+ ],
+ "orgs": [
+  "Runlayer",
+  "Zapier"
+ ],
+ "format": "talk",
+ "topics": [
+  "skills-self-improvement",
+  "mcp-and-tools",
+  "security-guardrails"
+ ],
+ "tags": [
+  "agent skills",
+  "skill distillation",
+  "self-improving agents",
+  "MCP distribution",
+  "Voyager",
+  "procedural memory",
+  "skill library",
+  "prompt injection scanning",
+  "organizational knowledge",
+  "Runlayer"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Skills are playbooks loaded by progressive disclosure",
+   "detail": "The client first sees only a short skill description, then reads the full playbook into context when it judges the skill relevant. The speaker says this changes the agent's trajectory and narrows the search space.",
+   "t": "1:41"
+  },
+  {
+   "idea": "Skills have three problems: dev-centric and local, no capture of tacit knowledge, and uneven client support",
+   "detail": "Skills live as markdown, JSON, CLI commands and git repos, which suits developers but not marketing, HR, legal or finance. Most people never write down the playbook after solving a hard problem. Some clients do not support skills at all.",
+   "t": "4:15"
+  },
+  {
+   "idea": "MCP can serve as the distribution layer for skills",
+   "detail": "A remote MCP server becomes the source of truth. Clients search for skills, and the server applies policy by query and role. The speaker chose tools over resources because resource support is mixed across clients, and notes a Skills Over MCP working group.",
+   "t": "7:58"
+  },
+  {
+   "idea": "Turn exploration into reusable procedural knowledge (Voyager)",
+   "detail": "Voyager saved each discovered recipe as code in a skill library and retrieved it later instead of rediscovering it. The speaker adopts this as the core idea for his team's pipeline.",
+   "t": "10:16"
+  },
+  {
+   "idea": "Failed runs are the richest signal for sharpening skills",
+   "detail": "Successful runs make a skill more trustworthy. Failed runs expose missing guardrails, missing libraries and edge cases, so each pass or fail feeds the distiller. The loop runs asynchronously with no human in it.",
+   "t": "11:40"
+  },
+  {
+   "idea": "Gate skills before they reach the shared library",
+   "detail": "Distilled skills are checked for prompt injection and PII before they are published. A central MCP gateway then serves the approved library to every client and agent in the company.",
+   "t": "15:17"
+  },
+  {
+   "idea": "Internal distilled procedures as a moat and a hedge against model churn",
+   "detail": "The speaker argues that models become commodities and can be deprecated or degrade, so a company's compounding library of its own procedures is harder to copy and lowers cost without switching models.",
+   "t": "16:42"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Trace-to-skill distillation",
+   "how": "After an agent run that succeeds or looks interesting, send the tool-call trace to an LLM and ask it to write a reusable skill. Store the skill for future runs.",
+   "when": "Multi-step agent tasks where the same procedure recurs, such as a deploy, rollback or a customer-handling playbook."
+  },
+  {
+   "name": "Learn from failures too",
+   "how": "Feed failed runs into the same distiller so a failure adds the missing guardrail, library or edge case to the skill. Successes raise trust in the skill and failures make it more robust.",
+   "when": "Any skill loop where you can tell success from failure, such as a verifiable task outcome."
+  },
+  {
+   "name": "Checks before publishing a skill",
+   "how": "Scan each distilled skill for prompt injection and PII before it enters the shared library.",
+   "when": "Any setup where agents write content that other agents will later load into context."
+  },
+  {
+   "name": "Remote MCP skill registry with tool-based access",
+   "how": "Expose skill search and retrieval as MCP tools on a central server, with policy applied per role or query, so any MCP client can use the skills.",
+   "when": "Mixed client fleets where some clients (non-developer chat apps) cannot load local skill files or do not support MCP resources."
+  },
+  {
+   "name": "Group similar runs before distilling",
+   "how": "Cluster similar runs first, then distill one skill from the group rather than from a single run.",
+   "when": "When many runs cover the same problem and you want a more general skill."
+  }
+ ],
+ "tools": [
+  "MCP",
+  "Claude Sonnet 4.6",
+  "Voyager",
+  "Chromium",
+  "AWS Lambda",
+  "npx skills"
+ ],
+ "numbers": [
+  {
+   "claim": "Success rate on a Chromium-fork-in-AWS-Lambda task rose from 36% to 100% after one distilled skill was added to future runs (Sonnet 4.6). Single anecdote, no sample size given.",
+   "t": "12:31"
+  },
+  {
+   "claim": "Runlayer scans thousands of skills every day and reports unsafe content in them.",
+   "t": "5:40"
+  },
+  {
+   "claim": "METR-style time-horizon chart cited for longer agent task horizons. No numeric value given in the talk.",
+   "t": "3:02"
+  },
+  {
+   "claim": "Speaker reports skills cut tool calls, explored branches and token/money spend. Qualitative, no figures.",
+   "t": "13:50"
+  }
+ ],
+ "hot_takes": [
+  "MCP is not dead. It is the best distribution layer for skills, because it works across almost every client.",
+  "Failed runs are more valuable than successful ones for building skills.",
+  "The moat is not the model. It is the company's own distilled library of how work gets done.",
+  "Installing skills with npx is a security hazard, since skills can carry prompt injections and scripts."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 3,
+   "why": "Maps directly onto L2D SkillForge (mine agent telemetry into governed, reusable skills). The talk answers SkillForge's open question about the success signal, saying success and failure both count and a failed run is the richest signal. It also offers a concrete gate (injection and PII checks) before a skill is published, which lines up with Govrix scanning.",
+   "action": "Add a SkillForge distillation job that reads traces from both successful and failed runs, emits a candidate skill, and gates it with the existing Govrix injection and PII scanner before it enters the library. Measure success rate before and after on one fixed task."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness already has skill ranking and checkpoint/resume around Claude Code runs. Distilling a skill from each completed or failed harness run would be a cheap extension of that.",
+   "action": "After each ProsHarness run ends, distill a candidate skill from the trace (pass or fail) and store it as a draft that skill ranking can score before promotion."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Progressive disclosure of playbooks and the Voyager-style skill library are a useful framing for context engineering, though the talk gives no implementation detail.",
+   "action": ""
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

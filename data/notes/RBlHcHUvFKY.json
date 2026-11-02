@@ -1,0 +1,175 @@
+{
+ "one_line": "Hands-on walkthrough of OpenAI's new drag-and-drop Agent Builder, used to build a GitHub PR code-review agent; covers guardrails, structured outputs, MCP, widgets and evals, with bugs noted and a verdict that it does not yet replace n8n.",
+ "summary": "The host builds a GitHub pull-request code-review agent in OpenAI's new Agent Builder, a visual drag-and-drop workflow editor on the OpenAI platform, and walks through each node. The workflow runs a guardrails check on input, extracts owner, repo and pull number as structured JSON, gates on an if/else check, reshapes data with transform nodes, fetches the diff through a GitHub MCP server, runs a review agent with file search and web search, and ends with a final agent that returns an interactive widget. The host calls out guardrails with configurable moderation and jailbreak checks, JSON-schema outputs, an AI-assisted widget builder and a trace-based evaluate tab with graders as the most useful features. He also reports several first-week problems: a required-field toggle that breaks the workflow, a GitHub MCP call that stopped working mid-demo so he substituted a fake diff server, and an Agents SDK that does not yet run workflows containing MCP nodes. His verdict is that n8n is not yet threatened, since n8n offers non-AI flows, non-MCP integrations, sharing and self-hosting, while the Agent Builder mainly targets OpenAI models and so creates model lock-in. The evidence is one person's single demo with no metrics, costs or latency figures.",
+ "speakers": [],
+ "orgs": [
+  "OpenAI",
+  "GitHub",
+  "Zapier",
+  "n8n"
+ ],
+ "format": "review",
+ "topics": [
+  "agent-architecture",
+  "mcp-and-tools",
+  "pr-code-review"
+ ],
+ "tags": [
+  "openai-agent-builder",
+  "visual-workflows",
+  "n8n-comparison",
+  "guardrails",
+  "structured-output",
+  "json-schema",
+  "mcp",
+  "github-mcp-server",
+  "chatkit",
+  "widgets",
+  "evals",
+  "graders",
+  "transform-nodes",
+  "model-lock-in"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Agent Builder is a visual workflow editor on the OpenAI platform, positioned against n8n and Zapier, with six starter templates.",
+   "detail": "Nodes are Start (text input plus typed variables), Agent (model plus prompt), tools (file search, guardrails, MCP) and logic nodes for multi-step flows. The host loaded a PR review workflow he had built earlier.",
+   "t": "0:00"
+  },
+  {
+   "idea": "A workflow can return a widget instead of text, giving an interactive component inside the chat.",
+   "detail": "The final agent in the demo picks a meme from the code review and renders it as a widget. Widgets are part of ChatKit.",
+   "t": "1:09"
+  },
+  {
+   "idea": "The guardrails node runs checks on user input or model output, and each check is configurable.",
+   "detail": "Options include moderation, jailbreak, personal-information and hallucination checks. The jailbreak check lets you choose the checking model and a confidence threshold. A failed check routes to a short agent that sends a warning message and ends the flow.",
+   "t": "2:30"
+  },
+  {
+   "idea": "Structured extraction uses a JSON output format with a schema, and the required toggle is buggy.",
+   "detail": "The extraction agent pulls owner and repo as strings and pull number as a number from the chat, and the schema fields carry descriptions. Unticking required breaks the whole workflow, so every field stays required. An AI button can generate the schema.",
+   "t": "3:48"
+  },
+  {
+   "idea": "Transform-data nodes are needed to flatten nested outputs into the exact input schema an MCP tool expects.",
+   "detail": "Hovering the connector path shows the target input schema. The upstream output was a nested object, so a select-based mapping pulled the pull number out to the flat field the MCP tool requires.",
+   "t": "4:43"
+  },
+  {
+   "idea": "MCP nodes can reach OpenAI-curated and third-party servers, or any server that speaks streamable HTTP, but a live dependency is fragile.",
+   "detail": "Setting require approval to never makes the step fully automated. The GitHub MCP server stopped working during recording, so the host built a fake diff server that returned the diff he already knew.",
+   "t": "5:44"
+  },
+  {
+   "idea": "Context control matters for a reviewer agent: the review agent has include-chat-history turned off, so it only sees the prompt and the diff.",
+   "detail": "The agent uses multiple instruction steps with user or assistant roles. Tools are a Context7 MCP server, a file-search vector store holding code best practices, and web search. The host says the aim is to keep irrelevant context out of the review.",
+   "t": "6:53"
+  },
+  {
+   "idea": "The Evaluate tab shows traces of recent runs, and graders written as plain-language prompts run across all of them for pass/fail.",
+   "detail": "Example graders are whether the agent performed a code review and whether it was polite. Publish pushes the draft to the production API. The Code button offers ChatKit or the Agents SDK, and the Agents SDK does not yet support workflows with MCP nodes.",
+   "t": "9:10"
+  },
+  {
+   "idea": "The bigger risk is lock-in: the Agent Builder is built around OpenAI models, so switching to another provider's model is harder than in n8n.",
+   "detail": "The host expects people to combine n8n or Zapier with the Agent Builder, since n8n has non-AI flows, non-MCP integrations, shareable workflows and self-hosting.",
+   "t": "10:02"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Input guardrail with a fail branch",
+   "how": "In the guardrails node, enable moderation and jailbreak checks on the user input, choose the jailbreak model and confidence threshold in each check's settings, then route the fail path to a small agent (GPT-4.1 in the demo) that returns a friendly warning and ends the workflow.",
+   "when": "Any user-facing agent that accepts untrusted text and must block abusive or injected prompts before tools run."
+  },
+  {
+   "name": "Structured extraction gate before tool calls",
+   "how": "Set the agent's output format to JSON and define a schema with typed fields (owner string, repo string, pull number number), each with a description. Follow it with an if/else node whose CEL expression checks for empty strings and a zero number, and only continue to tool nodes when the check passes.",
+   "when": "Pipelines where a tool needs validated parameters extracted from free-form user text, and missing values should stop the flow early with a clear message."
+  },
+  {
+   "name": "Transform node to flatten nested outputs for a tool",
+   "how": "Click the connector path between two nodes to see the target input schema. Add a transform-data node and map each required flat key (e.g. pull number) from the nested upstream object using the select picker.",
+   "when": "The upstream output is nested, but the downstream MCP or function tool needs flat named parameters."
+  },
+  {
+   "name": "Isolated reviewer context",
+   "how": "On the review agent, turn off include chat history, put the fixed review instructions in a user message, and add the diff as a separate user message. Use multiple instruction steps for ordering. Keep unrelated tool output out of the reviewer context.",
+   "when": "A reviewer or critic agent should judge only the artifact (diff, document, plan) and not inherit the whole conversation or prior tool dumps."
+  },
+  {
+   "name": "Natural-language graders over traces",
+   "how": "Run the workflow a few times, open Evaluate to see the traces, then add a grader with a plain-language criterion such as whether the agent performed a code review or stayed polite. Run it across all traces and read the pass/fail result.",
+   "when": "Quick regression checks on a no-code or low-code workflow before a deeper eval harness exists."
+  },
+  {
+   "name": "Widget output from a final agent",
+   "how": "Set the final agent's output format to widget. Open the widget builder, describe the component in a prompt (the AI generates it), then preview the widget JSON. The output renders as an interactive card in chat.",
+   "when": "The end result is better shown as a card (a status, a chart, a choice) than as plain text."
+  },
+  {
+   "name": "Adding a custom MCP server",
+   "how": "In the MCP node, choose Add for the curated list, or Server to enter a URL and auth for any server that supports streamable HTTP. Pick the tools to expose and set require approval to never for unattended steps.",
+   "when": "Connecting a remote tool server to a visual workflow without writing a client, if the server supports streamable HTTP."
+  }
+ ],
+ "tools": [
+  "OpenAI Agent Builder",
+  "ChatKit",
+  "Agents SDK",
+  "Apps SDK",
+  "GitHub MCP server",
+  "Context7 MCP server",
+  "GPT-5",
+  "GPT-4.1",
+  "OpenAI vector store (file search)",
+  "web search tool",
+  "code interpreter",
+  "n8n",
+  "Zapier",
+  "CEL (common expression language, if/else conditions)"
+ ],
+ "numbers": [
+  {
+   "claim": "Six starter templates offered in Agent Builder.",
+   "t": "0:00"
+  },
+  {
+   "claim": "The code review step runs on GPT-5 with reasoning, so it is the slowest step; the fail-path agent uses GPT-4.1.",
+   "t": "1:09"
+  },
+  {
+   "claim": "The extraction schema has 3 fields: owner (string), repo (string), pull number (number).",
+   "t": "3:48"
+  },
+  {
+   "claim": "The demo prompt is just the word review followed by a GitHub PR link; no benchmarks, costs, token counts or latency figures are given.",
+   "t": "1:09"
+  }
+ ],
+ "hot_takes": [
+  "Agent Builder is not an n8n killer for now: it is focused on OpenAI models, with no non-MCP integrations, no sharing or self-hosting, and no non-AI flows [9:10].",
+  "The bigger risk is model lock-in to OpenAI, which matters more than the missing features [10:02].",
+  "Early-stage bugs (the required-field toggle breaking the flow, the MCP call failing live, the Agents SDK missing MCP support) should be expected to be fixed within about a week [3:48] [5:44] [9:10].",
+  "Evidence is one hands-on demo with no metrics; treat the verdict as a single practitioner's first impression."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "The guardrails node (moderation, jailbreak and PII checks with per-check model and confidence threshold, applied to input or output) parallels the L1 PII and prompt-injection scan in Govrix Scout.",
+   "action": "Compare Govrix's PII and prompt-injection thresholds against OpenAI's guardrail settings, specifically where checks run (input vs output) and how a failed check is routed."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Turning off include-chat-history so a reviewer sees only the diff and a fixed prompt is a context-isolation pattern for critique steps. Trace graders written as plain-language prompts are a cheap check for plan-critique output.",
+   "action": "Try a context-isolated critic step in ProsHarness's plan-critique stage that sees only the plan and a fixed rubric, and check its output with a plain-language grader over recent runs."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

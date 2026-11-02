@@ -1,0 +1,155 @@
+{
+ "one_line": "AWS's Sandhya Subramani demos an agent that writes its own tools and sub-agents at runtime using three built-in tools (editor, shell, load-from-directory) plus a system prompt, then argues that evals and sandboxing are required before trusting it.",
+ "summary": "The speaker shows a Strands Agents setup (auto-captions say \"TransAgent\") where the agent starts with no tool files, then creates a math calculator and a character counter on the fly and uses them without a restart. The core recipe is a system prompt that defines a tool template, rules for where to write, and a check-before-write rule, plus three tools: editor, shell, and load-tools-from-directory. The same pattern is used to have the agent generate sub-agents for an itinerary task (flight, activities, itinerary), and the speaker says it can also repair its own agent after a max-token error. He lists swarm, graph and workflow as the agent patterns the generated sub-agents can use. The second half argues for trust: eight built-in evals across session goal, trace helpfulness and hallucination, tool choice and parameters, and inter-agent sequencing, plus four guardrails (sandboxed execution, constrained tools and permissions, constrained who can ask, observability). The talk is demo-driven with no benchmarks, and it is also a product pitch for Strands.",
+ "speakers": [
+  "Sandhya Subramani"
+ ],
+ "orgs": [
+  "AWS",
+  "Strands Agents (AWS open source framework)"
+ ],
+ "format": "talk",
+ "topics": [
+  "mcp-and-tools",
+  "agent-architecture",
+  "sandboxing-execution",
+  "evals"
+ ],
+ "tags": [
+  "meta-tooling",
+  "runtime-tool-creation",
+  "self-healing-agents",
+  "strands",
+  "system-prompt-as-spec",
+  "subagents",
+  "agent-patterns-swarm-graph-workflow",
+  "eval-levels",
+  "guardrails",
+  "sandboxing",
+  "self-evolving-agents"
+ ],
+ "key_ideas": [
+  {
+   "idea": "An agent can gain capabilities it was never given by writing tool files into a directory and loading them at runtime, without restarting.",
+   "detail": "The demo agent has a system prompt, three tools, and zero tool files. Asked for a math calculator, it writes one, loads it, and uses it in the same run. Asked to count characters, it writes a character counter before the speaker finishes talking.",
+   "t": "1:44"
+  },
+  {
+   "idea": "The whole capability is three generic tools plus one system prompt. The prompt is the spec.",
+   "detail": "The three tools are an editor (write files), a shell (see what exists), and a load-tools-from-directory tool (load new tools dynamically). The system prompt carries the tool template, the rules, and the instruction to check whether a tool exists before writing a new one. The speaker says it takes one line of code to wire in.",
+   "t": "5:10"
+  },
+  {
+   "idea": "The same pattern extends from tools to whole sub-agents.",
+   "detail": "With the same three tools and a sub-agent template, the agent writes flight, activities and itinerary sub-agents for a trip request, then calls them. He says sub-agents can be built as swarm (parallel), graph (handoff), or workflow (a mix).",
+   "t": "11:06"
+  },
+  {
+   "idea": "Runtime self-repair is shown as a live example, with a caveat about autonomy.",
+   "detail": "When a run hit a max-token error, the agent recognized the failure, edited its own agent definition, and retried. The speaker says that raises the stakes: an agent that edits itself needs guardrails and evals.",
+   "t": "14:18"
+  },
+  {
+   "idea": "The speaker's answer to 'can it break things' is eight evals across four levels.",
+   "detail": "Session level asks whether the end goal was reached. Trace level asks whether the answer was helpful and not made up. Tool level asks whether the right tool and parameters were used. Multi-agent level checks the order of tool and sub-agent calls and the messages between agents.",
+   "t": "15:31"
+  },
+  {
+   "idea": "Four guardrails are needed because a meta-agent that can create tools can also modify or delete things.",
+   "detail": "They are: sandboxed execution of generated code (he cites a recent Strands sandbox feature, a sandbox around the code the agent runs rather than around the whole agent), constrained tools and permissions, constrained access on who can ask what, and observability (evals, OpenTelemetry, telemetry).",
+   "t": "16:29"
+  },
+  {
+   "idea": "He frames the trajectory as tools, then agents, then self-editing source code, and says the Python Strands codebase was used to write its TypeScript port.",
+   "detail": "This is a single anecdote from the speaker, not a measured result. It is used to motivate the self-evolving agent idea.",
+   "t": "19:09"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Meta-tooling bootstrap (three tools + system prompt)",
+   "how": "Give the agent an editor tool, a shell tool to list existing tools, and a load-tools-from-directory tool. Put a tool template (a decorated function spec), storage location, and rules in the system prompt. The agent writes tool files and loads them in the same session.",
+   "when": "When you want an agent to fill capability gaps on the fly instead of failing or waiting for an engineering cycle, such as a request outside its built-in tools."
+  },
+  {
+   "name": "Check-before-write rule for generated tools",
+   "how": "The system prompt tells the agent to look for an existing tool first and create a new one only if none fits, which stops duplicate tools from piling up.",
+   "when": "Any time an agent is allowed to create tools or agents, so the tool directory does not fill with near-duplicates."
+  },
+  {
+   "name": "Self-repair on error",
+   "how": "When a run fails (the demo case is a max-token error), let the agent read its own agent file, fix it with the editor tool, and retry.",
+   "when": "For long-running or customer-facing agents where a crash should trigger a fix attempt rather than a human round-trip. Only with sandboxing and evals in place."
+  },
+  {
+   "name": "Sub-agent topology choice (swarm, graph, workflow)",
+   "how": "Ask the generating agent to split a task into sub-agents that either run in parallel (swarm), pass results along a handoff chain (graph), or combine both (workflow).",
+   "when": "When one task has independent parts that can run in parallel, or a fixed sequence where each step needs the last one's output."
+  },
+  {
+   "name": "Layered agent evals",
+   "how": "Score at four levels: whole-session goal, per-trace helpfulness and hallucination, tool selection and parameter correctness, and inter-agent call order and messages. Collect OpenTelemetry-style traces so each level can be checked.",
+   "when": "Before letting any agent create or change its own tools, since a single end-to-end pass rate hides which tool or sub-agent went wrong."
+  },
+  {
+   "name": "Four-part guardrail stack for self-modifying agents",
+   "how": "Sandbox generated code execution so it cannot touch the rest of the environment. Limit which tools and permissions are available. Limit who can ask the agent what. Keep full telemetry and evals on every run.",
+   "when": "Any time an agent can write code, delete files, or change its own definition."
+  }
+ ],
+ "tools": [
+  "Strands Agents (AWS open source agent harness, Python and TypeScript)",
+  "Python",
+  "OpenTelemetry (named as telemetry)",
+  "Strands code-execution sandbox (recent feature, named in talk)"
+ ],
+ "numbers": [
+  {
+   "claim": "Three core tools (editor, shell, load-tools-from-directory) plus one system prompt are enough for runtime tool creation. The speaker says wiring it takes one line of code.",
+   "t": "5:10"
+  },
+  {
+   "claim": "Demo creates five random tools in one run, and the itinerary demo creates 2 to 4 sub-agents (flight, activities, itinerary).",
+   "t": "9:57"
+  },
+  {
+   "claim": "Eight built-in evals across session, trace, tool, and inter-agent levels.",
+   "t": "15:31"
+  },
+  {
+   "claim": "Four guardrail categories: sandboxed environment, constrained tools and permissions, constrained access, observability.",
+   "t": "16:29"
+  },
+  {
+   "claim": "Strands was built internally about three years before the talk, and the Python version was used to write the TypeScript version. This is an anecdote, not a benchmark.",
+   "t": "19:09"
+  },
+  {
+   "claim": "Talk length 20:40. No latency, cost, or success-rate benchmarks are given.",
+   "t": "0:08"
+  }
+ ],
+ "hot_takes": [
+  "Runtime tool creation is the next step past tool calling: an agent that fails on an unsupported request should build the missing capability instead of erroring out.",
+  "The hard part of self-writing agents is not generation but control: sandboxing, permissions, and evals have to exist before the agent is allowed to edit itself.",
+  "The Python-to-TypeScript port written by the Strands codebase is a sign that agents can edit their own source code, though this is a single anecdote from a vendor talk."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "AgentOS Crucible already plans sandboxed code execution and exec-gate guardrails, and this talk says runtime-generated tools need the same controls. It does not show a new mechanism AgentOS lacks.",
+   "action": "Check whether Crucible's exec-gate would intercept a tool file an agent writes into a directory and loads at runtime. If not, add a rule that generated tools run only inside the sandbox and must pass a tool-level eval before they are loaded."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps Claude Code with checkpoint/resume, plan critique and loops. The talk's layered eval split (goal, trace, tool-call, inter-agent order) and four-part guardrail stack are a checklist for loop runs that write their own helper scripts.",
+   "action": "Read the talk's eval layers as a checklist to add a tool-call-level check (right tool, right parameters) to ProsHarness loop runs, since that is where the talk says agent failures are hardest to see."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

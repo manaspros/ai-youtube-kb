@@ -1,0 +1,63 @@
+# Do Claude Get Quietly Nerfed After Launch..(We Have Proof)
+
+- **channel:** [Kai Explains](../channels/kai.md) · **id:** `SxLUx8-hN1o` · [watch](https://youtu.be/SxLUx8-hN1o) · **date:** 2026-10-12 · **length:** 17:40 · **format:** review · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Kai (Kai Explains channel host; surname not stated in transcript) · **orgs:** Anthropic, Microsoft, Salesforce, MarginLab
+- **topics:** claude-code, evals, token-cost-efficiency, models-research · **tags:** model-regression, nerf, effort-setting, adaptive-thinking, default-settings, silent-fallback-model, token-usage, claude-code-versions, benchmark-variance, multi-turn-degradation, pricing
+
+> Claude "nerfs" are usually config changes (effort defaults, harness bugs, silent model fallback) rather than weight changes; track output tokens, tool calls and app version alongside any score.
+
+## Summary
+Kai walks through why users feel Claude models get worse after launch and argues the cause is mostly how the product is configured, not the model weights. He cites third-party trackers (LiveNerf, Nerfbench, MarginLab) and Anthropic's own docs: Opus 5.5 is benchmarked at max effort but ships at medium by default in the API and Claude Code, and a high-to-medium effort change cut output tokens 26% while the score moved less than the tracker's detection threshold. He also covers documented incidents (a routing bug, a default effort change, a system-prompt length cap, and silent fallback to other models for flagged requests), plus a SWE-Bench Pro drop traced to a Claude Code version rather than the model. The practical advice is to pin effort explicitly, turn off silent model switching, and log output tokens, tool-call counts and app version so a regression can be attributed to model, default or harness. The talk leans on single screenshots and some uncited figures, but the methodology and the data it reports are useful.
+
+## Key ideas
+- **Comparing today's model against its launch-day output cannot separate a model change from a configuration change.** — Launch-day vs. today screenshots are one sample each and miss default and harness changes. A tracker that pins Claude Code version and uses many samples per question is the more defensible method. ([2:36](https://youtu.be/SxLUx8-hN1o?t=156))
+- **Score barely moved when effort was lowered, but output tokens dropped sharply, so effort is a how-much-work dial, not a capability cut.** — Switching high to medium gave a 4.2-point score drop, below the tracker's 6.6-point detection threshold, while output tokens fell 26%. ([2:36](https://youtu.be/SxLUx8-hN1o?t=156))
+- **Benchmark headlines use max effort, but the default users get is medium for Opus 5.5 and Claude Code, and Opus 5 defaulted to high.** — A footnote says Opus 5.5 benchmark results use adaptive thinking at max effort. The API and Claude Code default is medium. Settings do not carry over automatically from Opus 5 to Opus 5.5. ([5:07](https://youtu.be/SxLUx8-hN1o?t=307))
+- **The headline 40% cost reduction for Opus 5.5 is partly a price cut and partly a default that produces fewer output tokens.** — Per-token price fell about 20% ($5/$25 to $4/$20 per million). The rest comes from roughly 25% less output work per task, which matches the effort-default token drop. On the API, restoring high effort costs about 35% more per task. Subscribers get no refund for the saving. ([6:31](https://youtu.be/SxLUx8-hN1o?t=391))
+- **Real degradations have happened, but none touched model weights; they came from routing, defaults and prompts.** — Across about 10 incidents in four write-ups, causes included a routing bug (Aug 2025), a default effort change that ran 34 days, and a 25-word cap on text between tool calls that cost about 3% on benchmarks for four days. ([9:13](https://youtu.be/SxLUx8-hN1o?t=553))
+- **Claude Code can silently switch models mid-session when a safety classifier flags a request, so the same chat can be answered by a different model.** — Cybersecurity-flagged requests rerun on Opus 4.8 and biology-flagged ones fall back to Opus 5, and the session continues there. A setting exists to pause and ask instead, which the speaker says most users do not know about. ([10:37](https://youtu.be/SxLUx8-hN1o?t=637))
+- **A daily SWE-Bench Pro tracker showed a five-day drop that was caused by a Claude Code version, not the model.** — Scores fell from a baseline of about 65% to 50-54% from May 22-26. The drop started with Claude Code 2.1.150 and persisted through 2.1.152. It recovered in 2.1.153 on May 27. Tool calls rose about 60% while input tokens stayed flat. ([11:46](https://youtu.be/SxLUx8-hN1o?t=706))
+- **Track three numbers with every score: output tokens, tool-call count and app version, to tell which layer changed.** — Output tokens dropping on the same task points to a moved default. Tool calls spiking with flat input tokens points to a harness change. Only if all three stay steady while results worsen is there evidence of a real model regression. ([12:53](https://youtu.be/SxLUx8-hN1o?t=773))
+- **Single-sample comparisons are mostly noise, and multi-turn context adds a real degradation of its own.** — Nerfbench's stated normal variance band is plus or minus 10%: its score went from 94.2% to 96.5% within two days. A Microsoft and Salesforce study over more than 200,000 simulated conversations reportedly found about 39% worse performance when tasks arrive over several turns. ([14:06](https://youtu.be/SxLUx8-hN1o?t=846))
+
+## Techniques
+- **Pin and set effort explicitly per model** — In Claude Code, run the effort command, choose a level for each model, and confirm it saved. On the API, send the effort parameter on every request instead of relying on the default. Do not assume an effort setting carries over from a previous model. *When:* Any time you compare model quality across time or models, or before blaming the model for worse output.
+- **Disable silent model switching in Claude Code** — Turn off the automatic model-switching behavior in the Claude Code config so the session pauses and asks instead of falling back. The talk does not name the exact config key. *When:* When you need to know which model actually answered, for example in audit-sensitive or regression-sensitive work. Expect more prompts.
+- **Choose effort by task type** — Use medium for well-defined, structured tasks. Use high or extra high for open-ended, multi-step work where a failure costs hours. The talk cites a Frontier Code benchmark where medium ties max and CursorBench where medium loses 5.3 points. *When:* When setting default effort for agent workloads or cost-sensitive pipelines.
+- **Mine local session logs for token and tool-call metrics** — Claude Code writes token usage to session logs on local disk. Summarise output tokens, input tokens and tool-call counts per session, grouped by Claude Code version. The talk mentions a usage tool it transcribes as 'seek usage' (name unverified). *When:* To measure quality or cost drift without rerunning prompts by hand.
+- **Regression diagnosis by three signals** — Log output tokens, tool-call count and app version for each evaluation run. If output tokens drop on the same task type, suspect a default change. If tool calls spike while input tokens stay flat, suspect a harness bug. If all three hold and results still drop, suspect a model regression. *When:* When a daily or per-release eval score moves and you need to attribute the cause.
+- **Multi-sample tracker with a detection threshold** — Use a fixed set of hard questions, filtered to those the model gets right only sometimes, with several samples per question, exact-match grading, a pinned product version and a control model. Measure the smallest detectable drop, then count only changes above it. *When:* When building an internal regression tracker or deciding whether a score change is real.
+
+## Numbers
+- LiveNerf started on Opus 5.5 launch day: 2,336 hard questions, 4 samples each, filtered to 78 sensitive questions. ([2:36](https://youtu.be/SxLUx8-hN1o?t=156))
+- Smallest real drop LiveNerf could detect in a 10-day window: 6.6 points. ([2:36](https://youtu.be/SxLUx8-hN1o?t=156))
+- High-to-medium effort: score moved 4.2 points (below threshold) while output tokens fell 26%. ([2:36](https://youtu.be/SxLUx8-hN1o?t=156))
+- Opus 5.5 effort levels: low, medium, high, extra high, max. Benchmarks use max; API and Claude Code default is medium; Opus 5 defaulted to high. ([3:43](https://youtu.be/SxLUx8-hN1o?t=223))
+- CursorBench: headline 57.8% at max vs 52.5% at medium, a 5.3-point gap. ([5:07](https://youtu.be/SxLUx8-hN1o?t=307))
+- Opus 5 priced $5/$25 per million input/output tokens; Opus 5.5 at $4/$20 (about 20% lower per token). ([6:31](https://youtu.be/SxLUx8-hN1o?t=391))
+- Headline 40% cheaper implies about 25% less output work per task at default settings. ([6:31](https://youtu.be/SxLUx8-hN1o?t=391))
+- Per task on the API: about $20 at high effort vs about $14.80 at medium, so high costs roughly 35% more. ([7:50](https://youtu.be/SxLUx8-hN1o?t=470))
+- About 10 documented quality incidents across four lab write-ups over roughly a year (speaker's count, uncited). ([7:50](https://youtu.be/SxLUx8-hN1o?t=470))
+- Aug 31 2025 routing bug: about 16% of Sonnet 4 requests hit it at the worst hour; about 30% of Claude Code users got at least one bad answer that day. ([9:13](https://youtu.be/SxLUx8-hN1o?t=553))
+- A default effort change for Opus 4.6 (high to medium, March 2026) ran for 34 days before it was addressed. ([9:13](https://youtu.be/SxLUx8-hN1o?t=553))
+- A 25-word cap on text between tool calls cost about 3% on benchmarks for two Claude models and lasted four days. ([9:13](https://youtu.be/SxLUx8-hN1o?t=553))
+- MarginLab SWE-Bench Pro: 50 tasks per day; baseline about 65%; May 22-26 scores 50, 54, 50, 50, 52. ([10:37](https://youtu.be/SxLUx8-hN1o?t=637))
+- During the drop, tool calls rose about 60% while input tokens stayed flat; Claude Code 2.1.153 (May 27) restored about 66%. ([11:46](https://youtu.be/SxLUx8-hN1o?t=706))
+- Nerfbench: 50 tasks x 3 runs per session; normal variance band plus or minus 10%. Score 94.2% (Oct 2) rose to 96.5% two days later. ([12:53](https://youtu.be/SxLUx8-hN1o?t=773))
+- Microsoft and Salesforce study over 200,000+ simulated conversations: about 39% worse on average when a task arrives over several turns. ([14:06](https://youtu.be/SxLUx8-hN1o?t=846))
+- Viral GPT-6 Astra launch-day vs. later screenshot post: 12,000 likes and 2.1 million views. ([1:25](https://youtu.be/SxLUx8-hN1o?t=85))
+
+## Hot takes
+- Lowering the default effort while benchmarking at max is a real-world consequence even if not technically a lie, because the footnote is where it lives and nobody reads footnotes.
+- On subscription plans the token saving goes to the lab, so subscribers feel a lower default before API users can measure it.
+- Launch-day vs. today screenshots are one sample each and only show variance, not regression.
+- The 'nerf' instinct is not wrong, since something did change, but the change is usually in instructions or config, not intelligence.
+- Track output tokens, tool calls and app version; that is more evidence than most public nerf arguments produce.
+
+## Tools mentioned
+Claude Code, Claude Opus 5.5, Claude Opus 5, Claude Opus 4.6, Claude Opus 4.7, Claude Opus 4.8, Claude Sonnet 4, GPT-6 Astra (as named in the talk), LiveNerf (daily tracker), Nerfbench (daily tracker), MarginLab (daily SWE-Bench Pro tracker), SWE-Bench Pro, GPQA, CursorBench, Frontier Code benchmark, usage-summary tool transcribed as 'seek usage' (name unverified)
+
+## Relevance to our work
+- **prosharness** (3/3): ProsHarness wraps the Claude Code CLI, so default effort, silent model fallback and Claude Code version drift all affect its runs directly. → *Record Claude Code version, effort level, resolved model and per-run output-token and tool-call counts in each checkpoint, so a quality drop can be attributed to model, default or harness.*
+- **agentos** (2/3): AgentOS already has telemetry, budgets and observability layers, and the talk's regression-attribution method fits that telemetry. → *Add output-token, tool-call-count and model-version fields to per-request telemetry, and add a fixed-task-set regression tracker with multiple samples per question and a detection threshold.*
+- **general** (2/3): Recurring interests include Claude Code workflows and evals, and this talk gives a concrete method for separating drift from real regression. → *Pin effort explicitly and log output tokens, tool calls and app version alongside any Claude Code eval score before trusting a trend.*

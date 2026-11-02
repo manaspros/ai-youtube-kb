@@ -1,0 +1,177 @@
+{
+ "one_line": "A team rebuilds a Nano Banana image skill for Claude Code, then shows the skill-design fixes that mattered: trigger-rich descriptions, progressive disclosure, scripts, validation gates and error tables.",
+ "summary": "The AI LABS team built a Claude Code skill that has Claude write image prompts and file names while Google Antigravity generates the images into a shared public folder. They say their first version failed in predictable ways: skills loaded when not needed, square-only image output, skipped verification, and missing error handling. Their fixes were to write descriptions with trigger phrases and negative triggers, split the workflow into SKILL.md plus references, and move repeatable operations into CLI scripts with preview modes. They added structural and aesthetic validation gates with regenerate-on-fail loops, and an error/cause/fix format for known failure modes. The video is a practitioner walkthrough of skill design, not a benchmark study. Quality is capped at 2 because of a sponsor segment, and the claims are from one team's anecdotal experience.",
+ "speakers": [],
+ "orgs": [
+  "Anthropic",
+  "Google",
+  "AI LABS"
+ ],
+ "format": "tutorial",
+ "topics": [
+  "skills-self-improvement",
+  "context-engineering",
+  "claude-code",
+  "testing-verification"
+ ],
+ "tags": [
+  "agent-skills",
+  "skill-description",
+  "progressive-disclosure",
+  "validation-gates",
+  "error-handling",
+  "nano-banana",
+  "image-generation",
+  "antigravity",
+  "scripts",
+  "references",
+  "iteration"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Skill descriptions are the routing signal and should say both what the skill does and when to use it",
+   "detail": "The YAML front-matter description is always in context and decides whether the skill loads. Descriptions that only say what the skill does cause skills to load when unneeded. Good ones add trigger phrases and negative triggers, such as not loading for simple bug fixes or database work.",
+   "t": "2:17"
+  },
+  {
+   "idea": "Progressive disclosure in three levels keeps the context window small",
+   "detail": "Level 1 is the description, always loaded. Level 2 is the SKILL.md body, which holds the workflow and points to level 3. Level 3 is references and scripts, pulled in only when needed. The official guide also says to put the critical information at the front of the file.",
+   "t": "5:46"
+  },
+  {
+   "idea": "Image dimensions were a tool-side constraint, so the prompt stopped specifying them",
+   "detail": "The Antigravity image tool only produced square images, even when custom dimensions were requested. The fix was to drop dimensions and aspect ratio from prompts and crop later with a separate crop tool, rather than asking for them at generation time.",
+   "t": "3:31"
+  },
+  {
+   "idea": "Repeatable operations belong in a scripts folder with CLI modes and a preview mode",
+   "detail": "Claude discovers scripts by use case and calls them with arguments. Good scripts have explicit modes, and a preview mode lets Claude see the output before destructive operations run.",
+   "t": "3:31"
+  },
+  {
+   "idea": "Claude did not verify its own output unless asked, so the workflow needs explicit validation gates",
+   "detail": "Structural validation checked file validity but not aesthetics. The team added a visual review step with pass/fail questions and a reason. A failed image is deleted and regenerated from a corrected prompt that includes the failure reason. A gate is an explicit blocker, and if the same check runs unchanged every time it should be a tool.",
+   "t": "6:47"
+  },
+  {
+   "idea": "Error handling works best as a table of error, cause, and fix for each known failure",
+   "detail": "Failures seen during iteration were missing or corrupt images, partial API output, and scripts exiting on partial failure. Each one should be written down with its cause and the fix, since it will likely recur.",
+   "t": "8:59"
+  },
+  {
+   "idea": "References act as separate domain knowledge packets, and the rules come from testing",
+   "detail": "The prompting rules reference holds 13 rules found through testing. Design patterns, front-end aesthetics and prompting rules each sit in their own file, so the knowledge base can grow without bloating context. Unrelated skills, such as a front-end design skill and a font choice, were added where a capability was needed.",
+   "t": "11:01"
+  },
+  {
+   "idea": "Skill quality comes from iterating on a real run, and the platform skill-creator was outdated",
+   "detail": "The team compared the first skill with the final one, which were very different. They updated the official skill-creator to match the newer guide and then iterated through many rounds of testing.",
+   "t": "0:00"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Trigger-rich skill descriptions with negative triggers",
+   "how": "In the SKILL.md front matter, write a description that states what the skill does, lists the phrases that should invoke it (for example 'build a landing page' or a skill keyword), and lists cases to exclude (for example simple bug fixes or database work).",
+   "when": "Any skill set with several other skills loaded, where a vague description causes wrong loads."
+  },
+  {
+   "name": "Three-level progressive disclosure layout",
+   "how": "Keep the description short (always loaded). Keep SKILL.md as the workflow only, with a critical-info section at the top and explicit triggers saying when to read or run each reference or script. Move guidelines, troubleshooting and tips into references/ files that are read only at the relevant step.",
+   "when": "Skills whose full instructions would bloat context, or that have guidelines needed only at certain steps."
+  },
+  {
+   "name": "Move constraints out of prompts into post-processing",
+   "how": "If the generation tool ignores a parameter (the video's example: custom dimensions produced squares), remove that parameter from the prompt and run a separate deterministic step (crop) afterward.",
+   "when": "When a generator's behavior is inconsistent with the spec, so the spec is enforced by a later tool rather than by prompting."
+  },
+  {
+   "name": "CLI scripts with modes and a preview mode",
+   "how": "Put executable tools in a scripts/ folder with named CLI arguments and modes. Include a preview or dry-run mode that shows what a destructive action would do, and have the skill instruct Claude to run preview first.",
+   "when": "Any repeated operation the agent should call with arguments, especially file writes or deletes."
+  },
+  {
+   "name": "Two-stage validation gates with regenerate-on-fail",
+   "how": "Gate 1 is a structural check script (valid file, not corrupt). Gate 2 is a visual review with explicit pass/fail questions, returning a reason on failure. On fail: delete the asset, write a corrected prompt that includes the failure reason, regenerate, and do not advance until the gate passes. Turn any gate that never varies into a tool.",
+   "when": "Multi-step agent pipelines producing assets (images, files, generated code) that must be checked before the next step consumes them."
+  },
+  {
+   "name": "Error table with error, cause, and fix",
+   "how": "For each failure already seen (missing or corrupt images, partial API output, partial script failure), write an entry with the error signature, its cause, and the concrete fix or status to set. Put the table in the skill's references so it loads on error.",
+   "when": "After the first few iteration runs, when the same failures begin to recur."
+  },
+  {
+   "name": "Split domain knowledge into reference packets",
+   "how": "Create separate reference files per domain area (for example design patterns, front-end aesthetics, prompting rules). Each file holds rules found during testing (the video's prompting rules file has 13). Link each from the workflow at the step that needs it.",
+   "when": "Skills where knowledge grows over time and should not all sit in the always-loaded body."
+  },
+  {
+   "name": "Iterate against real outputs and refresh the skill-creator",
+   "how": "Run the skill on real tasks, look at the failures (skipped steps, bad outputs), and fix the skill. The team also updated the platform skill-creator to match the newer guide before using it to rebuild the skill.",
+   "when": "Before trusting a skill for repeated use; the video's point is that the first version is usually not the final one."
+  }
+ ],
+ "tools": [
+  "Claude Code",
+  "Google Antigravity",
+  "Nano Banana Pro",
+  "skill-creator (Claude Code official skill)",
+  "Next.js",
+  "Cream (sponsor, merchant of record)",
+  "Cursor",
+  "Windsurf"
+ ],
+ "numbers": [
+  {
+   "claim": "Antigravity generated three images in parallel into the images folder in one batch",
+   "t": "1:17"
+  },
+  {
+   "claim": "Antigravity image tool produced only square output when custom dimensions were requested (observed failure)",
+   "t": "3:31"
+  },
+  {
+   "claim": "The prompting rules reference holds 13 rules found through testing",
+   "t": "6:47"
+  },
+  {
+   "claim": "Sponsor (Cream) advertises a flat 3.9% plus 40 cents per transaction, a sponsor claim not verified in the video",
+   "t": "4:44"
+  },
+  {
+   "claim": "Video length is 11:56",
+   "t": "0:00"
+  }
+ ],
+ "hot_takes": [
+  "Descriptions that only state what a skill does are a main cause of skills loading when they are not needed.",
+  "Claude will not verify its own generated assets unless told to, so validation gates must be explicit in the workflow.",
+  "Validation gates are still prompts unless a check is repeated with no variation, in which case it should be a tool.",
+  "The platform skill-creator was outdated relative to the newer skills guide, according to the team.",
+  "Sponsored segment at about 4:44 for Cream payments (sponsor claim); quality is capped at 2 because of it."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L2D SkillForge needs governed, reusable skills; this video's trigger descriptions, validation gates and error table are concrete patterns for that governance layer.",
+   "action": "Require SkillForge-generated skills to carry trigger and negative-trigger descriptions, and a per-skill error table (error, cause, fix) that is checked before a skill is accepted."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code and runs plan, critique and loop steps, so explicit validation gates that block the next step and feed failure reasons back map onto its plan and critique flow.",
+   "action": "Add explicit pass/fail gates between ProsHarness steps where the check is a tool call, and on failure re-prompt with the failure reason instead of advancing."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The progressive-disclosure layout (short always-loaded description, workflow body, references loaded on demand) is a reusable context-engineering pattern for CLAUDE.md and skills.",
+   "action": "Audit the CLAUDE.md and skill files in this repo and move per-step guidance into referenced files loaded only when needed."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T16:08:31"
+}

@@ -1,0 +1,134 @@
+{
+ "one_line": "Matt Pocock's prerecorded talk gives a four-part checklist (trigger, structure, steering, pruning) for judging and writing agent skills, to escape \"skill hell\".",
+ "summary": "Matt Pocock, who could not attend in person, presents a checklist for judging whether an agent skill is good. The checklist has four parts: the trigger (how the skill is invoked), the internal structure (steps plus reference material), steering (how the skill directs the agent), and pruning (removing waste). His main argument is that people adopt many skills without a shared rubric for quality, which he calls \"skill hell\". On triggers, he separates user-invoked skills, which the agent never sees until called, from model-invoked skills, whose descriptions sit in context on every request. He prefers user-invoked skills for control, at the cost of user cognitive load. On steering, he recommends \"leading words\" that pack a precise concept into a short term the agent repeats, and splitting a phase into its own skill so the agent does more legwork on that step. For pruning, he lists duplication, sediment, and no-op instructions, and suggests a deletion test to find them. He points to his \"writing great skills\" skill in his repo as a tool for applying the checklist. The talk has no benchmarks or measured results.",
+ "speakers": [
+  "Matt Pocock"
+ ],
+ "orgs": [
+  "AI Hero"
+ ],
+ "format": "talk",
+ "topics": [
+  "skills-self-improvement",
+  "context-engineering",
+  "claude-code"
+ ],
+ "tags": [
+  "agent-skills",
+  "SKILL.md",
+  "user-invoked-vs-model-invoked",
+  "context-load",
+  "leading-words",
+  "legwork",
+  "progressive-disclosure",
+  "pruning",
+  "deletion-test",
+  "skill-hell",
+  "superpowers",
+  "writing-great-skills"
+ ],
+ "tools": [
+  "SKILL.md agent skills",
+  "superpowers (comparison skill set)",
+  "Matt Pocock skills repo (writing-great-skills skill)"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Most people cannot tell a good skill from a bad one, and there is no shared rubric for skill quality.",
+   "detail": "The speaker frames this as 'skill hell': many freely available skills get stacked together without understanding how they work, so the promised results do not appear. He offers a four-part checklist as the rubric.",
+   "t": "1:06"
+  },
+  {
+   "idea": "Model-invoked and user-invoked skills each carry a cost.",
+   "detail": "A model-invoked skill keeps its description in the agent's context on every request, so 100 such skills means 100 descriptions to carry. The model may also skip a fitting skill, which makes behavior unpredictable and pushes testing burden onto the author. A user-invoked skill has no context cost but adds cognitive load for the user, who has to remember it.",
+   "t": "3:21"
+  },
+  {
+   "idea": "Skills are made of two units: steps and reference.",
+   "detail": "Steps are the procedure the skill walks through. Reference is supporting material such as templates or definitions. A skill can be all steps, all reference, or both. Example: a PRD skill has three steps, plus a test-seam definition and a PRD template as reference.",
+   "t": "7:40"
+  },
+  {
+   "idea": "Keep SKILL.md small by moving branch-specific reference behind context pointers.",
+   "detail": "If reference material is only needed on one branch of the skill, move it into a separate file and point to it from the main file. Material needed on every run stays in the main file. Example: a domain-modeling skill keeps its ADR and glossary templates in external files, loaded only when those branches run.",
+   "t": "8:57"
+  },
+  {
+   "idea": "Leading words pack a precise concept into a short term that the agent then repeats in its reasoning.",
+   "detail": "Example: asking for 'vertical slice' instead of a long instruction against layer-by-layer coding. The term should be used consistently across the skill. The speaker says you can verify it works by checking whether the agent's reasoning traces adopt the term.",
+   "t": "11:47"
+  },
+  {
+   "idea": "Agents skip legwork on a step when they can see the goal of a later step.",
+   "detail": "Plan mode is the example: the agent sees that its real aim is to write a plan, so it asks only a few clarifying questions. The fix is to split the phases into separate skills, so the clarifying-questions skill only shows that phase. The next skill then runs with its own focus.",
+   "t": "15:09"
+  },
+  {
+   "idea": "Prune with a deletion test: remove a paragraph and check whether the output changes.",
+   "detail": "Common failures are duplication (keep one source of truth for each piece), sediment (old material accumulated from many editors), and no-ops (instructions that do not change behavior, such as asking for a long commit message the agent would write anyway). Remove what does not change the output.",
+   "t": "16:17"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Choose user-invoked vs model-invoked per skill",
+   "how": "Mark a skill as user-only (e.g. disable model invocation) so its description never enters the agent's context. Use model invocation only when the agent should trigger it on its own and you accept the unpredictability.",
+   "when": "Use user-invoked for skills you want fully under your control, or when you have many skills and want to limit per-request context. Use model-invoked when automatic triggering matters more than predictability."
+  },
+  {
+   "name": "Steps plus reference split with external context pointers",
+   "how": "Write the procedure as numbered steps in SKILL.md. Put templates and definitions in separate files. In SKILL.md, add a pointer that says when to load each file, so only the branch that needs it reads it.",
+   "when": "Use when a skill has several branches (for example, optional outputs), or when reference material is large and used only on some runs."
+  },
+  {
+   "name": "Leading words",
+   "how": "Choose one precise term that carries the behavior you want (e.g. 'vertical slice'). Use it consistently throughout the skill instead of re-explaining. Check the agent's reasoning traces to confirm it adopts the term.",
+   "when": "Use when the agent keeps missing a behavior you have described in long form, and when a well-known term from the field captures the intent."
+  },
+  {
+   "name": "Split phases into separate skills to force legwork",
+   "how": "Turn a step that the agent under-does (e.g. clarifying questions) into its own skill, and let the next phase be a separate skill. The agent then sees only the current phase's goal.",
+   "when": "Use for steps that need deep exploration or questioning, where the agent tends to rush toward a later goal such as planning."
+  },
+  {
+   "name": "Deletion test and sediment audit",
+   "how": "For each paragraph in a skill, delete it mentally or in a test run and check whether the agent's output would change. Remove paragraphs that do not change behavior. Check for repeated material across steps and for stale or irrelevant material added over time.",
+   "when": "Use after a skill is working, or on skills written by an agent or built up by many contributors."
+  }
+ ],
+ "numbers": [
+  {
+   "claim": "Each model-invoked skill adds its description to the agent's context on every request; illustrative case is 100 model-invoked skills meaning 100 descriptions in context. No measured token figures are given.",
+   "t": "5:33"
+  }
+ ],
+ "hot_takes": [
+  "Model-invoked skills are less predictable, because the model may skip a skill that fits the task. The speaker removes that failure class by making skills user-invoked, and accepts the cognitive load on the user.",
+  "Plan mode is under-done by design: its clarifying-questions step does too little work, and splitting the phases into separate skills fixes it.",
+  "Most skill-writing advice is untested; a deletion test can show which lines of a skill do nothing."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "SkillForge (L2D) needs skill-worthiness scoring. This talk gives a qualitative checklist (trigger, structure, steering, pruning) that could inform a rubric, but it gives no metric or measured outcome.",
+   "action": "Read the writing-great-skills skill in Matt Pocock's skills repo and compare its checklist with the SkillForge skill-worthiness scoring draft."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs plan, critique and debate phases around Claude Code. The talk's point that a plan step gets too little legwork when the goal is visible, and that splitting phases fixes it, applies to its plan stage. Its skill ranking could also use the deletion test.",
+   "action": "Check whether the ProsHarness plan step still gets clarifying questions when the plan goal is visible. If not, split the clarifying-questions phase into its own skill."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The user's own skills and CLAUDE.md files are subject to the same context-load, leading-word and no-op problems described. Applying the deletion test to them is cheap and checkable.",
+   "action": "Run the deletion test on the user's most-used skill files and on the global CLAUDE.md, removing paragraphs that do not change output."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

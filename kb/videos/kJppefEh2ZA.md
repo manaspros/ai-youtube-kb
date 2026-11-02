@@ -1,0 +1,46 @@
+# This Open-Weights TTS Beat ElevenLabs... Then I Read the License
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `kJppefEh2ZA` · [watch](https://youtu.be/kJppefEh2ZA) · **date:** 2026-10-02 · **length:** 10:00 · **format:** review · **quality:** 4/5 · **depth:** practitioner
+- **speakers:** Josh (Better Stack host) · **orgs:** Better Stack, Breeze Blue, ElevenLabs, Artificial Analysis, Cartesia
+- **topics:** voice-multimodal, evals, local-ai · **tags:** text-to-speech, open-weights, voice-design, licensing, benchmark-methodology, mlx-audio, apple-silicon, elevenlabs, kokoro, chatterbox, voxcpm
+
+> Josh from Better Stack tests Breeze TTS 2, an open-weights voice model that tops a benchmark, then shows why its non-commercial weights license blocks most real use.
+
+## Summary
+The host runs Breeze TTS 2 locally on a Mac with MLX audio and demonstrates voice design, where a voice is described in text instead of cloned from reference audio. He shows that lowering the CFG scale pulls the output away from a generic voice and toward a purer AI voice, and that inline vocal events such as sighs and laughs can be typed into the text. He breaks down the stack (Qwen 3 backbone, T5Gemma 2 text encoder, Mimi codec, about 3B parameters, 24 kHz mono) and notes the tokenizer derives from Qwen3-TTS, which is Apache 2.0. The benchmark claim of beating ElevenLabs holds only by 5 Elo points on a vote-based leaderboard with far fewer votes, and Breeze is not first there. On a same-prompt leaderboard it ranks third among open-weight models and 16th of 39 overall. The main point is the license: the weights fall under a Breeze Blue research and non-commercial license that explicitly covers production use, hosting behind an API, and internal use of outputs, and it also excludes self-hosted commercial use even for paid API customers. He concludes the model is fine for experiments but not for shipping, and recommends Kokoro (Apache 2.0), Chatterbox (MIT), or VoxCPM2.
+
+## Key ideas
+- **Voice design generates a voice from a text description, with no reference recording needed, unlike voice cloning, which needs about 10 seconds of audio plus a transcript.** — Breeze is positioned between fixed-preset open TTS (Kokoro) and reference-cloning models (Chatterbox), since it builds a voice from one descriptive sentence. ([0:56](https://youtu.be/kJppefEh2ZA?t=56))
+- **The CFG scale controls how strongly the model follows the voice description; lowering it pushes output back toward a generic voice, and the host dropped it to 1 to get a pure AI-sounding voice.** — The docs default is 4 and he used that for some voices. Lowering it to 1 gave the 'pure AI' sample; this is the main knob for voice-description adherence. ([2:09](https://youtu.be/kJppefEh2ZA?t=129))
+- **Vocal events such as sighs, laughs and crying can be placed inline in the text using parentheses, mid-sentence or at the start or end.** — He calls this a nice feature but notes many open-weight voice models now offer it too, so it does not separate Breeze from the field. ([3:07](https://youtu.be/kJppefEh2ZA?t=187))
+- **Breeze is built from a Qwen 3 language backbone, a T5Gemma 2 text encoder and the Mimi audio codec, at about 3B parameters with 24 kHz mono output. Its audio tokenizer is derived from Qwen3-TTS, which is Apache 2.0.** — This sets up the license irony he returns to later: the model builds on permissively licensed work but its own weights are restricted. ([4:07](https://youtu.be/kJppefEh2ZA?t=247))
+- **The ElevenLabs beat is technically true but statistically thin: Breeze scores 1215 vs ElevenLabs Conversational at 1210, on about 1,200 votes vs 4,500+, and Cartesia Sonic 3.6 is higher at 1282.** — The provider leaderboard lets each model use its own voices, which favors voice-choice-heavy systems. On the same-prompt leaderboard Breeze scores 1002, third among open-weight models and 16th of 39 overall. ([5:24](https://youtu.be/kJppefEh2ZA?t=324))
+- **The weights license (Breeze Blue research and non-commercial) bars commercial use. Its definition covers production use, using the model in a product or service, hosting it behind an API, and using outputs for internal operations beyond limited evaluation.** — The code is Apache 2.0, but the weights are not. The license has no creator, small business or revenue-threshold exception, and it covers generated audio, not only the model. ([6:27](https://youtu.be/kJppefEh2ZA?t=387))
+- **Even paying for the hosted API does not grant commercial rights to self-hosted models or their outputs. The host reads the open weights as the demo and the API as the product, at about $34 per million characters.** — His recommendation: for shipping anything commercial, use a permissively licensed alternative. He names Kokoro (Apache 2.0), Chatterbox (MIT), and VoxCPM2, which he previously covered and rates highly. ([7:52](https://youtu.be/kJppefEh2ZA?t=472))
+
+## Techniques
+- **Local voice-design install on macOS** — Create a virtual environment in the terminal, then pip install mlx-audio (needed for Apple Silicon). Linux or NVIDIA setups differ but the host did not show them. Describe the voice in plain text (e.g. 'warm, thoughtful, wise old man, calm reflective delivery') and generate from that description with no reference audio. *When:* Prototyping TTS voices on a laptop, or comparing open TTS models before committing to one.
+- **Lower CFG scale to make voice descriptions stick** — Start from the documented default (4) and reduce the CFG scale, which controls how strongly the model follows the voice description. The host went down to 1 to remove generic drift toward a default voice. *When:* When a generated voice drifts toward generic or does not match the description. Lower it to see how far the model stays on the description.
+- **Inline vocal-event markup** — Type non-verbal events in parentheses inside the text (e.g. a sigh, laughing or crying) at the start, middle or end of a sentence. *When:* Adding expressive non-speech cues to TTS output without a separate audio track. Check whether the model supports this, since many open models now do.
+- **License check before adopting open weights** — Read the weights license separately from the code license. Check how it defines commercial use: production, hosting behind an API, and whether outputs are covered. Check whether paid API access grants commercial rights to self-hosted weights or outputs. *When:* Before using any open-weights model in a product, service, paid content or internal business workflow. Do this even when the repo says Apache 2.0 or MIT.
+- **Read leaderboards for vote count and prompt control** — Compare the ELO gap against the number of votes behind each score, and check whether the leaderboard fixes the prompt and voice or lets each model choose its own. Use a same-prompt board when comparing models directly. *When:* Before accepting a 'beats X' benchmark claim, especially for voice or generative models where voice choice changes the result.
+
+## Numbers
+- Breeze TTS 2 weights download is about 3 GB; model is about 3B parameters; output is 24 kHz mono. ([0:00](https://youtu.be/kJppefEh2ZA?t=0))
+- Breeze first released August 25 (per the host). The voice-design capability is the main novelty; reference audio for cloning is about 10 seconds. ([0:56](https://youtu.be/kJppefEh2ZA?t=56))
+- CFG scale default is 4 per the docs; the host lowered it to 1 for the pure AI voice sample. ([2:09](https://youtu.be/kJppefEh2ZA?t=129))
+- Artificial Analysis provider voice leaderboard: Breeze 1215 Elo vs ElevenLabs Conversational 1210 (5-point gap). Breeze has about 1,200 votes vs ElevenLabs 4,500+. Cartesia Sonic 3.6 is 1282. ([5:24](https://youtu.be/kJppefEh2ZA?t=324))
+- Same-prompt leaderboard: Breeze 1002, third among open-weight models, 16th of 39 overall. ([5:24](https://youtu.be/kJppefEh2ZA?t=324))
+- API price cited: $34 per million characters (paid API does not grant commercial rights to self-hosted models or outputs). ([7:52](https://youtu.be/kJppefEh2ZA?t=472))
+
+## Hot takes
+- The license, not the benchmark, decides usability: an open-weights model with a non-commercial weights license is a demo for most real teams.
+- The 'beats ElevenLabs' claim is within noise: 5 Elo points, far fewer votes, and results change when each model picks its own voice.
+- Open weights and open source no longer mean the same thing; read the weights license separately from the code license.
+- The API is the product and the open weights are the demo, which the host reads from the license terms rather than from marketing.
+
+## Tools mentioned
+Breeze TTS 2 (Breeze Blue), MLX audio (mlx-audio, pip install), Qwen 3, Qwen3-TTS, T5Gemma 2, Mimi audio codec, ElevenLabs Conversational, Cartesia Sonic 3.6, Artificial Analysis speech arena, Kokoro, Chatterbox, VoxCPM2
+
+## Relevance to our work
+- **agentos** (1/3): Shows that open-weights model choices can be blocked by a weights license even when the code is permissive, relevant when AgentOS picks models or voice components for its stack. → *Add a license check step (weights license, commercial-use definition, output coverage) to model-selection notes for any open-weights model added to InferCraft or other AgentOS components.*

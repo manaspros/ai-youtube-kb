@@ -1,0 +1,132 @@
+{
+ "one_line": "Coder's staff solutions engineer explains the \"lethal trifecta\" (private data, external communication, untrusted input) and argues for isolated remote dev environments, a logging model proxy, and a process-level agent firewall.",
+ "summary": "Michael Patterson of Coder frames agent security around the lethal trifecta, a term coined by Simon Willison: an agent that can read private data, communicate externally, and ingest untrusted content. He says two of the three is already unacceptable for enterprises, and that prompt injection, context poisoning, and over-broad privileges make a laptop-hosted agent a matter of when, not if, an incident happens. He describes shadow AI (personal subscriptions on laptops) as a growing problem and says CISOs, platform teams, and developers all need guardrails before rollout. His proposed architecture has three parts: move agents into isolated, pre-configured remote environments with restricted egress and scoped credentials; route all LLM traffic through a proxy that strips injections or sensitive data and logs every call; and add a process-level firewall that denies blocked commands. The talk is mostly conceptual and ends with a booth pitch for Coder, so it contains few hard numbers or measured results.",
+ "speakers": [
+  "Michael Patterson"
+ ],
+ "orgs": [
+  "Coder"
+ ],
+ "format": "talk",
+ "topics": [
+  "security-guardrails",
+  "sandboxing-execution",
+  "observability"
+ ],
+ "tags": [
+  "lethal-trifecta",
+  "prompt-injection",
+  "context-poisoning",
+  "agent-security",
+  "shadow-ai",
+  "cloud-dev-environments",
+  "model-proxy",
+  "egress-control",
+  "least-privilege",
+  "agent-firewall"
+ ],
+ "key_ideas": [
+  {
+   "idea": "The lethal trifecta: an agent with access to private data, the ability to communicate externally, and exposure to untrusted content is the dangerous combination.",
+   "detail": "The speaker says any one of these is manageable, two of three is unacceptable for enterprises, and all three makes an incident a matter of when, not if. He credits Simon Willison with coining the term.",
+   "t": "5:06"
+  },
+  {
+   "idea": "Attack surface: prompt injection, context poisoning, and privilege escalation.",
+   "detail": "Malicious text in error messages, support tickets, or CI/CD logs can be trusted by an agent. Poisoned docs or data do the same. Agents usually get broad access, so one injection can make them drop tables, upload data, or post things they should not.",
+   "t": "6:32"
+  },
+  {
+   "idea": "Three pillars of agent security: control data access, restrict external communication, and lock down permissions.",
+   "detail": "Run the agent in a VM or remote environment instead of a laptop. Limit it to allowlisted domains behind a VPN or firewall, log all of its traffic, and alert admins so they can kill the VM. Use tightly scoped credentials. He argues agent security is the same as ordinary sound security practice.",
+   "t": "9:19"
+  },
+  {
+   "idea": "Shadow AI is already happening, and it scales into what he calls ninja AI.",
+   "detail": "When companies do not authorize agents, employees use personal Claude or ChatGPT subscriptions on laptops. The enterprise cannot see it. He expects many unseen agents across an organization to break things before anyone notices.",
+   "t": "10:42"
+  },
+  {
+   "idea": "Remote cloud dev environments make agent work repeatable and safer.",
+   "detail": "Environments are pre-configured with the dependencies a project needs, so an agent does not pull from arbitrary registries on a fresh machine. Only the data and credentials placed in the environment are reachable, and internet access is limited to what is allowed.",
+   "t": "15:42"
+  },
+  {
+   "idea": "A model proxy between the agent and the LLM provider sanitizes and logs every call.",
+   "detail": "The proxy can strip injected instructions and sensitive data, such as a credit card number accidentally pasted into a prompt, before the request leaves the company. It also logs everything, which feeds observability and alerting.",
+   "t": "18:28"
+  },
+  {
+   "idea": "An agent firewall watches process-level commands and denies ones that were not approved.",
+   "detail": "Examples include commands like repo delete or dropping a database table. The check runs on the remote environment's process logs, not on the model's text output.",
+   "t": "18:28"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Remote isolated agent environment",
+   "how": "Run coding agents in a pre-configured VM or cloud dev environment, not on a laptop. Allow only the data and credentials placed in it, and allow egress only to allowlisted domains behind a firewall or VPN. Log all traffic and alert on out-of-policy destinations so the VM can be killed.",
+   "when": "When agents need broad repo or data access and the company cannot accept code or credentials on developer laptops."
+  },
+  {
+   "name": "Logging model proxy in front of the LLM provider",
+   "how": "Route all agent LLM calls through an in-house gateway that scans for injected instructions and sensitive data such as card numbers, redacts or blocks them, and logs every request for audit and alerting.",
+   "when": "When the org needs an audit trail of every model call and a choke point to enforce data-leak rules before data leaves."
+  },
+  {
+   "name": "Process-level agent firewall with command denylist",
+   "how": "Watch the commands an agent starts on its box and deny those on a blocklist, such as destructive git or SQL operations, before they execute.",
+   "when": "When agents run shell commands with real permissions and a prompt-level instruction is not a reliable control."
+  },
+  {
+   "name": "Pre-baked environments as supply-chain control",
+   "how": "Define the dev environment (dependencies, runtimes) up front, for example with Terraform, so the agent starts from a known image and does not pull arbitrary packages from registries.",
+   "when": "When you want reproducible agent setups and want to limit exposure to contaminated package registries."
+  }
+ ],
+ "tools": [
+  "Coder",
+  "Terraform",
+  "Claude Code",
+  "Codex",
+  "OpenClaw"
+ ],
+ "numbers": [
+  {
+   "claim": "Coder was founded in 2017 by three developers who had been building Minecraft mods; the speaker says it is now an $80M company.",
+   "t": "3:44"
+  },
+  {
+   "claim": "Speaker says Coder is in roughly six of the top 10 US banks, plus hedge funds and government agencies. This is a vendor-reported customer claim.",
+   "t": "3:44"
+  },
+  {
+   "claim": "Speaker says he talks to CISOs about once or twice a week.",
+   "t": "13:11"
+  }
+ ],
+ "hot_takes": [
+  "Two of the three lethal-trifecta conditions is already unacceptable in an enterprise.",
+  "Agent security is no different from sound security practice for humans. Assuming AI is safe to give full access is the mistake.",
+  "Shadow AI at scale ('ninja AI') is a bigger near-term risk than any single misbehaving agent.",
+  "Agents should not run on developer laptops at all."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "The model-proxy pattern (scan for injection and PII, log every LLM call before forwarding) matches the L1 Govrix Scout proxy scope. The speaker also points to the trifecta as a design lens for AgentOS's exec and egress gates.",
+   "action": "Check whether L1 Govrix Scout covers all three trifecta legs. Add an egress-to-LLM check that strips card and PII patterns and logs each call, and review Crucible's sandbox egress against the same three-way test."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness runs Claude Code CLI runs unattended. A process-level command denylist on those runs would address the same destructive-command risk, though the talk gives no implementation detail.",
+   "action": "Consider a denylist for destructive commands (repo delete, DROP TABLE, force push) in ProsHarness's Claude Code runner, enforced on the process level and not only in the prompt."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

@@ -1,0 +1,48 @@
+# I Tried Both New 30B Models... One Of Them Is a DISASTER! (Muse Glimmer & Lightning 3.5)
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `mzQC9UK9n84` · [watch](https://youtu.be/mzQC9UK9n84) · **date:** 2026-09-02 · **length:** 16:01 · **format:** review · **quality:** 3/5 · **depth:** practitioner
+- **speakers:** Unnamed Better Stack host · **orgs:** Meta, NVIDIA, Better Stack, Adobe, Epidemic Sound, SEC
+- **topics:** local-ai, evals, mcp-and-tools, models-research · **tags:** open-weight-models, tool-calling, hallucination, speculative-decoding, mixture-of-experts, ollama, opencode, premiere-pro, mcp, long-context, rtx-5090
+
+> Hands-on test of Meta's Muse Glimmer and NVIDIA's Nemotron Lightning 3.5 (both ~30B, local via Ollama) on three agentic tasks; Glimmer passes two of three, Lightning fails all three.
+
+## Summary
+The host compares two open-weight models released the same week, Meta's Muse Glimmer (a distilled Muse Spark) and NVIDIA's Nemotron Lightning 3.5 (a mixture-of-experts model), on an RTX 5090 workstation served through Ollama and driven by OpenCode. The first task asks each model to build a single web page explaining an ESP32-C3 wiring setup; Lightning produces a blank page with dead buttons even after a second correction round, while Glimmer produces a working but incomplete page. The second task has the models edit a Premiere project via a custom UXP plugin and an Epidemic Sound MCP server to build an "AI" montage with music; Lightning fast-calls tools but damages the timeline, while Glimmer completes the edit correctly and handles a follow-up request. The third task asks for percentages from NVIDIA's FY2026 10-K; Lightning's SEC fetch fails, it falls back to search, and reports wrong numbers (23% vs the filing's 22% and 14%), while Glimmer recovers the correct 36% combined figure despite some failed fetches. The host scores Glimmer 2/3 and says he would consider using it day to day; the sample is one run per model per task, and the title and verdict are more emphatic than the evidence supports.
+
+## Key ideas
+- **Both models are pitched as ~30B and consumer-friendly, but they are built differently: Glimmer is a dense distillation, Lightning is a mixture-of-experts model.** — Glimmer is a distilled version of Muse Spark, with quantized builds for M4/M5 Macs. Lightning routes each token to a few expert subnetworks, so the host says only a fraction of the parameters are active per token. The transcript gives both 30B and 13B total for Lightning, so the total size is unclear. ([0:02](https://youtu.be/mzQC9UK9n84?t=2))
+- **Glimmer ships with D-Flash speculative decoding, where a small drafter proposes a block of tokens and the main model verifies it.** — The host claims roughly a 3x speed-up without quality loss, but the video does not measure throughput; the claim is untested here. ([1:27](https://youtu.be/mzQC9UK9n84?t=87))
+- **On paper the two differ mainly in vision and context: Glimmer sees images and has about 128K context, Lightning has no vision and about 1M context.** — Both support tool calling. The host expects Lightning to suit large-document work and Glimmer short dense back-and-forths, which the later tests partly contradict. ([3:27](https://youtu.be/mzQC9UK9n84?t=207))
+- **Lightning failed the single-file web page task twice, while Glimmer produced a partially working page.** — Lightning gave a blank page with non-functional buttons after about 5 minutes, and the same after a second round of about 6 minutes. Glimmer took about 2m50s, produced working buttons, a pin layout and tooltips, but no real wiring diagram. ([5:36](https://youtu.be/mzQC9UK9n84?t=336))
+- **In the Premiere edit, Lightning's fast tool calls were not enough. It put music on the speaker track, deleted speaker audio while trying to fix it, and damaged the timeline.** — Glimmer was slower but correct: it put the music on a separate track, trimmed it to the video length, added a fade-out, and swapped the track when asked. The host treats error recovery and state awareness as the discriminating skills. ([8:03](https://youtu.be/mzQC9UK9n84?t=483))
+- **On the 10-K question, a failed fetch led Lightning to fall back to general search, and it reported wrong figures with confidence.** — Lightning answered 23% combined (about 13% and 10%, data center). The filing says 22% and 14%, 36% combined. Glimmer hit some failed fetches but recovered the correct figures in about 3 minutes. ([12:43](https://youtu.be/mzQC9UK9n84?t=763))
+- **The host's verdict is 2 of 3 for Glimmer, and he questions NVIDIA's benchmarks given the Lightning results.** — This is one run per model per task on a single workstation, so the verdict is anecdotal. The skepticism about published benchmarks is an opinion, not something this test measured. ([14:44](https://youtu.be/mzQC9UK9n84?t=884))
+
+## Techniques
+- **Same-prompt, multi-round correction test** — Send an identical prompt to each model, then give up to two follow-up prompts that name the specific bug. Mark the task failed if the output is still broken after the last round. Record wall-clock time per round. *When:* Comparing agentic coding or task models on fixed tasks where a human judges the result.
+- **Serve two local models and drive them from an agent CLI** — Load both models on an Ollama server and point OpenCode at it with a JSON config that lists the two models and the MCP servers. The video shows the config in a screen capture but does not show exact keys; a GitHub gist with the prompt is referenced. *When:* Quick local A/B tests of open models for tool-using agent work on a single GPU box.
+- **Expose a desktop editor to models through a custom UXP plugin** — Build an Adobe Premiere plugin using UXP that connects through Adobe Bridge and exposes editor actions as tools. Any tool-calling model can then drive the NLE. The plugin repo link is in the video description and was not captured in the transcript. *When:* When an agent needs to operate a GUI application through structured actions rather than screen control.
+- **Check numbers against the source document** — When a model extracts figures from a long filing, compare each figure with the primary source (here the 10-K) and check whether the reported 'cross-check' actually appears in the cited section. *When:* Any document-QA or financial-extraction task, especially when the model had a failed tool call.
+- **Treat tool-error fallback as a test case** — Break a fetch on purpose or observe a failed one, and check whether the agent reports the failure or silently answers from a weaker source. Lightning's fallback to general search produced confident wrong numbers. *When:* Evaluating agent reliability for research or retrieval tasks.
+
+## Numbers
+- Both models are described as 30B parameters. ([0:02](https://youtu.be/mzQC9UK9n84?t=2))
+- D-Flash drafter proposes a block of 16 (transcript says 'words', likely tokens) per step, with a claimed 3x speed-up and no quality loss; not measured in the video. ([1:27](https://youtu.be/mzQC9UK9n84?t=87))
+- Lightning is described as about 13B total parameters with about 3B active per token. ([2:43](https://youtu.be/mzQC9UK9n84?t=163))
+- Context windows: Glimmer about 128K tokens, Lightning about 1M tokens. ([3:27](https://youtu.be/mzQC9UK9n84?t=207))
+- Test rig: RTX 5090 with 64 GB DDR5. ([4:30](https://youtu.be/mzQC9UK9n84?t=270))
+- Web page task: Lightning about 5 min (round 1) and about 6 min (round 2), both broken; Glimmer about 2m50s, partly working. ([5:36](https://youtu.be/mzQC9UK9n84?t=336))
+- 10-K task: Lightning reported about 23% combined (13% + 10%); the filing shows 22% + 14% = 36%. Glimmer took about 3 minutes and reported 22%, 14%, 36%. ([12:43](https://youtu.be/mzQC9UK9n84?t=763))
+- Final score: Glimmer 2 of 3 tasks passed, Lightning 0 of 3. ([13:40](https://youtu.be/mzQC9UK9n84?t=820))
+
+## Hot takes
+- Lightning is called 'probably the worst model I've ever tested' (title says 'DISASTER'), an emotional verdict based on one run per task.
+- The host questions whether NVIDIA tests its own model and whether its published benchmarks can be trusted, without evidence from this test.
+- The host says he would consider using Glimmer daily when Claude token usage runs out, but this is a personal preference rather than a measured result.
+
+## Tools mentioned
+Muse Glimmer (Meta), Muse Spark (Meta), Nemotron Lightning 3.5 (NVIDIA), NeMo Switchyard (NVIDIA routing), D-Flash speculative decoding, Ollama, OpenCode, Opus 5 (reference model), Adobe Premiere Pro, Adobe Bridge, UXP plugin (custom), Epidemic Sound MCP server, NVIDIA FY2026 10-K (SEC filing), ESP32-C3, RTX 5090
+
+## Relevance to our work
+- **agentos** (2/3): The video tests two 30B-class open models on a single RTX 5090 with tool calls, the same class of hardware and models InferCraft targets. The 10-K failure, where a failed fetch led to confident wrong numbers, is a concrete failure mode for the MemoryMesh and eval story. → *Add a tool-failure case and a known-answer filing extraction (with a ground-truth figure) to the agent eval set, and run it against any new open model before routing traffic to it.*
+- **prosharness** (1/3): ProsHarness wraps the Claude Code CLI; the tool-error fallback behavior seen here is relevant to how a harness should surface failed tool calls rather than let the model answer silently. → *When adding any non-Claude backend to ProsHarness, add a check that a failed tool call surfaces as a failure rather than a fallback answer.*

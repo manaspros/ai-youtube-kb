@@ -1,0 +1,178 @@
+{
+ "one_line": "A team's walkthrough of MCP context bloat and a runtime MCP-to-CLI converter (MCP2CLI), plus CLAUDE.md and skills rules that keep large tool outputs out of the context window.",
+ "summary": "The video argues that MCP tool definitions and tool outputs both bloat the agent's context window, and that existing fixes (Docker Code Mode, TypeScript-per-tool conversion, build-time CLI converters such as CLI Hub) each leave gaps. The host presents MCP2CLI, which converts MCP servers (and OpenAPI/REST APIs) into bash-callable CLI tools at call time, caches the converted tools for one hour by default, and runs on the MCP Python SDK. They wired a Supabase, GitHub, Puppeteer and Context7 MCP into Claude Code (78 tools total) to build a Next.js chat app, and report that the agent ignored Context7 until a CLAUDE.md rule forced it to consult docs first. Skills replaced CLAUDE.md for per-MCP guidance because skill descriptions load into context. For browser testing, the Puppeteer MCP lost session state between calls and was slow (about 7 minutes wasted), so they preferred Claude's browser extension. The closing technique is the most useful one: a CLAUDE.md rule that redirects large MCP output to a file and greps it, which they say was impossible while MCPs were handled natively by the agent. The video shows the workflow in one run and gives no token or cost measurements.",
+ "speakers": [
+  "AI LABS host (unnamed in transcript)"
+ ],
+ "orgs": [
+  "Docker",
+  "Cloudflare",
+  "Anthropic",
+  "Cursor",
+  "Supabase",
+  "Orchids (sponsor)"
+ ],
+ "format": "review",
+ "topics": [
+  "mcp-and-tools",
+  "token-cost-efficiency",
+  "claude-code",
+  "context-engineering"
+ ],
+ "tags": [
+  "mcp",
+  "mcp2cli",
+  "context-bloat",
+  "runtime-conversion",
+  "tool-output-redirection",
+  "claude-md",
+  "skills",
+  "toon",
+  "context7",
+  "puppeteer",
+  "supabase",
+  "tiktoken",
+  "browser-testing"
+ ],
+ "key_ideas": [
+  {
+   "idea": "MCP context bloat has two sources: tool definitions loaded up front, and tool outputs that stay in the window.",
+   "detail": "Docker Code Mode, Anthropic's paper and TypeScript-per-tool conversion each address part of this. Claude Code's CLI flag loads tools on demand but does not stop large outputs from staying in context.",
+   "t": "0:00"
+  },
+  {
+   "idea": "MCP2CLI converts MCP servers into bash CLI tools at runtime, not at build time.",
+   "detail": "The conversion happens when a tool is called, so upstream MCP changes show up automatically. Build-time converters such as CLI Hub need manual refresh. It also covers OpenAPI and REST APIs through the same CLI interface.",
+   "t": "1:27"
+  },
+  {
+   "idea": "Runtime conversion is kept fast by a one-hour cache of converted tools.",
+   "detail": "Frequently used tools stay cached for one hour by default. The host says the design keeps runtime flexibility without making repeated calls slow.",
+   "t": "2:29"
+  },
+  {
+   "idea": "Tool output only enters the context window when the agent asks for it.",
+   "detail": "The tool runs MCP calls as bash commands and returns results to the agent on request, which reduces context use compared with native MCP handling.",
+   "t": "2:29"
+  },
+  {
+   "idea": "Connecting MCPs does not make the agent use them; instructions have to force it.",
+   "detail": "Claude ignored a deprecated Next.js middleware pattern. The team added a CLAUDE.md rule to consult Context7 before writing code, then converted per-MCP guidance into skills because skill descriptions are loaded into context.",
+   "t": "7:31"
+  },
+  {
+   "idea": "Puppeteer MCP is a poor fit for multi-step browser testing; a persistent browser is better.",
+   "detail": "Each Puppeteer call started a new browser, so sessions were lost. The team says MCPs run as persistent processes, but the Puppeteer MCP still lost session state. They preferred Claude's own browser extension for end-to-end tests that need session persistence.",
+   "t": "8:58"
+  },
+  {
+   "idea": "Large MCP outputs can be redirected to a file and searched with grep, which the video calls the biggest unlock.",
+   "detail": "Because MCP calls are now bash commands, a CLAUDE.md rule can send big output to a file path and have the agent grep the result. The agent then completed a feature from progress.json this way without dumping the output into context.",
+   "t": "10:26"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Run MCP2CLI without installing it",
+   "how": "The host chose to run the tool without a global install (via pip or a no-install run) to keep the environment clean. A bundled skill lays out the core workflow and bash command examples for auth and caching. The exact command name is not shown in the video.",
+   "when": "When you want MCP servers available to the agent without polluting the system Python environment."
+  },
+  {
+   "name": "Give the agent the MCP access tokens through environment or file references",
+   "how": "Get the access token from the service first, then give it to Claude to add. Credentials are passed through environment variables, a file path, or a secret manager that injects them at runtime, not as command-line arguments. The host showed the agent referring to .env.local at project level.",
+   "when": "Any time an MCP is converted into a shell command, because CLI arguments can show up in process listings."
+  },
+  {
+   "name": "Verify MCP connections by asking the agent to count the tools",
+   "how": "After connecting the MCPs, ask Claude to confirm which MCPs are connected and how many tools they expose (78 across four servers in the video).",
+   "when": "After setup, to confirm every server actually loaded before building on them."
+  },
+  {
+   "name": "CLAUDE.md rule to consult docs before coding",
+   "how": "Add a rule that says to use the Context7 MCP before writing any code. The host reports the agent still needed a correction after the first attempt.",
+   "when": "When the agent keeps using outdated APIs or deprecated patterns from training data."
+  },
+  {
+   "name": "Move per-MCP guidance from CLAUDE.md into one skill per MCP",
+   "how": "Ask Claude to create a skill for each connected MCP describing its tools, how to use them and when to use them. The host argues skill descriptions are always in context, so the agent knows what is available without a full instruction dump.",
+   "when": "When CLAUDE.md is getting long with tool-usage instructions, or the agent does not read them reliably."
+  },
+  {
+   "name": "Ask for TOON output for verbose documentation MCPs",
+   "how": "A CLAUDE.md rule says to request TOON format whenever Context7 is called. The host describes TOON as indentation plus CSV-style lists that are smaller than JSON or YAML. The video does not show the exact flag or config key.",
+   "when": "When documentation or API MCP results are large and you want a smaller token footprint."
+  },
+  {
+   "name": "Redirect large MCP output to a file and grep it",
+   "how": "Add a CLAUDE.md instruction: when any MCP tool output is large, write it to a specified file path instead of the context window, then use grep to extract what is needed. The host applied this to Context7 and a progress.json tracker. The Claude.md file with the full rules is said to be in the AI Labs Pro community, which is not shown.",
+   "when": "For MCP results that can be large, such as documentation or query results, where only a few lines are needed for the task."
+  },
+  {
+   "name": "Use Claude's browser extension for stateful browser testing",
+   "how": "The host had Claude test the chat flow in a browser it controlled, having it click and scroll the UI. Puppeteer MCP spun up a new browser per call and lost sessions, so the host preferred the extension for end-to-end tests.",
+   "when": "For end-to-end UI tests that need login state or multi-step sessions across several tool calls."
+  }
+ ],
+ "tools": [
+  "MCP2CLI",
+  "Claude Code",
+  "Docker MCP gateway / Code Mode",
+  "CLI Hub",
+  "MCP Python SDK",
+  "tiktoken",
+  "Supabase MCP",
+  "GitHub MCP",
+  "Puppeteer MCP",
+  "Context7 MCP",
+  "Next.js",
+  "TOON format",
+  "Cursor",
+  "Claude browser extension",
+  "CLAUDE.md",
+  "progress.json",
+  "Orchids (sponsor)"
+ ],
+ "numbers": [
+  {
+   "claim": "Converted MCP tools are cached for one hour by default.",
+   "t": "2:29"
+  },
+  {
+   "claim": "A TikToken-based automated test suite was used to claim the tool is much cheaper and faster, but no figures are shown.",
+   "t": "2:29"
+  },
+  {
+   "claim": "Four MCPs connected (Supabase, GitHub, Puppeteer, Context7), 78 tools total.",
+   "t": "6:41"
+  },
+  {
+   "claim": "The headless-browser approach took about 7 minutes on a simple task, which the host says was the reason for switching to the browser extension.",
+   "t": "8:58"
+  }
+ ],
+ "hot_takes": [
+  "The biggest claim, that MCP-as-bash redirection solves output bloat, is shown in one feature run with no before/after token counts.",
+  "The video says the MCP2CLI token-efficiency tests had numbers behind them, but none appear on screen.",
+  "The Orchids sponsor segment (around 3:57) is separate from the technical content. The technical content has enough substance that the sponsorship does not cap quality.",
+  "The host's own experience is that connecting tools is not enough, and that CLAUDE.md rules and skills were needed to make the agent use them. This is more useful than the tool pitch itself.",
+  "The title, 'I Didn't Know This Was Possible Until Now', overstates the content. Redirecting output to files was already covered in the channel's earlier Cursor video, which the host cites."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS sits in front of agents as a proxy and manages tool access. Context bloat from MCP tools is a real cost there, and runtime conversion with caching is a candidate design.",
+   "action": "Benchmark MCP tool-definition tokens against a runtime-converted CLI approach using tiktoken on one real MCP server, and record the result as a data point for the token-cost work."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness wraps Claude Code runs. Large tool outputs and reliable per-MCP guidance (skills over CLAUDE.md) are directly relevant to long checkpointed runs.",
+   "action": "Add a rule in ProsHarness run config that writes MCP tool output above a size threshold to a file and has the agent grep it, then compare context size across runs."
+  }
+ ],
+ "quality": 3,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

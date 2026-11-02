@@ -1,0 +1,41 @@
+# The Only Guide You Need to Build MCP Server.
+
+- **channel:** [AI LABS](../channels/ailabs.md) · **id:** `kfTDFkhNDFU` · [watch](https://youtu.be/kfTDFkhNDFU) · **date:** 2025-11-02 · **length:** 8:05 · **format:** tutorial · **quality:** 2/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Cursor, Figma, GitHub
+- **topics:** mcp-and-tools, coding-agents, context-engineering · **tags:** mcp, mcp-server, python, cursor, crawl4ai, figma-api, gitingest, tool-calling, docs-as-context
+
+> Walkthrough of building a minimal Python MCP server with the official SDK, wiring it into Cursor, and using docs and AI generation to wrap a web crawler and a Figma API.
+
+## Summary
+The speaker frames the video as a concept walkthrough rather than a coding tutorial. He picks the Python SDK from the official MCP docs, installs the mcp package with pip, and builds a toy tool that converts dollars to pounds at a fixed rate, with the function's description acting as the model-facing context. He registers the server in Cursor's MCP settings as a command-type server that runs the file, then confirms the agent calls the tool. To cut down on hand-written code, he feeds the SDK's README (not the whole repo, to keep context small) into Cursor as a doc, and shows gitingest as a way to turn a GitHub repo into LLM-readable text. The more practical example wraps the open-source Crawl4AI script as a tool that takes a URL and returns markdown, which he notes gives text but not the HTML structure. He closes by pointing the agent at the Figma get-file API docs and having it generate the parameter extraction and server code, arguing that any API-backed platform can be exposed to an agent this way.
+
+## Key ideas
+- **An MCP server is essentially a simple input-output tool: a Python function exposed to the agent, which calls it with parameters and displays the returned result.** — He says the core model is input to function to output, and that the decorated function's description is what tells the model when to use the tool. ([1:13](https://youtu.be/kfTDFkhNDFU?t=73))
+- **Tool descriptions are the selection signal, not just documentation for humans.** — He calls the function's description the model's context and says it guides which tool the model picks in different situations. ([1:13](https://youtu.be/kfTDFkhNDFU?t=73))
+- **Give the coding agent the SDK docs instead of learning the syntax.** — The SDK README contains the tool, image, prompt and resource docs. He adds it to Cursor's docs feature so Composer can use it as context while building. ([2:45](https://youtu.be/kfTDFkhNDFU?t=165))
+- **Index only the README, not the full repository, to keep context size down.** — He explicitly says the full repo would not be useful and would only inflate the context. ([3:52](https://youtu.be/kfTDFkhNDFU?t=232))
+- **Wrapping an existing script as a tool is a prompt-driven job: verify the script runs, then ask the agent to move its function into the MCP file and accept a URL parameter.** — The Crawl4AI example returns markdown. The speaker notes it captures page text but not HTML structure, which would need extra configuration. ([5:18](https://youtu.be/kfTDFkhNDFU?t=318))
+- **Any API with documentation can be exposed as an MCP tool by giving the agent the endpoint docs.** — He uses the Figma get-file endpoint docs as the example, asking the agent to derive the parameters from a Figma file URL and generate the server code. ([6:45](https://youtu.be/kfTDFkhNDFU?t=405))
+- **Quality caveat: the demo is intentionally shallow. Error handling, auth, transport and testing are not covered.** — He says at the start that this is not a general tutorial, and the only demo is a fixed-rate currency toy and a single crawl call. ([0:00](https://youtu.be/kfTDFkhNDFU?t=0))
+
+## Techniques
+- **Minimal Python MCP server** — Run `pip install mcp`. Create a new .py file. Import the library's MCP class, create an instance, and define a function decorated as a tool (decorator name not spoken). Give the function a clear description, since that is the model-facing context. The demo tool converts dollars to pounds at a fixed rate and takes an amount as input. *When:* Starting any new MCP server. Keep the first version to one function to check the input-output loop before adding more.
+- **Register a local MCP server in Cursor** — Copy the absolute path to the server file. In Cursor Settings, open the MCP section and add a new server. Enter any nickname, set Type to `command`, and set the command to `mcp run <file path>`. Click Add, then confirm the tool appears in the list. Ask the agent a question that needs the tool (e.g. convert $20 to pounds) to test it. *When:* Testing a local MCP server with a Cursor agent before connecting it to anything else.
+- **Feed SDK docs to the coding agent** — Open the SDK's GitHub repo and take the README URL, not the repo URL. In Cursor, open Features, go to the Docs section, add a new doc, paste the README link, and give it a name (he used 'Python MCP SDK'). In Composer, reference that doc when asking for code. *When:* When building against an unfamiliar SDK. Using the README alone keeps context small compared with indexing the whole repo.
+- **gitingest to turn a repo into LLM context** — On a GitHub repo URL, replace 'hub' with 'ingest' (github.com becomes gitingest.com). Choose the parts of the repo you want, then copy the output and paste it into any LLM. *When:* When you want a whole repo or a subset of it as a single text knowledge base to ask questions about.
+- **Wrap an existing script as an MCP tool** — First check that the script runs. Then prompt the agent: look at this file, take the function, implement it in the MCP file that already has the server structure, and accept a link as a parameter. The tool returns the result as markdown. Test by passing a real URL and inspecting the output. *When:* Turning a working utility, such as the Crawl4AI crawler, into a tool an agent can call.
+- **API-to-tool generation from endpoint docs** — Give the agent the API endpoint documentation (the demo uses the Figma get-file endpoint). Ask it to derive the required parameters from a given URL, for example the file key from a Figma file URL, and implement the MCP server around that call. *When:* Exposing any platform with a documented REST API to an agent.
+
+## Hot takes
+- Title overpromises: 'The Only Guide You Need' is an 8-minute Cursor demo of a fixed-rate currency toy and one crawler call, and the speaker says it is not a general tutorial.
+- Using the SDK README as the doc context, not the full repo, to save context tokens is a practical tip.
+- Claims that any platform with an API can be controlled through an agent via a simple input-output MCP server. This is asserted, not demonstrated beyond the Figma endpoint docs.
+- No discussion of error handling, auth, transport choice, or testing, so the 'build anything' framing overstates what the video teaches. Quality capped at 2 for hype title with thin substance.
+
+## Tools mentioned
+MCP Python SDK (mcp, installed with pip; no version stated), Cursor (agent, Composer, docs feature, MCP settings), Crawl4AI (open-source web crawler and data extractor), Figma REST API (get file endpoint), gitingest (gitingest.com, GitHub URL swap), GitHub (SDK repo, README)
+
+## Relevance to our work
+- **general** (2/3): Shows the full loop from docs-as-context to a working MCP server in a coding agent, which is the setup pattern for building tools for agents in this repo. → *Read the official MCP Python SDK quick start before writing any new MCP server, and index its README as a Cursor or Claude doc rather than the full repo.*
+- **agentos** (1/3): MCP is a plausible way to expose AgentOS capabilities (retrieval, exec) to agents, but the video only shows a single-function server. → *If AgentOS features are exposed to Cursor or Claude Code, check the MCP Python SDK quick start for the server skeleton before building a custom wrapper.*
+- **prosharness** (1/3): ProsHarness wraps Claude Code and has phone-driven approvals. A small MCP server registered as a command-type server could expose those hooks to the CLI. → *Prototype one ProsHarness action (for example, a status or approval-request tool) as a single-function MCP server registered via the `mcp run <file>` command pattern.*

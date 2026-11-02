@@ -1,0 +1,47 @@
+# Cron Task Scheduling in Linux | User Crontabs | python-crontab package
+
+- **channel:** [Better Stack](../channels/betterstack.md) · **id:** `t1QWq7IzbKw` · [watch](https://youtu.be/t1QWq7IzbKw) · **date:** 2024-11-02 · **length:** 25:06 · **format:** tutorial · **quality:** 3/5 · **depth:** intro
+- **speakers:** ? · **orgs:** Better Stack
+- **topics:** dev-tools, observability · **tags:** cron, crontab, linux, python-crontab, heartbeat, job-scheduling, cron-monitoring, sqlite-backup, wsl, venv
+
+> Better Stack walkthrough of Linux cron: install and start the cron service, write user crontab entries, schedule Python scripts with python-crontab, and monitor jobs with heartbeat pings.
+
+## Summary
+The video is a beginner tutorial on scheduling tasks with cron on Linux, shown on Ubuntu under WSL. It covers installing cron with apt and starting the service, then reading and editing the user crontab with crontab -l and crontab -e. It explains the five-field schedule (minute, hour, day of month, month, day of week) and points to crontab.guru for checking expressions. The demos use every-minute jobs: a curl request writing to a file, and a SQLite backup done first with cp and then with a Python script. The second half uses the python-crontab package to register the job from Python, adds a comment to each entry, and shows how to find, disable, and remove jobs. The last section sends a heartbeat ping to a Better Stack monitor after each successful run, so a missed run raises an incident. The speaker closes by saying plain cron is simpler for most cases and the package is useful only when the scheduling logic is complex.
+
+## Key ideas
+- **Cron jobs need the cron service running. On a fresh Ubuntu/WSL install it is not running by default, so install it and start it before any schedule has effect.** — Install with apt install cron, start with sudo service cron start, check with sudo service cron status. Restart the service after editing the crontab. ([1:20](https://youtu.be/t1QWq7IzbKw?t=80))
+- **Each user has a personal crontab, and each job is one line made of five schedule fields followed by a command.** — crontab -l lists the entries and crontab -e opens them in an editor (nano in the demo). Ranges and steps work in each field, for example 0-30 and */2. crontab.guru is suggested for checking an expression. ([2:35](https://youtu.be/t1QWq7IzbKw?t=155))
+- **Demo jobs were run every minute, which is not a sensible default. The point is to show the mechanics: a curl request saved to a file, then a backup that copies a SQLite file.** — The speaker calls the curl task unpractical and the every-minute backup a quick demo. Daily or weekly schedules are presented as the real-world choice. ([5:51](https://youtu.be/t1QWq7IzbKw?t=351))
+- **Scheduling a script that runs with Python needs the full path to the file and the interpreter in the cron command. The speaker says the same approach works for PHP, Node.js, or any other language.** — Shown as python3 with the absolute path to app.py. Simple file-copy logic can be moved into a Python script with shutil.copy, which the speaker picks as an example. ([10:57](https://youtu.be/t1QWq7IzbKw?t=657))
+- **python-crontab can read and write the user crontab from Python, so the schedule lives in code and does not need manual crontab edits.** — Create CronTab(user=True), call cron.new with the command, set the schedule through job.minute.every(n), then call cron.write(). Running the script adds an entry to the crontab. ([13:00](https://youtu.be/t1QWq7IzbKw?t=780))
+- **Comment each crontab entry. The speaker calls this a best practice, and python-crontab supports it through set_comment.** — Comments can later be used to find jobs (find_comment), disable them with enable(False), or delete them with remove(), so jobs are identifiable without reading the command. ([18:06](https://youtu.be/t1QWq7IzbKw?t=1086))
+- **Heartbeat monitoring is the answer to silent cron failures. The job sends an HTTP GET to a monitor URL only after it succeeds, and a missed ping opens an incident.** — Better Stack heartbeats are the example. The speaker recommends a grace period of about 20% above the expected duration. Escalation is set up through email, SMS, or a call, and the monitor shows down after cron is stopped. ([19:06](https://youtu.be/t1QWq7IzbKw?t=1146))
+- **Plain crontab is preferred for most jobs, and python-crontab is for cases where the logic that creates or manages schedules is complex.** — The speaker says the package adds a dependency, and that the scheduled scripts can be as complex as needed while cron itself stays simple. ([23:52](https://youtu.be/t1QWq7IzbKw?t=1432))
+
+## Techniques
+- **Install and start the cron service** — sudo apt install cron, then sudo service cron start. Check with sudo service cron status. After any crontab change, run sudo service cron restart so the scheduler picks it up. *When:* Fresh Linux or WSL machines where cron is missing or not running, and after editing the crontab in the demo.
+- **Five-field crontab entry** — Edit with crontab -e. One job per line: minute hour day-of-month month day-of-week followed by the command. Use * for any value, a-b for a range, and */n for a step. Verify with crontab -l. The demo's every-minute line is * * * * * <command>. *When:* Any recurring local task such as a backup, API fetch, or report on a fixed schedule.
+- **Backup a SQLite file on a schedule** — SQLite is a single file, so a copy is enough for a simple backup. In cron, use cp db.sqlite3 db.sqlite3.backup. In Python, use shutil.copyfile or shutil.copy from the standard library. The demo copies to the same folder with a different extension. *When:* Small SQLite databases where a file copy is a valid backup and the database is not being written to during the copy.
+- **Register a Python job from code using python-crontab** — python3 -m venv venvcron, then source venvcron/bin/activate, then pip install python-crontab requests. In cron.py: task_file = Path('app.py').resolve(); cron = CronTab(user=True); job = cron.new(command=f'python3 {task_file}'); job.minute.every(1); job.set_comment('...'); cron.write(). Running the script writes the entry to the user crontab. *When:* When schedules are produced by application logic or change based on config, rather than hand-edited.
+- **Manage existing cron jobs from Python** — Iterate over cron (CronTab) to list jobs. Use find_time(...) for jobs matching a schedule and find_comment(...) for jobs matching a comment. job.enable(False) disables a job; enable(True) re-enables it. cron.remove(job) deletes it. Call cron.write() after changes. *When:* Auditing or cleaning up jobs that were registered by a script, identified through their comments.
+- **Dead-man's-switch heartbeat for each scheduled run** — Create a heartbeat monitor and copy its URL. At the end of the job, after the work succeeds, call requests.get(url). Set the expected period to the run interval and the grace period to about 1.2x the expected duration. Missing pings raise an incident, and escalation is configured in the monitor. *When:* Any job where a silent failure would matter: cron stopped, the job crashed before finishing, or the machine is down. The ping only fires on success, so failed runs are caught too.
+
+## Numbers
+- Schedules use five fields: minute, hour, day of month, month, day of week. ([3:30](https://youtu.be/t1QWq7IzbKw?t=210))
+- Better Stack recommends a heartbeat grace period of 20% above the expected job duration. ([19:06](https://youtu.be/t1QWq7IzbKw?t=1146))
+- In the demo, the heartbeat monitor showed the service down about 38 seconds after cron was stopped, and an incident was raised automatically. ([22:29](https://youtu.be/t1QWq7IzbKw?t=1349))
+- The demo's backup and curl jobs run every minute, so the results appear within one minute of the change. ([5:51](https://youtu.be/t1QWq7IzbKw?t=351))
+
+## Hot takes
+- The speaker says plain cron is usually better than python-crontab, because the package adds a dependency and the scheduling is simpler to read in the crontab.
+- Every-minute demo jobs are shown on purpose for demo speed. The speaker says real backups are usually daily or every few days.
+- The heartbeat section is effectively a product tour for Better Stack. The same pattern works with any ping endpoint, so the tool choice does not matter.
+- Tutorial is accurate but introductory, and it has no AI-specific content.
+
+## Tools mentioned
+cron, crontab, python-crontab, Python 3, venv, pip, requests, pathlib, shutil, sqlite3, nano, VS Code, apt, Better Stack Heartbeats, crontab.guru, WSL Ubuntu
+
+## Relevance to our work
+- **prosharness** (2/3): ProsHarness covers loops and schedules around the Claude Code CLI. The video shows the basic pattern of cron plus an end-of-run heartbeat, which gives a simple way to detect a scheduled run that never finished. → *For scheduled ProsHarness runs, ping a heartbeat URL only after a successful completion, set the grace period to about 1.2x the expected run time, and give each crontab entry a comment that names the job.*
+- **agentos** (1/3): AgentOS has periodic work such as load tests, archive jobs and backups in its L3 and L4 roadmap. Those jobs need a way to detect a silent failure, and this video is a basic walkthrough of that. → *Add a missed-run heartbeat to any scheduled AgentOS job, such as the DuckDB archive or Locust load runs, so a dead cron or crashed job raises an alert.*

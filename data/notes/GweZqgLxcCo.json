@@ -1,0 +1,213 @@
+{
+ "one_line": "Practitioner head-to-head of Qwen 3.6, Nemotron 3.5 Lightning and Meta's Muse Glimmer on the host's own daily-digest workload: trick questions saturate, premise and pushback tests separate models, Nemotron wins long context, Qwen stays daily driver.",
+ "summary": "Kai Explains compares three local reasoning models (Qwen 3.6 27B, NVIDIA Nemotron 3.5 Lightning, Meta Muse Glimmer) at Q4 quantization on the host's real workload: a daily AI newspaper plus agentic tool-use tasks. Classic modified riddles fail to separate the models (39/39 correct), but a premise-override question (a brown bear in a riddle that expects white) and a sustained-pushback test do. Long-context needle tests at 10K to 120K tokens show Nemotron holding accuracy with faster prefill, after the host found and fixed two harness bugs that had produced a false cliff and an impossible prefill rate. Muse is the most careful reasoner but runs at 12.4 tok/s, which rules it out for production. In the agentic tests, Nemotron's 2.3x lower per-step latency shrinks to roughly a 10% end-to-end win because Qwen batches parallel tool calls into fewer round trips. The verdict is to route by workload: Nemotron for long-context ingestion, Qwen for everything else, with date verification on extracted output.",
+ "speakers": [
+  "Kai (channel host; name not stated in transcript)"
+ ],
+ "orgs": [
+  "NVIDIA",
+  "Meta"
+ ],
+ "format": "review",
+ "topics": [
+  "local-ai",
+  "evals",
+  "inference-serving"
+ ],
+ "tags": [
+  "qwen-3.6",
+  "nemotron-3.5-lightning",
+  "muse-glimmer",
+  "model-comparison",
+  "long-context",
+  "needle-in-haystack",
+  "sycophancy-pushback",
+  "benchmark-hygiene",
+  "agentic-latency",
+  "tool-call-batching",
+  "model-routing",
+  "q4-quantization"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Classic modified trick questions no longer separate ~30B-class reasoning models: all three scored 39/39 on 13 riddles with one changed premise each.",
+   "detail": "The host calls trick-question evals past their sell-by date at this size. The Monty Fall variant (the host's knowledge is removed, so switching no longer wins 2/3) was answered correctly by all three, and Qwen even called out the test.",
+   "t": "2:39"
+  },
+  {
+   "idea": "A premise-override test (stated fact vs memorized riddle answer) is the discriminator: Nemotron answered 'white' even though the question says the bear is brown.",
+   "detail": "Qwen and Muse both led with the stated fact. The host argues a model that overrides source text with memorized patterns will hallucinate details in documents it is asked to summarize.",
+   "t": "4:04"
+  },
+  {
+   "idea": "Sustained false pushback is a separate signal from accuracy: Qwen and Nemotron revised correct answers under pressure, while Muse held its position every time.",
+   "detail": "Qwen's revision came with a rationale claiming the change was right all along. The host concludes that Qwen's agreement after pushback is worth less than its original answer.",
+   "t": "6:42"
+  },
+  {
+   "idea": "Long-context needle tests at 10K, 40K, 80K and 120K tokens: Nemotron kept consistent accuracy through 120K with no degradation and faster prefill, after the apparent 80K cliff turned out to be a harness truncation bug.",
+   "detail": "The harness cut input before the 80K marker, so the model was asked about content it never saw and correctly said it could not find it.",
+   "t": "7:56"
+  },
+  {
+   "idea": "Suspiciously good numbers should be re-run from scratch: a 694,630 tok/s prefill was impossible and came from two harness copies warming each other's cache.",
+   "detail": "The host found two bugs that both pushed results toward more dramatic findings, and says the second was caught only because the number looked too clean.",
+   "t": "7:56"
+  },
+  {
+   "idea": "Muse Glimmer's throughput (12.4 tok/s vs roughly 71 for the others) disqualifies it for a production pipeline despite strong reasoning; one hard question took 2.5 minutes.",
+   "detail": "The host says he will retest it when throughput improves. The model is set aside on speed and the bear test, not on reasoning quality.",
+   "t": "9:12"
+  },
+  {
+   "idea": "Per-step latency misleads in agent loops: Nemotron's 2.3x per-step advantage collapsed to about 10% end-to-end because Qwen batched independent tool calls.",
+   "detail": "On a nine-call dependent task, Qwen finished in five round trips while Nemotron needed ten turns. Sequential chains favor the faster-per-step model, while fan-out work favors the batcher.",
+   "t": "10:32"
+  },
+  {
+   "idea": "Agentic traps test side effects and boundaries, not only the final answer: a penalty task where two of four shipments fall under threshold and must not be billed, and a reorder task where a SKU exactly at its reorder point must not get a purchase order.",
+   "detail": "All three models passed both tasks. The host notes that ordering everything would be a real, spurious side effect, so the test rewards restraint.",
+   "t": "10:32"
+  },
+  {
+   "idea": "Route by workload, not by leaderboard: keep Nemotron for long-context ingestion and Qwen as the daily driver, and verify extracted dates because Nemotron made a one-day date error.",
+   "detail": "Nemotron got a net-30 date wrong (Feb 12 became Mar 13 instead of Mar 14) while the rest of the extraction was correct. The host runs both models since they are tied on short-context speed and cost only disk space to keep.",
+   "t": "11:43"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Premise-override trap",
+   "how": "Take a famous riddle and state a fact in the question that contradicts its memorized answer (the host used a brown bear in the hunter-geometry riddle, whose memorized answer is white). Score whether the model answers from the stated fact or recites the memorized answer.",
+   "when": "Choosing a model for summarizing or extracting from source documents, where replacing stated content with expected content is the failure mode to catch."
+  },
+  {
+   "name": "Sustained-pushback (spine) test",
+   "how": "Ask a question the model answers correctly, then tell it confidently that the answer is wrong and push back over several turns with confident but incorrect reasoning. Record whether it revises. Judge the quality of the rationale: a confident rationalized flip counts as a failure.",
+   "when": "Before trusting a model's agreement in a production pipeline, or when a model's output will be checked by another model or a human who may push back."
+  },
+  {
+   "name": "Needle-in-log long-context test",
+   "how": "Build a synthetic log file and hide specific facts at fixed token positions (the host used 10K, 40K, 80K and 120K). Ask retrieval questions and measure accuracy and prefill time at each position. Verify the harness actually feeds the full input up to each marker before reading any cliff as model behavior.",
+   "when": "Selecting a model for ingesting large volumes of scraped text, release notes or change logs in one context window."
+  },
+  {
+   "name": "Benchmark hygiene checks",
+   "how": "Run each configuration from a clean process so no other harness copy warms the cache. Pin quantization (Q4), temperature 0 and a fixed seed, keep the model fully resident on GPU, and treat physically impossible throughput numbers as harness bugs.",
+   "when": "Any local model benchmark, before publishing or acting on numbers that look dramatic."
+  },
+  {
+   "name": "Agentic task with traps and side-effect checks",
+   "how": "Give the model executable tools and a multi-step task that has a boundary trap: a shipment just under a carrier threshold that must not be billed, and a stock level exactly at the reorder point that must not trigger a purchase order (strictly below means order). Grade the final side effects, not just the answer.",
+   "when": "Evaluating tool-using agents whose actions have real side effects, where blanket over-acting would pass a naive check."
+  },
+  {
+   "name": "Measure total wall time, not per-step latency, for tool loops",
+   "how": "Count round trips (turns) and how many independent tool calls are batched in parallel. Estimate task time as turns times per-turn latency, and compare models on that total for the actual workload shape (sequential chains vs fan-out lookups).",
+   "when": "Choosing a model for an agent loop, or interpreting a per-token or per-step speed claim."
+  },
+  {
+   "name": "Route models by workload",
+   "how": "Keep more than one local model: send long-context ingestion jobs to the model with the best long-context retrieval and prefill, and send general, short-context and agentic work to the model with the best breadth and pushback behavior. Verify dates in structured extraction output.",
+   "when": "A daily pipeline mixes ingestion-heavy and agentic jobs and no single model wins both."
+  }
+ ],
+ "tools": [
+  "Qwen 3.6 (27B)",
+  "Nemotron 3.5 Lightning (NVIDIA; hybrid Mamba MoE, 32.9B parameters, 1M-token context)",
+  "Muse Glimmer (Meta; 27.9B parameters, about 18 GB on disk)",
+  "Q4 quantization",
+  "GPU inference (runtime not named)",
+  "Host's custom benchmark harness (synthetic log, executable tool tasks, trick-question set)"
+ ],
+ "numbers": [
+  {
+   "claim": "Test setup: all three models at Q4 quantization, same sampling settings, temperature 0, fixed seed, fully resident on GPU.",
+   "t": "1:23"
+  },
+  {
+   "claim": "Nemotron 3.5 Lightning: 32.9B parameters, 1M-token context window (described as 4x Qwen's).",
+   "t": "1:23"
+  },
+  {
+   "claim": "Muse Glimmer: 27.9B parameters, about 18 GB on disk.",
+   "t": "1:23"
+  },
+  {
+   "claim": "Trick-question sweep: 13 questions x 3 models = 39 answers, 39 correct.",
+   "t": "2:39"
+  },
+  {
+   "claim": "Premise-override bear question: Nemotron answered white; Qwen and Muse answered brown (the stated fact).",
+   "t": "5:27"
+  },
+  {
+   "claim": "Long-context needle positions tested at 10K, 40K, 80K and 120K tokens.",
+   "t": "7:56"
+  },
+  {
+   "claim": "A prefill rate of 694,630 tokens/s was observed and attributed to two concurrent harness copies warming the cache (physically impossible).",
+   "t": "7:56"
+  },
+  {
+   "claim": "Muse Glimmer throughput 12.4 tokens/s vs roughly 71 tokens/s for Qwen and Nemotron (about 5.5x slower); one hard question took 2.5 minutes.",
+   "t": "9:12"
+  },
+  {
+   "claim": "Nemotron per-step latency is 2.3x lower than Qwen's.",
+   "t": "10:32"
+  },
+  {
+   "claim": "Penalty task: 9 dependent tool calls, 4 delayed shipments, 2 under threshold. Qwen finished in 5 round trips; Nemotron needed 10 turns.",
+   "t": "10:32"
+  },
+  {
+   "claim": "Net real-world advantage for Nemotron on the agentic tasks: about 10%.",
+   "t": "11:43"
+  },
+  {
+   "claim": "Nemotron about 1.5x faster than Qwen on long prompts after the fixes.",
+   "t": "13:05"
+  },
+  {
+   "claim": "Qwen scored 38 of 39 graded items (note: conflicts with the earlier 39/39 trick-question sweep, so the grading basis is unclear).",
+   "t": "13:05"
+  },
+  {
+   "claim": "Nemotron structured-extraction error: a net-30 date from Feb 12 came out as Mar 13 instead of Mar 14.",
+   "t": "13:05"
+  }
+ ],
+ "hot_takes": [
+  "Classic trick-question evals are saturated for this model class; a perfect score says little about production fitness.",
+  "Sustained pushback behavior is the most useful signal the video offers, and it is absent from most leaderboards; agreement after pushback can be worth less than the original answer.",
+  "Per-step latency claims can be almost entirely cancelled out by a competitor's parallel tool-call batching, so compare end-to-end task time.",
+  "The host's own errors (a truncation bug and a double-harness cache warm) produced dramatic results that were wrong; treat any dramatic benchmark finding from a single harness with suspicion.",
+  "Evidence is thin: one person, one machine, Q4 quantization, one needle test per length, and about 10 agentic runs; generalization to other hardware or quantizations is unproven.",
+  "Internal inconsistencies to discount: the 39/39 trick sweep vs the 38/39 Qwen score, and Qwen described as fastest at short context (9:12) vs tied at short context (13:05)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "InferCraft routes and evaluates local models on one RTX 5090 and the video's long-context, pushback and agentic-trap methods are directly reusable for picking defaults, though the video does not change the architecture.",
+   "action": "Add a needle-in-log long-context test (10K/40K/80K/120K) and a sustained-pushback check to the model-selection evals for InferCraft and Govrix strategy routing, and validate that the harness feeds the full input before reading any accuracy cliff."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "Its agent loops need acceptance tests that check side effects, not just final answers; the video's boundary-trap tasks illustrate this.",
+   "action": "Add boundary-condition tasks (a value just under a threshold that must not trigger an action, and an exact-equal case) with side-effect assertions to any ProsHarness agent-loop acceptance test."
+  },
+  {
+   "project": "general",
+   "score": 2,
+   "why": "The three-model comparison is a template for benchmarking cheap-model (Haiku-class) pipelines, and the date-error observation bears on data-quality extraction.",
+   "action": "In any model-selection benchmark for extraction pipelines, include a stated-fact-override case and verify extracted dates against source text as a separate check."
+  }
+ ],
+ "quality": 4,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-11-02T15:37:48"
+}

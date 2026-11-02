@@ -1,0 +1,162 @@
+{
+ "one_line": "Vendor talk (DZ Labs, now Colibra) on turning millions of messy SharePoint documents into AI-ready data by tagging, deduplicating, freshness-filtering and scoping them before RAG.",
+ "summary": "Jeff Koss and Leo Platzer, from DZ Labs (acquired by Colibra), walk through a fictional manufacturer that wants a legal-ops chatbot over SharePoint. Their pilot used 40 pre-curated files and worked, but at 80,000+ files the team could not find relevant files, could not find sensitive data, and could not trust the quality. The talk's pitch is that a repeatable pipeline for unstructured data (classify, scan, dedupe, freshness-filter, slice, refresh) is what moves a stalled POC into production. The demo covers an AI-suggested tag tree with conditional sub-tags and per-tag evidence, a hybrid pattern-plus-AI sensitivity scan, a dedup/freshness dashboard, and \"data slices\" that auto-refresh on a schedule. Leo argues that stale and duplicate chunks crowd out relevant results in top-K retrieval, and cites an internal multi-hop RAG eval with large recall and task-completion gains. The closing demo generates a context.md index per SharePoint folder so coding agents can read a summary instead of opening files. Most of the talk is product demo; the reusable ideas are the pipeline stages and the claim that corpus hygiene matters regardless of use case, but the numbers are vendor-run and not detailed.",
+ "speakers": [
+  "Jeff Koss",
+  "Leo Platzer"
+ ],
+ "orgs": [
+  "DZ Labs",
+  "Colibra",
+  "Informatica",
+  "Databricks",
+  "Gartner",
+  "SharePoint"
+ ],
+ "format": "demo",
+ "topics": [
+  "data-engineering",
+  "rag-retrieval",
+  "governance-compliance"
+ ],
+ "tags": [
+  "unstructured-data",
+  "data-curation",
+  "taxonomy",
+  "auto-tagging",
+  "pii-detection",
+  "deduplication",
+  "freshness",
+  "data-slices",
+  "context-files",
+  "sharepoint",
+  "vendor-pitch"
+ ],
+ "key_ideas": [
+  {
+   "idea": "A POC on 40 curated files hides problems that appear at 80,000+ files: discovery, sensitive-data location, and data trust.",
+   "detail": "The North River example went from a working 40-file pilot to failures in finding relevant files, leaking sensitive data into the chatbot, and wrong answers. The speaker frames the gap between POC and production as a data-curation problem, not a model problem.",
+   "t": "1:10"
+  },
+  {
+   "idea": "Document quality is not tabular quality. Duplication, conflicting versions and freshness matter as much as completeness and accuracy.",
+   "detail": "The speaker lists the six classic data-quality dimensions and then says documents need checks for duplicate and conflicting content and for how current each file is.",
+   "t": "4:26"
+  },
+  {
+   "idea": "Tag the corpus with an AI-suggested taxonomy that a human reviews, then use the tags as chatbot metadata.",
+   "detail": "A tag tree can have conditional branches (for example, only legal files get a contract-type sub-tag). AI proposes tags from a prompt and optional classification values, a reviewer accepts or rejects them, and thumbs up/down acts as few-shot feedback. Each tag shows the evidence text and a confidence score.",
+   "t": "7:21"
+  },
+  {
+   "idea": "Use a hybrid of pattern matching and AI for sensitive-data detection, with context words to cut false positives.",
+   "detail": "For a Finnish national ID example, the tool generated a regex and also added Finnish context words that tend to appear near the identifier. The speaker says this reduces false positives compared with pattern-only scanning.",
+   "t": "9:54"
+  },
+  {
+   "idea": "Deduplicate and filter stale files before they reach the index, because redundant context crowds out relevant chunks in top-K retrieval.",
+   "detail": "The speaker's argument: in a RAG index, duplicate or outdated versions fill the top-K results, so the answer is starved of relevant material. Duplicates are either genuine newer context or pure redundancy and are handled differently.",
+   "t": "15:02"
+  },
+  {
+   "idea": "A corpus with 30% stale or duplicate files can fill up to 80% of an agent's context with stale information, according to the speaker's internal eval.",
+   "detail": "The claim is from the vendor's own multi-hop RAG evaluation, not a public benchmark. The speaker reports that recall@1 roughly doubled and task-completion accuracy rose 10-15% after cleanup. The talk gives no eval setup, dataset size or baseline details, so the figures are unverified.",
+   "t": "16:29"
+  },
+  {
+   "idea": "Generate a context.md index for each folder so coding agents read a summary before opening files.",
+   "detail": "The demo fetches SharePoint metadata and writes, for each folder, the document types, key topics, when to use it, and example questions, plus a top-level index. The agent consults the index first and skips folders that are not relevant.",
+   "t": "18:49"
+  },
+  {
+   "idea": "Keep the curated set fresh with scheduled refreshes of a saved slice, so new or deleted source files flow into the index automatically.",
+   "detail": "A data slice is a saved filter over the metadata (for example, only legal files newer than a date, or at least N required fields). A workflow reruns it on a schedule and the SDK pushes updated metadata into the vector database.",
+   "t": "13:33"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "Conditional tag tree with AI suggestions and human review",
+   "how": "Define a tag with an LLM prompt and optional allowed values. Let the model propose sub-tags, add branches that only apply when a parent tag matches, and let a reviewer accept or reject each suggestion. Use thumbs up/down as few-shot examples. Store the evidence span and confidence score with each tag.",
+   "when": "Classifying a large, mixed document corpus before it goes into RAG, when you need auditable tags and metadata-filtered retrieval."
+  },
+  {
+   "name": "Dedupe and freshness pruning before indexing",
+   "how": "Group duplicate and near-duplicate documents, decide whether each version is newer context or plain redundancy, and drop stale files outside a date window. Apply this step before chunking and embedding.",
+   "when": "Document corpora with many versions of the same contract or policy, where old versions would otherwise appear in top-K results."
+  },
+  {
+   "name": "Hybrid pattern plus LLM sensitive-data scan",
+   "how": "Use an LLM to draft a regex for a national ID or similar identifier, then add nearby context words, and run the regex with AI validation on top. Review matches at file and chunk level.",
+   "when": "Finding PII or PHI in documents in languages or formats where you cannot write rules yourself."
+  },
+  {
+   "name": "Folder-level context index file",
+   "how": "Write a context.md per folder with document types, topics, when to read it and example questions, plus a root index. Point the coding agent at the index so it reads the summary before opening raw files.",
+   "when": "Agents that search large file trees and waste tokens opening irrelevant files."
+  },
+  {
+   "name": "Scheduled data slices",
+   "how": "Save a filter over metadata as a named slice and rerun it on a fixed schedule. The downstream chatbot or vector store then reloads the slice so it stays current.",
+   "when": "Enterprise corpora that change continuously, where a stale index would give wrong answers."
+  }
+ ],
+ "tools": [
+  "SharePoint",
+  "DZ Labs (DZ data curation platform, DZ SDK)",
+  "Colibra",
+  "Claude Code",
+  "Codex",
+  "vector database",
+  "knowledge graph"
+ ],
+ "numbers": [
+  {
+   "claim": "Pilot used about 40 pre-curated files; production target is 80,000+ SharePoint files, and a telecom customer has 20,000 HTML files.",
+   "t": "3:31"
+  },
+  {
+   "claim": "Demo ingested 339 files; filters narrowed the set to about 20, and a legal-only data slice had 14 files.",
+   "t": "7:21"
+  },
+  {
+   "claim": "Speaker's example: 30% of files stale or duplicate can lead to up to 80% of agent context being stale information.",
+   "t": "16:29"
+  },
+  {
+   "claim": "Internal multi-hop RAG eval: recall@1 roughly doubled and task-completion accuracy improved 10-15%. Vendor-reported, no setup given.",
+   "t": "17:30"
+  },
+  {
+   "claim": "Customer case: data preparation fell from about four months to a few days.",
+   "t": "13:33"
+  },
+  {
+   "claim": "Demo fixture: 68 files tagged as contracts and legal; the demo says 40,000 employees across 20 countries (fictional customer).",
+   "t": "8:55"
+  }
+ ],
+ "hot_takes": [
+  "Stale and duplicate documents can make up most of an agent's retrieved context, so corpus cleanup matters more than retrieval tuning.",
+  "Data quality for documents means duplication, conflicts and freshness, not the classic tabular dimensions.",
+  "Use case does not change the value of deduplication and freshness, so they are a universal first step."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 1,
+   "why": "MemoryMesh ingests knowledge buckets for hybrid BM25+pgvector retrieval, and the talk's dedupe and freshness pruning is a possible ingest step that AgentOS does not do yet. The speaker's eval numbers are unverified.",
+   "action": "Build a small multi-hop RAG test set with duplicate and stale versions, then measure recall@1 with and without a dedupe-plus-date-window pruning step in MemoryMesh ingest."
+  },
+  {
+   "project": "prosharness",
+   "score": 1,
+   "why": "ProsHarness wraps the Claude Code CLI for long runs. A folder-level context index written before a run could cut the file-scanning tokens the CLI spends, and the auto-refresh idea fits its schedules.",
+   "action": "Try writing a context.md index per repo folder before a ProsHarness run and compare the number of file reads the CLI makes on a fixed task with and without it."
+  }
+ ],
+ "quality": 2,
+ "depth": "intro",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}

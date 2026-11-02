@@ -1,0 +1,179 @@
+{
+ "one_line": "Arize's Dat Ngo argues LLM observability, evals and experiments form one flywheel, built on OpenTelemetry traces, with evals scoped from single spans up to whole sessions. It is mostly a product walkthrough with a useful eval taxonomy.",
+ "summary": "Dat Ngo, an AI architect at Arize (transcribed as \"Arise\"), presents observability, evaluation and experimentation as one loop for LLM agents and harnesses. He says the platform is built on OpenTelemetry, so traces and spans act as the audit record of what an agent did, and an auto-instrumentation line can capture a framework's activity. He separates session-level state (the back-and-forth conversation) from trajectory-level behaviour (branches, loops and per-component latency across many runs). On evals he lists signal sources (LLM-as-judge, humans, golden datasets, deterministic checks) and eval scopes from a single span to multi-span, trajectory and session. He advises running the smallest eval set that shows whether the app works, because evals cost money. The talk closes with a product pitch: primitives exposed through a CLI and skills so coding agents can drive them, an in-product assistant that proposes evals, and Phoenix (open source) and AX (enterprise) as the two products. Most of the content is vendor positioning, and the concrete technical content is short.",
+ "speakers": [
+  "Dat Ngo"
+ ],
+ "orgs": [
+  "Arize AI"
+ ],
+ "format": "talk",
+ "topics": [
+  "observability",
+  "evals",
+  "agent-architecture"
+ ],
+ "tags": [
+  "opentelemetry",
+  "tracing",
+  "spans",
+  "session-evals",
+  "trajectory-evals",
+  "multi-span-evals",
+  "llm-as-judge",
+  "golden-dataset",
+  "deterministic-evals",
+  "experiments",
+  "arize-phoenix",
+  "arize-ax",
+  "coding-agent-integration",
+  "vendor-pitch"
+ ],
+ "key_ideas": [
+  {
+   "idea": "Telemetry, not the code, is what audits an agent",
+   "detail": "Because everything is OpenTelemetry-first, one line of auto-instrumentation can turn a framework's or SDK's activity into traces and spans. A trace or span is the audit record of what the agent did, and it works for any harness, agent or model setup.",
+   "t": "2:51"
+  },
+  {
+   "idea": "Sessions are a separate layer from traces",
+   "detail": "A session groups the back-and-forth conversation (state across turns). Enterprise teams often care less about each tool call and more about whether the end user was satisfied and all questions were answered.",
+   "t": "4:15"
+  },
+  {
+   "idea": "Look at the distribution of paths, not one run",
+   "detail": "Treat the agent as a non-deterministic system and aggregate all its branches and loops. Questions this answers: what share of traffic takes each branch, and which component on a path adds latency or drops the eval score.",
+   "t": "5:36"
+  },
+  {
+   "idea": "Ordering bugs show up as eval drops on certain paths",
+   "detail": "A worked example: an eval fell only on one path because two steps ran in the wrong order (B before A, though B depended on A). The fix was to add context telling the LLM the required order.",
+   "t": "5:36"
+  },
+  {
+   "idea": "Signal comes from several sources, each with a cost",
+   "detail": "He frames signal in five flavours but only names four in the talk: LLM-as-judge, humans (end users and domain experts), golden datasets, and deterministic checks such as valid JSON, a schema, or required non-null fields. Deterministic checks are the cheapest. A golden dataset labelled by domain experts is used to tune the LLM-as-judge.",
+   "t": "7:01"
+  },
+  {
+   "idea": "Eval scope ranges from one span to the whole session",
+   "detail": "A span eval looks at one input and output. A multi-span eval needs data from several components, such as how agents pass data to each other. A trajectory eval covers all spans on a path, checking whether calls were made in the right order to finish the process. A session eval looks at the whole conversation, for example whether the user got frustrated.",
+   "t": "9:20"
+  },
+  {
+   "idea": "Run the minimum set of evals, because each one costs",
+   "detail": "Evals are not meant to be exhaustive. Pick the smallest set that shows whether the application works as intended, and choose the scope and depth for each.",
+   "t": "12:10"
+  },
+  {
+   "idea": "Trace-to-dataset-to-experiment loop",
+   "detail": "Start from traces, or upload input/output pairs directly. Find traces where the signal is bad, collect them into a dataset, and run experiments. Experiments are changes to prompts, models, orchestration or configuration, tested in the UI or programmatically.",
+   "t": "12:10"
+  },
+  {
+   "idea": "Expose the platform to coding agents",
+   "detail": "The platform's primitives are exposed through a CLI, tools and skills, so Claude Code or Codex can call it. An in-product assistant (Alex) can plan and run analysis tasks. The vendor's stated goal is to automate the whole observe, eval and improve cycle.",
+   "t": "13:33"
+  },
+  {
+   "idea": "Generate evals on the fly from traces",
+   "detail": "The vendor argues users should not have to choose evals up front. The system proposes evals from the traces, or when something changes, and flags issues such as high latency or errors. This is the vendor's stated direction and is not shown in detail.",
+   "t": "14:56"
+  }
+ ],
+ "techniques": [
+  {
+   "name": "OTel auto-instrumentation for agents",
+   "how": "Add the instrumentation library for your framework or SDK (one line in the talk's example). Capture traces and spans, and read them as the audit record of each agent run.",
+   "when": "You want a framework-agnostic record of what an agent or harness did, without hand-written logging."
+  },
+  {
+   "name": "Session-level state tracking",
+   "how": "Group the back-and-forth turns into a session object. Evaluate whether the user was satisfied and whether all their questions were answered, rather than judging each tool call.",
+   "when": "The product is a multi-turn conversation or assistant, and the outcome that matters is the user's experience."
+  },
+  {
+   "name": "Distributional trajectory analysis",
+   "how": "Aggregate many runs into a graph of branches and loops. Measure the share of traffic on each path, and attribute latency or eval score drops to specific components on a path.",
+   "when": "A single trace does not explain a regression. You need to know which path or component is responsible across many runs."
+  },
+  {
+   "name": "Eval at the smallest scope that answers the question",
+   "how": "Choose span, multi-span, trajectory or session scope for each eval. Keep the set minimal, because each eval costs tokens and time.",
+   "when": "Designing an eval suite for an agent with several components and a budget constraint."
+  },
+  {
+   "name": "Deterministic checks before LLM judges",
+   "how": "Validate outputs with code first: is the JSON valid, does it match the schema, are required fields non-null. Use an LLM judge only for what code cannot check.",
+   "when": "Structured outputs from an LLM, where cheap and reproducible checks catch most failures."
+  },
+  {
+   "name": "Calibrate an LLM judge against a golden dataset",
+   "how": "Have domain experts label a trusted set. Run the LLM judge on that set and tune the judge until its verdicts approximate the human labels.",
+   "when": "You plan to use an LLM-as-judge for a quality signal and need to trust it."
+  },
+  {
+   "name": "Trace-to-dataset-to-experiment loop",
+   "how": "Filter traces where the signal is bad, collect them into a dataset (or upload input/output pairs), then run experiments that vary prompts, models, orchestration or configuration against that dataset.",
+   "when": "You are improving an agent and want each change tested against the failure cases you already have."
+  },
+  {
+   "name": "Coding-agent access to the eval platform",
+   "how": "Expose the platform's operations through a CLI and skills, so a coding agent can query traces, create datasets and run experiments as part of its own workflow.",
+   "when": "You want Claude Code or Codex to diagnose and iterate on an agent without manual dashboard work."
+  }
+ ],
+ "tools": [
+  "Arize Phoenix",
+  "Arize AX",
+  "OpenTelemetry",
+  "LLM-as-judge",
+  "Claude Code",
+  "Codex",
+  "Anthropic Managed Agents (mentioned)"
+ ],
+ "numbers": [
+  {
+   "claim": "Speaker's own token usage last year: he estimates between 100 billion and 1 trillion tokens (a personal claim, not a benchmark)",
+   "t": "0:00"
+  },
+  {
+   "claim": "Arize AX is positioned for the largest enterprises; the talk names Uber, Booking and Reddit as examples of that tier",
+   "t": "14:56"
+  },
+  {
+   "claim": "Phoenix (open source) runs as a single container with no Kubernetes layer required",
+   "t": "14:56"
+  }
+ ],
+ "hot_takes": [
+  "Code does not audit agents or harnesses; telemetry does.",
+  "Fixing what you think is broken can produce two or three regressions you never saw, so observability has to come before fixes.",
+  "Evals are not an exhaustive exercise; run the minimal set, because each eval costs money.",
+  "The long-term goal is for the whole observe-eval-improve loop to be automated by an AI system, so users should not have to choose evals by hand (vendor claim)."
+ ],
+ "relevance": [
+  {
+   "project": "agentos",
+   "score": 2,
+   "why": "AgentOS L4 is Prometheus/Grafana and OTel. The talk's trajectory and session-scope evals are a concrete addition to that layer, and it applies to the MemoryMesh and Crucible evals.",
+   "action": "Add a session-scope eval (did the user's questions get answered) and a trajectory-scope eval (call order respects dependencies) to the AgentOS eval plan, both computed from OTel spans emitted by the proxy."
+  },
+  {
+   "project": "prosharness",
+   "score": 2,
+   "why": "ProsHarness runs long Claude Code plans with checkpoint and resume. Trajectory-scope checks on the step order and session-scope checks on whether the run finished the task map directly onto its plan and critique steps.",
+   "action": "Add a trajectory check to ProsHarness that compares executed step order against the plan's declared dependencies, and flag any out-of-order run at checkpoint time."
+  },
+  {
+   "project": "general",
+   "score": 1,
+   "why": "Calibrating an LLM judge against an expert-labelled golden set before trusting it is a sound, reusable eval practice, though not specific to any one project.",
+   "action": "Before using any LLM judge in a project, label a small golden set and measure the judge's agreement with it."
+  }
+ ],
+ "quality": 2,
+ "depth": "practitioner",
+ "_model": "haiku-workflow",
+ "_at": "2026-10-18T17:35:23"
+}
