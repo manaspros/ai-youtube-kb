@@ -23,3 +23,5 @@ Opt-in infra for ANY agent: point OpenAI base_url at one proxy URL, toggle pilla
 ## Recurring interests
 - Context engineering, Claude Code / coding-agent workflows, subagents & multi-agent orchestration,
   evals for agents, entity resolution / data quality with LLMs, cheap-model (Haiku) pipelines.
+- Learning track (Nov 2026+): LLM serving internals (SGLang/vLLM scheduler, KV cache, spec decoding) then Triton
+  decode kernels on the RTX 5090. Plan + resource overlap: `context/inference-learning-path.md`.
